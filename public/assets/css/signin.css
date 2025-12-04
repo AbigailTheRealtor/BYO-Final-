@@ -1,0 +1,146 @@
+body {
+    overflow: hidden;
+}
+.signMainDiv .leftCol img {
+    height: 100vh;
+    object-fit: cover;
+}
+.signin {
+    width: 35%;
+    margin: 2rem 10rem;
+}
+.signin .logo img {
+    height: 100px;
+}
+.signinForm {
+    margin-top: 10%;
+}
+.signinForm h1:not(.title):after{
+        background-color: #000;
+        content: "";
+        display: inline-block;
+        height: 1px;
+        position: relative;
+        vertical-align: middle;
+        width: 30%;
+        margin-left: 1rem;
+}
+.signinForm .fa-lock, .signinForm .fa-envelope, .signinForm .fa-eye{
+    position: absolute;
+    z-index: 1;
+    color: #656565!important;
+}
+.signinForm .fa-envelope, .signinForm .fa-lock{
+    top: 14px;
+    right: 1rem;
+}
+.signinForm .fa-eye {
+    top: 14px;
+    right: 2rem;
+}
+.signinForm input {
+    font-size: 16px;
+    color: #656565;
+    background-color: #fff;
+    min-height: calc(2.55rem + 5px);
+    font-weight: 400;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    margin-bottom: 1rem;
+}
+/* Custom check box color  */
+.form-check {
+    position: relative;
+}
+  
+.form-check input[type=checkbox] {
+    width: 20px;
+    height: 20px;
+    min-height: 0;
+    border: 1px solid rgb(150 150 150 / 30%);
+    margin-left: -11px;
+}
+.form-check  input[type=checkbox]:checked+label::before {
+    content: "";
+    display: block;
+    position: absolute;
+    text-align: center;
+    height: 20px;
+    width: 20px;
+    left: 13px;
+    top: 4px;
+    background-color: #36A9AD;
+    border-radius: 2px;
+} 
+.form-check  input[type=checkbox]:checked+label::after {
+    content: url('data:image/svg+xml; utf8, <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="white" viewBox="0 0 24 24"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg>');
+    display: block;
+    position: absolute;
+    left: 16px;
+    top: 4px;
+}
+.signinForm button {
+    border-radius: 5px;
+    background: #049399 !important;
+    border-color: #049399 !important;
+    font-size: 20px;
+    color: #fff;
+    padding: 14px 28px;
+    width: 100%;
+    margin-bottom: 4px;
+}
+a {
+    color: blue;
+}
+.form-control:focus,.form-check-input:focus {
+    box-shadow: none;
+    border-color:  rgb(150 150 150 / 30%);;
+}
+.fb-btn{
+    padding: 10px 0;
+    background-color: #38529A;
+    border-radius: 5px;
+}
+
+.fb-btn:hover, .fb-btn:active, .fb-btn:focus-visible{
+    padding: 10px 0;
+    background-color: #38529A !important;
+    
+}
+
+.fb-btn i {
+    color: #fff;
+    font-size: 16px;
+}
+
+.google-btn{
+    padding: 10px 0;
+    background-color: #3F81EC;
+    border-radius: 5px;
+}
+
+.google-btn:hover, .fb-btn:active, .fb-btn:focus-visible{
+    padding: 10px 0;
+    background-color: #3F81EC !important;
+    
+}
+  
+.google-btn i {
+    color: #fff;
+    font-size: 16px;
+}
+@media screen and (max-width:986px) {
+    .signin {
+        width: 80%;
+        margin: 2rem auto;
+    }
+    .signMainDiv .leftCol img {
+        display: none;
+    }
+    
+}
+@media screen and (max-width:468px) {
+    .signMainDiv {
+        padding-bottom: 14rem;
+    }
+}

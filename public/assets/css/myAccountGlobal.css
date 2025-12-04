@@ -1,0 +1,254 @@
+.mainDashboard {
+    margin: 4rem auto;
+}
+.mainDashboard button:not(.mainDashboard .choices__item button){
+    border-radius: 5px;
+    background: #ffffff;
+    color: #000000;
+    padding: 6px 28px;
+    margin-bottom: 4px;
+    border: 1px solid #e0e0e0;
+}
+.mainDashboard button:first-child:not(.mainDashboard .choices__item button){
+    background-color: #049399 ;
+    color: #ffffff;
+}
+
+.mainDashboard .review .left img {
+    width: 80px;
+}
+.mainDashboard .review .star {
+    cursor: pointer;
+}
+/* /////////////// DasboardContentDetails Left Side ///////////////// */
+.dashboardContentDetails .leftCol {
+    border-right: 1px solid #dee2e6;
+    padding-right: 0;
+}
+.dashboardContentDetails svg {
+    width: 24px;
+    height: 24px;
+}
+.dashboardContentDetails .leftCol a {
+    color: #212529;
+}
+/* /////////////// Dashboard Content Details Right Side /////////////// */
+.dashboardContentDetails .rightCol svg{
+    width: 32px;
+    height: 32px;
+}
+.dashboardContentDetails .rightCol .notification {
+    min-height: 440px;
+    max-height: 450px;
+}
+@media screen and (max-width:992px) {
+    .dashboardContentDetails .rightCol .userDetails {
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+    .dashboardContentDetails .rightCol .userDetails div {
+        border: none!important;
+    }
+    .dashboardContentDetails .leftCol {
+        border-right: none;
+        padding-right: 12px;
+    }
+}
+.form-control:focus,.form-check-input:focus, .form-select:focus {
+    box-shadow: none;
+    border-color:  rgb(150 150 150 / 30%);;
+}
+.myBid .myBidsDetails img{
+    max-width: 50px;
+    max-height: 40px;
+    border: 1px solid #ddd;
+    padding: 2px;
+}
+.myBid .myBidsDetails .badge {
+    background-color: #049399;
+}
+.myBid .accordion .card:hover {
+    cursor: pointer;
+}
+.myBid .accordion svg {
+    width: 48px;
+    height: 48px;
+    color: #049399 !important;
+}
+
+.myBid .accordion ul li {
+    display: flex;
+    font-size: 16px;
+    justify-content: space-between;
+    list-style: none;
+    border-top: 1px solid #dee2e6;
+    padding: 10px 0;
+}
+.myBid .accordion ul li div:last-child {
+    text-align: right;
+}
+.myBid .accordion .left li a{
+    border: 1px solid #e0e0e0;
+    padding: 5px 10px;
+    line-height: 30px!important;
+    box-shadow: 0 0.125rem 0.25rem rgb(0 0 0 / 9%);
+    color: black;
+}
+/* ////////////////// Message //////////////////////////////  */
+.messages .fa-comment{
+    color: #049399 !important;
+}
+.messages .info-header {
+    padding: 0 15px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+    position: sticky;
+    top: 0;
+    color: #4c595f;
+    background: #f8fafc;
+    z-index: 1;
+    height: 80px;
+    line-height: 70px;
+}
+.messages .leftCol {
+    padding: 0 24px;
+}
+.messages .contact-list {
+    overflow: auto;
+    padding-bottom: 60px;
+    height: 317px;
+}
+.messages .chat-list {
+    max-height: 730px;
+    overflow: hidden;
+}
+.messages .dis-message {
+    border-top: 1px solid #e2e8f0;
+    border-left: 1px solid #e2e8f0;
+    bottom: 0;
+    z-index: 1000;
+    background-color: #f8fafc;
+    padding: 20px 30px;
+    width: 98%;
+}
+.messages .fa-smile {
+    position: absolute;
+    top: 14px;
+    left: 1rem;
+}
+.messages .fa-paperclip {
+    position: absolute;
+    right: 24px;
+    top: 14px;
+
+}
+.messages .messageBox {
+    border: 2px solid #cbd5e1!important;
+    background: #fff!important;
+    border-radius: 20px !important;
+    height: 45px;
+}
+/* //////////////////////////// My Auction //////////////////////////// */
+.myAuctions .image img {
+    border: 1px solid #ddd;
+    padding: 2px;
+    background-color: #ffffff;
+}
+.myAuctions .upgradeModal {
+    background-color: #049399;
+}
+.myAuctions .buttons button:first-child {
+    background-color: #35853e!important;
+}
+.myAuctions .upgradeModal img {
+    width: 100px!important;
+    top: 10%;
+    height: 90px;
+    left: 45%;
+}
+.myAuctions .upgradeModal .curved {
+    /* width: 100%; */
+    height: 80px;
+    background: radial-gradient(106% 137% at top, transparent 50%, #fff 51.2%);
+        bottom: 0; 
+}
+/* ///////////////////// My Settings Section //////////////// */
+
+.accordion-body {
+    font-size: 20px;
+}
+.accordion-body {
+    font-size: 20px;
+}
+.accordion-button:focus {
+    box-shadow: none
+}
+.accordion-button:not(.collapsed) {
+    background-color: transparent;
+    color: #000000;
+}
+/* Custom style */
+.accordion-button::after {
+    background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='%23333' xmlns='http://www.w3.org/2000/svg'%3e%3cpath fill-rule='evenodd' d='M8 0a1 1 0 0 1 1 1v6h6a1 1 0 1 1 0 2H9v6a1 1 0 1 1-2 0V9H1a1 1 0 0 1 0-2h6V1a1 1 0 0 1 1-1z' clip-rule='evenodd'/%3e%3c/svg%3e");
+    transform: scale(.7) !important;
+    
+  }
+  .accordion-button:not(.collapsed)::after {
+    background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='%23333' xmlns='http://www.w3.org/2000/svg'%3e%3cpath fill-rule='evenodd' d='M0 8a1 1 0 0 1 1-1h14a1 1 0 1 1 0 2H1a1 1 0 0 1-1-1z' clip-rule='evenodd'/%3e%3c/svg%3e");
+  }
+  .mySettings .accordion  textarea,.mySettings .accordion  input{
+    background-clip: padding-box;
+    border-radius: 0.25rem;
+    box-shadow: inset 0 1px 2px 0 rgb(66 71 112 / 12%);
+    border-radius: 0.25rem;
+    background-color: #fafafb;
+  }
+.mySettings .slimPic {
+    cursor: pointer;
+    position: relative;
+    font-size: inherit;
+    background-color: #f8f9fa;
+    transition: background-color .25s;
+    padding-bottom: 0.025px;
+    height: 25rem;
+}
+.mySettings .slimPic .subDiv {
+    position: absolute;
+    top: 50%;
+    left: 35%;
+}
+.mySettings .slimPic .pic-label span{
+    cursor: pointer;
+}
+.mySettings .accordion .change {
+    background-color: #049399!important;
+    color:#ffffff!important;
+}
+  
+@media screen and (max-width:768PX) {
+    .mainDashboard .review {
+        text-align: center;
+    }
+    .mainDashboard .review .left{
+        justify-content: center;
+    }
+    .mainDashboard .review .right button,.mainDashboard .review .right{
+        width: 100%;
+    }
+    .mainDashboard .review .right button {
+        margin-top: 1rem;
+    }
+    .myBid .accordion button {
+        width: 100%!important;
+    }
+    .myFriends select {
+        width: 100%!important;
+    }
+}
+@media screen and (max-width: 991px) {
+    .mainDashboard {
+        margin-top: 6rem;
+    }
+    .myAuctions .buttons button {
+        width: 100%;
+    }
+  }

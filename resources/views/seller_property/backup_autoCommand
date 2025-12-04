@@ -1,0 +1,89 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Models\PropertyAuctionBid;
+use App\Models\User;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
+use \Carbon\Carbon;
+
+
+class AutoBid extends Command
+{
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'autoBid';
+
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Command description';
+
+    /**
+     * Create a new command instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
+    /**
+     * Execute the console command.
+     *
+     * @return int
+     */
+    public function handle()
+    {
+        $propertyAuctionBids = DB::select("SELECT c.id, c.property_auction_id, c.accepted, MAX(c.price) as max_price, a.meta_key, a.meta_value
+        FROM property_auction_bids c LEFT JOIN property_auction_bid_metas b ON b.property_auction_bid_id = c.id
+        LEFT JOIN property_auction_metas a ON a.property_auction_id=c.property_auction_id
+        WHERE a.meta_key='starting_price' OR a.meta_key='buy_now_price'
+        GROUP BY c.property_auction_id");
+
+
+        $totalBoots = User::where('user_type', 'boot')->count();
+
+        if ($totalBoots > 0) {
+            // Generate a random number between 1 and the total number of boots
+            $randomNumber = rand(1, $totalBoots);
+
+            // Fetch the user with the boot user_type at the random offset
+            $randomBoot = User::where('user_type', 'boot')->skip($randomNumber - 1)->take(1)->first();
+
+            // Use the $randomBoot object to access the user's properties
+            $randomBootId = $randomBoot->id;
+            foreach ($propertyAuctionBids as $row) {
+                if (
+                    $row->max_price >= $row->meta_value
+                    && $row->accepted == '0'
+                ) {
+                    $bid = new PropertyAuctionBid();
+                    $bid->user_id = $randomBootId;
+                    $bid->property_auction_id = $row->property_auction_id;
+                    $bid->price =  $row->max_price + 100;
+                    $bid->save();
+                    $bid->saveMeta('price', $row->max_price + 100);
+                    $bid->saveMeta('financing', 'Cash');
+                    $bid->saveMeta('custom_term_financings', "null");
+                    $bid->saveMeta('escrow_amount', "0");
+                    $bid->saveMeta('inspection_period', Carbon::now());
+                    $bid->saveMeta('closing_date', Carbon::now());
+                    $bid->saveMeta('contingencies', "Home Inspection");
+                    $bid->saveMeta('custom_contingencies', null);
+                    $bid->saveMeta('seller_premium', null);
+                    $bid->saveMeta('buyer_premium', "Buyer");
+                    $bid->saveMeta('buyer_type', "");
+                    $bid->saveMeta('video_url', "https://www.koqy.mobi");
+                }
+            }
+        }
+    }
+}

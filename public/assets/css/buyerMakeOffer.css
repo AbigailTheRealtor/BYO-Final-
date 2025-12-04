@@ -1,0 +1,69 @@
+.buyerOfferContentDetails {
+    margin-top: 4rem;
+}
+.buyerOfferContentDetails .selectionRoom select {
+        box-shadow: 0 1px 2px 0 rgb(0 0 0 / 5%);
+        background-color: #fff;
+        background-clip: border-box;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        padding: 0.58rem;
+      
+}
+.buyerOfferContentDetails .container {
+  margin: 2rem auto;
+}
+.buyerOfferSearchMenu select {
+  margin-right: 1rem;
+  border: none;
+  cursor: pointer;
+}
+.buyerOfferSearchMenu select:focus-visible {
+  outline: none;
+}
+.buyerOfferContentDetails svg {
+  width: 24px;
+  margin-right: 4px;
+  cursor: pointer;
+}
+.buyerOfferContentDetails .card .card-text .badge {
+  background-color: #049399 !important;
+}
+.buyerOfferContentDetails .card h5 a{
+  color: #000;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* number of lines to show */
+  line-clamp: 2; 
+  -webkit-box-orient: vertical;
+}
+.buyerOfferContentDetails .card .houseDetails {
+  font-size: 14px;
+}
+.buyerOfferContentDetails .card .houseDetails span:not(:last-child)::after {
+  content: " | ";
+  color: rgb(167, 166, 171);
+}
+.buyerOfferContentDetails .card .clock{
+  color: #049399;
+}
+/* Change Toogle Color  */
+.form-check-input:checked {
+  background-color: #35853e;
+  border-color: #fff;
+}
+
+.form-check-input:focus,.form-check-input:focus {
+  box-shadow: none;
+  border-color: #000;
+}
+.form-switch .form-check-input:focus {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%280, 0, 0, 0.25%29'/%3e%3c/svg%3e");
+}
+
+@media screen and (max-width: 991px) {
+  .buyerOfferContentDetails {
+      margin-top: 6rem;
+  }
+}

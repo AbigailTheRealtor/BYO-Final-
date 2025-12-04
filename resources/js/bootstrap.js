@@ -1,0 +1,55 @@
+window._ = require('lodash');
+window.axios = require('axios');
+window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+
+import Echo from "laravel-echo";
+import Pusher from "pusher-js";
+
+window.Pusher = Pusher;
+
+// Initialize Echo
+window.Echo = new Echo({
+    broadcaster: 'pusher',
+    key: import.meta.env.VITE_PUSHER_APP_KEY || '3a4373231eb68d1c839d',
+    cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER || 'eu',
+    forceTLS: true,
+    encrypted: true,
+    authEndpoint: '/broadcasting/auth',
+    auth: {
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    },
+    enabledTransports: ['ws', 'wss']
+});
+
+// ---------------------------------------
+// Real-time notifications via Echo
+// ---------------------------------------
+document.addEventListener('DOMContentLoaded', function() {
+    const userIdMeta = document.querySelector('meta[name="user-id"]');
+    if (!userIdMeta) return;
+
+    const userId = userIdMeta.content;
+    const channelName = 'user.' + userId;
+
+    window.Echo.private(channelName)
+        .listen('.notification.created', (e) => {
+            console.log('New notification received:', e);
+
+            // Dispatch custom event to header JS
+            const event = new CustomEvent('newNotification', { detail: e });
+            document.dispatchEvent(event);
+
+            // Browser notification
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('New Notification', { body: e.data?.message || e.message });
+            }
+        });
+
+    // Request browser notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+});

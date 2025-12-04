@@ -1,0 +1,51 @@
+body {
+    overflow-x: hidden;
+}
+.confirmOtp {
+    width: 35%;
+    margin: 2rem 10rem;
+}
+.confirmOtpMainDiv .leftCol img{
+    height: 100vh;
+}
+.confirmOtpForm {
+    position: relative;
+}
+.confirmOtp .logo img {
+    height: 100px;
+}
+.confirmOtpForm i{
+    left: 50%;
+    height: 50%;
+}
+.confirmOtpForm .section1 {
+    margin-top: 8rem;
+}
+.confirmOtpForm .section1 .fa-envelope  {
+    margin-top: 4rem;
+    font-size: 5rem;
+    color: #049399 !important;
+}
+.confirmOtp .fa-spinner {
+    color: #049399!important;
+}
+
+.confirmOtpForm button {
+    border-radius: 5px;
+    background: #049399 !important;
+    border-color: #049399 !important;
+    color: #fff;
+    padding: 14px 28px;
+    width: 50%;
+    margin-bottom: 4px;
+}
+@media screen and (max-width:986px) {
+    .confirmOtp {
+        width: 80%;
+        margin: 2rem auto;
+    }
+    .confirmOtpMainDiv .leftCol img {
+        display: none;
+    }
+    
+}

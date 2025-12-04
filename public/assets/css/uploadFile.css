@@ -1,0 +1,130 @@
+body {
+    overflow-x: hidden;
+}
+.uploadFile {
+    width: 35%;
+    margin: 2rem 10rem;
+}
+.uploadFileMainDiv .leftCol img{
+    height: 100vh;
+}
+
+.uploadFile .logo img {
+    height: 100px;
+}
+
+.uploadFileForm .section1 {
+    margin-top: 8rem;
+}
+.uploadFileForm .section1 .fa-file-arrow-up  {
+    margin-top: 4rem;
+    font-size: 5rem;
+    color: #049399 !important;
+}
+
+
+/* Drag Drop css  */
+.zone {
+    margin: auto;
+    position: absolute;
+    top: 10%;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: radial-gradient(ellipse at center, #049399 0, #049399 100%);
+    width: 80%;
+    height: 50%;
+    border: 5px dashed white;
+    text-align: center;
+    color: white;
+    z-index: 20;
+    transition: all 0.3s ease-out;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05), inset 0 0 0.25em 0 rgba(0, 0, 0, 0.25);
+  }
+  .zone .btnCompression .active {
+    background: #049399;
+    color: white;
+  }
+  .zone i {
+    text-align: center;
+    font-size: 10em;
+    color: #fff;
+    margin-top: 50px;
+  }
+  .zone .selectFile {
+    height: 50px;
+    margin: 20px auto;
+    position: relative;
+    width: 200px;
+  }
+  .zone label,
+  .zone input {
+    cursor: pointer;
+    display: block;
+    height: 50px;
+    left: 0;
+    position: absolute;
+    top: 6rem;
+    width: 100%;
+    border-radius: 5px;
+  }
+  .zone label {
+    background: #049399 !important;
+    color: #fff;
+    display: inline-block;
+    font-size: 1.2em;
+    line-height: 50px;
+    padding: 0;
+    text-align: center;
+    white-space: nowrap;
+    text-transform: uppercase;
+    font-weight: 400;
+    box-shadow: 0 1px 1px gray;
+  }
+  .zone input[type="file"] {
+    opacity: 0;
+  }
+  .zone.in {
+    color: white;
+    border-color: white;
+    background: radial-gradient(ellipse at center, #049399 0, #049399 100%);
+  }
+  .zone.in i {
+    color: #fff;
+  }
+  .zone.in label {
+    background: #fff;
+    color: #049399;
+  }
+  .zone.hover {
+    color: gray;
+    border-color: white;
+    background: #fff;
+    border: 5px dashed gray;
+  }
+  .zone.hover i {
+    color: #049399;
+  }
+  .zone.hover label {
+    background: #fff;
+    color: #049399;
+  }
+  .zone.fade {
+    transition: all 0.3s ease-out;
+    opacity: 1;
+  }
+  
+@media screen and (max-width:986px) {
+    .uploadFile {
+        width: 80%;
+        margin: 2rem auto;
+    }
+    .uploadFileMainDiv .leftCol img {
+        display: none;
+    }
+    .zone {
+        top: 28rem;
+        height: 40vh;
+    }
+    
+}
