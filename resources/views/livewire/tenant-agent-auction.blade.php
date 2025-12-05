@@ -1681,7 +1681,7 @@ $lease_types = [
                     : ($user_type === 'seller'
                     ? 'Sale Terms'
                     : 'Leasing Terms');
-                    $restTabs = [$firstRest, 'Services', 'Additional Details', 'Broker Compensation']; // Only include Pre-Screening if not landlord
+                    $restTabs = [$firstRest, 'Services', 'Additional Details', 'Broker Compensation & Agency Agreement Terms']; // Only include Pre-Screening if not landlord
                     if ($user_type !== 'landlord' and $user_type !== 'buyer' and $user_type !== 'seller') {
                     array_splice($restTabs, 1, 0, 'Pre-Screening');
                     }
@@ -2445,7 +2445,7 @@ $lease_types = [
 
         // end property seller
 
-        ///// •	Business & Real Estate Purchase Requirements
+        ///// • Business & Real Estate Purchase Requirements
 
 
         // cache the wrapper
@@ -2467,7 +2467,7 @@ $lease_types = [
             $other.toggleClass('d-none', !vals.includes('Other'));
         });
 
-        //// End •	Business & Real Estate Purchase Requirements
+        //// End •      Business & Real Estate Purchase Requirements
         ///// Selected the business type other then
 
         function toggleOtherBusinessInput() {

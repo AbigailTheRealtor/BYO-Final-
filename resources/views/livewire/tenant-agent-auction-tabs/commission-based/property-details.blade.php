@@ -644,7 +644,7 @@
 <!-- Garage/Parking Spaces Needed -->
 @if ($property_type === 'Commercial Property')
     <div class="form-group">
-        <label class="fw-bold">Garage Parking Features Needed:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Garage/Parking Features Needed:<span class="text-danger">*</span></label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the garage or parking features the Tenant requires.">
@@ -718,11 +718,11 @@
         <label class="fw-bold">Select Pool Type:</label>
         <div class="form-check">
             <input type="checkbox" wire:model="pool_type.private" id="pool_private" class="form-check-input">
-            <label class="form-check-label" for="pool_private">🏊‍♂️ Private</label>
+            <label class="form-check-label" for="pool_private">Private</label>
         </div>
         <div class="form-check">
             <input type="checkbox" wire:model="pool_type.community" id="pool_community" class="form-check-input">
-            <label class="form-check-label" for="pool_community">🏢 Community</label>
+            <label class="form-check-label" for="pool_community">Community</label>
         </div>
     </div>
 

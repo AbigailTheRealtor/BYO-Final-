@@ -11,11 +11,11 @@
 </div>
 <!-- First Name -->
 <div class="form-group">
-    <label class="fw-bold">First Name:</label>
+    <label class="fw-bold">First Name:<span class="text-danger">*</span></label>
 
     <div class="input-cover">
         <input type="text" wire:model="first_name" class="form-control has-icon" data-icon="fa-solid fa-user"
-            placeholder="Enter first name"  id="listing_title">
+            placeholder="Enter first name" id="listing_title" required>
     </div>
 
 
@@ -23,28 +23,28 @@
 
 <!-- Last Name -->
 <div class="form-group">
-    <label class="fw-bold">Last Name:</label>
+    <label class="fw-bold">Last Name:<span class="text-danger">*</span></label>
     <div class="input-cover">
         <input type="text" wire:model="last_name" class="form-control has-icon" data-icon="fa-solid fa-user"
-            placeholder="Enter last name">
+            placeholder="Enter last name" required>
     </div>
 </div>
 
 <!-- Phone Number -->
 <div class="form-group">
-    <label class="fw-bold">Phone Number:</label>
+    <label class="fw-bold">Phone Number:<span class="text-danger">*</span></label>
     <div class="input-cover">
         <input type="text" wire:model="phone_number" class="form-control has-icon" data-icon="fa-solid fa-phone"
-            placeholder="Enter phone number">
+            placeholder="(XXX) XXX-XXXX" id="phone_number_input" oninput="formatPhoneNumber(this)" required>
     </div>
 </div>
 
 <!-- Email -->
 <div class="form-group">
-    <label class="fw-bold">Email Address:</label>
+    <label class="fw-bold">Email Address:<span class="text-danger">*</span></label>
     <div class="input-cover">
         <input type="email" wire:model="email" class="form-control has-icon" data-icon="fa-solid fa-envelope"
-            placeholder="Enter email address ">
+            placeholder="Enter email address" required>
     </div>
 </div>
 @if ($service_type === 'full_service')
@@ -103,83 +103,17 @@
         </div>
     @endif
 
-    <!-- Video Upload -->
-    <div class="form-group">
-        <label class="fw-bold">
-            Personal Video:
-            <span class="tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top"
-                title="Upload a short video that explains what the Tenant is looking for in an Agent.">
-                <i class="fa-solid fa-circle-info"></i>
-
-            </span>
-        </label>
-        <div class="input-cover">
-            <div class="input-group">
-                <input type="file" wire:model="video" id="video-input" class="form-control has-icon"
-                    data-icon="fas fa-video" accept="video/*">
-            </div>
-        </div>
-        <span id="video-error" class="text-danger" style="display: none;"></span>
-    </div>
-
     <!-- Full-Screen Loader (Handled by Livewire) -->
-    <div id="video-loader" wire:loading wire:target="video, photo"
+    <div id="photo-loader" wire:loading wire:target="photo"
         style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 9999; display: flex; justify-content: center; align-items: center; visibility: hidden;">
         <div style="text-align: center; color: white;">
             <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
             <h3 class="mt-3">Uploading...</h3>
-            <p>Please wait while we process your files.</p>
+            <p>Please wait while we process your file.</p>
         </div>
     </div>
-    <!-- Video Preview -->
-    @if ($video)
-        <!-- Validate that it's a video and less than 10MB -->
-        <div class="col-md-6 col-6 pt-2 fw-bold"
-            style="width: 100%; max-width: 300px; height: auto; border: 1px solid #ddd; border-radius: 4px; overflow: hidden;">
-            Personal Video:
-            <span class="removeBold">
-                <!-- Display the temporary uploaded video -->
-                @if (is_string($video))
-                    <!-- If $video is a string (existing file path) -->
-                   <span class="removeBold">
-                                        <video autoplay muted loop playsinline controls style="width:100%; height:29vh;">
-                                            <source src="{{ asset('storage/auction/videos/' . $video) }}" type="video/mp4">
-                                            Your browser does not support the video tag.
-                                        </video>
-                                    </span>
-                    @if ($auctionId)
-                        <button wire:click="deleteVideo" wire:confirm="Are you sure you want to delete this video?"
-                            class="btn btn-danger btn-sm mt-2">
-                            Delete video
-                        </button>
-                    @endif
-                @else
-                    <!-- If $video is an UploadedFile object (newly uploaded file) -->
-                    {{-- <video controls style="width:100%;height:29vh;">
-                        <source src="{{ $video->temporaryUrl() }}" type="video/mp4">
-                        Your browser does not support the video tag.
-                    </video> --}}
-
-
-                     <span class="removeBold">
-                                        <video autoplay muted loop playsinline controls style="width:100%; height:29vh;">
-                                            <source src="{{ $video->temporaryUrl() }}" type="video/mp4">
-                                            Your browser does not support the video tag.
-                                        </video>
-                                    </span>
-
-                    @if ($auctionId)
-                        <button wire:click="deleteVideo" wire:confirm="Are you sure you want to delete this video?"
-                            class="btn btn-danger btn-sm mt-2">
-                            Delete video
-                        </button>
-                    @endif
-                @endif
-            </span>
-        </div>
-    @endif
 
 
 
@@ -219,3 +153,21 @@
         <strong> 🛡️ Privacy Notice: </strong> Your last name, email address, and phone number are only visible to the platform admin. Only your first name and any uploaded photo or video will appear on the public listing. This ensures Agents contact you through the platform and protects your personal information.
     </div>
 @endif
+
+<script>
+function formatPhoneNumber(input) {
+    let value = input.value.replace(/\D/g, '');
+    if (value.length > 10) {
+        value = value.substring(0, 10);
+    }
+    if (value.length >= 6) {
+        input.value = '(' + value.substring(0, 3) + ') ' + value.substring(3, 6) + '-' + value.substring(6);
+    } else if (value.length >= 3) {
+        input.value = '(' + value.substring(0, 3) + ') ' + value.substring(3);
+    } else if (value.length > 0) {
+        input.value = '(' + value;
+    } else {
+        input.value = '';
+    }
+}
+</script>

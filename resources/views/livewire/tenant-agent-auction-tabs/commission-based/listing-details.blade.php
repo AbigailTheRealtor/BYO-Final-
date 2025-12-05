@@ -437,10 +437,10 @@
                 data-icon="fa-solid fa-file-alt" required>
                 <option value="" title="">Select</option>
                 <option value="Bidding Period" data-display="Bidding Period"
-                    title="Agents can bid until the timer ends. Each bid will display the Agent’s First Name, Year Licensed, Why Should You Hire This Agent?, What Sets This Agent Apart?, and Services Offered.">
+                    title="Agents can submit bids until the countdown timer ends. Each bid will display the Agent’s Offered Services and Broker Compensation & Agency Agreement Terms.">
                     Bidding Period</option>
                 <option value="Traditional" data-display="Traditional"
-                    title="You may hire an Agent at any time and choose whether to show or hide bids. If shown, bids will display the Agent’s First Name, Year Licensed, Why Should You Hire This Agent?, What Sets This Agent Apart?, and Services Offered.">
+                    title="You may hire an Agent at any time and choose whether to show or hide bids. If shown, bids will display the Agent’s Offered Services and Broker Compensation & Agency Agreement Terms.">
                     Traditional</option>
             </select>
         </div>
@@ -455,7 +455,7 @@
         </label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Agents can submit bids until the countdown ends. Each bid will display the Agent’s First Name, Year Licensed, Why Should You Hire This Agent?, What Sets This Agent Apart?, and Services Offered. Once the timer ends, you can select the Agent who best meets your needs—you are not required to choose the highest or lowest bid. Broker compensation and agency agreement terms remain private on your dashboard and are never shown to other agents or the public.">
+            title="Agents can submit bids until the countdown ends. Each bid will display the Agent’s Offered Services and Broker Compensation & Agency Agreement Terms. Once the timer expires, you may select the Agent who best meets your needs—you are not required to choose the highest or lowest bid. Broker compensation and agency agreement terms remain private on your dashboard and are never shown to other agents or the public.">
             <i class="fa-solid fa-circle-info"></i> </span>
         <div class="input-cover">
             <select wire:model="auction_time" id="auction_time1" class="form-control has-icon"
@@ -508,8 +508,8 @@
             <select wire:model="auction_type" id="auction_type" class="form-control has-icon"
                 data-icon="fa-solid fa-file-alt" required>
                 <option value="">Select</option>
-                <option value="Bidding Period" title="Agents can bid until the timer ends. Each bid will display the Agent’s First Name, Year Licensed, Why Should You Hire This Agent?, What Sets This Agent Apart?, and Services Offered.">Bidding Period</option>
-                <option value="Traditional" title="You may hire an Agent at any time and choose whether to show or hide bids. If shown, bids will display the Agent’s First Name, Year Licensed, Why Should You Hire This Agent?, What Sets This Agent Apart?, and Services Offered.">Traditional</option>
+                <option value="Bidding Period" title="Agents can submit bids until the countdown timer ends. Each bid will display the Agent’s Offered Services and Broker Compensation & Agency Agreement Terms.">Bidding Period</option>
+                <option value="Traditional" title="You may hire an Agent at any time and choose whether to show or hide bids. If shown, bids will display the Agent’s Offered Services and Broker Compensation & Agency Agreement Terms.">Traditional</option>
             </select>
         </div>
         <span class="error mt-2" id="auction_type_error"></span>
@@ -521,7 +521,7 @@
         </label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Agents can submit bids until the countdown ends. All bids are visible to competing Agents in real time, promoting transparency and competition. Once the timer ends, you can select the Agent who best meets your needs—you are not required to choose the highest bidder.">
+            title="Agents can submit bids until the countdown ends. Each bid will display the Agent's Offered Services and Broker Compensation & Agency Agreement Terms. Once the timer expires, you may select the Agent who best meets your needs—you are not required to choose the highest or lowest bid. Broker compensation and agency agreement terms remain private on your dashboard and are never shown to other agents or the public.">
             <i class="fa-solid fa-circle-info"></i> </span>
         <div class="input-cover">
             <select wire:model="auction_time" id="auction_time" class="form-control has-icon"

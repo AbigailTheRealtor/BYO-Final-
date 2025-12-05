@@ -10,7 +10,7 @@
             </div>
         </div>
     </div>
-        <label class="fw-bold">About Agent:</label>
+        <label class="fw-bold">About Agent:<span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Provide a brief summary of your background, experience, and the areas you serve. This helps clients get to know you before reviewing your full bid.">
             <i class="fa-solid fa-circle-info"></i>
@@ -24,7 +24,7 @@
 
     <!-- Why Hire You -->
     <div class="form-group">
-        <label class="fw-bold">Why Should You Be Hired as Their Agent?</label>
+        <label class="fw-bold">Why Should You Be Hired as Their Agent?<span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Explain why you're the right fit for this client. Highlight your experience, communication style, service approach, or results you've delivered for past clients.">
             <i class="fa-solid fa-circle-info"></i>
@@ -38,7 +38,7 @@
 
     <!-- What Sets You Apart -->
     <div class="form-group">
-        <label class="fw-bold">What Sets You Apart From Other Agents?</label>
+        <label class="fw-bold">What Sets You Apart From Other Agents?<span class="text-danger">*</span></label>
          <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="What makes you different? Share your niche expertise, negotiation style, market knowledge, tech tools, or how you personalize your service.">
             <i class="fa-solid fa-circle-info"></i>
@@ -52,7 +52,7 @@
 
     <!-- Marketing Strategy -->
     <div class="form-group required-field">
-        <label class="fw-bold">What Is Your Marketing Strategy?</label>
+        <label class="fw-bold">What Is Your Marketing Strategy?<span class="text-danger">*</span></label>
           <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Briefly describe how you promote listings or support your clients’ goals. For example, mention paid ads, social media, email campaigns, networking, or door-to-door outreach.">
             <i class="fa-solid fa-circle-info"></i>
@@ -176,7 +176,7 @@
 
     <!-- Year Licensed -->
     <div class="form-group required-field">
-        <label class="fw-bold">Year Agent Got Licensed:</label>
+        <label class="fw-bold">Year Agent Got Licensed:<span class="text-danger">*</span></label>
          <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the year the Agent was first licensed. This gives clients a general idea of your experience level in the industry.">
             <i class="fa-solid fa-circle-info"></i>

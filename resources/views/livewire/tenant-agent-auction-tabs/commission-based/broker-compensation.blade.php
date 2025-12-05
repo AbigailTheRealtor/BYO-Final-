@@ -1,4 +1,4 @@
-<h3>Broker Compensation </h3>
+<h3>Broker Compensation & Agency Agreement Terms</h3>
 <div class="alert alert-info bg-light-info border-info mb-4">
     <div class="d-flex align-items-center">
         <div>
