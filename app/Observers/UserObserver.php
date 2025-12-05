@@ -6,17 +6,26 @@ use App\Models\User;
 
 class UserObserver
 {
-    public function retrieved(User $user)
+    public function creating(User $user)
     {
-        if ($user->short_id == "") {
+        if (empty($user->short_id)) {
             $user->short_id = uniqid();
-            $user->save();
+        }
+        
+        if (empty($user->user_name)) {
+            $user->user_name = $user->email ?? uniqid('user_');
+        }
+        
+        if (empty($user->phone_number)) {
+            $user->phone_number = $user->phone ?? '';
         }
     }
 
-    public function created(User $user)
+    public function retrieved(User $user)
     {
-        $user->short_id = uniqid();
-        $user->save();
+        if (empty($user->short_id)) {
+            $user->short_id = uniqid();
+            $user->save();
+        }
     }
 }

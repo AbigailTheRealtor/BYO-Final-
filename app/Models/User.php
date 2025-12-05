@@ -27,7 +27,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name',
-        // 'short_id',
+        'short_id',
         'first_name',
         'middle_name',
         'last_name',
@@ -37,6 +37,7 @@ class User extends Authenticatable
         'user_type',
         'mls_id',
         'phone',
+        'phone_number',
         'website',
         'description',
         'search_preferences',
