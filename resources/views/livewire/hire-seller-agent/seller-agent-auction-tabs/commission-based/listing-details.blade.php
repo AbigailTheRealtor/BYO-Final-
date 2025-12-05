@@ -504,7 +504,7 @@
     <div class="form-group">
         <label class="fw-bold">Listing Type:<span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Choose Bidding Period to let Agents bid until the timer ends with visible, competitive offers. Select Traditional to hire at any time, with the option to show or hide bids.">
+            title="Choose Bidding Period to allow Agents to submit bids until the countdown timer ends, with each bid showing the Agent's Offered Services and Broker Compensation & Agency Agreement Terms. Choose Traditional to hire an Agent at any time, with the option to hide or display the Agent's Offered Services and Broker Compensation & Agency Agreement Terms.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
 

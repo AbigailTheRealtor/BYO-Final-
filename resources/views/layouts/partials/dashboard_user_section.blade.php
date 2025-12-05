@@ -64,7 +64,7 @@
                 Agent</button></a> --}}
 
                         <span class="dropdown">
-                            <button class="btn" type="btn" data-bs-toggle="dropdown" aria-expanded="false">Hire
+                            <button class="btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">Hire
                                 Agent</button>
 
                             <ul class="dropdown-menu" style="margin-top:0px;">
@@ -114,7 +114,7 @@
                                 Agent</button></a>
                     @elseif(auth()->user() && auth()->user()->user_type == 'agent')
                         <span class="dropdown">
-                            <button class="btn btn-lg" type="btn" data-bs-toggle="dropdown" aria-expanded="false">
+                            <button class="btn btn-lg" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 Add Listing <i class="fa fa-angle-down"></i></button>
                             <ul class="dropdown-menu" style="margin-top:0px;">
                                 <li>
