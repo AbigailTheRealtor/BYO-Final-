@@ -1,4 +1,4 @@
-modules = ["php-8.2", "web", "nodejs-20"]
+modules = ["php-8.2", "web", "nodejs-20", "postgresql-16"]
 [agent]
 expertMode = true
 
@@ -17,3 +17,45 @@ DB_PASSWORD = "password"
 APP_NAME = "BidYourOffer"
 APP_ENV = "local"
 APP_DEBUG = "true"
+APP_URL = "https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev"
+CACHE_DRIVER = "file"
+SESSION_DRIVER = "file"
+QUEUE_CONNECTION = "sync"
+BROADCAST_DRIVER = "log"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Laravel Server"
+
+[[workflows.workflow]]
+name = "Laravel Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "php artisan serve --host=0.0.0.0 --port=5000"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[[ports]]
+localPort = 44525
+externalPort = 3000
+
+[deployment]
+deploymentTarget = "vm"
+run = ["php", "artisan", "serve", "--host=0.0.0.0", "--port=5000"]
+build = ["composer", "install", "--no-dev", "--optimize-autoloader", ";", "npm", "install", ";", "npm", "run", "prod", ";", "php", "artisan", "config:cache", ";", "php", "artisan", "route:cache", ";", "php", "artisan", "view:cache"]
