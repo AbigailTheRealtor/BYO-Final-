@@ -272,7 +272,7 @@ class TenantAgentAuctionController extends Controller
 
         // $tenant = TenantAgentAuction::with('meta')->find($id);
         // return $tenant->get;
-        $page_data['auction'] = $auction = TenantAgentAuction::find($id);
+        $page_data['auction'] = $auction = TenantAgentAuction::with(['bids.user', 'bids.meta'])->find($id);
         $page_data['title'] = $auction->address;
         $page_data['counties'] = County::all();
         $page_data['id'] = $id;

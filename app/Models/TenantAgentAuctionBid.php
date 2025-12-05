@@ -46,10 +46,11 @@ class TenantAgentAuctionBid extends Model
         $data = [];
         $metas = TenantAgentAuctionBidMeta::where('tenant_agent_auction_bid_id', $this->id)->get();
         foreach ($metas as $row) {
-            if (gettype(json_decode($row->meta_value)) == 'array') {
-                $value = json_decode($row->meta_value);
+            $metaValue = $row->meta_value ?? '';
+            if ($metaValue !== '' && gettype(json_decode($metaValue)) == 'array') {
+                $value = json_decode($metaValue);
             } else {
-                $value = $row->meta_value;
+                $value = $metaValue;
             }
             $data[$row->meta_key] = $value;
         }
