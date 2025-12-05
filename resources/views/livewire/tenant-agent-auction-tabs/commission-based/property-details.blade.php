@@ -258,7 +258,7 @@
         <input type="text" wire:model="state" wire:keydown.enter.prevent="selectStateSuggestion"
             wire:keydown.arrow-up="decrementHighlight('state')" wire:keydown.arrow-down="incrementHighlight('state')"
             class="form-control has-icon @error('state') is-invalid @enderror" data-icon="fa-solid fa-flag-usa"
-            autocomplete="off" placeholder="Enter state" required readonly>
+            autocomplete="off" placeholder="Enter state" required>
 
         @if (count($stateSuggestions) > 0)
             <div class="autocomplete-dropdown-counties shadow-sm">
