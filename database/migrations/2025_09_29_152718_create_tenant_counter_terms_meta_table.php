@@ -13,6 +13,12 @@ class CreateTenantCounterTermsMetaTable extends Migration
      */
     public function up()
     {
+        if (!Schema::hasTable('tenant_counter_terms')) {
+            return;
+        }
+        if (Schema::hasTable('tenant_counter_terms_meta')) {
+            return;
+        }
         Schema::create('tenant_counter_terms_meta', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('counter_term_id');

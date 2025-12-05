@@ -846,6 +846,11 @@
             </div>
             <div class="col-sm-12 col-md-4 col-lg-4 rightCol">
                 <h1 style="font-size: 1.5rem; font-weight: bold; color: #049399; line-height: 1.3;">{{ @$auction->title }}</h1>
+                @if(@$auction->listing_id)
+                <div class="mb-2">
+                    <span class="badge bg-secondary" style="font-size: 0.9rem;">Listing ID: {{ @$auction->listing_id }}</span>
+                </div>
+                @endif
                 <hr>
 
                  @inject('carbon', 'Carbon\Carbon')

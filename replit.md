@@ -36,6 +36,13 @@ This is a Laravel-based real estate auction platform that enables transparent bi
 - Agent Bids Tab 2: Renamed to "Agent Credentials & Contact Info", added required field indicators, phone auto-formatting
 - Agent Bids Tab 5: Removed video upload section from agent presentation files for tenant, landlord, and buyer
 
+### Unique Listing ID Feature:
+- Added `listing_id` column to all auction tables (tenant_agent_auctions, landlord_agent_auctions, buyer_agent_auctions, seller_agent_auctions, property_auctions, buyer_criteria_auctions, tenant_criteria_auctions, landlord_auctions)
+- Created `HasListingId` trait in `app/Traits/HasListingId.php` for auto-generating unique listing IDs
+- Format: PREFIX-XXXXXXXX (e.g., TAA-AB12CD34 for Tenant Agent Auctions, LAA-XY78ZW90 for Landlord Agent Auctions)
+- Listing IDs are displayed in the listing view page as a badge
+- All auction models updated to use the HasListingId trait
+
 ## Database
 - PostgreSQL database configured and connected
 - Core migrations completed successfully

@@ -13,6 +13,12 @@ class CreateBuyerCounterTermsMetaTable extends Migration
      */
     public function up()
     {
+        if (!Schema::hasTable('buyer_counter_terms')) {
+            return;
+        }
+        if (Schema::hasTable('buyer_counter_terms_meta')) {
+            return;
+        }
         Schema::create('buyer_counter_terms_meta', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('counter_term_id');
@@ -23,7 +29,7 @@ class CreateBuyerCounterTermsMetaTable extends Migration
             // Foreign key constraint
             $table->foreign('counter_term_id')
                 ->references('id')
-                ->on('tenant_counter_terms')
+                ->on('buyer_counter_terms')
                 ->onDelete('cascade');
 
             // Index for better performance

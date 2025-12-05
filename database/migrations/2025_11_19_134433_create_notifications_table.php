@@ -8,6 +8,9 @@ class CreateNotificationsTable extends Migration
 {
     public function up()
     {
+        if (Schema::hasTable('notifications')) {
+            return;
+        }
         Schema::create('notifications', function (Blueprint $table) {
             $table->uuid('id')->primary();               // UUID primary key
             $table->string('type');                      // Notification class

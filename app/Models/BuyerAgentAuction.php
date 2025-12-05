@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\HasListingId;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class BuyerAgentAuction extends Model
 {
-    use HasFactory;
+    use HasFactory, HasListingId;
     protected $appends = ["get"];
     
     protected $attributes = [
