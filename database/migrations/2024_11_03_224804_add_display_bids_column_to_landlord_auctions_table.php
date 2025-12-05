@@ -13,9 +13,11 @@ class AddDisplayBidsColumnToLandlordAuctionsTable extends Migration
      */
     public function up()
     {
-        Schema::table('landlord_auctions', function (Blueprint $table) {
-            $table->boolean('display_bids')->after('id')->default(true);
-        });
+        if (Schema::hasTable('landlord_auctions')) {
+            Schema::table('landlord_auctions', function (Blueprint $table) {
+                $table->boolean('display_bids')->after('id')->default(true);
+            });
+        }
     }
 
     /**

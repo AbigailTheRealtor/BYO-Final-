@@ -13,9 +13,11 @@ class AddCounterIdColumnInBuyerCriteriaAuctionBidsTable extends Migration
      */
     public function up()
     {
-        Schema::table('buyer_criteria_auction_bids', function (Blueprint $table) {
-            $table->integer('counter_id')->after('buyer_criteria_auction_id')->nullable();
-        });
+        if (Schema::hasTable('buyer_criteria_auction_bids')) {
+            Schema::table('buyer_criteria_auction_bids', function (Blueprint $table) {
+                $table->integer('counter_id')->after('buyer_criteria_auction_id')->nullable();
+            });
+        }
     }
 
     /**
@@ -25,8 +27,10 @@ class AddCounterIdColumnInBuyerCriteriaAuctionBidsTable extends Migration
      */
     public function down()
     {
-        Schema::table('buyer_criteria_auction_bids', function (Blueprint $table) {
-            $table->dropColumn('counter_id');
-        });
+        if (Schema::hasTable('buyer_criteria_auction_bids')) {
+            Schema::table('buyer_criteria_auction_bids', function (Blueprint $table) {
+                $table->dropColumn('counter_id');
+            });
+        }
     }
 }

@@ -13,9 +13,11 @@ class AddCounterIdColumnInTenantCriteriaAuctionBidsTable extends Migration
      */
     public function up()
     {
-        Schema::table('tenant_criteria_auction_bids', function (Blueprint $table) {
-            $table->integer('counter_id')->after('tenant_criteria_auction_id')->nullable();
-        });
+        if (Schema::hasTable('tenant_criteria_auction_bids')) {
+            Schema::table('tenant_criteria_auction_bids', function (Blueprint $table) {
+                $table->integer('counter_id')->after('tenant_criteria_auction_id')->nullable();
+            });
+        }
     }
 
     /**
@@ -25,8 +27,10 @@ class AddCounterIdColumnInTenantCriteriaAuctionBidsTable extends Migration
      */
     public function down()
     {
-        Schema::table('tenat_criteria_auction_bids', function (Blueprint $table) {
-            $table->dropColumn('counter_id');
-        });
+        if (Schema::hasTable('tenant_criteria_auction_bids')) {
+            Schema::table('tenant_criteria_auction_bids', function (Blueprint $table) {
+                $table->dropColumn('counter_id');
+            });
+        }
     }
 }

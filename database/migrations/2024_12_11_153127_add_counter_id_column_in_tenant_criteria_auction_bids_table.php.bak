@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddCounterIdInLandlordAuctionBidTable extends Migration
+class AddCounterIdColumnInTenantCriteriaAuctionBidsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,11 +13,9 @@ class AddCounterIdInLandlordAuctionBidTable extends Migration
      */
     public function up()
     {
-        if (Schema::hasTable('landlord_auction_bids')) {
-            Schema::table('landlord_auction_bids', function (Blueprint $table) {
-                $table->integer('counter_id')->after('landlord_auction_id')->nullable();
-            });
-        }
+        Schema::table('tenant_criteria_auction_bids', function (Blueprint $table) {
+            $table->integer('counter_id')->after('tenant_criteria_auction_id')->nullable();
+        });
     }
 
     /**
@@ -27,7 +25,7 @@ class AddCounterIdInLandlordAuctionBidTable extends Migration
      */
     public function down()
     {
-        Schema::table('landlord_auction_bids', function (Blueprint $table) {
+        Schema::table('tenat_criteria_auction_bids', function (Blueprint $table) {
             $table->dropColumn('counter_id');
         });
     }

@@ -1,0 +1,19 @@
+modules = ["php-8.2", "web", "nodejs-20"]
+[agent]
+expertMode = true
+
+[nix]
+channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+DB_CONNECTION = "pgsql"
+DB_HOST = "helium"
+DB_PORT = "5432"
+DB_DATABASE = "heliumdb"
+DB_USERNAME = "postgres"
+DB_PASSWORD = "password"
+APP_NAME = "BidYourOffer"
+APP_ENV = "local"
+APP_DEBUG = "true"

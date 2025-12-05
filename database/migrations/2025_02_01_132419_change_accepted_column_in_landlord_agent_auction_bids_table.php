@@ -13,9 +13,11 @@ class ChangeAcceptedColumnInLandlordAgentAuctionBidsTable extends Migration
      */
     public function up()
     {
-        Schema::table('landlord_agent_auction_bids', function (Blueprint $table) {
-            $table->integer('accepted')->change();
-        });
+        if (Schema::hasTable('landlord_agent_auction_bids')) {
+            Schema::table('landlord_agent_auction_bids', function (Blueprint $table) {
+                $table->integer('accepted')->change();
+            });
+        }
     }
 
     /**

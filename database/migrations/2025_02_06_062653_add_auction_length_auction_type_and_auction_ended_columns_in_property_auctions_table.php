@@ -14,9 +14,15 @@ class AddAuctionLengthAuctionTypeAndAuctionEndedColumnsInPropertyAuctionsTable e
     public function up()
     {
         Schema::table('property_auctions', function (Blueprint $table) {
-            $table->string('auction_type')->after('display_bids');
-            $table->integer('auction_length')->after('auction_type')->default(-1);
-            $table->boolean('auction_ended')->after('auction_length')->default(false);
+            if (!Schema::hasColumn('property_auctions', 'auction_type')) {
+                $table->string('auction_type')->after('display_bids');
+            }
+            if (!Schema::hasColumn('property_auctions', 'auction_length')) {
+                $table->integer('auction_length')->after('auction_type')->default(-1);
+            }
+            if (!Schema::hasColumn('property_auctions', 'auction_ended')) {
+                $table->boolean('auction_ended')->after('auction_length')->default(false);
+            }
         });
     }
 
@@ -28,9 +34,7 @@ class AddAuctionLengthAuctionTypeAndAuctionEndedColumnsInPropertyAuctionsTable e
     public function down()
     {
         Schema::table('property_auctions', function (Blueprint $table) {
-            $table->dropColumn('auction_type');
-            $table->dropColumn('auction_length');
-            $table->dropColumn('auction_ended');
+            $table->dropColumn(['auction_type', 'auction_length', 'auction_ended']);
         });
     }
 }

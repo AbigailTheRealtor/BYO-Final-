@@ -13,9 +13,11 @@ class AddCounterIdColumnInLandlordAgentAuctionBidsTable extends Migration
      */
     public function up()
     {
-        Schema::table('landlord_agent_auction_bids', function (Blueprint $table) {
-            $table->integer('counter_id')->after('landlord_agent_auction_id')->nullable();
-        });
+        if (Schema::hasTable('landlord_agent_auction_bids')) {
+            Schema::table('landlord_agent_auction_bids', function (Blueprint $table) {
+                $table->integer('counter_id')->after('landlord_agent_auction_id')->nullable();
+            });
+        }
     }
 
     /**
