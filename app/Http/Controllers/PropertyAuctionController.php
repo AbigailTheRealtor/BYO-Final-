@@ -1454,7 +1454,7 @@ class PropertyAuctionController extends Controller
         $page_data['bedrooms'] = Bedroom::all();
         $page_data['bathrooms'] = Bathroom::all();
         $auctions = PropertyAuction::all();
-        $auctions = PropertyAuction::selectRaw('*, (SELECT meta_value FROM property_auction_metas WHERE property_auction_metas.property_auction_id = property_auctions.id AND meta_key = "starting_price") as price')->where('sold', false)->where('is_approved', 1);
+        $auctions = PropertyAuction::selectRaw("*, (SELECT meta_value FROM property_auction_metas WHERE property_auction_metas.property_auction_id = property_auctions.id AND meta_key = 'starting_price') as price")->where('sold', false)->where('is_approved', true);
 
         if ($request->title != "") {
             $auctions->where('address', 'like', '%' . $request->title . '%');

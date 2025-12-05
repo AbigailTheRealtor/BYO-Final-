@@ -571,7 +571,7 @@ class TenantCriteriaAuctionController extends Controller
     public function search(Request $request)
     {
         $page_data['title'] = 'Search Listings';
-        $auctions = TenantCriteriaAuction::selectRaw('*, (SELECT meta_value FROM tenant_criteria_auction_metas WHERE tenant_criteria_auction_metas.tenant_criteria_auction_id = tenant_criteria_auctions.id AND meta_key = "max_price") as price, (SELECT meta_value FROM tenant_criteria_auction_metas WHERE tenant_criteria_auction_metas.tenant_criteria_auction_id = tenant_criteria_auctions.id AND meta_key = "property_type") as address')->where('is_sold', false)->where('is_approved', 1);
+        $auctions = TenantCriteriaAuction::selectRaw("*, (SELECT meta_value FROM tenant_criteria_auction_metas WHERE tenant_criteria_auction_metas.tenant_criteria_auction_id = tenant_criteria_auctions.id AND meta_key = 'max_price') as price, (SELECT meta_value FROM tenant_criteria_auction_metas WHERE tenant_criteria_auction_metas.tenant_criteria_auction_id = tenant_criteria_auctions.id AND meta_key = 'property_type') as address")->where('is_sold', false)->where('is_approved', true);
 
         if ($request->bedrooms != "") {
             $auctions->whereHas('meta', function ($meta) use ($request) {

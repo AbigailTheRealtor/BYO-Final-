@@ -421,7 +421,7 @@ class LandlordAgentAuctionController extends Controller
 
         $auctions = LandlordAgentAuction::query();
 
-        $auctions->selectRaw('*, (SELECT meta_value FROM landlord_agent_auction_metas WHERE landlord_agent_auction_metas.landlord_agent_auction_id = landlord_agent_auctions.id AND meta_key = "ideal_price") as price')->where('is_approved', 1);
+        $auctions->selectRaw("*, (SELECT meta_value FROM landlord_agent_auction_metas WHERE landlord_agent_auction_metas.landlord_agent_auction_id = landlord_agent_auctions.id AND meta_key = 'ideal_price') as price")->where('is_approved', true);
 
         // if ($request->title != "") {
         //     $auctions->where('title', 'like', '%' . $request->title . '%');

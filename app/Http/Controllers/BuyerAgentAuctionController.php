@@ -443,7 +443,7 @@ class BuyerAgentAuctionController extends Controller
 
         $auctions = BuyerAgentAuction::query();
 
-        $auctions->selectRaw('*, (SELECT meta_value FROM buyer_agent_auction_metas WHERE buyer_agent_auction_metas.buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = "ideal_price") as price')->where('is_approved', 1);
+        $auctions->selectRaw("*, (SELECT meta_value FROM buyer_agent_auction_metas WHERE buyer_agent_auction_metas.buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'ideal_price') as price")->where('is_approved', true);
 
         if ($request->title != "") {
             $auctions->where('title', 'like', '%' . $request->title . '%');
