@@ -15,7 +15,7 @@
         Tenant's Broker Commission Structure:
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select how the Tenant’s Broker will be compensated—either directly by the Tenant (out-of-pocket) or as part of the lease offer to the Landlord (included in offer). If the Landlord declines to pay, the Tenant remains responsible.">
+            title="Choose whether the Tenant's Broker is paid directly by the Tenant (out-of-pocket) or requested from the Landlord as part of the offer (included in offer). If the Landlord does not agree to pay, the Tenant remains responsible under the brokerage agreement.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
