@@ -13,6 +13,9 @@ class CreateTenantCounterBiddingTable extends Migration
      */
     public function up()
     {
+        if (!Schema::hasTable('tenant_agent_auctions')) {
+            return; // Skip if base table doesn't exist
+        }
         Schema::create('tenant_counter_bidding', function (Blueprint $table) {
             $table->id();
 

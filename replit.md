@@ -12,12 +12,15 @@ This is a Laravel-based real estate auction platform that enables transparent bi
 
 ## Recent Changes (December 5, 2025)
 - Migrated database from MySQL to PostgreSQL
-- Configured environment variables for Replit
+- Updated .env file with PostgreSQL connection details (DB_HOST=helium, DB_DATABASE=heliumdb)
+- Updated config/database.php to use PGHOST/PGDATABASE environment variables as fallbacks
 - Fixed database migrations (added table existence checks for optional features)
 - Built frontend assets using Laravel Mix
 - Configured Laravel server to run on port 5000
 - Added default settings to database (title, favicon, logo)
 - Set up deployment configuration
+- Fixed notification JavaScript errors with guard checks for non-logged-in users
+- Added Mix assets (css/app.css, js/app.js) to master.blade.php layout
 
 ## Database
 - PostgreSQL database configured and connected

@@ -13,6 +13,13 @@ class CreateLandlordCounterTermsTable extends Migration
      */
     public function up()
     {
+        if (!Schema::hasTable('tenant_agent_auctions') && !Schema::hasTable('landlord_agent_auctions')) {
+            return; // Skip if base tables do not exist
+        }
+    }
+
+    public function up_original()
+    {
         Schema::create('landlord_counter_terms', function (Blueprint $table) {
             $table->id();
 

@@ -7,6 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ $title ?? get_setting('title') }}</title>
     <link rel="stylesheet" href="{{ asset('assets/bootstrap-5.2.2/css/bootstrap.min.css') }}" />
+    <!-- Compiled Tailwind CSS -->
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}" />
     <!-- //Global css  -->
     <link rel="stylesheet" href="{{ asset('assets/css/global.css') }}" />
     @stack('styles')
@@ -154,7 +156,8 @@
     <script src="https://kit.fontawesome.com/d7dd5c0801.js" crossorigin="anonymous"></script>
     <script src="{{ asset('assets/bootstrap-5.2.2/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('assets/js/loader.js') }}"></script>
-
+    <!-- Compiled Alpine/App JS -->
+    <script src="{{ asset('js/app.js') }}" defer></script>
 
     @stack('scripts')
 
