@@ -1513,7 +1513,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 Fee Amount</div>
                                                             <div class="text-muted">
                                                                 @if (data_get($bid, 'get.lease_fee_flat_type') === '$')
-                                                                ${{ number_format(data_get($bid, 'get.lease_fee_flat'), 2) }}
+                                                                ${{ number_format((float)data_get($bid, 'get.lease_fee_flat'), 2) }}
                                                                 @else
                                                                 {{ data_get($bid, 'get.lease_fee_flat') }}%
                                                                 @endif
@@ -1553,7 +1553,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 style="color: #049399;">
                                                                 Flat Fee Portion</div>
                                                             <div class="text-muted">
-                                                                ${{ number_format(data_get($bid, 'get.lease_fee_flat_combo'), 2) }}
+                                                                ${{ number_format((float)data_get($bid, 'get.lease_fee_flat_combo'), 2) }}
                                                             </div>
                                                         </div>
                                                         @endif
@@ -1589,7 +1589,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 style="color: #049399;">
                                                                 Flat Fee Portion</div>
                                                             <div class="text-muted">
-                                                                ${{ number_format(data_get($bid, 'get.lease_fee_flat_combo_net'), 2) }}
+                                                                ${{ number_format((float)data_get($bid, 'get.lease_fee_flat_combo_net'), 2) }}
                                                             </div>
                                                         </div>
                                                         @endif
@@ -1641,7 +1641,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                     Purchase Flat Fee</div>
                                                                 <div class="text-muted">
                                                                     @if (data_get($bid, 'get.purchase_fee_flat_type') === '$')
-                                                                    ${{ number_format(data_get($bid, 'get.purchase_fee_flat'), 2) }}
+                                                                    ${{ number_format((float)data_get($bid, 'get.purchase_fee_flat'), 2) }}
                                                                     @else
                                                                     {{ data_get($bid, 'get.purchase_fee_flat') }}%
                                                                     @endif
@@ -1683,7 +1683,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 </div>
                                                                 <div
                                                                     class="text-muted">
-                                                                    ${{ number_format(data_get($bid, 'get.purchase_fee_flat_combo'), 2) }}
+                                                                    ${{ number_format((float)data_get($bid, 'get.purchase_fee_flat_combo'), 2) }}
                                                                 </div>
                                                             </div>
                                                             @endif
@@ -1720,7 +1720,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                     @if (data_get($bid, 'get.lease_type') === 'percent')
                                                                     {{ data_get($bid, 'get.lease_value') }}%
                                                                     @else
-                                                                    ${{ number_format(data_get($bid, 'get.lease_value'), 2) }}
+                                                                    ${{ number_format((float)data_get($bid, 'get.lease_value'), 2) }}
                                                                     @endif
                                                                 </div>
                                                             </div>
@@ -1736,7 +1736,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                     @if (data_get($bid, 'get.purchase_type') === 'percent')
                                                                     {{ data_get($bid, 'get.purchase_value') }}%
                                                                     @else
-                                                                    ${{ number_format(data_get($bid, 'get.purchase_value'), 2) }}
+                                                                    ${{ number_format((float)data_get($bid, 'get.purchase_value'), 2) }}
                                                                     @endif
                                                                 </div>
                                                             </div>
@@ -1774,7 +1774,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 style="color: #049399;">
                                                                 Termination Fee Amount</div>
                                                             <div class="text-muted">
-                                                                ${{ number_format(data_get($bid, 'get.early_termination_fee_amount'), 2) }}
+                                                                ${{ number_format((float)data_get($bid, 'get.early_termination_fee_amount'), 2) }}
                                                             </div>
                                                         </div>
                                                         @endif
@@ -1799,7 +1799,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 Retainer Fee Amount
                                                             </div>
                                                             <div class="text-muted">
-                                                                ${{ number_format(data_get($bid, 'get.retainer_fee_amount'), 2) }}
+                                                                ${{ number_format((float)data_get($bid, 'get.retainer_fee_amount'), 2) }}
                                                             </div>
                                                         </div>
                                                         @endif
