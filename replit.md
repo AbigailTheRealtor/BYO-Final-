@@ -21,6 +21,10 @@ This is a Laravel-based real estate auction platform that enables transparent bi
 - Set up deployment configuration
 - Fixed notification JavaScript errors with guard checks for non-logged-in users
 - Added Mix assets (css/app.css, js/app.js) to master.blade.php layout
+- Fixed JavaScript error in bootstrap.js (changed Vite syntax to Laravel Mix for Pusher)
+- Added Send Message button to all hire agent listing types (tenant, landlord, seller)
+- Fixed title font size and styling for hire agent listings (teal color, 1.5rem)
+- Fixed accordion structure for bid details across all hire agent views
 
 ## Database
 - PostgreSQL database configured and connected
