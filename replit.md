@@ -26,6 +26,16 @@ This is a Laravel-based real estate auction platform that enables transparent bi
 - Fixed title font size and styling for hire agent listings (teal color, 1.5rem)
 - Fixed accordion structure for bid details across all hire agent views
 
+### Hire a Tenant Agent Feature Updates:
+- Tab 1 Listing Details: Updated tooltips to reference "Agent's Offered Services and Broker Compensation & Agency Agreement Terms"
+- Tab 2 Property Preferences: Changed label to "Garage/Parking Features Needed", removed pool type emojis
+- Tab 5 Services: Renamed section header to "Property Alerts & Matching"
+- Tab 7 Broker Compensation: Renamed to "Broker Compensation & Agency Agreement Terms", added static $ symbol for flat fee, comma formatting for dollar amounts, added Lease-Option section headers and tooltips
+- Tab 8 Tenant Information: Added required field indicators, phone auto-formatting, removed video upload section
+- Agent Bids Tab 1: Added required field indicators to About Agent, Why Hire, What Sets You Apart, Marketing Strategy, Year Licensed
+- Agent Bids Tab 2: Renamed to "Agent Credentials & Contact Info", added required field indicators, phone auto-formatting
+- Agent Bids Tab 5: Removed video upload section from agent presentation files for tenant, landlord, and buyer
+
 ## Database
 - PostgreSQL database configured and connected
 - Core migrations completed successfully
