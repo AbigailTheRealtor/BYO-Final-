@@ -504,12 +504,16 @@
         const csrfToken = csrfTokenMeta ? csrfTokenMeta.content : null;
 
         if (!csrfToken) {
-            console.error("CSRF token not found. Notifications will not work.");
-            return;
+            return; // Not logged in, no notifications needed
         }
 
         const dropdown = document.querySelector('#notificationDropdown');
         const bellIcon = document.querySelector('.bell-icon');
+        
+        // If dropdown doesn't exist, user is not logged in - skip notifications
+        if (!dropdown) {
+            return;
+        }
 
         function timeAgo(date) {
             const seconds = Math.floor((new Date() - new Date(date)) / 1000);
