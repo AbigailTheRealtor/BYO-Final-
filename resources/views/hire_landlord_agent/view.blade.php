@@ -1573,7 +1573,7 @@ $auser = $auctionUser::find(@$auction->user_id);
 </div>
 </div>
 <div class="col-sm-12 col-md-4 col-lg-4 rightCol">
-    <h1>{{ @$auction->title }}</h1>
+    <h1 style="font-size: 1.5rem; font-weight: bold; color: #049399; line-height: 1.3;">{{ @$auction->title }}</h1>
     <hr>
 
     {{-- 🏆 Display Winner Information if Listing is Sold --}}
@@ -1694,11 +1694,9 @@ $auser = $auctionUser::find(@$auction->user_id);
 
 
         {{-- 📩 Message Button --}}
-        @if (@$auction->user_id != $auth_id)
-        <a href="{{ route('auction-chat', ['tenant-agent', $auction->id]) }}" class="btn btn-success w-100 mb-2">
+        <a href="{{ route('auction-chat', ['landlord-agent', $auction->id]) }}" class="btn btn-success w-100 mb-2">
             <i class="fa-solid fa-paper-plane"></i> Send Message
         </a>
-        @endif
 
 
         {{-- ⏳ Countdown Timer --}}
@@ -1822,24 +1820,24 @@ $auser = $auctionUser::find(@$auction->user_id);
                         @endphp
 
                         <!-- Item loop -->
-                        <div class="accordion" type="button" data-bs-toggle="collapse"
-                            data-bs-target="#item{{ data_get($bid, 'id') }}" aria-expanded="true"
+                        <div class="accordion-header" style="cursor: pointer;" role="button" data-bs-toggle="collapse"
+                            data-bs-target="#item{{ data_get($bid, 'id') }}" aria-expanded="false"
                             aria-controls="item{{ data_get($bid, 'id') }}">
-                            <div class="d-flex small accordion mr-0 text-center">
+                            <div class="d-flex small mr-0 text-center p-2 border rounded mb-1" style="background: #f8f9fa;">
                                 <div class="col-1">
-                                    <span class="badge">{{ $loop->iteration }}</span>
+                                    <span class="badge bg-primary">{{ $loop->iteration }}</span>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-5">
                                     {{ data_get($bid, 'user.first_name', '') }}
                                 </div>
-                                <div class="col-4 text-right">
+                                <div class="col-3 text-right">
                                     {{ data_get($bid, 'get.agent_fee', data_get($bid, 'agent_fee', '')) }}
                                 </div>
-                                <div class="col-2 d-flex">
+                                <div class="col-3 d-flex justify-content-end">
                                     @if($bidIsAccepted)
                                         <span class="text-success">✓ Accepted</span>
                                     @else
-                                        Terms↓
+                                        <span class="text-primary">Terms ↓</span>
                                     @endif
                                 </div>
                             </div>

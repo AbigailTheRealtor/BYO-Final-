@@ -1026,7 +1026,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
     </div>
 </div>
 <div class="col-sm-12 col-md-4 col-lg-4 rightCol">
-    <h1>{{ @$auction->title }}</h1>
+    <h1 style="font-size: 1.5rem; font-weight: bold; color: #049399; line-height: 1.3;">{{ @$auction->title }}</h1>
     <hr>
 
     @inject('carbon', 'Carbon\Carbon')
@@ -1100,11 +1100,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
 
         {{-- 📩 Message Button --}}
-        @if (@$auction->user_id != $auth_id)
         <a href="{{ route('auction-chat', ['tenant-agent', $auction->id]) }}" class="btn btn-success w-100 mb-2">
             <i class="fa-solid fa-paper-plane"></i> Send Message
         </a>
-        @endif
 
 
         {{-- ⏳ Countdown Timer --}}

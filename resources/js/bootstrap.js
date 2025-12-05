@@ -7,22 +7,29 @@ import Pusher from "pusher-js";
 
 window.Pusher = Pusher;
 
-// Initialize Echo
-window.Echo = new Echo({
-    broadcaster: 'pusher',
-    key: import.meta.env.VITE_PUSHER_APP_KEY || '3a4373231eb68d1c839d',
-    cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER || 'eu',
-    forceTLS: true,
-    encrypted: true,
-    authEndpoint: '/broadcasting/auth',
-    auth: {
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    },
-    enabledTransports: ['ws', 'wss']
-});
+// Initialize Echo - using process.env for Laravel Mix (Webpack)
+try {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+    if (csrfToken) {
+        window.Echo = new Echo({
+            broadcaster: 'pusher',
+            key: process.env.MIX_PUSHER_APP_KEY || '3a4373231eb68d1c839d',
+            cluster: process.env.MIX_PUSHER_APP_CLUSTER || 'eu',
+            forceTLS: true,
+            encrypted: true,
+            authEndpoint: '/broadcasting/auth',
+            auth: {
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken.content,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            },
+            enabledTransports: ['ws', 'wss']
+        });
+    }
+} catch (e) {
+    console.warn('Echo initialization skipped:', e.message);
+}
 
 // ---------------------------------------
 // Real-time notifications via Echo
