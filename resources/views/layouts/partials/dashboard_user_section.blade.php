@@ -22,6 +22,15 @@
         margin: 0;
         /* remove extra space around the line */
     }
+    
+    .right .dropdown {
+        display: inline-block;
+        position: relative;
+    }
+    
+    .right .dropdown-menu {
+        z-index: 1050;
+    }
 </style>
 <div class="card">
     <div class="card-body">
@@ -63,11 +72,11 @@
                         {{-- <a href="{{ route('hire.agent.auction') }}"><button class="btn btn-lg">Hire Tenant's
                 Agent</button></a> --}}
 
-                        <span class="dropdown">
-                            <button class="btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">Hire
+                        <div class="dropdown">
+                            <button class="btn" type="button" id="hireAgentDropdown" data-bs-toggle="dropdown" aria-expanded="false">Hire
                                 Agent</button>
 
-                            <ul class="dropdown-menu" style="margin-top:0px;">
+                            <ul class="dropdown-menu" aria-labelledby="hireAgentDropdown">
                                 <li>
                                     <a class="dropdown-item"
                                         href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}">
@@ -108,7 +117,7 @@
                                     </a>
                                 </li>
                             </ul>
-                        </span>
+                        </div>
                     @elseif(auth()->user() && auth()->user()->user_type == 'seller')
                         <a href="{{ route('sellerAgentHireAuction') }}"><button class="btn btn-lg">Hire Seller's
                                 Agent</button></a>
