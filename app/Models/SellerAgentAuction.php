@@ -14,6 +14,8 @@ class SellerAgentAuction extends Model
     
     protected $attributes = [
         'is_approved' => true,
+        'is_draft' => false,
+        'is_sold' => false,
     ];
 
     public function user()

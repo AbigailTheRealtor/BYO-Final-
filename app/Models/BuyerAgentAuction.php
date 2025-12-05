@@ -14,6 +14,7 @@ class BuyerAgentAuction extends Model
     protected $attributes = [
         'is_approved' => true,
         'is_draft' => false,
+        'is_sold' => false,
     ];
     
     public function counterTerms()
