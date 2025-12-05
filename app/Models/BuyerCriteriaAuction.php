@@ -10,6 +10,10 @@ class BuyerCriteriaAuction extends Model
 {
     use HasFactory;
     protected $appends = ["get"];
+    
+    protected $attributes = [
+        'is_approved' => true,
+    ];
 
     public function user()
     {

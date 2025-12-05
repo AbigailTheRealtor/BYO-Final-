@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class SellerServiceAuction extends Model
 {
     use HasFactory;
+    
+    protected $attributes = [
+        'is_approved' => true,
+    ];
 
     public function user()
     {

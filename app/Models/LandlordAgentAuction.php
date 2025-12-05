@@ -11,6 +11,11 @@ class LandlordAgentAuction extends Model
     use HasFactory;
     protected $appends = ["get"];
     protected $guarded = [];
+    
+    protected $attributes = [
+        'is_approved' => true,
+        'is_draft' => false,
+    ];
 
     public function user()
     {

@@ -12,6 +12,10 @@ class PropertyAuction extends Model
     use HasFactory;
     protected $appends = ["get"];
     protected $fillable = ['starting_price', 'sold', 'is_paid', 'sold_date', 'auction_ended', 'display_bids', 'auction_type', 'auction_length'];
+    
+    protected $attributes = [
+        'is_approved' => true,
+    ];
 
     public function user()
     {

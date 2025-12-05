@@ -10,6 +10,11 @@ class TenantCriteriaAuction extends Model
 {
     use HasFactory;
     protected $appends = ["get"];
+    
+    protected $attributes = [
+        'is_approved' => true,
+        'is_draft' => false,
+    ];
 
     public function user()
     {

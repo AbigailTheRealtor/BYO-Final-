@@ -11,6 +11,10 @@ class SellerAgentAuction extends Model
     use HasFactory;
     protected $guarded = [];
     protected $appends = ["get"];
+    
+    protected $attributes = [
+        'is_approved' => true,
+    ];
 
     public function user()
     {

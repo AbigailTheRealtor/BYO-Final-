@@ -40,6 +40,8 @@ class LandlordAgentAuctionController extends Controller
             $auction->address = $request->address;
             $auction->auction_type = $request->auction_type;
             $auction->auction_length = $auction_length_days;
+            $auction->is_approved = true;
+            $auction->is_draft = false;
             $auction->save();
             $auction->saveMeta("working_with_agent", $request->working_with_agent);
             $auction->saveMeta("address", $request->address);
