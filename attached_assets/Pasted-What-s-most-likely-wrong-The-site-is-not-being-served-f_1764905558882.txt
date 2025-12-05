@@ -1,0 +1,79 @@
+What’s most likely wrong
+
+The site is not being served from /public
+
+Laravel apps should be served from the public folder.
+
+If Replit is pointing the browser at the project root instead of /public, all the asset paths break and your CSS/JS won’t load.
+
+The compiled CSS/JS assets didn’t come over or weren’t rebuilt
+
+Things like:
+
+public/css/app.css
+
+public/js/app.js
+
+or public/build/assets/... (if it uses Vite)
+
+When those files are missing, the HTML still renders, but totally unstyled (what you see now).
+
+The Blade layout is pointing to assets that don’t exist in Replit
+
+In resources/views/layouts/... (often app.blade.php or main.blade.php), you’ll see something like:
+
+<link rel="stylesheet" href="{{ asset('css/app.css') }}">
+<script src="{{ asset('js/app.js') }}" defer></script>
+// or
+@vite(['resources/css/app.css', 'resources/js/app.js'])
+
+
+If those CSS/JS files haven’t been compiled in Replit, you’ll get the plain text page.
+
+Concrete steps to fix it in Replit
+
+You can do this yourself or just send the “dev instructions” at the end to Harry.
+
+1. Make sure Replit serves from /public
+
+In Replit, open the .replit file and set the run command to something like:
+
+run = "php -S 0.0.0.0:8000 -t public"
+
+
+Then click Run and open the webview.
+If that alone fixes it, your CSS/JS will suddenly appear and the layout will look much closer to what you expect.
+
+2. Check that CSS/JS files actually exist
+
+In the left file tree, expand:
+
+public/css
+
+public/js
+
+or public/build
+
+You should see files like app.css, app.js or build/assets/....
+
+If these folders are empty or missing, that’s why everything is unstyled.
+
+3. (If needed) Rebuild the assets
+
+If Step 2 shows missing/empty assets, do this in the Shell tab in Replit:
+
+npm install      # only once
+npm run build    # or: npm run prod  OR npm run dev  (whichever is in package.json)
+
+
+That command compiles everything in resources/ into the final CSS/JS in public/.
+
+After it finishes, refresh the webview. The site should now look like the original (filters, cards, Hire Agent dashboard styling, etc.).
+
+If you don’t know which script to use, open package.json in Replit and look under "scripts":
+
+If it has "build": "vite build" → use npm run build.
+
+If it has "prod": "npm run production" → use npm run prod.
+
+If it only has "dev": "vite" → use npm run dev (but then that process must stay running in Replit).
