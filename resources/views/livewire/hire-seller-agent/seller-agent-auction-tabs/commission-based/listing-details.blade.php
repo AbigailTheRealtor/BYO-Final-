@@ -535,7 +535,7 @@
         </label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Agents can submit bids until the countdown ends. Each bid will display the Agent’s First Name, Year Licensed, Why Should You Hire This Agent?, What Sets This Agent Apart?, and Services Offered. Once the timer ends, you can select the Agent who best meets your needs—you are not required to choose the highest or lowest bid. Broker compensation and agency agreement terms remain private on your dashboard and are never shown to other agents or the public.">
+            title="Agents can submit bids until the countdown ends. All bid details—including the Broker Compensation, Agency Agreement Terms, and Services offered—are visible to competing Agents in real time, promoting transparency and competition. Once the timer ends, you may select the Agent who best meets your needs—you are not required to choose the highest bidder.">
             <i class="fa-solid fa-circle-info"></i> </span>
         <div class="input-cover">
             <select wire:model="auction_time" id="auction_time1" class="form-control has-icon"
