@@ -1,5 +1,5 @@
 
-<h4>Agent Information</h4>
+<h4>Agent Credentials & Contact Info</h4>
 
 <div class="row">
      <div class="alert alert-info bg-light-info border-info mb-4">
@@ -11,7 +11,7 @@
     </div>
     <div class="col-md-6">
         <div class="form-group required-field">
-            <label class="fw-bold">First Name:</label>
+            <label class="fw-bold">First Name:<span class="text-danger">*</span></label>
             <div class="input-cover">
                 <input type="text" wire:model="first_name" id="first_name"
                     class="form-control has-icon" required data-icon="fa-solid fa-user" placeholder="Enter first name">
@@ -24,7 +24,7 @@
     </div>
     <div class="col-md-6">
         <div class="form-group required-field">
-            <label class="fw-bold">Last Name:</label>
+            <label class="fw-bold">Last Name:<span class="text-danger">*</span></label>
             <div class="input-cover">
                 <input type="text" wire:model="last_name" id="last_name"
                     class="form-control has-icon" required data-icon="fa-solid fa-user" placeholder="Enter last name" >
@@ -40,10 +40,10 @@
 <div class="row">
     <div class="col-md-6">
         <div class="form-group required-field">
-            <label class="fw-bold">Phone Number:</label>
+            <label class="fw-bold">Phone Number:<span class="text-danger">*</span></label>
             <div class="input-cover">
                 <input wire:model="phone" type="text" id="phone_number"
-                    class="form-control has-icon" required data-icon="fa-solid fa-phone" placeholder="Enter phone number">
+                    class="form-control has-icon" required data-icon="fa-solid fa-phone" placeholder="(XXX) XXX-XXXX" oninput="formatPhoneNumber(this)">
             </div>
             <span class="error mt-2" id="phone_error"></span>
             @error('phone')
@@ -53,7 +53,7 @@
     </div>
     <div class="col-md-6">
         <div class="form-group required-field">
-            <label class="fw-bold">Email:</label>
+            <label class="fw-bold">Email:<span class="text-danger">*</span></label>
             <div class="input-cover">
                 <input type="email" wire:model="email" id="email"
                     class="form-control has-icon" required data-icon="fa-solid fa-envelope" placeholder="Enter email address">
@@ -67,7 +67,7 @@
 </div>
 
 <div class="form-group required-field">
-    <label class="fw-bold">Brokerage:</label>
+    <label class="fw-bold">Brokerage:<span class="text-danger">*</span></label>
     <div class="input-cover">
         <input type="text" wire:model="brokerage" id="brokerage"
             class="form-control has-icon" required data-icon="fa-solid fa-building" placeholder="Enter brokerage name">
@@ -81,7 +81,7 @@
 <div class="row">
     <div class="col-md-6">
         <div class="form-group required-field">
-            <label class="fw-bold">Real Estate License #:</label>
+            <label class="fw-bold">Real Estate License #:<span class="text-danger">*</span></label>
             <div class="input-cover">
                 <input type="text" wire:model="license_no" id="license_no"
                     class="form-control has-icon" required data-icon="fa-solid fa-id-card" placeholder="Enter license number">
@@ -103,3 +103,19 @@
         </div>
     </div>
 </div>
+
+<script>
+function formatPhoneNumber(input) {
+    let value = input.value.replace(/\D/g, '');
+    if (value.length > 10) {
+        value = value.substring(0, 10);
+    }
+    if (value.length >= 6) {
+        input.value = '(' + value.substring(0, 3) + ') ' + value.substring(3, 6) + '-' + value.substring(6);
+    } else if (value.length >= 3) {
+        input.value = '(' + value.substring(0, 3) + ') ' + value.substring(3);
+    } else if (value.length > 0) {
+        input.value = '(' + value;
+    }
+}
+</script>

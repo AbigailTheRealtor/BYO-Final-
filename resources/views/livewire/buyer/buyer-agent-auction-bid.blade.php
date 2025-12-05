@@ -220,7 +220,7 @@
                             };
 
                             $tabs[] = 'Agent Presentation & Marketing Materials';
-                            $tabs[] = 'Agent Information';
+                            $tabs[] = 'Agent Credentials & Contact Info';
                         @endphp
 
                         {{-- <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -254,7 +254,7 @@
                         </ul>
                     @elseif($service_type === 'limited_service')
                         <ul class="nav nav-tabs" id="myTab" role="tablist">
-                            @foreach (['Agent Overview', 'Service Selection and Pricing', 'Additional Details', 'Presentation and Promotional Materials', 'Agent Information'] as $index => $tab)
+                            @foreach (['Agent Overview', 'Service Selection and Pricing', 'Additional Details', 'Presentation and Promotional Materials', 'Agent Credentials & Contact Info'] as $index => $tab)
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                         wire:click="setActiveTab({{ $index }})"

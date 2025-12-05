@@ -235,7 +235,7 @@
                             };
 
                             $tabs[] = 'Agent Presentation And Marketing Materials';
-                            $tabs[] = 'Agent Information';
+                            $tabs[] = 'Agent Credentials & Contact Info';
                         @endphp
 
 
