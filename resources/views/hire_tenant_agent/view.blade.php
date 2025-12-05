@@ -1198,21 +1198,21 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                         @foreach (@$auction->bids as $bid)
                         <!-- Item loop -->
-                        <div class="accordion" type="button" data-bs-toggle="collapse"
-                            data-bs-target="#item{{ data_get($bid, 'id') }}" aria-expanded="true"
+                        <div class="accordion-header" style="cursor: pointer;" role="button" data-bs-toggle="collapse"
+                            data-bs-target="#item{{ data_get($bid, 'id') }}" aria-expanded="false"
                             aria-controls="item{{ data_get($bid, 'id') }}">
-                            <div class="d-flex small accordion mr-0 text-center">
+                            <div class="d-flex small mr-0 text-center p-2 border rounded mb-1" style="background: #f8f9fa;">
                                 <div class="col-1">
-                                    <span class="badge">{{ $loop->iteration }}</span>
+                                    <span class="badge bg-primary">{{ $loop->iteration }}</span>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-5">
                                     {{ data_get($bid, 'user.first_name', '') }}
                                 </div>
-                                <div class="col-4 text-right">
+                                <div class="col-3 text-right">
                                     {{ data_get($bid, 'get.agent_fee', data_get($bid, 'agent_fee', '')) }}
                                 </div>
-                                <div class="col-2 d-flex">
-                                    Terms↓
+                                <div class="col-3 d-flex justify-content-end">
+                                    <span class="text-primary">Terms ↓</span>
                                 </div>
                             </div>
                         </div>
