@@ -54,16 +54,13 @@
                 </a>
                 <div class="right text-center">
                     @if (auth()->user() && auth()->user()->user_type == 'buyer')
-                        <a href="{{ route('buyer.add-auction') }}"><button class="btn btn-lg">Hire Buyer's
-                                Agent</button></a>
+                        <a href="{{ route('buyer.add-auction') }}"><button class="btn btn-lg">Hire Agent</button></a>
                     @elseif(auth()->user() && auth()->user()->user_type == 'landlord')
-                        <a href="{{ route('landlord.hire.agent.auction') }}"><button class="btn btn-lg">Hire Landlord's
-                                Agent</button></a>
+                        <a href="{{ route('landlord.hire.agent.auction') }}"><button class="btn btn-lg">Hire Agent</button></a>
                     @elseif(auth()->user() && auth()->user()->user_type == 'tenant')
-                        <a href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}"><button class="btn btn-lg">Hire Tenant's Agent</button></a>
+                        <a href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}"><button class="btn btn-lg">Hire Agent</button></a>
                     @elseif(auth()->user() && auth()->user()->user_type == 'seller')
-                        <a href="{{ route('sellerAgentHireAuction') }}"><button class="btn btn-lg">Hire Seller's
-                                Agent</button></a>
+                        <a href="{{ route('sellerAgentHireAuction') }}"><button class="btn btn-lg">Hire Agent</button></a>
                     @elseif(auth()->user() && auth()->user()->user_type == 'agent')
                         <span class="dropdown">
                             <button class="btn btn-lg" type="button" data-bs-toggle="dropdown" aria-expanded="false">
