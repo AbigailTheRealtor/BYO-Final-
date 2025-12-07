@@ -79,24 +79,24 @@ This is a Laravel-based real estate auction platform that enables transparent bi
   - `extractStateFromLocationString()` / `extractNameFromLocationString()`: String parsing helpers
 - **Known Limitation**: Cities spanning multiple counties only associate with their primary county due to data model constraints (us_cities has single county_id)
 
-### Address Autocomplete for Hire Seller/Landlord Agent (December 7, 2025):
-- **Feature**: When entering a property address in "Hire a Seller's Agent" or "Hire a Landlord's Agent" listings, selecting an address automatically populates City, County, State, and ZIP code fields
-- **Implementation Details**:
-  - `SellerAgentAuction.php` and `LandLordAgentAuction.php` updated with new methods:
-    - `getAddressSuggestionsWithPlaceIds()`: Fetches address suggestions and stores place_ids for each
-    - `fetchPlaceDetailsAndPopulate()`: Calls Google Places Details API to get address components
-    - `countyExistsIgnoreCase()`: Case-insensitive duplicate check for counties
-    - ZIP code management methods: `addZipCode()`, `removeZipCode()`, `selectZipCodeSuggestion()`
-  - New properties added: `$addressPlaceIds`, `$zipCodes`, `$zip_code`, `$zipCodeSuggestions`, `$highlightedZipCodeIndex`
-- **Auto-Population Behavior**:
-  - City: Added as pill badge with state abbreviation (e.g., "Tampa, FL")
-  - County: Added as pill badge with state abbreviation (e.g., "Hillsborough County, FL")
-  - State: Auto-fills state field with full name if empty (e.g., "Florida")
-  - ZIP Code: Added as pill badge
-- **UI Updates**:
-  - Replaced Bootstrap `btn-close` with visible text-based X button (`×`) using `.byo-pill-remove` CSS class
-  - Ensures delete button is visible on all badge colors
-- **API**: Uses Google Places API (requires GOOGLE_PLACES_API_KEY environment variable)
+### Simplified Address & ZIP Code Auto-Population (December 7, 2025):
+- **Street Address Field**: Simplified to a plain text input (no autocomplete) for Hire Seller/Landlord Agent listings
+  - Renamed from "Property Address" to "Street Address"
+  - Tooltip updated to clarify that City, County, State are entered separately
+  - Removed Google Places API dependency for address autocomplete
+- **ZIP Code Auto-Population from City**: When a city is selected, ZIP codes are automatically fetched from the local database and added as pills
+  - Uses new `us_zip_codes` table with 27,500+ ZIP codes (covers most US cities)
+  - `autoPopulateZipCodesFromCity()` method added to SellerAgentAuction.php and LandLordAgentAuction.php
+  - Up to 20 ZIP codes auto-added per city selection
+- **ZIP Code Database**:
+  - New table: `us_zip_codes` with columns: zip_code, city, state_abbrev, state_name, county, latitude, longitude
+  - New model: `App\Models\UsZipCode`
+  - Seeder: `UsZipCodesSeeder` downloads from public dataset
+  - 27,500+ ZIP codes loaded covering major US cities
+- **Code Cleanup**:
+  - Removed unused Google Places address autocomplete methods from both components
+  - Removed: `updatedAddress()`, `getAddressSuggestionsWithPlaceIds()`, `selectAddressSuggestion()`, `fetchPlaceDetailsAndPopulate()`
+- **No API Key Required**: City, County, State, and ZIP code auto-population all work from local database - no Google Places API needed
 
 ## Database
 - PostgreSQL database configured and connected
