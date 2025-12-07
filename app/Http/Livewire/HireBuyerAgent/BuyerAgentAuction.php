@@ -813,6 +813,8 @@ class BuyerAgentAuction extends Component
 
         $this->citySuggestions = [];
         $this->highlightedCityIndex = -1;
+        
+        $this->autoPopulateFromCity($suggestion);
     }
 
     public function selectCountySuggestion($suggestion = null)
@@ -826,6 +828,80 @@ class BuyerAgentAuction extends Component
 
         $this->countySuggestions = [];
         $this->highlightedCountyIndex = -1;
+        
+        $this->autoPopulateStateFromCounty($suggestion);
+    }
+    
+    private function autoPopulateFromCity($cityString)
+    {
+        $stateAbbr = $this->extractStateFromLocationString($cityString);
+        
+        if ($stateAbbr && empty($this->state)) {
+            $this->state = strtoupper($stateAbbr);
+        }
+        
+        $cityName = $this->extractNameFromLocationString($cityString);
+        if ($cityName && $stateAbbr) {
+            $cities = UsCity::with(['state', 'county.state'])
+                ->where('name', $cityName)
+                ->whereHas('state', function($q) use ($stateAbbr) {
+                    $q->where('abbreviation', $stateAbbr);
+                })
+                ->get();
+            
+            foreach ($cities as $city) {
+                if ($city->county) {
+                    $countyString = $city->county->name . ', ' . ($city->county->state ? $city->county->state->abbreviation : $stateAbbr);
+                    
+                    if (!$this->countyExistsIgnoreCase($countyString)) {
+                        $this->counties[] = $countyString;
+                    }
+                }
+            }
+        }
+    }
+    
+    private function countyExistsIgnoreCase($countyString)
+    {
+        $normalized = strtolower(trim($countyString));
+        foreach ($this->counties as $existing) {
+            if (strtolower(trim($existing)) === $normalized) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private function autoPopulateStateFromCounty($countyString)
+    {
+        if (empty($this->state)) {
+            $stateAbbr = $this->extractStateFromLocationString($countyString);
+            if ($stateAbbr) {
+                $this->state = strtoupper($stateAbbr);
+            }
+        }
+    }
+    
+    private function extractStateFromLocationString($locationString)
+    {
+        if (empty($locationString)) return null;
+        
+        $parts = explode(',', $locationString);
+        if (count($parts) >= 2) {
+            return trim(end($parts));
+        }
+        return null;
+    }
+    
+    private function extractNameFromLocationString($locationString)
+    {
+        if (empty($locationString)) return null;
+        
+        $parts = explode(',', $locationString);
+        if (count($parts) >= 1) {
+            return trim($parts[0]);
+        }
+        return null;
     }
 
 

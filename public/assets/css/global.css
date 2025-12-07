@@ -294,3 +294,41 @@ footer a:hover {
       padding-bottom: 6rem;
     }
   }
+
+.badge.bg-primary .btn-close {
+  filter: invert(1) brightness(2);
+  opacity: 1;
+  width: 0.75em;
+  height: 0.75em;
+  padding: 0.25em;
+}
+
+.badge.bg-primary .btn-close:hover {
+  opacity: 0.8;
+}
+
+.byo-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: #0d6efd;
+  color: #ffffff;
+  margin: 0.25rem;
+}
+
+.byo-pill-remove {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: #ffffff !important;
+  padding: 0 0.25rem;
+  font-weight: bold;
+}
+
+.byo-pill-remove:hover {
+  opacity: 0.8;
+}

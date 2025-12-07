@@ -59,6 +59,18 @@ This is a Laravel-based real estate auction platform that enables transparent bi
 - Unique indexes added on fips_code (counties) and name+state (cities) to prevent duplicates
 - Removed Acceptable ZIP Codes field from Hire a Buyer's Agent and Hire a Tenant's Agent listings
 
+### Auto-Population & UI Enhancements (December 7, 2025):
+- **State Auto-Population**: When a city or county is selected, the state field auto-populates with the state abbreviation (e.g., "FL") if currently empty
+- **County Auto-Population**: When a city is selected, its associated county is automatically added to the counties list
+- **Pill Badge Styling**: Added `.byo-pill` and `.byo-pill-remove` CSS classes for better visibility of remove buttons on location badges
+- **Case-Insensitive Duplicate Check**: Counties are checked case-insensitively to prevent duplicates with different casing
+- Helper methods added to both TenantAgentAuction.php and BuyerAgentAuction.php:
+  - `autoPopulateFromCity()`: Extracts state abbreviation and adds associated county
+  - `autoPopulateStateFromCounty()`: Extracts state abbreviation when county is selected
+  - `countyExistsIgnoreCase()`: Case-insensitive duplicate check
+  - `extractStateFromLocationString()` / `extractNameFromLocationString()`: String parsing helpers
+- **Known Limitation**: Cities spanning multiple counties only associate with their primary county due to data model constraints (us_cities has single county_id)
+
 ## Database
 - PostgreSQL database configured and connected
 - Core migrations completed successfully
