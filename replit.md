@@ -117,6 +117,16 @@ This is a Laravel-based real estate auction platform that enables transparent bi
 - **Legacy Support**: Old array properties (`$cities`, `$counties`, `$zipCodes`) kept for backwards compatibility with existing data
 - **Contrast with Buyer/Tenant Listings**: These use multi-select pill arrays since they represent location preferences, not a single property address
 
+### Route Architecture Fix (December 7, 2025):
+- **Issue**: All `/hire/agent/auction/{user_type}` URLs were being caught by the TenantAgentAuction component due to the catch-all route pattern
+- **Solution**: Added explicit routes for each user type BEFORE the catch-all tenant route in `routes/web.php`:
+  - `/hire/agent/auction/seller` → `SellerAgentAuction` component
+  - `/hire/agent/auction/buyer` → `BuyerAgentAuction` component  
+  - `/hire/agent/auction/landlord` → `LandLordAgentAuction` component
+  - `/hire/agent/auction/{user_type?}` → `TenantAgentAuction` (catch-all for tenant/fallback)
+- **Route Order Matters**: Laravel matches routes in order, so specific routes must be defined before optional parameter routes
+- **Each component has its own properties**: SellerAgentAuction/LandLordAgentAuction use single-value fields ($city, $county, $state, $zipCode) while BuyerAgentAuction/TenantAgentAuction use array fields ($cities, $counties) for multi-location preferences
+
 ## Database
 - PostgreSQL database configured and connected
 - Core migrations completed successfully
