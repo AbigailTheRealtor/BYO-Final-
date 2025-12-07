@@ -530,11 +530,6 @@
             </select>
         </div>
         <span class="error mt-2" id="auction_type_error"></span>
-
-        <div class="alert alert-warning mt-3 p-2 small">
-            <strong> Note: </strong> Broker compensation and agency agreement terms remain private on your dashboard and
-            are never shown to other agents or the public.
-        </div>
     </div>
 
     <!-- Auction Length (Only for Auction) -->
