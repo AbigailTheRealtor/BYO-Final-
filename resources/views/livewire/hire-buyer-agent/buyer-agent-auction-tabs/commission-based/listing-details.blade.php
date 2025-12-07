@@ -627,6 +627,46 @@
     select:active option>.dropdown-only {
         display: inline;
     }
+
+    /* Tooltip box styling */
+    .expired_tooltip {
+        display: none;
+        position: absolute;
+        top: -104px;
+        /* Adjust as needed */
+        left: 10%;
+        /* Adjust as needed */
+        padding: 14px;
+        background-color: #000000c9;
+        color: #fff;
+        border-radius: 5px;
+        font-size: 12px;
+        width: 250px;
+        z-index: 10000 !important;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+
+    /* Tooltip arrow */
+    .expired_tooltip::after {
+        content: '';
+        position: absolute;
+        bottom: -5px;
+        /* Adjust based on the position of your tooltip */
+        left: 50%;
+        transform: translateX(-50%);
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-top: 6px solid #000000c9;
+        background-color: #000000ab
+            /* Arrow color matching the tooltip */
+    }
+
+    /* Show tooltip when hovering over the label or the parent div */
+    #status-expired:hover+.expired_tooltip,
+    #expired_tooltip:hover .expired_tooltip {
+        display: block !important;
+    }
 </style>
 
 <script>
