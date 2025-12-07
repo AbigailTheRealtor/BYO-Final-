@@ -84,11 +84,11 @@
                         {{-- <a href="{{ route('hire.agent.auction') }}"><button class="btn btn-lg">Hire Tenant's
                 Agent</button></a> --}}
 
-                        <div class="dropdown">
-                            <button class="btn" type="button" id="hireAgentDropdown" data-bs-toggle="dropdown" aria-expanded="false">Hire
+                        <div class="dropdown" style="display: inline-block; position: relative;">
+                            <button class="btn" type="button" id="hireAgentDropdown" onclick="document.getElementById('hireAgentMenu').classList.toggle('show');">Hire
                                 Agent</button>
 
-                            <ul class="dropdown-menu" aria-labelledby="hireAgentDropdown">
+                            <ul class="dropdown-menu" id="hireAgentMenu" style="position: absolute; top: 100%; left: 0; z-index: 1050;">
                                 <li>
                                     <a class="dropdown-item"
                                         href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}">
