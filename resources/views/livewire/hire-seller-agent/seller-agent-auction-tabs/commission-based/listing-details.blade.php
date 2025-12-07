@@ -418,6 +418,15 @@
         </div>
     @endif
 
+    @if ($service_type === 'full_service')
+        <div class="alert alert-warning mt-3 p-2 small">
+
+            Fields marked with <span class="text-danger">*</span> are required. You do not need to fill in all other
+            fields; however, providing additional information will help Agents better serve you.
+
+        </div>
+    @endif
+
     <!-- Listing Title -->
 
     <div class="form-group">
