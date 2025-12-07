@@ -632,10 +632,9 @@
     .expired_tooltip {
         display: none;
         position: absolute;
-        top: -104px;
-        /* Adjust as needed */
-        left: 10%;
-        /* Adjust as needed */
+        bottom: calc(100% + 12px);
+        left: 50%;
+        transform: translateX(-50%);
         padding: 14px;
         background-color: #000000c9;
         color: #fff;
@@ -645,6 +644,10 @@
         z-index: 10000 !important;
         box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
         text-align: center;
+    }
+    
+    #expired_tooltip {
+        position: relative;
     }
 
     /* Tooltip arrow */
