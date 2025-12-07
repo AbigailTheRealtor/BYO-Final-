@@ -20,27 +20,6 @@
 
     .dropdown-menu .dropdown-divider {
         margin: 0;
-        /* remove extra space around the line */
-    }
-    
-    .right .dropdown {
-        display: inline-block;
-        position: relative;
-    }
-    
-    .right .dropdown .dropdown-menu {
-        z-index: 1050;
-        position: absolute;
-        top: 100%;
-        left: 0;
-    }
-    
-    .right .dropdown .dropdown-menu.show {
-        display: block;
-    }
-    
-    .card, .card-body, .review {
-        overflow: visible !important;
     }
 </style>
 
@@ -81,55 +60,7 @@
                         <a href="{{ route('landlord.hire.agent.auction') }}"><button class="btn btn-lg">Hire Landlord's
                                 Agent</button></a>
                     @elseif(auth()->user() && auth()->user()->user_type == 'tenant')
-                        {{-- <a href="{{ route('hire.agent.auction') }}"><button class="btn btn-lg">Hire Tenant's
-                Agent</button></a> --}}
-
-                        <div class="dropdown" style="display: inline-block; position: relative;">
-                            <button class="btn" type="button" id="hireAgentDropdown" onclick="document.getElementById('hireAgentMenu').classList.toggle('show');">Hire
-                                Agent</button>
-
-                            <ul class="dropdown-menu" id="hireAgentMenu" style="position: absolute; top: 100%; left: 0; z-index: 1050;">
-                                <li>
-                                    <a class="dropdown-item"
-                                        href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}">
-                                        Hire Tenant's Agent
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
-
-                                <li>
-                                    <a class="dropdown-item"
-                                        href="{{ route('hire.agent.auction', ['user_type' => 'landlord']) }}">
-                                        Hire Landlord's Agent
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
-
-                                <li>
-                                    <a class="dropdown-item"
-                                        href="{{ route('hire.agent.auction', ['user_type' => 'buyer']) }}">
-                                        Hire Buyer's Agent
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
-
-                                <li>
-                                    <a class="dropdown-item"
-                                        href="{{ route('hire.agent.auction', ['user_type' => 'seller']) }}">
-                                        Hire Seller's Agent
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
+                        <a href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}"><button class="btn btn-lg">Hire Tenant's Agent</button></a>
                     @elseif(auth()->user() && auth()->user()->user_type == 'seller')
                         <a href="{{ route('sellerAgentHireAuction') }}"><button class="btn btn-lg">Hire Seller's
                                 Agent</button></a>
@@ -181,21 +112,3 @@
     </div>
 </div>
 
-@push('scripts')
-<script>
-$(document).ready(function() {
-    $('#hireAgentDropdown').on('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        var $menu = $(this).siblings('.dropdown-menu');
-        $menu.toggleClass('show');
-    });
-    
-    $(document).on('click', function(e) {
-        if (!$(e.target).closest('#hireAgentDropdown').length && !$(e.target).closest('.dropdown-menu').length) {
-            $('#hireAgentDropdown').siblings('.dropdown-menu').removeClass('show');
-        }
-    });
-});
-</script>
-@endpush
