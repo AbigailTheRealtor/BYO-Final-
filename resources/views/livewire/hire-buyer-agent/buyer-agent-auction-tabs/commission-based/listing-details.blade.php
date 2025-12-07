@@ -285,44 +285,77 @@
             <label class="fw-bold mb-3 d-block">Listing Status:
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Choose the current stage of this listing: Active means the listing is open to Agent bids and inquiries; Pending indicates the client is reviewing options and a decision is pending; Hired Agent confirms that an Agent has been selected.">
-                    <i class="fa-solid fa-circle-info"></i> </span>
+                    <i class="fa-solid fa-circle-info"></i>
+                </span></label>
+
             </label>
+
             <div class="btn-group w-100 shadow-sm" role="group" aria-label="Listing status">
-                <!-- Active Status -->
-                <input type="radio" class="btn-check" wire:model="listing_status" id="status-active"
-                    value="Active" autocomplete="off" checked>
-                <label class="btn btn-status btn-outline-success px-3 px-md-4 position-relative" for="status-active">
-                    <span class="status-icon"><i class="fas fa-check-circle me-2"></i></span>
-                    <span class="status-text">Active</span>
-                    <span
-                        class="status-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success">
-                        <i class="fas fa-bolt"></i>
-                    </span>
-                </label>
+                <div class="input-field col-3">
+                    <input type="radio" class="btn-check" wire:model="listing_status" id="status-active"
+                        value="Active" autocomplete="off" checked>
+                    <label class="btn btn-status btn-outline-success px-3 px-md-4 position-relative"
+                        for="status-active" data-bs-toggle="tooltip" data-bs-placement="top"
+                        title="The listing is open to Agent bids and inquiries.">
+                        <span class="status-icon"><i class="fas fa-check-circle me-2"></i></span>
+                        <span class="status-text">Active</span>
 
-                <!-- Pending Status -->
-                <input type="radio" class="btn-check" wire:model="listing_status" id="status-pending"
-                    value="Pending" autocomplete="off">
-                <label class="btn btn-status btn-outline-warning px-3 px-md-4 position-relative" for="status-pending">
-                    <span class="status-icon"><i class="fas fa-clock me-2"></i></span>
-                    <span class="status-text">Pending</span>
-                    <span
-                        class="status-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
-                        <i class="fas fa-exclamation"></i>
-                    </span>
-                </label>
+                        <span
+                            class="status-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success">
+                            <i class="fas fa-bolt"></i>
+                        </span>
+                    </label>
+                </div>
+                <div class="input-field col-3">
 
-                <!-- Hired Agent Status -->
-                <input type="radio" class="btn-check" wire:model="listing_status" id="status-hired"
-                    value="Hired Agent" autocomplete="off">
-                <label class="btn btn-status btn-outline-primary px-3 px-md-4 position-relative" for="status-hired">
-                    <span class="status-icon"><i class="fas fa-user-tie me-2"></i></span>
-                    <span class="status-text">Hired Agent</span>
-                    <span
-                        class="status-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">
-                        <i class="fas fa-handshake"></i>
+                    <input type="radio" class="btn-check" wire:model="listing_status" id="status-pending"
+                        value="Pending" autocomplete="off">
+                    <label class="btn btn-status btn-outline-warning px-3 px-md-4 position-relative"
+                        for="status-pending" data-bs-toggle="tooltip" data-bs-placement="top"
+                        title="The client is reviewing bids or negotiating with Agents. New bids cannot be submitted.">
+                        <span class="status-icon"><i class="fas fa-clock me-2"></i></span>
+                        <span class="status-text">Pending</span>
+                        <span
+                            class="status-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
+                            <i class="fas fa-exclamation"></i>
+                        </span>
+                    </label>
+                </div>
+                <div class="input-field col-3">
+
+                    <input type="radio" class="btn-check" wire:model="listing_status" id="status-hired"
+                        value="Hired Agent" autocomplete="off">
+                    <label class="btn btn-status btn-outline-primary px-3 px-md-4 position-relative"
+                        for="status-hired" data-bs-toggle="tooltip" data-bs-placement="top"
+                        title="An Agent has been selected and the listing is closed to new bids.">
+                        <span class="status-icon"><i class="fas fa-user-tie me-2"></i></span>
+                        <span class="status-text">Hired Agent</span>
+                        <span
+                            class="status-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">
+                            <i class="fas fa-handshake"></i>
+                        </span>
+                    </label>
+                </div>
+                <div id="expired_tooltip" class="input-field col-3">
+                    <!-- Expired Status -->
+                    <input type="radio" class="btn-check" wire:model="listing_status" id="status-expired"
+                        value="Expired" autocomplete="off" disabled>
+                    <label class="btn btn-status btn-outline-secondary px-3 px-md-4 position-relative"
+                        for="status-expired">
+                        <span class="status-icon"><i class="fas fa-calendar-times me-2"></i></span>
+                        <span class="status-text">Expired</span>
+                        <span
+                            class="status-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary">
+                            <i class="fas fa-calendar-times"></i>
+                        </span>
+                    </label>
+                    <span class="expired_tooltip">
+                        The listing has ended without a hired Agent. You cannot select this status — it is
+                        applied automatically when the listing expires.
+
                     </span>
-                </label>
+                </div>
+
             </div>
         </div>
     @endif
