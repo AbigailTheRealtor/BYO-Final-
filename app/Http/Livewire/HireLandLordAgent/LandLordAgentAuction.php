@@ -890,6 +890,44 @@ class LandLordAgentAuction extends Component
 
         $this->citySuggestions = [];
         $this->highlightedCityIndex = -1;
+        
+        $this->autoPopulateZipCodesFromCity($suggestion);
+    }
+    
+    protected function autoPopulateZipCodesFromCity($cityWithState)
+    {
+        $cityName = $this->extractNameFromLocationString($cityWithState);
+        $stateAbbrev = $this->extractStateFromLocationString($cityWithState);
+        
+        if (empty($cityName)) return;
+        
+        $zipCodes = \App\Models\UsZipCode::where('city', 'ILIKE', $cityName);
+        
+        if ($stateAbbrev) {
+            $zipCodes->where('state_abbrev', strtoupper($stateAbbrev));
+        }
+        
+        $foundZips = $zipCodes->orderBy('zip_code')->limit(20)->pluck('zip_code')->toArray();
+        
+        foreach ($foundZips as $zip) {
+            if (!in_array($zip, $this->zipCodes)) {
+                $this->zipCodes[] = $zip;
+            }
+        }
+    }
+    
+    protected function extractStateFromLocationString($locationString)
+    {
+        if (preg_match('/,\s*([A-Z]{2})(?:\s|$|,)/', $locationString, $matches)) {
+            return $matches[1];
+        }
+        return null;
+    }
+    
+    protected function extractNameFromLocationString($locationString)
+    {
+        $parts = explode(',', $locationString);
+        return trim($parts[0]);
     }
 
     public function selectCountySuggestion($suggestion = null)

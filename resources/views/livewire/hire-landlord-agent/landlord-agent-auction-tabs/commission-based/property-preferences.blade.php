@@ -22,32 +22,16 @@
         </div>
     </div>
 </div>
-<!-- Property Address -->
+<!-- Street Address -->
 <div class="form-group mb-3">
-    <label class="fw-bold"> Property Address:<span class="text-danger">*</span></label>
+    <label class="fw-bold"> Street Address:<span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Enter the address of the property being offered for lease.">
+        title="Enter the street address of the property (e.g., 123 Main Street). City, County, and State will be entered separately below.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
-    <div class="input-cover position-relative">
+    <div class="input-cover">
         <input type="text" wire:model="address" class="form-control has-icon" data-icon="fa-solid fa-map-pin"
-            placeholder="Enter property address" wire:keydown.arrow-up="decrementHighlight('address')"
-            wire:keydown.arrow-down="incrementHighlight('address')" wire:keydown.enter.prevent="selectAddressSuggestion"
-            autocomplete="off" required>
-
-        @if (count($addressSuggestions) > 0)
-            <div class="autocomplete-dropdown">
-                <ul class="list-group">
-                    @foreach ($addressSuggestions as $index => $suggestion)
-                        <li class="list-group-item {{ $highlightedAddressIndex === $index ? 'active' : '' }}"
-                            wire:click="selectAddressSuggestion({{ $index }})">
-                            <i class="fas fa-map-marker-alt me-2"></i>
-                            {{ $suggestion }}
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
+            placeholder="Enter street address (e.g., 123 Main Street)" required>
     </div>
 </div>
 <div class="alert alert-warning mt-3 p-2 small">
