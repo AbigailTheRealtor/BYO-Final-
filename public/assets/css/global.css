@@ -355,3 +355,45 @@ footer a:hover {
 .byo-pill-remove:hover {
   opacity: 0.8;
 }
+
+/* Wizard Navigation Buttons - Solid Blue by Default */
+.wizard-step-next,
+.wizard-step-prev,
+.wizard-step-back,
+button.btn.btn-primary.wizard-step-next,
+button.btn.btn-primary.wizard-step-prev,
+button.btn.btn-secondary.wizard-step-back {
+  background-color: #1a73e8 !important;
+  border-color: #1a73e8 !important;
+  color: #ffffff !important;
+}
+
+.wizard-step-next:hover,
+.wizard-step-prev:hover,
+.wizard-step-back:hover,
+button.btn.btn-primary.wizard-step-next:hover,
+button.btn.btn-primary.wizard-step-prev:hover,
+button.btn.btn-secondary.wizard-step-back:hover {
+  background-color: #1557b0 !important;
+  border-color: #1557b0 !important;
+  color: #ffffff !important;
+}
+
+/* Override addListing/updateListing btnNext/btnPrevious styles */
+.addListing .basic .rightFooter .btnNext,
+.addListing .basic .rightFooter .btnPrevious,
+.updateListing .basic .rightFooter .btnNext,
+.updateListing .basic .rightFooter .btnPrevious {
+  background: #1a73e8 !important;
+  border-color: #1a73e8 !important;
+  color: #ffffff !important;
+}
+
+.addListing .basic .rightFooter .btnNext:hover,
+.addListing .basic .rightFooter .btnPrevious:hover,
+.updateListing .basic .rightFooter .btnNext:hover,
+.updateListing .basic .rightFooter .btnPrevious:hover {
+  background: #1557b0 !important;
+  border-color: #1557b0 !important;
+  color: #ffffff !important;
+}
