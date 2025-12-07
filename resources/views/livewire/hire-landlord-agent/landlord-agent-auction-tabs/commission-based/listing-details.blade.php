@@ -478,7 +478,7 @@
         </label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Agents can submit bids until the countdown ends. Each bid will display the Agent's Offered Services and Broker Compensation &amp; Agency Agreement Terms. Once the timer expires, you may select the Agent who best meets your needs—you are not required to choose the highest or lowest bid. Broker compensation and agency agreement terms remain private on your dashboard and are never shown to other agents or the public.">
+            title="Agents can submit bids until the countdown ends. Each bid will display the Agent's Offered Services and Broker Compensation &amp; Agency Agreement Terms. Once the timer expires, you may select the Agent who best meets your needs—you are not required to choose the highest or lowest bid.">
             <i class="fa-solid fa-circle-info"></i> </span>
         <div class="input-cover">
             <select wire:model="auction_time" id="auction_time" class="form-control has-icon"
@@ -536,7 +536,7 @@
         </label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Agents can submit bids until the countdown ends. Each bid will display the Agent's Offered Services and Broker Compensation &amp; Agency Agreement Terms. Once the timer expires, you may select the Agent who best meets your needs—you are not required to choose the highest or lowest bid. Broker compensation and agency agreement terms remain private on your dashboard and are never shown to other agents or the public.">
+            title="Agents can submit bids until the countdown ends. Each bid will display the Agent's Offered Services and Broker Compensation &amp; Agency Agreement Terms. Once the timer expires, you may select the Agent who best meets your needs—you are not required to choose the highest or lowest bid.">
             <i class="fa-solid fa-circle-info"></i> </span>
         <div class="input-cover">
             <select wire:model="auction_time" id="auction_time" class="form-control has-icon"
