@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use App\Models\User;
 
@@ -28,6 +29,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        // Force HTTPS for all generated URLs in production/Replit environment
+        if (config('app.env') !== 'local' || str_contains(config('app.url'), 'replit')) {
+            URL::forceScheme('https');
+        }
+        
         Relation::enforceMorphMap([
             'seller-property' => 'App\Models\PropertyAuction',
             'landlord-property' => 'App\Models\LandlordAuction',
