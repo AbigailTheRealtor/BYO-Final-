@@ -53,14 +53,29 @@
                     </div>
                 </a>
                 <div class="right text-center">
-                    @if (auth()->user() && auth()->user()->user_type == 'buyer')
-                        <a href="{{ route('buyer.add-auction') }}"><button class="btn btn-lg">Hire Agent</button></a>
-                    @elseif(auth()->user() && auth()->user()->user_type == 'landlord')
-                        <a href="{{ route('landlord.hire.agent.auction') }}"><button class="btn btn-lg">Hire Agent</button></a>
-                    @elseif(auth()->user() && auth()->user()->user_type == 'tenant')
-                        <a href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}"><button class="btn btn-lg">Hire Agent</button></a>
-                    @elseif(auth()->user() && auth()->user()->user_type == 'seller')
-                        <a href="{{ route('sellerAgentHireAuction') }}"><button class="btn btn-lg">Hire Agent</button></a>
+                    @if (auth()->user() && in_array(auth()->user()->user_type, ['buyer', 'landlord', 'tenant', 'seller']))
+                        <span class="dropdown">
+                            <button class="btn btn-lg" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Hire Agent <i class="fa fa-angle-down"></i></button>
+                            <ul class="dropdown-menu" style="margin-top:0px;">
+                                <li>
+                                    <a style="color: #333;" class="dropdown-item"
+                                        href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}">Hire Tenant's Agent</a>
+                                </li>
+                                <li>
+                                    <a style="color: #333;" class="dropdown-item"
+                                        href="{{ route('hire.agent.auction', ['user_type' => 'landlord']) }}">Hire Landlord's Agent</a>
+                                </li>
+                                <li>
+                                    <a style="color: #333;" class="dropdown-item"
+                                        href="{{ route('hire.agent.auction', ['user_type' => 'buyer']) }}">Hire Buyer's Agent</a>
+                                </li>
+                                <li>
+                                    <a style="color: #333;" class="dropdown-item"
+                                        href="{{ route('hire.agent.auction', ['user_type' => 'seller']) }}">Hire Seller's Agent</a>
+                                </li>
+                            </ul>
+                        </span>
                     @elseif(auth()->user() && auth()->user()->user_type == 'agent')
                         <span class="dropdown">
                             <button class="btn btn-lg" type="button" data-bs-toggle="dropdown" aria-expanded="false">
