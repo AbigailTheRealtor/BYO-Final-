@@ -750,11 +750,11 @@ class SellerAgentAuction extends Component
             $this->addressSuggestions = [];
             $this->addressPlaceIds = [];
             
-            foreach ($predictions as $prediction) {
+            foreach ($predictions as $index => $prediction) {
                 $description = $prediction['description'];
                 $placeId = $prediction['place_id'];
                 $this->addressSuggestions[] = $description;
-                $this->addressPlaceIds[$description] = $placeId;
+                $this->addressPlaceIds[] = $placeId;
             }
         } catch (\Exception $e) {
             Log::error('Address autocomplete error: ' . $e->getMessage());
@@ -844,16 +844,28 @@ class SellerAgentAuction extends Component
         $this->stateSuggestions = [];
         $this->highlightedStateIndex = -1;
     }
-    public function selectAddressSuggestion($suggestion)
+    public function selectAddressSuggestion($indexOrSuggestion = null)
     {
-        $this->address = $suggestion;
+        $index = null;
+        $suggestion = null;
+        
+        if (is_numeric($indexOrSuggestion)) {
+            $index = (int) $indexOrSuggestion;
+            $suggestion = $this->addressSuggestions[$index] ?? null;
+        } else {
+            $suggestion = $indexOrSuggestion ?? $this->addressSuggestions[$this->highlightedAddressIndex] ?? null;
+            $index = $this->highlightedAddressIndex >= 0 ? $this->highlightedAddressIndex : array_search($suggestion, $this->addressSuggestions);
+        }
+        
+        if ($suggestion) {
+            $this->address = $suggestion;
+        }
+        
         $this->addressSuggestions = [];
         $this->highlightedAddressIndex = -1;
         
-        // Get place_id for the selected suggestion
-        $placeId = $this->addressPlaceIds[$suggestion] ?? null;
-        
-        if ($placeId) {
+        if ($index !== null && $index !== false && isset($this->addressPlaceIds[$index])) {
+            $placeId = $this->addressPlaceIds[$index];
             $this->fetchPlaceDetailsAndPopulate($placeId);
         }
         
