@@ -295,8 +295,12 @@ footer a:hover {
     }
   }
 
+.badge .btn-close,
+.badge .btn-close-white,
 .badge.bg-primary .btn-close,
-.badge.bg-primary .btn-close-white {
+.badge.bg-primary .btn-close-white,
+.rounded-pill .btn-close,
+.rounded-pill .btn-close-white {
   filter: brightness(0) invert(1) !important;
   opacity: 1 !important;
   width: 0.65em;
@@ -305,13 +309,25 @@ footer a:hover {
   background-size: 100%;
 }
 
+.badge .btn-close:hover,
+.badge .btn-close-white:hover,
 .badge.bg-primary .btn-close:hover,
-.badge.bg-primary .btn-close-white:hover {
+.badge.bg-primary .btn-close-white:hover,
+.rounded-pill .btn-close:hover,
+.rounded-pill .btn-close-white:hover {
   opacity: 0.8 !important;
 }
 
 .btn-close-white {
   filter: brightness(0) invert(1) !important;
+}
+
+.cities-container .badge .btn-close,
+.cities-container .badge .btn-close-white,
+.counties-container .badge .btn-close,
+.counties-container .badge .btn-close-white {
+  filter: brightness(0) invert(1) !important;
+  opacity: 1 !important;
 }
 
 .byo-pill {

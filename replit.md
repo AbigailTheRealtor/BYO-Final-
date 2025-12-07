@@ -62,8 +62,16 @@ This is a Laravel-based real estate auction platform that enables transparent bi
 ### Auto-Population & UI Enhancements (December 7, 2025):
 - **State Auto-Population**: When a city or county is selected, the state field auto-populates with the FULL state name (e.g., "Florida") if currently empty
 - **County Auto-Population**: When a city is selected, its associated county is automatically added to the "Acceptable Counties" pill list (e.g., selecting "St. Petersburg, FL" adds "Pinellas County, FL")
-- **Pill Badge Styling**: Enhanced CSS for `.btn-close-white` class to ensure delete (X) button is visible as white on blue badge background
+- **Pill Badge Styling**: Enhanced CSS for `.btn-close-white` class to ensure delete (X) button is visible as white on colored badge backgrounds
 - **Case-Insensitive Duplicate Check**: Counties are checked case-insensitively to prevent duplicates with different casing
+- **Florida City-County Mappings**: Major Florida cities (111+ cities) manually linked to their correct counties including:
+  - Pinellas County: St. Petersburg, Clearwater, Largo, Pinellas Park, etc.
+  - Hillsborough County: Tampa, Brandon, Plant City, etc.
+  - Orange County: Orlando, Winter Park, Apopka, etc.
+  - Miami-Dade County: Miami, Miami Beach, Hialeah, etc.
+  - Broward County: Fort Lauderdale, Hollywood, Coral Springs, etc.
+  - Palm Beach County: West Palm Beach, Boca Raton, Delray Beach, etc.
+  - And other major Florida counties
 - Helper methods added to both TenantAgentAuction.php and BuyerAgentAuction.php:
   - `autoPopulateFromCity()`: Queries UsState model for full state name, queries UsCity for county_id and adds county
   - `autoPopulateStateFromCounty()`: Queries UsState model for full state name when county is selected
