@@ -1,0 +1,99 @@
+🧩 Address Section – Final Layout & Autopopulate Logic
+1. Field Layout Changes
+
+Field label: use “Street Address” (not Property Address).
+
+Remove the Unit Number field from this section.
+
+Place the fields in this order:
+
+Street Address* (with autocomplete)
+
+City*
+
+County*
+
+State* (full name)
+
+ZIP Code* (if kept on this form)
+
+This matches what I want: Delete Unit Number, add City after Street Address, then add State after County.
+
+2. Street Address Autocomplete → Auto-fill City / County / State / ZIP
+
+When the user types into Street Address:
+
+Show a dropdown of valid U.S. addresses.
+
+On selecting an address, auto-fill:
+
+function onStreetAddressSelected(address) {
+  // address example structure:
+  // {
+  //   street: "10600 Westminster Boulevard",
+  //   city: "Westminster",
+  //   county_id: 123,
+  //   county_name: "Jefferson County",
+  //   state_code: "CO",
+  //   state_full_name: "Colorado",
+  //   zip: "80020"
+  // }
+
+  streetAddressInput.value = address.street;
+
+  cityInput.value    = address.city;
+  countyInput.value  = address.county_name;
+  stateInput.value   = address.state_full_name; // e.g., "Colorado"
+  if (zipInput && address.zip) {
+    zipInput.value = address.zip;
+  }
+}
+
+3. City Typeahead → Auto-fill County / State / ZIP
+
+If the user skips Street Address autocomplete and starts with City, we still want auto-fill:
+
+Backend city endpoint must return:
+
+{
+  "id": 101,
+  "name": "Westminster",
+  "state_code": "CO",
+  "state_full_name": "Colorado",
+  "county_id": 55,
+  "county_name": "Jefferson County",
+  "primary_zip": "80020"
+}
+
+
+Frontend:
+
+function onCitySelected(city) {
+  cityInput.value   = city.name;
+  countyInput.value = city.county_name;
+  stateInput.value  = city.state_full_name;
+  if (zipInput && city.primary_zip) {
+    zipInput.value = city.primary_zip;
+  }
+}
+
+
+Rules:
+
+Once the user manually edits County/State/ZIP, do not override their change again from future auto-fills.
+
+4. Logical Order Confirmation
+
+Final, logical order for address fields:
+
+Street Address
+
+City
+
+County
+
+State (full name)
+
+ZIP Code
+
+ZIP after State is fine and standard; County sits between City and State because it’s more of an internal/real-estate detail.

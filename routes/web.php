@@ -471,6 +471,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::any('/update-counter-terms/{id}', [LandlordCounteredTermsController::class, 'update'])->name('update-counter-terms');
     });
 
+    // Explicit routes for each user type to use their dedicated Livewire components
+    Route::get('/hire/agent/auction/seller', liverSellerAuction::class)->name('hire.agent.auction.seller');
+    Route::get('/hire/agent/auction/buyer', liverBuyerAgentAuction::class)->name('hire.agent.auction.buyer');
+    Route::get('/hire/agent/auction/landlord', liverLandLordAgentAuction::class)->name('hire.agent.auction.landlord');
+    // Tenant as default/fallback for backwards compatibility
     Route::get('/hire/agent/auction/{user_type?}', liverTenantAgentAuction::class)->name('hire.agent.auction');
     Route::get('/hire/agent/auction/edit/{auctionId}/{user_type}', TenantAgentAuctionEdit::class)->name('hire.agent.auction.edit');
     // Only Tenants can access these routes

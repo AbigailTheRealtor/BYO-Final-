@@ -93,10 +93,29 @@ This is a Laravel-based real estate auction platform that enables transparent bi
   - New model: `App\Models\UsZipCode`
   - Seeder: `UsZipCodesSeeder` downloads from public dataset
   - 27,500+ ZIP codes loaded covering major US cities
-- **Code Cleanup**:
-  - Removed unused Google Places address autocomplete methods from both components
-  - Removed: `updatedAddress()`, `getAddressSuggestionsWithPlaceIds()`, `selectAddressSuggestion()`, `fetchPlaceDetailsAndPopulate()`
 - **No API Key Required**: City, County, State, and ZIP code auto-population all work from local database - no Google Places API needed
+
+### Single-Value Location Fields for Seller/Landlord Listings (December 7, 2025):
+- **Design Rationale**: Hire a Seller's Agent and Hire a Landlord's Agent are property-specific listings (one property = one location), so they use single-value fields instead of multi-select pill arrays
+- **New Single-Value Properties** added to both SellerAgentAuction.php and LandLordAgentAuction.php:
+  - `$city` - Single city value with autocomplete from local database
+  - `$county` - Single county value with autocomplete
+  - `$state` - Single state value with autocomplete
+  - `$zipCode` - Single ZIP code value
+- **Manual Edit Lock Flags**: Prevent auto-population from overriding user edits:
+  - `$cityLocked`, `$countyLocked`, `$stateLocked`, `$zipLocked`
+  - Set to `true` when user manually types in that field
+  - Auto-population methods check these flags before setting values
+- **Auto-Population Flow**:
+  - When city is selected: County, State, and ZIP auto-fill if not locked
+  - When county is selected: State auto-fills if not locked
+  - `autoPopulateFromCity()` method queries UsCity model for county relationship
+- **Template Updates**: Both property-preferences.blade.php templates updated:
+  - Removed Unit Number field
+  - Changed from pill-based multi-select to single text inputs
+  - Field order: Street Address → City → County → State → ZIP Code
+- **Legacy Support**: Old array properties (`$cities`, `$counties`, `$zipCodes`) kept for backwards compatibility with existing data
+- **Contrast with Buyer/Tenant Listings**: These use multi-select pill arrays since they represent location preferences, not a single property address
 
 ## Database
 - PostgreSQL database configured and connected

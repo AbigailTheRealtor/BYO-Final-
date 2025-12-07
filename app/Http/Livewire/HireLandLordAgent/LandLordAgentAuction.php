@@ -244,7 +244,6 @@ class LandLordAgentAuction extends Component
     public $meeting_details_meeting_date = '';
     public $meeting_details_instructions = '';
     public $meeting_details_additional_details = '';
-    public $addressSuggestions = [];
 
     // Add these to your component's properties
     public $service_completion_date = '';
@@ -341,29 +340,45 @@ class LandLordAgentAuction extends Component
     // Tab management
     public $activeTab = 0;
 
-    // Location suggestions
-    public $cities = [];
-    public $newCity = '';
-    public $counties = [];
-    public $newCounty = '';
+    // Single-value location fields for property listings
+    public $city = '';
+    public $county = '';
+    public $zipCode = '';
+    
+    // Autocomplete suggestions
     public $citySuggestions = [];
     public $countySuggestions = [];
     public $stateSuggestions = [];
-    
-    // ZIP code fields
-    public $zipCodes = [];
-    public $zip_code = '';
-    public $zipCodeSuggestions = [];
-    public $highlightedZipCodeIndex = -1;
-    
-    // Address autocomplete with place_id mapping
+    public $addressSuggestions = [];
     public $addressPlaceIds = [];
-
+    
     // Highlight indices for keyboard navigation
     public $highlightedCityIndex = -1;
     public $highlightedCountyIndex = -1;
     public $highlightedStateIndex = -1;
     public $highlightedAddressIndex = -1;
+    
+    // Manual edit lock flags - prevent auto-fill from overriding user edits
+    public $cityLocked = false;
+    public $countyLocked = false;
+    public $stateLocked = false;
+    public $zipLocked = false;
+    
+    // Field visibility flags - default to true for single-value fields
+    public $cityFieldVisible = true;
+    public $countyFieldVisible = true;
+    public $stateFieldVisible = true;
+    public $zipCodeFieldVisible = true;
+    
+    // Legacy array fields (kept for backwards compatibility with existing data)
+    public $cities = [];
+    public $newCity = '';
+    public $counties = [];
+    public $newCounty = '';
+    public $zipCodes = [];
+    public $zip_code = '';
+    public $zipCodeSuggestions = [];
+    public $highlightedZipCodeIndex = -1;
     public $fees = [];
 
 
@@ -762,113 +777,261 @@ class LandLordAgentAuction extends Component
     }
     // Listener for tab changes
 
-    public function updatedNewCity($value)
+    public function updatedAddress($value)
     {
+        $apiKey = env('GOOGLE_PLACES_API_KEY');
+        if (strlen($value) > 3 && !empty($apiKey)) {
+            $this->getAddressSuggestionsWithPlaceIds($value);
+        } else {
+            $this->addressSuggestions = [];
+            $this->addressPlaceIds = [];
+        }
+    }
+    
+    public function updatedCity($value)
+    {
+        $this->cityLocked = true;
         if (strlen($value) > 2) {
-            $this->citySuggestions = $this->getPlaceSuggestions($value, 'city');
+            $this->citySuggestions = $this->getCitySuggestionsFromDatabase($value);
         } else {
             $this->citySuggestions = [];
         }
     }
 
-    public function updatedNewCounty($value)
+    public function updatedCounty($value)
     {
+        $this->countyLocked = true;
         if (strlen($value) > 2) {
-            $this->countySuggestions = $this->getPlaceSuggestions($value, 'county');
+            $this->countySuggestions = $this->getCountySuggestionsFromDatabase($value);
         } else {
             $this->countySuggestions = [];
         }
     }
+    
     public function updatedState($value)
     {
+        $this->stateLocked = true;
         if (strlen($value) > 1) {
-            $this->stateSuggestions = $this->getPlaceSuggestions($value, 'state');
+            $this->stateSuggestions = $this->getStateSuggestionsFromDatabase($value);
         } else {
             $this->stateSuggestions = [];
         }
     }
     
-    protected function getPlaceSuggestions($input, $type = null)
+    public function updatedZipCode($value)
+    {
+        $this->zipLocked = true;
+    }
+    
+    protected function getAddressSuggestionsWithPlaceIds($input)
     {
         $client = new \GuzzleHttp\Client();
-
-        $query = [
-            'input' => $input,
-            'components' => 'country:us',
-            'key' => env('GOOGLE_PLACES_API_KEY')
-        ];
-        // Set types based on what we're searching for
-        if ($type === 'state') {
-            $query['types'] = 'administrative_area_level_1';
-        } elseif ($type === 'county') {
-            $query['types'] = 'administrative_area_level_2'; // best for counties
-
-        } elseif ($type === 'address') {
-            $query['types'] = 'address';
-        } else {
-            $query['types'] = '(cities)';
+        $apiKey = env('GOOGLE_PLACES_API_KEY');
+        
+        if (empty($apiKey)) {
+            $this->addressSuggestions = [];
+            $this->addressPlaceIds = [];
+            return;
         }
-
-
-        $response = $client->get('https://maps.googleapis.com/maps/api/place/autocomplete/json', [
-            'query' => $query
-        ]);
-
-        $predictions = json_decode($response->getBody(), true)['predictions'] ?? [];
-
-        return array_map(function ($prediction) use ($type) {
-            $description = $prediction['description'];
-
-            // Format differently based on type
-            if ($type === 'state') {
-                // Extract just the state name (remove ", USA")
-                return preg_replace('/,\s*USA$/', '', $description);
-            } elseif ($type === 'county') {
-                // For counties, we might want to keep county name and state
-                return $description;
-            } elseif ($type === 'address') {
-                // For counties, we might want to keep county name and state
-                return $description;
-            } else {
-                // For cities, return city and state
-                return $description;
+        
+        try {
+            $response = $client->get('https://maps.googleapis.com/maps/api/place/autocomplete/json', [
+                'query' => [
+                    'input' => $input,
+                    'components' => 'country:us',
+                    'types' => 'address',
+                    'key' => $apiKey
+                ]
+            ]);
+            
+            $result = json_decode($response->getBody(), true);
+            $predictions = $result['predictions'] ?? [];
+            
+            $this->addressSuggestions = [];
+            $this->addressPlaceIds = [];
+            
+            foreach ($predictions as $prediction) {
+                $this->addressSuggestions[] = $prediction['description'];
+                $this->addressPlaceIds[] = $prediction['place_id'];
             }
-        }, $predictions);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Address autocomplete error: ' . $e->getMessage());
+            $this->addressSuggestions = [];
+            $this->addressPlaceIds = [];
+        }
+    }
+    
+    public function selectAddressSuggestion($indexOrSuggestion = null)
+    {
+        $index = null;
+        $suggestion = null;
+        
+        if (is_numeric($indexOrSuggestion)) {
+            $index = (int) $indexOrSuggestion;
+            $suggestion = $this->addressSuggestions[$index] ?? null;
+        } else {
+            $suggestion = $indexOrSuggestion ?? $this->addressSuggestions[$this->highlightedAddressIndex] ?? null;
+            $index = $this->highlightedAddressIndex >= 0 ? $this->highlightedAddressIndex : array_search($suggestion, $this->addressSuggestions);
+        }
+        
+        if ($suggestion) {
+            $streetParts = explode(',', $suggestion);
+            $this->address = trim($streetParts[0]);
+        }
+        
+        $this->addressSuggestions = [];
+        $this->highlightedAddressIndex = -1;
+        
+        if ($index !== null && $index !== false && isset($this->addressPlaceIds[$index])) {
+            $placeId = $this->addressPlaceIds[$index];
+            $this->fetchAddressDetailsAndPopulate($placeId);
+        }
+        
+        $this->addressPlaceIds = [];
+    }
+    
+    protected function fetchAddressDetailsAndPopulate($placeId)
+    {
+        $client = new \GuzzleHttp\Client();
+        $apiKey = env('GOOGLE_PLACES_API_KEY');
+        
+        if (empty($apiKey)) return;
+        
+        try {
+            $response = $client->get('https://maps.googleapis.com/maps/api/place/details/json', [
+                'query' => [
+                    'place_id' => $placeId,
+                    'fields' => 'address_components',
+                    'key' => $apiKey
+                ]
+            ]);
+            
+            $result = json_decode($response->getBody(), true);
+            
+            if (isset($result['result']['address_components'])) {
+                $components = $result['result']['address_components'];
+                
+                $cityValue = null;
+                $countyValue = null;
+                $stateAbbrev = null;
+                $stateFull = null;
+                $zipValue = null;
+                
+                foreach ($components as $component) {
+                    $types = $component['types'];
+                    
+                    if (in_array('locality', $types)) {
+                        $cityValue = $component['long_name'];
+                    }
+                    if (in_array('administrative_area_level_2', $types)) {
+                        $countyValue = $component['long_name'];
+                    }
+                    if (in_array('administrative_area_level_1', $types)) {
+                        $stateAbbrev = $component['short_name'];
+                        $stateFull = $component['long_name'];
+                    }
+                    if (in_array('postal_code', $types)) {
+                        $zipValue = $component['long_name'];
+                    }
+                }
+                
+                if ($cityValue && !$this->cityLocked) {
+                    $this->city = $cityValue . ($stateAbbrev ? ', ' . $stateAbbrev : '');
+                }
+                if ($countyValue && !$this->countyLocked) {
+                    $this->county = $countyValue . ($stateAbbrev ? ', ' . $stateAbbrev : '');
+                }
+                if ($stateFull && !$this->stateLocked) {
+                    $this->state = $stateFull;
+                }
+                if ($zipValue && !$this->zipLocked) {
+                    $this->zipCode = $zipValue;
+                }
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Place details fetch error: ' . $e->getMessage());
+        }
+    }
+    
+    protected function getCitySuggestionsFromDatabase($input)
+    {
+        return \App\Models\UsCity::where('name', 'ILIKE', $input . '%')
+            ->with('state')
+            ->orderBy('name')
+            ->limit(10)
+            ->get()
+            ->map(function ($city) {
+                return $city->name . ', ' . ($city->state->abbreviation ?? '');
+            })
+            ->toArray();
+    }
+    
+    protected function getCountySuggestionsFromDatabase($input)
+    {
+        return \App\Models\UsCounty::where('name', 'ILIKE', $input . '%')
+            ->with('state')
+            ->orderBy('name')
+            ->limit(10)
+            ->get()
+            ->map(function ($county) {
+                return $county->name . ', ' . ($county->state->abbreviation ?? '');
+            })
+            ->toArray();
+    }
+    
+    protected function getStateSuggestionsFromDatabase($input)
+    {
+        return \App\Models\UsState::where('name', 'ILIKE', $input . '%')
+            ->orderBy('name')
+            ->limit(10)
+            ->pluck('name')
+            ->toArray();
     }
 
     public function selectCitySuggestion($suggestion = null)
     {
-        $suggestion = $suggestion ?? $this->citySuggestions[$this->highlightedCityIndex] ?? $this->newCity;
-        $this->newCity = $suggestion;
-
-        if (!in_array(trim($suggestion), $this->cities)) {
-            $this->addCity();
-        }
-
+        $suggestion = $suggestion ?? $this->citySuggestions[$this->highlightedCityIndex] ?? $this->city;
+        $this->city = $suggestion;
         $this->citySuggestions = [];
         $this->highlightedCityIndex = -1;
         
-        $this->autoPopulateZipCodesFromCity($suggestion);
+        $this->autoPopulateFromCity($suggestion);
     }
     
-    protected function autoPopulateZipCodesFromCity($cityWithState)
+    protected function autoPopulateFromCity($cityWithState)
     {
         $cityName = $this->extractNameFromLocationString($cityWithState);
         $stateAbbrev = $this->extractStateFromLocationString($cityWithState);
         
         if (empty($cityName)) return;
         
-        $zipCodes = \App\Models\UsZipCode::where('city', 'ILIKE', $cityName);
+        $cityRecord = \App\Models\UsCity::where('name', 'ILIKE', $cityName)
+            ->when($stateAbbrev, function ($query) use ($stateAbbrev) {
+                return $query->whereHas('state', function ($q) use ($stateAbbrev) {
+                    $q->where('abbreviation', strtoupper($stateAbbrev));
+                });
+            })
+            ->with(['state', 'county'])
+            ->first();
         
-        if ($stateAbbrev) {
-            $zipCodes->where('state_abbrev', strtoupper($stateAbbrev));
-        }
-        
-        $foundZips = $zipCodes->orderBy('zip_code')->limit(20)->pluck('zip_code')->toArray();
-        
-        foreach ($foundZips as $zip) {
-            if (!in_array($zip, $this->zipCodes)) {
-                $this->zipCodes[] = $zip;
+        if ($cityRecord) {
+            if ($cityRecord->county && !$this->countyLocked) {
+                $this->county = $cityRecord->county->name . ', ' . ($cityRecord->state->abbreviation ?? '');
+            }
+            if ($cityRecord->state && !$this->stateLocked) {
+                $this->state = $cityRecord->state->name;
+            }
+            if (!$this->zipLocked) {
+                $zipRecord = \App\Models\UsZipCode::where('city', 'ILIKE', $cityName)
+                    ->when($stateAbbrev, function ($query) use ($stateAbbrev) {
+                        return $query->where('state_abbrev', strtoupper($stateAbbrev));
+                    })
+                    ->orderBy('zip_code')
+                    ->first();
+                
+                if ($zipRecord) {
+                    $this->zipCode = $zipRecord->zip_code;
+                }
             }
         }
     }
@@ -889,17 +1052,25 @@ class LandLordAgentAuction extends Component
 
     public function selectCountySuggestion($suggestion = null)
     {
-        $suggestion = $suggestion ?? $this->countySuggestions[$this->highlightedCountyIndex] ?? $this->newCounty;
-        $this->newCounty = $suggestion;
-
-        if (!in_array(trim($suggestion), $this->counties)) {
-            $this->addCounty();
-        }
-
+        $suggestion = $suggestion ?? $this->countySuggestions[$this->highlightedCountyIndex] ?? $this->county;
+        $this->county = $suggestion;
         $this->countySuggestions = [];
         $this->highlightedCountyIndex = -1;
+        
+        $this->autoPopulateStateFromCounty($suggestion);
     }
-
+    
+    protected function autoPopulateStateFromCounty($countyWithState)
+    {
+        $stateAbbrev = $this->extractStateFromLocationString($countyWithState);
+        
+        if ($stateAbbrev && !$this->stateLocked) {
+            $stateRecord = \App\Models\UsState::where('abbreviation', strtoupper($stateAbbrev))->first();
+            if ($stateRecord) {
+                $this->state = $stateRecord->name;
+            }
+        }
+    }
 
     public function selectStateSuggestion($suggestion)
     {
