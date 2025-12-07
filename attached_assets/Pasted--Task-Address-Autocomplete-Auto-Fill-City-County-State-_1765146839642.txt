@@ -1,0 +1,117 @@
+🧩 Task: Address Autocomplete + Auto-Fill City, County, State
+Goal
+
+When a user types into Property Address, a database of all U.S. addresses should appear as suggestions.
+After the user selects one address, the system should automatically populate:
+
+City (as a pill)
+
+County (as a pill)
+
+State (full name, e.g., “Colorado”)
+
+(ZIP code can also be auto-filled if available, but the minimum requirement is City, County, State.)
+
+1. Backend – Address Autocomplete Endpoint
+
+Create or connect to an API that returns U.S. address suggestions.
+
+Endpoint example:
+
+GET /api/address-autocomplete?q=<partial_address>&country=US
+
+
+Response example:
+
+[
+  {
+    "id": "addr_1",
+    "label": "10600 Westminster Boulevard, Westminster, CO 80020, USA",
+    "street": "10600 Westminster Boulevard",
+    "city": "Westminster",
+    "county_id": 123,
+    "county_name": "Jefferson County",
+    "state_code": "CO",
+    "state_full_name": "Colorado",
+    "zip": "80020"
+  }
+]
+
+
+Requirements:
+
+Must cover all U.S. addresses (via internal DB or external service like Google Places/Mapbox/etc.).
+
+Each suggestion must include at least: street, city, county_id, county_name, state_code, state_full_name.
+
+If possible also include zip.
+
+2. Frontend – Typeahead on Property Address
+
+Field: Property Address
+
+Convert the address field into a typeahead:
+
+After the user types 3+ characters, call:
+
+GET /api/address-autocomplete?q=${userInput}
+
+
+Display results using label under the input.
+
+When the user clicks a suggestion, call onAddressSelected(suggestion).
+
+3. Frontend – onAddressSelected Logic
+function onAddressSelected(address) {
+  // 1. Set Property Address field to street + optional extra
+  propertyAddressInput.value = address.street; // e.g., "10600 Westminster Boulevard"
+
+  // 2. Auto-populate City as pill
+  selectedCities = [{
+    name: address.city,
+    state_code: address.state_code,
+    state_full_name: address.state_full_name
+  }];
+  renderCityPills();
+
+  // 3. Auto-populate County as pill
+  selectedCounties = [{
+    id: address.county_id,
+    name: address.county_name,
+    state_code: address.state_code,
+    state_full_name: address.state_full_name
+  }];
+  renderCountyPills();
+
+  // 4. Auto-populate State (full name, not abbreviation)
+  stateInput.value = address.state_full_name;  // e.g., "Colorado"
+
+  // 5. (Optional) Auto-populate ZIP code if field exists
+  if (zipInput && address.zip) {
+    selectedZips = [address.zip];
+    renderZipPills();
+  }
+}
+
+
+Important rules:
+
+City/County pills should use the same blue-pill style and visible white “X” remove button as other locations.
+
+If the user later manually changes City, County, or State, do not overwrite their changes again from the address.
+
+4. Acceptance Criteria
+
+Typing into Property Address shows live U.S. address suggestions.
+
+Selecting a suggestion populates:
+
+City pill (e.g., “Westminster”)
+
+County pill (e.g., “Jefferson County”)
+
+State field with full name (e.g., “Colorado”)
+
+City/County pills have visible “X” buttons and can be removed.
+
+Behavior matches the attached screenshot example.

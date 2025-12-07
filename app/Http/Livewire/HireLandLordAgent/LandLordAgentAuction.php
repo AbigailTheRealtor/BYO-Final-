@@ -349,6 +349,15 @@ class LandLordAgentAuction extends Component
     public $citySuggestions = [];
     public $countySuggestions = [];
     public $stateSuggestions = [];
+    
+    // ZIP code fields
+    public $zipCodes = [];
+    public $zip_code = '';
+    public $zipCodeSuggestions = [];
+    public $highlightedZipCodeIndex = -1;
+    
+    // Address autocomplete with place_id mapping
+    public $addressPlaceIds = [];
 
     // Highlight indices for keyboard navigation
     public $highlightedCityIndex = -1;
@@ -781,11 +790,47 @@ class LandLordAgentAuction extends Component
     public function updatedAddress($value)
     {
         if (strlen($value) > 1) {
-            $this->addressSuggestions = $this->getPlaceSuggestions($value, 'address');
+            $this->getAddressSuggestionsWithPlaceIds($value);
         } else {
             $this->addressSuggestions = [];
+            $this->addressPlaceIds = [];
         }
     }
+    
+    protected function getAddressSuggestionsWithPlaceIds($input)
+    {
+        $client = new \GuzzleHttp\Client();
+
+        $query = [
+            'input' => $input,
+            'components' => 'country:us',
+            'types' => 'address',
+            'key' => env('GOOGLE_PLACES_API_KEY')
+        ];
+
+        try {
+            $response = $client->get('https://maps.googleapis.com/maps/api/place/autocomplete/json', [
+                'query' => $query
+            ]);
+
+            $predictions = json_decode($response->getBody(), true)['predictions'] ?? [];
+            
+            $this->addressSuggestions = [];
+            $this->addressPlaceIds = [];
+            
+            foreach ($predictions as $prediction) {
+                $description = $prediction['description'];
+                $placeId = $prediction['place_id'];
+                $this->addressSuggestions[] = $description;
+                $this->addressPlaceIds[$description] = $placeId;
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Address autocomplete error: ' . $e->getMessage());
+            $this->addressSuggestions = [];
+            $this->addressPlaceIds = [];
+        }
+    }
+    
     protected function getPlaceSuggestions($input, $type = null)
     {
         $client = new \GuzzleHttp\Client();
@@ -872,6 +917,140 @@ class LandLordAgentAuction extends Component
         $this->address = $suggestion;
         $this->addressSuggestions = [];
         $this->highlightedAddressIndex = -1;
+        
+        // Get place_id for the selected suggestion
+        $placeId = $this->addressPlaceIds[$suggestion] ?? null;
+        
+        if ($placeId) {
+            $this->fetchPlaceDetailsAndPopulate($placeId);
+        }
+        
+        $this->addressPlaceIds = [];
+    }
+    
+    protected function fetchPlaceDetailsAndPopulate($placeId)
+    {
+        $client = new \GuzzleHttp\Client();
+        
+        try {
+            $response = $client->get('https://maps.googleapis.com/maps/api/place/details/json', [
+                'query' => [
+                    'place_id' => $placeId,
+                    'fields' => 'address_components',
+                    'key' => env('GOOGLE_PLACES_API_KEY')
+                ]
+            ]);
+            
+            $result = json_decode($response->getBody(), true);
+            
+            if (isset($result['result']['address_components'])) {
+                $components = $result['result']['address_components'];
+                
+                $city = null;
+                $county = null;
+                $stateAbbrev = null;
+                $stateFull = null;
+                $zipCode = null;
+                
+                foreach ($components as $component) {
+                    $types = $component['types'];
+                    
+                    // City (locality)
+                    if (in_array('locality', $types)) {
+                        $city = $component['long_name'];
+                    }
+                    
+                    // County (administrative_area_level_2)
+                    if (in_array('administrative_area_level_2', $types)) {
+                        $county = $component['long_name'];
+                    }
+                    
+                    // State (administrative_area_level_1)
+                    if (in_array('administrative_area_level_1', $types)) {
+                        $stateAbbrev = $component['short_name'];
+                        $stateFull = $component['long_name'];
+                    }
+                    
+                    // ZIP code (postal_code)
+                    if (in_array('postal_code', $types)) {
+                        $zipCode = $component['long_name'];
+                    }
+                }
+                
+                // Auto-populate city as a pill
+                if ($city && $stateAbbrev) {
+                    $cityWithState = $city . ', ' . $stateAbbrev;
+                    if (!in_array($cityWithState, $this->cities)) {
+                        $this->cities[] = $cityWithState;
+                    }
+                }
+                
+                // Auto-populate county as a pill
+                if ($county && $stateAbbrev) {
+                    $countyWithState = $county . ', ' . $stateAbbrev;
+                    if (!$this->countyExistsIgnoreCase($countyWithState)) {
+                        $this->counties[] = $countyWithState;
+                    }
+                }
+                
+                // Auto-populate state (full name)
+                if ($stateFull && empty($this->state)) {
+                    $this->state = $stateFull;
+                }
+                
+                // Auto-populate ZIP code as a pill
+                if ($zipCode) {
+                    if (!in_array($zipCode, $this->zipCodes)) {
+                        $this->zipCodes[] = $zipCode;
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Place details fetch error: ' . $e->getMessage());
+        }
+    }
+    
+    protected function countyExistsIgnoreCase($county)
+    {
+        $countyLower = strtolower(trim($county));
+        foreach ($this->counties as $existingCounty) {
+            if (strtolower(trim($existingCounty)) === $countyLower) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    // ZIP code methods
+    public function addZipCode()
+    {
+        $zip = trim($this->zip_code);
+        if (!empty($zip) && !in_array($zip, $this->zipCodes)) {
+            $this->zipCodes[] = $zip;
+        }
+        $this->zip_code = '';
+        $this->zipCodeSuggestions = [];
+    }
+    
+    public function removeZipCode($index)
+    {
+        if (isset($this->zipCodes[$index])) {
+            unset($this->zipCodes[$index]);
+            $this->zipCodes = array_values($this->zipCodes);
+        }
+    }
+    
+    public function selectZipCodeSuggestion($suggestion = null)
+    {
+        $suggestion = $suggestion ?? $this->zipCodeSuggestions[$this->highlightedZipCodeIndex] ?? $this->zip_code;
+        $this->zip_code = $suggestion;
+        
+        if (!empty(trim($suggestion)) && !in_array(trim($suggestion), $this->zipCodes)) {
+            $this->addZipCode();
+        }
+        
+        $this->zipCodeSuggestions = [];
+        $this->highlightedZipCodeIndex = -1;
     }
 
     // Updated keyboard navigation methods

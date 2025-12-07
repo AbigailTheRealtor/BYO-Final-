@@ -225,11 +225,11 @@
         <div class="mt-1 zip-container">
             @if (count($zipCodes) > 0)
                 @foreach ($zipCodes as $index => $zip)
-                    <span class="badge bg-primary rounded-pill" wire:key="zip-badge-{{ $index }}">
+                    <span class="badge bg-primary rounded-pill d-inline-flex align-items-center" wire:key="zip-badge-{{ $index }}">
                         <i class="fas fa-map-pin me-2"></i>
                         {{ $zip }}
-                        <button type="button" class="btn-close btn-close-white ms-2"
-                            wire:click="removeZipCode({{ $index }})" aria-label="Remove"></button>
+                        <button type="button" class="byo-pill-remove ms-2"
+                            wire:click="removeZipCode({{ $index }})" aria-label="Remove">&times;</button>
                     </span>
                 @endforeach
             @endif
