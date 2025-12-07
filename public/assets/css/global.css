@@ -295,16 +295,23 @@ footer a:hover {
     }
   }
 
-.badge.bg-primary .btn-close {
-  filter: invert(1) brightness(2);
-  opacity: 1;
-  width: 0.75em;
-  height: 0.75em;
+.badge.bg-primary .btn-close,
+.badge.bg-primary .btn-close-white {
+  filter: brightness(0) invert(1) !important;
+  opacity: 1 !important;
+  width: 0.65em;
+  height: 0.65em;
   padding: 0.25em;
+  background-size: 100%;
 }
 
-.badge.bg-primary .btn-close:hover {
-  opacity: 0.8;
+.badge.bg-primary .btn-close:hover,
+.badge.bg-primary .btn-close-white:hover {
+  opacity: 0.8 !important;
+}
+
+.btn-close-white {
+  filter: brightness(0) invert(1) !important;
 }
 
 .byo-pill {

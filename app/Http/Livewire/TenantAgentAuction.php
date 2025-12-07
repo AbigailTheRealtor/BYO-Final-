@@ -1661,7 +1661,10 @@ class TenantAgentAuction extends Component
         if (empty($this->state)) {
             $stateAbbr = $this->extractStateFromLocationString($countyString);
             if ($stateAbbr) {
-                $this->state = strtoupper($stateAbbr);
+                $stateRecord = UsState::where('abbreviation', strtoupper($stateAbbr))->first();
+                if ($stateRecord) {
+                    $this->state = $stateRecord->name;
+                }
             }
         }
     }
@@ -1860,7 +1863,10 @@ class TenantAgentAuction extends Component
         $stateAbbr = $this->extractStateFromLocationString($cityString);
         
         if ($stateAbbr && empty($this->state)) {
-            $this->state = strtoupper($stateAbbr);
+            $stateRecord = UsState::where('abbreviation', strtoupper($stateAbbr))->first();
+            if ($stateRecord) {
+                $this->state = $stateRecord->name;
+            }
         }
         
         $cityName = $this->extractNameFromLocationString($cityString);
@@ -1868,13 +1874,13 @@ class TenantAgentAuction extends Component
             $cities = UsCity::with(['state', 'county.state'])
                 ->where('name', $cityName)
                 ->whereHas('state', function($q) use ($stateAbbr) {
-                    $q->where('abbreviation', $stateAbbr);
+                    $q->where('abbreviation', strtoupper($stateAbbr));
                 })
                 ->get();
             
             foreach ($cities as $city) {
                 if ($city->county) {
-                    $countyString = $city->county->name . ', ' . ($city->county->state ? $city->county->state->abbreviation : $stateAbbr);
+                    $countyString = $city->county->name . ', ' . ($city->county->state ? $city->county->state->abbreviation : strtoupper($stateAbbr));
                     
                     if (!$this->countyExistsIgnoreCase($countyString)) {
                         $this->counties[] = $countyString;
