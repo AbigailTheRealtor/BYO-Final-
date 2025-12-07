@@ -1,0 +1,44 @@
+Blocked loading mixed active content “http://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/notifications/fetch”
+dashboard
+TypeError: NetworkError when attempting to fetch resource.
+    fetchNotifications https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/dashboard:655
+    <anonymous> https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/dashboard:716
+
+The Notification permission may only be requested from inside a short running user-generated event handler. dashboard
+Blocked loading mixed active content “http://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/notifications/fetch”
+dashboard
+TypeError: NetworkError when attempting to fetch resource.
+    fetchNotifications https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/dashboard:655
+
+Blocked loading mixed active content “http://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/notifications/fetch”
+dashboard
+TypeError: NetworkError when attempting to fetch resource.
+    fetchNotifications https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/dashboard:655
+
+Blocked loading mixed active content “http://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/notifications/fetch”
+dashboard
+TypeError: NetworkError when attempting to fetch resource.
+    fetchNotifications https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/dashboard:655
+
+Blocked loading mixed active content “http://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/notifications/fetch”
+dashboard
+TypeError: NetworkError when attempting to fetch resource.
+    fetchNotifications https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/dashboard:655
+
+Blocked loading mixed active content “http://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/notifications/fetch”
+dashboard
+TypeError: NetworkError when attempting to fetch resource.
+    fetchNotifications https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/dashboard:655
+
+Blocked loading mixed active content “http://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/notifications/fetch”
+dashboard
+TypeError: NetworkError when attempting to fetch resource.
+    fetchNotifications https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/dashboard:655
+
+Blocked loading mixed active content “http://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/notifications/fetch”
+dashboard
+TypeError: NetworkError when attempting to fetch resource.
+    fetchNotifications https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/dashboard:655
+
+​
+
