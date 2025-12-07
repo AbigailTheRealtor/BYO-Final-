@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use App\Models\UsState;
+use App\Models\UsCounty;
+use App\Models\UsCity;
 
 class BuyerAgentAuction extends Component
 {
@@ -720,6 +723,57 @@ class BuyerAgentAuction extends Component
     }
     protected function getPlaceSuggestions($input, $type = null)
     {
+        if ($type === 'state') {
+            return $this->getStateSuggestionsFromDb($input);
+        } elseif ($type === 'county') {
+            return $this->getCountySuggestionsFromDb($input);
+        } elseif ($type === 'city') {
+            return $this->getCitySuggestionsFromDb($input);
+        } elseif ($type === 'address') {
+            return $this->getPlaceSuggestionsFromApi($input, $type);
+        } else {
+            return $this->getCitySuggestionsFromDb($input);
+        }
+    }
+
+    protected function getStateSuggestionsFromDb($input)
+    {
+        $states = UsState::where('name', 'ILIKE', '%' . $input . '%')
+            ->orWhere('abbreviation', 'ILIKE', '%' . $input . '%')
+            ->limit(10)
+            ->get();
+
+        return $states->map(function ($state) {
+            return $state->name;
+        })->toArray();
+    }
+
+    protected function getCountySuggestionsFromDb($input)
+    {
+        $counties = UsCounty::with('state')
+            ->where('name', 'ILIKE', '%' . $input . '%')
+            ->limit(10)
+            ->get();
+
+        return $counties->map(function ($county) {
+            return $county->name . ', ' . ($county->state ? $county->state->abbreviation : '');
+        })->toArray();
+    }
+
+    protected function getCitySuggestionsFromDb($input)
+    {
+        $cities = UsCity::with('state')
+            ->where('name', 'ILIKE', '%' . $input . '%')
+            ->limit(10)
+            ->get();
+
+        return $cities->map(function ($city) {
+            return $city->name . ', ' . ($city->state ? $city->state->abbreviation : '');
+        })->toArray();
+    }
+
+    protected function getPlaceSuggestionsFromApi($input, $type = null)
+    {
         $client = new \GuzzleHttp\Client();
 
         $query = [
@@ -727,43 +781,25 @@ class BuyerAgentAuction extends Component
             'components' => 'country:us',
             'key' => env('GOOGLE_PLACES_API_KEY')
         ];
-        // Set types based on what we're searching for
-        if ($type === 'state') {
-            $query['types'] = 'administrative_area_level_1';
-        } elseif ($type === 'county') {
-            $query['types'] = 'administrative_area_level_2'; // best for counties
 
-        } elseif ($type === 'address') {
+        if ($type === 'address') {
             $query['types'] = 'address';
-        } else {
-            $query['types'] = '(cities)';
         }
 
+        try {
+            $response = $client->get('https://maps.googleapis.com/maps/api/place/autocomplete/json', [
+                'query' => $query
+            ]);
 
-        $response = $client->get('https://maps.googleapis.com/maps/api/place/autocomplete/json', [
-            'query' => $query
-        ]);
+            $predictions = json_decode($response->getBody(), true)['predictions'] ?? [];
 
-        $predictions = json_decode($response->getBody(), true)['predictions'] ?? [];
-
-        return array_map(function ($prediction) use ($type) {
-            $description = $prediction['description'];
-
-            // Format differently based on type
-            if ($type === 'state') {
-                // Extract just the state name (remove ", USA")
-                return preg_replace('/,\s*USA$/', '', $description);
-            } elseif ($type === 'county') {
-                // For counties, we might want to keep county name and state
-                return $description;
-            } elseif ($type === 'address') {
-                // For counties, we might want to keep county name and state
-                return $description;
-            } else {
-                // For cities, return city and state
-                return $description;
-            }
-        }, $predictions);
+            return array_map(function ($prediction) {
+                return $prediction['description'];
+            }, $predictions);
+        } catch (\Exception $e) {
+            Log::error('Google Places API error: ' . $e->getMessage());
+            return [];
+        }
     }
 
     public function selectCitySuggestion($suggestion = null)

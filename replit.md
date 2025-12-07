@@ -43,6 +43,21 @@ This is a Laravel-based real estate auction platform that enables transparent bi
 - Listing IDs are displayed in the listing view page as a badge
 - All auction models updated to use the HasListingId trait
 
+### Location Autocomplete Feature (December 7, 2025):
+- Created U.S. Census-based location database with normalized tables:
+  - `us_states`: 56 states/territories with FIPS codes and abbreviations
+  - `us_counties`: 3,232 counties with FIPS codes linked to states (from 2024 Census Gazetteer)
+  - `us_cities`: 32,141 cities/places with FIPS codes linked to states (from 2024 Census Gazetteer)
+- Created models: `App\Models\UsState`, `App\Models\UsCounty`, `App\Models\UsCity`
+- Updated Livewire components to use database-driven autocomplete instead of Google Places API:
+  - `TenantAgentAuction.php`: Updated `getPlaceSuggestions()` to use database for states, counties, and cities
+  - `BuyerAgentAuction.php`: Updated `getPlaceSuggestions()` to use database for states, counties, and cities
+- Database search uses ILIKE for case-insensitive PostgreSQL matching
+- Google Places API still used for address/postal code lookups only (retained for specific address validation)
+- Removed emojis from Property Type dropdown across all hire agent listings
+- Database seeders auto-download Census Gazetteer files: `UsStatesSeeder`, `UsCountiesExpandedSeeder`, `UsCitiesExpandedSeeder`
+- Unique indexes added on fips_code (counties) and name+state (cities) to prevent duplicates
+
 ## Database
 - PostgreSQL database configured and connected
 - Core migrations completed successfully
