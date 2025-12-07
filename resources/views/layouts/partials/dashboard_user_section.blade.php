@@ -14,12 +14,29 @@
 @endphp
 
 <style>
-  .dropdown-menu .dropdown-item {
-    padding: 4px 1px;
-}
+    .dropdown-menu .dropdown-item {
+        padding: 8px 16px;
+    }
 
     .dropdown-menu .dropdown-divider {
         margin: 0;
+    }
+    
+    .right .dropdown {
+        display: inline-block;
+        position: relative;
+    }
+    
+    .right .dropdown .dropdown-menu {
+        z-index: 1050;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        min-width: 200px;
+    }
+    
+    .right .dropdown:hover .dropdown-menu {
+        display: block;
     }
 </style>
 
