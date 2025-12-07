@@ -70,11 +70,11 @@
     <div class="mt-1 cities-container">
         @if (count($cities) > 0)
             @foreach ($cities as $index => $city)
-                <span class="badge bg-primary rounded-pill" wire:key="city-badge-{{ $index }}">
+                <span class="badge bg-primary rounded-pill d-inline-flex align-items-center" wire:key="city-badge-{{ $index }}">
                     <i class="fas fa-city me-2"></i>
                     {{ $city }}
-                    <button type="button" class="btn-close btn-close-white ms-2"
-                        wire:click="removeCity({{ $index }})" aria-label="Remove"></button>
+                    <button type="button" class="byo-pill-remove ms-2"
+                        wire:click="removeCity({{ $index }})" aria-label="Remove">&times;</button>
                 </span>
             @endforeach
 
@@ -123,11 +123,11 @@
     <div class="mt-1 counties-container">
         @if (count($counties) > 0)
             @foreach ($counties as $index => $county)
-                <span class="badge bg-primary rounded-pill" wire:key="county-badge-{{ $index }}">
+                <span class="badge bg-primary rounded-pill d-inline-flex align-items-center" wire:key="county-badge-{{ $index }}">
                     <i class="fas fa-map me-2"></i>
                     {{ $county }}
-                    <button type="button" class="btn-close btn-close-white ms-2"
-                        wire:click="removeCounty({{ $index }})" aria-label="Remove"></button>
+                    <button type="button" class="byo-pill-remove ms-2"
+                        wire:click="removeCounty({{ $index }})" aria-label="Remove">&times;</button>
                 </span>
             @endforeach
 
