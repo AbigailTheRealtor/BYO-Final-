@@ -44,31 +44,6 @@
     }
 </style>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    var hireAgentBtn = document.getElementById('hireAgentDropdown');
-    if (hireAgentBtn) {
-        hireAgentBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            var dropdownMenu = this.nextElementSibling;
-            if (dropdownMenu && dropdownMenu.classList.contains('dropdown-menu')) {
-                dropdownMenu.classList.toggle('show');
-            }
-        });
-        
-        document.addEventListener('click', function(e) {
-            var dropdown = document.getElementById('hireAgentDropdown');
-            if (dropdown) {
-                var dropdownMenu = dropdown.nextElementSibling;
-                if (dropdownMenu && !dropdown.contains(e.target) && !dropdownMenu.contains(e.target)) {
-                    dropdownMenu.classList.remove('show');
-                }
-            }
-        });
-    }
-});
-</script>
 <div class="card">
     <div class="card-body">
         <!-- Review  -->
@@ -205,3 +180,22 @@ document.addEventListener('DOMContentLoaded', function() {
         <!-- End  -->
     </div>
 </div>
+
+@push('scripts')
+<script>
+$(document).ready(function() {
+    $('#hireAgentDropdown').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $menu = $(this).siblings('.dropdown-menu');
+        $menu.toggleClass('show');
+    });
+    
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('#hireAgentDropdown').length && !$(e.target).closest('.dropdown-menu').length) {
+            $('#hireAgentDropdown').siblings('.dropdown-menu').removeClass('show');
+        }
+    });
+});
+</script>
+@endpush
