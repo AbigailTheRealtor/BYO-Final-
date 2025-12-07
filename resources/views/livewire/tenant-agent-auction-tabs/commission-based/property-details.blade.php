@@ -144,56 +144,6 @@
         @endif
     </div>
 </div>
-<div class="form-group mb-3">
-    <label class="fw-bold">Acceptable ZIP Codes:
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the ZIP Codes where the Tenant is looking to lease a property. ">
-            <i class="fa-solid fa-circle-info"></i>
-    </label>
-    </span>
-
-    <div class="input-cover position-relative">
-        <input type="text" wire:model="zip_code" wire:keydown.enter.prevent="selectZipCodeSuggestion()"
-            wire:keydown.arrow-up.prevent="decrementHighlight('ZipCode')"
-            wire:keydown.arrow-down.prevent="incrementHighlight('ZipCode')"
-            class="form-control has-icon @error('zip_code') is-invalid @enderror" data-icon="fas fa-map-pin"
-            autocomplete="off" placeholder="Enter one or more ZIP codes">
-
-        @if (count($zipCodeSuggestions) > 0)
-            <div class="autocomplete-dropdown shadow-sm">
-                <ul class="list-group">
-                    @foreach ($zipCodeSuggestions as $index => $suggestion)
-                        <li class="list-group-item {{ $highlightedZipCodeIndex === $index ? 'bg-light' : '' }}"
-                            wire:click="selectZipCodeSuggestion('{{ $suggestion }}')"
-                            wire:key="zip-suggestion-{{ $index }}">
-                            <i class="fas fa-map-pin me-2 text-muted"></i>
-                            {{ $suggestion }}
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-
-        @error('zip_code')
-            <div class="error-message">{{ $message }}</div>
-        @enderror
-    </div>
-
-    <!-- Display added ZIP codes -->
-    <div class="mt-1 zip-container">
-        @if (count($zipCodes) > 0)
-            @foreach ($zipCodes as $index => $zip)
-                <span class="badge bg-primary rounded-pill" wire:key="zip-badge-{{ $index }}">
-                    <i class="fas fa-map-pin me-2"></i>
-                    {{ $zip }}
-                    <button type="button" class="btn-close btn-close-white ms-2"
-                        wire:click="removeZipCode({{ $index }})" aria-label="Remove"></button>
-                </span>
-            @endforeach
-        @endif
-    </div>
-</div>
 
 <!-- Acceptable Counties -->
 <div class="form-group mb-3">

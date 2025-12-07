@@ -57,6 +57,7 @@ This is a Laravel-based real estate auction platform that enables transparent bi
 - Removed emojis from Property Type dropdown across all hire agent listings
 - Database seeders auto-download Census Gazetteer files: `UsStatesSeeder`, `UsCountiesExpandedSeeder`, `UsCitiesExpandedSeeder`
 - Unique indexes added on fips_code (counties) and name+state (cities) to prevent duplicates
+- Removed Acceptable ZIP Codes field from Hire a Buyer's Agent and Hire a Tenant's Agent listings
 
 ## Database
 - PostgreSQL database configured and connected
