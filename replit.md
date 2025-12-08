@@ -79,6 +79,15 @@ This is a Laravel-based real estate auction platform that enables transparent bi
   - `extractStateFromLocationString()` / `extractNameFromLocationString()`: String parsing helpers
 - **Known Limitation**: Cities spanning multiple counties only associate with their primary county due to data model constraints (us_cities has single county_id)
 
+### Tab Navigation Fix for All Hire Agent Pages (December 8, 2025):
+- **Fixed Tab-Pane ID Mismatch**: Bootstrap tab navigation targets (e.g., `#buyer-information`) didn't match tab-pane IDs (`id="tenant-info"`) - copy-paste errors from tenant agent template
+- **Files Fixed**:
+  - hire-buyer-agent.blade.php: Changed `id="tenant-info"` to `id="buyer-information"` (line 911)
+  - hire-seller-agent.blade.php: Changed `id="tenant-info"` to `id="seller-information"` (line 911)
+  - hire-landlord-agent.blade.php: Changed `id="tenant-info"` to `id="landlord-information"` (line 1125)
+- Updated comments from "Tenant Info Tab" to appropriate user type (Buyer/Seller/Landlord Info Tab)
+- **Investigation Result**: Tab content for all property types (Residential, Income, Commercial, Business, Vacant Land) renders unconditionally - no property_type conditions hide tabs
+
 ### Property Location Fields for Hire Seller/Landlord Agent (December 8, 2025):
 - **New Required Fields**: Added City*, State*, ZIP Code* immediately after Street Address
   - City field has autocomplete from local us_cities database (32,141 cities)

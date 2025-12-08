@@ -903,9 +903,9 @@
                                     @endif
                                 </div>
 
-                                <!-- Tenant Info Tab -->
+                                <!-- Buyer Info Tab -->
                                 <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
-                                    id="tenant-info" role="tabpanel" aria-labelledby="tenant-info-tab">
+                                    id="buyer-information" role="tabpanel" aria-labelledby="buyer-information-tab">
                                     @if ($user_type === 'tenant')
                                         @include('livewire.tenant-agent-auction-tabs.commission-based.tenant-info')
                                     @elseif($user_type === 'seller')

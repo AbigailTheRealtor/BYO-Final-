@@ -808,6 +808,121 @@
 {{-- 3) Income-only fields --}}
 @if ($property_type === 'Income')
 
+    {{-- Pets for Income Property (moved above Income Property Criteria) --}}
+    <div class="form-group">
+        <label class="fw-bold">Pets:<span class="text-danger">*</span>
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Indicate whether the Buyer has pets. If so, enter details including the number, type, breed, weight, and whether the pet is a service animal or an emotional support animal.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+
+        <div class="input-cover">
+            <select wire:model="pets" id="pets_income" class="form-control has-icon" data-icon="fa-solid fa-paw"
+                required>
+                <option value="">Select</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+            </select>
+        </div>
+        <span class="error mt-2" id="pets_error"></span>
+    </div>
+
+    @if ($pets === 'Yes')
+        <div id="pet-details-income">
+            <div class="form-group">
+                <label class="fw-bold">Number of Pets:</label>
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    title="Enter the total number of pets you currently have (e.g., 2).">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+                <div class="input-cover">
+                    <input type="number" wire:model="number_of_pets" class="form-control has-icon"
+                        data-icon="fa-solid fa-hashtag" placeholder="Enter number of pets (e.g., 2)">
+                </div>
+                <span class="error mt-2" id="number_of_pets_error"></span>
+            </div>
+
+            <div class="form-group">
+                <label class="fw-bold">Type of Pets:</label>
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    title="Enter the types of pets you own (e.g., Dog, Cat).">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+                <div class="input-cover">
+                    <input type="text" wire:model="type_of_pets" class="form-control has-icon"
+                        data-icon="fa-solid fa-cat" placeholder="Enter types of pets (e.g., Dog, Cat)">
+                </div>
+                <span class="error mt-2" id="type_of_pets_error"></span>
+            </div>
+
+            <div class="form-group">
+                <label class="fw-bold">Breed of Pets:</label>
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    title="Enter the breed(s) of your pets (e.g., Labrador, Siamese).">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+                <div class="input-cover">
+                    <input type="text" wire:model="breed_of_pets" class="form-control has-icon"
+                        data-icon="fa-solid fa-dog" placeholder="Enter breeds of pets (e.g., Labrador, Siamese)">
+                </div>
+                <span class="error mt-2" id="breed_of_pets_error"></span>
+            </div>
+
+            <div class="form-group">
+                <label class="fw-bold">Weight of Pets (lbs):</label>
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    title="Enter the weight of your pet(s) in pounds.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+                <div class="input-cover">
+                    <input type="text" wire:model="weight_of_pets" class="form-control has-icon"
+                        data-icon="fa-solid fa-weight" placeholder="Enter the weight of pets (e.g., 30 lbs, 50 lbs)">
+                </div>
+                <span class="error mt-2" id="weight_of_pets_error"></span>
+            </div>
+
+            <div class="form-group">
+                <label class="fw-bold">Service Animal:</label>
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    title="Select if any of your pets are trained service animals.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+                <div class="input-cover">
+                    <select wire:model="service_animal" class="form-control has-icon" data-icon="fa-solid fa-heart">
+                        <option value="">Select</option>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+                <span class="error mt-2" id="service_animal_error"></span>
+            </div>
+
+            <div class="form-group">
+                <label class="fw-bold">Emotional Support Animal:</label>
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    title="Select if any of your pets are emotional support animals.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+                <div class="input-cover">
+                    <select wire:model="emotional_support_animal" class="form-control has-icon"
+                        data-icon="fa-solid fa-heart">
+                        <option value="">Select</option>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+                <span class="error mt-2" id="emotional_support_animal_error"></span>
+            </div>
+        </div>
+    @endif
+
     {{-- a) Income Property Criteria --}}
     <div class="form-group">
         <label class="fw-bold">Income Property Criteria:</label>
@@ -888,8 +1003,8 @@
 
 {{-- 4) Net Income & Cap Rate (Income, Commercial, Business Opportunity) --}}
 
-{{-- Pets (Residential & Income only) --}}
-@if (in_array($property_type, ['Residential', 'Income']))
+{{-- Pets (Residential only - Income has it above Income Property Criteria) --}}
+@if ($property_type === 'Residential')
     <div class="form-group">
         <label class="fw-bold">Pets:<span class="text-danger">*</span>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1076,119 +1191,20 @@
                 @foreach ($unit_types as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach
+                <option value="Other">Other</option>
             </select>
         </div>
     </div>
-    {{-- @if (in_array($number_of_unit_type && $number_of_unit_type === 'Other'))
+    @if (is_array($number_of_unit_type) && in_array('Other', $number_of_unit_type))
         <div class="form-group">
-            <label class="fw-bold">Acceptable Units Type: </label>
+            <label class="fw-bold">Other Unit Type:</label>
             <div class="input-cover">
-                <input type="number" wire:model="number_of_unit_type_other" class="form-control has-icon"
+                <input type="text" wire:model="number_of_unit_type_other" class="form-control has-icon"
                     data-icon="fa-solid fa-home" placeholder="Enter acceptable unit types (e.g., Live/Work Unit, Boarding House, Accessory Dwelling Unit)">
             </div>
             <span class="error mt-2" id="number_of_unit_type_error"></span>
         </div>
-    @endif --}}
-    {{-- @if (in_array($number_of_unit_type && $number_of_unit_type !== 'Other'))
-        <div class="form-group">
-            <label class="fw-bold">Beds / Unit: </label>
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the number of bedrooms included in this unit type.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-            <div class="input-cover">
-                <input type="number" wire:model="beds_unit" class="form-control has-icon"
-                    data-icon="fa-solid fa-home" placeholder="Enter number of bedrooms (e.g., 2)">
-            </div>
-            <span class="error mt-2" id="number_of_unit_type_error"></span>
-        </div>
-        <div class="form-group">
-            <label class="fw-bold">Baths / Unit: </label>
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the number of bathrooms in this unit type. ">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-            <div class="input-cover">
-                <input type="number" wire:model="baths_unit" class="form-control has-icon"
-                    data-icon="fa-solid fa-home" placeholder="Enter number of bathrooms (e.g., 1.5)">
-            </div>
-            <span class="error mt-2" id="number_of_unit_type_error"></span>
-        </div>
-
-        <div class="form-group">
-            <label class="fw-bold">Number of Garage Spaces:</label><span class="ms-2" data-bs-toggle="tooltip"
-                data-bs-html="true" title="Enter the number of garage spaces available for this unit type. ">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-            <div class="input-cover">
-                <input type="number" wire:model="garage_spaces" class="form-control has-icon"
-                    data-icon="fa-solid fa-warehouse" placeholder="Enter number of garage spaces (e.g., 1)">
-            </div>
-            <span class="error mt-2" id="garage_spaces_error"></span>
-        </div>
-
-        <div class="form-group">
-            <label class="fw-bold">Number of Carport Spaces:</label><span class="ms-2" data-bs-toggle="tooltip"
-                data-bs-html="true" title="Enter the number of carport spaces available for this unit type. ">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-            <div class="input-cover">
-                <input type="number" wire:model="carport_spaces" class="form-control has-icon"
-                    data-icon="fa-solid fa-car" placeholder="Enter number of carport spaces (e.g., 2)">
-            </div>
-            <span class="error mt-2" id="carport_spaces_error"></span>
-        </div>
-
-        <div class="form-group">
-            <label class="fw-bold">Number of Units:</label><span class="ms-2" data-bs-toggle="tooltip"
-                data-bs-html="true" title="Enter the total number of units of this type included in the property. ">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-            <div class="input-cover">
-                <input type="number" wire:model="number_of_units" class="form-control has-icon"
-                    data-icon="fa-solid fa-th-large" placeholder="Enter total number of this unit type (e.g., 4)">
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label class="fw-bold">Number Occupied:</label><span class="ms-2" data-bs-toggle="tooltip"
-                data-bs-html="true" title="Enter how many of these units are currently occupied by tenants. ">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-            <div class="input-cover">
-                <input type="number" wire:model="number_occupied" class="form-control has-icon"
-                    data-icon="fa-solid fa-user-check"
-                    placeholder="Enter number of units currently occupied (e.g., 3)">
-            </div>
-            <span class="error mt-2" id="number_occupied_error"></span>
-        </div>
-
-        <div class="form-group">
-            <label class="fw-bold">Expected Rent:</label><span class="ms-2" data-bs-toggle="tooltip"
-                data-bs-html="true" title="Enter the expected monthly rent per unit for this unit type.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-            <div class="input-cover">
-                <input type="number" wire:model="expected_rent" class="form-control has-icon"
-                    data-icon="fa-solid fa-dollar-sign" placeholder="Enter expected monthly rent (e.g., 1500)">
-            </div>
-            <span class="error mt-2" id="expected_rent_error"></span>
-        </div>
-
-        <div class="form-group">
-            <label class="fw-bold">Unit Type Description:</label><span class="ms-2" data-bs-toggle="tooltip"
-                data-bs-html="true"
-                title="Provide a short description of this unit type (e.g., layout, location, unique features).">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-            <div class="input-cover">
-                <input type="text" wire:model="unit_type_description" class="form-control has-icon"
-                    data-icon="fa-solid fa-align-left"
-                    placeholder="Enter a brief description of this unit type (e.g., Upstairs 2/1 with balcony)">
-            </div>
-            <span class="error mt-2" id="unit_type_description_error"></span>
-        </div>
-    @endif --}}
+    @endif
 @endif
 @if ($property_type !== 'Residential' && $property_type !== 'Vacant Land')
 <div class="form-group">

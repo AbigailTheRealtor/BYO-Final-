@@ -1117,9 +1117,9 @@
 
                                 </div>
 
-                                <!-- Tenant Info Tab -->
+                                <!-- Landlord Info Tab -->
                                 <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
-                                    id="tenant-info" role="tabpanel" aria-labelledby="tenant-info-tab">
+                                    id="landlord-information" role="tabpanel" aria-labelledby="landlord-information-tab">
                                     @if ($user_type === 'tenant')
                                         @include('livewire.tenant-agent-auction-tabs.commission-based.tenant-info')
                                     @elseif($user_type === 'seller')
@@ -1655,7 +1655,7 @@
             });
 
 
-            ////////////	Desired Rental Amount
+            ////////////        Desired Rental Amount
 
 
             function toggleDesiredRentalAmountTenant(selectElement) {
