@@ -127,7 +127,7 @@
     <div class="input-cover">
         <input type="text" wire:model="property_zip" 
             class="form-control has-icon @error('property_zip') is-invalid @enderror" 
-            data-icon="fa-solid fa-magnifying-glass"
+            data-icon="fa-solid fa-map-pin"
             placeholder="Enter ZIP code" 
             required
             maxlength="10">
