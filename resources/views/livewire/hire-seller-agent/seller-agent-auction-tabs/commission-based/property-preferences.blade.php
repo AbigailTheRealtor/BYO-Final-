@@ -59,137 +59,129 @@
     while still allowing Agents to understand your general location.
 </div>
 <!-- City -->
-@if ($cityFieldVisible)
-    <div class="form-group mb-3">
-        <label class="fw-bold">City:<span class="text-danger">*</span></label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the city where the property is located. Selecting a city will auto-fill County, State, and ZIP Code if not already set.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover position-relative">
-            <input type="text" wire:model.debounce.300ms="city" 
-                wire:keydown.enter.prevent="selectCitySuggestion()"
-                wire:keydown.arrow-up.prevent="decrementHighlight('City')"
-                wire:keydown.arrow-down.prevent="incrementHighlight('City')"
-                class="form-control has-icon @error('city') is-invalid @enderror" data-icon="fas fa-city"
-                autocomplete="off" placeholder="Enter city" required>
+<div class="form-group mb-3">
+    <label class="fw-bold">City:<span class="text-danger">*</span></label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the city where the property is located. Selecting a city will auto-fill County, State, and ZIP Code if not already set.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover position-relative">
+        <input type="text" wire:model.debounce.300ms="city" 
+            wire:keydown.enter.prevent="selectCitySuggestion()"
+            wire:keydown.arrow-up.prevent="decrementHighlight('City')"
+            wire:keydown.arrow-down.prevent="incrementHighlight('City')"
+            class="form-control has-icon @error('city') is-invalid @enderror" data-icon="fas fa-city"
+            autocomplete="off" placeholder="Enter city" required>
 
-            @if (count($citySuggestions) > 0)
-                <div class="autocomplete-dropdown shadow-sm">
-                    <ul class="list-group">
-                        @foreach ($citySuggestions as $index => $suggestion)
-                            <li class="list-group-item {{ $highlightedCityIndex === $index ? 'bg-light' : '' }}"
-                                wire:click="selectCitySuggestion('{{ $suggestion }}')"
-                                wire:key="city-suggestion-{{ $index }}">
-                                <i class="fas fa-city me-2 text-muted"></i>
-                                {{ $suggestion }}
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
+        @if (count($citySuggestions ?? []) > 0)
+            <div class="autocomplete-dropdown shadow-sm">
+                <ul class="list-group">
+                    @foreach ($citySuggestions as $index => $suggestion)
+                        <li class="list-group-item {{ ($highlightedCityIndex ?? -1) === $index ? 'bg-light' : '' }}"
+                            wire:click="selectCitySuggestion('{{ $suggestion }}')"
+                            wire:key="city-suggestion-{{ $index }}">
+                            <i class="fas fa-city me-2 text-muted"></i>
+                            {{ $suggestion }}
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
-            @error('city')
-                <div class="error-message">{{ $message }}</div>
-            @enderror
-        </div>
+        @error('city')
+            <div class="error-message">{{ $message }}</div>
+        @enderror
     </div>
-@endif
+</div>
 
 <!-- County -->
-@if ($countyFieldVisible)
-    <div class="form-group mb-3">
-        <label class="fw-bold">County:<span class="text-danger">*</span></label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the county where the property is located.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover position-relative">
-            <input type="text" wire:model.debounce.300ms="county" 
-                wire:keydown.enter.prevent="selectCountySuggestion()"
-                wire:keydown.arrow-up.prevent="decrementHighlight('County')"
-                wire:keydown.arrow-down.prevent="incrementHighlight('County')"
-                class="form-control has-icon @error('county') is-invalid @enderror" data-icon="fa-solid fa-map"
-                autocomplete="off" placeholder="Enter county" required>
+<div class="form-group mb-3">
+    <label class="fw-bold">County:<span class="text-danger">*</span></label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the county where the property is located.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover position-relative">
+        <input type="text" wire:model.debounce.300ms="county" 
+            wire:keydown.enter.prevent="selectCountySuggestion()"
+            wire:keydown.arrow-up.prevent="decrementHighlight('County')"
+            wire:keydown.arrow-down.prevent="incrementHighlight('County')"
+            class="form-control has-icon @error('county') is-invalid @enderror" data-icon="fa-solid fa-map"
+            autocomplete="off" placeholder="Enter county" required>
 
-            @if (count($countySuggestions) > 0)
-                <div class="autocomplete-dropdown-counties shadow-sm">
-                    <ul class="list-group">
-                        @foreach ($countySuggestions as $index => $suggestion)
-                            <li class="list-group-item {{ $highlightedCountyIndex === $index ? 'bg-light' : '' }}"
-                                wire:click="selectCountySuggestion('{{ $suggestion }}')"
-                                wire:key="county-suggestion-{{ $index }}">
-                                <i class="fas fa-map me-2 text-muted"></i>
-                                {{ $suggestion }}
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
+        @if (count($countySuggestions ?? []) > 0)
+            <div class="autocomplete-dropdown-counties shadow-sm">
+                <ul class="list-group">
+                    @foreach ($countySuggestions as $index => $suggestion)
+                        <li class="list-group-item {{ ($highlightedCountyIndex ?? -1) === $index ? 'bg-light' : '' }}"
+                            wire:click="selectCountySuggestion('{{ $suggestion }}')"
+                            wire:key="county-suggestion-{{ $index }}">
+                            <i class="fas fa-map me-2 text-muted"></i>
+                            {{ $suggestion }}
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
-            @error('county')
-                <div class="error-message">{{ $message }}</div>
-            @enderror
-        </div>
+        @error('county')
+            <div class="error-message">{{ $message }}</div>
+        @enderror
     </div>
-@endif
+</div>
 
 <!-- State -->
-@if ($stateFieldVisible)
-    <div class="form-group mb-3">
-        <label class="fw-bold">State:<span class="text-danger">*</span></label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the state where the property is located (full name, e.g., 'Florida').">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover position-relative">
-            <input type="text" wire:model.debounce.300ms="state" 
-                wire:keydown.enter.prevent="selectStateSuggestion"
-                wire:keydown.arrow-up="decrementHighlight('state')"
-                wire:keydown.arrow-down="incrementHighlight('state')"
-                class="form-control has-icon @error('state') is-invalid @enderror" data-icon="fa-solid fa-flag-usa"
-                autocomplete="off" placeholder="Enter state" required>
+<div class="form-group mb-3">
+    <label class="fw-bold">State:<span class="text-danger">*</span></label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the state where the property is located (full name, e.g., 'Florida').">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover position-relative">
+        <input type="text" wire:model.debounce.300ms="state" 
+            wire:keydown.enter.prevent="selectStateSuggestion"
+            wire:keydown.arrow-up="decrementHighlight('state')"
+            wire:keydown.arrow-down="incrementHighlight('state')"
+            class="form-control has-icon @error('state') is-invalid @enderror" data-icon="fa-solid fa-flag-usa"
+            autocomplete="off" placeholder="Enter state" required>
 
-            @if (count($stateSuggestions) > 0)
-                <div class="autocomplete-dropdown-counties shadow-sm">
-                    <ul class="list-group">
-                        @foreach ($stateSuggestions as $index => $suggestion)
-                            <li class="list-group-item {{ $highlightedStateIndex === $index ? 'bg-light' : '' }}"
-                                wire:click="selectStateSuggestion('{{ $suggestion }}')"
-                                wire:key="state-suggestion-{{ $index }}">
-                                {{ $suggestion }}
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
+        @if (count($stateSuggestions ?? []) > 0)
+            <div class="autocomplete-dropdown-counties shadow-sm">
+                <ul class="list-group">
+                    @foreach ($stateSuggestions as $index => $suggestion)
+                        <li class="list-group-item {{ ($highlightedStateIndex ?? -1) === $index ? 'bg-light' : '' }}"
+                            wire:click="selectStateSuggestion('{{ $suggestion }}')"
+                            wire:key="state-suggestion-{{ $index }}">
+                            {{ $suggestion }}
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
-            @error('state')
-                <div class="error-message">{{ $message }}</div>
-            @enderror
-        </div>
+        @error('state')
+            <div class="error-message">{{ $message }}</div>
+        @enderror
     </div>
-@endif
+</div>
 
 <!-- ZIP Code -->
-@if ($zipCodeFieldVisible)
-    <div class="form-group mb-3">
-        <label class="fw-bold">ZIP Code:<span class="text-danger">*</span></label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the ZIP code of the property.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <input type="text" wire:model="zipCode" 
-                class="form-control has-icon @error('zipCode') is-invalid @enderror" data-icon="fas fa-map-pin"
-                autocomplete="off" placeholder="Enter ZIP code" required>
+<div class="form-group mb-3">
+    <label class="fw-bold">ZIP Code:<span class="text-danger">*</span></label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the ZIP code of the property.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <input type="text" wire:model="zipCode" 
+            class="form-control has-icon @error('zipCode') is-invalid @enderror" data-icon="fas fa-map-pin"
+            autocomplete="off" placeholder="Enter ZIP code" required>
 
-            @error('zipCode')
-                <div class="error-message">{{ $message }}</div>
-            @enderror
-        </div>
+        @error('zipCode')
+            <div class="error-message">{{ $message }}</div>
+        @enderror
     </div>
-@endif
+</div>
 
 <!-- Property Type Dropdown -->
 {{-- /////////////////////// --}}
