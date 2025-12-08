@@ -138,21 +138,6 @@
     </div>
 </div>
 
-<div>
-    <!-- Number of Pet(s) -->
-    <div class="form-group">
-        <label class="fw-bold">Unit Number:</label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the full unit identifier (e.g., “2B”, “PH-1”), if applicable.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <input type="text" wire:model="number_of_unit" class="form-control has-icon" data-icon="fa-solid fa-home"
-                placeholder="Enter unit number">
-        </div>
-        <span class="error mt-2" id="number_of_unit_error"></span>
-    </div>
-</div>
 <!-- Acceptable Cities -->
 
 @if ($cityFieldVisible)
@@ -208,59 +193,6 @@
     </div>
 @endif
 
-<!-- Acceptable Counties -->
-@if ($countyFieldVisible)
-    <div class="form-group mb-3">
-        <label class="fw-bold mb-2">County:<span class="text-danger">*</span></label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the county where the rental property is located.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-
-        <div class="input-cover position-relative">
-            <input type="text" wire:model="newCounty" wire:keydown.enter.prevent="selectCountySuggestion()"
-                wire:keydown.arrow-up.prevent="decrementHighlight('County')"
-                wire:keydown.arrow-down.prevent="incrementHighlight('County')"
-                class="form-control has-icon @error('newCounty') is-invalid @enderror" data-icon="fa-solid fa-map"
-                autocomplete="off" placeholder="Enter county">
-
-            <!-- County Suggestions Dropdown -->
-            @if (count($countySuggestions) > 0)
-                <div class="autocomplete-dropdown-counties shadow-sm">
-                    <ul class="list-group">
-                        @foreach ($countySuggestions as $index => $suggestion)
-                            <li class="list-group-item {{ $highlightedCountyIndex === $index ? 'bg-light' : '' }}"
-                                wire:click="selectCountySuggestion('{{ $suggestion }}')"
-                                wire:key="county-suggestion-{{ $index }}">
-                                <i class="fas fa-map me-2 text-muted"></i>
-                                {{ $suggestion }}
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
-            @error('newCounty')
-                <div class="error-message">{{ $message }}</div>
-            @enderror
-        </div>
-
-        <!-- Display added counties -->
-        <div class="mt-1 counties-container">
-            @if (count($counties) > 0)
-                @foreach ($counties as $index => $county)
-                    <span class="badge bg-primary rounded-pill d-inline-flex align-items-center" wire:key="county-badge-{{ $index }}">
-                        <i class="fas fa-map me-2"></i>
-                        {{ $county }}
-                        <button type="button" class="byo-pill-remove ms-2"
-                            wire:click="removeCounty({{ $index }})" aria-label="Remove">&times;</button>
-                    </span>
-                @endforeach
-
-            @endif
-        </div>
-    </div>
-@endif
 
 <!-- Acceptable State -->
 @if ($stateFieldVisible)
