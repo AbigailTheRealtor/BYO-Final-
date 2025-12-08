@@ -1031,8 +1031,10 @@
             <div class="input-cover">
                 <span class="input-group-text-seller">$</span>
 
-                <input type="number" wire:model="minimum_annual_net_income" class="form-control"
-                    placeholder="Enter minimum annual net income needed (e.g., 50000)">
+                <input type="text" wire:model="minimum_annual_net_income" class="form-control"
+                    placeholder="Enter minimum annual net income needed (e.g., 50,000)"
+                    data-error-id="minimum_annual_net_income_error" oninput="validateInput(this)"
+                    onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             </div>
             <span class="error mt-2" id="number_of_unit_error"></span>
         </div>
@@ -1048,8 +1050,10 @@
                 </span>
             </label>
             <div class="input-cover">
-                <input type="number" wire:model="minimum_cap_rate" class="form-control" style="padding-left: 12px;"
-                    placeholder="Enter minimum cap rate needed (e.g., 6.5)">
+                <input type="text" wire:model="minimum_cap_rate" class="form-control" style="padding-left: 12px;"
+                    placeholder="Enter minimum cap rate needed (e.g., 6.5)"
+                    data-error-id="minimum_cap_rate_error" oninput="validateInput(this)"
+                    onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                 <span class="input-group-text-seller">%</span>
             </div>
         </div>
