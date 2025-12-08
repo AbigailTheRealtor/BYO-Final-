@@ -1,7 +1,5 @@
 <h3>Services the Buyer Requests from Their Agent</h3>
 
-
-
 <div class="alert alert-info bg-light-info border-info mb-4">
     <div class="d-flex align-items-center">
         <div>
@@ -14,7 +12,7 @@
 
 
 
-@if ($property_type == 'Residential' || $property_type == 'Income')
+@if ($property_type == 'Residential' || $property_type == 'Income' || $property_type == 'Income Property')
 
     <div class="service-section mb-4">
         <h5 class="section-header bg-info text-white p-2 mb-3">📣 Buyer Criteria Marketing & Promotion</h5>

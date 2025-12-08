@@ -109,10 +109,11 @@ This is a Laravel-based real estate auction platform that enables transparent bi
     - tenant-agent-auction.blade.php (lines 3970-3972, 4011-4013)
     - tenant-agent-auction-edit.blade.php (lines 3919-3921, 3960-3962)
   - Functions now return early if required DOM elements are not present, preventing the error cascade
-  - **Additional Fix**: Updated services.blade.php to use Residential content for Income Property
-    - Changed condition from `@if ($property_type == 'Residential')` to `@if ($property_type == 'Residential' || $property_type == 'Income')`
-    - Removed duplicate Income-specific section (lines 122-270)
-    - Income Property now uses the same service options as Residential
+  - **Additional Fix**: Updated buyer services.blade.php property_type conditionals
+    - Changed condition from `@if ($property_type == 'Residential' || $property_type == 'Income')` to `@if ($property_type == 'Residential' || $property_type == 'Income' || $property_type == 'Income Property')`
+    - This handles both the dropdown value ('Income') and persisted database value ('Income Property')
+    - File: `resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/services.blade.php` (line 15)
+    - Income Property now correctly shows the same service options as Residential
 
 ### Property Location Fields for Hire Seller/Landlord Agent (December 8, 2025):
 - **New Required Fields**: Added City*, State*, ZIP Code* immediately after Street Address
