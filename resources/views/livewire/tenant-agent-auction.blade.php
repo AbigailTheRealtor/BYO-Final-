@@ -3821,28 +3821,31 @@ $lease_types = [
         addIconsToInputs();
         checkRepresentationStatus();
 
-        // Re-detect selected service type after DOM update
-        const fullServiceChecked = document.getElementById('fullService')?.checked;
-        const limitedServiceChecked = document.getElementById('limitedService')?.checked;
+        // Delay service initialization to allow Livewire component registry to stabilize
+        setTimeout(() => {
+            // Re-detect selected service type after DOM update
+            const fullServiceChecked = document.getElementById('fullService')?.checked;
+            const limitedServiceChecked = document.getElementById('limitedService')?.checked;
 
-        let newServiceType = null;
-        if (fullServiceChecked) {
-            newServiceType = 'full_service';
-        } else if (limitedServiceChecked) {
-            newServiceType = 'limited_service';
-        }
+            let newServiceType = null;
+            if (fullServiceChecked) {
+                newServiceType = 'full_service';
+            } else if (limitedServiceChecked) {
+                newServiceType = 'limited_service';
+            }
 
-        if (newServiceType !== currentServiceType) {
-            currentServiceType = newServiceType;
-        }
+            if (newServiceType !== currentServiceType) {
+                currentServiceType = newServiceType;
+            }
 
-        removeWizardEventListeners();
+            removeWizardEventListeners();
 
-        if (currentServiceType === 'full_service') {
-            initializeFullService();
-        } else if (currentServiceType === 'limited_service') {
-            initializeLimitedService();
-        }
+            if (currentServiceType === 'full_service') {
+                initializeFullService();
+            } else if (currentServiceType === 'limited_service') {
+                initializeLimitedService();
+            }
+        }, 100);
     });
 </script>
 
@@ -3972,9 +3975,11 @@ $lease_types = [
 </script>
 <script>
     document.addEventListener('livewire:load', function() {
-        const draftModal = new bootstrap.Modal(document.getElementById('draftModal'));
-        draftModal.show();
-
+        const draftModalElement = document.getElementById('draftModal');
+        if (draftModalElement) {
+            const draftModal = new bootstrap.Modal(draftModalElement);
+            draftModal.show();
+        }
     });
 </script>
 
