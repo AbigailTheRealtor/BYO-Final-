@@ -1859,10 +1859,20 @@ class TenantAgentAuction extends Component
 
     protected function getCitySuggestionsFromDb($input)
     {
-        $cities = UsCity::with('state')
-            ->where('name', 'ILIKE', '%' . $input . '%')
+        $citiesStartWith = UsCity::with('state')
+            ->where('name', 'ILIKE', $input . '%')
+            ->orderBy('name')
             ->limit(10)
             ->get();
+        
+        $citiesContain = UsCity::with('state')
+            ->where('name', 'ILIKE', '%' . $input . '%')
+            ->where('name', 'NOT ILIKE', $input . '%')
+            ->orderBy('name')
+            ->limit(10 - $citiesStartWith->count())
+            ->get();
+        
+        $cities = $citiesStartWith->merge($citiesContain);
 
         return $cities->map(function ($city) {
             return $city->name . ', ' . ($city->state ? $city->state->abbreviation : '');
