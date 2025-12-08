@@ -1560,6 +1560,86 @@ class TenantAgentAuction extends Component
             $this->citySuggestions = [];
         }
     }
+    
+    public function searchPropertyCity($value)
+    {
+        if (!in_array($this->user_type, ['landlord', 'seller'])) {
+            return;
+        }
+        
+        $this->property_city = $value;
+        if (strlen($value) > 2) {
+            $this->propertyCitySuggestions = $this->getPlaceSuggestions($value, 'city');
+        } else {
+            $this->propertyCitySuggestions = [];
+        }
+    }
+    
+    public function selectPropertyCitySuggestion($suggestion = null)
+    {
+        if (!in_array($this->user_type, ['landlord', 'seller'])) {
+            return;
+        }
+        
+        $suggestion = $suggestion ?? $this->propertyCitySuggestions[$this->highlightedPropertyCityIndex] ?? $this->property_city;
+        $this->property_city = $suggestion;
+        $this->propertyCitySuggestions = [];
+        $this->highlightedPropertyCityIndex = -1;
+        
+        $this->autoPopulateFromPropertyCity($suggestion);
+    }
+    
+    protected function autoPopulateFromPropertyCity($cityString)
+    {
+        if (empty($cityString)) {
+            return;
+        }
+        
+        $parts = explode(',', $cityString);
+        $cityName = trim($parts[0] ?? '');
+        $stateAbbrev = trim($parts[1] ?? '');
+        
+        if (!empty($stateAbbrev) && empty($this->property_state)) {
+            $state = \App\Models\UsState::where('abbreviation', 'ILIKE', $stateAbbrev)->first();
+            if ($state) {
+                $this->property_state = $state->name;
+            }
+        }
+        
+        if (!empty($cityName) && !empty($stateAbbrev)) {
+            $state = \App\Models\UsState::where('abbreviation', 'ILIKE', $stateAbbrev)->first();
+            if ($state) {
+                $city = \App\Models\UsCity::where('name', 'ILIKE', $cityName)
+                    ->where('state_id', $state->id)
+                    ->first();
+                
+                if ($city && $city->county_id) {
+                    $county = \App\Models\UsCounty::find($city->county_id);
+                    if ($county) {
+                        $countyName = $county->name;
+                        if (!str_contains(strtolower($countyName), 'county')) {
+                            $countyName .= ' County';
+                        }
+                        $this->property_county = $countyName . ', ' . $stateAbbrev;
+                    }
+                }
+            }
+        }
+    }
+    
+    public function incrementPropertyCityHighlight()
+    {
+        if (count($this->propertyCitySuggestions) > 0) {
+            $this->highlightedPropertyCityIndex = min($this->highlightedPropertyCityIndex + 1, count($this->propertyCitySuggestions) - 1);
+        }
+    }
+    
+    public function decrementPropertyCityHighlight()
+    {
+        if (count($this->propertyCitySuggestions) > 0) {
+            $this->highlightedPropertyCityIndex = max($this->highlightedPropertyCityIndex - 1, 0);
+        }
+    }
 
 
     public function updatedAddress($value)
