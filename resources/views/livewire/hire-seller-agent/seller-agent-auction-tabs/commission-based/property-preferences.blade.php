@@ -98,6 +98,25 @@
     </div>
 </div>
 
+<!-- Property County -->
+<div class="form-group mb-3">
+    <label class="fw-bold">County:<span class="text-danger">*</span></label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="County where the property is located (auto-populated when city is selected).">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <input type="text" wire:model="property_county" 
+            class="form-control has-icon @error('property_county') is-invalid @enderror" 
+            data-icon="fa-solid fa-map"
+            placeholder="County (auto-populated from city)" 
+            required>
+        @error('property_county')
+            <div class="error-message">{{ $message }}</div>
+        @enderror
+    </div>
+</div>
+
 <!-- Property ZIP Code -->
 <div class="form-group mb-3">
     <label class="fw-bold">ZIP Code:<span class="text-danger">*</span></label>
