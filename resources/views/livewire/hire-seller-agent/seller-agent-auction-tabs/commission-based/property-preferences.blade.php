@@ -39,6 +39,83 @@
     public listing, only your City, County, State, and ZIP code will be displayed. This helps protect your privacy
     while still allowing Agents to understand your general location.
 </div>
+
+<!-- Property City -->
+<div class="form-group mb-3">
+    <label class="fw-bold">City:<span class="text-danger">*</span></label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the city where the property is located. Selecting a city will auto-populate State and County.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover position-relative">
+        <input type="text" wire:model="property_city" 
+            wire:keydown.enter.prevent="selectPropertyCitySuggestion()"
+            class="form-control has-icon @error('property_city') is-invalid @enderror" 
+            data-icon="fas fa-city"
+            autocomplete="off" 
+            placeholder="Enter city" 
+            required>
+
+        @if (count($propertyCitySuggestions) > 0)
+            <div class="autocomplete-dropdown shadow-sm">
+                <ul class="list-group">
+                    @foreach ($propertyCitySuggestions as $index => $suggestion)
+                        <li class="list-group-item {{ $highlightedPropertyCityIndex === $index ? 'bg-light' : '' }}"
+                            wire:click="selectPropertyCitySuggestion('{{ $suggestion }}')"
+                            wire:key="property-city-suggestion-{{ $index }}">
+                            <i class="fas fa-city me-2 text-muted"></i>
+                            {{ $suggestion }}
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        @error('property_city')
+            <div class="error-message">{{ $message }}</div>
+        @enderror
+    </div>
+</div>
+
+<!-- Property State -->
+<div class="form-group mb-3">
+    <label class="fw-bold">State:<span class="text-danger">*</span></label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="State where the property is located (auto-populated when city is selected).">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <input type="text" wire:model="property_state" 
+            class="form-control has-icon @error('property_state') is-invalid @enderror" 
+            data-icon="fa-solid fa-flag-usa"
+            placeholder="State (auto-populated from city)" 
+            required>
+        @error('property_state')
+            <div class="error-message">{{ $message }}</div>
+        @enderror
+    </div>
+</div>
+
+<!-- Property ZIP Code -->
+<div class="form-group mb-3">
+    <label class="fw-bold">ZIP Code:<span class="text-danger">*</span></label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the ZIP code where the property is located.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <input type="text" wire:model="property_zip" 
+            class="form-control has-icon @error('property_zip') is-invalid @enderror" 
+            data-icon="fa-solid fa-mailbox"
+            placeholder="Enter ZIP code" 
+            required
+            maxlength="10">
+        @error('property_zip')
+            <div class="error-message">{{ $message }}</div>
+        @enderror
+    </div>
+</div>
+
 @if ($property_type != 'Vacant Land')
     <div>
         <!-- Number of Pet(s) -->

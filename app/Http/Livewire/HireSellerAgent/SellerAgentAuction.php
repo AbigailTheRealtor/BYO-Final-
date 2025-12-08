@@ -222,6 +222,12 @@ class SellerAgentAuction extends Component
     public $meeting_details_email = '';
 
     public $address = '';
+    public $property_city = '';
+    public $property_state = '';
+    public $property_zip = '';
+    public $property_county = '';
+    public $propertyCitySuggestions = [];
+    public $highlightedPropertyCityIndex = -1;
     public $meeting_details_meeting_time = '';
     public $meeting_details_time_zone = '';
     public $meeting_details_meeting_date = '';
@@ -720,52 +726,113 @@ class SellerAgentAuction extends Component
         }
     }
     
+    public function updatedPropertyCity($value)
+    {
+        if (strlen($value) > 2) {
+            $this->propertyCitySuggestions = $this->getPlaceSuggestions($value, 'city');
+        } else {
+            $this->propertyCitySuggestions = [];
+        }
+    }
+    
+    public function selectPropertyCitySuggestion($suggestion = null)
+    {
+        $suggestion = $suggestion ?? $this->propertyCitySuggestions[$this->highlightedPropertyCityIndex] ?? $this->property_city;
+        $this->property_city = $suggestion;
+        $this->propertyCitySuggestions = [];
+        $this->highlightedPropertyCityIndex = -1;
+        
+        $this->autoPopulateFromPropertyCity($suggestion);
+    }
+    
+    protected function autoPopulateFromPropertyCity($cityWithState)
+    {
+        $cityName = $this->extractNameFromLocationString($cityWithState);
+        $stateAbbrev = $this->extractStateFromLocationString($cityWithState);
+        
+        if (empty($cityName)) return;
+        
+        if ($stateAbbrev) {
+            $state = \App\Models\UsState::where('abbreviation', strtoupper($stateAbbrev))->first();
+            if ($state && empty($this->property_state)) {
+                $this->property_state = $state->name;
+            }
+        }
+        
+        $city = \App\Models\UsCity::where('name', 'ILIKE', $cityName)
+            ->when($stateAbbrev, function ($query) use ($stateAbbrev) {
+                return $query->whereHas('state', function ($q) use ($stateAbbrev) {
+                    $q->where('abbreviation', strtoupper($stateAbbrev));
+                });
+            })
+            ->with(['county', 'state'])
+            ->first();
+        
+        if ($city) {
+            if ($city->county && empty($this->property_county)) {
+                $countyName = $city->county->name;
+                if (!str_contains(strtolower($countyName), 'county')) {
+                    $countyName .= ' County';
+                }
+                $stateAbbr = $city->state ? $city->state->abbreviation : '';
+                $this->property_county = $countyName . ', ' . $stateAbbr;
+            }
+            
+            $zipCode = \App\Models\UsZipCode::where('city', 'ILIKE', $cityName)
+                ->when($stateAbbrev, function ($query) use ($stateAbbrev) {
+                    return $query->where('state_abbrev', strtoupper($stateAbbrev));
+                })
+                ->first();
+            
+            if ($zipCode && empty($this->property_zip)) {
+                $this->property_zip = $zipCode->zip_code;
+            }
+        }
+    }
+    
     protected function getPlaceSuggestions($input, $type = null)
     {
-        $client = new \GuzzleHttp\Client();
-
-        $query = [
-            'input' => $input,
-            'components' => 'country:us',
-            'key' => env('GOOGLE_PLACES_API_KEY')
-        ];
-        // Set types based on what we're searching for
+        $results = [];
+        
         if ($type === 'state') {
-            $query['types'] = 'administrative_area_level_1';
-        } elseif ($type === 'county') {
-            $query['types'] = 'administrative_area_level_2'; // best for counties
-
-        } elseif ($type === 'address') {
-            $query['types'] = 'address';
-        } else {
-            $query['types'] = '(cities)';
-        }
-
-
-        $response = $client->get('https://maps.googleapis.com/maps/api/place/autocomplete/json', [
-            'query' => $query
-        ]);
-
-        $predictions = json_decode($response->getBody(), true)['predictions'] ?? [];
-
-        return array_map(function ($prediction) use ($type) {
-            $description = $prediction['description'];
-
-            // Format differently based on type
-            if ($type === 'state') {
-                // Extract just the state name (remove ", USA")
-                return preg_replace('/,\s*USA$/', '', $description);
-            } elseif ($type === 'county') {
-                // For counties, we might want to keep county name and state
-                return $description;
-            } elseif ($type === 'address') {
-                // For counties, we might want to keep county name and state
-                return $description;
-            } else {
-                // For cities, return city and state
-                return $description;
+            $states = \App\Models\UsState::where('name', 'ILIKE', $input . '%')
+                ->orWhere('abbreviation', 'ILIKE', $input . '%')
+                ->orderBy('name')
+                ->limit(10)
+                ->get();
+            
+            foreach ($states as $state) {
+                $results[] = $state->name;
             }
-        }, $predictions);
+        } elseif ($type === 'county') {
+            $counties = \App\Models\UsCounty::where('name', 'ILIKE', $input . '%')
+                ->with('state')
+                ->orderBy('name')
+                ->limit(10)
+                ->get();
+            
+            foreach ($counties as $county) {
+                $stateAbbrev = $county->state ? $county->state->abbreviation : '';
+                $countyName = $county->name;
+                if (!str_contains(strtolower($countyName), 'county')) {
+                    $countyName .= ' County';
+                }
+                $results[] = $countyName . ', ' . $stateAbbrev;
+            }
+        } else {
+            $cities = \App\Models\UsCity::where('name', 'ILIKE', $input . '%')
+                ->with('state')
+                ->orderBy('name')
+                ->limit(10)
+                ->get();
+            
+            foreach ($cities as $city) {
+                $stateAbbrev = $city->state ? $city->state->abbreviation : '';
+                $results[] = $city->name . ', ' . $stateAbbrev;
+            }
+        }
+        
+        return $results;
     }
 
     public function selectCitySuggestion($suggestion = null)
