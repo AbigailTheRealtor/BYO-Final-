@@ -1794,7 +1794,8 @@ $lease_types = [
                             @break
                             @endswitch
                         </div>
-
+                        <!-- DEBUG: AFTER PROPERTY PREFERENCES, BEFORE TERMS TAB -->
+                        <div style="background:blue;color:white;padding:10px;">DEBUG: AFTER PROPERTY-PREFERENCES DIV</div>
                         <!-- Terms Tab (Tab 2) - Different IDs per user type -->
                         @php
                             $termsTabId = match($user_type) {
