@@ -3849,31 +3849,39 @@ $lease_types = [
         addIconsToInputs();
         checkRepresentationStatus();
 
-        // Delay service initialization to allow Livewire component registry to stabilize
-        setTimeout(() => {
-            // Re-detect selected service type after DOM update
-            const fullServiceChecked = document.getElementById('fullService')?.checked;
-            const limitedServiceChecked = document.getElementById('limitedService')?.checked;
+        // Use requestAnimationFrame + setTimeout for maximum stability
+        // This ensures DOM is painted and Livewire registry is fully updated
+        requestAnimationFrame(() => {
+            setTimeout(() => {
+                // Verify Livewire is ready before proceeding
+                if (!window.Livewire || !window.Livewire.components || !window.Livewire.components.componentsById) {
+                    return;
+                }
 
-            let newServiceType = null;
-            if (fullServiceChecked) {
-                newServiceType = 'full_service';
-            } else if (limitedServiceChecked) {
-                newServiceType = 'limited_service';
-            }
+                // Re-detect selected service type after DOM update
+                const fullServiceChecked = document.getElementById('fullService')?.checked;
+                const limitedServiceChecked = document.getElementById('limitedService')?.checked;
 
-            if (newServiceType !== currentServiceType) {
-                currentServiceType = newServiceType;
-            }
+                let newServiceType = null;
+                if (fullServiceChecked) {
+                    newServiceType = 'full_service';
+                } else if (limitedServiceChecked) {
+                    newServiceType = 'limited_service';
+                }
 
-            removeWizardEventListeners();
+                if (newServiceType !== currentServiceType) {
+                    currentServiceType = newServiceType;
+                }
 
-            if (currentServiceType === 'full_service') {
-                initializeFullService();
-            } else if (currentServiceType === 'limited_service') {
-                initializeLimitedService();
-            }
-        }, 100);
+                removeWizardEventListeners();
+
+                if (currentServiceType === 'full_service') {
+                    initializeFullService();
+                } else if (currentServiceType === 'limited_service') {
+                    initializeLimitedService();
+                }
+            }, 250);
+        });
     });
 </script>
 
