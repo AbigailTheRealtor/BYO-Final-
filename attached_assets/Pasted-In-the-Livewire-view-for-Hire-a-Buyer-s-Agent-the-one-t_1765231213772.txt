@@ -1,0 +1,134 @@
+In the Livewire view for Hire a Buyer’s Agent (the one that shows all the tabs), temporarily print out the selected property type so we can see the exact string.
+
+Add this inside the component (anywhere above the tabs):
+
+@if (app()->environment('local'))
+    <div style="color:red; font-weight:bold;">
+        DEBUG: property_type = {{ $listing->property_type ?? $property_type ?? 'null' }}
+    </div>
+@endif
+
+
+Now:
+
+Refresh the page.
+
+Choose Income.
+
+Look at the red debug text.
+➜ That exact value is what the Blade if / switch must match.
+
+(After you note it, you can remove this debug block.)
+
+Step 2 – Make Income use the same partials as Residential (or its own)
+
+Right now, inside your tab content Blade you probably have something like (examples):
+
+{{-- Purchasing Terms tab --}}
+@if ($listing->property_type === 'residential')
+    @include('buyer.tabs.residential-purchasing-terms')
+@elseif ($listing->property_type === 'commercial')
+    @include('buyer.tabs.commercial-purchasing-terms')
+@elseif ($listing->property_type === 'business')
+    @include('buyer.tabs.business-purchasing-terms')
+@elseif ($listing->property_type === 'vacant_land')
+    @include('buyer.tabs.vacant-land-purchasing-terms')
+@endif
+
+
+But no branch for Income, so nothing renders → blank tab.
+
+You have two options:
+
+Option A – Treat Income the same as Residential (easiest)
+
+If Income should use the same fields as Residential for now:
+
+@php
+    $isResidentialLike = in_array($listing->property_type, ['residential', 'income', 'income_property']);
+@endphp
+
+@if ($isResidentialLike)
+    @include('buyer.tabs.residential-purchasing-terms')
+@elseif ($listing->property_type === 'commercial')
+    @include('buyer.tabs.commercial-purchasing-terms')
+@elseif ($listing->property_type === 'business')
+    @include('buyer.tabs.business-purchasing-terms')
+@elseif ($listing->property_type === 'vacant_land')
+    @include('buyer.tabs.vacant-land-purchasing-terms')
+@endif
+
+
+Do this same pattern for all of these tab bodies:
+
+Purchasing Terms
+
+Services
+
+Additional Details
+
+Broker Compensation
+
+Buyer Information
+
+Anywhere a tab body is chosen by property type, make sure income (or whatever the debug value was) is included in that list.
+
+Option B – Give Income its own partials
+
+If you already created Income-specific views, then add branches for them:
+
+@if ($listing->property_type === 'residential')
+    @include('buyer.tabs.residential-services')
+@elseif ($listing->property_type === 'income')
+    @include('buyer.tabs.income-services')
+@elseif ($listing->property_type === 'commercial')
+    @include('buyer.tabs.commercial-services')
+{{-- etc --}}
+@endif
+
+
+Right now, those @elseif for Income are probably missing entirely.
+
+Step 3 – Add a tiny debug marker inside the Services partial
+
+Just to be 100% sure the right file is loading, add this at the top of the Income Services partial (or the Residential one if you share it):
+
+@if (app()->environment('local'))
+    <div style="color:green; font-weight:bold;">
+        DEBUG: Income Services tab loaded
+    </div>
+@endif
+
+
+If you switch to Income → Services and don’t see this green text, the partial is still not included and the condition is wrong.
+
+If you do see it, then Blade is fine and the problem is JS initialization (next step).
+
+Remove the debug text once you see it working.
+
+Step 4 – Guard the JS initializer so it can’t blank the tab
+
+In the JS file that has initializeFullService (the one mentioned in the error), wrap it with a safety check so, even if the componentId is wrong, it doesn’t crash the page:
+
+function initializeFullService(componentId) {
+    const store = window.Livewire && window.Livewire.components
+        ? window.Livewire.components.componentsById
+        : null;
+
+    if (!store || !store[componentId] || !store[componentId].$wire) {
+        console.warn(
+            'FullService init skipped – component not found for',
+            componentId
+        );
+        return;
+    }
+
+    const $wire = store[componentId].$wire;
+
+    // existing logic here…
+}
+
+
+This stops the fatal componentsById[componentId] is undefined error from nuking the UI.
+
+Step 5 – What to tell Replit in one shot

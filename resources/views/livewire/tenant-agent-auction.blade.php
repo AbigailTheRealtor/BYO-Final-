@@ -1756,6 +1756,15 @@ $lease_types = [
 
                     <!-- Tab Content -->
                     <div class="tab-content" id="myTabContent">
+                        
+                        <!-- DEBUG: Property Type Value -->
+                        <div style="background: yellow; padding: 10px; margin-bottom: 10px; border: 2px solid red;">
+                            <strong>DEBUG:</strong> 
+                            user_type = {{ $user_type ?? 'NULL' }} | 
+                            property_type = {{ $property_type ?? 'NULL' }} | 
+                            service_type = {{ $service_type ?? 'NULL' }} |
+                            activeTab = {{ $activeTab ?? 'NULL' }}
+                        </div>
 
                         <!-- Listing Details Tab -->
                         <div class="tab-pane fade {{ $activeTab === 0 ? 'show active' : '' }}" id="listing-details"
