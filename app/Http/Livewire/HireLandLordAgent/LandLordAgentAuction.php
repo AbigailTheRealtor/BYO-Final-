@@ -813,6 +813,20 @@ class LandLordAgentAuction extends Component
         $this->autoPopulateFromPropertyCity($suggestion);
     }
     
+    public function incrementPropertyCityHighlight()
+    {
+        if (count($this->propertyCitySuggestions) > 0) {
+            $this->highlightedPropertyCityIndex = min($this->highlightedPropertyCityIndex + 1, count($this->propertyCitySuggestions) - 1);
+        }
+    }
+
+    public function decrementPropertyCityHighlight()
+    {
+        if ($this->highlightedPropertyCityIndex > 0) {
+            $this->highlightedPropertyCityIndex--;
+        }
+    }
+    
     protected function autoPopulateFromPropertyCity($cityWithState)
     {
         $cityName = $this->extractNameFromLocationString($cityWithState);

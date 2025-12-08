@@ -48,15 +48,14 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover position-relative">
-        <input type="text" wire:model.debounce.300ms="property_city" 
+        <input type="text" wire:model="property_city" 
             wire:keydown.enter.prevent="selectPropertyCitySuggestion()"
-            wire:keydown.arrow-down.prevent="$set('highlightedPropertyCityIndex', Math.min({{ count($propertyCitySuggestions ?? []) - 1 }}, ($wire.highlightedPropertyCityIndex ?? -1) + 1))"
-            wire:keydown.arrow-up.prevent="$set('highlightedPropertyCityIndex', Math.max(0, ($wire.highlightedPropertyCityIndex ?? 0) - 1))"
-            wire:keydown.escape="$set('propertyCitySuggestions', [])"
+            wire:keydown.arrow-up.prevent="decrementPropertyCityHighlight()"
+            wire:keydown.arrow-down.prevent="incrementPropertyCityHighlight()"
             class="form-control has-icon @error('property_city') is-invalid @enderror" 
             data-icon="fas fa-city"
             autocomplete="off" 
-            placeholder="Start typing city name..." 
+            placeholder="Enter city" 
             required>
 
         @if (!empty($propertyCitySuggestions) && count($propertyCitySuggestions) > 0)
