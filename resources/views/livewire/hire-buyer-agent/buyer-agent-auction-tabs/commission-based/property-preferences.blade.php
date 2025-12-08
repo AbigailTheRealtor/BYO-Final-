@@ -1186,6 +1186,7 @@
         </div>
     @endif --}}
 @endif
+@if ($property_type !== 'Residential')
 <div class="form-group">
     <label class="fw-bold">Additional Details:
 
@@ -1201,6 +1202,7 @@
             style="padding: 10px; font-size: 16px;" placeholder="Enter any additional preferences "></textarea>
     </div>
 </div>
+@endif
 <script>
     document.addEventListener('livewire:load', function() {
         const select = document.getElementById('property_type');
