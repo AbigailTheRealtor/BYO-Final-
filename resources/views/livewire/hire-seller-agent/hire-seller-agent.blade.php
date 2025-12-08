@@ -857,8 +857,9 @@
                                 <!-- Leasing Terms Tab -->
                                 <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}" id="sale-terms"
                                     role="tabpanel" aria-labelledby="sale-terms-tab">
-                                    @include('livewire.tenant-agent-auction-tabs.commission-based.leasing-terms')
-                                @elseif($user_type === 'seller')
+                                    @if ($user_type === 'tenant')
+                                        @include('livewire.tenant-agent-auction-tabs.commission-based.leasing-terms')
+                                    @elseif($user_type === 'seller')
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-terms')
                                 @elseif($user_type === 'buyer')
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.purchasing-terms')
@@ -925,8 +926,7 @@
                                 @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.landlord-info')
                             @endif
                         </div>
-                    @elseif($service_type === 'limited_service')
-                        @endif
+                    @endif
                 </div>
                 <!-- Navigation Buttons -->
                 <div class="d-flex justify-content-between form-group mt-4">
