@@ -86,7 +86,13 @@ This is a Laravel-based real estate auction platform that enables transparent bi
   - hire-seller-agent.blade.php: Changed `id="tenant-info"` to `id="seller-information"` (line 911)
   - hire-landlord-agent.blade.php: Changed `id="tenant-info"` to `id="landlord-information"` (line 1125)
 - Updated comments from "Tenant Info Tab" to appropriate user type (Buyer/Seller/Landlord Info Tab)
-- **Investigation Result**: Tab content for all property types (Residential, Income, Commercial, Business, Vacant Land) renders unconditionally - no property_type conditions hide tabs
+- **Fixed Invalid CSS Selector Bug (Root Cause of Missing Tabs)**:
+  - Tab name "Broker Compensation & Agency Agreement Terms" in tenant-agent-auction.blade.php contained ampersand (`&`)
+  - When converted to CSS ID (`#broker-compensation-&-agency-agreement-terms`), this created an invalid selector
+  - Bootstrap's Tab controller threw error: `Element.querySelector: '#broker-compensation-&-agency-agreement-terms' is not a valid selector`
+  - This error broke Bootstrap tab initialization, causing tabs 2-6 to not function for Income Property
+  - Fixed by changing tab name to "Broker Compensation" (line 1687 in tenant-agent-auction.blade.php)
+  - Full title "Broker Compensation & Agency Agreement Terms" retained as H3 header inside tab content
 
 ### Property Location Fields for Hire Seller/Landlord Agent (December 8, 2025):
 - **New Required Fields**: Added City*, State*, ZIP Code* immediately after Street Address
