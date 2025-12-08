@@ -22,41 +22,249 @@
         </div>
     </div>
 </div>
-<!-- Street Address -->
+<!-- Property Address -->
 <div class="form-group mb-3">
-    <label class="fw-bold"> Street Address:<span class="text-danger">*</span></label>
+    <label class="fw-bold"> Property Address:<span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Enter the street address of the property (e.g., 123 Main Street). City, County, and State will be entered separately below.">
+        title="Enter the address of the property being offered for sale.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
-    <div class="input-cover">
+    <div class="input-cover position-relative">
         <input type="text" wire:model="address" class="form-control has-icon" data-icon="fa-solid fa-map-pin"
-            placeholder="Enter street address (e.g., 123 Main Street)" required>
-    </div>
-</div>
-<div class="alert alert-warning mt-3 p-2 small">
-    <strong> 🛡️ Privacy Notice: </strong> Your full property address is only visible to the platform admin. On the
-    public listing, only your City, County, State, and ZIP code will be displayed. This helps protect your privacy
-    while still allowing Agents to understand your general location.
-</div>
-@if ($property_type != 'Vacant Land')
-    <div>
-        <!-- Number of Pet(s) -->
-        <div class="form-group">
-            <label class="fw-bold">Unit Number:</label>
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the full unit identifier (e.g., “2B”, “PH-1”), if applicable.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-            <div class="input-cover">
-                <input type="text" wire:model="number_of_unit" class="form-control has-icon"
-                    data-icon="fa-solid fa-home" placeholder="Enter unit number">
+            placeholder="Enter property address" wire:keydown.arrow-up="decrementHighlight('address')"
+            wire:keydown.arrow-down="incrementHighlight('address')" wire:keydown.enter.prevent="selectAddressSuggestion"
+            autocomplete="off" required>
+
+        @if (count($addressSuggestions) > 0)
+            <div class="autocomplete-dropdown">
+                <ul class="list-group">
+                    @foreach ($addressSuggestions as $index => $suggestion)
+                        <li class="list-group-item {{ $highlightedAddressIndex === $index ? 'active' : '' }}"
+                            wire:click="selectAddressSuggestion('{{ $suggestion }}')">
+                            <i class="fas fa-map-marker-alt me-2"></i>
+                            {{ $suggestion }}
+                        </li>
+                    @endforeach
+                </ul>
             </div>
-            <span class="error mt-2" id="number_of_unit_error"></span>
-        </div>
+        @endif
     </div>
-@endif
+
+    <div class="alert alert-warning mt-3 p-2 small">
+        <strong> 🛡️ Privacy Notice: </strong> Your full property address is only visible to the platform admin. On the
+        public listing, only your City, County, State, and ZIP code will be displayed.This helps protect your privacy
+        while still allowing Agents to understand your general location.
+    </div>
+
+</div>
+
+<div>
+    <!-- Number of Pet(s) -->
+    <div class="form-group">
+        <label class="fw-bold">Unit Number:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the full unit identifier (e.g., “2B”, “PH-1”), if applicable.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <input type="text" wire:model="number_of_unit" class="form-control has-icon" data-icon="fa-solid fa-home"
+                placeholder="Enter unit number">
+        </div>
+        <span class="error mt-2" id="number_of_unit_error"></span>
+    </div>
+</div>
 <!-- Acceptable Cities -->
+
+{{-- @if ($cityFieldVisible)
+<div class="form-group mb-3">
+    <label class="fw-bold mb-2"> City:<span class="text-danger">*</span></label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the city where the rental property is located. Required for search and filtering accuracy.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+
+    <div class="input-cover position-relative">
+        <input type="text" wire:model="newCity" wire:keydown.enter.prevent="selectCitySuggestion()"
+            wire:keydown.arrow-up.prevent="decrementHighlight('City')"
+            wire:keydown.arrow-down.prevent="incrementHighlight('City')"
+            class="form-control has-icon @error('newCity') is-invalid @enderror" data-icon="fas fa-city"
+            autocomplete="off" placeholder="Enter city or cities">
+
+        <!-- City Suggestions Dropdown -->
+        @if (count($citySuggestions) > 0)
+            <div class="autocomplete-dropdown shadow-sm">
+                <ul class="list-group">
+                    @foreach ($citySuggestions as $index => $suggestion)
+                        <li class="list-group-item {{ $highlightedCityIndex === $index ? 'bg-light' : '' }}"
+                            wire:click="selectCitySuggestion('{{ $suggestion }}')"
+                            wire:key="city-suggestion-{{ $index }}">
+                            <i class="fas fa-city me-2 text-muted"></i>
+                            {{ $suggestion }}
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        @error('newCity')
+            <div class="error-message">{{ $message }}</div>
+        @enderror
+    </div>
+
+    <!-- Display added cities -->
+    <div class="mt-1 cities-container">
+        @if (count($cities) > 0)
+            @foreach ($cities as $index => $city)
+                <span class="badge bg-primary rounded-pill" wire:key="city-badge-{{ $index }}">
+                    <i class="fas fa-city me-2"></i>
+                    {{ $city }}
+                    <button type="button" class="btn-close btn-close-white ms-2"
+                        wire:click="removeCity({{ $index }})" aria-label="Remove"></button>
+                </span>
+            @endforeach
+
+        @endif
+    </div>
+</div>
+@endif
+
+<!-- Acceptable Counties -->
+ @if ($countyFieldVisible)
+<div class="form-group mb-3">
+    <label class="fw-bold mb-2">County:<span class="text-danger">*</span></label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the county where the rental property is located.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+
+
+    <div class="input-cover position-relative">
+        <input type="text" wire:model="newCounty" wire:keydown.enter.prevent="selectCountySuggestion()"
+            wire:keydown.arrow-up.prevent="decrementHighlight('County')"
+            wire:keydown.arrow-down.prevent="incrementHighlight('County')"
+            class="form-control has-icon @error('newCounty') is-invalid @enderror" data-icon="fa-solid fa-map"
+            autocomplete="off" placeholder="Enter county">
+
+        <!-- County Suggestions Dropdown -->
+        @if (count($countySuggestions) > 0)
+            <div class="autocomplete-dropdown shadow-sm">
+                <ul class="list-group">
+                    @foreach ($countySuggestions as $index => $suggestion)
+                        <li class="list-group-item {{ $highlightedCountyIndex === $index ? 'bg-light' : '' }}"
+                            wire:click="selectCountySuggestion('{{ $suggestion }}')"
+                            wire:key="county-suggestion-{{ $index }}">
+                            <i class="fas fa-map me-2 text-muted"></i>
+                            {{ $suggestion }}
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        @error('newCounty')
+            <div class="error-message">{{ $message }}</div>
+        @enderror
+    </div>
+
+    <!-- Display added counties -->
+    <div class="mt-1 counties-container">
+        @if (count($counties) > 0)
+            @foreach ($counties as $index => $county)
+                <span class="badge bg-primary rounded-pill" wire:key="county-badge-{{ $index }}">
+                    <i class="fas fa-map me-2"></i>
+                    {{ $county }}
+                    <button type="button" class="btn-close btn-close-white ms-2"
+                        wire:click="removeCounty({{ $index }})" aria-label="Remove"></button>
+                </span>
+            @endforeach
+
+        @endif
+    </div>
+</div>
+@endif
+
+<!-- Acceptable State -->
+@if ($stateFieldVisible)
+<div class="form-group">
+    <label class="fw-bold"> State:<span class="text-danger">*</span></label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the state where the rental property is located. Required for search and filtering accuracy.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover position-relative">
+        <input type="text" wire:model="state" class="form-control has-icon" data-icon="fa-solid fa-flag-usa"
+            required wire:keydown.arrow-up="decrementHighlight('state')"
+            wire:keydown.arrow-down="incrementHighlight('state')" wire:keydown.enter.prevent="selectStateSuggestion"
+            autocomplete="off" placeholder="Enter state" required>
+
+        @if (count($stateSuggestions) > 0)
+            <div class="autocomplete-dropdown">
+                <ul class="list-group">
+                    @foreach ($stateSuggestions as $index => $suggestion)
+                        <li class="list-group-item {{ $highlightedStateIndex === $index ? 'active' : '' }}"
+                            wire:click="selectStateSuggestion('{{ $suggestion }}')">
+                            {{ $suggestion }}
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+    </div>
+    <span class="error mt-2" id="state_error"></span>
+</div>
+@endif
+<!-- Property Type Dropdown -->
+
+@if ($zipCodeFieldVisible)
+<div class="form-group mb-3">
+    <label class="fw-bold">Zip Code:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the ZIP code for the rental property. Required for search and filtering accuracy.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+
+    <div class="input-cover position-relative">
+        <input type="text" wire:model="zip_code" wire:keydown.enter.prevent="selectZipCodeSuggestion()"
+            wire:keydown.arrow-up.prevent="decrementHighlight('ZipCode')"
+            wire:keydown.arrow-down.prevent="incrementHighlight('ZipCode')"
+            class="form-control has-icon @error('zip_code') is-invalid @enderror" data-icon="fas fa-map-pin"
+            autocomplete="off" placeholder="Enter one or more ZIP codes">
+
+        @if (count($zipCodeSuggestions) > 0)
+            <div class="autocomplete-dropdown shadow-sm">
+                <ul class="list-group">
+                    @foreach ($zipCodeSuggestions as $index => $suggestion)
+                        <li class="list-group-item {{ $highlightedZipCodeIndex === $index ? 'bg-light' : '' }}"
+                            wire:click="selectZipCodeSuggestion('{{ $suggestion }}')"
+                            wire:key="zip-suggestion-{{ $index }}">
+                            <i class="fas fa-map-pin me-2 text-muted"></i>
+                            {{ $suggestion }}
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        @error('zip_code')
+            <div class="error-message">{{ $message }}</div>
+        @enderror
+    </div>
+
+    <!-- Display added ZIP codes -->
+    <div class="mt-1 zip-container">
+        @if (count($zipCodes) > 0)
+            @foreach ($zipCodes as $index => $zip)
+                <span class="badge bg-primary rounded-pill" wire:key="zip-badge-{{ $index }}">
+                    <i class="fas fa-map-pin me-2"></i>
+                    {{ $zip }}
+                    <button type="button" class="btn-close btn-close-white ms-2"
+                        wire:click="removeZipCode({{ $index }})" aria-label="Remove"></button>
+                </span>
+            @endforeach
+        @endif
+    </div>
+</div>
+@endif --}}
 
 {{-- ///////////////////////// --}}
 
@@ -100,11 +308,11 @@
         <div class="mt-1 counties-container">
             @if (count($counties) > 0)
                 @foreach ($counties as $index => $county)
-                    <span class="badge bg-primary rounded-pill d-inline-flex align-items-center" wire:key="county-badge-{{ $index }}">
+                    <span class="badge bg-primary rounded-pill" wire:key="county-badge-{{ $index }}">
                         <i class="fas fa-map me-2"></i>
                         {{ $county }}
-                        <button type="button" class="byo-pill-remove ms-2"
-                            wire:click="removeCounty({{ $index }})" aria-label="Remove">&times;</button>
+                        <button type="button" class="btn-close btn-close-white ms-2"
+                            wire:click="removeCounty({{ $index }})" aria-label="Remove"></button>
                     </span>
                 @endforeach
 
@@ -155,11 +363,11 @@
         <div class="mt-1 cities-container">
             @if (count($cities) > 0)
                 @foreach ($cities as $index => $city)
-                    <span class="badge bg-primary rounded-pill d-inline-flex align-items-center" wire:key="city-badge-{{ $index }}">
+                    <span class="badge bg-primary rounded-pill" wire:key="city-badge-{{ $index }}">
                         <i class="fas fa-city me-2"></i>
                         {{ $city }}
-                        <button type="button" class="byo-pill-remove ms-2"
-                            wire:click="removeCity({{ $index }})" aria-label="Remove">&times;</button>
+                        <button type="button" class="btn-close btn-close-white ms-2"
+                            wire:click="removeCity({{ $index }})" aria-label="Remove"></button>
                     </span>
                 @endforeach
 
@@ -208,11 +416,11 @@
         <div class="mt-1 zip-container">
             @if (count($zipCodes) > 0)
                 @foreach ($zipCodes as $index => $zip)
-                    <span class="badge bg-primary rounded-pill d-inline-flex align-items-center" wire:key="zip-badge-{{ $index }}">
+                    <span class="badge bg-primary rounded-pill" wire:key="zip-badge-{{ $index }}">
                         <i class="fas fa-map-pin me-2"></i>
                         {{ $zip }}
-                        <button type="button" class="byo-pill-remove ms-2"
-                            wire:click="removeZipCode({{ $index }})" aria-label="Remove">&times;</button>
+                        <button type="button" class="btn-close btn-close-white ms-2"
+                            wire:click="removeZipCode({{ $index }})" aria-label="Remove"></button>
                     </span>
                 @endforeach
             @endif
@@ -258,8 +466,6 @@
             @enderror
         </div>
 
-
-
     </div>
     <!-- Property Type Dropdown -->
 @endif
@@ -295,11 +501,9 @@
     </span>
 
     <div class="input-cover">
-
-        <select wire:model="property_items" id="property_style_select" class="form-control has-icon"
-            data-icon="fa-solid fa-home" @if (!$property_type) disabled @endif required>
-            <option value="">Select</option>
-
+        <select wire:model="property_items" id="property_items" class="form-control has-icon select2-multiple"
+            data-icon="fa-solid fa-home input-icon2" @if (!$property_type) disabled @endif multiple
+            required>
             @if ($property_type === 'Residential')
                 @foreach ($property_items_seller as $item)
                     @if (str_contains($item['class'], 'residential-length'))
@@ -343,7 +547,7 @@
 </div>
 
 <!-- Other Property Condition Input -->
-<div class="form-group other_property_items_seller d-none">
+<div class="form-group other_property_items d-none">
     <div class="input-cover">
         <input type="text" wire:model="other_property_items" class="form-control has-icon"
             data-icon="fa-solid fa-home"
@@ -352,10 +556,10 @@
     <span class="error mt-2" id="other_property_items_error"></span>
 </div>
 
-<div class="form-group mt-3 business_type_seller d-none">
+<div class="form-group mt-3 business_type d-none">
     <label class="fw-bold">Business Type:</label>
     <div class="input-cover">
-        <select wire:model="business_type" id="business_type_seller" class="form-control has-icon"
+        <select wire:model="business_type" id="business_type" class="form-control has-icon"
             data-icon="fa-solid fa-home">
             <option value="">Select</option>
             @foreach ($business_type as $item)
@@ -365,7 +569,7 @@
     </div>
 </div>
 <!-- Other Business Type Input -->
-<div class="form-group other-business-input_seller d-none">
+<div class="form-group other-business-input d-none">
     <div class="input-cover">
         <input type="text" wire:model="other_business_type" class="form-control has-icon"
             data-icon="fa-solid fa-home"
@@ -376,14 +580,14 @@
 @if ($property_type != 'Vacant Land')
 
     <div class="form-group">
-        <label class="fw-bold">Property Condition:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Property Condition:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the current condition of the property being offered for sale.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
 
         <div class="input-cover">
-            <select wire:model="condition_prop" class="form-control has-icon"
+            <select wire:model="condition_prop_buyer" class="form-control has-icon"
                 data-icon="fa-solid fa-screwdriver-wrench" required>
                 <option value="">Select</option>
                 @foreach ($property_condition_seller as $row_pt)
@@ -393,16 +597,15 @@
         </div>
     </div>
 
-
     <!-- Other Property Condition Input (Hidden by Default) -->
-    {{-- <div class="form-group other_property_condition d-none">
+    <div class="form-group other_property_condition d-none">
         <label class="fw-bold">Other Property Condition:</label>
         <div class="input-cover">
             <input type="text" wire:model="other_property_condition" class="form-control has-icon"
                 data-icon="fa-solid fa-home">
         </div>
         <span class="error mt-2" id="other_property_condition_error"></span>
-    </div> --}}
+    </div>
 @endif
 <!-- Minimum Bedrooms Needed -->
 @if ($property_type === 'Residential')
@@ -428,7 +631,7 @@
         {{-- <label class="fw-bold">Minimum Bedrooms Needed:</label> --}}
         <div class="input-cover">
             <input type="number" wire:model="other_bedrooms" class="form-control has-icon"
-                data-icon="fa-solid fa-bed" placeholder="Enter number of bedrooms (e.g., 11)">
+                data-icon="fa-solid fa-bed" placeholder="Enter other bedrooms (e.g., 11) ">
         </div>
         <span class="error mt-2" id="other_bedrooms_error"></span>
     </div>
@@ -463,16 +666,16 @@
         {{-- <label class="fw-bold">Minimum Bathrooms Needed:</label> --}}
         <div class="input-cover">
             <input type="number" wire:model="other_bathrooms" class="form-control has-icon"
-                data-icon="fa-solid fa-bath" placeholder="Enter number of bathrooms (e.g., 11)">
+                data-icon="fa-solid fa-bath" placeholder="Enter other bathrooms (e.g., 11)">
         </div>
         <span class="error mt-2" id="other_bathrooms_error"></span>
     </div>
 @endif
 
 <!-- Minimum Heated SqFt Needed -->
-{{-- @if (in_array($property_type, ['Residential', 'Business', 'Commercial']))
-    <div class="form-group" wire:ignore wire:key="heated-square-select-{{ $property_type }}">
-        <label class="fw-bold"> Heated SqFt:<span class="text-danger">*</span></label>
+@if (in_array($property_type, ['Residential', 'Business', 'Commercial']))
+    <div class="form-group" wire:ignore>
+        <label class="fw-bold"> Heated SqFt:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the total square footage of climate-controlled (heated/cooled) interior space.">
@@ -484,41 +687,21 @@
         </div>
         <span class="error mt-2" id="minimum_heated_square_error"></span>
     </div>
-@endif --}}
-
-@if (in_array($property_type, ['Residential', 'Business', 'Commercial']))
-    <div class="form-group" wire:ignore wire:key="heated-square-select-{{ $property_type }}">
-        <label class="fw-bold">Heated SqFt:<span class="text-danger">*</span></label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the total square footage of climate-controlled (heated/cooled) interior space.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <input type="text" id="minimum_heated_square" wire:model="minimum_heated_square"
-                class="form-control has-icon" data-icon="fa-solid fa-ruler"
-                placeholder="Enter heated square footage (e.g., 1000)" data-error-id="minimum_heated_square_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)" required>
-        </div>
-        <span class="error mt-2" id="minimum_heated_square_error"></span>
-    </div>
 @endif
-
 @if ($property_type != 'Vacant Land')
     <div class="form-group">
-        <label class="fw-bold">Total SqFt:</label>
+        <label class="fw-bold"> Total SqFt: </label>
+
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the full square footage of the property, including all usable and non-usable areas.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover">
-            <input type="text" id="total_square_feet" wire:model="total_square_feet"
-                class="form-control has-icon" data-icon="fa-solid fa-ruler"
-                placeholder="Enter total square footage (e.g., 2000)" data-error-id="total_square_feet_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-        </div>
-        <span class="error mt-2" id="total_square_feet_error"></span>
-    </div>
 
+        <div class="input-cover">
+            <input type="number" wire:model="total_square_feet" class="form-control has-icon"
+                data-icon="fa-solid fa-ruler" placeholder="Enter total square footage (e.g., 2000)">
+        </div>
+    </div>
     <div class="form-group mb-3">
         <label class="fw-bold mb-2">SqFt Heated Source:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -537,24 +720,21 @@
         </div>
     </div>
 @endif
-
 <!-- Minimum Net LeaseableSqFt Needed -->
 @if ($property_type === 'Commercial')
     <div class="form-group">
         <label class="fw-bold">Minimum Net Leaseable SqFt Needed:</label>
 
         <div class="input-cover">
-            <input type="text" wire:model="minimum_leaseable" class="form-control has-icon"
-                data-icon="fa-solid fa-ruler" placeholder="Enter net leasable square footage (e.g., 1,500)"
-                data-error-id="minimum_leaseable_error" oninput="validateInput(this)" onblur="reformatNumber(this)"
-                onpaste="handlePaste(event)">
+            <input type="number" wire:model="minimum_leaseable" class="form-control has-icon"
+                data-icon="fa-solid fa-ruler" placeholder="Enter net leasable square footage (e.g., 1,500)">
         </div>
         <span class="error mt-2" id="minimum_leaseable_error"></span>
     </div>
 @endif
 <!-- Minimum Total Acreage Needed -->
 <div class="form-group">
-    <label class="fw-bold"> Total Acreage:<span class="text-danger">*</span></label>
+    <label class="fw-bold"> Total Acreage:</label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Enter the total land area of the property, measured in acres.">
@@ -563,7 +743,7 @@
 
     <div class="input-cover">
         <select wire:model="total_acreage" id="total_acreage" class="form-control has-icon"
-            data-icon="fa-solid fa-ruler-combined" required>
+            data-icon="fa-solid fa-ruler-combined">
             <option value="">Select</option>
             @foreach ($acreageRes as $row_pt)
                 <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -655,8 +835,6 @@
     </div>
 @endif
 
-
-
 <!-- Garage Spaces Needed (Residential Only) -->
 @if ($property_type === 'Residential')
     <div class="form-group">
@@ -688,10 +866,7 @@
 @endif
 
 <!-- Garage/Parking Spaces Needed -->
-
-@if (in_array($property_type, ['Business', 'Commercial']))
-
-    {{-- @if ($property_type === 'Business') --}}
+@if ($property_type === 'Commercial' or $property_type === 'Business')
     {{-- <div class="form-group">
         <label class="fw-bold">Garage/Parking Features:<span class="text-danger">*</span></label>
 
@@ -736,14 +911,14 @@
         </div>
     </div> --}}
 
-    <div class="form-group" wire:ignore wire:key="parking-features-select-{{ $property_type }}">
+    <div class="form-group">
         <label class="fw-bold">Garage/Parking Features:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the type of garage or parking features available. If “Other” is selected, enter any additional garage or parking features in the provided field.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <select wire:model="garage_parking_spaces_option" id="garage_parking_spaces_option_landlord"
+            <select wire:ignore wire:model="garage_parking_spaces_option" id="garage_parking_spaces_option_landlord"
                 class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse input-icon2" multiple>
                 @foreach ($garage_parking_spaces as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -755,7 +930,7 @@
     <!-- Other Parking Space Text Input -->
     <div class="form-group" id="other_garage_parking_spaces_option_landlord"
         style="{{ collect($garage_parking_spaces_option)->contains('Other') ? '' : 'display: none;' }}">
-        {{-- <label class="fw-bold">Other Garage/Parking Features:</label> --}}
+        <label class="fw-bold">Other Garage/Parking Features:</label>
         <div class="input-cover">
             <input type="text" wire:model="other_parking_space_wrapper" class="form-control has-icon"
                 data-icon="fa-solid fa-warehouse"
@@ -836,7 +1011,7 @@
 <!-- Eligibility/Interest in Leasing in 55-and-Over Communities -->
 @if ($property_type === 'Residential')
     <div class="form-group">
-        <label class="fw-bold">Age-Restricted Community:</label>
+        <label class="fw-bold">Age-Restricted Community :<span class="text-danger">*</span></label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Indicate if the property is part of an age-restricted community under federal housing laws. 55+ communities typically require at least one occupant to be 55 or older, while 62+ housing requires all residents to be 62 or older.">
@@ -845,7 +1020,7 @@
 
         <div class="input-cover">
             <select wire:model="leasing_55_plus" id="leasing_55_plus" class="form-control has-icon"
-                data-icon="fa-solid fa-users">
+                data-icon="fa-solid fa-users" required>
                 <option value="">Select</option>
                 @foreach ($purchasing_props as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -896,7 +1071,7 @@
             @if (in_array($property_type, ['Residential', 'Income']))
                 <input type="text" wire:model="other_non_negotiable_amenities" class="form-control has-icon"
                     data-icon="fa-solid fa-lock"
-                    placeholder="Enter amenities or property features (e.g., Sauna, Ev Charger, Outdoor Kitchen)">
+                    placeholder="Enter amenities or property features (e.g., sauna, EV charger, outdoor kitchen)">
             @elseif(in_array($property_type, ['Business', 'Commercial']))
                 <input type="text" wire:model="other_non_negotiable_amenities" class="form-control has-icon"
                     data-icon="fa-solid fa-lock"
@@ -917,7 +1092,8 @@
         </span>
 
         <div class="input-cover">
-            <select wire:model="pets" id="pets" class="form-control has-icon" data-icon="fa-solid fa-paw">
+            <select wire:model="pets" id="pets" class="form-control has-icon" data-icon="fa-solid fa-paw"
+                >
                 <option value="">Select</option>
                 <option value="Yes">Yes</option>
                 <option value="No">No</option>
@@ -1084,40 +1260,25 @@
         </span>
 
         <div class="input-cover">
-            <span class="input-group-text-seller">$</span>
-
-            <input type="text" wire:model="minimum_annual_net_income" class="form-control has-icon"
-                placeholder="Enter annual net income (e.g., 85000)"
-
-                 data-error-id="minimum_annual_net_income_error"
-        oninput="validateInput(this)"
-        onblur="reformatNumber(this)"
-        onpaste="handlePaste(event)"
-                >
+            <input type="number" wire:model="minimum_annual_net_income" class="form-control has-icon"
+                data-icon="fa-solid fa-dollar-sign" placeholder="Enter annual net income (e.g., 85000)">
         </div>
         <span class="error mt-2" id="minimum_annual_net_income_error"></span>
     </div>
-@endif
-@if (in_array($property_type, ['Income', 'Commercial', 'Business']))
+
     <div class="form-group">
         <label class="fw-bold"> Cap Rate:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the capitalization rate (Cap Rate), which reflects the property’s income potential relative to its price.Formula: Cap Rate = Net Operating Income ÷ Purchase Price">
+            title="Enter the capitalization rate (Cap Rate), which reflects the property’s income potential relative to its price.
+Formula: Cap Rate = Net Operating Income ÷ Purchase Price
+">
             <i class="fa-solid fa-circle-info"></i>
         </span>
 
         <div class="input-cover">
-            <input type="text" wire:model="minimum_cap_rate" class="form-control has-icon percentage-value-set"
-                placeholder="Enter cap rate (e.g., 6.5)"
-                 data-error-id="minimum_cap_rate_error"
-        oninput="validateInput(this)"
-        onblur="reformatNumber(this)"
-        onpaste="handlePaste(event)"
-                >
-
-            <span class="input-group-text-seller">%</span>
-
+            <input type="number" wire:model="minimum_cap_rate" class="form-control has-icon"
+                data-icon="fa-solid fa-percent" placeholder="Enter cap rate (e.g., 6.5)">
         </div>
         <span class="error mt-2" id="minimum_cap_rate_error"></span>
     </div>
@@ -1234,9 +1395,8 @@
                 <i class="fa-solid fa-circle-info"></i>
             </span>
             <div class="input-cover">
-                <span class="input-group-text-seller">$</span>
                 <input type="number" wire:model="expected_rent" class="form-control has-icon"
-                    placeholder="Enter expected monthly rent (e.g., 1500)">
+                    data-icon="fa-solid fa-dollar-sign" placeholder="Enter expected monthly rent (e.g., 1500)">
             </div>
             <span class="error mt-2" id="expected_rent_error"></span>
         </div>
@@ -1258,6 +1418,7 @@
 @endif --}}
 
 @if ($property_type === 'Income')
+    {{-- Unit Types Section --}}
     <div class="unit-types-container">
         @foreach ($unit_type_configurations as $index => $unitConfig)
             <div class="unit-type-section mb-4 p-3 border rounded">
@@ -1271,6 +1432,7 @@
                     @endif
                 </div>
 
+                {{-- Unit Type Selection --}}
                 <div class="form-group">
                     <label class="fw-bold">Unit Type:</label>
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1290,6 +1452,7 @@
                 </div>
 
                 @if (!empty($unit_type_configurations[$index]['unit_type']))
+                    {{-- Unit Details --}}
                     <div class="form-group">
                         <label class="fw-bold">Beds / Unit: </label>
                         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1371,7 +1534,6 @@
                                 class="form-control has-icon" data-icon="fa-solid fa-th-large"
                                 placeholder="Enter total number of this unit type (e.g., 4)">
                         </div>
-
                     </div>
 
                     <div class="form-group">
@@ -1395,11 +1557,10 @@
                             <i class="fa-solid fa-circle-info"></i>
                         </span>
                         <div class="input-cover">
-                            <span class="input-group-text-seller">$</span>
-
                             <input type="number"
                                 wire:model="unit_type_configurations.{{ $index }}.expected_rent"
-                                class="form-control has-icon" placeholder="Enter expected monthly rent (e.g., 1500)">
+                                class="form-control has-icon" data-icon="fa-solid fa-dollar-sign"
+                                placeholder="Enter expected monthly rent (e.g., 1500)">
                         </div>
                     </div>
 
@@ -1433,16 +1594,53 @@
         const select = document.getElementById('property_type');
         let isDropdownOpen = false;
 
-        // Store original options without emojis
+        // Store original options with emojis
         const originalOptions = {
-            'Residential Property': 'Residential Property',
-            'Commercial Property': 'Commercial Property'
+            'Residential Property': '🏠 Residential Property',
+            'Commercial Property': '🏢 Commercial Property'
         };
 
-        // Initialize options with plain text (no emojis)
+        // When clicking the select (before dropdown opens)
+        select.addEventListener('mousedown', function(e) {
+            isDropdownOpen = true;
+
+            // Temporarily show options with emojis
+            Array.from(this.options).forEach(option => {
+                if (option.value && originalOptions[option.value]) {
+                    option.text = originalOptions[option.value];
+                }
+            });
+        });
+
+        // When selection changes or dropdown closes
+        select.addEventListener('change', function() {
+            isDropdownOpen = false;
+
+            // Revert to text without emojis
+            Array.from(this.options).forEach(option => {
+                if (option.value && option.hasAttribute('data-display')) {
+                    option.text = option.getAttribute('data-display');
+                }
+            });
+        });
+
+        // Handle cases where user clicks away without selecting
+        document.addEventListener('click', function(e) {
+            if (isDropdownOpen && e.target !== select) {
+                isDropdownOpen = false;
+
+                Array.from(select.options).forEach(option => {
+                    if (option.value && option.hasAttribute('data-display')) {
+                        option.text = option.getAttribute('data-display');
+                    }
+                });
+            }
+        });
+
+        // Initialize with correct display
         Array.from(select.options).forEach(option => {
-            if (option.value && originalOptions[option.value]) {
-                option.text = originalOptions[option.value];
+            if (option.value && option.hasAttribute('data-display')) {
+                option.text = option.getAttribute('data-display');
             }
         });
     });

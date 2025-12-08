@@ -22,39 +22,58 @@
         </div>
     </div>
 </div>
-<!-- Street Address -->
+<!-- Property Address -->
 <div class="form-group mb-3">
-    <label class="fw-bold"> Street Address:<span class="text-danger">*</span></label>
+    <label class="fw-bold"> Property Address:<span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Enter the street address of the property (e.g., 123 Main Street). City, County, and State will be entered separately below.">
+        title="Enter the address of the property being offered for sale.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
-    <div class="input-cover">
+    <div class="input-cover position-relative">
         <input type="text" wire:model="address" class="form-control has-icon" data-icon="fa-solid fa-map-pin"
-            placeholder="Enter street address (e.g., 123 Main Street)" required>
+            placeholder="Enter property address" wire:keydown.arrow-up="decrementHighlight('address')"
+            wire:keydown.arrow-down="incrementHighlight('address')" wire:keydown.enter.prevent="selectAddressSuggestion"
+            autocomplete="off" required>
+
+        @if (count($addressSuggestions) > 0)
+            <div class="autocomplete-dropdown">
+                <ul class="list-group">
+                    @foreach ($addressSuggestions as $index => $suggestion)
+                        <li class="list-group-item {{ $highlightedAddressIndex === $index ? 'active' : '' }}"
+                            wire:click="selectAddressSuggestion('{{ $suggestion }}')">
+                            <i class="fas fa-map-marker-alt me-2"></i>
+                            {{ $suggestion }}
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
     </div>
+
 </div>
 <div class="alert alert-warning mt-3 p-2 small">
     <strong> 🛡️ Privacy Notice: </strong> Your full property address is only visible to the platform admin. On the
-    public listing, only your City, County, State, and ZIP code will be displayed. This helps protect your privacy
+    public listing, only your City, County, State, and ZIP code will be displayed.This helps protect your privacy
     while still allowing Agents to understand your general location.
 </div>
-@if ($property_type != 'Vacant Land')
-    <div>
-        <!-- Number of Pet(s) -->
-        <div class="form-group">
-            <label class="fw-bold">Unit Number:</label>
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the full unit identifier (e.g., “2B”, “PH-1”), if applicable.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-            <div class="input-cover">
-                <input type="text" wire:model="number_of_unit" class="form-control has-icon"
-                    data-icon="fa-solid fa-home" placeholder="Enter unit number">
-            </div>
-            <span class="error mt-2" id="number_of_unit_error"></span>
+@if ($property_type !='Vacant Land')
+
+<div>
+    <!-- Number of Pet(s) -->
+    <div class="form-group">
+        <label class="fw-bold">Unit Number:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the full unit identifier (e.g., “2B”, “PH-1”), if applicable.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <input type="text" wire:model="number_of_unit" class="form-control has-icon" data-icon="fa-solid fa-home"
+                placeholder="Enter unit number">
         </div>
+        <span class="error mt-2" id="number_of_unit_error"></span>
     </div>
+</div>
+
 @endif
 <!-- Acceptable Cities -->
 
@@ -100,11 +119,11 @@
         <div class="mt-1 counties-container">
             @if (count($counties) > 0)
                 @foreach ($counties as $index => $county)
-                    <span class="badge bg-primary rounded-pill d-inline-flex align-items-center" wire:key="county-badge-{{ $index }}">
+                    <span class="badge bg-primary rounded-pill" wire:key="county-badge-{{ $index }}">
                         <i class="fas fa-map me-2"></i>
                         {{ $county }}
-                        <button type="button" class="byo-pill-remove ms-2"
-                            wire:click="removeCounty({{ $index }})" aria-label="Remove">&times;</button>
+                        <button type="button" class="btn-close btn-close-white ms-2"
+                            wire:click="removeCounty({{ $index }})" aria-label="Remove"></button>
                     </span>
                 @endforeach
 
@@ -155,11 +174,11 @@
         <div class="mt-1 cities-container">
             @if (count($cities) > 0)
                 @foreach ($cities as $index => $city)
-                    <span class="badge bg-primary rounded-pill d-inline-flex align-items-center" wire:key="city-badge-{{ $index }}">
+                    <span class="badge bg-primary rounded-pill" wire:key="city-badge-{{ $index }}">
                         <i class="fas fa-city me-2"></i>
                         {{ $city }}
-                        <button type="button" class="byo-pill-remove ms-2"
-                            wire:click="removeCity({{ $index }})" aria-label="Remove">&times;</button>
+                        <button type="button" class="btn-close btn-close-white ms-2"
+                            wire:click="removeCity({{ $index }})" aria-label="Remove"></button>
                     </span>
                 @endforeach
 
@@ -208,11 +227,11 @@
         <div class="mt-1 zip-container">
             @if (count($zipCodes) > 0)
                 @foreach ($zipCodes as $index => $zip)
-                    <span class="badge bg-primary rounded-pill d-inline-flex align-items-center" wire:key="zip-badge-{{ $index }}">
+                    <span class="badge bg-primary rounded-pill" wire:key="zip-badge-{{ $index }}">
                         <i class="fas fa-map-pin me-2"></i>
                         {{ $zip }}
-                        <button type="button" class="byo-pill-remove ms-2"
-                            wire:click="removeZipCode({{ $index }})" aria-label="Remove">&times;</button>
+                        <button type="button" class="btn-close btn-close-white ms-2"
+                            wire:click="removeZipCode({{ $index }})" aria-label="Remove"></button>
                     </span>
                 @endforeach
             @endif
@@ -257,8 +276,6 @@
                 <div class="error-message">{{ $message }}</div>
             @enderror
         </div>
-
-
 
     </div>
     <!-- Property Type Dropdown -->
@@ -393,7 +410,6 @@
         </div>
     </div>
 
-
     <!-- Other Property Condition Input (Hidden by Default) -->
     {{-- <div class="form-group other_property_condition d-none">
         <label class="fw-bold">Other Property Condition:</label>
@@ -486,39 +502,35 @@
     </div>
 @endif --}}
 
-@if (in_array($property_type, ['Residential', 'Business', 'Commercial']))
-    <div class="form-group" wire:ignore wire:key="heated-square-select-{{ $property_type }}">
-        <label class="fw-bold">Heated SqFt:<span class="text-danger">*</span></label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the total square footage of climate-controlled (heated/cooled) interior space.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <input type="text" id="minimum_heated_square" wire:model="minimum_heated_square"
-                class="form-control has-icon" data-icon="fa-solid fa-ruler"
-                placeholder="Enter heated square footage (e.g., 1000)" data-error-id="minimum_heated_square_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)" required>
-        </div>
-        <span class="error mt-2" id="minimum_heated_square_error"></span>
-    </div>
-@endif
+<div class="form-group" wire:ignore wire:key="heated-square-select-{{ $property_type }}">
+    <label class="fw-bold"> Heated SqFt:<span class="text-danger">*</span></label>
 
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the total square footage of climate-controlled (heated/cooled) interior space.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+
+    <div class="input-cover">
+        <input type="text" id="minimum_heated_square" wire:model="minimum_heated_square" class="form-control has-icon"
+            data-icon="fa-solid fa-ruler" placeholder="Enter heated square footage (e.g., 1000)" required>
+    </div>
+
+    <span class="error mt-2" id="minimum_heated_square_error"></span>
+</div>
 @if ($property_type != 'Vacant Land')
     <div class="form-group">
-        <label class="fw-bold">Total SqFt:</label>
+        <label class="fw-bold"> Total SqFt: </label>
+
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the full square footage of the property, including all usable and non-usable areas.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover">
-            <input type="text" id="total_square_feet" wire:model="total_square_feet"
-                class="form-control has-icon" data-icon="fa-solid fa-ruler"
-                placeholder="Enter total square footage (e.g., 2000)" data-error-id="total_square_feet_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-        </div>
-        <span class="error mt-2" id="total_square_feet_error"></span>
-    </div>
 
+        <div class="input-cover">
+            <input type="number" wire:model="total_square_feet" class="form-control has-icon"
+                data-icon="fa-solid fa-ruler" placeholder="Enter total square footage (e.g., 2000)">
+        </div>
+    </div>
     <div class="form-group mb-3">
         <label class="fw-bold mb-2">SqFt Heated Source:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -537,17 +549,14 @@
         </div>
     </div>
 @endif
-
 <!-- Minimum Net LeaseableSqFt Needed -->
 @if ($property_type === 'Commercial')
     <div class="form-group">
         <label class="fw-bold">Minimum Net Leaseable SqFt Needed:</label>
 
         <div class="input-cover">
-            <input type="text" wire:model="minimum_leaseable" class="form-control has-icon"
-                data-icon="fa-solid fa-ruler" placeholder="Enter net leasable square footage (e.g., 1,500)"
-                data-error-id="minimum_leaseable_error" oninput="validateInput(this)" onblur="reformatNumber(this)"
-                onpaste="handlePaste(event)">
+            <input type="number" wire:model="minimum_leaseable" class="form-control has-icon"
+                data-icon="fa-solid fa-ruler" placeholder="Enter net leasable square footage (e.g., 1,500)">
         </div>
         <span class="error mt-2" id="minimum_leaseable_error"></span>
     </div>
@@ -655,8 +664,6 @@
     </div>
 @endif
 
-
-
 <!-- Garage Spaces Needed (Residential Only) -->
 @if ($property_type === 'Residential')
     <div class="form-group">
@@ -687,11 +694,14 @@
     </div>
 @endif
 
+
+
 <!-- Garage/Parking Spaces Needed -->
 
 @if (in_array($property_type, ['Business', 'Commercial']))
 
-    {{-- @if ($property_type === 'Business') --}}
+
+{{-- @if ($property_type === 'Business') --}}
     {{-- <div class="form-group">
         <label class="fw-bold">Garage/Parking Features:<span class="text-danger">*</span></label>
 
@@ -755,7 +765,7 @@
     <!-- Other Parking Space Text Input -->
     <div class="form-group" id="other_garage_parking_spaces_option_landlord"
         style="{{ collect($garage_parking_spaces_option)->contains('Other') ? '' : 'display: none;' }}">
-        {{-- <label class="fw-bold">Other Garage/Parking Features:</label> --}}
+        <label class="fw-bold">Other Garage/Parking Features:</label>
         <div class="input-cover">
             <input type="text" wire:model="other_parking_space_wrapper" class="form-control has-icon"
                 data-icon="fa-solid fa-warehouse"
@@ -1086,19 +1096,15 @@
         <div class="input-cover">
             <span class="input-group-text-seller">$</span>
 
-            <input type="text" wire:model="minimum_annual_net_income" class="form-control has-icon"
-                placeholder="Enter annual net income (e.g., 85000)"
-
-                 data-error-id="minimum_annual_net_income_error"
-        oninput="validateInput(this)"
-        onblur="reformatNumber(this)"
-        onpaste="handlePaste(event)"
-                >
+            <input type="number" wire:model="minimum_annual_net_income" class="form-control has-icon"
+                placeholder="Enter annual net income (e.g., 85000)">
         </div>
         <span class="error mt-2" id="minimum_annual_net_income_error"></span>
     </div>
+
 @endif
-@if (in_array($property_type, ['Income', 'Commercial', 'Business']))
+@if (in_array($property_type, ['Vacant Land']))
+
     <div class="form-group">
         <label class="fw-bold"> Cap Rate:</label>
 
@@ -1108,13 +1114,8 @@
         </span>
 
         <div class="input-cover">
-            <input type="text" wire:model="minimum_cap_rate" class="form-control has-icon percentage-value-set"
-                placeholder="Enter cap rate (e.g., 6.5)"
-                 data-error-id="minimum_cap_rate_error"
-        oninput="validateInput(this)"
-        onblur="reformatNumber(this)"
-        onpaste="handlePaste(event)"
-                >
+            <input type="number" wire:model="minimum_cap_rate" class="form-control has-icon percentage-value-set"
+                placeholder="Enter cap rate (e.g., 6.5)">
 
             <span class="input-group-text-seller">%</span>
 
@@ -1234,9 +1235,8 @@
                 <i class="fa-solid fa-circle-info"></i>
             </span>
             <div class="input-cover">
-                <span class="input-group-text-seller">$</span>
                 <input type="number" wire:model="expected_rent" class="form-control has-icon"
-                    placeholder="Enter expected monthly rent (e.g., 1500)">
+                    data-icon="fa-solid fa-dollar-sign" placeholder="Enter expected monthly rent (e.g., 1500)">
             </div>
             <span class="error mt-2" id="expected_rent_error"></span>
         </div>
@@ -1257,6 +1257,9 @@
     @endif
 @endif --}}
 
+
+
+{{--
 @if ($property_type === 'Income')
     <div class="unit-types-container">
         @foreach ($unit_type_configurations as $index => $unitConfig)
@@ -1371,7 +1374,6 @@
                                 class="form-control has-icon" data-icon="fa-solid fa-th-large"
                                 placeholder="Enter total number of this unit type (e.g., 4)">
                         </div>
-
                     </div>
 
                     <div class="form-group">
@@ -1395,11 +1397,12 @@
                             <i class="fa-solid fa-circle-info"></i>
                         </span>
                         <div class="input-cover">
-                            <span class="input-group-text-seller">$</span>
+                                        <span class="input-group-text-seller">$</span>
 
                             <input type="number"
                                 wire:model="unit_type_configurations.{{ $index }}.expected_rent"
-                                class="form-control has-icon" placeholder="Enter expected monthly rent (e.g., 1500)">
+                                class="form-control has-icon"
+                                placeholder="Enter expected monthly rent (e.g., 1500)">
                         </div>
                     </div>
 
@@ -1426,23 +1429,60 @@
             </button>
         </div>
     </div>
-@endif
+@endif --}}
 
 <script>
     document.addEventListener('livewire:load', function() {
         const select = document.getElementById('property_type');
         let isDropdownOpen = false;
 
-        // Store original options without emojis
+        // Store original options with emojis
         const originalOptions = {
-            'Residential Property': 'Residential Property',
-            'Commercial Property': 'Commercial Property'
+            'Residential Property': '🏠 Residential Property',
+            'Commercial Property': '🏢 Commercial Property'
         };
 
-        // Initialize options with plain text (no emojis)
+        // When clicking the select (before dropdown opens)
+        select.addEventListener('mousedown', function(e) {
+            isDropdownOpen = true;
+
+            // Temporarily show options with emojis
+            Array.from(this.options).forEach(option => {
+                if (option.value && originalOptions[option.value]) {
+                    option.text = originalOptions[option.value];
+                }
+            });
+        });
+
+        // When selection changes or dropdown closes
+        select.addEventListener('change', function() {
+            isDropdownOpen = false;
+
+            // Revert to text without emojis
+            Array.from(this.options).forEach(option => {
+                if (option.value && option.hasAttribute('data-display')) {
+                    option.text = option.getAttribute('data-display');
+                }
+            });
+        });
+
+        // Handle cases where user clicks away without selecting
+        document.addEventListener('click', function(e) {
+            if (isDropdownOpen && e.target !== select) {
+                isDropdownOpen = false;
+
+                Array.from(select.options).forEach(option => {
+                    if (option.value && option.hasAttribute('data-display')) {
+                        option.text = option.getAttribute('data-display');
+                    }
+                });
+            }
+        });
+
+        // Initialize with correct display
         Array.from(select.options).forEach(option => {
-            if (option.value && originalOptions[option.value]) {
-                option.text = originalOptions[option.value];
+            if (option.value && option.hasAttribute('data-display')) {
+                option.text = option.getAttribute('data-display');
             }
         });
     });

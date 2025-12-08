@@ -1,4 +1,3 @@
-@include('livewire.partials.hire-agent-option-sets')
 <div class="dashboard-section">
     <h3>Listing Details </h3>
     <div class="alert alert-info bg-light-info border-info mb-4">

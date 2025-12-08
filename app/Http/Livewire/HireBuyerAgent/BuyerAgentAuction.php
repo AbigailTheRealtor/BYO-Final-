@@ -40,7 +40,6 @@ class BuyerAgentAuction extends Component
     // Location fields
     public $state = '';
     public $property_type = '';
-    public $business_type = [];
 
     // Property details
     public $property_items = [];
@@ -60,7 +59,7 @@ class BuyerAgentAuction extends Component
     public $other_carport_needed = '';
 
     // Properties
-    public $sale_provision = [];
+    public $sale_provision = '';
     public $sale_provision_other = '';
     public $sale_provision_assignment = '';
     public $assignment_fee_type = '$';
@@ -137,7 +136,6 @@ class BuyerAgentAuction extends Component
     public $pool_type = [];
     public $view_preference = [];
     public $other_preferences = '';
-    public $is_other_visible = false;
     public $real_estate_purchase = '';
     public $number_of_unit = '';
     public $number_of_unit_other = '';
@@ -148,9 +146,6 @@ class BuyerAgentAuction extends Component
     public $property_criteria = '';
     public $unit_size = '';
     public $unit_size_other = '';
-    public $appliances = '';
-    public $appliances_other = '';
-    public $showOtherAppliances = false;
 
     public $leasing_55_plus = '';
     public $non_negotiable_amenities = [];

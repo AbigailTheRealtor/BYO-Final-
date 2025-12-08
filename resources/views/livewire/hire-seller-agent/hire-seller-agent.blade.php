@@ -280,9 +280,415 @@
     </style>
 @endpush
 
+@php
 
-@include('livewire.partials.hire-agent-option-sets')
+    $property_types = [['name' => 'Residential Property'], ['name' => 'Commercial Property']];
 
+    $property_condition = [
+        ['name' => 'Completely Updated: No updates needed'],
+        ['name' => 'Currently Being Built'],
+        ['name' => 'New Construction'],
+        ['name' => 'Not Updated: Requires a complete update'],
+        ['name' => 'Open to any type of property condition'],
+        ['name' => 'Pre-Construction'],
+        ['name' => 'Semi-updated: Needs minor updates'],
+        ['name' => 'Tear Down: Requires complete demolition and reconstruction'],
+        // ['name' => 'Open to any type of property condition.'],
+        // ['name' => 'Semi-updated: Needs minor updates.'],
+        // ['name' => 'Other'],
+    ];
+
+    $bedroomsRes = [
+        ['name' => '1'],
+        ['name' => '2'],
+        ['name' => '3'],
+        ['name' => '4'],
+        ['name' => '5'],
+        ['name' => '6'],
+        ['name' => '7'],
+        ['name' => '8'],
+        ['name' => '9'],
+        ['name' => '10'],
+        ['name' => 'Other'],
+    ];
+
+    $bathrooms = [
+        ['name' => '1'],
+        ['name' => '1.5'],
+        ['name' => '2'],
+        ['name' => '2.5'],
+        ['name' => '3'],
+        ['name' => '3.5'],
+        ['name' => '4'],
+        ['name' => '4.5'],
+        ['name' => '5'],
+        ['name' => '6'],
+        ['name' => '7'],
+        ['name' => '8'],
+        ['name' => '9'],
+        ['name' => '10'],
+        ['name' => 'Other'],
+    ];
+
+    $acreageRes = [
+        ['name' => '0 to less than 1/4 acre'],
+        ['name' => '1/4 to less than 1/2 acre'],
+        ['name' => '1/2 to less than 1 acre'],
+        ['name' => '1 to less than 2 acres'],
+        ['name' => '2 to less than 5 acres'],
+        ['name' => '5 to less than 10 acres'],
+        ['name' => '10 to less than 20 acres'],
+        ['name' => '20 to less than 50 acres'],
+        ['name' => '50 to less than 100 acres'],
+        ['name' => '100 to less than 200 acres'],
+        ['name' => '200 to less than 500 acres'],
+        ['name' => '500+ acres'],
+        ['name' => 'Non-Applicable'],
+    ];
+
+    $tenant_require = [
+        ['name' => 'Furnished'],
+        ['name' => 'Optional'],
+        ['name' => 'Partial'],
+        ['name' => 'Turnkey'],
+        ['name' => 'Unfurnished'],
+    ];
+    $preferences = [
+        ['name' => 'Furniture, Fixtures, and Equipment (as per attached inventory)'],
+        ['name' => 'Advertising Materials'],
+        ['name' => 'Contract Rights'],
+        ['name' => 'Leases'],
+        ['name' => 'Licenses'],
+        ['name' => 'Rights under any Agreement for Interests'],
+
+        ['name' => 'Other'],
+    ];
+
+    $non_negotialble_terms = [
+        ['name' => '55 and Over Community', 'class' => 'residential-length'],
+        ['name' => 'Accessibility Features', 'class' => 'residential-length'],
+        ['name' => 'Balcony/Patio', 'class' => 'residential-length'],
+        ['name' => 'Carpet Floors', 'class' => 'residential-length'],
+        ['name' => 'Carport', 'class' => 'residential-length'],
+        ['name' => 'Central Air Conditioning', 'class' => 'residential-length'],
+        ['name' => 'Central Heating', 'class' => 'residential-length'],
+        ['name' => 'Clubhouse', 'class' => 'residential-length'],
+        ['name' => 'Covered Carport', 'class' => 'residential-length'],
+        ['name' => 'Elevator', 'class' => 'residential-length'],
+        ['name' => 'Fireplace', 'class' => 'residential-length'],
+        ['name' => 'First Floor Unit', 'class' => 'residential-length'],
+        ['name' => 'Fitness Center/Gym', 'class' => 'residential-length'],
+        ['name' => 'Garage', 'class' => 'residential-length'],
+        ['name' => 'Gated Community', 'class' => 'residential-length'],
+        ['name' => 'Hardwood Floors', 'class' => 'residential-length'],
+        ['name' => 'HOA Community', 'class' => 'residential-length'],
+        ['name' => 'In-Unit Laundry', 'class' => 'residential-length'],
+        ['name' => 'On-site Laundry', 'class' => 'residential-length'],
+        ['name' => 'On-site Maintenance', 'class' => 'residential-length'],
+        ['name' => 'On-site Management', 'class' => 'residential-length'],
+        ['name' => 'Outdoor Space', 'class' => 'residential-length'],
+        ['name' => 'Pet Friendly', 'class' => 'residential-length'],
+        ['name' => 'Playground', 'class' => 'residential-length'],
+        ['name' => 'Pool', 'class' => 'residential-length'],
+        ['name' => 'Security System', 'class' => 'residential-length'],
+        ['name' => 'Specific School District', 'class' => 'residential-length'],
+        ['name' => 'Storage Space', 'class' => 'residential-length'],
+        ['name' => 'Study/Den/Office', 'class' => 'residential-length'],
+        ['name' => 'Tile Floors', 'class' => 'residential-length'],
+        ['name' => 'Updated Bathroom', 'class' => 'residential-length'],
+        ['name' => 'Updated Kitchen', 'class' => 'residential-length'],
+        ['name' => 'Walk-in Closet', 'class' => 'residential-length'],
+        ['name' => 'Washer and Dryer', 'class' => 'residential-length'],
+        ['name' => 'Washer and Dryer Hookup', 'class' => 'residential-length'],
+        ['name' => 'Waterfront', 'class' => 'residential-length'],
+        ['name' => 'Other', 'class' => 'residential-length'],
+
+        ['name' => 'Access to Public Transportation', 'class' => 'commercial-length'],
+        ['name' => 'Business Center', 'class' => 'commercial-length'],
+        ['name' => 'Common Areas', 'class' => 'commercial-length'],
+        ['name' => 'Conference Room', 'class' => 'commercial-length'],
+        ['name' => 'Elevator', 'class' => 'commercial-length'],
+        ['name' => 'Fire Safety Systems', 'class' => 'commercial-length'],
+        ['name' => 'Flexibility for Renovations', 'class' => 'commercial-length'],
+        ['name' => 'Green Building Certification', 'class' => 'commercial-length'],
+        ['name' => 'Gym/Fitness Facilities', 'class' => 'commercial-length'],
+        ['name' => 'Handicap Accessibility', 'class' => 'commercial-length'],
+        ['name' => 'High-Speed Internet', 'class' => 'commercial-length'],
+        ['name' => 'HVAC System', 'class' => 'commercial-length'],
+        ['name' => 'Industrial Features', 'class' => 'commercial-length'],
+        ['name' => 'Kitchenette/Break Room', 'class' => 'commercial-length'],
+        ['name' => 'Loading Dock', 'class' => 'commercial-length'],
+        ['name' => 'Lounge Area', 'class' => 'commercial-length'],
+        ['name' => 'Natural Lighting', 'class' => 'commercial-length'],
+        ['name' => 'Office Space', 'class' => 'commercial-length'],
+        ['name' => 'On-site Maintenance', 'class' => 'commercial-length'],
+        ['name' => 'On-site Management', 'class' => 'commercial-length'],
+        ['name' => 'Open Floor Plan', 'class' => 'commercial-length'],
+        ['name' => 'Outdoor Space/Garden', 'class' => 'commercial-length'],
+        ['name' => 'Parking Spaces', 'class' => 'commercial-length'],
+        ['name' => 'Proximity to Highways', 'class' => 'commercial-length'],
+        ['name' => 'Reception Area', 'class' => 'commercial-length'],
+        ['name' => 'Restaurant Space', 'class' => 'commercial-length'],
+        ['name' => 'Restrooms', 'class' => 'commercial-length'],
+        ['name' => 'Retail Frontage', 'class' => 'commercial-length'],
+        ['name' => 'Security Guard', 'class' => 'commercial-length'],
+        ['name' => 'Security System', 'class' => 'commercial-length'],
+        ['name' => 'Signage Opportunities', 'class' => 'commercial-length'],
+        ['name' => 'Storage Space', 'class' => 'commercial-length'],
+        ['name' => 'Utilities Included', 'class' => 'commercial-length'],
+        ['name' => 'Visibility from Main Road', 'class' => 'commercial-length'],
+        ['name' => 'Warehouse Space', 'class' => 'commercial-length'],
+        ['name' => 'Other', 'class' => 'commercial-length'],
+    ];
+    $unit_types = [
+        ['name' => '1 Bed/1 Bath'],
+        ['name' => '1 Bedroom'],
+        ['name' => '2 Bed/1 Bath'],
+        ['name' => '2 Bed/2 Bath'],
+        ['name' => '2 Bedroom'],
+        ['name' => '3 Bed/1 Bath'],
+        ['name' => '3 Bed/2 Bath'],
+        ['name' => '3 Bedroom'],
+        ['name' => '4 Bedroom or More'],
+        ['name' => '4+ Bed/1 Bath'],
+        ['name' => '4+ Bed/2 Bath'],
+        ['name' => 'Apartments'],
+        ['name' => 'Efficiency'],
+        ['name' => 'Loft'],
+        ['name' => "Manager's Unit"],
+        ['name' => 'Multi-Level'],
+        ['name' => 'Penthouse'],
+        ['name' => 'Studio'],
+        ['name' => 'Other'],
+    ];
+
+    $purchasing_props = [['name' => 'Yes'], ['name' => 'No']];
+
+    $lease_for = [
+        ['name' => '3 Months'],
+        ['name' => '6 Months'],
+        ['name' => '9 Months'],
+        ['name' => '1 Year'],
+        ['name' => '2 Years'],
+        ['name' => '3-5 Years'],
+        ['name' => '5+ Years'],
+        ['name' => 'Other'],
+    ];
+
+    // Define the updated services array
+    $services = [
+        ['name' => 'List the Tenant’s rental criteria on BidYourOffer.com.'],
+        [
+            'name' =>
+                'Market the Tenant’s rental criteria across various real estate groups, pages, and affiliates directing interested parties to the Tenant’s criteria listing on BidYourOffer.com.',
+        ],
+        [
+            'name' =>
+                'Promote the Tenant’s rental criteria on social media platforms directing interested parties to the Tenant’s criteria listing on BidYourOffer.com.',
+        ],
+        [
+            'name' =>
+                'Launch an online marketing campaign to drive traffic to the Tenant’s criteria listing on BidYourOffer.com.',
+        ],
+        [
+            'name' =>
+                'Conduct email marketing campaigns targeting agents and potential Landlords, linking to the Tenant’s criteria listing on BidYourOffer.com.',
+        ],
+        [
+            'name' =>
+                'Implement neighborhood marketing efforts in the Tenant’s desired area directing interested parties to the Tenant’s criteria listing on BidYourOffer.com.',
+        ],
+        [
+            'name' =>
+                'Send prompt email notifications with properties that match the Tenant’s criteria as soon as they are listed, ensuring access to the most up-to-date options.',
+        ],
+        ['name' => 'Schedule and accompany the Tenant on property viewings and showings.'],
+        ['name' => 'Arrange video tours of the Tenant’s preferred properties.'],
+        [
+            'name' =>
+                'Conduct a thorough Rental Market Analysis (RMA) to assess property values and rental pricing strategies.',
+        ],
+        ['name' => 'Assist with the Tenant’s rental application process, providing guidance and support.'],
+        ['name' => 'Help the Tenant understand lease terms and potential penalties before signing.'],
+        [
+            'name' =>
+                'Negotiate lease terms on behalf of the Tenant, including rental price, lease duration, and additional clauses or provisions.',
+        ],
+        ['name' => 'Coordinate with property managers, Landlords, and Agents to expedite application processing.'],
+        ['name' => 'Coordinate and oversee the move-in process, including inspections and key handovers.'],
+        ['name' => 'Advocate for security deposit refunds and ensure fair lease terms.'],
+        [
+            'name' =>
+                'Provide moving assistance resources, including utility setup, moving companies, and renter’s insurance.',
+        ],
+        [
+            'name' =>
+                'Help the Tenant establish a rental history report through recognized services (e.g., Experian RentBureau, RentReporters, or similar platforms) to support future leasing or homeownership goals.',
+        ],
+        ['name' => 'Provide guidance on lease renewal options and negotiate rent adjustments if necessary.'],
+        ['name' => 'Other – Specify additional services as needed.'],
+    ];
+
+    $property_items = [
+        // Residential (alphabetical order)
+        ['name' => '½ Duplex', 'class' => 'residential-length'],
+        ['name' => '1/3 Triplex', 'class' => 'residential-length'],
+        ['name' => '1/4 Quadplex', 'class' => 'residential-length'],
+        ['name' => 'Condo-Hotel', 'class' => 'residential-length'],
+        ['name' => 'Condominium', 'class' => 'residential-length'],
+        ['name' => 'Dock-Rackominium', 'class' => 'residential-length'],
+        ['name' => 'Farm', 'class' => 'residential-length'],
+        ['name' => 'Garage Condo', 'class' => 'residential-length'],
+        ['name' => 'Manufactured Home- Post 1977', 'class' => 'residential-length'],
+        ['name' => 'Mobile Home- Pre 1976', 'class' => 'residential-length'],
+        ['name' => 'Modular Home', 'class' => 'residential-length'],
+        ['name' => 'Single Family Residence', 'class' => 'residential-length'],
+        ['name' => 'Townhouse', 'class' => 'residential-length'],
+        ['name' => 'Villa', 'class' => 'residential-length'],
+
+        // Income (alphabetical order)
+        ['name' => 'Duplex', 'class' => 'income-length'],
+        ['name' => 'Five or More', 'class' => 'income-length'],
+        ['name' => 'Quadplex', 'class' => 'income-length'],
+        ['name' => 'Triplex', 'class' => 'income-length'],
+
+        // Business (alphabetical order)
+        ['name' => 'Agriculture', 'class' => 'business-length'],
+        ['name' => 'Assembly Building', 'class' => 'business-length'],
+        ['name' => 'Business', 'class' => 'business-length'],
+        ['name' => 'Five or More', 'class' => 'business-length'],
+        ['name' => 'Hotel/Motel', 'class' => 'business-length'],
+        ['name' => 'Industrial', 'class' => 'business-length'],
+        ['name' => 'Mixed Use', 'class' => 'business-length'],
+        ['name' => 'Office', 'class' => 'business-length'],
+        ['name' => 'Restaurant', 'class' => 'business-length'],
+        ['name' => 'Retail', 'class' => 'business-length'],
+        ['name' => 'Warehouse', 'class' => 'business-length'],
+
+        ['name' => 'Agriculture', 'class' => 'commercial-length'],
+        ['name' => 'Assembly Building', 'class' => 'commercial-length'],
+        ['name' => 'Business', 'class' => 'commercial-length'],
+        ['name' => 'Five or More ', 'class' => 'commercial-length'],
+        ['name' => 'Hotel/Motel', 'class' => 'commercial-length'],
+        ['name' => 'Industrial', 'class' => 'commercial-length'],
+        ['name' => 'Mixed Use', 'class' => 'commercial-length'],
+        ['name' => 'Office', 'class' => 'commercial-length'],
+        ['name' => 'Restaurant', 'class' => 'commercial-length'],
+        ['name' => 'Retail', 'class' => 'commercial-length'],
+        ['name' => 'Warehouse', 'class' => 'commercial-length'],
+
+        // Vacant Land
+
+        ['name' => 'Agricultural', 'class' => 'vacant-land-length'],
+        ['name' => 'Billboard Site', 'class' => 'vacant-land-length'],
+        ['name' => 'Business', 'class' => 'vacant-land-length'],
+        ['name' => 'Cattle', 'class' => 'vacant-land-length'],
+        ['name' => 'Commercial', 'class' => 'vacant-land-length'],
+        ['name' => 'Farm', 'class' => 'vacant-land-length'],
+        ['name' => 'Fishery', 'class' => 'vacant-land-length'],
+        ['name' => 'Highway Frontage', 'class' => 'vacant-land-length'],
+        ['name' => 'Horses', 'class' => 'vacant-land-length'],
+        ['name' => 'Industrial', 'class' => 'vacant-land-length'],
+        ['name' => 'Land Fill', 'class' => 'vacant-land-length'],
+        ['name' => 'Livestock', 'class' => 'vacant-land-length'],
+        ['name' => 'Mixed Use', 'class' => 'vacant-land-length'],
+        ['name' => 'Multi Family', 'class' => 'vacant-land-length'],
+        ['name' => 'Nursery', 'class' => 'vacant-land-length'],
+        ['name' => 'Orchard', 'class' => 'vacant-land-length'],
+        ['name' => 'Pasture', 'class' => 'vacant-land-length'],
+        ['name' => 'Poultry', 'class' => 'vacant-land-length'],
+        ['name' => 'Ranch', 'class' => 'vacant-land-length'],
+        ['name' => 'Residential', 'class' => 'vacant-land-length'],
+        ['name' => 'Retail', 'class' => 'vacant-land-length'],
+        ['name' => 'Row Crops', 'class' => 'vacant-land-length'],
+        ['name' => 'Sod Farm', 'class' => 'vacant-land-length'],
+        ['name' => 'Subdivision', 'class' => 'vacant-land-length'],
+        ['name' => 'Timber', 'class' => 'vacant-land-length'],
+        ['name' => 'Tracts', 'class' => 'vacant-land-length'],
+        ['name' => 'Trans/Cell Tower', 'class' => 'vacant-land-length'],
+        ['name' => 'Tree Farm', 'class' => 'vacant-land-length'],
+        ['name' => 'Unimproved Land', 'class' => 'vacant-land-length'],
+        ['name' => 'Well Field', 'class' => 'vacant-land-length'],
+        ['name' => 'Other', 'class' => 'vacant-land-length', 'id' => 'vacant-land-length-other'],
+    ];
+    $credit_score = [['name' => 'Poor'], ['name' => 'Fair'], ['name' => 'Good'], ['name' => 'Excellent']];
+
+    $auction_lengths = [
+        ['name' => '1 Day'],
+        ['name' => '3 Days'],
+        ['name' => '5 Days'],
+        ['name' => '7 Days'],
+        ['name' => '10 Days'],
+        ['name' => '14 Days'],
+        ['name' => '21 Days'],
+        ['name' => '30 Days'],
+        ['name' => '45 Days'],
+        ['name' => '60 Days'],
+        ['name' => '75 Days'],
+        ['name' => '90 Days'],
+        // ['name' => 'No time limit'],
+    ];
+    $auction_lengths_flat_fee = [
+        ['name' => '1 hour'],
+        ['name' => '2 hours'],
+        ['name' => '3 hours'],
+        ['name' => '4 hours'],
+        ['name' => '5 hours'],
+        ['name' => '6 hours'],
+        ['name' => '7 hours'],
+        ['name' => '8 hours'],
+        ['name' => '9 hours'],
+        ['name' => '10 hours'],
+        ['name' => '11 hours'],
+        ['name' => '12 hours'],
+        ['name' => '1 day'],
+        ['name' => '2 days'],
+        ['name' => '3 days'],
+        ['name' => '5 days'],
+        ['name' => '7 days'],
+        ['name' => '10 days'],
+        ['name' => '14 days'],
+        ['name' => '21 days'],
+        ['name' => '30 days'],
+    ];
+    $acceptable_leasing_space = [
+        ['name' => 'Entire Property'],
+        ['name' => 'Single Room'],
+        ['name' => 'Open to Leasing Either Entire Property or Single Room'],
+    ];
+    $garage_parking_spaces = [
+        ['name' => '1 to 5 Spaces'],
+        ['name' => '6 to 12 Spaces'],
+        ['name' => '13 to 18 Spaces'],
+        ['name' => '19 to 30 Spaces'],
+        ['name' => 'Airplane Hangar'],
+        ['name' => 'Common'],
+        ['name' => 'Curb Parking'],
+        ['name' => 'Deeded'],
+        ['name' => 'Electric Vehicle Charging Station(s)'],
+        ['name' => 'Ground Level'],
+        ['name' => 'Lighted'],
+        ['name' => 'Over 30 Spaces'],
+        ['name' => 'RV Parking'],
+        ['name' => 'Secured'],
+        ['name' => 'Under Building'],
+        ['name' => 'Underground'],
+        ['name' => 'Valet'],
+        ['name' => 'None'],
+        ['name' => 'Other'],
+    ];
+
+    $seller_property = [
+        ['name' => 'Assignment Contract'],
+        ['name' => 'Auction'],
+        ['name' => 'Bank Owned/REO'],
+        ['name' => 'Government Owned'],
+        ['name' => 'None'],
+        ['name' => 'Probate Listing'],
+        ['name' => 'Short Sale'],
+        ['name' => 'Other'],
+    ];
+@endphp
 
 <div class="container pt-5 pb-5">
     <div class="card">
@@ -443,9 +849,8 @@
                                 <!-- Leasing Terms Tab -->
                                 <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}" id="sale-terms"
                                     role="tabpanel" aria-labelledby="sale-terms-tab">
-                                    @if ($user_type === 'tenant')
-                                        @include('livewire.tenant-agent-auction-tabs.commission-based.leasing-terms')
-                                    @elseif($user_type === 'seller')
+                                    @include('livewire.tenant-agent-auction-tabs.commission-based.leasing-terms')
+                                @elseif($user_type === 'seller')
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-terms')
                                 @elseif($user_type === 'buyer')
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.purchasing-terms')
@@ -512,7 +917,8 @@
                                 @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.landlord-info')
                             @endif
                         </div>
-                    @endif
+                    @elseif($service_type === 'limited_service')
+                        @endif
                 </div>
                 <!-- Navigation Buttons -->
                 <div class="d-flex justify-content-between form-group mt-4">

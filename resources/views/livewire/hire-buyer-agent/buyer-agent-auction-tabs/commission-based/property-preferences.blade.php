@@ -1,4 +1,3 @@
-@include('livewire.partials.hire-agent-option-sets')
 <style>
     .input-cover .input-icon2 {
         z-index: 1 !important;
