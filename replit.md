@@ -79,24 +79,21 @@ This is a Laravel-based real estate auction platform that enables transparent bi
   - `extractStateFromLocationString()` / `extractNameFromLocationString()`: String parsing helpers
 - **Known Limitation**: Cities spanning multiple counties only associate with their primary county due to data model constraints (us_cities has single county_id)
 
-### Simplified Address & ZIP Code Auto-Population (December 7, 2025):
-- **Street Address Field**: Simplified to a plain text input (no autocomplete) for Hire Seller/Landlord Agent listings
-  - Renamed from "Property Address" to "Street Address"
-  - Tooltip updated to clarify that City, County, State are entered separately
-  - Removed Google Places API dependency for address autocomplete
-- **ZIP Code Auto-Population from City**: When a city is selected, ZIP codes are automatically fetched from the local database and added as pills
-  - Uses new `us_zip_codes` table with 27,500+ ZIP codes (covers most US cities)
-  - `autoPopulateZipCodesFromCity()` method added to SellerAgentAuction.php and LandLordAgentAuction.php
-  - Up to 20 ZIP codes auto-added per city selection
-- **ZIP Code Database**:
-  - New table: `us_zip_codes` with columns: zip_code, city, state_abbrev, state_name, county, latitude, longitude
-  - New model: `App\Models\UsZipCode`
-  - Seeder: `UsZipCodesSeeder` downloads from public dataset
-  - 27,500+ ZIP codes loaded covering major US cities
-- **Code Cleanup**:
-  - Removed unused Google Places address autocomplete methods from both components
-  - Removed: `updatedAddress()`, `getAddressSuggestionsWithPlaceIds()`, `selectAddressSuggestion()`, `fetchPlaceDetailsAndPopulate()`
-- **No API Key Required**: City, County, State, and ZIP code auto-population all work from local database - no Google Places API needed
+### Property Location Fields for Hire Seller/Landlord Agent (December 8, 2025):
+- **New Required Fields**: Added City*, State*, ZIP Code* immediately after Street Address
+  - City field has autocomplete from local us_cities database (32,141 cities)
+  - State field displays full state name (e.g., "Florida")
+  - ZIP Code field for property's postal code
+- **Auto-Population Flow**: When City is selected from autocomplete:
+  - State auto-populates with full state name
+  - County auto-populates (stored in property_county)
+  - ZIP code suggests first matching ZIP from database
+- **Implementation**:
+  - New properties: `property_city`, `property_state`, `property_zip`, `property_county`
+  - New methods: `updatedPropertyCity()`, `selectPropertyCitySuggestion()`, `autoPopulateFromPropertyCity()`
+  - Updated `getPlaceSuggestions()` to use 100% local database (zero Google Places API calls)
+- **Database**: All 32,141 cities have valid state_id relationships for accurate state lookup
+- **No API Key Required**: All location autocomplete and auto-population uses local database only
 
 ## Database
 - PostgreSQL database configured and connected
