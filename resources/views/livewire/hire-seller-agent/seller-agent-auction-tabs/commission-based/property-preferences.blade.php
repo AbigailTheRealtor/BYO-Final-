@@ -371,7 +371,7 @@
     <div class="input-cover">
         <input type="text" wire:model="other_property_items" class="form-control has-icon"
             data-icon="fa-solid fa-home"
-            placeholder="Enter other land use (e.g., Solar Farm, RV Park, Conservation Easement)">
+            placeholder="Enter land use (e.g., Solar Farm, RV Park, Conservation Easement)">
     </div>
     <span class="error mt-2" id="other_property_items_error"></span>
 </div>
