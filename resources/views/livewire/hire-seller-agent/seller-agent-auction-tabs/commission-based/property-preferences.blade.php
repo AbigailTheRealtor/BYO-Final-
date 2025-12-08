@@ -562,20 +562,6 @@
     </div>
 @endif
 
-<!-- Minimum Net LeaseableSqFt Needed -->
-@if ($property_type === 'Commercial')
-    <div class="form-group">
-        <label class="fw-bold">Minimum Net Leaseable SqFt Needed:</label>
-
-        <div class="input-cover">
-            <input type="text" wire:model="minimum_leaseable" class="form-control has-icon"
-                data-icon="fa-solid fa-ruler" placeholder="Enter net leasable square footage (e.g., 1,500)"
-                data-error-id="minimum_leaseable_error" oninput="validateInput(this)" onblur="reformatNumber(this)"
-                onpaste="handlePaste(event)">
-        </div>
-        <span class="error mt-2" id="minimum_leaseable_error"></span>
-    </div>
-@endif
 <!-- Minimum Total Acreage Needed -->
 <div class="form-group">
     <label class="fw-bold"> Total Acreage:<span class="text-danger">*</span></label>
