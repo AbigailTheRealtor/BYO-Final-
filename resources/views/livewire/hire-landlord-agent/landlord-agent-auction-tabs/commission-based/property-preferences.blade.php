@@ -49,14 +49,17 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover position-relative">
-        <input type="text" wire:model="property_city" 
-            wire:keydown.enter.prevent="selectPropertyCitySuggestion()"
-            wire:keydown.arrow-up.prevent="decrementPropertyCityHighlight()"
-            wire:keydown.arrow-down.prevent="incrementPropertyCityHighlight()"
+        <input type="text" 
+            x-data
+            x-on:input.debounce.150ms="$wire.searchPropertyCity($event.target.value)"
+            x-on:keydown.enter.prevent="$wire.selectPropertyCitySuggestion()"
+            x-on:keydown.arrow-up.prevent="$wire.decrementPropertyCityHighlight()"
+            x-on:keydown.arrow-down.prevent="$wire.incrementPropertyCityHighlight()"
             class="form-control has-icon @error('property_city') is-invalid @enderror" 
             data-icon="fas fa-city"
             autocomplete="off" 
-            placeholder="Enter city" 
+            placeholder="Enter city"
+            value="{{ $property_city }}"
             required>
 
         @if (!empty($propertyCitySuggestions) && count($propertyCitySuggestions) > 0)

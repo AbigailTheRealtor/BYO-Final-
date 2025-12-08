@@ -803,6 +803,16 @@ class LandLordAgentAuction extends Component
         }
     }
     
+    public function searchPropertyCity($value)
+    {
+        $this->property_city = $value;
+        if (strlen($value) > 2) {
+            $this->propertyCitySuggestions = $this->getPlaceSuggestions($value, 'city');
+        } else {
+            $this->propertyCitySuggestions = [];
+        }
+    }
+    
     public function selectPropertyCitySuggestion($suggestion = null)
     {
         $suggestion = $suggestion ?? $this->propertyCitySuggestions[$this->highlightedPropertyCityIndex] ?? $this->property_city;
