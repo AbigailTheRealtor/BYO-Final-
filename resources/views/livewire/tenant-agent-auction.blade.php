@@ -2067,7 +2067,7 @@ $lease_types = [
 
     function getLivewireComponent() {
         try {
-            // Find component by looking for wire:id in the DOM - more reliable than cached ID
+            // Find component by looking for wire:id in the DOM
             const wireElement = document.querySelector('[wire\\:id]');
             if (!wireElement) return null;
             
@@ -2079,22 +2079,27 @@ $lease_types = [
                 return null;
             }
             
-            // Check if component exists in registry before trying to access it
-            if (!window.Livewire.components.componentsById[componentId]) {
-                return null;
-            }
+            // Get component directly from registry instead of using find()
+            const component = window.Livewire.components.componentsById[componentId];
+            if (!component) return null;
             
-            return window.Livewire.find(componentId);
+            // Verify the component has required properties
+            if (!component.$wire) return null;
+            
+            return component;
         } catch (e) {
-            console.log('getLivewireComponent error:', e);
             return null;
         }
     }
 
     function safeLivewireSet(property, value) {
         const component = getLivewireComponent();
-        if (component) {
-            component.set(property, value);
+        if (component && component.$wire) {
+            try {
+                component.$wire.set(property, value);
+            } catch (e) {
+                setTimeout(() => safeLivewireSet(property, value), 100);
+            }
         } else {
             setTimeout(() => safeLivewireSet(property, value), 100);
         }
@@ -2152,12 +2157,18 @@ $lease_types = [
     }
 
     function initializeFullService() {
-        const component = getLivewireComponent();
-        if (!component) {
-            setTimeout(initializeFullService, 50);
+        try {
+            const component = getLivewireComponent();
+            if (!component) {
+                setTimeout(initializeFullService, 100);
+                return;
+            }
+        } catch (e) {
+            setTimeout(initializeFullService, 100);
             return;
         }
 
+        // Initialize Select2 dropdowns - they use safeLivewireSet which handles component lookup safely
         $('#sale_provision').select2({
             placeholder: "Select",
             allowClear: true,
