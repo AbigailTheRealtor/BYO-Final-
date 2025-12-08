@@ -56,7 +56,7 @@ class SellerAgentAuction extends Component
     public $other_carport_needed = '';
 
     // Properties
-    public $sale_provision = '';
+    public $sale_provision = [];
     public $sale_provision_other = '';
     public $sale_provision_assignment = '';
     public $assignment_fee_type = '$';
