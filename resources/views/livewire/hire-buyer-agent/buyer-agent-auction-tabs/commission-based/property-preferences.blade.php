@@ -1048,9 +1048,9 @@
                 </span>
             </label>
             <div class="input-cover">
-                <input type="number" wire:model="minimum_cap_rate" class="form-control"
+                <input type="number" wire:model="minimum_cap_rate" class="form-control" style="padding-left: 12px;"
                     placeholder="Enter minimum cap rate needed (e.g., 6.5)">
-                    <span class="input-group-text-seller">%</span>
+                <span class="input-group-text-seller">%</span>
             </div>
         </div>
     </div>
