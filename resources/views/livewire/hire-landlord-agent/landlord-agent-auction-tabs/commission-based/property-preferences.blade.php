@@ -91,7 +91,7 @@
         <input type="text" wire:model="property_state" 
             class="form-control has-icon @error('property_state') is-invalid @enderror" 
             data-icon="fa-solid fa-flag-usa"
-            placeholder="State" 
+            placeholder="Enter state" 
             required>
         @error('property_state')
             <div class="error-message">{{ $message }}</div>
@@ -110,7 +110,7 @@
         <input type="text" wire:model="property_county" 
             class="form-control has-icon @error('property_county') is-invalid @enderror" 
             data-icon="fa-solid fa-map"
-            placeholder="County" 
+            placeholder="Enter county" 
             required>
         @error('property_county')
             <div class="error-message">{{ $message }}</div>
