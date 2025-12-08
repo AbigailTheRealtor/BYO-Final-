@@ -527,7 +527,7 @@
 <!-- Garage/Parking Spaces Needed -->
 @if ($property_type === 'Commercial' or $property_type === 'Business')
     <div class="form-group">
-        <label class="fw-bold">Garage Parking Features Needed:
+        <label class="fw-bold">Garage/Parking Features Needed:
 
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Select the garage or parking features the Buyer requires.">
@@ -550,7 +550,7 @@
 @endif
 <!-- Garage/Parking Spaces Type Dropdown -->
 <div class="form-group d-none" id="garage_parking_spaces_option_wrapper">
-    <label class="fw-bold">Garage Parking Features:</label>
+    <label class="fw-bold">Garage/Parking Features:</label>
     <div class="input-cover">
 
         <select wire:model="garage_parking_spaces_option" id="garage_parking_spaces_option"
