@@ -1835,7 +1835,7 @@ $lease_types = [
 
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 3 : 4) ? 'show active' : '' }}"
                                     id="services" role="tabpanel" aria-labelledby="services-tab">
-
+                                    <div class="alert alert-danger mb-2">MAIN TEMPLATE DEBUG: user_type="{{ $user_type }}", property_type="{{ $property_type }}", activeTab={{ $activeTab }}</div>
                                     @if ($user_type === 'tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.services')
                                     @elseif($user_type === 'seller')
