@@ -1817,6 +1817,7 @@ $lease_types = [
                                 <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
                                     id="purchasing-terms" role="tabpanel" aria-labelledby="purchasing-terms-tab">
                                     @endif
+                                    <div style="background:orange;padding:5px;">TAB 2 TERMS DIV RENDERED (user={{ $user_type }})</div>
                                     @if ($user_type === 'tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.leasing-terms')
                                     @elseif($user_type === 'seller')
@@ -1844,6 +1845,7 @@ $lease_types = [
 
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 3 : 4) ? 'show active' : '' }}"
                                     id="services" role="tabpanel" aria-labelledby="services-tab">
+                                    <div style="background:lime;padding:5px;">TAB 3 SERVICES DIV RENDERED (user_type={{ $user_type }})</div>
                                     @if ($user_type === 'tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.services')
                                     @elseif($user_type === 'seller')
@@ -1859,7 +1861,7 @@ $lease_types = [
 
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 4 : 5) ? 'show active' : '' }}"
                                     id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
-
+                                    <div style="background:cyan;padding:5px;">TAB 4 ADDITIONAL DETAILS DIV RENDERED</div>
                                     @if ($user_type === 'tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.additional-details')
                                     @elseif($user_type === 'seller')
