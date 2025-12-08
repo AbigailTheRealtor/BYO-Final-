@@ -1186,7 +1186,7 @@
         </div>
     @endif --}}
 @endif
-@if ($property_type !== 'Residential')
+@if ($property_type !== 'Residential' && $property_type !== 'Vacant Land')
 <div class="form-group">
     <label class="fw-bold">Additional Details:
 
