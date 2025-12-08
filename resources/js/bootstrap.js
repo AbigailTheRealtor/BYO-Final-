@@ -55,8 +55,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-    // Request browser notification permission
-    if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission();
-    }
+    // Browser notification permission should be requested via user interaction
+    // The permission will be requested when the user clicks the notification bell
+    // This avoids the browser warning about requesting permission without user gesture
 });

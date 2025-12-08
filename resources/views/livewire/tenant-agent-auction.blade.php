@@ -2064,6 +2064,9 @@ $lease_types = [
 </script>
 <script>
     let currentServiceType = null;
+    let isInitializing = false;
+    let initRetryCount = 0;
+    const MAX_INIT_RETRIES = 20;
 
     function getLivewireComponent() {
         try {
@@ -2075,16 +2078,16 @@ $lease_types = [
             if (!componentId) return null;
             
             // Check if Livewire and its registry are available
-            if (!window.Livewire || !window.Livewire.components || !window.Livewire.components.componentsById) {
-                return null;
-            }
+            if (!window.Livewire) return null;
+            if (!window.Livewire.components) return null;
+            if (!window.Livewire.components.componentsById) return null;
             
-            // Get component directly from registry instead of using find()
+            // Check if component exists in registry
             const component = window.Livewire.components.componentsById[componentId];
             if (!component) return null;
             
             // Verify the component has required properties
-            if (!component.$wire) return null;
+            if (typeof component.$wire === 'undefined') return null;
             
             return component;
         } catch (e) {
@@ -2092,16 +2095,20 @@ $lease_types = [
         }
     }
 
-    function safeLivewireSet(property, value) {
-        const component = getLivewireComponent();
-        if (component && component.$wire) {
-            try {
+    function safeLivewireSet(property, value, retries = 0) {
+        if (retries > 10) {
+            console.warn('safeLivewireSet: Max retries exceeded for', property);
+            return;
+        }
+        try {
+            const component = getLivewireComponent();
+            if (component && component.$wire) {
                 component.$wire.set(property, value);
-            } catch (e) {
-                setTimeout(() => safeLivewireSet(property, value), 100);
+            } else {
+                setTimeout(() => safeLivewireSet(property, value, retries + 1), 150);
             }
-        } else {
-            setTimeout(() => safeLivewireSet(property, value), 100);
+        } catch (e) {
+            setTimeout(() => safeLivewireSet(property, value, retries + 1), 150);
         }
     }
 
@@ -2156,20 +2163,31 @@ $lease_types = [
         if (backBtn && backClone) backBtn.parentNode.replaceChild(backClone, backBtn);
     }
 
-    function initializeFullService() {
-        try {
-            const component = getLivewireComponent();
-            if (!component) {
-                setTimeout(initializeFullService, 100);
-                return;
-            }
-        } catch (e) {
-            setTimeout(initializeFullService, 100);
+    function initializeFullService(retryCount = 0) {
+        // Prevent concurrent initializations and infinite loops
+        if (isInitializing) return;
+        if (retryCount > MAX_INIT_RETRIES) {
+            console.warn('initializeFullService: Max retries exceeded, skipping initialization');
+            isInitializing = false;
             return;
         }
 
+        try {
+            const component = getLivewireComponent();
+            if (!component) {
+                setTimeout(() => initializeFullService(retryCount + 1), 150);
+                return;
+            }
+        } catch (e) {
+            setTimeout(() => initializeFullService(retryCount + 1), 150);
+            return;
+        }
+
+        isInitializing = true;
+
         // Initialize Select2 dropdowns - they use safeLivewireSet which handles component lookup safely
-        $('#sale_provision').select2({
+        try {
+            $('#sale_provision').select2({
             placeholder: "Select",
             allowClear: true,
         }).on('change', function() {
@@ -3627,7 +3645,11 @@ $lease_types = [
             });
         });
 
-
+        } catch (e) {
+            console.warn('initializeFullService error:', e);
+        } finally {
+            isInitializing = false;
+        }
     }
 
     function initializeLimitedService() {
