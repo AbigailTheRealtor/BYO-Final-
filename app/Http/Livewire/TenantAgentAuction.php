@@ -576,6 +576,16 @@ class TenantAgentAuction extends Component
     public  $cityFieldVisible = false;
     public $zipCodeFieldVisible = false;
     public $embedUrl;
+    
+    // Single-value location fields (for landlord/seller templates compatibility)
+    public $city = '';
+    public $county = '';
+    public $zipCode = '';
+    public $cityLocked = false;
+    public $countyLocked = false;
+    public $stateLocked = false;
+    public $zipLocked = false;
+    
     // Form fields
     public $fees = [];
 
