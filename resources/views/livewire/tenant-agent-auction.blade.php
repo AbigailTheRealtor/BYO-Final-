@@ -1834,6 +1834,7 @@ $lease_types = [
                         @endphp
                         <div class="tab-pane fade {{ $activeTab === $servicesTabIndex ? 'show active' : '' }}"
                             id="services" role="tabpanel" aria-labelledby="services-tab">
+                            <div style="background:lime;padding:20px;font-size:24px;font-weight:bold;">DEBUG: SERVICES TAB RENDERED - user_type={{ $user_type }}, servicesTabIndex={{ $servicesTabIndex }}</div>
                             @switch($user_type)
                                 @case('tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.services')
