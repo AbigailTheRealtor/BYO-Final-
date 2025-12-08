@@ -37,6 +37,7 @@ class LandLordAgentAuction extends Component
     // Location fields
     public $state = '';
     public $property_type = '';
+    public $business_type = [];
 
     // Property details
     public $property_items = [];
