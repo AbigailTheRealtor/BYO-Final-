@@ -451,6 +451,12 @@ class TenantAgentAuction extends Component
     public $meeting_details_email = '';
 
     public $address = '';
+    public $property_city = '';
+    public $property_state = '';
+    public $property_zip = '';
+    public $property_county = '';
+    public $propertyCitySuggestions = [];
+    public $highlightedPropertyCityIndex = -1;
     public $meeting_details_meeting_time = '';
     public $meeting_details_time_zone = '';
     public $meeting_details_meeting_date = '';
