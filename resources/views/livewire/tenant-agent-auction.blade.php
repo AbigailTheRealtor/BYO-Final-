@@ -2064,12 +2064,29 @@ $lease_types = [
 </script>
 <script>
     let currentServiceType = null;
-    const livewireComponentId = @json($this->id);
 
     function getLivewireComponent() {
         try {
-            return window.Livewire?.find(livewireComponentId) || null;
+            // Find component by looking for wire:id in the DOM - more reliable than cached ID
+            const wireElement = document.querySelector('[wire\\:id]');
+            if (!wireElement) return null;
+            
+            const componentId = wireElement.getAttribute('wire:id');
+            if (!componentId) return null;
+            
+            // Check if Livewire and its registry are available
+            if (!window.Livewire || !window.Livewire.components || !window.Livewire.components.componentsById) {
+                return null;
+            }
+            
+            // Check if component exists in registry before trying to access it
+            if (!window.Livewire.components.componentsById[componentId]) {
+                return null;
+            }
+            
+            return window.Livewire.find(componentId);
         } catch (e) {
+            console.log('getLivewireComponent error:', e);
             return null;
         }
     }
@@ -2079,7 +2096,7 @@ $lease_types = [
         if (component) {
             component.set(property, value);
         } else {
-            setTimeout(() => safeLivewireSet(property, value), 50);
+            setTimeout(() => safeLivewireSet(property, value), 100);
         }
     }
 
