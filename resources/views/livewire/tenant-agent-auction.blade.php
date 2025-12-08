@@ -3964,26 +3964,31 @@ $lease_types = [
         const enhancementWrapper = document.getElementById("enhancement-options-wrapper");
         const checkboxes = document.querySelectorAll('.enhancement-trigger');
 
+        if (!enhancementWrapper || checkboxes.length === 0) {
+            return;
+        }
+
         function toggleEnhancements() {
             const isChecked = Array.from(checkboxes).some(cb =>
                 cb.checked && cb.dataset.value === enhancementTriggerValue
             );
-            enhancementWrapper.style.display = isChecked ? 'block' : 'none';
+            if (enhancementWrapper) {
+                enhancementWrapper.style.display = isChecked ? 'block' : 'none';
+            }
         }
 
         checkboxes.forEach(cb => {
-            cb.removeEventListener('change', toggleEnhancements); // Remove previous to prevent duplication
+            cb.removeEventListener('change', toggleEnhancements);
             cb.addEventListener('change', toggleEnhancements);
         });
 
-        toggleEnhancements(); // Run on init
+        toggleEnhancements();
     }
 
     document.addEventListener('DOMContentLoaded', function() {
         setupEnhancementToggle();
     });
 
-    // Re-run after Livewire updates DOM
     document.addEventListener("livewire:load", function() {
         Livewire.hook('message.processed', () => {
             setupEnhancementToggle();
@@ -3992,7 +3997,6 @@ $lease_types = [
 
 
     function setupOpenHouseToggle() {
-        // Array of checkbox values that should trigger the input
         const triggerValues = [
             "Host in-person open houses",
             "Host scheduled broker previews or commercial tenant tours"
@@ -4001,11 +4005,17 @@ $lease_types = [
         const inputWrapper = document.getElementById("open-house-input-wrapper");
         const checkboxes = document.querySelectorAll('.showings-trigger');
 
+        if (!inputWrapper || checkboxes.length === 0) {
+            return;
+        }
+
         function toggleInput() {
             const isChecked = Array.from(checkboxes).some(cb =>
                 cb.checked && triggerValues.includes(cb.dataset.value)
             );
-            inputWrapper.style.display = isChecked ? 'block' : 'none';
+            if (inputWrapper) {
+                inputWrapper.style.display = isChecked ? 'block' : 'none';
+            }
         }
 
         checkboxes.forEach(cb => {
@@ -4013,7 +4023,7 @@ $lease_types = [
             cb.addEventListener('change', toggleInput);
         });
 
-        toggleInput(); // Run on init
+        toggleInput();
     }
 
     document.addEventListener('DOMContentLoaded', function() {

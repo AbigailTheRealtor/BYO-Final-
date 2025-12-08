@@ -100,6 +100,15 @@ This is a Laravel-based real estate auction platform that enables transparent bi
     - hire-seller-agent.blade.php: Changed `#tenant-info` to `#seller-information` (lines 2009, 2014)
     - hire-landlord-agent.blade.php: Changed `#tenant-info` to `#landlord-information` (lines 2410, 2415)
   - This ensures form validation correctly identifies required fields in the final tab for each user type
+- **Fixed Income Property Blank Tabs Bug (December 8, 2025)**:
+  - Root Cause: JavaScript functions `setupEnhancementToggle()` and `setupOpenHouseToggle()` were trying to access DOM elements that don't exist for Income Property type
+  - The `/hire/agent/auction/buyer` route uses tenant-agent-auction.blade.php which has tenant-specific JavaScript
+  - When Livewire re-renders after selecting Income Property, the JavaScript threw null reference errors (`can't access property 'style', enhancementWrapper is null`)
+  - These errors aborted the Livewire DOM update, causing all subsequent tabs (3-7) to appear blank
+  - Fixed by adding null checks to both functions in:
+    - tenant-agent-auction.blade.php (lines 3970-3972, 4011-4013)
+    - tenant-agent-auction-edit.blade.php (lines 3919-3921, 3960-3962)
+  - Functions now return early if required DOM elements are not present, preventing the error cascade
 
 ### Property Location Fields for Hire Seller/Landlord Agent (December 8, 2025):
 - **New Required Fields**: Added City*, State*, ZIP Code* immediately after Street Address
