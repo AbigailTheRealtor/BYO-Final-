@@ -723,6 +723,73 @@
             'description' => 'Other special sale provision not listed.',
         ],
     ];
+
+    $financing_options = [
+        [
+            'name' => 'Assumable',
+            'description' => 'Buyer is allowed to assume the Seller\'s existing mortgage, subject to lender approval.',
+        ],
+        [
+            'name' => 'Cash',
+            'description' => 'Buyer is allowed to pay the full purchase price in cash, with no financing contingency.',
+        ],
+        [
+            'name' => 'Conventional',
+            'description' => 'Buyer is allowed to use a traditional loan that meets standard underwriting guidelines.',
+        ],
+        [
+            'name' => 'Cryptocurrency',
+            'description' => 'Buyer is allowed to use digital currency (e.g., Bitcoin or Ethereum) as a form of payment.',
+        ],
+        [
+            'name' => 'Exchange/Trade',
+            'description' => 'Buyer is allowed to offer another asset as part of the purchase in a trade.',
+        ],
+        [
+            'name' => 'FHA',
+            'description' => 'Buyer is allowed to use a loan backed by the Federal Housing Administration.',
+        ],
+        [
+            'name' => 'Jumbo',
+            'description' => 'Buyer is allowed to use a loan above conforming loan limits.',
+        ],
+        [
+            'name' => 'Lease Option',
+            'description' => 'Buyer is allowed to lease the property with the option to purchase it later.',
+        ],
+        [
+            'name' => 'Lease Purchase',
+            'description' => 'Buyer is allowed to lease the property now and commit to purchase it later.',
+        ],
+        [
+            'name' => 'Non-Fungible Token (NFT)',
+            'description' => 'Buyer is allowed to use a verified digital asset as full or partial consideration.',
+        ],
+        [
+            'name' => 'No-Doc',
+            'description' => 'Buyer is allowed to use a loan requiring little to no income documentation.',
+        ],
+        [
+            'name' => 'Non-QM',
+            'description' => 'Buyer is allowed to use a Non-Qualified Mortgage with alternative income verification.',
+        ],
+        [
+            'name' => 'Seller Financing',
+            'description' => 'Seller is offering to finance all or part of the purchase price directly to the Buyer.',
+        ],
+        [
+            'name' => 'USDA',
+            'description' => 'Buyer is allowed to use a USDA loan for eligible rural properties.',
+        ],
+        [
+            'name' => 'VA',
+            'description' => 'Buyer is allowed to use a VA loan backed by the U.S. Department of Veterans Affairs.',
+        ],
+        [
+            'name' => 'Other',
+            'description' => 'Buyer is allowed to use an alternative financing method not listed above.',
+        ],
+    ];
 @endphp
 
 <div class="container pt-5 pb-5">
