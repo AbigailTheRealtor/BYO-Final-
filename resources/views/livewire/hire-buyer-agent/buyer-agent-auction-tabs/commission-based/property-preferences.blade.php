@@ -914,7 +914,7 @@
     <div id="pet-details">
         {{-- Number of Pets --}}
         <div class="form-group">
-            <label class="fw-bold">Number of Pets:</label><span class="text-danger">*</span>
+            <label class="fw-bold">Number of Pets:</label>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Enter the total number of pets you currently have (e.g., 2).">
                 <i class="fa-solid fa-circle-info"></i>
@@ -930,7 +930,7 @@
 
         {{-- Type of Pets --}}
         <div class="form-group">
-            <label class="fw-bold">Type of Pets:</label> <span class="text-danger">*</span>
+            <label class="fw-bold">Type of Pets:</label>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Enter the types of pets you own (e.g., Dog, Cat).">
                 <i class="fa-solid fa-circle-info"></i>
@@ -946,7 +946,7 @@
 
         {{-- Breed of Pets --}}
         <div class="form-group">
-            <label class="fw-bold">Breed of Pets:</label> <span class="text-danger">*</span>
+            <label class="fw-bold">Breed of Pets:</label>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Enter the breed(s) of your pets (e.g., Labrador, Siamese). If you have multiple pets with different breeds, list them all.">
                 <i class="fa-solid fa-circle-info"></i>
@@ -962,7 +962,7 @@
 
         {{-- Weight of Pets --}}
         <div class="form-group">
-            <label class="fw-bold">Weight of Pets (lbs):</label> <span class="text-danger">*</span>
+            <label class="fw-bold">Weight of Pets (lbs):</label>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Enter the weight of your pet(s) in pounds (e.g., 30 lbs, 50 lbs). If you have multiple pets, you can list their weights individually.">
                 <i class="fa-solid fa-circle-info"></i>
@@ -978,7 +978,7 @@
 
         {{-- Service Animal --}}
         <div class="form-group">
-            <label class="fw-bold">Service Animal:</label> <span class="text-danger">*</span>
+            <label class="fw-bold">Service Animal:</label>
 
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Select if any of your pets are trained service animals (e.g., for assistance with disabilities).">
@@ -998,7 +998,7 @@
 
         {{-- Emotional Support Animal --}}
         <div class="form-group">
-            <label class="fw-bold">Emotional Support Animal:</label> <span class="text-danger">*</span>
+            <label class="fw-bold">Emotional Support Animal:</label>
 
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Select if any of your pets are emotional support animals, providing therapeutic support.">
