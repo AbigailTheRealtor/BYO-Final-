@@ -1,0 +1,83 @@
+Issue: Only “Hire a Tenant’s Agent” listing type is wired correctly
+
+Steps to reproduce
+
+Log in with: tenant@exp.com
+
+Click “Hire Agent” from the dashboard.
+
+You see the options to create a Tenant, Landlord, Buyer, or Seller listing.
+
+Right now:
+
+The only option that actually works correctly is “Hire a Tenant’s Agent”.
+
+When you click other listing types (Landlord, Buyer, Seller), it still uses the old structure / wrong file format and does not match the finalized versions we’ve documented.
+
+What I believe is happening
+
+Originally, all listing types (Tenant, Landlord, Buyer, Seller) were built under the Tenant listing flow.
+
+Later we split them into four separate flows with different fields, tooltips, and logic.
+
+It looks like:
+
+The current “Hire a Tenant’s Agent” listing is using the new, correct Tenant file/logic.
+
+But Landlord, Buyer, and Seller are still using old templates or logic that were copied from the original Tenant listing, so when you make edits you might be editing old Buyer/Seller/Landlord files, not the new versions we finalized.
+
+That’s why the new changes for Buyer/Seller/Landlord aren’t showing up and those flows still don’t work as expected.
+
+What I need you to do
+
+Confirm which controller + view (Blade) files are used for each listing type:
+
+Hire a Tenant’s Agent
+
+Hire a Landlord’s Agent
+
+Hire a Buyer’s Agent
+
+Hire a Seller’s Agent
+
+Please list:
+
+Route name / URL
+
+Controller method
+
+Blade view file used
+
+Make sure each listing type has its own flow wired to the correct NEW files, not the old tenant-based ones:
+
+Hire a Tenant’s Agent → use the new Tenant listing flow (this one is already correct – use it as the reference).
+
+Hire a Landlord’s Agent → must use the new Landlord flow we finalized (tabs, tooltips, compensation logic, etc.).
+
+Hire a Buyer’s Agent → must use the new Buyer flow we finalized.
+
+Hire a Seller’s Agent → must use the new Seller flow we finalized.
+
+Remove or stop using any legacy “Tenant” templates that are still being reused for Landlord, Buyer, or Seller.
+
+If those old files are still referenced, update the routes/controllers to point to the new Role-specific views instead.
+
+Do not duplicate or rebuild logic under the old tenant listing file.
+
+After wiring is corrected:
+
+From tenant@exp.com, clicking each listing type should open its own correct multi-tab form (with the finalized structure, fields, placeholders, and tooltips we documented).
+
+Any future edits must be made ONLY in those new files, not in the legacy tenant templates.
+
+Acceptance check
+
+From tenant@exp.com, clicking Hire Agent → Hire a Tenant’s Agent loads the correct NEW Tenant listing (already OK).
+
+Clicking Hire Agent → Hire a Landlord’s Agent loads the NEW Landlord flow (tabs + tooltips match the spec).
+
+Clicking Hire Agent → Hire a Buyer’s Agent loads the NEW Buyer flow.
+
+Clicking Hire Agent → Hire a Seller’s Agent loads the NEW Seller flow.
+
+No Buyer/Seller/Landlord views are using the old Tenant listing template anymore.
