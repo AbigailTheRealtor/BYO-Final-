@@ -1,0 +1,139 @@
+Uncaught TypeError: can't access property "classList", this._element is undefined
+    _isAnimated modal.js:332
+    _initializeBackDrop modal.js:205
+    De modal.js:82
+    <anonymous> buyer:5392
+    dispatch dispatch.js:6
+    value index.js:92
+    <anonymous> buyer:3135
+    zt app.js:2
+    start app.js:2
+    554 app.js:2
+    r app.js:2
+    <anonymous> app.js:2
+    O app.js:2
+    <anonymous> app.js:2
+    <anonymous> app.js:2
+modal.js:332:5
+The Notification permission may only be requested from inside a short running user-generated event handler. buyer
+Uncaught (in promise) TypeError: can't access property "$wire", this.components.componentsById[componentId] is undefined
+    value index.js:32
+    initializeFullService buyer:4178
+    value MessageBus.js:17
+    value MessageBus.js:16
+    call HookManager.js:38
+    callHook Store.js:121
+    value index.js:340
+    value index.js:269
+    value index.js:11
+    value index.js:75
+    promise callback*value/< index.js:70
+    promise callback*value index.js:68
+    sendMessage index.js:242
+    value index.js:252
+    later debounce.js:8
+    setTimeout handler*debounce/< debounce.js:12
+    value index.js:225
+    debouncedHandler node_initializer.js:243
+    value index.js:582
+    debouncedHandler node_initializer.js:201
+    attachListener node_initializer.js:259
+    attachDomListener node_initializer.js:170
+    initialize node_initializer.js:42
+    initialize node_initializer.js:15
+    value index.js:92
+    value index.js:525
+    walk walk.js:5
+    walk walk.js:10
+    walk walk.js:10
+    walk walk.js:10
+    walk walk.js:10
+    walk walk.js:10
+    walk walk.js:10
+    walk walk.js:10
+    walk walk.js:10
+    value index.js:511
+    value index.js:90
+    Component index.js:51
+    value index.js:88
+    value index.js:87
+    <anonymous> buyer:3135
+    zt app.js:2
+    start app.js:2
+    554 app.js:2
+    r app.js:2
+    <anonymous> app.js:2
+    O app.js:2
+    <anonymous> app.js:2
+    <anonymous> app.js:2
+index.js:32:9
+Uncaught (in promise) TypeError: can't access property "$wire", this.components.componentsById[componentId] is undefined
+    value index.js:32
+    initializeFullService buyer:4178
+    value MessageBus.js:17
+    value MessageBus.js:16
+    call HookManager.js:38
+    callHook Store.js:121
+    value index.js:340
+    value index.js:269
+    value index.js:11
+    value index.js:75
+    promise callback*value/< index.js:70
+    promise callback*value index.js:68
+    sendMessage index.js:242
+    value index.js:252
+    later debounce.js:8
+    setTimeout handler*debounce/< debounce.js:12
+    value index.js:225
+    callback node_initializer.js:94
+index.js:32:9
+Uncaught (in promise) TypeError: can't access property "$wire", this.components.componentsById[componentId] is undefined
+    value index.js:32
+    initializeFullService buyer:4178
+    value MessageBus.js:17
+    value MessageBus.js:16
+    call HookManager.js:38
+    callHook Store.js:121
+    value index.js:340
+    value index.js:269
+    value index.js:11
+    value index.js:75
+    promise callback*value/< index.js:70
+    promise callback*value index.js:68
+    sendMessage index.js:242
+    value index.js:252
+    later debounce.js:8
+    setTimeout handler*debounce/< debounce.js:12
+    value index.js:225
+    debouncedHandler node_initializer.js:243
+    value index.js:582
+    debouncedHandler node_initializer.js:201
+    attachListener node_initializer.js:259
+    attachDomListener node_initializer.js:170
+    initialize node_initializer.js:42
+    initialize node_initializer.js:15
+    value index.js:92
+    value index.js:525
+    walk walk.js:5
+    walk walk.js:10
+    walk walk.js:10
+    walk walk.js:10
+    walk walk.js:10
+    walk walk.js:10
+    walk walk.js:10
+    walk walk.js:10
+    walk walk.js:10
+    value index.js:511
+    value index.js:90
+    Component index.js:51
+    value index.js:88
+    value index.js:87
+    <anonymous> buyer:3135
+    zt app.js:2
+    start app.js:2
+    554 app.js:2
+    r app.js:2
+    <anonymous> app.js:2
+    O app.js:2
+    <anonymous> app.js:2
+    <anonymous> app.js:2

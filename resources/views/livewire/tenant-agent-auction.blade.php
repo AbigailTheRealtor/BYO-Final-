@@ -1835,7 +1835,6 @@ $lease_types = [
 
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 3 : 4) ? 'show active' : '' }}"
                                     id="services" role="tabpanel" aria-labelledby="services-tab">
-                                    <div class="alert alert-danger mb-2">MAIN TEMPLATE DEBUG: user_type="{{ $user_type }}", property_type="{{ $property_type }}", activeTab={{ $activeTab }}</div>
                                     @if ($user_type === 'tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.services')
                                     @elseif($user_type === 'seller')
@@ -2065,6 +2064,24 @@ $lease_types = [
 </script>
 <script>
     let currentServiceType = null;
+    const livewireComponentId = @json($this->id);
+
+    function getLivewireComponent() {
+        try {
+            return window.Livewire?.find(livewireComponentId) || null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function safeLivewireSet(property, value) {
+        const component = getLivewireComponent();
+        if (component) {
+            component.set(property, value);
+        } else {
+            setTimeout(() => safeLivewireSet(property, value), 50);
+        }
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
         // Detect which service is preselected on load
@@ -2118,14 +2135,17 @@ $lease_types = [
     }
 
     function initializeFullService() {
-
+        const component = getLivewireComponent();
+        if (!component) {
+            setTimeout(initializeFullService, 50);
+            return;
+        }
 
         $('#sale_provision').select2({
             placeholder: "Select",
             allowClear: true,
         }).on('change', function() {
-            // Update the model in Livewire (or any other reactive framework you're using)
-            @this.set('sale_provision', $(this).val());
+            safeLivewireSet('sale_provision', $(this).val());
 
             // Add tooltips to selected options dynamically
             $(this).find('option:selected').each(function() {
@@ -2151,7 +2171,7 @@ $lease_types = [
             allowClear: true,
         }).on('change', function() {
             // Update the model in Livewire (or any other reactive framework you're using)
-            @this.set('offered_financing', $(this).val());
+            safeLivewireSet('offered_financing', $(this).val());
 
             // Reapply tooltips to all options dynamically
             $(this).find('option').each(function() {
@@ -2179,7 +2199,7 @@ $lease_types = [
             // Handle changes
             $('.condition_prop_buyer').on('change', function(e) {
                 let data = $(this).val();
-                @this.set('condition_prop_buyer', data, true); // Livewire v2.x
+                safeLivewireSet('condition_prop_buyer', data); // Livewire v2.x
             });
         }
 
@@ -2221,7 +2241,7 @@ $lease_types = [
 
         selectEl.on('change', function() {
             let selectedValues = $(this).val();
-            @this.set('garage_parking_spaces_option', selectedValues);
+            safeLivewireSet('garage_parking_spaces_option', selectedValues);
 
             if (selectedValues && selectedValues.includes('Other')) {
                 $('#other_garage_parking_spaces_option_landlord').removeClass('d-none').show();
@@ -2268,7 +2288,7 @@ $lease_types = [
         // Livewire updates on selection change
         $('#lease_for').on('change', function(e) {
             let selectedValues = $(this).val();
-            @this.set('lease_for', selectedValues); // Update Livewire property
+            safeLivewireSet('lease_for', selectedValues); // Update Livewire property
             toggleOtherLeaseInput(); // Show or hide the "Other" input
         });
 
@@ -2302,7 +2322,7 @@ $lease_types = [
         // Update Livewire property on change
         $('#property_items').on('change', function(e) {
             let selectedValues = $(this).val();
-            @this.set('property_items', selectedValues);
+            safeLivewireSet('property_items', selectedValues);
         });
 
         // Reinitialize Select2 after Livewire update
@@ -2496,7 +2516,7 @@ $lease_types = [
         // Update Livewire property on change
         $('#credit_scroe_rating').on('change', function(e) {
             let selectedValues = $(this).val();
-            @this.set('credit_scroe_rating', selectedValues);
+            safeLivewireSet('credit_scroe_rating', selectedValues);
         });
 
         // Reinitialize Select2 after Livewire update
@@ -2529,10 +2549,10 @@ $lease_types = [
                     $('.other_non_negotiable_amenities')
                         .addClass('d-none')
                         .find('input').val('').trigger('input');
-                    @this.set('other_non_negotiable_amenities', '');
+                    safeLivewireSet('other_non_negotiable_amenities', '');
                 }
                 // sync back to Livewire if you need it:
-                @this.set('non_negotiable_amenities', vals);
+                safeLivewireSet('non_negotiable_amenities', vals);
             });
         // End to non_negotiable_amenities
 
@@ -2773,7 +2793,7 @@ $lease_types = [
                 $('#other_parking_space_wrapper').show(); // Show "Other" input
             } else {
                 $('#other_parking_space_wrapper').hide(); // Hide "Other" input
-                @this.set('other_parking_space_wrapper', null); // Clear the text input
+                safeLivewireSet('other_parking_space_wrapper', null); // Clear the text input
             }
         });
 
@@ -2827,7 +2847,7 @@ $lease_types = [
                     $('#other_appliances').show();
                 } else {
                     $('#other_appliances').hide();
-                    @this.set('other_appliances', null); // Clear other appliances if "Other" is deselected
+                    safeLivewireSet('other_appliances', null); // Clear other appliances if "Other" is deselected
                 }
             });
         }
@@ -2874,7 +2894,7 @@ $lease_types = [
 
         // Update Livewire when Select2 changes
         $('#leasing_spaces_tenant').on('change', function(e) {
-            @this.set('leasing_spaces_tenant', $(this).val());
+            safeLivewireSet('leasing_spaces_tenant', $(this).val());
         });
 
         // Reinitialize Select2 when Livewire updates the DOM
@@ -2912,7 +2932,7 @@ $lease_types = [
             } else {
                 $('.tenant_pays_other').hide();
             }
-            @this.set('tenant_pays', selectedValues);
+            safeLivewireSet('tenant_pays', selectedValues);
             // toggleOtherTenantField(selectedValues);
         });
 
@@ -2966,7 +2986,7 @@ $lease_types = [
                 const selectedValues = $(this).val() || [];
 
                 // Update Livewire
-                @this.set('terms_of_lease', selectedValues);
+                safeLivewireSet('terms_of_lease', selectedValues);
 
                 // Toggle "Other" input
                 toggleLeaseOther(selectedValues);
@@ -3019,9 +3039,9 @@ $lease_types = [
                 $('.other_owner_pays').show();
             } else {
                 $('.other_owner_pays').hide();
-                @this.set('other_owner_pays', null);
+                safeLivewireSet('other_owner_pays', null);
             }
-            @this.set('owner_pays', selectedValues);
+            safeLivewireSet('owner_pays', selectedValues);
         });
 
 
@@ -3032,9 +3052,9 @@ $lease_types = [
                 $('.other_lease_term').show();
             } else {
                 $('.other_lease_term').hide();
-                @this.set('other_lease_term', null);
+                safeLivewireSet('other_lease_term', null);
             }
-            @this.set('desired_lease_length', selectedValues);
+            safeLivewireSet('desired_lease_length', selectedValues);
         });
 
         // Reinit after DOM update
@@ -3072,7 +3092,7 @@ $lease_types = [
 
             $('.lease_for').off('change').on('change', function() {
                 let selectedLease = $(this).val() || [];
-                @this.set('lease_for', selectedLease);
+                safeLivewireSet('lease_for', selectedLease);
                 toggleLease(selectedLease);
             });
         }
@@ -3111,9 +3131,9 @@ $lease_types = [
                 $('.other_rent_input_wrapper').show();
             } else {
                 $('.other_rent_input_wrapper').hide();
-                @this.set('other_rent_include', null);
+                safeLivewireSet('other_rent_include', null);
             }
-            @this.set('rent_includes', selectedValues);
+            safeLivewireSet('rent_includes', selectedValues);
             //toggleOtherField(selectedValues);
         });
 
