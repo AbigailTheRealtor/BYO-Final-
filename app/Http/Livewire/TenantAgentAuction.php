@@ -1561,6 +1561,19 @@ class TenantAgentAuction extends Component
         }
     }
     
+    public function updatedPropertyCity($value)
+    {
+        if (!in_array($this->user_type, ['landlord', 'seller'])) {
+            return;
+        }
+        
+        if (strlen($value) > 2) {
+            $this->propertyCitySuggestions = $this->getPlaceSuggestions($value, 'city');
+        } else {
+            $this->propertyCitySuggestions = [];
+        }
+    }
+    
     public function searchPropertyCity($value)
     {
         if (!in_array($this->user_type, ['landlord', 'seller'])) {
