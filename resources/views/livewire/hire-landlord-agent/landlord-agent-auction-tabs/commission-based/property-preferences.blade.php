@@ -57,11 +57,11 @@
             placeholder="Enter city" 
             required>
 
-        @if (count($propertyCitySuggestions) > 0)
+        @if (!empty($propertyCitySuggestions) && count($propertyCitySuggestions) > 0)
             <div class="autocomplete-dropdown shadow-sm">
                 <ul class="list-group">
                     @foreach ($propertyCitySuggestions as $index => $suggestion)
-                        <li class="list-group-item {{ $highlightedPropertyCityIndex === $index ? 'bg-light' : '' }}"
+                        <li class="list-group-item {{ ($highlightedPropertyCityIndex ?? -1) === $index ? 'bg-light' : '' }}"
                             wire:click="selectPropertyCitySuggestion('{{ $suggestion }}')"
                             wire:key="property-city-suggestion-{{ $index }}">
                             <i class="fas fa-city me-2 text-muted"></i>
