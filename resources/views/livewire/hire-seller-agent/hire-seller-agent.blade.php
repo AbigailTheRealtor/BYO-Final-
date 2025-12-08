@@ -628,6 +628,14 @@
         ['name' => '90 Days'],
         // ['name' => 'No time limit'],
     ];
+    $auction_lengths_seller = [
+        ['name' => '1 Day'],
+        ['name' => '3 Days'],
+        ['name' => '5 Days'],
+        ['name' => '7 Days'],
+        ['name' => '10 Days'],
+        ['name' => '14 Days'],
+    ];
     $auction_lengths_flat_fee = [
         ['name' => '1 hour'],
         ['name' => '2 hours'],
