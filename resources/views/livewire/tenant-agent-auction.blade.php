@@ -1756,15 +1756,6 @@ $lease_types = [
 
                     <!-- Tab Content -->
                     <div class="tab-content" id="myTabContent">
-                        
-                        <!-- DEBUG: Property Type Value -->
-                        <div style="background: yellow; padding: 10px; margin-bottom: 10px; border: 2px solid red;">
-                            <strong>DEBUG:</strong> 
-                            user_type = {{ $user_type ?? 'NULL' }} | 
-                            property_type = {{ $property_type ?? 'NULL' }} | 
-                            service_type = {{ $service_type ?? 'NULL' }} |
-                            activeTab = {{ $activeTab ?? 'NULL' }}
-                        </div>
 
                         <!-- Listing Details Tab -->
                         <div class="tab-pane fade {{ $activeTab === 0 ? 'show active' : '' }}" id="listing-details"
@@ -1803,107 +1794,133 @@ $lease_types = [
                             @endswitch
                         </div>
 
-                        <!-- Leasing Terms Tab -->
-
-                        @if (in_array($user_type, ['landlord', 'tenant']))
+                        <!-- Terms Tab (Tab 2) - Different IDs per user type -->
+                        @php
+                            $termsTabId = match($user_type) {
+                                'buyer' => 'purchasing-terms',
+                                'seller' => 'sale-terms',
+                                default => 'leasing-terms'
+                            };
+                        @endphp
                         <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
-                            id="leasing-terms" role="tabpanel" aria-labelledby="leasing-terms-tab">
-                            @endif
-                            @if ($user_type === 'seller')
-                            <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
-                                id="sale-terms" role="tabpanel" aria-labelledby="sale-terms-tab">
-                                @endif
-                                @if ($user_type === 'buyer')
-                                <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
-                                    id="purchasing-terms" role="tabpanel" aria-labelledby="purchasing-terms-tab">
-                                    @endif
-                                    <div style="background:orange;padding:5px;">TAB 2 TERMS DIV RENDERED (user={{ $user_type }})</div>
-                                    @if ($user_type === 'tenant')
+                            id="{{ $termsTabId }}" role="tabpanel" aria-labelledby="{{ $termsTabId }}-tab">
+                            @switch($user_type)
+                                @case('tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.leasing-terms')
-                                    @elseif($user_type === 'seller')
+                                    @break
+                                @case('seller')
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-terms')
-                                    @elseif($user_type === 'buyer')
+                                    @break
+                                @case('buyer')
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.purchasing-terms')
-                                    @elseif($user_type === 'landlord')
+                                    @break
+                                @case('landlord')
                                     @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.lease-terms')
-                                    @endif
-                                </div>
+                                    @break
+                            @endswitch
+                        </div>
 
-                                <!-- Conditional Pre-Screening Tab -->
-                                @if ($user_type !== 'landlord' and $user_type !== 'buyer' and $user_type !== 'seller')
-                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}" id="pre-screening"
-                                    role="tabpanel" aria-labelledby="pre-screening-tab">
-                                    @if ($user_type === 'tenant')
-                                    @include('livewire.tenant-agent-auction-tabs.commission-based.pre-screening')
-                                    @elseif($user_type === 'seller')
-                                    @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-terms')
-                                    @endif
-                                </div>
-                                @endif
+                        <!-- Conditional Pre-Screening Tab (only for tenant) -->
+                        @if ($user_type === 'tenant')
+                        <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}" id="pre-screening"
+                            role="tabpanel" aria-labelledby="pre-screening-tab">
+                            @include('livewire.tenant-agent-auction-tabs.commission-based.pre-screening')
+                        </div>
+                        @endif
 
-                                <!-- Services Tab - Adjust index based on user_type -->
-
-                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 3 : 4) ? 'show active' : '' }}"
-                                    id="services" role="tabpanel" aria-labelledby="services-tab">
-                                    <div style="background:lime;padding:5px;">TAB 3 SERVICES DIV RENDERED (user_type={{ $user_type }})</div>
-                                    @if ($user_type === 'tenant')
+                        <!-- Services Tab -->
+                        @php
+                            $servicesTabIndex = in_array($user_type, ['landlord', 'buyer', 'seller']) ? 3 : 4;
+                        @endphp
+                        <div class="tab-pane fade {{ $activeTab === $servicesTabIndex ? 'show active' : '' }}"
+                            id="services" role="tabpanel" aria-labelledby="services-tab">
+                            @switch($user_type)
+                                @case('tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.services')
-                                    @elseif($user_type === 'seller')
+                                    @break
+                                @case('seller')
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.services')
-                                    @elseif($user_type === 'buyer')
+                                    @break
+                                @case('buyer')
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.services')
-                                    @elseif($user_type === 'landlord')
+                                    @break
+                                @case('landlord')
                                     @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.services')
-                                    @endif
-                                </div>
+                                    @break
+                            @endswitch
+                        </div>
 
-                                <!-- Additional Details Tab - Adjust index based on user_type -->
-
-                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 4 : 5) ? 'show active' : '' }}"
-                                    id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
-                                    <div style="background:cyan;padding:5px;">TAB 4 ADDITIONAL DETAILS DIV RENDERED</div>
-                                    @if ($user_type === 'tenant')
+                        <!-- Additional Details Tab -->
+                        @php
+                            $additionalTabIndex = in_array($user_type, ['landlord', 'buyer', 'seller']) ? 4 : 5;
+                        @endphp
+                        <div class="tab-pane fade {{ $activeTab === $additionalTabIndex ? 'show active' : '' }}"
+                            id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
+                            @switch($user_type)
+                                @case('tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.additional-details')
-                                    @elseif($user_type === 'seller')
+                                    @break
+                                @case('seller')
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.additional-details')
-                                    @elseif($user_type === 'buyer')
+                                    @break
+                                @case('buyer')
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.additional-details')
-                                    @elseif($user_type === 'landlord')
+                                    @break
+                                @case('landlord')
                                     @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.additional-details')
-                                    @endif
-                                </div>
+                                    @break
+                            @endswitch
+                        </div>
 
-                                <!-- Broker Compensation Tab - Adjust index based on user_type -->
-
-                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 5 : 6) ? 'show active' : '' }}"
-                                    id="broker-compensation" role="tabpanel" aria-labelledby="broker-compensation-tab">
-
-                                    @if ($user_type === 'tenant')
+                        <!-- Broker Compensation Tab -->
+                        @php
+                            $brokerTabIndex = in_array($user_type, ['landlord', 'buyer', 'seller']) ? 5 : 6;
+                        @endphp
+                        <div class="tab-pane fade {{ $activeTab === $brokerTabIndex ? 'show active' : '' }}"
+                            id="broker-compensation" role="tabpanel" aria-labelledby="broker-compensation-tab">
+                            @switch($user_type)
+                                @case('tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.broker-compensation')
-                                    @elseif($user_type === 'seller')
+                                    @break
+                                @case('seller')
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.broker-compensation')
-                                    @elseif($user_type === 'buyer')
+                                    @break
+                                @case('buyer')
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.broker-compensation')
-                                    @elseif($user_type === 'landlord')
+                                    @break
+                                @case('landlord')
                                     @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.broker-compensation')
-                                    @endif
-                                </div>
+                                    @break
+                            @endswitch
+                        </div>
 
-                                <!-- Info Tab - Adjust index based on user_type -->
-
-                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 6 : 7) ? 'show active' : '' }}"
-                                    id="tenant-info" role="tabpanel" aria-labelledby="tenant-info-tab">
-
-                                    @if ($user_type === 'tenant')
+                        <!-- User Info Tab -->
+                        @php
+                            $infoTabIndex = in_array($user_type, ['landlord', 'buyer', 'seller']) ? 6 : 7;
+                            $infoTabId = match($user_type) {
+                                'buyer' => 'buyer-information',
+                                'seller' => 'seller-information',
+                                'landlord' => 'landlord-information',
+                                default => 'tenant-info'
+                            };
+                        @endphp
+                        <div class="tab-pane fade {{ $activeTab === $infoTabIndex ? 'show active' : '' }}"
+                            id="{{ $infoTabId }}" role="tabpanel" aria-labelledby="{{ $infoTabId }}-tab">
+                            @switch($user_type)
+                                @case('tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.tenant-info')
-                                    @elseif($user_type === 'seller')
+                                    @break
+                                @case('seller')
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-info')
-                                    @elseif($user_type === 'buyer')
+                                    @break
+                                @case('buyer')
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.buyer-info')
-                                    @elseif($user_type === 'landlord')
+                                    @break
+                                @case('landlord')
                                     @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.landlord-info')
-                                    @endif
-                                </div>
+                                    @break
+                            @endswitch
+                        </div>
                                 @elseif($service_type === 'limited_service')
                                 <div class="tab-pane fade {{ $activeTab === 1 ? 'show active' : '' }}"
                                     id="location-and-meeting-details" role="tabpanel"
