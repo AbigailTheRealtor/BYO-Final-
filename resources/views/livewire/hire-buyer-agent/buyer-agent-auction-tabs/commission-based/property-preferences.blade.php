@@ -27,7 +27,7 @@
 
 
 <div class="form-group mb-3">
-    <label class="fw-bold">Acceptable Cities:<span class="text-danger">*</span>
+    <label class="fw-bold">Acceptable Cities:
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the cities where the Buyer is looking to purchase a property.">
@@ -527,7 +527,7 @@
 <!-- Garage/Parking Spaces Needed -->
 @if ($property_type === 'Commercial' or $property_type === 'Business')
     <div class="form-group">
-        <label class="fw-bold">Garage Parking Features Needed:<span class="text-danger">*</span>
+        <label class="fw-bold">Garage Parking Features Needed:
 
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Select the garage or parking features the Buyer requires.">
@@ -538,7 +538,7 @@
 
         <div class="input-cover">
             <select wire:model="garage_parking_spaces" id="garage_parking_spaces" class="form-control has-icon"
-                data-icon="fa-solid fa-warehouse" required>
+                data-icon="fa-solid fa-warehouse">
                 <option value="">Select</option>
                 <option value="Yes">Yes</option>
                 <option value="No">No</option>
@@ -650,7 +650,7 @@
 <!-- Eligibility/Interest in Leasing in 55-and-Over Communities -->
 @if ($property_type === 'Residential')
     <div class="form-group">
-        <label class="fw-bold">Age-Restricted Community:<span class="text-danger">*</span>
+        <label class="fw-bold">Age-Restricted Community:
 
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Indicate whether the Buyer is eligible for and interested in purchasing in an age-restricted community under federal housing laws. 55+ communities typically require at least one occupant to be 55 or older, while 62+ communities require all residents to be 62 or older.">
@@ -661,7 +661,7 @@
 
         <div class="input-cover">
             <select wire:model="leasing_55_plus" id="leasing_55_plus" class="form-control has-icon"
-                data-icon="fa-solid fa-users" required>
+                data-icon="fa-solid fa-users">
                 <option value="">Select</option>
                 @foreach ($purchasing_props as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>

@@ -13,7 +13,7 @@
 <!-- Special Sale Provisions Dropdown -->
 
 <div class="form-group">
-    <label class="fw-bold">Acceptable Special Sale Provisions:<span class="text-danger">*</span>
+    <label class="fw-bold">Acceptable Special Sale Provisions:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select any special sale conditions the Buyer is open to. If the situation isn’t listed, select “Other” and provide details.">
             <i class="fa-solid fa-circle-info"></i>
@@ -23,7 +23,7 @@
 
     <div class="input-cover">
         <select wire:model="sale_provision" id="sale_provision" class="form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-screwdriver-wrench input-icon2" multiple required>
+            data-icon="fa-solid fa-screwdriver-wrench input-icon2" multiple>
             @foreach ($buyer_property as $row_pt)
                 <option value="{{ $row_pt['name'] }}" title="{{ $row_pt['description'] }}">{{ $row_pt['name'] }}
                 </option>
