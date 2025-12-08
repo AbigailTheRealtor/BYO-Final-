@@ -137,6 +137,7 @@ class BuyerAgentAuction extends Component
     public $pool_type = [];
     public $view_preference = [];
     public $other_preferences = '';
+    public $is_other_visible = false;
     public $real_estate_purchase = '';
     public $number_of_unit = '';
     public $number_of_unit_other = '';
@@ -147,6 +148,9 @@ class BuyerAgentAuction extends Component
     public $property_criteria = '';
     public $unit_size = '';
     public $unit_size_other = '';
+    public $appliances = '';
+    public $appliances_other = '';
+    public $showOtherAppliances = false;
 
     public $leasing_55_plus = '';
     public $non_negotiable_amenities = [];

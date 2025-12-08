@@ -133,6 +133,7 @@ class SellerAgentAuction extends Component
     public $pool_type = [];
     public $view_preference = [];
     public $other_preferences = '';
+    public $is_other_visible = false;
     public $real_estate_purchase = '';
     public $number_of_unit = '';
     public $number_of_unit_other = '';
