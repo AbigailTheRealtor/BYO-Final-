@@ -1,3 +1,5 @@
+<!-- DEBUG MARKER: services.blade.php IS BEING INCLUDED -->
+<div class="alert alert-warning mb-2">DEBUG: property_type = "{{ $property_type ?? 'UNDEFINED' }}"</div>
 <h3>Services the Buyer Requests from Their Agent</h3>
 
 <div class="alert alert-info bg-light-info border-info mb-4">
