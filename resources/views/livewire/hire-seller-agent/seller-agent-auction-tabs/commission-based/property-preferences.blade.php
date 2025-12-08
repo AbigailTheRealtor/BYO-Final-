@@ -48,7 +48,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover position-relative">
-        <input type="text" wire:model="property_city"
+        <input type="text" wire:model.live.debounce.300ms="property_city"
             wire:keydown.enter.prevent="selectPropertyCitySuggestion()"
             wire:keydown.arrow-up.prevent="decrementPropertyCityHighlight()"
             wire:keydown.arrow-down.prevent="incrementPropertyCityHighlight()"
