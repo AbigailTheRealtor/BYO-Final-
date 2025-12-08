@@ -905,6 +905,9 @@
         ['name' => 'None'],
         // ['name' => 'Other', 'target' => '.otherOwnerPays'],
     ];
+
+    $occupant_types = [['name' => 'Tenant'], ['name' => 'Vacant'], ['name' => 'Occupied']];
+    $occupant_types_seller = [['name' => 'Owner'], ['name' => 'Tenant'], ['name' => 'Vacant']];
 @endphp
 
 <div class="container pt-5 pb-5">
