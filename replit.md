@@ -93,6 +93,13 @@ This is a Laravel-based real estate auction platform that enables transparent bi
   - This error broke Bootstrap tab initialization, causing tabs 2-6 to not function for Income Property
   - Fixed by changing tab name to "Broker Compensation" (line 1687 in tenant-agent-auction.blade.php)
   - Full title "Broker Compensation & Agency Agreement Terms" retained as H3 header inside tab content
+- **Fixed Validation Selector References (December 8, 2025)**:
+  - JavaScript validation code was referencing `#tenant-info` instead of user-specific tab IDs
+  - Updated `getAllRequiredFields()` function in all three hire agent pages:
+    - hire-buyer-agent.blade.php: Changed `#tenant-info` to `#buyer-information` (lines 2009, 2014)
+    - hire-seller-agent.blade.php: Changed `#tenant-info` to `#seller-information` (lines 2009, 2014)
+    - hire-landlord-agent.blade.php: Changed `#tenant-info` to `#landlord-information` (lines 2410, 2415)
+  - This ensures form validation correctly identifies required fields in the final tab for each user type
 
 ### Property Location Fields for Hire Seller/Landlord Agent (December 8, 2025):
 - **New Required Fields**: Added City*, State*, ZIP Code* immediately after Street Address

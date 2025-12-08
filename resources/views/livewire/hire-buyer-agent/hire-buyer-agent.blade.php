@@ -2006,12 +2006,12 @@
                     '#services',
                     '#additional-details',
                     '#broker-compensation',
-                    '#tenant-info'
+                    '#buyer-information'
                 ] : [
                     '#listing-details',
                     '#location-and-meeting-details',
                     '#service-selection-and-pricing',
-                    '#tenant-info'
+                    '#buyer-information'
                 ];
 
                 tabSelector.forEach(selector => {

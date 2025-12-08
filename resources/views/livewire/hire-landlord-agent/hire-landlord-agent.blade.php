@@ -2407,12 +2407,12 @@
                     '#services',
                     '#additional-details',
                     '#broker-compensation',
-                    '#tenant-info'
+                    '#landlord-information'
                 ] : [
                     '#listing-details',
                     '#location-and-meeting-details',
                     '#service-selection-and-pricing',
-                    '#tenant-info'
+                    '#landlord-information'
                 ];
 
                 tabSelector.forEach(selector => {
