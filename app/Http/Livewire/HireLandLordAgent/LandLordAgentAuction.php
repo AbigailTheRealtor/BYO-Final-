@@ -160,6 +160,7 @@ class LandLordAgentAuction extends Component
     public $unit_size_other = '';
     public $appliances = '';
     public $appliances_other = '';
+    public $showOtherAppliances = false;
 
     public $leasing_55_plus = '';
     public $non_negotiable_amenities = [];

@@ -143,6 +143,9 @@ class SellerAgentAuction extends Component
     public $property_criteria = '';
     public $unit_size = '';
     public $unit_size_other = '';
+    public $appliances = '';
+    public $appliances_other = '';
+    public $showOtherAppliances = false;
 
     public $leasing_55_plus = '';
     public $non_negotiable_amenities = [];
