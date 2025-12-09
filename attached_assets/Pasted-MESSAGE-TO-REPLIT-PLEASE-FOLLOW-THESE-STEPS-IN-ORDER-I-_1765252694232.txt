@@ -1,0 +1,167 @@
+MESSAGE TO REPLIT – PLEASE FOLLOW THESE STEPS IN ORDER
+
+I’ve reverted the project back to the original working state (except for the Income tabs bug).
+
+I need you to carefully confirm which files are actually being used for the Hire a Buyer’s Agent (Auction) flow, and then only edit those files.
+
+1️⃣ Confirm the route → component → view chain
+
+Goal: When I visit Hire a Buyer’s Agent (Auction), I want to know:
+
+exactly which route
+
+which Livewire component
+
+and which Blade view
+are used.
+
+Steps:
+
+In the Replit shell, run:
+
+php artisan route:list | grep -i "hire" | grep -i "buyer"
+php artisan route:list | grep -i "auction" | grep -i "buyer"
+
+
+Identify the URL I am using, which is something like:
+
+/hire/agent/auction/buyer
+
+
+From the route definition, note the Livewire component it uses.
+It will look like one of these:
+
+App\Http\Livewire\TenantAgentAuction
+// or
+App\Http\Livewire\HireBuyerAgent\BuyerAgentAuction
+
+
+Open that component class and check the render() method to see which view it returns, for example:
+
+public function render()
+{
+    return view('livewire.tenant-agent-auction');
+    // or
+    return view('livewire.hire-buyer-agent.buyer-agent-auction');
+}
+
+
+Write down the final Blade view name you find (e.g. livewire.tenant-agent-auction).
+
+From this point on, please work only in that confirmed Blade view file and the tab partials it includes.
+
+2️⃣ Add a debug banner to PROVE the main view being used
+
+Goal: Visually confirm, in the browser, which Blade view is actually rendering the page.
+
+Open the Blade view you found in step 1, for example:
+
+resources/views/livewire/tenant-agent-auction.blade.php
+// or
+resources/views/livewire/hire-buyer-agent/buyer-agent-auction.blade.php
+
+
+At the very top of that file (right after @extends / <div> if any), temporarily add:
+
+<div style="background:#00ff00; color:#000; padding:6px; font-weight:bold;">
+    DEBUG MAIN VIEW:
+    {{ __FILE__ }}
+</div>
+
+
+In the browser, go to my Hire a Buyer’s Agent (Auction) URL.
+
+Confirm you see that green bar at the top and that the file path matches the view you think you’re editing.
+
+If you don’t see this banner, you’re editing the wrong file.
+
+3️⃣ Find the tab content includes for the Buyer user type
+
+Goal: Inside that main view, identify how tabs 3–7 (Purchasing Terms, Services, Additional Details, Broker Compensation, Buyer Information) are loaded for Buyers.
+
+In the same main Blade view, search for:
+
+@include('livewire.hire-buyer-agent.buyer-agent-auction-tabs')
+@include('...purchasing-terms')
+@include('...services')
+@include('...additional-details')
+@include('...broker-compensation')
+@include('...buyer-info')
+
+
+or any similar @include(...) for those tab names.
+
+Around those includes, find the conditions that control when the Buyer content is shown, for example:
+
+@if ($user_type === 'buyer' && $service_type === 'full_service')
+    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.services')
+@endif
+
+
+Write down the exact include paths for the Buyer tabs, e.g.:
+
+resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/purchasing-terms.blade.php
+resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/services.blade.php
+resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/additional-details.blade.php
+resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/broker-compensation.blade.php
+resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/buyer-info.blade.php
+
+
+These are the only files that should be edited for Buyer tab behavior.
+Please confirm these paths back to me before making any logic changes.
+
+4️⃣ Confirm what user_type, service_type, and property_type are for Income
+
+Goal: See the actual values being passed when I choose Buyer + Full Service + Income, so we know what to match in the conditions.
+
+In the confirmed main Blade view (e.g. tenant-agent-auction.blade.php), near the top (below the debug banner), temporarily add:
+
+<div style="background:#ffff00; color:#000; padding:6px; font-weight:bold;">
+    DEBUG DATA:
+    user_type="{{ $user_type ?? 'NULL' }}"
+    | service_type="{{ $service_type ?? 'NULL' }}"
+    | property_type="{{ $property_type ?? 'NULL' }}"
+</div>
+
+
+In the browser:
+
+Select Buyer flow
+
+Choose Full Service
+
+Select property type Income
+
+Go to tab 3+ where it’s blank
+
+Tell me exactly what that yellow debug line shows for:
+
+user_type = ?
+
+service_type = ?
+
+property_type = ?
+
+We will use those exact values in the conditions for Buyer Income tabs.
+
+5️⃣ Only after all of the above: fix the Income tab condition
+
+Once steps 1–4 are confirmed, then you can safely:
+
+Update the conditions around the Buyer tab includes so that Income uses the correct Buyer tab files, instead of showing blank content or Residential-only.
+
+But for now, the most important thing is:
+
+✅ Verify the exact route → component → view → tab include chain
+✅ Confirm the real property_type value when “Income” is selected
+✅ Confirm the actual tab partial file paths
+
+Please send me:
+
+The confirmed main view path (from the green debug banner)
+
+The list of tab partials being included for Buyer
+
+The values from the yellow debug banner when I choose Income
+
+Then we can write a tiny, precise condition to make the Income tabs show correctly.

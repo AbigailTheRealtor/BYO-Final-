@@ -1591,6 +1591,14 @@ $lease_types = [
 @endphp
 
 <div class="container pt-5 pb-5">
+    <!-- DEBUG BANNERS - REMOVE AFTER TESTING -->
+    <div style="background:#00ff00; color:#000; padding:6px; font-weight:bold;">
+        DEBUG MAIN VIEW: {{ __FILE__ }}
+    </div>
+    <div style="background:#ffff00; color:#000; padding:6px; font-weight:bold;">
+        DEBUG DATA: user_type="{{ $user_type ?? 'NULL' }}" | service_type="{{ $service_type ?? 'NULL' }}" | property_type="{{ $property_type ?? 'NULL' }}"
+    </div>
+    <!-- END DEBUG BANNERS -->
     <div class="card">
         <div class="row">
             <div class="col-12 p-4">
