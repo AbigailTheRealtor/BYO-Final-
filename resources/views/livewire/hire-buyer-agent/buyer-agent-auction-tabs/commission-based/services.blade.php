@@ -1,3 +1,6 @@
+<div style="background:#ff0; padding:4px; font-weight:bold;">
+    DEBUG BUYER TAB LOADED: {{ basename(__FILE__) }} | property_type = {{ $property_type ?? 'null' }}
+</div>
 <h3>Services the Buyer Requests from Their Agent</h3>
 
 

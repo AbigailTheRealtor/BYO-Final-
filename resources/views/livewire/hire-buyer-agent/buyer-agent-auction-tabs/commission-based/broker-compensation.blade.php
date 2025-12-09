@@ -1,3 +1,6 @@
+<div style="background:#ff0; padding:4px; font-weight:bold;">
+    DEBUG BUYER TAB LOADED: {{ basename(__FILE__) }} | property_type = {{ $property_type ?? 'null' }}
+</div>
 <h3>Broker Compensation & Agency Agreement Terms</h3>
 <div class="alert alert-info bg-light-info border-info mb-4">
     <div class="d-flex align-items-center">
