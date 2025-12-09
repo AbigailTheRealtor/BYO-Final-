@@ -1798,11 +1798,13 @@ $lease_types = [
                         <div style="background:blue;color:white;padding:10px;">DEBUG: AFTER PROPERTY-PREFERENCES DIV</div>
                         <!-- Terms Tab (Tab 2) - Different IDs per user type -->
                         @php
-                            $termsTabId = match($user_type) {
-                                'buyer' => 'purchasing-terms',
-                                'seller' => 'sale-terms',
-                                default => 'leasing-terms'
-                            };
+                            if ($user_type === 'buyer') {
+                                $termsTabId = 'purchasing-terms';
+                            } elseif ($user_type === 'seller') {
+                                $termsTabId = 'sale-terms';
+                            } else {
+                                $termsTabId = 'leasing-terms';
+                            }
                         @endphp
                         <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
                             id="{{ $termsTabId }}" role="tabpanel" aria-labelledby="{{ $termsTabId }}-tab">
@@ -1900,12 +1902,15 @@ $lease_types = [
                         <!-- User Info Tab -->
                         @php
                             $infoTabIndex = in_array($user_type, ['landlord', 'buyer', 'seller']) ? 6 : 7;
-                            $infoTabId = match($user_type) {
-                                'buyer' => 'buyer-information',
-                                'seller' => 'seller-information',
-                                'landlord' => 'landlord-information',
-                                default => 'tenant-info'
-                            };
+                            if ($user_type === 'buyer') {
+                                $infoTabId = 'buyer-information';
+                            } elseif ($user_type === 'seller') {
+                                $infoTabId = 'seller-information';
+                            } elseif ($user_type === 'landlord') {
+                                $infoTabId = 'landlord-information';
+                            } else {
+                                $infoTabId = 'tenant-info';
+                            }
                         @endphp
                         <div class="tab-pane fade {{ $activeTab === $infoTabIndex ? 'show active' : '' }}"
                             id="{{ $infoTabId }}" role="tabpanel" aria-labelledby="{{ $infoTabId }}-tab">
