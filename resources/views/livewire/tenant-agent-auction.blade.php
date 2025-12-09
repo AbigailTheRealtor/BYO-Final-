@@ -1829,6 +1829,11 @@ $lease_types = [
                             @endswitch
                         </div>
 
+                        {{-- DEBUG: AFTER TERMS TAB --}}
+                        <div style="background: red; color: white; padding: 10px; border: 3px solid blue; font-weight: bold;">
+                            DEBUG AFTER TERMS TAB: We got past the terms tab. user_type={{ $user_type }}
+                        </div>
+
                         <!-- Conditional Pre-Screening Tab (only for tenant) -->
                         @if ($user_type === 'tenant')
                         <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}" id="pre-screening"
