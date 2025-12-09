@@ -8,6 +8,13 @@
 
 <h3>Services the Buyer Requests from Their Agent</h3>
 
+{{-- Debug: Remove after testing --}}
+<div style="background: yellow; padding: 10px; margin-bottom: 10px; font-weight: bold; border: 2px solid red;">
+    DEBUG: property_type = "{{ $property_type ?? 'NULL' }}" | 
+    type (lowercase) = "{{ $type }}" | 
+    isResidentialOrIncome = {{ $isResidentialOrIncome ? 'TRUE' : 'FALSE' }}
+</div>
+
 <div class="alert alert-info bg-light-info border-info mb-4">
     <div class="d-flex align-items-center">
         <div>
