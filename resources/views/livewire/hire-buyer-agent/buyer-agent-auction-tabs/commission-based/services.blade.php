@@ -1,9 +1,10 @@
 @php
-    $type = strtolower($property_type ?? '');
+    // Normalize property_type: lowercase and replace underscores/dashes with spaces
+    $type = strtolower(str_replace(['_', '-'], ' ', trim($property_type ?? '')));
     $isResidentialOrIncome = in_array($type, ['income', 'income property', 'residential', 'residential property']);
     $isCommercial = $type === 'commercial';
     $isBusiness = $type === 'business';
-    $isVacantLand = in_array($type, ['vacant land', 'vacant_land', 'land']);
+    $isVacantLand = in_array($type, ['vacant land', 'land']);
 @endphp
 
 <h3>Services the Buyer Requests from Their Agent</h3>

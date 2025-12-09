@@ -1829,11 +1829,6 @@ $lease_types = [
                             @endswitch
                         </div>
 
-                        {{-- DEBUG: AFTER TERMS TAB --}}
-                        <div style="background: red; color: white; padding: 10px; border: 3px solid blue; font-weight: bold;">
-                            DEBUG AFTER TERMS TAB: We got past the terms tab. user_type={{ $user_type }}
-                        </div>
-
                         <!-- Conditional Pre-Screening Tab (only for tenant) -->
                         @if ($user_type === 'tenant')
                         <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}" id="pre-screening"
@@ -1848,10 +1843,6 @@ $lease_types = [
                         @endphp
                         <div class="tab-pane fade {{ $activeTab === $servicesTabIndex ? 'show active' : '' }}"
                             id="services" role="tabpanel" aria-labelledby="services-tab">
-                            {{-- DEBUG: INSIDE SERVICES TAB-PANE --}}
-                            <div style="background: purple; color: white; padding: 10px; border: 3px solid yellow; font-weight: bold;">
-                                DEBUG INSIDE SERVICES TAB-PANE: user_type={{ $user_type }}
-                            </div>
                             @switch($user_type)
                                 @case('tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.services')
@@ -1860,10 +1851,6 @@ $lease_types = [
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.services')
                                     @break
                                 @case('buyer')
-                                    {{-- DEBUG: BUYER SERVICES CASE REACHED --}}
-                                    <div style="background: orange; padding: 10px; border: 3px solid black; font-weight: bold;">
-                                        DEBUG BUYER SERVICES: About to include buyer services.blade.php
-                                    </div>
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.services')
                                     @break
                                 @case('landlord')
