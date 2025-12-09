@@ -1851,6 +1851,10 @@ $lease_types = [
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.services')
                                     @break
                                 @case('buyer')
+                                    {{-- DEBUG: BUYER SERVICES CASE REACHED --}}
+                                    <div style="background: orange; padding: 10px; border: 3px solid black; font-weight: bold;">
+                                        DEBUG BUYER SERVICES: About to include buyer services.blade.php
+                                    </div>
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.services')
                                     @break
                                 @case('landlord')
