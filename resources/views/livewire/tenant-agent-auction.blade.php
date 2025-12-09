@@ -1772,7 +1772,6 @@ $lease_types = [
                         </div>
 
                         @if ($service_type === 'full_service')
-                        </div>
                         <div class="tab-pane fade {{ $activeTab === 1 ? 'show active' : '' }}"
                             id="{{ $propertyId }}" role="tabpanel"
                             aria-labelledby="{{ $propertyId }}-tab">
@@ -1795,28 +1794,30 @@ $lease_types = [
                             @endswitch
                         </div>
 
-                        <!-- Tab 2: Terms Tab (varies by user_type) -->
+                        <!-- Leasing Terms Tab -->
+
                         @if (in_array($user_type, ['landlord', 'tenant']))
-                            <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
-                                id="leasing-terms" role="tabpanel" aria-labelledby="leasing-terms-tab">
-                                @if ($user_type === 'tenant')
-                                    @include('livewire.tenant-agent-auction-tabs.commission-based.leasing-terms')
-                                @elseif($user_type === 'landlord')
-                                    @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.lease-terms')
-                                @endif
-                            </div>
-                        @elseif ($user_type === 'seller')
+                        <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
+                            id="leasing-terms" role="tabpanel" aria-labelledby="leasing-terms-tab">
+                            @endif
+                            @if ($user_type === 'seller')
                             <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
                                 id="sale-terms" role="tabpanel" aria-labelledby="sale-terms-tab">
-                                @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-terms')
-                            </div>
-                        @elseif ($user_type === 'buyer')
-                            <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
-                                id="purchasing-terms" role="tabpanel" aria-labelledby="purchasing-terms-tab"
-                                wire:key="purchasing-terms-{{ $user_type }}-{{ $property_type }}">
-                                @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.purchasing-terms')
-                            </div>
-                        @endif
+                                @endif
+                                @if ($user_type === 'buyer')
+                                <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
+                                    id="purchasing-terms" role="tabpanel" aria-labelledby="purchasing-terms-tab">
+                                    @endif
+                                    @if ($user_type === 'tenant')
+                                    @include('livewire.tenant-agent-auction-tabs.commission-based.leasing-terms')
+                                    @elseif($user_type === 'seller')
+                                    @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-terms')
+                                    @elseif($user_type === 'buyer')
+                                    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.purchasing-terms')
+                                    @elseif($user_type === 'landlord')
+                                    @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.lease-terms')
+                                    @endif
+                                </div>
 
                                 <!-- Conditional Pre-Screening Tab -->
                                 @if ($user_type !== 'landlord' and $user_type !== 'buyer' and $user_type !== 'seller')
@@ -1833,8 +1834,8 @@ $lease_types = [
                                 <!-- Services Tab - Adjust index based on user_type -->
 
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 3 : 4) ? 'show active' : '' }}"
-                                    id="services" role="tabpanel" aria-labelledby="services-tab"
-                                    wire:key="services-{{ $user_type }}-{{ $property_type }}">
+                                    id="services" role="tabpanel" aria-labelledby="services-tab">
+
                                     @if ($user_type === 'tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.services')
                                     @elseif($user_type === 'seller')
@@ -1849,8 +1850,8 @@ $lease_types = [
                                 <!-- Additional Details Tab - Adjust index based on user_type -->
 
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 4 : 5) ? 'show active' : '' }}"
-                                    id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab"
-                                    wire:key="additional-details-{{ $user_type }}-{{ $property_type }}">
+                                    id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
+
                                     @if ($user_type === 'tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.additional-details')
                                     @elseif($user_type === 'seller')
@@ -1865,8 +1866,8 @@ $lease_types = [
                                 <!-- Broker Compensation Tab - Adjust index based on user_type -->
 
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 5 : 6) ? 'show active' : '' }}"
-                                    id="broker-compensation" role="tabpanel" aria-labelledby="broker-compensation-tab"
-                                    wire:key="broker-compensation-{{ $user_type }}-{{ $property_type }}">
+                                    id="broker-compensation" role="tabpanel" aria-labelledby="broker-compensation-tab">
+
                                     @if ($user_type === 'tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.broker-compensation')
                                     @elseif($user_type === 'seller')
@@ -1881,8 +1882,8 @@ $lease_types = [
                                 <!-- Info Tab - Adjust index based on user_type -->
 
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 6 : 7) ? 'show active' : '' }}"
-                                    id="tenant-info" role="tabpanel" aria-labelledby="tenant-info-tab"
-                                    wire:key="buyer-info-{{ $user_type }}-{{ $property_type }}">
+                                    id="tenant-info" role="tabpanel" aria-labelledby="tenant-info-tab">
+
                                     @if ($user_type === 'tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.tenant-info')
                                     @elseif($user_type === 'seller')
@@ -3382,10 +3383,57 @@ $lease_types = [
             return allValid;
         }
 
-        // Services tab validation - no longer requires at least one service
+        // Add this function to validate services tab
         function validateServicesTab(tabContent) {
-            // Services are optional - always return true
-            return true;
+            if (!tabContent || tabContent.id !== 'services') return true;
+
+            let isValid = true;
+
+            // Check at least one service is selected (excluding "Other" checkbox)
+            const hasServices = tabContent.querySelectorAll(
+                'input[type="checkbox"][wire\\:model="services"]:checked:not(#other-services-checkbox)'
+            ).length > 0;
+
+            // Check "Other Services" if enabled
+            const otherCheckbox = tabContent.querySelector('#other-services-checkbox');
+            const otherTextarea = tabContent.querySelector('#other-services-input');
+            const hasOtherDescription = otherTextarea && otherTextarea.value.trim() !== '';
+
+            // Clear previous errors
+            const existingErrors = tabContent.querySelectorAll('.service-error');
+            if (existingErrors) {
+                existingErrors.forEach(el => el.remove());
+            }
+            if (otherTextarea) otherTextarea.classList.remove('is-invalid');
+
+            if (!hasServices && (!otherCheckbox || !otherCheckbox.checked)) {
+                isValid = false;
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'service-error error mt-2';
+                errorDiv.textContent = 'Please select at least one service or specify additional services.';
+
+                const lastSection = tabContent.querySelector('.service-section:last-child') || tabContent;
+                if (lastSection) {
+                    lastSection.appendChild(errorDiv);
+                }
+            }
+
+            /*   if (otherCheckbox && otherCheckbox.checked && (!otherTextarea || !hasOtherDescription)) {
+                            isValid = false;
+                            const errorDiv = document.createElement('div');
+                            errorDiv.className = 'service-error error mt-2';
+                            errorDiv.textContent = 'Please describe the additional services you require.';
+
+                            if (otherTextarea) {
+                                otherTextarea.classList.add('is-invalid');
+                                const container = otherTextarea.closest('.mb-3') || otherTextarea.parentNode;
+                                if (container) {
+                                    container.appendChild(errorDiv);
+                                }
+                            }
+                        }
+        */
+            return isValid;
         }
         // MODIFY your existing next button click handler like this:
         document.querySelector('.wizard-step-next')?.addEventListener('click', function() {

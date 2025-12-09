@@ -1454,10 +1454,56 @@
             }
 
             // Add this function to validate services tab
-            // Services tab validation - no longer requires at least one service
             function validateServicesTab(tabContent) {
-                // Services are optional - always return true
-                return true;
+                if (!tabContent || tabContent.id !== 'services') return true;
+
+                let isValid = true;
+
+                // Check at least one service is selected (excluding "Other" checkbox)
+                const hasServices = tabContent.querySelectorAll(
+                    'input[type="checkbox"][wire\\:model="services"]:checked:not(#other-services-checkbox)'
+                ).length > 0;
+
+                // Check "Other Services" if enabled
+                const otherCheckbox = tabContent.querySelector('#other-services-checkbox');
+                const otherTextarea = tabContent.querySelector('#other-services-input');
+                const hasOtherDescription = otherTextarea && otherTextarea.value.trim() !== '';
+
+                // Clear previous errors
+                const existingErrors = tabContent.querySelectorAll('.service-error');
+                if (existingErrors) {
+                    existingErrors.forEach(el => el.remove());
+                }
+                if (otherTextarea) otherTextarea.classList.remove('is-invalid');
+
+                if (!hasServices && (!otherCheckbox || !otherCheckbox.checked)) {
+                    isValid = false;
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'service-error error mt-2';
+                    errorDiv.textContent = 'Please select at least one service or specify additional services.';
+
+                    const lastSection = tabContent.querySelector('.service-section:last-child') || tabContent;
+                    if (lastSection) {
+                        lastSection.appendChild(errorDiv);
+                    }
+                }
+
+                if (otherCheckbox && otherCheckbox.checked && (!otherTextarea || !hasOtherDescription)) {
+                    isValid = false;
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'service-error error mt-2';
+                    errorDiv.textContent = 'Please describe the additional services you require.';
+
+                    if (otherTextarea) {
+                        otherTextarea.classList.add('is-invalid');
+                        const container = otherTextarea.closest('.mb-3') || otherTextarea.parentNode;
+                        if (container) {
+                            container.appendChild(errorDiv);
+                        }
+                    }
+                }
+
+                return isValid;
             }
             // MODIFY your existing next button click handler like this:
             document.querySelector('.wizard-step-next')?.addEventListener('click', function() {
