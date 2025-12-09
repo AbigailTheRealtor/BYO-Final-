@@ -1,5 +1,9 @@
 <h3>Services the Buyer Requests from Their Agent</h3>
 
+<div style="background:yellow;padding:5px;margin-bottom:10px;font-weight:bold;">
+    DEBUG SERVICES: property_type = "{{ $property_type ?? 'NULL' }}"
+</div>
+
 <div class="alert alert-info bg-light-info border-info mb-4">
     <div class="d-flex align-items-center">
         <div>

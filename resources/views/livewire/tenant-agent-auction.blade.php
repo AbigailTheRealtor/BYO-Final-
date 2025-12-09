@@ -1591,9 +1591,6 @@ $lease_types = [
 @endphp
 
 <div class="container pt-5 pb-5">
-    <div style="background:purple;color:white;font-weight:bold;padding:8px;margin-bottom:10px;">
-        DEBUG: tenant-agent-auction.blade.php - Route: /hire/agent/auction/{{ $user_type ?? 'unknown' }}
-    </div>
     <div class="card">
         <div class="row">
             <div class="col-12 p-4">
