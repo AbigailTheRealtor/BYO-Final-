@@ -55,7 +55,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-    // Browser notification permission should be requested via user interaction
-    // The permission will be requested when the user clicks the notification bell
-    // This avoids the browser warning about requesting permission without user gesture
+    // Request browser notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
 });

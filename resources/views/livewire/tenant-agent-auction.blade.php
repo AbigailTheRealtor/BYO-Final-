@@ -1591,9 +1591,6 @@ $lease_types = [
 @endphp
 
 <div class="container pt-5 pb-5">
-    <div style="background:lime;color:black;font-weight:bold;padding:8px;margin-bottom:10px;">
-        DEBUG MAIN: user_type="{{ $user_type ?? 'NULL' }}" | service_type="{{ $service_type ?? 'NULL' }}" | property_type="{{ $property_type ?? 'NULL' }}"
-    </div>
     <div class="card">
         <div class="row">
             <div class="col-12 p-4">
@@ -1667,15 +1664,11 @@ $lease_types = [
                     @php
                     $baseTabs = ['Listing Details'];
 
-                    // Normalize property_type: treat Income variants as Residential for tabs 3+
-                    $normalizedPropertyType = in_array($property_type, ['Income', 'Income Property', 'income', 'income_property']) ? 'Residential' : $property_type;
-
                     // Conditionally set Property tab label based on user type
-                    if ($user_type === 'tenant' || $user_type === 'buyer') {
-                        $propertyTab = 'Property Preferences';
-                    } else {
-                        $propertyTab = 'Property Details';
-                    }
+                    $propertyTab = match ($user_type) {
+                    'tenant', 'buyer' => 'Property Preferences',
+                    'seller', 'landlord' => 'Property Details',
+                    };
 
                     $propertyId = str_replace(' ', '-', strtolower($propertyTab));
 
@@ -1801,144 +1794,106 @@ $lease_types = [
                             @endswitch
                         </div>
 
-                        <!-- Terms Tab (Tab 2) - Different IDs per user type -->
-                        @php
-                            if ($user_type === 'buyer') {
-                                $termsTabId = 'purchasing-terms';
-                            } elseif ($user_type === 'seller') {
-                                $termsTabId = 'sale-terms';
-                            } else {
-                                $termsTabId = 'leasing-terms';
-                            }
-                        @endphp
+                        <!-- Leasing Terms Tab -->
+
+                        @if (in_array($user_type, ['landlord', 'tenant']))
                         <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
-                            id="{{ $termsTabId }}" role="tabpanel" aria-labelledby="{{ $termsTabId }}-tab">
-                            @switch($user_type)
-                                @case('tenant')
+                            id="leasing-terms" role="tabpanel" aria-labelledby="leasing-terms-tab">
+                            @endif
+                            @if ($user_type === 'seller')
+                            <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
+                                id="sale-terms" role="tabpanel" aria-labelledby="sale-terms-tab">
+                                @endif
+                                @if ($user_type === 'buyer')
+                                <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
+                                    id="purchasing-terms" role="tabpanel" aria-labelledby="purchasing-terms-tab">
+                                    @endif
+                                    @if ($user_type === 'tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.leasing-terms')
-                                    @break
-                                @case('seller')
+                                    @elseif($user_type === 'seller')
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-terms')
-                                    @break
-                                @case('buyer')
+                                    @elseif($user_type === 'buyer')
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.purchasing-terms')
-                                    @break
-                                @case('landlord')
+                                    @elseif($user_type === 'landlord')
                                     @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.lease-terms')
-                                    @break
-                            @endswitch
-                        </div>
+                                    @endif
+                                </div>
 
-                        <!-- Conditional Pre-Screening Tab (only for tenant) -->
-                        @if ($user_type === 'tenant')
-                        <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}" id="pre-screening"
-                            role="tabpanel" aria-labelledby="pre-screening-tab">
-                            @include('livewire.tenant-agent-auction-tabs.commission-based.pre-screening')
-                        </div>
-                        @endif
+                                <!-- Conditional Pre-Screening Tab -->
+                                @if ($user_type !== 'landlord' and $user_type !== 'buyer' and $user_type !== 'seller')
+                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}" id="pre-screening"
+                                    role="tabpanel" aria-labelledby="pre-screening-tab">
+                                    @if ($user_type === 'tenant')
+                                    @include('livewire.tenant-agent-auction-tabs.commission-based.pre-screening')
+                                    @elseif($user_type === 'seller')
+                                    @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-terms')
+                                    @endif
+                                </div>
+                                @endif
 
-                        <!-- Services Tab -->
-                        @php
-                            $servicesTabIndex = in_array($user_type, ['landlord', 'buyer', 'seller']) ? 3 : 4;
-                        @endphp
-                        <div class="tab-pane fade {{ $activeTab === $servicesTabIndex ? 'show active' : '' }}"
-                            id="services" role="tabpanel" aria-labelledby="services-tab">
-                            
-                            {{-- DEBUG: SERVICES TAB CONTENT START --}}
-                            <div style="background: cyan; color: black; padding: 15px; border: 4px solid purple; font-size: 18px;">
-                                SERVICES TAB-PANE CONTENT: user_type = "{{ $user_type }}"
-                            </div>
-                            
-                            @switch($user_type)
-                                @case('tenant')
+                                <!-- Services Tab - Adjust index based on user_type -->
+
+                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 3 : 4) ? 'show active' : '' }}"
+                                    id="services" role="tabpanel" aria-labelledby="services-tab">
+
+                                    @if ($user_type === 'tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.services')
-                                    @break
-                                @case('seller')
+                                    @elseif($user_type === 'seller')
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.services')
-                                    @break
-                                @case('buyer')
+                                    @elseif($user_type === 'buyer')
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.services')
-                                    @break
-                                @case('landlord')
+                                    @elseif($user_type === 'landlord')
                                     @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.services')
-                                    @break
-                            @endswitch
-                        </div>
+                                    @endif
+                                </div>
 
-                        <!-- Additional Details Tab -->
-                        @php
-                            $additionalTabIndex = in_array($user_type, ['landlord', 'buyer', 'seller']) ? 4 : 5;
-                        @endphp
-                        <div class="tab-pane fade {{ $activeTab === $additionalTabIndex ? 'show active' : '' }}"
-                            id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
-                            @switch($user_type)
-                                @case('tenant')
+                                <!-- Additional Details Tab - Adjust index based on user_type -->
+
+                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 4 : 5) ? 'show active' : '' }}"
+                                    id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
+
+                                    @if ($user_type === 'tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.additional-details')
-                                    @break
-                                @case('seller')
+                                    @elseif($user_type === 'seller')
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.additional-details')
-                                    @break
-                                @case('buyer')
+                                    @elseif($user_type === 'buyer')
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.additional-details')
-                                    @break
-                                @case('landlord')
+                                    @elseif($user_type === 'landlord')
                                     @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.additional-details')
-                                    @break
-                            @endswitch
-                        </div>
+                                    @endif
+                                </div>
 
-                        <!-- Broker Compensation Tab -->
-                        @php
-                            $brokerTabIndex = in_array($user_type, ['landlord', 'buyer', 'seller']) ? 5 : 6;
-                        @endphp
-                        <div class="tab-pane fade {{ $activeTab === $brokerTabIndex ? 'show active' : '' }}"
-                            id="broker-compensation" role="tabpanel" aria-labelledby="broker-compensation-tab">
-                            @switch($user_type)
-                                @case('tenant')
+                                <!-- Broker Compensation Tab - Adjust index based on user_type -->
+
+                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 5 : 6) ? 'show active' : '' }}"
+                                    id="broker-compensation" role="tabpanel" aria-labelledby="broker-compensation-tab">
+
+                                    @if ($user_type === 'tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.broker-compensation')
-                                    @break
-                                @case('seller')
+                                    @elseif($user_type === 'seller')
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.broker-compensation')
-                                    @break
-                                @case('buyer')
+                                    @elseif($user_type === 'buyer')
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.broker-compensation')
-                                    @break
-                                @case('landlord')
+                                    @elseif($user_type === 'landlord')
                                     @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.broker-compensation')
-                                    @break
-                            @endswitch
-                        </div>
+                                    @endif
+                                </div>
 
-                        <!-- User Info Tab -->
-                        @php
-                            $infoTabIndex = in_array($user_type, ['landlord', 'buyer', 'seller']) ? 6 : 7;
-                            if ($user_type === 'buyer') {
-                                $infoTabId = 'buyer-information';
-                            } elseif ($user_type === 'seller') {
-                                $infoTabId = 'seller-information';
-                            } elseif ($user_type === 'landlord') {
-                                $infoTabId = 'landlord-information';
-                            } else {
-                                $infoTabId = 'tenant-info';
-                            }
-                        @endphp
-                        <div class="tab-pane fade {{ $activeTab === $infoTabIndex ? 'show active' : '' }}"
-                            id="{{ $infoTabId }}" role="tabpanel" aria-labelledby="{{ $infoTabId }}-tab">
-                            @switch($user_type)
-                                @case('tenant')
+                                <!-- Info Tab - Adjust index based on user_type -->
+
+                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 6 : 7) ? 'show active' : '' }}"
+                                    id="tenant-info" role="tabpanel" aria-labelledby="tenant-info-tab">
+
+                                    @if ($user_type === 'tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.tenant-info')
-                                    @break
-                                @case('seller')
+                                    @elseif($user_type === 'seller')
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-info')
-                                    @break
-                                @case('buyer')
+                                    @elseif($user_type === 'buyer')
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.buyer-info')
-                                    @break
-                                @case('landlord')
+                                    @elseif($user_type === 'landlord')
                                     @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.landlord-info')
-                                    @break
-                            @endswitch
-                        </div>
+                                    @endif
+                                </div>
                                 @elseif($service_type === 'limited_service')
                                 <div class="tab-pane fade {{ $activeTab === 1 ? 'show active' : '' }}"
                                     id="location-and-meeting-details" role="tabpanel"
@@ -2110,53 +2065,6 @@ $lease_types = [
 </script>
 <script>
     let currentServiceType = null;
-    let isInitializing = false;
-    let initRetryCount = 0;
-    const MAX_INIT_RETRIES = 20;
-
-    function getLivewireComponent() {
-        try {
-            // Find component by looking for wire:id in the DOM
-            const wireElement = document.querySelector('[wire\\:id]');
-            if (!wireElement) return null;
-            
-            const componentId = wireElement.getAttribute('wire:id');
-            if (!componentId) return null;
-            
-            // Check if Livewire and its registry are available
-            if (!window.Livewire) return null;
-            if (!window.Livewire.components) return null;
-            if (!window.Livewire.components.componentsById) return null;
-            
-            // Check if component exists in registry
-            const component = window.Livewire.components.componentsById[componentId];
-            if (!component) return null;
-            
-            // Verify the component has required properties
-            if (typeof component.$wire === 'undefined') return null;
-            
-            return component;
-        } catch (e) {
-            return null;
-        }
-    }
-
-    function safeLivewireSet(property, value, retries = 0) {
-        if (retries > 10) {
-            console.warn('safeLivewireSet: Max retries exceeded for', property);
-            return;
-        }
-        try {
-            const component = getLivewireComponent();
-            if (component && component.$wire) {
-                component.$wire.set(property, value);
-            } else {
-                setTimeout(() => safeLivewireSet(property, value, retries + 1), 150);
-            }
-        } catch (e) {
-            setTimeout(() => safeLivewireSet(property, value, retries + 1), 150);
-        }
-    }
 
     document.addEventListener('DOMContentLoaded', () => {
         // Detect which service is preselected on load
@@ -2209,35 +2117,15 @@ $lease_types = [
         if (backBtn && backClone) backBtn.parentNode.replaceChild(backClone, backBtn);
     }
 
-    function initializeFullService(retryCount = 0) {
-        // Prevent concurrent initializations and infinite loops
-        if (isInitializing) return;
-        if (retryCount > MAX_INIT_RETRIES) {
-            console.warn('initializeFullService: Max retries exceeded, skipping initialization');
-            isInitializing = false;
-            return;
-        }
+    function initializeFullService() {
 
-        try {
-            const component = getLivewireComponent();
-            if (!component) {
-                setTimeout(() => initializeFullService(retryCount + 1), 150);
-                return;
-            }
-        } catch (e) {
-            setTimeout(() => initializeFullService(retryCount + 1), 150);
-            return;
-        }
 
-        isInitializing = true;
-
-        // Initialize Select2 dropdowns - they use safeLivewireSet which handles component lookup safely
-        try {
-            $('#sale_provision').select2({
+        $('#sale_provision').select2({
             placeholder: "Select",
             allowClear: true,
         }).on('change', function() {
-            safeLivewireSet('sale_provision', $(this).val());
+            // Update the model in Livewire (or any other reactive framework you're using)
+            @this.set('sale_provision', $(this).val());
 
             // Add tooltips to selected options dynamically
             $(this).find('option:selected').each(function() {
@@ -2263,7 +2151,7 @@ $lease_types = [
             allowClear: true,
         }).on('change', function() {
             // Update the model in Livewire (or any other reactive framework you're using)
-            safeLivewireSet('offered_financing', $(this).val());
+            @this.set('offered_financing', $(this).val());
 
             // Reapply tooltips to all options dynamically
             $(this).find('option').each(function() {
@@ -2291,7 +2179,7 @@ $lease_types = [
             // Handle changes
             $('.condition_prop_buyer').on('change', function(e) {
                 let data = $(this).val();
-                safeLivewireSet('condition_prop_buyer', data); // Livewire v2.x
+                @this.set('condition_prop_buyer', data, true); // Livewire v2.x
             });
         }
 
@@ -2333,7 +2221,7 @@ $lease_types = [
 
         selectEl.on('change', function() {
             let selectedValues = $(this).val();
-            safeLivewireSet('garage_parking_spaces_option', selectedValues);
+            @this.set('garage_parking_spaces_option', selectedValues);
 
             if (selectedValues && selectedValues.includes('Other')) {
                 $('#other_garage_parking_spaces_option_landlord').removeClass('d-none').show();
@@ -2380,7 +2268,7 @@ $lease_types = [
         // Livewire updates on selection change
         $('#lease_for').on('change', function(e) {
             let selectedValues = $(this).val();
-            safeLivewireSet('lease_for', selectedValues); // Update Livewire property
+            @this.set('lease_for', selectedValues); // Update Livewire property
             toggleOtherLeaseInput(); // Show or hide the "Other" input
         });
 
@@ -2414,7 +2302,7 @@ $lease_types = [
         // Update Livewire property on change
         $('#property_items').on('change', function(e) {
             let selectedValues = $(this).val();
-            safeLivewireSet('property_items', selectedValues);
+            @this.set('property_items', selectedValues);
         });
 
         // Reinitialize Select2 after Livewire update
@@ -2608,7 +2496,7 @@ $lease_types = [
         // Update Livewire property on change
         $('#credit_scroe_rating').on('change', function(e) {
             let selectedValues = $(this).val();
-            safeLivewireSet('credit_scroe_rating', selectedValues);
+            @this.set('credit_scroe_rating', selectedValues);
         });
 
         // Reinitialize Select2 after Livewire update
@@ -2641,10 +2529,10 @@ $lease_types = [
                     $('.other_non_negotiable_amenities')
                         .addClass('d-none')
                         .find('input').val('').trigger('input');
-                    safeLivewireSet('other_non_negotiable_amenities', '');
+                    @this.set('other_non_negotiable_amenities', '');
                 }
                 // sync back to Livewire if you need it:
-                safeLivewireSet('non_negotiable_amenities', vals);
+                @this.set('non_negotiable_amenities', vals);
             });
         // End to non_negotiable_amenities
 
@@ -2885,7 +2773,7 @@ $lease_types = [
                 $('#other_parking_space_wrapper').show(); // Show "Other" input
             } else {
                 $('#other_parking_space_wrapper').hide(); // Hide "Other" input
-                safeLivewireSet('other_parking_space_wrapper', null); // Clear the text input
+                @this.set('other_parking_space_wrapper', null); // Clear the text input
             }
         });
 
@@ -2939,7 +2827,7 @@ $lease_types = [
                     $('#other_appliances').show();
                 } else {
                     $('#other_appliances').hide();
-                    safeLivewireSet('other_appliances', null); // Clear other appliances if "Other" is deselected
+                    @this.set('other_appliances', null); // Clear other appliances if "Other" is deselected
                 }
             });
         }
@@ -2986,7 +2874,7 @@ $lease_types = [
 
         // Update Livewire when Select2 changes
         $('#leasing_spaces_tenant').on('change', function(e) {
-            safeLivewireSet('leasing_spaces_tenant', $(this).val());
+            @this.set('leasing_spaces_tenant', $(this).val());
         });
 
         // Reinitialize Select2 when Livewire updates the DOM
@@ -3024,7 +2912,7 @@ $lease_types = [
             } else {
                 $('.tenant_pays_other').hide();
             }
-            safeLivewireSet('tenant_pays', selectedValues);
+            @this.set('tenant_pays', selectedValues);
             // toggleOtherTenantField(selectedValues);
         });
 
@@ -3078,7 +2966,7 @@ $lease_types = [
                 const selectedValues = $(this).val() || [];
 
                 // Update Livewire
-                safeLivewireSet('terms_of_lease', selectedValues);
+                @this.set('terms_of_lease', selectedValues);
 
                 // Toggle "Other" input
                 toggleLeaseOther(selectedValues);
@@ -3131,9 +3019,9 @@ $lease_types = [
                 $('.other_owner_pays').show();
             } else {
                 $('.other_owner_pays').hide();
-                safeLivewireSet('other_owner_pays', null);
+                @this.set('other_owner_pays', null);
             }
-            safeLivewireSet('owner_pays', selectedValues);
+            @this.set('owner_pays', selectedValues);
         });
 
 
@@ -3144,9 +3032,9 @@ $lease_types = [
                 $('.other_lease_term').show();
             } else {
                 $('.other_lease_term').hide();
-                safeLivewireSet('other_lease_term', null);
+                @this.set('other_lease_term', null);
             }
-            safeLivewireSet('desired_lease_length', selectedValues);
+            @this.set('desired_lease_length', selectedValues);
         });
 
         // Reinit after DOM update
@@ -3184,7 +3072,7 @@ $lease_types = [
 
             $('.lease_for').off('change').on('change', function() {
                 let selectedLease = $(this).val() || [];
-                safeLivewireSet('lease_for', selectedLease);
+                @this.set('lease_for', selectedLease);
                 toggleLease(selectedLease);
             });
         }
@@ -3223,9 +3111,9 @@ $lease_types = [
                 $('.other_rent_input_wrapper').show();
             } else {
                 $('.other_rent_input_wrapper').hide();
-                safeLivewireSet('other_rent_include', null);
+                @this.set('other_rent_include', null);
             }
-            safeLivewireSet('rent_includes', selectedValues);
+            @this.set('rent_includes', selectedValues);
             //toggleOtherField(selectedValues);
         });
 
@@ -3691,11 +3579,7 @@ $lease_types = [
             });
         });
 
-        } catch (e) {
-            console.warn('initializeFullService error:', e);
-        } finally {
-            isInitializing = false;
-        }
+
     }
 
     function initializeLimitedService() {
@@ -3917,39 +3801,28 @@ $lease_types = [
         addIconsToInputs();
         checkRepresentationStatus();
 
-        // Use requestAnimationFrame + setTimeout for maximum stability
-        // This ensures DOM is painted and Livewire registry is fully updated
-        requestAnimationFrame(() => {
-            setTimeout(() => {
-                // Verify Livewire is ready before proceeding
-                if (!window.Livewire || !window.Livewire.components || !window.Livewire.components.componentsById) {
-                    return;
-                }
+        // Re-detect selected service type after DOM update
+        const fullServiceChecked = document.getElementById('fullService')?.checked;
+        const limitedServiceChecked = document.getElementById('limitedService')?.checked;
 
-                // Re-detect selected service type after DOM update
-                const fullServiceChecked = document.getElementById('fullService')?.checked;
-                const limitedServiceChecked = document.getElementById('limitedService')?.checked;
+        let newServiceType = null;
+        if (fullServiceChecked) {
+            newServiceType = 'full_service';
+        } else if (limitedServiceChecked) {
+            newServiceType = 'limited_service';
+        }
 
-                let newServiceType = null;
-                if (fullServiceChecked) {
-                    newServiceType = 'full_service';
-                } else if (limitedServiceChecked) {
-                    newServiceType = 'limited_service';
-                }
+        if (newServiceType !== currentServiceType) {
+            currentServiceType = newServiceType;
+        }
 
-                if (newServiceType !== currentServiceType) {
-                    currentServiceType = newServiceType;
-                }
+        removeWizardEventListeners();
 
-                removeWizardEventListeners();
-
-                if (currentServiceType === 'full_service') {
-                    initializeFullService();
-                } else if (currentServiceType === 'limited_service') {
-                    initializeLimitedService();
-                }
-            }, 250);
-        });
+        if (currentServiceType === 'full_service') {
+            initializeFullService();
+        } else if (currentServiceType === 'limited_service') {
+            initializeLimitedService();
+        }
     });
 </script>
 
@@ -4079,11 +3952,9 @@ $lease_types = [
 </script>
 <script>
     document.addEventListener('livewire:load', function() {
-        const draftModalElement = document.getElementById('draftModal');
-        if (draftModalElement) {
-            const draftModal = new bootstrap.Modal(draftModalElement);
-            draftModal.show();
-        }
+        const draftModal = new bootstrap.Modal(document.getElementById('draftModal'));
+        draftModal.show();
+
     });
 </script>
 
@@ -4093,31 +3964,26 @@ $lease_types = [
         const enhancementWrapper = document.getElementById("enhancement-options-wrapper");
         const checkboxes = document.querySelectorAll('.enhancement-trigger');
 
-        if (!enhancementWrapper || checkboxes.length === 0) {
-            return;
-        }
-
         function toggleEnhancements() {
             const isChecked = Array.from(checkboxes).some(cb =>
                 cb.checked && cb.dataset.value === enhancementTriggerValue
             );
-            if (enhancementWrapper) {
-                enhancementWrapper.style.display = isChecked ? 'block' : 'none';
-            }
+            enhancementWrapper.style.display = isChecked ? 'block' : 'none';
         }
 
         checkboxes.forEach(cb => {
-            cb.removeEventListener('change', toggleEnhancements);
+            cb.removeEventListener('change', toggleEnhancements); // Remove previous to prevent duplication
             cb.addEventListener('change', toggleEnhancements);
         });
 
-        toggleEnhancements();
+        toggleEnhancements(); // Run on init
     }
 
     document.addEventListener('DOMContentLoaded', function() {
         setupEnhancementToggle();
     });
 
+    // Re-run after Livewire updates DOM
     document.addEventListener("livewire:load", function() {
         Livewire.hook('message.processed', () => {
             setupEnhancementToggle();
@@ -4126,6 +3992,7 @@ $lease_types = [
 
 
     function setupOpenHouseToggle() {
+        // Array of checkbox values that should trigger the input
         const triggerValues = [
             "Host in-person open houses",
             "Host scheduled broker previews or commercial tenant tours"
@@ -4134,17 +4001,11 @@ $lease_types = [
         const inputWrapper = document.getElementById("open-house-input-wrapper");
         const checkboxes = document.querySelectorAll('.showings-trigger');
 
-        if (!inputWrapper || checkboxes.length === 0) {
-            return;
-        }
-
         function toggleInput() {
             const isChecked = Array.from(checkboxes).some(cb =>
                 cb.checked && triggerValues.includes(cb.dataset.value)
             );
-            if (inputWrapper) {
-                inputWrapper.style.display = isChecked ? 'block' : 'none';
-            }
+            inputWrapper.style.display = isChecked ? 'block' : 'none';
         }
 
         checkboxes.forEach(cb => {
@@ -4152,7 +4013,7 @@ $lease_types = [
             cb.addEventListener('change', toggleInput);
         });
 
-        toggleInput();
+        toggleInput(); // Run on init
     }
 
     document.addEventListener('DOMContentLoaded', function() {

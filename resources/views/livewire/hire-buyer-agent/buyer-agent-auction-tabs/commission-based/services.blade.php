@@ -1,54 +1,144 @@
-{{-- ABSOLUTE TOP OF BUYER SERVICES FILE --}}
-<div style="background: lime; color: black; padding: 20px; border: 5px solid red; font-size: 24px; font-weight: bold;">
-    THIS IS BUYER SERVICES.BLADE.PHP - IF YOU SEE THIS, THE FILE IS LOADING
-</div>
-
-@php
-    // Normalize property_type: lowercase and replace underscores/dashes with spaces
-    $type = strtolower(str_replace(['_', '-'], ' ', trim($property_type ?? '')));
-    $isResidentialOrIncome = in_array($type, ['income', 'income property', 'residential', 'residential property']);
-    $isCommercial = $type === 'commercial';
-    $isBusiness = $type === 'business';
-    $isVacantLand = in_array($type, ['vacant land', 'land']);
-@endphp
-
 <h3>Services the Buyer Requests from Their Agent</h3>
 
-{{-- Debug: Remove after testing --}}
-<div style="background: yellow; padding: 10px; margin-bottom: 10px; font-weight: bold; border: 2px solid red;">
-    DEBUG: property_type = "{{ $property_type ?? 'NULL' }}" | 
-    type (lowercase) = "{{ $type }}" | 
-    isResidentialOrIncome = {{ $isResidentialOrIncome ? 'TRUE' : 'FALSE' }}
-</div>
+
 
 <div class="alert alert-info bg-light-info border-info mb-4">
     <div class="d-flex align-items-center">
         <div>
-            <strong>Select the services the Buyer would like the Agent to provide throughout the purchase process. Services
+            <strong>🤝 Select the services the Buyer would like the Agent to provide throughout the purchase process. Services
             are offered under a commission-based, full-service agreement. The final scope and compensation will be
-            outlined in the signed agreement.</strong>
+            outlined in the signed agreement. </strong>
         </div>
     </div>
 </div>
 
-{{-- Residential and Income Property Services (Income uses same content as Residential for now) --}}
-@if ($isResidentialOrIncome)
 
+
+@if ($property_type == 'Residential')
+
+    <div class="service-section mb-4">
+        <h5 class="section-header bg-info text-white p-2 mb-3">📣 Buyer Criteria Marketing & Promotion</h5>
+        <div class="service-options">
+            @foreach (['Create a branded flyer summarizing the Buyer’s purchase criteria', 'Post the Buyer’s purchase criteria on Craigslist under the “Real Estate Wanted” section', 'Share the Buyer’s purchase criteria on Nextdoor in Neighborhood or Community Groups', 'Promote the Buyer’s purchase criteria on Facebook in Real Estate or Housing Groups', 'Share the Buyer’s purchase criteria on Instagram using posts, stories, or reels', 'Promote the Buyer’s purchase criteria on LinkedIn in Real Estate or Housing Groups', 'Upload a TikTok video summarizing the Buyer’s purchase criteria', 'Upload a YouTube video summarizing the Buyer’s purchase criteria', 'Launch a mass email campaign promoting the Buyer’s purchase criteria', 'Distribute branded postcards or flyers in the Buyer’s preferred neighborhoods', 'Launch hyperlocal digital ads targeting the Buyer’s preferred purchase areas'] as $service)
+                <div class="form-check service-item">
+                    <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
+                        id="marketing-{{ Str::slug($service) }}">
+                    <label class="form-check-label" for="marketing-{{ Str::slug($service) }}">
+                        {{ $service }}
+                    </label>
+                </div>
+            @endforeach
+        </div>
+    </div>
+
+    <!-- Search & Property Matching Section -->
+    <div class="service-section mb-4">
+        <h5 class="section-header bg-info text-white p-2 mb-3">🔍 Property Search, Alerts & Matching</h5>
+        <div class="service-options">
+            @foreach (['Send email alerts with new listings from the MLS that match the Buyer’s purchase criteria', 'Search for off-market, pre-market, distressed, withdrawn, canceled, or expired properties that meet the Buyer’s purchase criteria', 'Communicate with the Seller’s Agent or Seller to confirm availability, purchase terms, and showing instructions', 'Evaluate properties with the Buyer and provide insights on pricing, terms, potential, and overall fit'] as $service)
+                <div class="form-check service-item">
+                    <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
+                        id="search-{{ Str::slug($service) }}">
+                    <label class="form-check-label" for="search-{{ Str::slug($service) }}">
+                        {{ $service }}
+                    </label>
+                </div>
+            @endforeach
+        </div>
+    </div>
+
+    <!-- Showings & Virtual Tours Section -->
+    <div class="service-section mb-4">
+        <h5 class="section-header bg-info text-white p-2 mb-3">🏡 Property Showings & Virtual Tours</h5>
+        <div class="service-options">
+            @foreach (['Schedule and attend property showings with the Buyer', 'Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs', 'Preview properties on behalf of the Buyer upon request', 'Provide factual observations on property layout and condition'] as $service)
+                <div class="form-check service-item">
+                    <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
+                        id="showings-{{ Str::slug($service) }}">
+                    <label class="form-check-label" for="showings-{{ Str::slug($service) }}">
+                        {{ $service }}
+                    </label>
+                </div>
+            @endforeach
+        </div>
+    </div>
+
+    <!-- Offer Preparation & Contract Coordination Section -->
+    <div class="service-section mb-4">
+        <h5 class="section-header bg-info text-white p-2 mb-3">📝 Offer & Contract Coordination</h5>
+        <div class="service-options">
+            @foreach (['Draft and submit offers using state-approved purchase forms', 'Provide the Buyer with the necessary disclosure forms required by state or local law', 'Draft and deliver counteroffers and manage revisions to the purchase agreement', 'Negotiate price, deposits, and contingencies with the Seller’s Agent or Seller (as permitted under the agency agreement)', 'Manage communications with the Seller’s Agent or Seller', 'Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties', 'Assist with inspection-related negotiations and Buyer requests for repairs', 'Monitor contract milestones, contingency periods, and financing deadlines', 'Provide referrals to Attorneys, Title Companies, Escrow Professionals, or Lenders (referrals only — no endorsement or warranty is made)'] as $service)
+                <div class="form-check service-item">
+                    <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
+                        id="offer-{{ Str::slug($service) }}">
+                    <label class="form-check-label" for="offer-{{ Str::slug($service) }}">
+                        {{ $service }}
+                    </label>
+                </div>
+            @endforeach
+        </div>
+    </div>
+
+    <!-- Transaction Management & Closing Support Section -->
+    <div class="service-section mb-4">
+        <h5 class="section-header bg-info text-white p-2 mb-3">📋 Closing Coordination & Transaction Management</h5>
+        <div class="service-options">
+            @foreach (['Coordinate inspections, appraisals, and lease audits (if applicable)', 'Coordinate with the Lender, Title, Escrow, and/or Attorney to prepare for Closing', 'Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed (no legal or financial advice provided)', 'Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties', 'Schedule and confirm the Final Walkthrough', 'Schedule and confirm the Closing Appointment'] as $service)
+                <div class="form-check service-item">
+                    <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
+                        id="closing-{{ Str::slug($service) }}">
+                    <label class="form-check-label" for="closing-{{ Str::slug($service) }}">
+                        {{ $service }}
+                    </label>
+                </div>
+            @endforeach
+        </div>
+    </div>
+
+<!-- Buyer Guidance & Strategy Section -->
 <div class="service-section mb-4">
-    <h5 class="section-header bg-info text-white p-2 mb-3">Buyer Criteria Marketing & Promotion</h5>
+    <h5 class="section-header bg-info text-white p-2 mb-3">💡 Buying Strategy & Guidance</h5>
     <div class="service-options">
         @foreach ([
-            'Create a branded flyer summarizing the Buyer\'s purchase criteria',
-            'Post the Buyer\'s purchase criteria on Craigslist under the "Real Estate Wanted" section',
-            'Share the Buyer\'s purchase criteria on Nextdoor in Neighborhood or Community Groups',
-            'Promote the Buyer\'s purchase criteria on Facebook in Real Estate or Housing Groups',
-            'Share the Buyer\'s purchase criteria on Instagram using posts, stories, or reels',
-            'Promote the Buyer\'s purchase criteria on LinkedIn in Real Estate or Housing Groups',
-            'Upload a TikTok video summarizing the Buyer\'s purchase criteria',
-            'Upload a YouTube video summarizing the Buyer\'s purchase criteria',
-            'Launch a mass email campaign promoting the Buyer\'s purchase criteria',
-            'Distribute branded postcards or flyers in the Buyer\'s preferred neighborhoods',
-            'Launch hyperlocal digital ads targeting the Buyer\'s preferred purchase areas'
+            'Provide a Comparative Market Analysis (CMA) with pricing recommendations based on comparable sales, neighborhood trends, and current market conditions (for informational purposes only — not a formal appraisal)',
+            'Answer general questions about financing, loan options, property taxes, insurance, and escrow timelines (non-legal guidance)',
+            'Provide factual information about neighborhood characteristics, school zones, crime data, and local amenities using third-party sources (no personal opinions or steering)',
+            'Offer general guidance on inspection expectations, common repair requests, and contingency planning during the offer process (non-legal advice)'
+        ] as $service)
+            <div class="form-check service-item">
+                <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
+                    id="guidance-{{ Str::slug($service) }}">
+                <label class="form-check-label" for="guidance-{{ Str::slug($service) }}">
+                    {{ $service }}
+                </label>
+            </div>
+        @endforeach
+    </div>
+</div>
+
+
+@endif
+
+@if ($property_type == 'Income')
+
+<!-- Buyer Criteria Marketing & Promotion Section -->
+<div class="service-section mb-4">
+    <h5 class="section-header bg-info text-white p-2 mb-3">
+        📣 Buyer Criteria Marketing & Promotion
+    </h5>
+    <div class="service-options">
+        @foreach ([
+            'Create a branded flyer summarizing the Buyer’s purchase criteria',
+            'Post the Buyer’s purchase criteria on Craigslist under the “Real Estate Wanted” section',
+            'Share the Buyer’s purchase criteria on Nextdoor in Neighborhood or Community Groups',
+            'Promote the Buyer’s purchase criteria on Facebook in Real Estate Investor or Multifamily Groups',
+            'Share the Buyer’s purchase criteria on Instagram using posts, stories, or reels',
+            'Promote the Buyer’s purchase criteria on LinkedIn in Investment or Property Management Groups',
+            'Upload a TikTok video summarizing the Buyer’s purchase criteria',
+            'Upload a YouTube video summarizing the Buyer’s purchase criteria',
+            'Launch a mass email campaign promoting the Buyer’s purchase criteria',
+            'Distribute branded postcards or flyers in the Buyer’s preferred neighborhoods',
+            'Launch hyperlocal digital ads targeting the Buyer’s preferred purchase areas'
         ] as $service)
             <div class="form-check service-item">
                 <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
@@ -60,15 +150,16 @@
         @endforeach
     </div>
 </div>
-
+    <!-- Search, Alerts & Property Matching Section -->
+<!-- Property Search, Alerts & Matching Section -->
 <div class="service-section mb-4">
-    <h5 class="section-header bg-info text-white p-2 mb-3">Property Search, Alerts & Matching</h5>
+    <h5 class="section-header bg-info text-white p-2 mb-3">🔍 Property Search, Alerts & Matching</h5>
     <div class="service-options">
         @foreach ([
-            'Send email alerts with new listings from the MLS that match the Buyer\'s purchase criteria',
-            'Search for off-market, pre-market, distressed, withdrawn, canceled, or expired properties that meet the Buyer\'s purchase criteria',
-            'Communicate with the Seller\'s Agent or Seller to confirm availability, purchase terms, and showing instructions',
-            'Evaluate properties with the Buyer and provide insights on pricing, terms, potential, and overall fit'
+            'Send email alerts with new listings that match the Buyer’s purchase criteria',
+            'Search for off-market, pre-market, distressed, withdrawn, canceled, or expired properties that meet the Buyer’s purchase criteria',
+            'Communicate with the Seller’s Agent or Sellers to confirm pricing, rental income, expenses, and showing instructions',
+            'Evaluate investment properties with the Buyer and provide insights on cash flow, cap rates, and value-add potential'
         ] as $service)
             <div class="form-check service-item">
                 <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
@@ -81,19 +172,22 @@
     </div>
 </div>
 
+
+<!-- Property Showings & Virtual Tours Section -->
 <div class="service-section mb-4">
-    <h5 class="section-header bg-info text-white p-2 mb-3">Property Showings & Virtual Tours</h5>
-    <div class="service-options">
+<h5 class="section-header bg-info text-white p-2 mb-3">
+    <span class="text-dark">🏘</span> Property Showings & Virtual Tours
+</h5>    <div class="service-options">
         @foreach ([
             'Schedule and attend property showings with the Buyer',
             'Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs',
             'Preview properties on behalf of the Buyer upon request',
-            'Provide factual observations on property layout and condition'
+            'Provide observations on tenant occupancy, building condition, and operating expenses'
         ] as $service)
             <div class="form-check service-item">
                 <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
-                    id="showings-{{ Str::slug($service) }}">
-                <label class="form-check-label" for="showings-{{ Str::slug($service) }}">
+                    id="showing-{{ Str::slug($service) }}">
+                <label class="form-check-label" for="showing-{{ Str::slug($service) }}">
                     {{ $service }}
                 </label>
             </div>
@@ -101,37 +195,38 @@
     </div>
 </div>
 
+<!-- Offer & Contract Management Section -->
 <div class="service-section mb-4">
-    <h5 class="section-header bg-info text-white p-2 mb-3">Offer & Contract Coordination</h5>
+    <h5 class="section-header bg-info text-white p-2 mb-3">📝 Offer & Contract Management</h5>
     <div class="service-options">
         @foreach ([
             'Draft and submit offers using state-approved purchase forms',
             'Provide the Buyer with the necessary disclosure forms required by state or local law',
             'Draft and deliver counteroffers and manage revisions to the purchase agreement',
-            'Negotiate price, deposits, and contingencies with the Seller\'s Agent or Seller (as permitted under the agency agreement)',
-            'Manage communications with the Seller\'s Agent or Seller',
+            'Negotiate price, deposits, and contingencies with the Seller’s Agent or Seller',
+            'Manage communication with the Seller’s Agent or Seller',
             'Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties',
             'Assist with inspection-related negotiations and Buyer requests for repairs',
             'Monitor contract milestones, contingency periods, and financing deadlines',
-            'Provide referrals to Attorneys, Title Companies, Escrow Professionals, or Lenders (referrals only - no endorsement or warranty is made)'
+            'Provide referrals to Attorneys, Title Companies, Escrow Professionals, Lenders, or 1031 Exchange Intermediaries (referrals only — no endorsement or warranty is made)'
         ] as $service)
             <div class="form-check service-item">
                 <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
-                    id="offer-{{ Str::slug($service) }}">
-                <label class="form-check-label" for="offer-{{ Str::slug($service) }}">
+                    id="contract-{{ Str::slug($service) }}">
+                <label class="form-check-label" for="contract-{{ Str::slug($service) }}">
                     {{ $service }}
                 </label>
             </div>
         @endforeach
     </div>
 </div>
-
+<!-- Closing Coordination & Transaction Management Section -->
 <div class="service-section mb-4">
-    <h5 class="section-header bg-info text-white p-2 mb-3">Closing Coordination & Transaction Management</h5>
+    <h5 class="section-header bg-info text-white p-2 mb-3">📋 Closing Coordination & Transaction Management</h5>
     <div class="service-options">
         @foreach ([
-            'Coordinate inspections, appraisals, and lease audits (if applicable)',
-            'Coordinate with the Lender, Title, Escrow, and/or Attorney to prepare for Closing',
+            'Review and provide due diligence documents such as lease agreements, estoppel certificates, rent rolls, utility summaries, and operating expense breakdowns (as available)',
+            'Coordinate with the Seller’s Agent, Buyer’s Lender, Title, Escrow, and/or Attorney to prepare for Closing',
             'Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed (no legal or financial advice provided)',
             'Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties',
             'Schedule and confirm the Final Walkthrough',
@@ -148,19 +243,20 @@
     </div>
 </div>
 
+<!-- Buying Strategy & Guidance Section -->
 <div class="service-section mb-4">
-    <h5 class="section-header bg-info text-white p-2 mb-3">Buying Strategy & Guidance</h5>
+    <h5 class="section-header bg-info text-white p-2 mb-3">💡 Buying Strategy & Guidance</h5>
     <div class="service-options">
         @foreach ([
-            'Provide a Comparative Market Analysis (CMA) with pricing recommendations based on comparable sales, neighborhood trends, and current market conditions (for informational purposes only - not a formal appraisal)',
-            'Answer general questions about financing, loan options, property taxes, insurance, and escrow timelines (non-legal guidance)',
-            'Provide factual information about neighborhood characteristics, school zones, crime data, and local amenities using third-party sources (no personal opinions or steering)',
-            'Offer general guidance on inspection expectations, common repair requests, and contingency planning during the offer process (non-legal advice)'
+            'Provide a Comparative Market Analysis (CMA) with pricing recommendations, rental comps, and Cap Rate estimates (for informational purposes only — not a formal appraisal)',
+            'Answer general questions about financing options, rent control, property taxes, and Landlord responsibilities',
+            'Provide factual information on rental demand, turnover rates, and sub market conditions using third-party sources',
+            'Offer general guidance on due diligence steps, lease audits, and estoppel reviews (non-legal advice)'
         ] as $service)
             <div class="form-check service-item">
                 <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
-                    id="guidance-{{ Str::slug($service) }}">
-                <label class="form-check-label" for="guidance-{{ Str::slug($service) }}">
+                    id="strategy-{{ Str::slug($service) }}">
+                <label class="form-check-label" for="strategy-{{ Str::slug($service) }}">
                     {{ $service }}
                 </label>
             </div>
@@ -168,9 +264,11 @@
     </div>
 </div>
 
-@endif
 
-@if ($isCommercial)
+
+
+@endif
+@if ($property_type == 'Commercial')
 
     <!-- Buyer Criteria Marketing & Promotion Section -->
     <div class="service-section mb-4">
@@ -321,7 +419,7 @@
 
 
 @endif
-@if ($isBusiness)
+@if ($property_type == 'Business')
 
     {{-- <div class="alert alert-info bg-light-info border-info mb-4">
         <div class="d-flex align-items-center">
@@ -483,7 +581,7 @@
 
 
 @endif
-@if ($isVacantLand)
+@if ($property_type == 'Vacant Land')
 
     {{-- <div class="alert alert-info bg-light-info border-info mb-4">
         <div class="d-flex align-items-center">

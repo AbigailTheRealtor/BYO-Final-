@@ -93,27 +93,6 @@ This is a Laravel-based real estate auction platform that enables transparent bi
   - This error broke Bootstrap tab initialization, causing tabs 2-6 to not function for Income Property
   - Fixed by changing tab name to "Broker Compensation" (line 1687 in tenant-agent-auction.blade.php)
   - Full title "Broker Compensation & Agency Agreement Terms" retained as H3 header inside tab content
-- **Fixed Validation Selector References (December 8, 2025)**:
-  - JavaScript validation code was referencing `#tenant-info` instead of user-specific tab IDs
-  - Updated `getAllRequiredFields()` function in all three hire agent pages:
-    - hire-buyer-agent.blade.php: Changed `#tenant-info` to `#buyer-information` (lines 2009, 2014)
-    - hire-seller-agent.blade.php: Changed `#tenant-info` to `#seller-information` (lines 2009, 2014)
-    - hire-landlord-agent.blade.php: Changed `#tenant-info` to `#landlord-information` (lines 2410, 2415)
-  - This ensures form validation correctly identifies required fields in the final tab for each user type
-- **Fixed Income Property Blank Tabs Bug (December 8, 2025)**:
-  - Root Cause: JavaScript functions `setupEnhancementToggle()` and `setupOpenHouseToggle()` were trying to access DOM elements that don't exist for Income Property type
-  - The `/hire/agent/auction/buyer` route uses tenant-agent-auction.blade.php which has tenant-specific JavaScript
-  - When Livewire re-renders after selecting Income Property, the JavaScript threw null reference errors (`can't access property 'style', enhancementWrapper is null`)
-  - These errors aborted the Livewire DOM update, causing all subsequent tabs (3-7) to appear blank
-  - Fixed by adding null checks to both functions in:
-    - tenant-agent-auction.blade.php (lines 3970-3972, 4011-4013)
-    - tenant-agent-auction-edit.blade.php (lines 3919-3921, 3960-3962)
-  - Functions now return early if required DOM elements are not present, preventing the error cascade
-  - **Additional Fix**: Updated buyer services.blade.php property_type conditionals
-    - Changed condition from `@if ($property_type == 'Residential' || $property_type == 'Income')` to `@if ($property_type == 'Residential' || $property_type == 'Income' || $property_type == 'Income Property')`
-    - This handles both the dropdown value ('Income') and persisted database value ('Income Property')
-    - File: `resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/services.blade.php` (line 15)
-    - Income Property now correctly shows the same service options as Residential
 
 ### Property Location Fields for Hire Seller/Landlord Agent (December 8, 2025):
 - **New Required Fields**: Added City*, State*, ZIP Code* immediately after Street Address
