@@ -1772,7 +1772,6 @@ $lease_types = [
                         </div>
 
                         @if ($service_type === 'full_service')
-                        <div style="background:red;padding:10px;color:white;font-weight:bold;">DEBUG: FULL_SERVICE BLOCK ENTERED</div>
                         <div class="tab-pane fade {{ $activeTab === 1 ? 'show active' : '' }}"
                             id="{{ $propertyId }}" role="tabpanel"
                             aria-labelledby="{{ $propertyId }}-tab">
@@ -1794,8 +1793,7 @@ $lease_types = [
                             @break
                             @endswitch
                         </div>
-                        <!-- DEBUG: AFTER PROPERTY PREFERENCES, BEFORE TERMS TAB -->
-                        <div style="background:blue;color:white;padding:10px;">DEBUG: AFTER PROPERTY-PREFERENCES DIV</div>
+
                         <!-- Terms Tab (Tab 2) - Different IDs per user type -->
                         @php
                             if ($user_type === 'buyer') {
@@ -1838,7 +1836,6 @@ $lease_types = [
                         @endphp
                         <div class="tab-pane fade {{ $activeTab === $servicesTabIndex ? 'show active' : '' }}"
                             id="services" role="tabpanel" aria-labelledby="services-tab">
-                            <div style="background:lime;padding:20px;font-size:24px;font-weight:bold;">DEBUG: SERVICES TAB RENDERED - user_type={{ $user_type }}, servicesTabIndex={{ $servicesTabIndex }}</div>
                             @switch($user_type)
                                 @case('tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.services')
