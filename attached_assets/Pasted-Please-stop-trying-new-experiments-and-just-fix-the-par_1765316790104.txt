@@ -1,0 +1,68 @@
+Please stop trying new experiments and just fix the parent tab rendering for Hire a Buyer’s Agent – Income. I need the original Income flow restored, not converted to Residential.
+
+1. Open this file:
+resources/views/livewire/tenant-agent-auction.blade.php
+
+2. In the @elseif($user_type === 'buyer') block, fix the tab-panes for Tabs 3–7 (Purchasing Terms, Services, Additional Details, Broker Compensation, Buyer Info):
+
+Each of these tab panes must always render for buyer/full_service, no matter what the property_type is.
+
+The only condition for showing them should be the tab index / activeTab value.
+
+Do NOT wrap any of these tab-pane <div>s in @if($property_type ...) conditions.
+
+For example, the Purchasing Terms tab-pane should look like this (structure, not exact styling):
+
+{{-- Buyer – Purchasing Terms tab (Tab 3) --}}
+<div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}" id="buyer-purchasing-terms">
+    {{-- DEBUG: this must always render for buyer, any property_type --}}
+    <div style="background:#00ff00">
+        PURCHASING-TERMS TAB RENDERED:
+        activeTab={{ $activeTab }}
+        | user_type={{ $user_type }}
+        | service_type={{ $service_type }}
+        | property_type={{ $property_type }}
+    </div>
+
+    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.purchasing-terms')
+</div>
+
+
+Do the same pattern for:
+
+Services tab-pane (Tab 4)
+
+Additional Details (Tab 5)
+
+Broker Compensation (Tab 6)
+
+Buyer Information (Tab 7)
+
+Again: no @if ($property_type == 'Residential'), @elseif($property_type == 'Income'), etc. around these tab panes.
+
+3. Keep the Income vs Residential logic inside the partials only:
+
+services.blade.php is allowed to use:
+
+@if ($property_type == 'Residential')
+    {{-- residential services content --}}
+@elseif ($property_type == 'Income')
+    {{-- income 2–4 unit services content (this is what I want preserved) --}}
+@endif
+
+
+If broker-compensation.blade.php needs different fields for Income, handle that inside that file with @if ($property_type == 'Income'), but don’t block the entire tab-pane in tenant-agent-auction.blade.php.
+
+4. After you update:
+
+Clear views/cache: php artisan view:clear && php artisan cache:clear
+
+Reload /hire/agent/auction/buyer
+
+Test:
+
+Buyer → Full Service → Residential → click Purchasing Terms → green banner should show.
+
+Buyer → Full Service → Income → click Purchasing Terms → the exact same green banner must show (with property_type=Income) and the tab should no longer be blank.
+
+If the green banner appears for Income and the tab is still blank, then the issue is inside the partial; but right now the green banner is missing, which proves the tab-pane is being blocked in tenant-agent-auction.blade.php. Please remove that property_type gating.

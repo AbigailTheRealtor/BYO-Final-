@@ -1806,7 +1806,8 @@ $lease_types = [
                                 @endif
                                 @if ($user_type === 'buyer')
                                 <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
-                                    id="purchasing-terms" role="tabpanel" aria-labelledby="purchasing-terms-tab">
+                                    id="purchasing-terms" role="tabpanel" aria-labelledby="purchasing-terms-tab"
+                                    wire:key="purchasing-terms-{{ $user_type }}-{{ $property_type }}">
                                     {{-- TEMP DEBUG: Tab visibility --}}
                                     <div style="background:lime; padding:4px; font-size:12px;">
                                         PURCHASING-TERMS TAB RENDERED: activeTab={{ $activeTab ?? 'n/a' }} |
@@ -1841,7 +1842,8 @@ $lease_types = [
                                 <!-- Services Tab - Adjust index based on user_type -->
 
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 3 : 4) ? 'show active' : '' }}"
-                                    id="services" role="tabpanel" aria-labelledby="services-tab">
+                                    id="services" role="tabpanel" aria-labelledby="services-tab"
+                                    wire:key="services-{{ $user_type }}-{{ $property_type }}">
                                     {{-- TEMP DEBUG: Tab visibility --}}
                                     <div style="background:lime; padding:4px; font-size:12px;">
                                         SERVICES TAB RENDERED: activeTab={{ $activeTab ?? 'n/a' }} |
@@ -1863,7 +1865,8 @@ $lease_types = [
                                 <!-- Additional Details Tab - Adjust index based on user_type -->
 
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 4 : 5) ? 'show active' : '' }}"
-                                    id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
+                                    id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab"
+                                    wire:key="additional-details-{{ $user_type }}-{{ $property_type }}">
                                     {{-- TEMP DEBUG: Tab visibility --}}
                                     <div style="background:lime; padding:4px; font-size:12px;">
                                         ADDITIONAL-DETAILS TAB RENDERED: activeTab={{ $activeTab ?? 'n/a' }} |
@@ -1885,7 +1888,8 @@ $lease_types = [
                                 <!-- Broker Compensation Tab - Adjust index based on user_type -->
 
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 5 : 6) ? 'show active' : '' }}"
-                                    id="broker-compensation" role="tabpanel" aria-labelledby="broker-compensation-tab">
+                                    id="broker-compensation" role="tabpanel" aria-labelledby="broker-compensation-tab"
+                                    wire:key="broker-compensation-{{ $user_type }}-{{ $property_type }}">
                                     {{-- TEMP DEBUG: Tab visibility --}}
                                     <div style="background:lime; padding:4px; font-size:12px;">
                                         BROKER-COMP TAB RENDERED: activeTab={{ $activeTab ?? 'n/a' }} |
@@ -1907,7 +1911,8 @@ $lease_types = [
                                 <!-- Info Tab - Adjust index based on user_type -->
 
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 6 : 7) ? 'show active' : '' }}"
-                                    id="tenant-info" role="tabpanel" aria-labelledby="tenant-info-tab">
+                                    id="tenant-info" role="tabpanel" aria-labelledby="tenant-info-tab"
+                                    wire:key="buyer-info-{{ $user_type }}-{{ $property_type }}">
                                     {{-- TEMP DEBUG: Tab visibility --}}
                                     <div style="background:lime; padding:4px; font-size:12px;">
                                         BUYER-INFO TAB RENDERED: activeTab={{ $activeTab ?? 'n/a' }} |
