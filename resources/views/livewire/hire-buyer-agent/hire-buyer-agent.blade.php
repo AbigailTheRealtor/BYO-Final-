@@ -726,6 +726,9 @@
 @endphp
 
 <div class="container pt-5 pb-5">
+    <div style="background:red;color:white;font-weight:bold;padding:8px;margin-bottom:10px;">
+        DEBUG: hire-buyer-agent.blade.php (FULL SERVICE) - Route: /buyer/add-auction
+    </div>
     <div class="card">
         <div class="row">
             <div class="col-12 p-4">
