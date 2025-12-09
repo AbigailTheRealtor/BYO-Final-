@@ -1806,6 +1806,7 @@ $lease_types = [
                         @endphp
                         <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
                             id="{{ $termsTabId }}" role="tabpanel" aria-labelledby="{{ $termsTabId }}-tab">
+                            <div style="background:orange;color:black;padding:5px;font-weight:bold;">TAB2: Terms Tab ({{ $termsTabId }})</div>
                             @switch($user_type)
                                 @case('tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.leasing-terms')
@@ -1836,6 +1837,7 @@ $lease_types = [
                         @endphp
                         <div class="tab-pane fade {{ $activeTab === $servicesTabIndex ? 'show active' : '' }}"
                             id="services" role="tabpanel" aria-labelledby="services-tab">
+                            <div style="background:lime;color:black;padding:5px;font-weight:bold;">TAB3: Services Tab</div>
                             @switch($user_type)
                                 @case('tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.services')
