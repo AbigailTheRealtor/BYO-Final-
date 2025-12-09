@@ -1591,6 +1591,9 @@ $lease_types = [
 @endphp
 
 <div class="container pt-5 pb-5">
+    <div style="background:lime;color:black;font-weight:bold;padding:8px;margin-bottom:10px;">
+        DEBUG MAIN: user_type="{{ $user_type ?? 'NULL' }}" | service_type="{{ $service_type ?? 'NULL' }}" | property_type="{{ $property_type ?? 'NULL' }}"
+    </div>
     <div class="card">
         <div class="row">
             <div class="col-12 p-4">
