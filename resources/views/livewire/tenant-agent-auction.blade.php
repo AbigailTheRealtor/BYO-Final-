@@ -1798,38 +1798,35 @@ $lease_types = [
                             @endswitch
                         </div>
 
-                        <!-- Leasing Terms Tab -->
-
+                        <!-- Tab 2: Terms Tab (varies by user_type) -->
                         @if (in_array($user_type, ['landlord', 'tenant']))
-                        <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
-                            id="leasing-terms" role="tabpanel" aria-labelledby="leasing-terms-tab">
-                            @endif
-                            @if ($user_type === 'seller')
+                            <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
+                                id="leasing-terms" role="tabpanel" aria-labelledby="leasing-terms-tab">
+                                @if ($user_type === 'tenant')
+                                    @include('livewire.tenant-agent-auction-tabs.commission-based.leasing-terms')
+                                @elseif($user_type === 'landlord')
+                                    @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.lease-terms')
+                                @endif
+                            </div>
+                        @elseif ($user_type === 'seller')
                             <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
                                 id="sale-terms" role="tabpanel" aria-labelledby="sale-terms-tab">
-                                @endif
-                                @if ($user_type === 'buyer')
-                                <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
-                                    id="purchasing-terms" role="tabpanel" aria-labelledby="purchasing-terms-tab"
-                                    wire:key="purchasing-terms-{{ $user_type }}-{{ $property_type }}">
-                                    {{-- TEMP DEBUG: Tab visibility --}}
-                                    <div style="background:lime; padding:4px; font-size:12px;">
-                                        PURCHASING-TERMS TAB RENDERED: activeTab={{ $activeTab ?? 'n/a' }} |
-                                        user_type={{ $user_type ?? 'n/a' }} |
-                                        service_type={{ $service_type ?? 'n/a' }} |
-                                        property_type={{ $property_type ?? 'n/a' }}
-                                    </div>
-                                    @endif
-                                    @if ($user_type === 'tenant')
-                                    @include('livewire.tenant-agent-auction-tabs.commission-based.leasing-terms')
-                                    @elseif($user_type === 'seller')
-                                    @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-terms')
-                                    @elseif($user_type === 'buyer')
-                                    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.purchasing-terms')
-                                    @elseif($user_type === 'landlord')
-                                    @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.lease-terms')
-                                    @endif
+                                @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-terms')
+                            </div>
+                        @elseif ($user_type === 'buyer')
+                            <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
+                                id="purchasing-terms" role="tabpanel" aria-labelledby="purchasing-terms-tab"
+                                wire:key="purchasing-terms-{{ $user_type }}-{{ $property_type }}">
+                                {{-- TEMP DEBUG: Tab visibility --}}
+                                <div style="background:lime; padding:4px; font-size:12px;">
+                                    PURCHASING-TERMS TAB RENDERED: activeTab={{ $activeTab ?? 'n/a' }} |
+                                    user_type={{ $user_type ?? 'n/a' }} |
+                                    service_type={{ $service_type ?? 'n/a' }} |
+                                    property_type={{ $property_type ?? 'n/a' }}
                                 </div>
+                                @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.purchasing-terms')
+                            </div>
+                        @endif
 
                                 <!-- Conditional Pre-Screening Tab -->
                                 @if ($user_type !== 'landlord' and $user_type !== 'buyer' and $user_type !== 'seller')

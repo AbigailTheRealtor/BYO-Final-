@@ -1,0 +1,144 @@
+The Hire a Buyer’s Agent Income flow is still empty on tabs 3–7 (Purchasing Terms, Services, Additional Details, Broker Compensation, Buyer Info).
+
+What I see with the current debug banners:
+
+Route: /hire/agent/auction/buyer
+
+Choose: Buyer → Full Service → Residential → go to tab 3 (Purchasing Terms)
+
+At the very top of the page, I see:
+FULL_SERVICE BLOCK: user_type=buyer | service_type=full_service | property_type=Residential
+
+Inside tab 3 (above the tab content) I see:
+PURCHASING-TERMS TAB RENDERED: activeTab=2 | user_type=buyer | service_type=full_service | property_type=Residential
+
+The full Purchasing Terms content shows.
+
+Now change property type to Income and go back to tab 3:
+
+At the top of the page I still see:
+FULL_SERVICE BLOCK: user_type=buyer | service_type=full_service | property_type=Income
+
+But inside tab 3 there is no “PURCHASING-TERMS TAB RENDERED…” debug line and no content.
+
+Tabs 4–7 are also completely blank.
+
+This means:
+
+The full-service buyer block is running for Income
+
+But the tab-pane includes for the buyer tabs are not being executed when property_type = 'Income'
+
+Important: I do not want Income to reuse Residential content.
+Income has its own services and broker-comp text inside the partials.
+I just need the Income tabs to show again the way they used to.
+
+What I need you to fix
+
+Open
+resources/views/livewire/tenant-agent-auction.blade.php
+
+In the full_service + buyer section (the one that prints FULL_SERVICE BLOCK: user_type=buyer…), find the tab-pane markup for buyer tabs 3–7:
+
+Purchasing Terms
+
+Services
+
+Additional Details
+
+Broker Compensation
+
+Buyer Information
+
+They should be using includes like:
+
+@include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.purchasing-terms')
+@include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.services')
+@include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.additional-details')
+@include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.broker-compensation')
+@include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.buyer-info')
+
+
+Make sure these tab panes are NOT wrapped in any condition that excludes Income.
+They should only depend on user_type === 'buyer' and service_type === 'full_service'.
+
+Please remove or relax any outer checks like:
+
+@if (in_array($property_type, ['Residential', 'Commercial', 'Business']))
+    {{-- buyer tab panes here --}}
+@endif
+
+
+or @if ($property_type == 'Residential') that sit around the buyer tab includes.
+
+Instead, the structure should look like:
+
+@if ($service_type === 'full_service')
+    @elseif ($user_type === 'buyer')
+
+        {{-- Tab 3 – Purchasing Terms --}}
+        <div class="tab-pane fade show"
+             id="buyerPurchasingTerms"
+             role="tabpanel"
+             wire:key="buyer-purchasing-terms-{{ $property_type }}">
+            @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.purchasing-terms')
+        </div>
+
+        {{-- Tab 4 – Services --}}
+        <div class="tab-pane fade show"
+             id="buyerServices"
+             role="tabpanel"
+             wire:key="buyer-services-{{ $property_type }}">
+            @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.services')
+        </div>
+
+        {{-- Tab 5 – Additional Details --}}
+        <div class="tab-pane fade show"
+             id="buyerAdditionalDetails"
+             role="tabpanel"
+             wire:key="buyer-additional-details-{{ $property_type }}">
+            @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.additional-details')
+        </div>
+
+        {{-- Tab 6 – Broker Compensation --}}
+        <div class="tab-pane fade show"
+             id="buyerBrokerCompensation"
+             role="tabpanel"
+             wire:key="buyer-broker-comp-{{ $property_type }}">
+            @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.broker-compensation')
+        </div>
+
+        {{-- Tab 7 – Buyer Info --}}
+        <div class="tab-pane fade show"
+             id="buyerInfo"
+             role="tabpanel"
+             wire:key="buyer-info-{{ $property_type }}">
+            @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.buyer-info')
+        </div>
+
+    @endif
+@endif
+
+
+Keep the Income-specific wording inside the partials themselves, e.g.:
+
+{{-- in services.blade.php --}}
+@if ($property_type == 'Income')
+    {{-- Income services list --}}
+@elseif ($property_type == 'Residential')
+    {{-- Residential services list --}}
+@endif
+
+
+After changes, please run:
+
+php artisan view:clear && php artisan cache:clear
+
+
+I’ll re-test:
+
+Buyer → Full Service → Residential → tab 3 (I should still see the “PURCHASING-TERMS TAB RENDERED…” line + content)
+
+Buyer → Full Service → Income → tab 3 (I should now see the same debug line and my Income-specific content)
+
+There is also a large blank space under Additional Details in tab 2 for Income, which is probably the same issue: Income is being excluded by a property_type condition somewhere. Once the tab includes are unconditional and the partials handle the differences, that spacing should go away.
