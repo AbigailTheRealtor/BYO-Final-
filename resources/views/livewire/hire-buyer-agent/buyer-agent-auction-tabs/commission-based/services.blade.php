@@ -1,7 +1,15 @@
+@php
+    $type = strtolower($property_type ?? '');
+    $isResidentialOrIncome = in_array($type, ['residential', 'income', 'income property', 'income_property']);
+    $isCommercial = $type === 'commercial';
+    $isBusiness = $type === 'business';
+    $isVacantLand = in_array($type, ['vacant land', 'vacant_land', 'land']);
+@endphp
+
 <h3>Services the Buyer Requests from Their Agent</h3>
 
 <div style="background:yellow;padding:5px;margin-bottom:10px;font-weight:bold;">
-    DEBUG SERVICES: property_type = "{{ $property_type ?? 'NULL' }}"
+    DEBUG SERVICES: property_type = "{{ $property_type ?? 'NULL' }}" | type = "{{ $type }}" | isResidentialOrIncome = {{ $isResidentialOrIncome ? 'YES' : 'NO' }}
 </div>
 
 <div class="alert alert-info bg-light-info border-info mb-4">
@@ -16,7 +24,7 @@
 
 
 
-@if ($property_type == 'Residential' || $property_type == 'Income' || $property_type == 'Income Property')
+@if ($isResidentialOrIncome)
 
     <div class="service-section mb-4">
         <h5 class="section-header bg-info text-white p-2 mb-3">📣 Buyer Criteria Marketing & Promotion</h5>
@@ -121,7 +129,7 @@
 
 @endif
 
-@if ($property_type == 'Commercial')
+@if ($isCommercial)
 
     <!-- Buyer Criteria Marketing & Promotion Section -->
     <div class="service-section mb-4">
@@ -272,7 +280,7 @@
 
 
 @endif
-@if ($property_type == 'Business')
+@if ($isBusiness)
 
     {{-- <div class="alert alert-info bg-light-info border-info mb-4">
         <div class="d-flex align-items-center">
@@ -434,7 +442,7 @@
 
 
 @endif
-@if ($property_type == 'Vacant Land')
+@if ($isVacantLand)
 
     {{-- <div class="alert alert-info bg-light-info border-info mb-4">
         <div class="d-flex align-items-center">
