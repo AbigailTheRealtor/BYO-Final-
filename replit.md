@@ -94,6 +94,17 @@ This is a Laravel-based real estate auction platform that enables transparent bi
   - Fixed by changing tab name to "Broker Compensation" (line 1687 in tenant-agent-auction.blade.php)
   - Full title "Broker Compensation & Agency Agreement Terms" retained as H3 header inside tab content
 
+### Income Property Tabs Fix (December 9, 2025):
+- **Root Cause Found**: Unclosed `<div>` tag in property-preferences.blade.php
+  - Line 936 opened `<div class="form-group">` for "Acceptable Number of Units" section
+  - Lines 955-958 had dead code: empty `<div></div>` tags
+  - The form-group div was never closed, causing all subsequent tab content to be swallowed
+  - This resulted in: Tab 2 showing huge gap at bottom, Tabs 3-7 appearing blank for Income only
+- **Fix Applied**: Removed empty `<div></div>` dead code and added proper `</div>` closing tag
+  - File: `resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/property-preferences.blade.php`
+  - Verified: 135 opening `<div` tags now match 135 closing `</div>` tags
+- **Result**: All 7 tabs now render correctly for Buyer → Full Service → Income property type
+
 ### Property Location Fields for Hire Seller/Landlord Agent (December 8, 2025):
 - **New Required Fields**: Added City*, State*, ZIP Code* immediately after Street Address
   - City field has autocomplete from local us_cities database (32,141 cities)

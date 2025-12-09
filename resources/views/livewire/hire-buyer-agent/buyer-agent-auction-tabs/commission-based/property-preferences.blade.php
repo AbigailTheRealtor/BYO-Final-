@@ -951,10 +951,6 @@
                 <option value="Other">Other</option>
             </select>
         </div>
-
-        <div>
-
-
     </div>
     @if ($unit_size === 'Other')
         <div class="form-group">
@@ -1223,6 +1219,7 @@
     </div>
 </div>
 @endif
+
 <script>
     document.addEventListener('livewire:load', function() {
         const select = document.getElementById('property_type');

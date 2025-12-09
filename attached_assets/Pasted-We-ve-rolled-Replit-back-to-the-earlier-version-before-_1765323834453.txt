@@ -1,0 +1,242 @@
+We’ve rolled Replit back to the earlier version (before the recent debugging instructions). Current behavior:
+
+Route: /hire/agent/auction/buyer
+
+User Type: buyer
+
+Service Type: full_service
+
+Property Type: Income
+
+Symptoms:
+
+For Income:
+
+Tab 1 – Listing Details → works
+
+Tab 2 – Property Preferences → shows questions but has a large empty gap at the bottom
+
+Tabs 3–7 (Purchasing Terms, Services, Additional Details, Broker Compensation, Buyer Info) → completely blank
+
+For Residential, Commercial, Business, Vacant Land:
+
+All 7 tabs work and render content normally.
+
+These issues existed before the last round of changes; rolling back just removed the newer experiments.
+
+I don’t want any more global changes to the tab system. I just want Buyer → Full Service → Income to render correctly again, without breaking the other property types.
+
+Please follow these steps only:
+
+1) Confirm the main Buyer tab includes (read-only check)
+
+File:
+
+resources/views/livewire/tenant-agent-auction.blade.php
+
+What to check (do not change logic here unless you see new property_type checks):
+
+There should be a section for the Buyer, roughly like:
+
+@if ($service_type === 'full_service')
+    @elseif ($user_type === 'buyer')
+        @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.listing-details')
+        @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.property-preferences')
+        @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.purchasing-terms')
+        @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.services')
+        @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.additional-details')
+        @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.broker-compensation')
+        @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.buyer-info')
+    @endif
+@endif
+
+
+Key point:
+There should be no @if($property_type…) conditions wrapping these includes. Buyer tabs should always be included for full_service, and each tab partial should handle property_type internally.
+
+If this structure already matches, leave it as-is.
+
+2) Fix the big gap on Tab 2 (Property Preferences – Income only)
+
+File:
+
+resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/property-preferences.blade.php
+
+What we know:
+
+On Income only, the bottom of this tab has a huge vertical blank space.
+
+That’s usually caused by a mismatched @if/@endif, @foreach/@endforeach, or <div>/</div> sequence near the bottom of the file.
+
+Please:
+
+Scroll to the last 80–100 lines of this file.
+
+Check carefully for:
+
+An @if ($property_type === 'Income') or similar block that might not be closed correctly.
+
+Any @if without matching @endif
+
+Any @foreach without @endforeach
+
+Extra / missing </div> tags compared to the Residential section.
+
+Compare the Income portion to the Residential portion above it:
+
+The structure of opening/closing tags should be the same.
+
+It’s OK if the field labels/options differ, but the shape of the markup should match.
+
+To verify structure without breaking anything, please add a temporary debug marker right at the very bottom of the tab’s main content area:
+
+<div style="background:#ffff00; padding:4px; font-size:12px;">
+    END OF BUYER PROPERTY PREFERENCES | property_type={{ $property_type }}
+</div>
+
+
+Place this just before the final closing </div> that ends the tab panel.
+
+Expected after fix:
+
+For Residential, Income, etc., Tab 2 should show this yellow “END OF BUYER PROPERTY PREFERENCES…” line immediately under the last question, with no huge empty gap below it.
+
+Fixing this should also reduce the chance of later tabs being affected by broken markup.
+
+Once confirmed, you can remove the debug <div> again.
+
+3) Make sure each Buyer tab partial doesn’t silently exclude Income
+
+Please review these 5 partials (same folder):
+
+purchasing-terms.blade.php
+
+services.blade.php
+
+additional-details.blade.php
+
+broker-compensation.blade.php
+
+buyer-info.blade.php
+
+3a) Tabs that should be shared by all property types
+
+For Purchasing Terms, Additional Details, and Buyer Info:
+
+These tabs should show for every property type (Buyer’s budget, timing, extra info, etc.).
+
+Please ensure there are no @if ($property_type === 'Residential') or similar top-level conditions that would skip the entire content when $property_type === 'Income'.
+
+If you find something like:
+
+@if ($property_type === 'Residential')
+    ... full content ...
+@endif
+
+
+Change it to either:
+
+Remove the condition entirely (preferred), e.g.:
+
+{{-- no property_type filter; show for all Buyer property types --}}
+... full content ...
+
+
+or, if you truly need branching:
+
+@if (in_array($property_type, ['Residential', 'Income', 'Commercial', 'Business', 'Vacant Land']))
+    ... shared Buyer content ...
+@endif
+
+
+Main idea: Income should not fall through without any content.
+
+3b) Services tab – where Income is intentionally different
+
+For services.blade.php it is expected that Income has its own services list.
+
+What to check:
+
+At the top of the file there should be a chain like:
+
+@if ($property_type === 'Residential')
+    ... residential services ...
+@elseif ($property_type === 'Income')
+    ... income services ...
+@elseif ($property_type === 'Commercial')
+    ... commercial services ...
+@elseif ($property_type === 'Business')
+    ... business services ...
+@elseif ($property_type === 'Vacant Land')
+    ... land services ...
+@endif
+
+
+If instead you see separate @if blocks (no @elseif), please convert them into a single @if / @elseif / @endif chain so only one branch renders.
+
+Also double-check the exact value for Income:
+
+Use {{$property_type}} temporarily in a small debug span to confirm the value is literally 'Income'.
+
+If you see 'Income Property' or something else, update the comparisons to match.
+
+3c) Broker Compensation tab
+
+For broker-compensation.blade.php:
+
+Earlier versions had conditions like:
+
+@if ($property_type === 'Residential')
+    ...
+@elseif (in_array($property_type, ['Commercial', 'Business']))
+    ...
+@endif
+
+
+But no case for Income, so Income gets nothing.
+
+Simplest fix:
+
+If the Buyer compensation structure is basically the same across property types, remove the outer property_type checks so the content always renders.
+
+If you really need different versions, add Income to the appropriate branch, e.g.:
+
+@if (in_array($property_type, ['Residential', 'Income']))
+    ... standard residential/income buyer compensation fields ...
+@elseif (in_array($property_type, ['Commercial', 'Business']))
+    ... commercial/business version ...
+@endif
+
+
+Goal: Income must always hit one of the branches.
+
+4) Test sequence (only after the above changes)
+
+Please test in this exact order:
+
+Go to /hire/agent/auction/buyer
+
+Choose:
+
+User Type: Buyer
+
+Service Type: Full Service
+
+Select Residential as property type.
+
+Confirm all 7 tabs render with no huge gaps.
+
+Switch to Income as property type.
+
+Confirm:
+
+Tab 2 no longer has a huge blank gap.
+
+Tabs 3–7 show content appropriate for Income (services list can be different; other tabs can be shared).
+
+If at any step any other property type breaks (Residential/Commercial/etc.), please undo that specific file change and keep the others intact. The goal is to fix Income without regressing the types that already work.
+
+That’s all I’m trying to accomplish right now:
+✅ Restore the original Income flow so all 7 tabs render,
+✅ Keep the unique Income services list,
+✅ Don’t touch global tab logic or other user types.
