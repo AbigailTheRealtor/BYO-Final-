@@ -1,0 +1,98 @@
+Please remove all property_type gating from the Hire a Buyer’s Agent Income tabs (3-7) and make buyer tabs always render for full-service, then re-hook the existing Income content.
+
+I’m still having the same bug:
+
+URL: /hire/agent/auction/buyer
+
+Flow: Buyer → Full Service → Income Property
+
+Tabs 3–7 (Purchasing Terms, Services, Additional Details, Broker Compensation, Buyer Information) are completely blank.
+
+The green debug banner inside the partial (e.g. “PURCHASING-TERMS TAB RENDERED…”) only shows when property_type=Residential. For property_type=Income there is no green banner at all.
+
+That tells us the partials for tabs 3–7 are not being included at all when property_type=Income, even though they should be.
+
+1️⃣ Fix the main view: always include buyer tabs for full_service
+
+File to work in (only):
+
+resources/views/livewire/tenant-agent-auction.blade.php
+
+Find the section where tab panes 3–7 are included for the buyer user type.
+The includes should look like this (paths may wrap, but these are the ones):
+
+@include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.purchasing-terms')
+@include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.services')
+@include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.additional-details')
+@include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.broker-compensation')
+@include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.buyer-info')
+
+
+Remove any conditions that involve property_type around those includes.
+I do not want the buyer tabs filtered by property_type at the tab-pane level.
+
+The only conditions that should control those 5 includes are:
+
+@if ($service_type === 'full_service')
+    @elseif ($user_type === 'buyer')
+        {{-- tab panes 3–7 go here, no property_type checks --}}
+    @endif
+@endif
+
+
+Concretely, for now, make it this simple (pseudo-structure):
+
+{{-- inside the full_service block --}}
+@elseif ($user_type === 'buyer')
+    {{-- Tab 3: Purchasing Terms --}}
+    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.purchasing-terms')
+
+    {{-- Tab 4: Services --}}
+    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.services')
+
+    {{-- Tab 5: Additional Details --}}
+    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.additional-details')
+
+    {{-- Tab 6: Broker Compensation --}}
+    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.broker-compensation')
+
+    {{-- Tab 7: Buyer Info --}}
+    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.buyer-info')
+@endif
+
+
+⚠️ Important: no if ($property_type === 'Residential'), no in_array($property_type, …) and no other wrapper conditions around these buyer tab panes.
+
+After changing that, run:
+
+php artisan view:clear && php artisan cache:clear
+
+2️⃣ Keep Income-specific content where it already exists
+
+Do not delete or rewrite the Income-specific sections that are already inside the buyer partials:
+
+resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/services.blade.php
+(this file already has separate blocks for Residential, Income, Commercial, etc — that content is correct and should remain).
+
+resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/broker-compensation.blade.php
+(if there are any property_type conditionals here, they should stay, because they control content, not whether the whole tab exists).
+
+Those files should handle the text differences for Income vs Residential. The outer view (tenant-agent-auction.blade.php) should never completely skip the partials just because the property type is Income.
+
+3️⃣ Quick test after your changes
+
+After you clear caches and restart:
+
+Go to /hire/agent/auction/buyer.
+
+Choose: Buyer → Full Service → Residential.
+
+Tabs 3–7 should show content (they already do).
+
+Change only the Property Type to Income Property.
+
+Tabs 3–7 should now also show content.
+
+In Services, I should see the Income-specific language (2–4 unit, rental income, etc.) that already exists in services.blade.php.
+
+If Income still shows blank and the green “TAB RENDERED” debug line never appears, then the includes are still being blocked somewhere in tenant-agent-auction.blade.php.

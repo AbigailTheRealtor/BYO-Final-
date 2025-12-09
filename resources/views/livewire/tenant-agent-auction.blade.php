@@ -1772,6 +1772,10 @@ $lease_types = [
                         </div>
 
                         @if ($service_type === 'full_service')
+                        {{-- TOP-LEVEL DEBUG: This should ALWAYS appear for full_service --}}
+                        <div style="background:yellow; padding:4px; font-size:12px; position:fixed; top:0; left:0; z-index:9999;">
+                            FULL_SERVICE BLOCK: user_type={{ $user_type }} | service_type={{ $service_type }} | property_type={{ $property_type }}
+                        </div>
                         <div class="tab-pane fade {{ $activeTab === 1 ? 'show active' : '' }}"
                             id="{{ $propertyId }}" role="tabpanel"
                             aria-labelledby="{{ $propertyId }}-tab">
