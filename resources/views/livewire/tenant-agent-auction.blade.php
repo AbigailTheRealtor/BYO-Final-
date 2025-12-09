@@ -1665,10 +1665,11 @@ $lease_types = [
                     $baseTabs = ['Listing Details'];
 
                     // Conditionally set Property tab label based on user type
-                    $propertyTab = match ($user_type) {
-                    'tenant', 'buyer' => 'Property Preferences',
-                    'seller', 'landlord' => 'Property Details',
-                    };
+                    if ($user_type === 'tenant' || $user_type === 'buyer') {
+                        $propertyTab = 'Property Preferences';
+                    } else {
+                        $propertyTab = 'Property Details';
+                    }
 
                     $propertyId = str_replace(' ', '-', strtolower($propertyTab));
 
@@ -1806,7 +1807,6 @@ $lease_types = [
                         @endphp
                         <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
                             id="{{ $termsTabId }}" role="tabpanel" aria-labelledby="{{ $termsTabId }}-tab">
-                            <div style="background:orange;color:black;padding:5px;font-weight:bold;">TAB2: Terms Tab ({{ $termsTabId }})</div>
                             @switch($user_type)
                                 @case('tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.leasing-terms')
@@ -1837,7 +1837,6 @@ $lease_types = [
                         @endphp
                         <div class="tab-pane fade {{ $activeTab === $servicesTabIndex ? 'show active' : '' }}"
                             id="services" role="tabpanel" aria-labelledby="services-tab">
-                            <div style="background:lime;color:black;padding:5px;font-weight:bold;">TAB3: Services Tab</div>
                             @switch($user_type)
                                 @case('tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.services')
