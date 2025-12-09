@@ -688,6 +688,41 @@
         ['name' => 'Short Sale'],
         ['name' => 'Other'],
     ];
+
+    $buyer_property = [
+        [
+            'name' => 'Assignment Contract',
+            'description' => 'The Buyer is open to purchasing a property where the Seller is assigning their contractual rights to another Buyer (commonly used in wholesaling).',
+        ],
+        [
+            'name' => 'Auction',
+            'description' => 'The Buyer is willing to purchase a property through a public bidding process.',
+        ],
+        [
+            'name' => 'Bank Owned/REO',
+            'description' => 'The Buyer is open to properties that have been foreclosed on and are now owned by the bank (Real Estate Owned)',
+        ],
+        [
+            'name' => 'Government Owned',
+            'description' => 'The Buyer is open to properties owned by a government entity (e.g., HUD, VA).',
+        ],
+        [
+            'name' => 'Probate Listing',
+            'description' => 'The Buyer is open to purchasing properties that are part of a deceased owner\'s estate and require probate court approval to sell.',
+        ],
+        [
+            'name' => 'Short Sale',
+            'description' => 'The Buyer is willing to purchase a property where the Seller owes more than the property\'s market value and needs lender approval to sell for less.',
+        ],
+        [
+            'name' => 'None',
+            'description' => 'The Buyer is only seeking standard sales with no special sale provisions.',
+        ],
+        [
+            'name' => 'Other',
+            'description' => 'The Buyer is open to a special sale scenario not listed here — please specify the details.',
+        ],
+    ];
 @endphp
 
 <div class="container pt-5 pb-5">

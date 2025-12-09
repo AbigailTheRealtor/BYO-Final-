@@ -1,0 +1,68 @@
+What to send back to Replit (you can copy–paste this)
+
+The Income fix still isn’t working. From your logs I see you edited:
+
+resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs.blade.php
+
+and tenant-agent-auction.blade.php
+
+However, the screen I’m using is not the auction view. In DevTools the wrapper is:
+
+<div id="wizard-form-container"
+     class="container pt-5 pb-5"
+     data-service-type="full_service">
+
+
+So this is the full_service wizard version of “Hire a Buyer’s Agent,” not the auction version. That’s why the changes you made to the auction Blade don’t affect this page and Tabs 3–7 are still blank for Income.
+
+What I need you to do:
+
+Open the correct Blade file for the full_service wizard, not the auction:
+
+Search the codebase for wizard-form-container and open the Blade file where that div is defined (inside resources/views/livewire/hire-buyer-agent/…).
+
+Inside that file, for the tab panes inside #wizard-form-container (Tabs 3–7: Purchasing Terms, Services, Additional Details, Broker Compensation, Buyer Information), update the property-type conditions so that Income is treated exactly like Residential.
+
+Example pattern inside each tab:
+
+@php
+    $rawType = $listing->property_type ?? $property_type ?? null;
+    $isResidentialOrIncome = in_array($rawType, [
+        'residential',
+        'income',
+        'income_property',
+        'income_property_4_units',
+        'income_4_units',
+    ]);
+@endphp
+
+{{-- Tab 3 – Purchasing Terms --}}
+@if ($isResidentialOrIncome)
+    @include('buyer.tabs.residential-purchasing-terms')
+@elseif ($rawType === 'commercial')
+    @include('buyer.tabs.commercial-purchasing-terms')
+@elseif ($rawType === 'business')
+    @include('buyer.tabs.business-purchasing-terms')
+@elseif ($rawType === 'vacant_land')
+    @include('buyer.tabs.vacant-land-purchasing-terms')
+@endif
+
+{{-- Tab 4 – Services --}}
+@if ($isResidentialOrIncome)
+    @include('buyer.services.residential-full-service')
+@elseif ($rawType === 'commercial')
+    @include('buyer.services.commercial-full-service')
+@elseif ($rawType === 'business')
+    @include('buyer.services.business-full-service')
+@elseif ($rawType === 'vacant_land')
+    @include('buyer.services.vacant-land-full-service')
+@endif
+
+{{-- Repeat same pattern for Additional Details, Broker Compensation, Buyer Information --}}
+
+
+Please don’t apply this only to the buyer-agent-auction-* files. The fix needs to be in the full_service tabs file (the one with wizard-form-container).
+
+After that, I’ll test again by selecting Income and clicking through Tabs 3–7. They should show the same content as Residential.
+
+Right now, Income clearly hits the “FULL_SERVICE BLOCK ENTERED” debug banner, but there is still no markup in the tab panes because the full_service Blade isn’t including the Residential partials for Income.
