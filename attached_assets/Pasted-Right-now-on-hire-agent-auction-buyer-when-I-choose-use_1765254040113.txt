@@ -1,0 +1,148 @@
+Right now, on /hire/agent/auction/buyer when I choose:
+
+user_type = buyer
+
+service_type = full_service
+
+property_type = Income
+
+then tabs 3–7 are all blank:
+
+Purchasing Terms
+
+Services
+
+Additional Details
+
+Broker Compensation
+
+Buyer Information
+
+The green/yellow debug banner at the very top of the page shows:
+
+DEBUG DATA: user_type="buyer" | service_type="full_service" | property_type="Income"
+
+
+So we know those three variables are set. The problem is that none of the Buyer tab partials are being included for this combination.
+
+Please do the following, step by step, and don’t add or remove any extra partials/helpers – just fix the includes and show me simple debug.
+
+1) Confirm the view & component again
+
+We already established:
+
+Route: hire/agent/auction/{user_type?} → URL /hire/agent/auction/buyer
+
+Livewire Component: App\Http\Livewire\TenantAgentAuction
+
+Blade View:
+resources/views/livewire/tenant-agent-auction.blade.php
+
+Please re-open tenant-agent-auction.blade.php – we will only touch this file and the Buyer tab partials.
+
+2) Find the Buyer tab includes and simplify the conditions
+
+In tenant-agent-auction.blade.php, find the block where the Buyer tabs are included.
+You previously listed these includes as:
+
+livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.purchasing-terms
+
+...services
+
+...additional-details
+
+...broker-compensation
+
+...buyer-info
+
+Right now, those includes are probably wrapped in conditions that also check service_type or property_type, something like:
+
+@if ($user_type === 'buyer' && $service_type === 'commission_based')
+    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.services')
+@endif
+
+
+or similar.
+
+For now, please remove any service_type and property_type checks from around the Buyer includes.
+
+Change the conditions so all Buyer tabs are included whenever $user_type === 'buyer', regardless of service_type or property_type.
+
+For example, for each Buyer tab include, it should look like this (or equivalent):
+
+@if ($user_type === 'buyer')
+    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.purchasing-terms')
+@endif
+
+@if ($user_type === 'buyer')
+    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.services')
+@endif
+
+@if ($user_type === 'buyer')
+    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.additional-details')
+@endif
+
+@if ($user_type === 'buyer')
+    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.broker-compensation')
+@endif
+
+@if ($user_type === 'buyer')
+    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.buyer-info')
+@endif
+
+
+The key: no conditions using $service_type or $property_type around these includes.
+
+3) Add a very simple test box at the TOP of each Buyer tab partial
+
+For each of these files:
+
+resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/purchasing-terms.blade.php
+resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/services.blade.php
+resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/additional-details.blade.php
+resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/broker-compensation.blade.php
+resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/buyer-info.blade.php
+
+
+Add this snippet at the very top of each file, before any @if ($property_type...) or other logic, and do not wrap it in any condition:
+
+<div style="background:red;color:white;padding:5px;margin-bottom:10px;">
+    TEST: [TAB NAME] partial loaded |
+    user_type = {{ $user_type ?? 'NULL' }},
+    service_type = {{ $service_type ?? 'NULL' }},
+    property_type = {{ $property_type ?? 'NULL' }}
+</div>
+
+
+Replace [TAB NAME] with the actual tab, e.g.:
+
+TEST: Purchasing Terms partial loaded
+
+TEST: Services partial loaded
+
+etc.
+
+4) Clear views and test
+
+Run:
+
+php artisan view:clear
+
+
+Then I will test:
+
+Go to /hire/agent/auction/buyer
+
+Choose Buyer → Full Service → Residential → go through tabs 3–7
+
+Choose Buyer → Full Service → Income → go through tabs 3–7
+
+Choose Buyer → Full Service → Commercial → go through tabs 3–7
+
+What should happen now:
+
+Each of the five tabs shows its red “TEST: [TAB NAME] partial loaded” box at the top for all property types.
+
+The red box should show user_type=buyer, service_type=full_service, and the correct property_type string.
+
+Once that works, we can safely turn those red boxes into proper @if ($property_type === 'Income') / @elseif splits inside the partials, based on the exact value shown.

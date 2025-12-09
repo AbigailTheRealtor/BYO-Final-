@@ -1,5 +1,8 @@
-<div style="background:#ff0; padding:4px; font-weight:bold;">
-    DEBUG BUYER TAB LOADED: {{ basename(__FILE__) }} | property_type = {{ $property_type ?? 'null' }}
+<div style="background:red;color:white;padding:5px;margin-bottom:10px;">
+    TEST: Purchasing Terms partial loaded |
+    user_type = {{ $user_type ?? 'NULL' }},
+    service_type = {{ $service_type ?? 'NULL' }},
+    property_type = {{ $property_type ?? 'NULL' }}
 </div>
 <!-- Section Heading -->
 <h3>Purchasing Terms</h3>
