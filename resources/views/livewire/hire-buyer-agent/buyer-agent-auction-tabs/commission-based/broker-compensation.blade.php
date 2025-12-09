@@ -122,7 +122,7 @@
     <div class="form-group mb-4">
         <label class="fw-bold d-flex align-items-center">
             Buyer’s Broker Lease Fee:
-            @if ($property_type === 'Residential')
+            @if ($property_type === 'Residential' || $property_type === 'Income' || $property_type === 'Income Property')
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Choose how the Tenant’s Broker will be compensated if a residential property is leased. Options include a flat fee, a percentage of monthly rent, a percentage of the gross lease value, a combination of flat fee and percentage, or select “Other” to define a custom structure. Then enter the appropriate amount(s) based on your selection.">
 

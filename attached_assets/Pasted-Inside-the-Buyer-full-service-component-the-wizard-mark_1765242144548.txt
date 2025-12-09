@@ -1,0 +1,91 @@
+Inside the Buyer full-service component, the wizard markup is:
+
+<div id="wizard-form-container"
+     class="container pt-5 pb-5"
+     data-service-type="full_service">
+    {{-- tabs + tab panes live here --}}
+</div>
+
+
+For Income Property, Tabs 1–2 render normally, and I see the debug messages:
+
+DEBUG: FULL_SERVICE BLOCK ENTERED
+
+DEBUG: AFTER PROPERTY-PREFERENCES DIV
+
+But Tabs 3–7 (Purchasing Terms, Services, Additional Details, Broker Compensation, Buyer Information) are blank — no fields inside the tab panes when Income is selected.
+
+I need a very simple behavior:
+
+For Income Property, from Tab 3 onward, reuse the Residential layouts.
+
+Please implement this directly in the Blade that builds the tab panes inside #wizard-form-container. For each tab from 3 on, treat Income as Residential:
+
+@php
+    $rawType = $listing->property_type ?? $property_type ?? null;
+    $isResidentialOrIncome = in_array($rawType, [
+        'residential',
+        'income',
+        'income_property',
+        'income_property_4_units',
+        'income_4_units',
+    ]);
+@endphp
+
+{{-- Tab 3 – Purchasing Terms --}}
+@if ($isResidentialOrIncome)
+    @include('buyer.tabs.residential-purchasing-terms')
+@elseif ($rawType === 'commercial')
+    @include('buyer.tabs.commercial-purchasing-terms')
+@elseif ($rawType === 'business')
+    @include('buyer.tabs.business-purchasing-terms')
+@elseif ($rawType === 'vacant_land')
+    @include('buyer.tabs.vacant-land-purchasing-terms')
+@endif
+
+{{-- Tab 4 – Services --}}
+@if ($isResidentialOrIncome)
+    @include('buyer.services.residential-full-service')
+@elseif ($rawType === 'commercial')
+    @include('buyer.services.commercial-full-service')
+@elseif ($rawType === 'business')
+    @include('buyer.services.business-full-service')
+@elseif ($rawType === 'vacant_land')
+    @include('buyer.services.vacant-land-full-service')
+@endif
+
+{{-- Tab 5 – Additional Details --}}
+@if ($isResidentialOrIncome)
+    @include('buyer.tabs.residential-additional-details')
+@elseif ($rawType === 'commercial')
+    @include('buyer.tabs.commercial-additional-details')
+@elseif ($rawType === 'business')
+    @include('buyer.tabs.business-additional-details')
+@elseif ($rawType === 'vacant_land')
+    @include('buyer.tabs.vacant-land-additional-details')
+@endif
+
+{{-- Tab 6 – Broker Compensation --}}
+@if ($isResidentialOrIncome)
+    @include('buyer.tabs.residential-broker-compensation')
+@elseif ($rawType === 'commercial')
+    @include('buyer.tabs.commercial-broker-compensation')
+@elseif ($rawType === 'business')
+    @include('buyer.tabs.business-broker-compensation')
+@elseif ($rawType === 'vacant_land')
+    @include('buyer.tabs.vacant-land-broker-compensation')
+@endif
+
+{{-- Tab 7 – Buyer Information --}}
+@if ($isResidentialOrIncome)
+    @include('buyer.tabs.residential-buyer-information')
+@elseif ($rawType === 'commercial')
+    @include('buyer.tabs.commercial-buyer-information')
+@elseif ($rawType === 'business')
+    @include('buyer.tabs.business-buyer-information')
+@elseif ($rawType === 'vacant_land')
+    @include('buyer.tabs.vacant-land-buyer-information')
+@endif
+
+
+The important part is inside #wizard-form-container: when the property type is Income, don’t try to load a special Income partial — just include the same partials used for Residential so the tab panes aren’t empty

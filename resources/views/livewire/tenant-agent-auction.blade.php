@@ -1664,6 +1664,9 @@ $lease_types = [
                     @php
                     $baseTabs = ['Listing Details'];
 
+                    // Normalize property_type: treat Income variants as Residential for tabs 3+
+                    $normalizedPropertyType = in_array($property_type, ['Income', 'Income Property', 'income', 'income_property']) ? 'Residential' : $property_type;
+
                     // Conditionally set Property tab label based on user type
                     if ($user_type === 'tenant' || $user_type === 'buyer') {
                         $propertyTab = 'Property Preferences';
