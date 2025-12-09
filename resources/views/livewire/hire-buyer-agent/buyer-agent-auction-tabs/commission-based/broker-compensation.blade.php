@@ -1,6 +1,7 @@
 @php
     $type = strtolower($property_type ?? '');
-    $isResidentialOrIncome = in_array($type, ['residential', 'income', 'income property', 'income_property']);
+    $isIncome = in_array($type, ["income", "income property", "income_property", "income 2-4 units"]);
+    $isResidential = in_array($type, ["residential", "residential property"]);
     $isCommercialOrBusiness = in_array($type, ['commercial', 'business']);
 @endphp
 
@@ -128,7 +129,7 @@
     <div class="form-group mb-4">
         <label class="fw-bold d-flex align-items-center">
             Buyer’s Broker Lease Fee:
-            @if ($isResidentialOrIncome)
+            @if ($isIncome || $isResidential)
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Choose how the Tenant’s Broker will be compensated if a residential property is leased. Options include a flat fee, a percentage of monthly rent, a percentage of the gross lease value, a combination of flat fee and percentage, or select “Other” to define a custom structure. Then enter the appropriate amount(s) based on your selection.">
 
