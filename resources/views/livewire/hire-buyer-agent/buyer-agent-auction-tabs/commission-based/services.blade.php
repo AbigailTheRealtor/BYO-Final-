@@ -1,3 +1,8 @@
+{{-- ABSOLUTE TOP OF BUYER SERVICES FILE --}}
+<div style="background: lime; color: black; padding: 20px; border: 5px solid red; font-size: 24px; font-weight: bold;">
+    THIS IS BUYER SERVICES.BLADE.PHP - IF YOU SEE THIS, THE FILE IS LOADING
+</div>
+
 @php
     // Normalize property_type: lowercase and replace underscores/dashes with spaces
     $type = strtolower(str_replace(['_', '-'], ' ', trim($property_type ?? '')));
