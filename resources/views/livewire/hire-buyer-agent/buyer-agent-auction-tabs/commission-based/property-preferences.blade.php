@@ -951,10 +951,6 @@
                 <option value="Other">Other</option>
             </select>
         </div>
-
-        <div>
-
-
     </div>
     @if ($unit_size === 'Other')
         <div class="form-group">
@@ -1223,6 +1219,12 @@
     </div>
 </div>
 @endif
+
+{{-- DEBUG MARKER --}}
+<div style="background:#ff0; padding:4px; font-size:12px;">
+    END OF PROPERTY PREFERENCES | property_type={{ $property_type ?? 'null' }}
+</div>
+
 <script>
     document.addEventListener('livewire:load', function() {
         const select = document.getElementById('property_type');
