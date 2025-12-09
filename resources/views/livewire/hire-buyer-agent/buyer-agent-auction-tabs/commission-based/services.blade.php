@@ -1,9 +1,3 @@
-<div style="background:red;color:white;padding:5px;margin-bottom:10px;">
-    TEST: Services partial loaded |
-    user_type = {{ $user_type ?? 'NULL' }},
-    service_type = {{ $service_type ?? 'NULL' }},
-    property_type = {{ $property_type ?? 'NULL' }}
-</div>
 <h3>Services the Buyer Requests from Their Agent</h3>
 
 

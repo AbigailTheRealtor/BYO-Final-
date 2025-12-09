@@ -1591,14 +1591,6 @@ $lease_types = [
 @endphp
 
 <div class="container pt-5 pb-5">
-    <!-- DEBUG BANNERS - REMOVE AFTER TESTING -->
-    <div style="background:#00ff00; color:#000; padding:6px; font-weight:bold;">
-        DEBUG MAIN VIEW: {{ __FILE__ }}
-    </div>
-    <div style="background:#ffff00; color:#000; padding:6px; font-weight:bold;">
-        DEBUG DATA: user_type="{{ $user_type ?? 'NULL' }}" | service_type="{{ $service_type ?? 'NULL' }}" | property_type="{{ $property_type ?? 'NULL' }}"
-    </div>
-    <!-- END DEBUG BANNERS -->
     <div class="card">
         <div class="row">
             <div class="col-12 p-4">
@@ -1821,7 +1813,6 @@ $lease_types = [
                                     @elseif($user_type === 'seller')
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-terms')
                                     @elseif($user_type === 'buyer')
-                                    <div style="background:blue;color:white;padding:3px;">INCLUDE PURCHASING-TERMS FOR BUYER</div>
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.purchasing-terms')
                                     @elseif($user_type === 'landlord')
                                     @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.lease-terms')
@@ -1844,13 +1835,11 @@ $lease_types = [
 
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 3 : 4) ? 'show active' : '' }}"
                                     id="services" role="tabpanel" aria-labelledby="services-tab">
-                                    <div style="background:green;color:white;padding:3px;">SERVICES TAB-PANE RENDERED (user_type={{ $user_type }})</div>
                                     @if ($user_type === 'tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.services')
                                     @elseif($user_type === 'seller')
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.services')
                                     @elseif($user_type === 'buyer')
-                                    <div style="background:blue;color:white;padding:3px;">INCLUDE SERVICES FOR BUYER</div>
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.services')
                                     @elseif($user_type === 'landlord')
                                     @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.services')
@@ -1861,13 +1850,11 @@ $lease_types = [
 
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 4 : 5) ? 'show active' : '' }}"
                                     id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
-                                    <div style="background:green;color:white;padding:3px;">ADDITIONAL-DETAILS TAB-PANE RENDERED (user_type={{ $user_type }})</div>
                                     @if ($user_type === 'tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.additional-details')
                                     @elseif($user_type === 'seller')
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.additional-details')
                                     @elseif($user_type === 'buyer')
-                                    <div style="background:blue;color:white;padding:3px;">INCLUDE ADDITIONAL-DETAILS FOR BUYER</div>
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.additional-details')
                                     @elseif($user_type === 'landlord')
                                     @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.additional-details')
@@ -1878,13 +1865,11 @@ $lease_types = [
 
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 5 : 6) ? 'show active' : '' }}"
                                     id="broker-compensation" role="tabpanel" aria-labelledby="broker-compensation-tab">
-                                    <div style="background:green;color:white;padding:3px;">BROKER-COMPENSATION TAB-PANE RENDERED (user_type={{ $user_type }})</div>
                                     @if ($user_type === 'tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.broker-compensation')
                                     @elseif($user_type === 'seller')
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.broker-compensation')
                                     @elseif($user_type === 'buyer')
-                                    <div style="background:blue;color:white;padding:3px;">INCLUDE BROKER-COMPENSATION FOR BUYER</div>
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.broker-compensation')
                                     @elseif($user_type === 'landlord')
                                     @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.broker-compensation')
@@ -1895,13 +1880,11 @@ $lease_types = [
 
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 6 : 7) ? 'show active' : '' }}"
                                     id="tenant-info" role="tabpanel" aria-labelledby="tenant-info-tab">
-                                    <div style="background:green;color:white;padding:3px;">BUYER-INFO TAB-PANE RENDERED (user_type={{ $user_type }})</div>
                                     @if ($user_type === 'tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.tenant-info')
                                     @elseif($user_type === 'seller')
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-info')
                                     @elseif($user_type === 'buyer')
-                                    <div style="background:blue;color:white;padding:3px;">INCLUDE BUYER-INFO FOR BUYER</div>
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.buyer-info')
                                     @elseif($user_type === 'landlord')
                                     @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.landlord-info')

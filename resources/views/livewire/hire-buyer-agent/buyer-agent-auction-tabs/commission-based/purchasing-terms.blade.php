@@ -1,9 +1,3 @@
-<div style="background:red;color:white;padding:5px;margin-bottom:10px;">
-    TEST: Purchasing Terms partial loaded |
-    user_type = {{ $user_type ?? 'NULL' }},
-    service_type = {{ $service_type ?? 'NULL' }},
-    property_type = {{ $property_type ?? 'NULL' }}
-</div>
 <!-- Section Heading -->
 <h3>Purchasing Terms</h3>
 <div class="alert alert-info bg-light-info border-info mb-4">
