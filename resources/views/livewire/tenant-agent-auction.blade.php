@@ -1821,6 +1821,7 @@ $lease_types = [
                                     @elseif($user_type === 'seller')
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-terms')
                                     @elseif($user_type === 'buyer')
+                                    <div style="background:blue;color:white;padding:3px;">INCLUDE PURCHASING-TERMS FOR BUYER</div>
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.purchasing-terms')
                                     @elseif($user_type === 'landlord')
                                     @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.lease-terms')
@@ -1849,6 +1850,7 @@ $lease_types = [
                                     @elseif($user_type === 'seller')
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.services')
                                     @elseif($user_type === 'buyer')
+                                    <div style="background:blue;color:white;padding:3px;">INCLUDE SERVICES FOR BUYER</div>
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.services')
                                     @elseif($user_type === 'landlord')
                                     @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.services')
@@ -1865,6 +1867,7 @@ $lease_types = [
                                     @elseif($user_type === 'seller')
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.additional-details')
                                     @elseif($user_type === 'buyer')
+                                    <div style="background:blue;color:white;padding:3px;">INCLUDE ADDITIONAL-DETAILS FOR BUYER</div>
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.additional-details')
                                     @elseif($user_type === 'landlord')
                                     @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.additional-details')
@@ -1881,6 +1884,7 @@ $lease_types = [
                                     @elseif($user_type === 'seller')
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.broker-compensation')
                                     @elseif($user_type === 'buyer')
+                                    <div style="background:blue;color:white;padding:3px;">INCLUDE BROKER-COMPENSATION FOR BUYER</div>
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.broker-compensation')
                                     @elseif($user_type === 'landlord')
                                     @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.broker-compensation')
@@ -1897,6 +1901,7 @@ $lease_types = [
                                     @elseif($user_type === 'seller')
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-info')
                                     @elseif($user_type === 'buyer')
+                                    <div style="background:blue;color:white;padding:3px;">INCLUDE BUYER-INFO FOR BUYER</div>
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.buyer-info')
                                     @elseif($user_type === 'landlord')
                                     @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.landlord-info')
