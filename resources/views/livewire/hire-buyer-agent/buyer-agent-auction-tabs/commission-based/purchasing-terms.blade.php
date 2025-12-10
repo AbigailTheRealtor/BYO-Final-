@@ -1465,10 +1465,10 @@
         </span>
         <div class="input-cover">
             <input type="text" wire:model="crypto_percentage" class="form-control has-icon"
-                placeholder="Enter percentage to be paid with cryptocurrency (e.g., 50)"  
+                placeholder="Enter percentage to be paid with cryptocurrency (e.g., 50)"
                 data-error-id="crypto_percentage_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
-                 required>
+                required>
             <span class="input-group-text-seller">%</span>
         </div>
 
@@ -1487,10 +1487,9 @@
         <div class="input-cover">
             <input type="text" wire:model="cash_percentage_crypto" class="form-control has-icon"
                 placeholder="Enter percentage to be paid with cash (e.g., 50)"
-                 data-error-id="cash_percentage_crypto_error"
+                data-error-id="cash_percentage_crypto_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
-                 required>
-
+                required>
             <span class="input-group-text-seller">%</span>
         </div>
                 <span class="error mt-2" id="cash_percentage_crypto_error"></span>
@@ -1535,19 +1534,14 @@
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
-        <div class="d-flex gap-3 mt-2">
-            <div class="form-check">
-                <input class="form-check-input" type="radio" wire:model="crypto_transaction_fees" value="Buyer" id="crypto_fees_buyer">
-                <label class="form-check-label" for="crypto_fees_buyer">Buyer</label>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="radio" wire:model="crypto_transaction_fees" value="Seller" id="crypto_fees_seller">
-                <label class="form-check-label" for="crypto_fees_seller">Seller</label>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="radio" wire:model="crypto_transaction_fees" value="Split" id="crypto_fees_split">
-                <label class="form-check-label" for="crypto_fees_split">Split</label>
-            </div>
+        <div class="input-cover">
+            <select wire:model="crypto_transaction_fees" class="form-control has-icon"
+                data-icon="fa-solid fa-money-bill-wave">
+                <option value="">Select</option>
+                <option value="Buyer">Buyer</option>
+                <option value="Seller">Seller</option>
+                <option value="Split">Split</option>
+            </select>
         </div>
     </div>
 
@@ -1559,19 +1553,14 @@
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
-        <div class="d-flex gap-3 mt-2">
-            <div class="form-check">
-                <input class="form-check-input" type="radio" wire:model="crypto_transfer_timing" value="At Contract Signing" id="crypto_timing_signing">
-                <label class="form-check-label" for="crypto_timing_signing">At Contract Signing</label>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="radio" wire:model="crypto_transfer_timing" value="At Closing" id="crypto_timing_closing">
-                <label class="form-check-label" for="crypto_timing_closing">At Closing</label>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="radio" wire:model="crypto_transfer_timing" value="Other" id="crypto_timing_other">
-                <label class="form-check-label" for="crypto_timing_other">Other</label>
-            </div>
+        <div class="input-cover">
+            <select wire:model="crypto_transfer_timing" class="form-control has-icon"
+                data-icon="fa-regular fa-calendar-days">
+                <option value="">Select</option>
+                <option value="At Contract Signing">At Contract Signing</option>
+                <option value="At Closing">At Closing</option>
+                <option value="Other">Other</option>
+            </select>
         </div>
     </div>
 
