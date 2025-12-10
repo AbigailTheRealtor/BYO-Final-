@@ -1199,129 +1199,63 @@
 @if ($offered_financing === 'Lease Purchase')
 
     <div class="alert alert-warning mt-3 p-2 small">
-        <strong>Note:</strong> 📌 If this transaction is structured as a Lease-Purchase, the Buyer’s Broker Purchase Fee
+        <strong>Note:</strong> 📌 If this transaction is structured as a Lease-Purchase, the Buyer's Broker Purchase Fee
         applies upon successful closing of the sale. Under Broker Compensation, use the Lease Fee or Lease-Option Fee
         sections only if there is no guaranteed purchase
     </div>
 
+    <!-- 1. Buyer's Desired Offering Price for Lease Purchase -->
     <div class="form-group mt-3">
         <label class="fw-bold">Buyer's Desired Offering Price for Lease Purchase:<span
                 class="text-danger">*</span></label>
-
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the price the Buyer is offering if the purchase is completed at the end of the lease term.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-
             <span class="input-group-text-seller">$</span>
-
             <input type="text" wire:model="lease_purchase_price" class="form-control has-icon"
                 placeholder="Enter offering price for lease purchase (e.g., 800000)" required
-                 data-error-id="lease_purchase_price_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
-                >
+                data-error-id="lease_purchase_price_error"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
         </div>
-
-                                <span class="error mt-2" id="lease_purchase_price_error"></span>
-
+        <span class="error mt-2" id="lease_purchase_price_error"></span>
     </div>
 
-    <div class="form-group mt-3">
-        <label class="fw-bold">Specific Terms Proposed for Lease Purchase:<span class="text-danger">*</span></label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter any proposed terms for the lease purchase (e.g., rent credits apply toward purchase).">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-
-            <input type="text" wire:model="lease_purchase_terms" class="form-control has-icon"
-                data-icon="fa-solid fa-file-alt"
-                placeholder="Enter specific terms proposed (e.g., Rent credits apply toward purchase, Option to buy after 12 months)" required>
-        </div>
-    </div>
-
-    <div class="form-group mt-3">
-        <label class="fw-bold">Proposed Duration of Lease (Months):<span class="text-danger">*</span></label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the number of months the Buyer wishes to lease before purchasing.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <input type="number" wire:model="lease_purchase_duration"class="form-control has-icon"
-                data-icon="fa-regular fa-calendar-days"
-                placeholder="Enter the proposed lease duration in months (e.g., 6)" required>
-
-        </div>
-    </div>
-
+    <!-- 2. Monthly Payment Buyer is Offering -->
     <div class="form-group mt-3">
         <label class="fw-bold">Monthly Payment Buyer is Offering:<span class="text-danger">*</span></label>
-
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the monthly lease amount the Buyer is offering.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
             <span class="input-group-text-seller">$</span>
-
             <input type="text" wire:model="lease_purchase_payment" class="form-control has-icon"
                 placeholder="Enter monthly payment amount (e.g., 5000)" required
-                
-                 data-error-id="lease_purchase_payment_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
-                >
+                data-error-id="lease_purchase_payment_error"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
         </div>
-
-                                <span class="error mt-2" id="lease_purchase_payment_error"></span>
-
+        <span class="error mt-2" id="lease_purchase_payment_error"></span>
     </div>
 
+    <!-- 3. Proposed Duration of Lease (Months) -->
     <div class="form-group mt-3">
-        <label class="fw-bold">Conditions or Requirements for Lease Purchase:<span
-                class="text-danger">*</span></label>
-
+        <label class="fw-bold">Proposed Duration of Lease (Months):<span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter any requirements (e.g., Buyer must secure financing by lease end).">
+            title="Enter the number of months the Buyer wishes to lease before purchasing.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-
-            <input type="text" wire:model="lease_purchase_conditions" class="form-control has-icon"
-                data-icon="fa-solid fa-file-alt"
-                placeholder="Enter any conditions or requirements (e.g., Property must appraise at agreed value, Seller to cover closing costs)" required>
+            <input type="number" wire:model="lease_purchase_duration" class="form-control has-icon"
+                data-icon="fa-regular fa-calendar-days"
+                placeholder="Enter the proposed lease duration in months (e.g., 6)" required>
         </div>
     </div>
 
-    <div class="form-group">
-        <label class="fw-bold">Offered Option Fee:</label>
-        <div class="input-cover">
-            <select wire:model="lease_purchase_option_fee" class="form-control has-icon"
-                data-icon="fa-solid fa-file-invoice-dollar">
-                <option value="">Select</option>
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
-            </select>
-        </div>
-    </div>
-
-    @if ($lease_purchase_option_fee === 'Yes')
-        <div class="form-group">
-            <label class="fw-bold">Offered Option Fee:</label>
-            <div class="input-cover">
-                <span class="input-group-text-seller">$</span>
-
-                <input type="number" wire:model="lease_purchase_option_fee_amount" class="form-control has-icon"
-                    placeholder="Enter option fee amount (e.g., 15000)">
-            </div>
-        </div>
-    @endif
-
-    <!-- Rent Credit Toward Purchase -->
+    <!-- 4. Rent Credit Toward Purchase Price -->
     <div class="form-group mt-3">
-        <label class="fw-bold">Rent Credit Toward Purchase:
+        <label class="fw-bold">Rent Credit Toward Purchase Price:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Select whether any portion of the monthly rent will be credited toward the purchase price.">
                 <i class="fa-solid fa-circle-info"></i>
@@ -1333,40 +1267,87 @@
                 <option value="">Select</option>
                 <option value="Yes">Yes</option>
                 <option value="No">No</option>
+                <option value="Partial">Partial</option>
             </select>
         </div>
     </div>
 
-    @if (($lease_purchase_rent_credit ?? '') === 'Yes')
+    @if (($lease_purchase_rent_credit ?? '') === 'Yes' || ($lease_purchase_rent_credit ?? '') === 'Partial')
     <div class="form-group mt-2">
-        <label class="fw-bold">Percentage of Rent Credited Toward Purchase Price:</label>
-        <div class="input-group">
-            <input type="number" wire:model="lease_purchase_rent_credit_percentage" class="form-control"
-                placeholder="Enter percentage of rent credited (e.g., 25)">
-            <span class="input-group-text">%</span>
+        <label class="fw-bold">Rent Credit Amount Toward Purchase Price:</label>
+        <div class="d-flex align-items-center gap-2">
+            <div class="btn-group" role="group">
+                <input type="radio" class="btn-check" wire:model="lease_purchase_rent_credit_amount_type" value="%" id="rent_credit_percent" autocomplete="off">
+                <label class="btn btn-outline-primary btn-sm" for="rent_credit_percent">%</label>
+                <input type="radio" class="btn-check" wire:model="lease_purchase_rent_credit_amount_type" value="$" id="rent_credit_dollar" autocomplete="off">
+                <label class="btn btn-outline-primary btn-sm" for="rent_credit_dollar">$</label>
+            </div>
+            <div class="input-group flex-grow-1">
+                @if (($lease_purchase_rent_credit_amount_type ?? '%') === '$')
+                <span class="input-group-text">$</span>
+                <input type="text" wire:model="lease_purchase_rent_credit_amount" class="form-control"
+                    placeholder="Enter rent credit dollar amount (e.g., 500)"
+                    data-error-id="lease_purchase_rent_credit_amount_error"
+                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                @else
+                <input type="number" wire:model="lease_purchase_rent_credit_amount" class="form-control"
+                    placeholder="Enter rent credit percentage (e.g., 25)">
+                <span class="input-group-text">%</span>
+                @endif
+            </div>
         </div>
+        <span class="error mt-2" id="lease_purchase_rent_credit_amount_error"></span>
     </div>
     @endif
 
-    <!-- Security Deposit Amount -->
+    <!-- 5. Non-Refundable Deposit / Purchase Deposit -->
     <div class="form-group mt-3">
-        <label class="fw-bold">Security Deposit Amount:
+        <label class="fw-bold">Non-Refundable Deposit / Purchase Deposit:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the security deposit the Buyer is offering upfront. This is separate from any option fee.">
+                title="Enter the deposit amount required upfront for the lease purchase. This is typically non-refundable but may be applied to the purchase price.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
         <div class="input-cover">
             <span class="input-group-text-seller">$</span>
             <input type="text" wire:model="lease_purchase_deposit" class="form-control has-icon"
-                placeholder="Enter security deposit amount (e.g., 5000)"
+                placeholder="Enter deposit amount (e.g., 10000)"
                 data-error-id="lease_purchase_deposit_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
         </div>
         <span class="error mt-2" id="lease_purchase_deposit_error"></span>
     </div>
 
-    <!-- Maintenance / Repair Responsibility -->
+    <!-- 6. Conditions or Requirements for Lease Purchase -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Conditions or Requirements for Lease Purchase:<span
+                class="text-danger">*</span></label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter any requirements (e.g., Buyer must secure financing by lease end).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <input type="text" wire:model="lease_purchase_conditions" class="form-control has-icon"
+                data-icon="fa-solid fa-file-alt"
+                placeholder="Enter any conditions or requirements (e.g., Property must appraise at agreed value, Seller to cover closing costs)" required>
+        </div>
+    </div>
+
+    <!-- 7. Specific Terms Proposed for Lease Purchase -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Specific Terms Proposed for Lease Purchase:<span class="text-danger">*</span></label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter any proposed terms for the lease purchase (e.g., rent credits apply toward purchase).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <input type="text" wire:model="lease_purchase_terms" class="form-control has-icon"
+                data-icon="fa-solid fa-file-alt"
+                placeholder="Enter specific terms proposed (e.g., Rent credits apply toward purchase, Option to buy after 12 months)" required>
+        </div>
+    </div>
+
+    <!-- 8. Maintenance / Repair Responsibility -->
     <div class="form-group mt-3">
         <label class="fw-bold">Maintenance / Repair Responsibility:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1385,7 +1366,7 @@
         </div>
     </div>
 
-    <!-- Extension Terms -->
+    <!-- 9. Extension Terms -->
     <div class="form-group mt-3">
         <label class="fw-bold">Extension Terms:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"

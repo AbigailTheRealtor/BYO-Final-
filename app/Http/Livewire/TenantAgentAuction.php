@@ -302,7 +302,8 @@ class TenantAgentAuction extends Component
     
     // Lease Purchase additional fields
     public $lease_purchase_rent_credit = '';
-    public $lease_purchase_rent_credit_percentage = '';
+    public $lease_purchase_rent_credit_amount_type = '%';
+    public $lease_purchase_rent_credit_amount = '';
     public $lease_purchase_deposit = '';
     public $lease_purchase_maintenance = '';
     public $lease_purchase_extension_terms = '';
