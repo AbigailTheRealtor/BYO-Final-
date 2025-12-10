@@ -1275,26 +1275,15 @@
     @if (($lease_purchase_rent_credit ?? '') === 'Yes' || ($lease_purchase_rent_credit ?? '') === 'Partial')
     <div class="form-group mt-2">
         <label class="fw-bold">Rent Credit Amount Toward Purchase Price:</label>
-        <div class="d-flex align-items-center gap-2">
-            <div class="btn-group" role="group">
-                <input type="radio" class="btn-check" wire:model="lease_purchase_rent_credit_amount_type" value="%" id="rent_credit_percent" autocomplete="off">
-                <label class="btn btn-outline-primary btn-sm" for="rent_credit_percent">%</label>
-                <input type="radio" class="btn-check" wire:model="lease_purchase_rent_credit_amount_type" value="$" id="rent_credit_dollar" autocomplete="off">
-                <label class="btn btn-outline-primary btn-sm" for="rent_credit_dollar">$</label>
-            </div>
-            <div class="input-group flex-grow-1">
-                @if (($lease_purchase_rent_credit_amount_type ?? '%') === '$')
-                <span class="input-group-text">$</span>
-                <input type="text" wire:model="lease_purchase_rent_credit_amount" class="form-control"
-                    placeholder="Enter rent credit dollar amount (e.g., 500)"
-                    data-error-id="lease_purchase_rent_credit_amount_error"
-                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-                @else
-                <input type="number" wire:model="lease_purchase_rent_credit_amount" class="form-control"
-                    placeholder="Enter rent credit percentage (e.g., 25)">
-                <span class="input-group-text">%</span>
-                @endif
-            </div>
+        <div class="input-group">
+            <select wire:model="lease_purchase_rent_credit_amount_type" class="form-select" style="max-width: 80px;">
+                <option value="$">$</option>
+                <option value="%">%</option>
+            </select>
+            <input type="text" wire:model="lease_purchase_rent_credit_amount" class="form-control"
+                placeholder="{{ ($lease_purchase_rent_credit_amount_type ?? '$') === '%' ? 'Enter rent credit percentage (e.g., 25)' : 'Enter rent credit dollar amount (e.g., 500)' }}"
+                data-error-id="lease_purchase_rent_credit_amount_error"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
         </div>
         <span class="error mt-2" id="lease_purchase_rent_credit_amount_error"></span>
     </div>
@@ -1543,18 +1532,14 @@
             title="Enter the percentage of the purchase price to be paid in NFTs.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover">
-            <input type="text" wire:model="nft_percentage" class="form-control has-icon"
+        <div class="input-group">
+            <input type="text" wire:model="nft_percentage" class="form-control"
                 placeholder="Enter percentage to be paid with NFT (e.g., 40)" required
-                
-                 data-error-id="nft_percentage_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
-                
-                >
-            <span class="input-group-text-seller">%</span>
-
+                data-error-id="nft_percentage_error"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+            <span class="input-group-text">%</span>
         </div>
-                        <span class="error mt-2" id="nft_percentage_error"></span>
+        <span class="error mt-2" id="nft_percentage_error"></span>
 
     </div>
 
@@ -1566,17 +1551,14 @@
             title="Enter the percentage to be paid in cash. The two percentages should total 100%.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover">
-            <input type="text" wire:model="cash_percentage_nft" class="form-control has-icon"
+        <div class="input-group">
+            <input type="text" wire:model="cash_percentage_nft" class="form-control"
                 placeholder="Enter percentage to be paid with cash (e.g., 60)" required
-                
-                data-error-id="cryptocurrency_type_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
-                >
-            <span class="input-group-text-seller">%</span>
-
+                data-error-id="cash_percentage_nft_error"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+            <span class="input-group-text">%</span>
         </div>
-                        <span class="error mt-2" id="cryptocurrency_type_error"></span>
+        <span class="error mt-2" id="cash_percentage_nft_error"></span>
 
     </div>
 
@@ -1606,7 +1588,7 @@
         <div class="input-cover">
             <input type="text" wire:model="nft_transfer_method" class="form-control has-icon"
                 data-icon="fa-solid fa-wallet"
-                placeholder="Enter wallet, marketplace, or escrow service for transfer (e.g., MetaMask, OpenSea, Propy Title, escrow smart contract)">
+                placeholder="Enter wallet, marketplace, or escrow service for transfer (e.g., MetaMask, OpenSea, Propy Title, Escrow Smart Contract)">
         </div>
     </div>
 
