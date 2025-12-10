@@ -1101,6 +1101,14 @@
                 initNumberOfUnitTypeSelect2();
             });
 
+            // Call immediately in case DOM is already ready
+            initNumberOfUnitTypeSelect2();
+
+            // Also call after a short delay to handle dynamic rendering
+            setTimeout(function() {
+                initNumberOfUnitTypeSelect2();
+            }, 500);
+
             // Function to toggle "auction time" input field
             function toggleAuctionTime(selectElement) {
                 const auctionTimeDiv = document.querySelector('.auction_time');
