@@ -64,26 +64,41 @@
 
     <!-- If Seller is Under Contract (Yes) -->
     @if ($sale_provision_assignment === 'Yes')
-        <div class="form-group mt-2">
+        <div class="form-group mt-3">
             <label class="fw-bold">Assignment Contract Fee to Broker:
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Enter the fee the Seller is willing to pay the Broker for facilitating the assignment of the contract. This can be a flat dollar amount or a percentage of the contract assignment value.">
+                    title="Select how the assignment fee will be structured - either as a flat dollar amount or as a percentage of the contract assignment value.">
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
             </label>
-            <div class="input-group">
-                <select wire:model="assignment_fee_type" class="form-select" style="max-width: 100px;">
-                    <option value="flat">Flat Fee</option>
-                    <option value="percent">%</option>
+            <div class="input-cover mt-2">
+                <select wire:model="assignment_fee_type" class="form-control has-icon"
+                    data-icon="fa-solid fa-file-invoice-dollar">
+                    <option value="">Select</option>
+                    <option value="$">Flat Fee</option>
+                    <option value="%">Percentage of Contract Assignment Value</option>
                 </select>
-                <input type="text" step="any" wire:model.lazy="assignment_fee_amount" class="form-control"
-                    placeholder="{{ $assignment_fee_type === 'percent'
-                        ? 'Enter percentage of contract assignment value (e.g., 3)'
-                        : 'Enter flat fee amount (e.g., 2500)' }}"
-                    data-error-id="assignment_fee_amount_error" oninput="validateInput(this)"
-                    onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             </div>
-            <span class="error mt-2" id="assignment_fee_amount_error"></span>
+
+            <!-- Dynamic Inputs Based on Selection -->
+            <div class="mt-3">
+                @if ($assignment_fee_type === '$')
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="text" wire:model="assignment_fee_amount" class="form-control"
+                            placeholder="Enter flat fee amount (e.g., 2500)"
+                            data-error-id="assignment_fee_amount_error"
+                            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                    </div>
+                    <span class="error mt-2" id="assignment_fee_amount_error"></span>
+                @elseif($assignment_fee_type === '%')
+                    <div class="input-group">
+                        <input type="number" wire:model="assignment_fee_amount" class="form-control"
+                            placeholder="Enter percentage of contract assignment value (e.g., 2)">
+                        <span class="input-group-text">%</span>
+                    </div>
+                @endif
+            </div>
         </div>
     @endif
 
