@@ -1183,7 +1183,7 @@
 
         <div class="input-cover">
             <select wire:model="number_of_unit_type" id="number_of_unit_type"
-                class="form-control has-icon" data-icon="fa-solid fa-home">
+                class="form-control has-icon select2-multiple" data-icon="fa-solid fa-home input-icon2" multiple>
                 <option value="">Select</option>
                 @foreach ($unit_types as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -1191,17 +1191,14 @@
                 <option value="Other">Other</option>
             </select>
         </div>
+        <span class="error mt-2" id="number_of_unit_type_error"></span>
     </div>
-    @if ($number_of_unit_type === 'Other')
-        <div class="form-group" id="other_unit_type_wrapper">
-            <label class="fw-bold">Other Unit Type:</label>
-            <div class="input-cover">
-                <input type="text" wire:model="number_of_unit_type_other" class="form-control has-icon"
-                    data-icon="fa-solid fa-home" placeholder="Enter acceptable unit types (e.g., Live/Work Unit, Boarding House, Accessory Dwelling Unit)">
-            </div>
-            <span class="error mt-2" id="number_of_unit_type_error"></span>
+    <div class="form-group other_unit_type_wrapper {{ in_array('Other', $number_of_unit_type ?? []) ? '' : 'd-none' }}" id="other_unit_type_wrapper">
+        <div class="input-cover">
+            <input type="text" wire:model="number_of_unit_type_other" class="form-control has-icon"
+                data-icon="fa-solid fa-home" placeholder="Enter acceptable unit types (e.g., Live/Work Unit, Boarding House, Accessory Dwelling Unit)">
         </div>
-    @endif
+    </div>
 @endif
 @if ($property_type !== 'Residential' && $property_type !== 'Vacant Land')
 <div class="form-group">
