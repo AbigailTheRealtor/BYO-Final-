@@ -59,7 +59,7 @@ class SellerAgentAuction extends Component
     public $sale_provision = '';
     public $sale_provision_other = '';
     public $sale_provision_assignment = '';
-    public $assignment_fee_type = '$';
+    public $assignment_fee_type = '';
     public $assignment_fee_amount = '';
     public $buyer_sell_contract = '';
 

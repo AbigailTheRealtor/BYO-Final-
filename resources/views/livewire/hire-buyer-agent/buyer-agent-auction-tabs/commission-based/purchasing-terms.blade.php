@@ -92,7 +92,7 @@
                 @elseif($assignment_fee_type === '%')
                     <div class="input-group">
                         <input type="number" wire:model="assignment_fee_amount" class="form-control"
-                            placeholder="Enter percentage of contract assignment value (e.g., 2)">
+                            placeholder="Enter percentage of contract assignment value (e.g., 3)">
                         <span class="input-group-text">%</span>
                     </div>
                 @endif
