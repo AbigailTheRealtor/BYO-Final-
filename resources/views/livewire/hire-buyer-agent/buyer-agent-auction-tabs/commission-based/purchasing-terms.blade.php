@@ -1166,10 +1166,10 @@
     @if (($lease_option_fee_credit ?? '') === 'Partial')
     <div class="form-group mt-2">
         <label class="fw-bold">Percentage of Option Fee Credited Toward Purchase Price:</label>
-        <div class="input-cover">
-            <input type="number" wire:model="lease_option_fee_credit_percentage" class="form-control has-icon"
+        <div class="input-group">
+            <input type="number" wire:model="lease_option_fee_credit_percentage" class="form-control"
                 placeholder="Enter percentage of option fee credited (e.g., 50)">
-            <span class="input-group-text-seller">%</span>
+            <span class="input-group-text">%</span>
         </div>
     </div>
     @endif
@@ -1201,10 +1201,8 @@
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
-        <div class="input-cover">
-            <textarea wire:model="lease_option_extension_terms" class="form-control" rows="3"
-                placeholder="Enter extension terms (e.g., Tenant-Buyer may extend for 6 months with additional $5,000 fee)"></textarea>
-        </div>
+        <textarea wire:model="lease_option_extension_terms" class="form-control" rows="3"
+            placeholder="Enter extension terms (e.g., Tenant-Buyer may extend for 6 months with additional $5,000 fee)"></textarea>
     </div>
 @endif
 
@@ -1353,10 +1351,10 @@
     @if (($lease_purchase_rent_credit ?? '') === 'Yes')
     <div class="form-group mt-2">
         <label class="fw-bold">Percentage of Rent Credited Toward Purchase Price:</label>
-        <div class="input-cover">
-            <input type="number" wire:model="lease_purchase_rent_credit_percentage" class="form-control has-icon"
+        <div class="input-group">
+            <input type="number" wire:model="lease_purchase_rent_credit_percentage" class="form-control"
                 placeholder="Enter percentage of rent credited (e.g., 25)">
-            <span class="input-group-text-seller">%</span>
+            <span class="input-group-text">%</span>
         </div>
     </div>
     @endif
@@ -1406,10 +1404,8 @@
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
-        <div class="input-cover">
-            <textarea wire:model="lease_purchase_extension_terms" class="form-control" rows="3"
-                placeholder="Enter extension terms (e.g., Lease may be extended for 6 months with adjusted purchase price)"></textarea>
-        </div>
+        <textarea wire:model="lease_purchase_extension_terms" class="form-control" rows="3"
+            placeholder="Enter extension terms (e.g., Lease may be extended for 6 months with adjusted purchase price)"></textarea>
     </div>
 @endif
 
