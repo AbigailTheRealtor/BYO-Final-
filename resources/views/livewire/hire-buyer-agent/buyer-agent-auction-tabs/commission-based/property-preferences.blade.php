@@ -1184,29 +1184,49 @@
 
         <div class="input-cover">
             <select wire:model="number_of_unit_type" id="number_of_unit_type"
-                class="form-control has-icon"
-                data-icon="fa-solid fa-home" multiple size="6"
-                onchange="toggleOtherUnitTypeInput()">
+                class="number_of_unit_type form-control has-icon select2-multiple"
+                data-icon="fa-solid fa-home input-icon2" multiple>
                 @foreach ($unit_types as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach
                 <option value="Other">Other</option>
             </select>
-            <small class="text-muted">Hold Ctrl (Windows) or Cmd (Mac) to select multiple options</small>
         </div>
         <script>
-            function toggleOtherUnitTypeInput() {
-                var select = document.getElementById('number_of_unit_type');
-                var wrapper = document.getElementById('other_unit_type_wrapper');
-                if (select && wrapper) {
-                    var selectedOptions = Array.from(select.selectedOptions).map(opt => opt.value);
-                    if (selectedOptions.includes('Other')) {
-                        wrapper.classList.remove('d-none');
-                    } else {
-                        wrapper.classList.add('d-none');
+            (function() {
+                function initUnitTypeSelect2() {
+                    if (typeof $ !== 'undefined' && $('#number_of_unit_type').length > 0) {
+                        if (!$('#number_of_unit_type').hasClass('select2-hidden-accessible')) {
+                            $('#number_of_unit_type').select2({
+                                placeholder: "Select unit types",
+                                allowClear: true,
+                            });
+                        }
+                        $('#number_of_unit_type').off('change.unittype').on('change.unittype', function(e) {
+                            var selectedValues = $(this).val() || [];
+                            var wrapper = document.getElementById('other_unit_type_wrapper');
+                            if (wrapper) {
+                                if (selectedValues.includes('Other')) {
+                                    wrapper.classList.remove('d-none');
+                                } else {
+                                    wrapper.classList.add('d-none');
+                                }
+                            }
+                            if (typeof Livewire !== 'undefined') {
+                                Livewire.emit('setNumberOfUnitType', selectedValues);
+                            }
+                        });
                     }
                 }
-            }
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', function() { setTimeout(initUnitTypeSelect2, 100); });
+                } else {
+                    setTimeout(initUnitTypeSelect2, 100);
+                }
+                if (typeof Livewire !== 'undefined') {
+                    Livewire.hook('message.processed', function() { setTimeout(initUnitTypeSelect2, 100); });
+                }
+            })();
         </script>
     </div>
     <div class="form-group other_unit_type_wrapper {{ is_array($number_of_unit_type) && in_array('Other', $number_of_unit_type) ? '' : 'd-none' }}" id="other_unit_type_wrapper">
