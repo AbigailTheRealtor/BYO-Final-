@@ -52,22 +52,6 @@ outputType = "webview"
 localPort = 5000
 externalPort = 80
 
-[[ports]]
-localPort = 36359
-externalPort = 3000
-
-[[ports]]
-localPort = 37033
-externalPort = 3003
-
-[[ports]]
-localPort = 41357
-externalPort = 3001
-
-[[ports]]
-localPort = 43891
-externalPort = 3002
-
 [deployment]
 deploymentTarget = "vm"
 run = ["php", "artisan", "serve", "--host=0.0.0.0", "--port=5000"]

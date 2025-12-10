@@ -36,11 +36,11 @@
 <!-- Other Special Sale Provision Input -->
 @if (in_array('Other', $sale_provision))
     <div class="form-group mt-3">
-        <label class="fw-bold">Other Special Sale Provision:</label>
+        {{-- Label removed to match Seller flow --}}
         <div class="input-cover">
             <input type="text" wire:model="sale_provision_other" class="form-control has-icon"
                 data-icon="fa-solid fa-screwdriver-wrench"
-                placeholder="Enter other special sale provision (e.g., Divorce Sale, Third-Party Approval)">
+                placeholder="Enter special sale provision (e.g., Divorce Sale, Third-Party Approval)">
         </div>
     </div>
 @endif
@@ -99,7 +99,7 @@
                         </div>
                     </div>
                     <input type="number" wire:model="assignment_fee_amount" class="form-control"
-                        placeholder="Enter flat fee (e.g., 2500)">
+                        placeholder="Enter flat fee amount (e.g., 2500)">
                 @else
                     <!-- Show input first for % -->
                     <input type="number" wire:model="assignment_fee_amount" class="form-control"

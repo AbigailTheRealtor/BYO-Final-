@@ -249,8 +249,9 @@
     <span class="error mt-2" id="leasing_space_error"></span>
 </div>
 
-<!-- Other Property Condition Input -->
-<div class="form-group other_property_items d-none">
+<!-- Other Property Style Input (shown when "Other" is selected) -->
+@if (is_array($property_items) && in_array('Other', $property_items))
+<div class="form-group" wire:key="other-property-items-wrapper">
     <div class="input-cover">
         <input type="text" wire:model="other_property_items" class="form-control has-icon"
             data-icon="fa-solid fa-home"
@@ -258,6 +259,7 @@
     </div>
     <span class="error mt-2" id="other_property_items_error"></span>
 </div>
+@endif
 
 {{-- Business Type - shown inline when Business is selected as Property Type --}}
 @if ($property_type === 'Business')
@@ -310,8 +312,9 @@
         <span class="error mt-2" id="condition_prop_error"></span>
     </div>
 @endif
-<!-- Other Property Condition Input (Hidden by Default) -->
-<div class="form-group other_property_condition d-none">
+<!-- Other Property Condition Input (shown when "Other" is selected) -->
+@if (is_array($condition_prop_buyer) && in_array('Other', $condition_prop_buyer))
+<div class="form-group" wire:key="other-property-condition-wrapper">
     <label class="fw-bold">Other Property Condition:</label>
     <div class="input-cover">
         <input type="text" wire:model="other_property_condition" class="form-control has-icon"
@@ -319,6 +322,7 @@
     </div>
     <span class="error mt-2" id="other_property_condition_error"></span>
 </div>
+@endif
 
 <!-- Minimum Bedrooms Needed -->
 @if ($property_type === 'Residential')
@@ -341,14 +345,15 @@
         </div>
         <span class="error mt-2" id="bedrooms_error"></span>
     </div>
-    <div class="form-group other_bedrooms d-none">
-        {{-- <label class="fw-bold">Minimum Bedrooms Needed:</label> --}}
+    @if (($bedrooms ?? '') === 'Other')
+    <div class="form-group" wire:key="other-bedrooms-wrapper">
         <div class="input-cover">
             <input type="number" wire:model="other_bedrooms" class="form-control has-icon"
                 data-icon="fa-solid fa-bed" placeholder="Enter minimum bedrooms needed (e.g., 11)">
         </div>
         <span class="error mt-2" id="other_bedrooms_error"></span>
     </div>
+    @endif
 @endif
 
 <!-- Minimum Bathrooms Needed -->
@@ -805,9 +810,9 @@
         <span class="error mt-2" id="assets_error"></span>
     </div>
 @endif
-{{-- "Other" text input (only for Income, Commercial, Business) --}}
-@if (in_array($property_type, ['Income', 'Commercial', 'Business']))
-<div class="form-group other_assets d-none" wire:ignore>
+{{-- "Other" text input (only for Income, Commercial, Business when "Other" is selected) --}}
+@if (in_array($property_type, ['Income', 'Commercial', 'Business']) && is_array($assets ?? []) && in_array('Other', $assets ?? []))
+<div class="form-group" wire:key="other-assets-wrapper">
     <div class="input-cover">
         <input type="text" wire:model="assets_other" class="form-control has-icon" data-icon="fas fa-building"
             placeholder="Enter any included assets (e.g., Inventory, Customer Lists, Trademarks, Software Rights)">

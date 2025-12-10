@@ -1,0 +1,65 @@
+Hire a Buyer’s Agent – Tab 3 “Purchasing Terms” Updates
+1. Acceptable Special Sale Provisions – “Other” option
+
+Location:
+Hire a Buyer’s Agent → Tab 3: Purchasing Terms → section Acceptable Special Sale Provisions.
+
+Current issue:
+When the user selects Other, the UI shows a label “Other Special Sale Provision” and the placeholder says “Enter other special sale provision…”. This needs to match the Seller version.
+
+Change to:
+
+When the user selects Other in Acceptable Special Sale Provisions:
+
+Remove the heading/label “Other Special Sale Provision” completely.
+
+The label above the pill should be exactly:
+Special Sale Provision: (same as it appears for Seller).
+
+Keep the selected pill “✕ Other” visible, same style as the Seller screen.
+
+In the text input under the pill, update the placeholder to:
+Enter special sale provision (e.g., Divorce Sale, Third-Party Approval)
+(remove the word “other” from the placeholder).
+
+The layout and styling for this block should be identical to the Seller flow’s “Special Sale Provision” section when “Other” is selected.
+
+2. Assignment Contract – “Assignment Fee to Broker” field
+
+Location:
+Hire a Buyer’s Agent → Tab 3: Purchasing Terms → Assignment Contract section.
+
+Display logic:
+
+Add / update conditional logic so that the field “Assignment Fee to Broker” is shown only when:
+
+Assignment Contract = Yes, and
+
+Buyer Open to Purchasing an Assignment Contract = Yes.
+
+Input format:
+
+For Assignment Fee to Broker, use the same $ / % selector component that is already used in other compensation fields (the one with a dropdown showing $ and a down arrow to switch to %):
+
+Place the selector immediately to the left of the numeric input inside the same control.
+
+Default value for the selector should be $.
+
+User must be able to click the down arrow and switch between $ and %.
+
+Placeholder behavior:
+
+Update the amount input placeholder based on the selector:
+
+When selector = $, placeholder must be:
+Enter flat fee amount (e.g., 2500)
+
+When selector = %, keep the same placeholder pattern we use for other percentage-based fields (or reuse the existing % placeholder if already implemented).
+
+Validation:
+
+Reuse the same validation rules as the other money/percent fields:
+
+Numeric input only (no $ or % typed into the box),
+
+Any additional min/max rules can mirror the existing commission fields.
