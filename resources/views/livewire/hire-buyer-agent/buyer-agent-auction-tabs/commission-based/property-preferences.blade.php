@@ -1184,14 +1184,30 @@
 
         <div class="input-cover">
             <select wire:model="number_of_unit_type" id="number_of_unit_type"
-                class="number_of_unit_type form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-home input-icon2" multiple>
+                class="form-control has-icon"
+                data-icon="fa-solid fa-home" multiple size="6"
+                onchange="toggleOtherUnitTypeInput()">
                 @foreach ($unit_types as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach
                 <option value="Other">Other</option>
             </select>
+            <small class="text-muted">Hold Ctrl (Windows) or Cmd (Mac) to select multiple options</small>
         </div>
+        <script>
+            function toggleOtherUnitTypeInput() {
+                var select = document.getElementById('number_of_unit_type');
+                var wrapper = document.getElementById('other_unit_type_wrapper');
+                if (select && wrapper) {
+                    var selectedOptions = Array.from(select.selectedOptions).map(opt => opt.value);
+                    if (selectedOptions.includes('Other')) {
+                        wrapper.classList.remove('d-none');
+                    } else {
+                        wrapper.classList.add('d-none');
+                    }
+                }
+            }
+        </script>
     </div>
     <div class="form-group other_unit_type_wrapper {{ is_array($number_of_unit_type) && in_array('Other', $number_of_unit_type) ? '' : 'd-none' }}" id="other_unit_type_wrapper">
         <label class="fw-bold">Other Unit Type:</label>
