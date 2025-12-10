@@ -62,33 +62,28 @@
         </div>
     </div>
 
-    <!-- If Buyer is Under Contract (Yes) -->
+    <!-- If Seller is Under Contract (Yes) -->
     @if ($sale_provision_assignment === 'Yes')
         <div class="form-group mt-2">
-            <label class="fw-bold">Assignment Fee to Broker:</label>
-
+            <label class="fw-bold">Assignment Contract Fee to Broker:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    title="Enter the fee the Seller is willing to pay the Broker for facilitating the assignment of the contract. This can be a flat dollar amount or a percentage of the contract assignment value.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
             <div class="input-group">
-                <!-- Select for type -->
                 <select wire:model="assignment_fee_type" class="form-select" style="max-width: 100px;">
-                    <option value="flat">$</option>
+                    <option value="flat">Flat Fee</option>
                     <option value="percent">%</option>
                 </select>
-
-                <!-- Single input -->
                 <input type="text" step="any" wire:model.lazy="assignment_fee_amount" class="form-control"
                     placeholder="{{ $assignment_fee_type === 'percent'
-                        ? 'Enter percentage of contract assignment value (e.g., 2)'
-                        : 'Enter flat fee (e.g., 2500)' }}"
+                        ? 'Enter percentage of contract assignment value (e.g., 3)'
+                        : 'Enter flat fee amount (e.g., 2500)' }}"
                     data-error-id="assignment_fee_amount_error" oninput="validateInput(this)"
                     onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-
-                <!-- Suffix -->
-                <span class="input-group-text">
-                    {{ $assignment_fee_type === 'percent' ? '%' : '$' }}
-                </span>
             </div>
             <span class="error mt-2" id="assignment_fee_amount_error"></span>
-
         </div>
     @endif
 
@@ -498,12 +493,10 @@ This amount represents the portion of the purchase price that the Seller will fi
 @if (in_array('Assumable', $offered_financing))
     <div class="form-group">
         <label class="fw-bold">Offered Assumable Terms:</label>
-
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the loan terms being offered for assumption, including remaining balance, interest rate, term type (fixed/variable), and remaining duration.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-
         <div class="input-cover">
             <input type="text" wire:model="assumable_terms" class="form-control has-icon"
                 data-icon="fa-regular fa-calendar-days"
@@ -511,91 +504,201 @@ This amount represents the portion of the purchase price that the Seller will fi
         </div>
     </div>
 
-    <div class="form-group">
-        <label class="fw-bold"> Interest Rate of Assumable Loan:</label>
+    <!-- Type of Loan -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Type of Loan:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Assumable loans allow a buyer to take over the seller's existing financing. FHA, VA, and USDA loans are the most common types that may be assumed, but lender approval is usually required. Conventional loans almost always have a due-on-sale clause and are not assumable.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <select wire:model="assumable_loan_type" class="form-control has-icon"
+                data-icon="fa-solid fa-file-contract">
+                <option value="">Select</option>
+                <option value="FHA">FHA</option>
+                <option value="VA">VA</option>
+                <option value="USDA">USDA</option>
+            </select>
+        </div>
+    </div>
 
+    <div class="form-group mt-3">
+        <label class="fw-bold">Interest Rate of Assumable Loan:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the current interest rate on the loan (e.g., 5).">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-
-        <div class="input-cover">
-            <input type="text" wire:model="max_assumable_rate" class="form-control has-icon percentage-value-set"
+        <div class="input-group">
+            <input type="text" wire:model="max_assumable_rate" class="form-control"
                 placeholder="Enter interest rate (e.g., 5)" data-error-id="max_assumable_rate_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-            <span class="input-group-text-seller">%</span>
-
+            <span class="input-group-text">%</span>
         </div>
-
         <span class="error mt-2" id="max_assumable_rate_error"></span>
-
     </div>
 
     <div class="form-group mt-3">
-        <label class="fw-bold"> Monthly Payment (Principal & Interest) for Assumable Loan:</label>
-
+        <label class="fw-bold">Monthly Payment (Principal & Interest) for Assumable Loan:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the monthly principal and interest payment. Exclude taxes, insurance, and HOA unless included in the mortgage.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-
         <div class="input-cover">
             <span class="input-group-text-seller">$</span>
-
             <input type="text" wire:model="max_monthly_payment" class="form-control has-icon"
                 placeholder="Enter monthly payment (e.g., 2000)" data-error-id="max_monthly_payment_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
         </div>
-
         <span class="error mt-2" id="max_monthly_payment_error"></span>
-
     </div>
-    <div class="form-group mt-3">
-        <label class="fw-bold"> Outstanding Balance on Existing Loan:</label>
 
+    <!-- Monthly Escrow / Impounds -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Monthly Escrow / Impounds: (Not Assumable, Informational Only)
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter the seller's current monthly escrow amount for property taxes and homeowner's insurance. Buyer's escrow will be recalculated after closing and may differ significantly. This field is provided for reference only and is not part of the assumable loan terms.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <span class="input-group-text-seller">$</span>
+            <input type="text" wire:model="assumable_monthly_escrow" class="form-control has-icon"
+                placeholder="Enter monthly escrow amount for taxes/insurance (e.g., 450)"
+                data-error-id="assumable_monthly_escrow_error"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+        </div>
+        <span class="error mt-2" id="assumable_monthly_escrow_error"></span>
+    </div>
+
+    <div class="form-group mt-3">
+        <label class="fw-bold">Outstanding Balance on Existing Loan:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the remaining balance the Buyer would assume.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-
         <div class="input-cover">
             <span class="input-group-text-seller">$</span>
-
             <input type="text" wire:model="outstanding_balance" class="form-control has-icon"
-                placeholder="Enter outstanding balance on existing loan  (e.g., 100000)"
+                placeholder="Enter outstanding balance on existing loan (e.g., 100000)"
                 data-error-id="outstanding_balance_error" oninput="validateInput(this)" onblur="reformatNumber(this)"
                 onpaste="handlePaste(event)">
         </div>
         <span class="error mt-2" id="outstanding_balance_error"></span>
-
     </div>
 
-    <div class="form-group mt-2">
+    <div class="form-group mt-3">
         <label class="fw-bold">Down Payment to Cover the Gap Between Price and Loan:</label>
-
         <div class="input-group">
-            <!-- Select for type -->
             <select wire:model="gap_payment_type" class="form-select" style="max-width: 100px;">
                 <option value="flat">$</option>
                 <option value="percent">%</option>
             </select>
-
-            <!-- Single input -->
-            <input type="text" step="any" wire:model.lazy="seller_financing_amount" class="form-control"
-                placeholder="{{ $gap_payment_type === 'percent'
-                    ? 'Enter the down payment needed to cover the difference between the asking price and the assumable loan balance (e.g., 50000)'
-                    : 'Enter the down payment needed to cover the difference between the asking price and the assumable loan balance (e.g., 50000)' }}"
-                data-error-id="seller_financing_amount_error" oninput="validateInput(this)"
+            <input type="text" step="any" wire:model.lazy="gap_payment_amount" class="form-control"
+                placeholder="{{ ($gap_payment_type ?? 'flat') === 'percent'
+                    ? 'Enter down payment percentage (e.g., 20)'
+                    : 'Enter down payment amount (e.g., 50000)' }}"
+                data-error-id="gap_payment_amount_error" oninput="validateInput(this)"
                 onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-
-            <!-- Suffix -->
-            <span class="input-group-text">
-                {{ $gap_payment_type === 'percent' ? '%' : '$' }}
-            </span>
         </div>
-        <span class="error mt-2" id="seller_financing_amount_error"></span>
-
+        <span class="error mt-2" id="gap_payment_amount_error"></span>
     </div>
+
+    <!-- Loan Term Remaining -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Loan Term Remaining (Years):
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter the number of years left on the existing loan term. This helps buyers understand how much time is left before the loan is fully paid off.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <input type="text" wire:model="assumable_loan_term_remaining" class="form-control has-icon"
+                data-icon="fa-regular fa-calendar-days"
+                placeholder="Enter years remaining (e.g., 26)">
+        </div>
+    </div>
+
+    <!-- Date Loan Originated -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Date Loan Originated:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter the date the original loan began. This helps buyers understand how far into the amortization schedule the loan currently is.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <input type="text" wire:model="assumable_loan_origination_date" class="form-control has-icon"
+                data-icon="fa-regular fa-calendar-days"
+                placeholder="Enter original loan start date (e.g., Jan 2020)">
+        </div>
+    </div>
+
+    <!-- Loan Servicer / Lender -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Loan Servicer / Lender:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter the name of the company currently servicing the loan. Buyers will work with this servicer to complete the loan assumption process.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <input type="text" wire:model="assumable_loan_servicer" class="form-control has-icon"
+                data-icon="fa-solid fa-building-columns"
+                placeholder="Enter loan servicer or lender name (e.g., Mr. Cooper, Wells Fargo)">
+        </div>
+    </div>
+
+    <!-- Assumption Fee -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Assumption Fee:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Some lenders charge a processing or transfer fee for assumable loans. Enter the amount, if applicable.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-group">
+            <select wire:model="assumable_fee_type" class="form-select" style="max-width: 80px;">
+                <option value="$">$</option>
+                <option value="%">%</option>
+            </select>
+            <input type="text" wire:model="assumable_fee_amount" class="form-control"
+                placeholder="{{ ($assumable_fee_type ?? '$') === '%' ? 'Enter assumption fee percentage (e.g., 1)' : 'Enter assumption fee amount (e.g., 1000)' }}"
+                data-error-id="assumable_fee_amount_error"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+        </div>
+        <span class="error mt-2" id="assumable_fee_amount_error"></span>
+    </div>
+
+    <!-- Occupancy Requirement -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Occupancy Requirement:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select whether the loan requires the buyer to occupy the property as their primary residence (common for FHA and VA loans).">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <select wire:model="assumable_occupancy_requirement" class="form-control has-icon"
+                data-icon="fa-solid fa-house-user">
+                <option value="">Select</option>
+                <option value="Primary Residence Required for 1 Year (FHA)">Primary Residence Required for 1 Year (FHA)</option>
+                <option value="Primary Residence – Intend to Occupy within 60 Days (VA)">Primary Residence – Intend to Occupy within 60 Days (VA)</option>
+                <option value="No Occupancy Restriction">No Occupancy Restriction</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+    </div>
+
+    @if (($assumable_occupancy_requirement ?? '') === 'Other')
+    <div class="form-group mt-2">
+        <div class="input-cover">
+            <input type="text" wire:model="assumable_occupancy_other" class="form-control has-icon"
+                data-icon="fa-solid fa-house-user"
+                placeholder="Enter other occupancy requirement">
+        </div>
+    </div>
+    @endif
 @endif
 <!-- Exchange/Trade Option -->
 
@@ -717,104 +820,125 @@ This amount represents the portion of the purchase price that the Seller will fi
                 placeholder="Enter how the value of the exchange/trade item should be determined (e.g., Licensed Appraisal, Online Valuation, Mutual Agreement)">
         </div>
     </div>
+
+    <!-- Transfer Method / Logistics -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Transfer Method / Logistics:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Specify the method for transferring ownership of the exchange/trade item (e.g., title transfer for a vehicle, bill of sale for equipment, delivery at closing).">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <input type="text" wire:model="exchange_transfer_method" class="form-control has-icon"
+                data-icon="fa-solid fa-truck"
+                placeholder="Enter how the exchange/trade item will be delivered or transferred (e.g., Title transfer, Bill of Sale, Delivery at closing)">
+        </div>
+    </div>
+
+    <!-- Liens / Encumbrances Disclosure -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Liens / Encumbrances Disclosure:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Indicate if the exchange/trade item has any liens or encumbrances (such as loans, leases, or legal claims). Buyers and sellers should resolve these before closing.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <select wire:model="exchange_liens_disclosure" class="form-control has-icon"
+                data-icon="fa-solid fa-file-contract">
+                <option value="">Select</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+            </select>
+        </div>
+    </div>
+
+    @if (($exchange_liens_disclosure ?? '') === 'Yes')
+    <div class="form-group mt-2">
+        <div class="input-cover">
+            <input type="text" wire:model="exchange_liens_details" class="form-control has-icon"
+                data-icon="fa-solid fa-file-contract"
+                placeholder="Enter lien/encumbrance details (e.g., auto loan balance, UCC filing)">
+        </div>
+    </div>
+    @endif
+
+    <!-- Inspection / Verification Rights -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Inspection / Verification Rights:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select whether the party receiving the trade item may inspect or verify its condition/value before closing.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <select wire:model="exchange_inspection_rights" class="form-control has-icon"
+                data-icon="fa-solid fa-search">
+                <option value="">Select</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+            </select>
+        </div>
+    </div>
 @endif
 
 <!-- Lease Option -->
 
 @if (in_array('Lease Option', $offered_financing))
+    <!-- 1. Seller's Desired Offering Price for Lease Option -->
     <div class="form-group">
         <label class="fw-bold">Seller's Desired Offering Price for Lease Option:</label>
-
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the price the Seller is willing to accept if the Buyer exercises the option to purchase.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-
         <div class="input-cover">
             <span class="input-group-text-seller">$</span>
-
             <input type="text" wire:model="lease_option_price" class="form-control has-icon"
                 placeholder="Enter offering price for lease option (e.g., 500000)"
                 data-error-id="lease_option_price_error" oninput="validateInput(this)" onblur="reformatNumber(this)"
                 onpaste="handlePaste(event)">
         </div>
         <span class="error mt-2" id="lease_option_price_error"></span>
-
     </div>
 
-    <div class="form-group">
-        <label class="fw-bold">Specific Terms Proposed for Lease Option:</label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Describe any proposed terms for the lease option (e.g., inspections allowed during lease term).">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-
-        <div class="input-cover">
-            <input type="text" wire:model="lease_option_terms" class="form-control has-icon"
-                data-icon="fas fa-clipboard-list"
-                placeholder="Enter any conditions or requirements for the lease option (e.g., Buyer may conduct inspections during lease term, Seller to maintain property)">
-        </div>
-    </div>
-
-    <div class="form-group">
-        <label class="fw-bold">Proposed Duration of Lease (Months):</label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the number of months the lease will last before the purchase option may be exercised.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-
-        <div class="input-cover">
-            <input type="number" wire:model="lease_option_duration" class="form-control has-icon"
-                data-icon="fa-regular fa-calendar-days" placeholder="Enter lease duration in months (e.g., 12)">
-
-        </div>
-    </div>
-
-    <div class="form-group">
+    <!-- 2. Monthly Payment the Seller Will Accept -->
+    <div class="form-group mt-3">
         <label class="fw-bold">Monthly Payment the Seller Will Accept:</label>
-
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the monthly lease payment the Seller will accept.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-
         <div class="input-cover">
             <span class="input-group-text-seller">$</span>
-
             <input type="text" wire:model="lease_option_payment" class="form-control has-icon"
                 placeholder="Enter monthly payment amount (e.g., 2500)" data-error-id="lease_option_payment_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
         </div>
-
         <span class="error mt-2" id="lease_option_payment_error"></span>
-
     </div>
 
-    <div class="form-group">
-        <label class="fw-bold">Conditions or Requirements for Lease Option:</label>
-
+    <!-- 3. Proposed Duration of Lease (Months) -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Proposed Duration of Lease (Months):</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Specify any additional requirements or limitations (e.g., option exercisable after 12 months).">
+            title="Enter the number of months the lease will last before the purchase option may be exercised.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-
         <div class="input-cover">
-            <input type="text" wire:model="lease_option_conditions" class="form-control has-icon"
-                data-icon="fa-solid fa-circle-exclamation"
-                placeholder="Enter any conditions or requirements for the lease option (e.g., Option may be exercised after 12 months, Non-refundable option fee due at signing, Buyer responsible for all maintenance during lease term)">
+            <input type="number" wire:model="lease_option_duration" class="form-control has-icon"
+                data-icon="fa-regular fa-calendar-days" placeholder="Enter lease duration in months (e.g., 12)">
         </div>
     </div>
 
-    <div class="form-group">
+    <!-- 4. Offered Option Fee -->
+    <div class="form-group mt-3">
         <label class="fw-bold">Offered Option Fee:</label>
-
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Indicate if a non-refundable option fee is required, and if so, enter the fee amount.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-
         <div class="input-cover">
             <select wire:model="has_option_fee" class="form-control has-icon"
                 data-icon="fa-solid fa-file-invoice-dollar">
@@ -825,21 +949,109 @@ This amount represents the portion of the purchase price that the Seller will fi
         </div>
     </div>
 
-    @if ($has_option_fee === 'Yes')
-        <div class="form-group">
-            <label class="fw-bold">Offered Option Fee:</label>
+    @if (($has_option_fee ?? '') === 'Yes')
+        <div class="form-group mt-2">
             <div class="input-cover">
-
                 <span class="input-group-text-seller">$</span>
-
                 <input type="text" wire:model="option_fee_amount" class="form-control has-icon"
                     placeholder="Enter option fee amount (e.g., 15000)" data-error-id="option_fee_amount_error"
                     oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             </div>
             <span class="error mt-2" id="option_fee_amount_error"></span>
-
         </div>
     @endif
+
+    <!-- 5. Option Fee Credit Toward Purchase Price -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Option Fee Credit Toward Purchase Price:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select whether the option fee (or part of it) will be credited toward the purchase price if the option is exercised.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <select wire:model="seller_lease_option_fee_credit" class="form-control has-icon"
+                data-icon="fa-solid fa-hand-holding-usd">
+                <option value="">Select</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+                <option value="Partial">Partial</option>
+            </select>
+        </div>
+    </div>
+
+    @if (($seller_lease_option_fee_credit ?? '') === 'Partial')
+    <div class="form-group mt-2">
+        <label class="fw-bold">Percentage of Option Fee Credited Toward Purchase Price:</label>
+        <div class="input-group">
+            <input type="text" wire:model="seller_lease_option_fee_credit_percent" class="form-control"
+                placeholder="Enter percentage of option fee credited (e.g., 50)"
+                data-error-id="seller_lease_option_fee_credit_percent_error"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+            <span class="input-group-text">%</span>
+        </div>
+        <span class="error mt-2" id="seller_lease_option_fee_credit_percent_error"></span>
+    </div>
+    @endif
+
+    <!-- 6. Conditions or Requirements for Lease Option -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Conditions or Requirements for Lease Option:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Specify any additional requirements or limitations (e.g., option exercisable after 12 months).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <input type="text" wire:model="lease_option_conditions" class="form-control has-icon"
+                data-icon="fa-solid fa-circle-exclamation"
+                placeholder="Enter any conditions or requirements for the lease option (e.g., Option may be exercised after 12 months)">
+        </div>
+    </div>
+
+    <!-- 7. Specific Terms Proposed for Lease Option -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Specific Terms Proposed for Lease Option:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Describe any proposed terms for the lease option (e.g., inspections allowed during lease term).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <input type="text" wire:model="lease_option_terms" class="form-control has-icon"
+                data-icon="fas fa-clipboard-list"
+                placeholder="Enter specific terms for the lease option (e.g., Buyer may conduct inspections during lease term)">
+        </div>
+    </div>
+
+    <!-- 8. Maintenance / Repair Responsibility -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Maintenance / Repair Responsibility:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select who is responsible for property maintenance and repairs during the lease option term.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <select wire:model="seller_lease_option_maintenance" class="form-control has-icon"
+                data-icon="fa-solid fa-tools">
+                <option value="">Select</option>
+                <option value="Seller">Seller</option>
+                <option value="Tenant-Buyer">Tenant-Buyer</option>
+                <option value="Shared">Shared</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- 9. Extension Terms -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Extension Terms:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter whether the lease option may be extended, and under what terms or costs.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <textarea wire:model="seller_lease_option_extension_terms" class="form-control" rows="2"
+            placeholder="Enter extension terms (e.g., Tenant-Buyer may extend for 6 months with additional $5,000 fee)"></textarea>
+    </div>
 @endif
 
 <!-- Lease Purchase -->
@@ -871,98 +1083,146 @@ This amount represents the portion of the purchase price that the Seller will fi
 
     </div>
 
+    <!-- 2. Monthly Payment the Seller Will Accept -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Monthly Payment the Seller Will Accept:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the monthly lease amount the Seller will accept.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <span class="input-group-text-seller">$</span>
+            <input type="text" wire:model="lease_purchase_payment" class="form-control has-icon"
+                placeholder="Enter monthly payment amount (e.g., 5000)" data-error-id="lease_purchase_payment_error"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+        </div>
+        <span class="error mt-2" id="lease_purchase_payment_error"></span>
+    </div>
+
+    <!-- 3. Proposed Duration of Lease (Months) -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Proposed Duration of Lease (Months):</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the number of months the lease will last before the Buyer is expected to purchase.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <input type="number" wire:model="lease_purchase_duration" class="form-control has-icon"
+                data-icon="fa-regular fa-calendar-days" placeholder="Enter lease duration in months (e.g., 6)">
+        </div>
+    </div>
+
+    <!-- 4. Rent Credit Toward Purchase Price -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Rent Credit Toward Purchase Price:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select whether any portion of monthly rent will be credited toward the purchase price.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <select wire:model="seller_lease_purchase_rent_credit" class="form-control has-icon"
+                data-icon="fa-solid fa-hand-holding-usd">
+                <option value="">Select</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+                <option value="Partial">Partial</option>
+            </select>
+        </div>
+    </div>
+
+    @if (($seller_lease_purchase_rent_credit ?? '') === 'Yes' || ($seller_lease_purchase_rent_credit ?? '') === 'Partial')
+    <div class="form-group mt-2">
+        <label class="fw-bold">Rent Credit Amount Toward Purchase Price:</label>
+        <div class="input-group">
+            <select wire:model="seller_lease_purchase_rent_credit_type" class="form-select" style="max-width: 80px;">
+                <option value="$">$</option>
+                <option value="%">%</option>
+            </select>
+            <input type="text" wire:model="seller_lease_purchase_rent_credit_amount" class="form-control"
+                placeholder="{{ ($seller_lease_purchase_rent_credit_type ?? '$') === '%' ? 'Enter rent credit percentage (e.g., 25)' : 'Enter rent credit dollar amount (e.g., 500)' }}"
+                data-error-id="seller_lease_purchase_rent_credit_amount_error"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+        </div>
+        <span class="error mt-2" id="seller_lease_purchase_rent_credit_amount_error"></span>
+    </div>
+    @endif
+
+    <!-- 5. Non-Refundable Deposit / Purchase Deposit -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Non-Refundable Deposit / Purchase Deposit:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter the deposit amount required upfront for the lease purchase. This is typically non-refundable but may be applied to the purchase price.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <span class="input-group-text-seller">$</span>
+            <input type="text" wire:model="seller_lease_purchase_deposit" class="form-control has-icon"
+                placeholder="Enter deposit amount (e.g., 10000)"
+                data-error-id="seller_lease_purchase_deposit_error"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+        </div>
+        <span class="error mt-2" id="seller_lease_purchase_deposit_error"></span>
+    </div>
+
+    <!-- 6. Conditions or Requirements for Lease Purchase -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Conditions or Requirements for Lease Purchase:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Include any requirements (e.g., Buyer must secure financing by lease end).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <input wire:model="lease_purchase_conditions" class="form-control has-icon"
+                data-icon="fa-solid fa-circle-exclamation"
+                placeholder="Enter any conditions or requirements for the lease purchase (e.g., Buyer must secure financing by end of lease term)">
+        </div>
+    </div>
+
+    <!-- 7. Specific Terms Proposed for Lease Purchase -->
     <div class="form-group mt-3">
         <label class="fw-bold">Specific Terms Proposed for Lease Purchase:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="List any proposed terms for the lease purchase (e.g., rent credits apply toward purchase).">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-
         <div class="input-cover">
             <input wire:model="lease_purchase_terms" class="form-control has-icon" data-icon="fas fa-clipboard-list"
-                placeholder="Enter specific terms proposed for the lease purchase (e.g., Rent credits apply toward purchase, Option to buy after 12 months)">
-            </input>
+                placeholder="Enter specific terms proposed for the lease purchase (e.g., Rent credits apply toward purchase)">
         </div>
     </div>
 
+    <!-- 8. Maintenance / Repair Responsibility -->
     <div class="form-group mt-3">
-        <label class="fw-bold">Proposed Duration of Lease (Months):</label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the number of months the lease will last before the Buyer is expected to purchase.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-
+        <label class="fw-bold">Maintenance / Repair Responsibility:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select who is responsible for property maintenance and repairs during the lease purchase term.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
         <div class="input-cover">
-            <input type="number" wire:model="lease_purchase_duration"class="form-control has-icon"
-                data-icon="fa-regular fa-calendar-days" placeholder="Enter lease duration in months (e.g., 6)">
-
-        </div>
-    </div>
-
-    <div class="form-group mt-3">
-        <label class="fw-bold">Monthly Payment the Seller Will Accept:</label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the monthly lease amount the Seller will accept.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-
-        <div class="input-cover">
-            <span class="input-group-text-seller">$</span>
-
-            <input type="text" wire:model="lease_purchase_payment" class="form-control has-icon"
-                placeholder="Enter monthly payment amount (e.g., 5000)" data-error-id="lease_purchase_payment_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-        </div>
-        <span class="error mt-2" id="lease_purchase_payment_error"></span>
-
-    </div>
-
-    <div class="form-group mt-3">
-        <label class="fw-bold">Conditions or Requirements for Lease Purchase:</label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Include any requirements (e.g., Buyer must secure financing by lease end).">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-
-        <div class="input-cover">
-            <input wire:model="lease_purchase_conditions" class="form-control has-icon"
-                data-icon="fa-solid fa-circle-exclamation"
-                placeholder="Enter any conditions or requirements for the lease purchase (e.g., Buyer must secure financing by end of lease term, Non-refundable deposit required at lease signing)"></input>
-        </div>
-    </div>
-
-    {{-- <div class="form-group">
-        <label class="fw-bold">Offered Option Fee:</label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Indicate if a non-refundable option fee is required, and if so, enter the fee amount.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-
-        <div class="input-cover">
-            <select wire:model="lease_purchase_option_fee" class="form-control has-icon"
-                data-icon="fa-solid fa-file-invoice-dollar">
+            <select wire:model="seller_lease_purchase_maintenance" class="form-control has-icon"
+                data-icon="fa-solid fa-tools">
                 <option value="">Select</option>
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
+                <option value="Seller">Seller</option>
+                <option value="Tenant-Buyer">Tenant-Buyer</option>
+                <option value="Shared">Shared</option>
             </select>
         </div>
     </div>
 
-    @if ($lease_purchase_option_fee === 'Yes')
-        <div class="form-group">
-            <label class="fw-bold">Offered Option Fee:</label>
-            <div class="input-cover">
-                <span class="input-group-text-seller">$</span>
-
-                <input type="number" wire:model="lease_purchase_option_fee_amount" class="form-control has-icon"
-                   placeholder="Enter option fee amount (e.g., 15000)">
-            </div>
-        </div>
-    @endif --}}
+    <!-- 9. Extension Terms -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Extension Terms:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter whether the lease purchase may be extended, and under what terms or costs.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <textarea wire:model="seller_lease_purchase_extension_terms" class="form-control" rows="2"
+            placeholder="Enter extension terms (e.g., Buyer may extend lease purchase for 6 months with additional $5,000 deposit)"></textarea>
+    </div>
 @endif
 
 <!-- Cryptocurrency Option -->
@@ -1006,21 +1266,97 @@ This amount represents the portion of the purchase price that the Seller will fi
 
     <div class="form-group mt-3">
         <label class="fw-bold">Percentage of Purchase Price to be Paid with Cash:</label>
-
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the portion of the purchase price, as a percentage, to be paid in cash or traditional currency. The two percentages should total 100%.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
+        <div class="input-group">
+            <input type="text" wire:model="cash_percentage_crypto" class="form-control"
+                placeholder="Enter percentage to be paid with cash (e.g., 50)"
+                data-error-id="cash_percentage_crypto_error"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+            <span class="input-group-text">%</span>
+        </div>
+        <span class="error mt-2" id="cash_percentage_crypto_error"></span>
+    </div>
 
+    <!-- Exchange / Conversion Method -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Exchange / Conversion Method:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Specify how the cryptocurrency will be converted to U.S. dollars at closing. Most transactions use the spot exchange rate at a set time (e.g., date of transfer or settlement).">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
         <div class="input-cover">
-            <input type="number" wire:model="cash_percentage_crypto"
-                class="form-control has-icon percentage-value-set"
-                placeholder="Percentage of purchase price to be Paid with cash (e.g., 50)">
-
-            <span class="input-group-text-seller">%</span>
-
+            <input type="text" wire:model="crypto_exchange_method" class="form-control has-icon"
+                data-icon="fa-solid fa-exchange-alt"
+                placeholder="Enter how crypto will be valued (e.g., Spot price at closing, Coinbase exchange rate)">
         </div>
     </div>
+
+    <!-- Custodian / Wallet for Transfer -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Custodian / Wallet for Transfer:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter the wallet, exchange, platform, or escrow service where cryptocurrency will be transferred. Examples include Coinbase, Binance, an escrow wallet address, or a crypto title/escrow provider such as Propy Title. This ensures both parties agree on the transfer method.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <input type="text" wire:model="crypto_custodian_wallet" class="form-control has-icon"
+                data-icon="fa-solid fa-wallet"
+                placeholder="Enter wallet, exchange, or escrow service (e.g., Coinbase, Escrow Wallet, Propy Title)">
+        </div>
+    </div>
+
+    <!-- Transaction Fees Responsibility -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Transaction Fees Responsibility:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select who will be responsible for blockchain transaction fees (miner/gas fees) associated with the crypto transfer.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <select wire:model="crypto_transaction_fees" class="form-control has-icon"
+                data-icon="fa-solid fa-coins">
+                <option value="">Select</option>
+                <option value="Buyer">Buyer</option>
+                <option value="Seller">Seller</option>
+                <option value="Split">Split</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Timing of Transfer -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Timing of Transfer:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select when the cryptocurrency transfer will occur. Timing is important due to price volatility.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <select wire:model="crypto_transfer_timing" class="form-control has-icon"
+                data-icon="fa-solid fa-clock">
+                <option value="">Select</option>
+                <option value="At Contract Signing">At Contract Signing</option>
+                <option value="At Closing">At Closing</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+    </div>
+
+    @if (($crypto_transfer_timing ?? '') === 'Other')
+    <div class="form-group mt-2">
+        <div class="input-cover">
+            <input type="text" wire:model="crypto_transfer_timing_other" class="form-control has-icon"
+                data-icon="fa-solid fa-clock"
+                placeholder="Enter timing of transfer (e.g., within 48 hours of contract acceptance, partial transfer at inspection period)">
+        </div>
+    </div>
+    @endif
 @endif
 
 <!-- NFT Option -->

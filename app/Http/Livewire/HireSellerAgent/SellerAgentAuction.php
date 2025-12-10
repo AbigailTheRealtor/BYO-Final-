@@ -94,6 +94,10 @@ class SellerAgentAuction extends Component
     public $exchange_item_condition = '';
     public $additional_cash = '';
     public $value_determination = '';
+    public $exchange_transfer_method = '';
+    public $exchange_liens_disclosure = '';
+    public $exchange_liens_details = '';
+    public $exchange_inspection_rights = '';
 
     // Lease Option Properties
     public $lease_option_price = '';
@@ -103,6 +107,10 @@ class SellerAgentAuction extends Component
     public $lease_option_conditions = '';
     public $has_option_fee = '';
     public $option_fee_amount = '';
+    public $seller_lease_option_fee_credit = '';
+    public $seller_lease_option_fee_credit_percent = '';
+    public $seller_lease_option_maintenance = '';
+    public $seller_lease_option_extension_terms = '';
 
     // Lease Purchase Properties
     public $lease_purchase_price = '';
@@ -110,6 +118,12 @@ class SellerAgentAuction extends Component
     public $lease_purchase_duration = '';
     public $lease_purchase_payment = '';
     public $lease_purchase_conditions = '';
+    public $seller_lease_purchase_rent_credit = '';
+    public $seller_lease_purchase_rent_credit_type = '$';
+    public $seller_lease_purchase_rent_credit_amount = '';
+    public $seller_lease_purchase_deposit = '';
+    public $seller_lease_purchase_maintenance = '';
+    public $seller_lease_purchase_extension_terms = '';
 
     public $lease_purchase_option_fee = '';
     public $lease_purchase_option_fee_amount = '';
@@ -1118,6 +1132,10 @@ class SellerAgentAuction extends Component
             $this->exchange_item_condition = $auction->get->exchange_item_condition;
             $this->additional_cash = $auction->get->additional_cash;
             $this->value_determination = $auction->get->value_determination;
+            $this->exchange_transfer_method = $auction->get->exchange_transfer_method;
+            $this->exchange_liens_disclosure = $auction->get->exchange_liens_disclosure;
+            $this->exchange_liens_details = $auction->get->exchange_liens_details;
+            $this->exchange_inspection_rights = $auction->get->exchange_inspection_rights;
 
             // Lease Option
             $this->lease_option_price = $auction->get->lease_option_price;
@@ -1127,6 +1145,10 @@ class SellerAgentAuction extends Component
             $this->lease_option_conditions = $auction->get->lease_option_conditions;
             $this->has_option_fee = $auction->get->has_option_fee;
             $this->option_fee_amount = $auction->get->option_fee_amount;
+            $this->seller_lease_option_fee_credit = $auction->get->seller_lease_option_fee_credit;
+            $this->seller_lease_option_fee_credit_percent = $auction->get->seller_lease_option_fee_credit_percent;
+            $this->seller_lease_option_maintenance = $auction->get->seller_lease_option_maintenance;
+            $this->seller_lease_option_extension_terms = $auction->get->seller_lease_option_extension_terms;
 
             // Lease Purchase
             $this->lease_purchase_price = $auction->get->lease_purchase_price;
@@ -1134,6 +1156,12 @@ class SellerAgentAuction extends Component
             $this->lease_purchase_duration = $auction->get->lease_purchase_duration;
             $this->lease_purchase_payment = $auction->get->lease_purchase_payment;
             $this->lease_purchase_conditions = $auction->get->lease_purchase_conditions;
+            $this->seller_lease_purchase_rent_credit = $auction->get->seller_lease_purchase_rent_credit;
+            $this->seller_lease_purchase_rent_credit_type = $auction->get->seller_lease_purchase_rent_credit_type ?? '$';
+            $this->seller_lease_purchase_rent_credit_amount = $auction->get->seller_lease_purchase_rent_credit_amount;
+            $this->seller_lease_purchase_deposit = $auction->get->seller_lease_purchase_deposit;
+            $this->seller_lease_purchase_maintenance = $auction->get->seller_lease_purchase_maintenance;
+            $this->seller_lease_purchase_extension_terms = $auction->get->seller_lease_purchase_extension_terms;
             $this->lease_purchase_option_fee = $auction->get->lease_purchase_option_fee;
             $this->lease_purchase_option_fee_amount = $auction->get->lease_purchase_option_fee_amount;
 
@@ -1445,6 +1473,10 @@ class SellerAgentAuction extends Component
         $auction->saveMeta('exchange_item_condition', $this->exchange_item_condition);
         $auction->saveMeta('additional_cash', $this->additional_cash);
         $auction->saveMeta('value_determination', $this->value_determination);
+        $auction->saveMeta('exchange_transfer_method', $this->exchange_transfer_method);
+        $auction->saveMeta('exchange_liens_disclosure', $this->exchange_liens_disclosure);
+        $auction->saveMeta('exchange_liens_details', $this->exchange_liens_details);
+        $auction->saveMeta('exchange_inspection_rights', $this->exchange_inspection_rights);
 
         // Lease Option
         $auction->saveMeta('lease_option_price', $this->lease_option_price);
@@ -1454,6 +1486,10 @@ class SellerAgentAuction extends Component
         $auction->saveMeta('lease_option_conditions', $this->lease_option_conditions);
         $auction->saveMeta('has_option_fee', $this->has_option_fee);
         $auction->saveMeta('option_fee_amount', $this->option_fee_amount);
+        $auction->saveMeta('seller_lease_option_fee_credit', $this->seller_lease_option_fee_credit);
+        $auction->saveMeta('seller_lease_option_fee_credit_percent', $this->seller_lease_option_fee_credit_percent);
+        $auction->saveMeta('seller_lease_option_maintenance', $this->seller_lease_option_maintenance);
+        $auction->saveMeta('seller_lease_option_extension_terms', $this->seller_lease_option_extension_terms);
 
         // Lease Purchase
         $auction->saveMeta('lease_purchase_price', $this->lease_purchase_price);
@@ -1461,6 +1497,12 @@ class SellerAgentAuction extends Component
         $auction->saveMeta('lease_purchase_duration', $this->lease_purchase_duration);
         $auction->saveMeta('lease_purchase_payment', $this->lease_purchase_payment);
         $auction->saveMeta('lease_purchase_conditions', $this->lease_purchase_conditions);
+        $auction->saveMeta('seller_lease_purchase_rent_credit', $this->seller_lease_purchase_rent_credit);
+        $auction->saveMeta('seller_lease_purchase_rent_credit_type', $this->seller_lease_purchase_rent_credit_type);
+        $auction->saveMeta('seller_lease_purchase_rent_credit_amount', $this->seller_lease_purchase_rent_credit_amount);
+        $auction->saveMeta('seller_lease_purchase_deposit', $this->seller_lease_purchase_deposit);
+        $auction->saveMeta('seller_lease_purchase_maintenance', $this->seller_lease_purchase_maintenance);
+        $auction->saveMeta('seller_lease_purchase_extension_terms', $this->seller_lease_purchase_extension_terms);
         $auction->saveMeta('lease_purchase_option_fee', $this->lease_purchase_option_fee);
         $auction->saveMeta('lease_purchase_option_fee_amount', $this->lease_purchase_option_fee_amount);
 
