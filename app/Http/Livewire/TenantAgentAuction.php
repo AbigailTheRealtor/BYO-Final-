@@ -272,6 +272,46 @@ class TenantAgentAuction extends Component
     public $exchange_item_condition = '';
     public $has_option_fee  = '';
     public $lease_purchase_option_fee = '';
+    
+    // New properties for financing types (December 2025)
+    public $assumable_loan_type = '';
+    
+    // Cryptocurrency additional fields
+    public $crypto_exchange_method = '';
+    public $crypto_custodian_wallet = '';
+    public $crypto_transaction_fees = '';
+    public $crypto_transfer_timing = '';
+    public $crypto_transfer_timing_other = '';
+    
+    // Exchange/Trade additional fields
+    public $exchange_transfer_method = '';
+    public $exchange_liens = '';
+    public $exchange_liens_details = '';
+    public $exchange_inspection_rights = '';
+    
+    // NFT additional fields
+    public $nft_valuation_method = '';
+    public $nft_transfer_method = '';
+    public $nft_gas_fees = '';
+    
+    // Lease Option additional fields
+    public $lease_option_fee_credit = '';
+    public $lease_option_fee_credit_percentage = '';
+    public $lease_option_maintenance = '';
+    public $lease_option_extension_terms = '';
+    
+    // Lease Purchase additional fields
+    public $lease_purchase_rent_credit = '';
+    public $lease_purchase_rent_credit_percentage = '';
+    public $lease_purchase_deposit = '';
+    public $lease_purchase_maintenance = '';
+    public $lease_purchase_extension_terms = '';
+    
+    // Seller Financing additional fields
+    public $seller_amortization_type = '';
+    public $seller_payment_frequency = '';
+    public $seller_late_fee_type = '$';
+    public $seller_late_fee_amount = '';
     public $lease_fee_type = '';
 
     public string $lease_fee_flat_type = '$';

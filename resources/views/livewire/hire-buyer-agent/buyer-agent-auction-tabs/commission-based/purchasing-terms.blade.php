@@ -240,40 +240,16 @@
 @if ($offered_financing === 'Other')
     <div>
         <div class="form-group">
-            <label class="fw-bold">Other Financing/Currency:</label>
             <div class="input-cover">
                 <input type="text" wire:model="other_financing" class="form-control has-icon"
                     data-icon="fa-solid fa-money-bill-wave"
-                    placeholder="Enter type of financing or currency offered (e.g., Gold Bullion, Stock Transfer, Private Investment Agreement)">
+                    placeholder="Enter type of financing or currency offered">
             </div>
         </div>
     </div>
 @endif
 
-<!-- Cash Option -->
-@if ($offered_financing === 'Cash')
-    <div>
-        <div class="form-group">
-            <label class="fw-bold">Offered Cash Amount:<span class="text-danger">*</span></label>
-
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the total cash amount the Buyer is offering for the purchase (e.g., 500000).">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-            <div class="input-cover">
-                <span class="input-group-text-seller">$</span>
-
-                <input type="text" wire:model="cash_budget" class="form-control has-icon"
-                    placeholder="Enter the total cash amount the Buyer is offering for the purchase (e.g., 500000)."
-
-                     data-error-id="cash_budget_error" oninput="validateInput(this)"
-                onblur="reformatNumber(this)" onpaste="handlePaste(event)
-                " required>
-            </div>
-            <span class="error mt-2" id="cash_budget_error"></span>
-        </div>
-    </div>
-@endif
+<!-- Cash Option - No additional fields needed per requirements -->
 
 <!-- Conventional, FHA, Jumbo, VA, No-Doc, Non-QM, USDA -->
 @if (in_array($offered_financing, ['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA']))
@@ -619,6 +595,69 @@
             </div>
         </div>
     @endif
+
+    <!-- Amortization Type -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Amortization Type:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select the loan repayment structure: Fully Amortized (equal payments over full term), Interest-Only (payments only cover interest), or Partially Amortized (remaining balance due at end).">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <select wire:model="seller_amortization_type" class="form-control has-icon"
+                data-icon="fa-solid fa-chart-line">
+                <option value="">Select</option>
+                <option value="Fully Amortized">Fully Amortized</option>
+                <option value="Interest-Only">Interest-Only</option>
+                <option value="Partially Amortized">Partially Amortized</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Payment Frequency -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Payment Frequency:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select how often payments will be made to the Seller.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <select wire:model="seller_payment_frequency" class="form-control has-icon"
+                data-icon="fa-solid fa-calendar-check">
+                <option value="">Select</option>
+                <option value="Monthly">Monthly</option>
+                <option value="Bi-Weekly">Bi-Weekly</option>
+                <option value="Quarterly">Quarterly</option>
+                <option value="Annually">Annually</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Late Payment Fee -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Late Payment Fee:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter any late payment fee as a flat amount or percentage. If none, leave blank.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-group">
+            <select wire:model="seller_late_fee_type" class="form-select" style="max-width: 100px;">
+                <option value="$">$</option>
+                <option value="%">%</option>
+            </select>
+            <input type="text" wire:model="seller_late_fee_amount" class="form-control"
+                placeholder="{{ $seller_late_fee_type === '%' ? 'Enter late fee percentage (e.g., 5)' : 'Enter late fee amount (e.g., 50)' }}"
+                data-error-id="seller_late_fee_error"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+            <span class="input-group-text">
+                {{ $seller_late_fee_type === '$' ? '$' : '%' }}
+            </span>
+        </div>
+        <span class="error mt-2" id="seller_late_fee_error"></span>
+    </div>
 @endif
 
 <!-- Assumable Financing -->
@@ -771,16 +810,15 @@
                 <!-- Single input -->
                 <input type="text" step="any" wire:model.lazy="gap_payment_amount" class="form-control"
                     placeholder="{{ $gap_payment_type === '%'
-                        ? 'Enter down payment amount to bridge gap (e.g., 10)'
-                        : 'Enter down payment amount to bridge gap (e.g., 50000)' }}"
+                        ? 'Enter down payment percentage to bridge gap (e.g., 10)'
+                        : 'Enter down payment amount to bridge gap (e.g., 50,000)' }}"
                          data-error-id="gap_payment_amount_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)" required>
 
-                <!-- Suffix -->
-                <span class="input-group-text">
-                    {{ $gap_payment_type === '%' ? '%' : '$' }}
-                </span>
-
+                @if ($gap_payment_type === '%')
+                <!-- Suffix for percentage only -->
+                <span class="input-group-text">%</span>
+                @endif
 
         <span class="error mt-2" id="gap_payment_amount_error"></span>
 
@@ -788,6 +826,23 @@
 
     </div>
 
+    <!-- Type of Loan for Assumable Financing -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Type of Loan:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Assumable loans allow a buyer to take over the seller's existing financing. FHA, VA, and USDA loans are the most common types that may be assumed, but lender approval is usually required. Conventional loans almost always have a due-on-sale clause and are not assumable.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <select wire:model="assumable_loan_type" class="form-control has-icon" data-icon="fa-solid fa-file-contract">
+                <option value="">Select</option>
+                <option value="FHA">FHA</option>
+                <option value="VA">VA</option>
+                <option value="USDA">USDA</option>
+            </select>
+        </div>
+    </div>
 
 @endif
 <!-- Exchange/Trade Option -->
@@ -904,8 +959,71 @@
                 
                  required>
         </div>
+    </div>
 
+    <!-- Transfer Method / Logistics -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Transfer Method / Logistics:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Specify the method for transferring ownership of the exchange/trade item (e.g., title transfer for a vehicle, bill of sale for equipment, delivery at closing).">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <input type="text" wire:model="exchange_transfer_method" class="form-control has-icon"
+                data-icon="fa-solid fa-truck"
+                placeholder="Enter how the exchange/trade item will be delivered or transferred (e.g., Title transfer, Bill of Sale, Delivery at closing)">
+        </div>
+    </div>
 
+    <!-- Liens / Encumbrances Disclosure -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Liens / Encumbrances Disclosure:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Indicate if the exchange/trade item has any liens or encumbrances (such as loans, leases, or legal claims). Buyers and sellers should resolve these before closing.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="d-flex gap-3 mt-2">
+            <div class="form-check">
+                <input class="form-check-input" type="radio" wire:model="exchange_liens" value="Yes" id="exchange_liens_yes">
+                <label class="form-check-label" for="exchange_liens_yes">Yes</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" wire:model="exchange_liens" value="No" id="exchange_liens_no">
+                <label class="form-check-label" for="exchange_liens_no">No</label>
+            </div>
+        </div>
+    </div>
+
+    @if (($exchange_liens ?? '') === 'Yes')
+    <div class="form-group mt-2">
+        <div class="input-cover">
+            <input type="text" wire:model="exchange_liens_details" class="form-control has-icon"
+                data-icon="fa-solid fa-file-contract"
+                placeholder="Enter lien/encumbrance details (e.g., auto loan balance, UCC filing)">
+        </div>
+    </div>
+    @endif
+
+    <!-- Inspection / Verification Rights -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Inspection / Verification Rights:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select whether the party receiving the trade item may inspect or verify its condition/value before closing.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="d-flex gap-3 mt-2">
+            <div class="form-check">
+                <input class="form-check-input" type="radio" wire:model="exchange_inspection_rights" value="Yes" id="exchange_inspection_yes">
+                <label class="form-check-label" for="exchange_inspection_yes">Yes</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" wire:model="exchange_inspection_rights" value="No" id="exchange_inspection_no">
+                <label class="form-check-label" for="exchange_inspection_no">No</label>
+            </div>
+        </div>
     </div>
 @endif
 
@@ -1029,6 +1147,79 @@
 
         </div>
     @endif
+
+    <!-- Option Fee Credit Toward Purchase Price -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Option Fee Credit Toward Purchase Price:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select whether the option fee (or part of it) will be credited toward the purchase price if the option is exercised.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="d-flex gap-3 mt-2">
+            <div class="form-check">
+                <input class="form-check-input" type="radio" wire:model="lease_option_fee_credit" value="Yes" id="lo_fee_credit_yes">
+                <label class="form-check-label" for="lo_fee_credit_yes">Yes</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" wire:model="lease_option_fee_credit" value="No" id="lo_fee_credit_no">
+                <label class="form-check-label" for="lo_fee_credit_no">No</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" wire:model="lease_option_fee_credit" value="Partial" id="lo_fee_credit_partial">
+                <label class="form-check-label" for="lo_fee_credit_partial">Partial</label>
+            </div>
+        </div>
+    </div>
+
+    @if (($lease_option_fee_credit ?? '') === 'Partial')
+    <div class="form-group mt-2">
+        <label class="fw-bold">Percentage of Option Fee Credited Toward Purchase Price:</label>
+        <div class="input-cover">
+            <input type="number" wire:model="lease_option_fee_credit_percentage" class="form-control has-icon"
+                placeholder="Enter percentage of option fee credited (e.g., 50)">
+            <span class="input-group-text-seller">%</span>
+        </div>
+    </div>
+    @endif
+
+    <!-- Maintenance / Repair Responsibility -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Maintenance / Repair Responsibility:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select who is responsible for property maintenance and repairs during the lease option term.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="d-flex gap-3 mt-2">
+            <div class="form-check">
+                <input class="form-check-input" type="radio" wire:model="lease_option_maintenance" value="Seller" id="lo_maint_seller">
+                <label class="form-check-label" for="lo_maint_seller">Seller</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" wire:model="lease_option_maintenance" value="Tenant-Buyer" id="lo_maint_buyer">
+                <label class="form-check-label" for="lo_maint_buyer">Tenant-Buyer</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" wire:model="lease_option_maintenance" value="Shared" id="lo_maint_shared">
+                <label class="form-check-label" for="lo_maint_shared">Shared</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Extension Terms -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Extension Terms:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter whether the lease option may be extended, and under what terms or costs.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <textarea wire:model="lease_option_extension_terms" class="form-control" rows="3"
+                placeholder="Enter extension terms (e.g., Tenant-Buyer may extend for 6 months with additional $5,000 fee)"></textarea>
+        </div>
+    </div>
 @endif
 
 <!-- Lease Purchase -->
@@ -1154,6 +1345,93 @@
             </div>
         </div>
     @endif
+
+    <!-- Rent Credit Toward Purchase -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Rent Credit Toward Purchase:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select whether any portion of the monthly rent will be credited toward the purchase price.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="d-flex gap-3 mt-2">
+            <div class="form-check">
+                <input class="form-check-input" type="radio" wire:model="lease_purchase_rent_credit" value="Yes" id="lp_rent_credit_yes">
+                <label class="form-check-label" for="lp_rent_credit_yes">Yes</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" wire:model="lease_purchase_rent_credit" value="No" id="lp_rent_credit_no">
+                <label class="form-check-label" for="lp_rent_credit_no">No</label>
+            </div>
+        </div>
+    </div>
+
+    @if (($lease_purchase_rent_credit ?? '') === 'Yes')
+    <div class="form-group mt-2">
+        <label class="fw-bold">Percentage of Rent Credited Toward Purchase Price:</label>
+        <div class="input-cover">
+            <input type="number" wire:model="lease_purchase_rent_credit_percentage" class="form-control has-icon"
+                placeholder="Enter percentage of rent credited (e.g., 25)">
+            <span class="input-group-text-seller">%</span>
+        </div>
+    </div>
+    @endif
+
+    <!-- Security Deposit Amount -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Security Deposit Amount:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter the security deposit the Buyer is offering upfront. This is separate from any option fee.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <span class="input-group-text-seller">$</span>
+            <input type="text" wire:model="lease_purchase_deposit" class="form-control has-icon"
+                placeholder="Enter security deposit amount (e.g., 5000)"
+                data-error-id="lease_purchase_deposit_error"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+        </div>
+        <span class="error mt-2" id="lease_purchase_deposit_error"></span>
+    </div>
+
+    <!-- Maintenance / Repair Responsibility -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Maintenance / Repair Responsibility:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select who is responsible for property maintenance and repairs during the lease purchase term.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="d-flex gap-3 mt-2">
+            <div class="form-check">
+                <input class="form-check-input" type="radio" wire:model="lease_purchase_maintenance" value="Seller" id="lp_maint_seller">
+                <label class="form-check-label" for="lp_maint_seller">Seller</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" wire:model="lease_purchase_maintenance" value="Tenant-Buyer" id="lp_maint_buyer">
+                <label class="form-check-label" for="lp_maint_buyer">Tenant-Buyer</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" wire:model="lease_purchase_maintenance" value="Shared" id="lp_maint_shared">
+                <label class="form-check-label" for="lp_maint_shared">Shared</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Extension Terms -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Extension Terms:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter whether the lease purchase may be extended, and under what terms or costs.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <textarea wire:model="lease_purchase_extension_terms" class="form-control" rows="3"
+                placeholder="Enter extension terms (e.g., Lease may be extended for 6 months with adjusted purchase price)"></textarea>
+        </div>
+    </div>
 @endif
 
 <!-- Cryptocurrency Option -->
@@ -1218,6 +1496,94 @@
                 <span class="error mt-2" id="cash_percentage_crypto_error"></span>
 
     </div>
+
+    <!-- Exchange / Conversion Method -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Exchange / Conversion Method:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Specify how the cryptocurrency will be converted to U.S. dollars at closing. Most transactions use the spot exchange rate at a set time (e.g., date of transfer or settlement).">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <input type="text" wire:model="crypto_exchange_method" class="form-control has-icon"
+                data-icon="fa-solid fa-exchange-alt"
+                placeholder="Enter how crypto will be valued (e.g., Spot price at closing, Coinbase exchange rate)">
+        </div>
+    </div>
+
+    <!-- Custodian / Wallet for Transfer -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Custodian / Wallet for Transfer:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter the wallet, exchange, platform, or escrow service where cryptocurrency will be transferred. Examples include Coinbase, Binance, an escrow wallet address, or a crypto title/escrow provider such as Propy Title. This ensures both parties agree on the transfer method.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <input type="text" wire:model="crypto_custodian_wallet" class="form-control has-icon"
+                data-icon="fa-solid fa-wallet"
+                placeholder="Enter wallet, exchange, or escrow service (e.g., Coinbase, Escrow Wallet, Propy Title)">
+        </div>
+    </div>
+
+    <!-- Transaction Fees Responsibility -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Transaction Fees Responsibility:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select who will be responsible for blockchain transaction fees (miner/gas fees) associated with the crypto transfer.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="d-flex gap-3 mt-2">
+            <div class="form-check">
+                <input class="form-check-input" type="radio" wire:model="crypto_transaction_fees" value="Buyer" id="crypto_fees_buyer">
+                <label class="form-check-label" for="crypto_fees_buyer">Buyer</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" wire:model="crypto_transaction_fees" value="Seller" id="crypto_fees_seller">
+                <label class="form-check-label" for="crypto_fees_seller">Seller</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" wire:model="crypto_transaction_fees" value="Split" id="crypto_fees_split">
+                <label class="form-check-label" for="crypto_fees_split">Split</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timing of Transfer -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Timing of Transfer:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select when the cryptocurrency transfer will occur. Timing is important due to price volatility.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="d-flex gap-3 mt-2">
+            <div class="form-check">
+                <input class="form-check-input" type="radio" wire:model="crypto_transfer_timing" value="At Contract Signing" id="crypto_timing_signing">
+                <label class="form-check-label" for="crypto_timing_signing">At Contract Signing</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" wire:model="crypto_transfer_timing" value="At Closing" id="crypto_timing_closing">
+                <label class="form-check-label" for="crypto_timing_closing">At Closing</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" wire:model="crypto_transfer_timing" value="Other" id="crypto_timing_other">
+                <label class="form-check-label" for="crypto_timing_other">Other</label>
+            </div>
+        </div>
+    </div>
+
+    @if ($crypto_transfer_timing === 'Other')
+    <div class="form-group mt-2">
+        <div class="input-cover">
+            <input type="text" wire:model="crypto_transfer_timing_other" class="form-control has-icon"
+                data-icon="fa-regular fa-calendar-days"
+                placeholder="Enter timing of transfer (e.g., within 48 hours of contract acceptance, partial transfer at inspection period)">
+        </div>
+    </div>
+    @endif
 @endif
 
 <!-- NFT Option -->
@@ -1279,5 +1645,59 @@
         </div>
                         <span class="error mt-2" id="cryptocurrency_type_error"></span>
 
+    </div>
+
+    <!-- NFT Valuation Method -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">NFT Valuation Method:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Specify how the value of the NFT will be calculated at closing to avoid disputes over fluctuating market prices.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <input type="text" wire:model="nft_valuation_method" class="form-control has-icon"
+                data-icon="fa-solid fa-chart-line"
+                placeholder="Enter how NFT value will be determined (e.g., Floor price on OpenSea, Independent appraisal, Mutual agreement)">
+        </div>
+    </div>
+
+    <!-- NFT Transfer Method -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">NFT Transfer Method:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter the platform, wallet, or escrow service where the NFT will be transferred. Examples include a crypto wallet (e.g., MetaMask), a marketplace (e.g., OpenSea), or a crypto title/escrow provider (e.g., Propy Title). This ensures both parties agree on the transfer method and can verify ownership.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <input type="text" wire:model="nft_transfer_method" class="form-control has-icon"
+                data-icon="fa-solid fa-wallet"
+                placeholder="Enter wallet, marketplace, or escrow service for transfer (e.g., MetaMask, OpenSea, Propy Title, escrow smart contract)">
+        </div>
+    </div>
+
+    <!-- Transaction Fees Responsibility (Gas Fees) -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Transaction Fees Responsibility (Gas Fees):
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select who will be responsible for blockchain transaction (gas) fees associated with transferring the NFT.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="d-flex gap-3 mt-2">
+            <div class="form-check">
+                <input class="form-check-input" type="radio" wire:model="nft_gas_fees" value="Buyer" id="nft_fees_buyer">
+                <label class="form-check-label" for="nft_fees_buyer">Buyer</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" wire:model="nft_gas_fees" value="Seller" id="nft_fees_seller">
+                <label class="form-check-label" for="nft_fees_seller">Seller</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" wire:model="nft_gas_fees" value="Split" id="nft_fees_split">
+                <label class="form-check-label" for="nft_fees_split">Split</label>
+            </div>
+        </div>
     </div>
 @endif

@@ -1,0 +1,496 @@
+Under Hire a Buyer’s Agent → Tab 3 – Purchasing Terms (Offered Financing/Currency):
+
+Only the main field “Offered Financing/Currency” should be required.
+
+All follow-up questions that appear after a financing type is selected should not be marked required (unless already explicitly required elsewhere).
+
+Make the following edits for each financing type.
+
+1. Assumable Financing
+
+Down Payment to Cover the Gap Between Price and Loan
+
+In the “Down Payment to Cover the Gap Between Price and Loan” input:
+
+Remove the second trailing “$” icon at the right side of the field so there is only the left-side currency prefix.
+
+Add Type of Loan field
+
+After the existing Offered Assumable Terms fields, add a new question:
+
+Label: Type of Loan:
+Field type: single-select (radio buttons or dropdown).
+Options:
+
+FHA
+
+VA
+
+USDA
+
+Tooltip (Type of Loan):
+Assumable loans allow a buyer to take over the seller’s existing financing. FHA, VA, and USDA loans are the most common types that may be assumed, but lender approval is usually required. Conventional loans almost always have a due-on-sale clause and are not assumable.
+
+2. Cash
+
+If the user selects Cash in Offered Financing/Currency:
+
+Delete/Remove the “Offered Cash Amount” field from this section (do not show this question).
+
+3. Cryptocurrency
+
+Fix placeholder alignment
+
+In both percentage fields:
+
+“Percentage of Purchase Price to be Paid with Cryptocurrency”
+
+“Percentage of Purchase Price to be Paid with Cash”
+
+Remove the extra leading space before the placeholder text so “Enter percentage…” starts flush to the far left, consistent with all other fields.
+
+Add the following 4 questions at the end of the Cryptocurrency section (these should be the last crypto questions):
+
+a) Exchange / Conversion Method
+
+Label: Exchange / Conversion Method:
+
+Field type: single-line text input.
+
+Placeholder:
+Enter how crypto will be valued (e.g., Spot price at closing, Coinbase exchange rate)
+
+Tooltip:
+Specify how the cryptocurrency will be converted to U.S. dollars at closing. Most transactions use the spot exchange rate at a set time (e.g., date of transfer or settlement).
+
+b) Custodian / Wallet for Transfer
+
+Label: Custodian / Wallet for Transfer:
+
+Field type: single-line text input.
+
+Placeholder:
+Enter wallet, exchange, or escrow service (e.g., Coinbase, Escrow Wallet, Propy Title)
+
+Tooltip:
+Enter the wallet, exchange, platform, or escrow service where cryptocurrency will be transferred. Examples include Coinbase, Binance, an escrow wallet address, or a crypto title/escrow provider such as Propy Title. This ensures both parties agree on the transfer method.
+
+c) Transaction Fees Responsibility
+
+Label: Transaction Fees Responsibility:
+
+Field type: radio buttons.
+
+Options:
+
+Buyer
+
+Seller
+
+Split
+
+Tooltip:
+Select who will be responsible for blockchain transaction fees (miner/gas fees) associated with the crypto transfer.
+
+d) Timing of Transfer
+
+Label: Timing of Transfer:
+
+Field type: radio buttons.
+
+Options:
+
+At Contract Signing
+
+At Closing
+
+Other
+
+If Other is selected, display a text input:
+
+Placeholder:
+Enter timing of transfer (e.g., within 48 hours of contract acceptance, partial transfer at inspection period)
+
+Tooltip:
+Select when the cryptocurrency transfer will occur. Timing is important due to price volatility.
+
+4. Exchange / Trade
+
+Under If user selects Exchange/Trade, after the existing Condition of Exchange/Trade Item field, add these 3 questions:
+
+Transfer Method / Logistics
+
+Label: Transfer Method / Logistics:
+
+Field type: single-line text input.
+
+Placeholder:
+Enter how the exchange/trade item will be delivered or transferred (e.g., Title transfer, Bill of Sale, Delivery at closing)
+
+Tooltip:
+Specify the method for transferring ownership of the exchange/trade item (e.g., title transfer for a vehicle, bill of sale for equipment, delivery at closing).
+
+Liens / Encumbrances Disclosure
+
+Label: Liens / Encumbrances Disclosure:
+
+Field type: radio buttons.
+
+Options:
+
+Yes
+
+No
+
+If Yes is selected, display a text input with:
+
+Placeholder:
+Enter lien/encumbrance details (e.g., auto loan balance, UCC filing)
+
+Tooltip:
+Indicate if the exchange/trade item has any liens or encumbrances (such as loans, leases, or legal claims). Buyers and sellers should resolve these before closing.
+
+Inspection / Verification Rights
+
+Label: Inspection / Verification Rights:
+
+Field type: radio buttons.
+
+Options:
+
+Yes
+
+No
+
+Tooltip:
+Select whether the party receiving the trade item may inspect or verify its condition/value before closing.
+
+5. Lease Option
+
+Under If user selects Lease Option, add these questions and then reorder the whole Lease Option section as described.
+
+Option Fee Credit Toward Purchase Price
+
+Label: Option Fee Credit Toward Purchase Price:
+
+Field type: radio buttons.
+
+Options:
+
+Yes
+
+No
+
+Partial
+
+If Partial is selected, show:
+
+Label: Percentage of Option Fee Credited Toward Purchase Price:
+
+Field type: numeric input with % indicator.
+
+Placeholder:
+Enter percentage of option fee credited (e.g., 50)
+
+Tooltip:
+Select whether the option fee (or part of it) will be credited toward the purchase price if the option is exercised.
+
+Maintenance / Repair Responsibility
+
+Label: Maintenance / Repair Responsibility:
+
+Field type: radio buttons.
+
+Options:
+
+Seller
+
+Tenant-Buyer
+
+Shared
+
+Tooltip:
+Select who is responsible for property maintenance and repairs during the lease option term.
+
+Extension Terms
+
+Label: Extension Terms:
+
+Field type: text area.
+
+Placeholder:
+Enter extension terms (e.g., Tenant-Buyer may extend for 6 months with additional $5,000 fee)
+
+Tooltip:
+Enter whether the lease option may be extended, and under what terms or costs.
+
+Reorder the Lease Option section questions in this order:
+
+Buyer’s Desired Offering Price for Lease Option
+
+Monthly Payment Buyer is Offering
+
+Proposed Duration of Lease (Months)
+
+Offered Option Fee
+
+Option Fee Credit Toward Purchase Price
+
+Conditions or Requirements for Lease Option
+
+Specific Terms Proposed for Lease Option
+
+Maintenance / Repair Responsibility
+
+Extension Terms
+
+6. Lease Purchase
+
+Under If user selects Lease Purchase:
+
+Remove existing Option Fee fields
+
+Delete both of these Lease Purchase questions:
+
+“Offered Option Fee? Yes/No”
+
+“Offered Option Fee” amount input.
+
+Add new questions
+
+a) Rent Credit Toward Purchase Price
+
+Label: Rent Credit Toward Purchase Price:
+
+Field type: radio buttons.
+
+Options:
+
+Yes
+
+No
+
+Partial
+
+If Yes or Partial is selected, show:
+
+Sub-label: Rent Credit Amount Toward Purchase Price:
+Add a toggle or selector so user can choose % or $, then show the appropriate input:
+
+If % selected:
+Placeholder: Enter rent credit percentage (e.g., 25)
+
+If $ selected:
+Placeholder: Enter rent credit dollar amount (e.g., 500)
+
+Tooltip:
+Select whether any portion of monthly rent will be credited toward the purchase price.
+
+b) Non-Refundable Deposit / Purchase Deposit
+
+Label: Non-Refundable Deposit / Purchase Deposit:
+
+Field type: currency input.
+
+Placeholder:
+Enter deposit amount (e.g., 10000)
+
+Tooltip:
+Enter the deposit amount required upfront for the lease purchase. This is typically non-refundable but may be applied to the purchase price.
+
+c) Maintenance / Repair Responsibility
+
+Label: Maintenance / Repair Responsibility:
+
+Field type: radio buttons.
+
+Options:
+
+Seller
+
+Tenant–Buyer
+
+Shared
+
+Tooltip:
+Select who is responsible for property maintenance and repairs during the lease purchase term.
+
+d) Extension Terms
+
+Label: Extension Terms:
+
+Field type: text area.
+
+Placeholder:
+Enter extension terms (e.g., Tenant-Buyer may extend lease purchase for 6 months with additional $5,000 deposit)
+
+Tooltip:
+Enter whether the lease purchase may be extended, and under what terms or costs.
+
+Reorder the Lease Purchase section questions in this order:
+
+Buyer’s Desired Offering Price for Lease Purchase
+
+Monthly Payment Buyer is Offering
+
+Proposed Duration of Lease (Months)
+
+Rent Credit Toward Purchase Price
+
+Non-Refundable Deposit / Purchase Deposit
+
+Conditions or Requirements for Lease Purchase
+
+Specific Terms Proposed for Lease Purchase
+
+Maintenance / Repair Responsibility
+
+Extension Terms
+
+7. Non-Fungible Token (NFT)
+
+Under If user selects Non-Fungible Token (NFT):
+
+Fix placeholder alignment
+
+In both NFT percentage fields:
+
+“Percentage of Purchase Price to be Paid with NFT”
+
+“Percentage of Purchase Price to be Paid with Cash”
+
+Remove extra leading space so “Enter percentage…” starts at the far left.
+
+Add these 3 questions after the percentage fields (after ‘Percentage of Purchase Price Seller Will Accept as Cash’):
+
+a) NFT Valuation Method
+
+Label: NFT Valuation Method:
+
+Field type: single-line text input.
+
+Placeholder:
+Enter how NFT value will be determined (e.g., Floor price on OpenSea, Independent appraisal, Mutual agreement)
+
+Tooltip:
+Specify how the value of the NFT will be calculated at closing to avoid disputes over fluctuating market prices.
+
+b) NFT Transfer Method
+
+Label: NFT Transfer Method:
+
+Field type: single-line text input.
+
+Placeholder:
+Enter wallet, marketplace, or escrow service for transfer (e.g., MetaMask, OpenSea, Propy Title, escrow smart contract)
+
+Tooltip:
+Enter the platform, wallet, or escrow service where the NFT will be transferred. Examples include a crypto wallet (e.g., MetaMask), a marketplace (e.g., OpenSea), or a crypto title/escrow provider (e.g., Propy Title). This ensures both parties agree on the transfer method and can verify ownership.
+
+c) Transaction Fees Responsibility (Gas Fees)
+
+Label: Transaction Fees Responsibility (Gas Fees):
+
+Field type: radio buttons.
+
+Options:
+
+Buyer
+
+Seller
+
+Split
+
+Tooltip:
+Select who will be responsible for blockchain transaction (gas) fees associated with transferring the NFT.
+
+8. Seller Financing
+
+Under If user selects Seller Financing:
+
+Fix placeholder spacing
+
+In the Desired Interest Rate field, remove any extra space before the placeholder so “Enter interest rate (e.g., 6.5)” starts at the far left.
+
+Balloon Payment amount formatting
+
+For the Balloon Payment Amount input:
+
+Use the same currency prefix style as other dollar fields (left-side $ icon/dropdown only).
+
+Update the example placeholder to use comma formatting: Enter balloon payment amount (e.g., 100,000).
+
+Down Payment / Seller Financing fields
+
+For the Down Payment and Seller Financing amount inputs:
+
+Remove the trailing second “$” icon at the right side of each field so there is only the left-side currency prefix.
+
+Ensure example placeholders use comma formatting, e.g. Enter down payment amount (e.g., 100,000) and Enter seller financing amount (e.g., 400,000).
+
+Add Amortization Type (after Loan Duration)
+
+Label: Amortization Type:
+
+Field type: radio buttons.
+
+Options:
+
+Fully Amortizing
+
+Interest-Only
+
+Other
+
+If Other is selected, display a text input:
+
+Placeholder:
+Enter custom amortization type (e.g., Hybrid, Graduated Payments, Step-Up Structure)
+
+Tooltip:
+Select whether payments will fully amortize the loan over the term, be interest-only, or follow another structure.
+
+Add Payment Frequency (after Amortization Type)
+
+Label: Payment Frequency:
+
+Field type: radio buttons.
+
+Options:
+
+Monthly
+
+Quarterly
+
+Annually
+
+Other
+
+If Other is selected, display a text input:
+
+Placeholder:
+Enter custom payment schedule (e.g., Bi-Weekly, Semi-Annual, Lump Sum at Harvest)
+
+Tooltip:
+Select how often payments will be made. Monthly is most common.
+
+Add Late Payment Fee (last question under Seller Financing)
+
+Label: Late Payment Fee:
+
+Field type: single-line text input.
+
+Placeholder:
+Enter late fee and when it applies (e.g., $100 after 10 days late, or 5% of payment after 15 days)
+
+Tooltip:
+Enter the late payment fee and timing for when it applies. For example: “$100 after 10 days late” or “5% of the monthly payment after 15 days late.” This ensures both the amount and the grace period are clear.
+
+9. Other Financing / Currency
+
+Under If user selects Other:
+
+Keep the existing free-text input, but remove the label text “Other Financing/Currency:” above it.
+
+The input should rely on its placeholder, which should remain:
+Enter type of financing or currency offered.
