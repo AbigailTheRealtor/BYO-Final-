@@ -984,15 +984,13 @@
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
-        <div class="d-flex gap-3 mt-2">
-            <div class="form-check">
-                <input class="form-check-input" type="radio" wire:model="exchange_liens" value="Yes" id="exchange_liens_yes">
-                <label class="form-check-label" for="exchange_liens_yes">Yes</label>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="radio" wire:model="exchange_liens" value="No" id="exchange_liens_no">
-                <label class="form-check-label" for="exchange_liens_no">No</label>
-            </div>
+        <div class="input-cover">
+            <select wire:model="exchange_liens" class="form-control has-icon"
+                data-icon="fa-solid fa-file-contract">
+                <option value="">Select</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+            </select>
         </div>
     </div>
 
@@ -1014,15 +1012,13 @@
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
-        <div class="d-flex gap-3 mt-2">
-            <div class="form-check">
-                <input class="form-check-input" type="radio" wire:model="exchange_inspection_rights" value="Yes" id="exchange_inspection_yes">
-                <label class="form-check-label" for="exchange_inspection_yes">Yes</label>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="radio" wire:model="exchange_inspection_rights" value="No" id="exchange_inspection_no">
-                <label class="form-check-label" for="exchange_inspection_no">No</label>
-            </div>
+        <div class="input-cover">
+            <select wire:model="exchange_inspection_rights" class="form-control has-icon"
+                data-icon="fa-solid fa-search">
+                <option value="">Select</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+            </select>
         </div>
     </div>
 @endif
@@ -1156,19 +1152,14 @@
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
-        <div class="d-flex gap-3 mt-2">
-            <div class="form-check">
-                <input class="form-check-input" type="radio" wire:model="lease_option_fee_credit" value="Yes" id="lo_fee_credit_yes">
-                <label class="form-check-label" for="lo_fee_credit_yes">Yes</label>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="radio" wire:model="lease_option_fee_credit" value="No" id="lo_fee_credit_no">
-                <label class="form-check-label" for="lo_fee_credit_no">No</label>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="radio" wire:model="lease_option_fee_credit" value="Partial" id="lo_fee_credit_partial">
-                <label class="form-check-label" for="lo_fee_credit_partial">Partial</label>
-            </div>
+        <div class="input-cover">
+            <select wire:model="lease_option_fee_credit" class="form-control has-icon"
+                data-icon="fa-solid fa-money-check-alt">
+                <option value="">Select</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+                <option value="Partial">Partial</option>
+            </select>
         </div>
     </div>
 
@@ -1191,19 +1182,14 @@
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
-        <div class="d-flex gap-3 mt-2">
-            <div class="form-check">
-                <input class="form-check-input" type="radio" wire:model="lease_option_maintenance" value="Seller" id="lo_maint_seller">
-                <label class="form-check-label" for="lo_maint_seller">Seller</label>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="radio" wire:model="lease_option_maintenance" value="Tenant-Buyer" id="lo_maint_buyer">
-                <label class="form-check-label" for="lo_maint_buyer">Tenant-Buyer</label>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="radio" wire:model="lease_option_maintenance" value="Shared" id="lo_maint_shared">
-                <label class="form-check-label" for="lo_maint_shared">Shared</label>
-            </div>
+        <div class="input-cover">
+            <select wire:model="lease_option_maintenance" class="form-control has-icon"
+                data-icon="fa-solid fa-tools">
+                <option value="">Select</option>
+                <option value="Seller">Seller</option>
+                <option value="Tenant-Buyer">Tenant-Buyer</option>
+                <option value="Shared">Shared</option>
+            </select>
         </div>
     </div>
 
@@ -1354,15 +1340,13 @@
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
-        <div class="d-flex gap-3 mt-2">
-            <div class="form-check">
-                <input class="form-check-input" type="radio" wire:model="lease_purchase_rent_credit" value="Yes" id="lp_rent_credit_yes">
-                <label class="form-check-label" for="lp_rent_credit_yes">Yes</label>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="radio" wire:model="lease_purchase_rent_credit" value="No" id="lp_rent_credit_no">
-                <label class="form-check-label" for="lp_rent_credit_no">No</label>
-            </div>
+        <div class="input-cover">
+            <select wire:model="lease_purchase_rent_credit" class="form-control has-icon"
+                data-icon="fa-solid fa-hand-holding-usd">
+                <option value="">Select</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+            </select>
         </div>
     </div>
 
@@ -1403,19 +1387,14 @@
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
-        <div class="d-flex gap-3 mt-2">
-            <div class="form-check">
-                <input class="form-check-input" type="radio" wire:model="lease_purchase_maintenance" value="Seller" id="lp_maint_seller">
-                <label class="form-check-label" for="lp_maint_seller">Seller</label>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="radio" wire:model="lease_purchase_maintenance" value="Tenant-Buyer" id="lp_maint_buyer">
-                <label class="form-check-label" for="lp_maint_buyer">Tenant-Buyer</label>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="radio" wire:model="lease_purchase_maintenance" value="Shared" id="lp_maint_shared">
-                <label class="form-check-label" for="lp_maint_shared">Shared</label>
-            </div>
+        <div class="input-cover">
+            <select wire:model="lease_purchase_maintenance" class="form-control has-icon"
+                data-icon="fa-solid fa-tools">
+                <option value="">Select</option>
+                <option value="Seller">Seller</option>
+                <option value="Tenant-Buyer">Tenant-Buyer</option>
+                <option value="Shared">Shared</option>
+            </select>
         </div>
     </div>
 
@@ -1673,19 +1652,14 @@
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
-        <div class="d-flex gap-3 mt-2">
-            <div class="form-check">
-                <input class="form-check-input" type="radio" wire:model="nft_gas_fees" value="Buyer" id="nft_fees_buyer">
-                <label class="form-check-label" for="nft_fees_buyer">Buyer</label>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="radio" wire:model="nft_gas_fees" value="Seller" id="nft_fees_seller">
-                <label class="form-check-label" for="nft_fees_seller">Seller</label>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="radio" wire:model="nft_gas_fees" value="Split" id="nft_fees_split">
-                <label class="form-check-label" for="nft_fees_split">Split</label>
-            </div>
+        <div class="input-cover">
+            <select wire:model="nft_gas_fees" class="form-control has-icon"
+                data-icon="fa-solid fa-gas-pump">
+                <option value="">Select</option>
+                <option value="Buyer">Buyer</option>
+                <option value="Seller">Seller</option>
+                <option value="Split">Split</option>
+            </select>
         </div>
     </div>
 @endif
