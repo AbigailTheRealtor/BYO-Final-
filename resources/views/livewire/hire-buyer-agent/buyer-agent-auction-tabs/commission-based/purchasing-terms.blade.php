@@ -1464,15 +1464,14 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <input type="text" wire:model="crypto_percentage" class="form-control has-icon"
+            <input type="text" wire:model="crypto_percentage" class="form-control"
                 placeholder="Enter percentage to be paid with cryptocurrency (e.g., 50)"
                 data-error-id="crypto_percentage_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
                 required>
             <span class="input-group-text-seller">%</span>
         </div>
-
-                <span class="error mt-2" id="crypto_percentage_error"></span>
+        <span class="error mt-2" id="crypto_percentage_error"></span>
 
     </div>
 
@@ -1485,14 +1484,14 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <input type="text" wire:model="cash_percentage_crypto" class="form-control has-icon"
+            <input type="text" wire:model="cash_percentage_crypto" class="form-control"
                 placeholder="Enter percentage to be paid with cash (e.g., 50)"
                 data-error-id="cash_percentage_crypto_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
                 required>
             <span class="input-group-text-seller">%</span>
         </div>
-                <span class="error mt-2" id="cash_percentage_crypto_error"></span>
+        <span class="error mt-2" id="cash_percentage_crypto_error"></span>
 
     </div>
 
