@@ -667,23 +667,20 @@
     </div>
 
     <div class="form-group">
-        <label class="fw-bold">Maximum Interest Rate of Assumable Loan:<span class="text-danger">*</span></label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the maximum interest rate the Buyer is willing to accept for the assumable loan (e.g., 5).">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <input type="text" wire:model="max_assumable_rate" class="form-control has-icon"
+        <label class="fw-bold">Maximum Interest Rate of Assumable Loan:<span class="text-danger">*</span>
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter the maximum interest rate the Buyer is willing to accept for the assumable loan (e.g., 5).">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-group">
+            <input type="text" wire:model="max_assumable_rate" class="form-control"
                 placeholder="Enter maximum acceptable interest rate (e.g., 5)"
-                 data-error-id="max_assumable_rate_error" oninput="validateInput(this)"
-                onblur="reformatNumber(this)" onpaste="handlePaste(event)
-                " required>
-            <span class="input-group-text-seller">%</span>
-
+                data-error-id="max_assumable_rate_error" oninput="validateInput(this)"
+                onblur="reformatNumber(this)" onpaste="handlePaste(event)" required>
+            <span class="input-group-text">%</span>
         </div>
-                <span class="error mt-2" id="max_assumable_rate_error"></span>
-
+        <span class="error mt-2" id="max_assumable_rate_error"></span>
     </div>
 
     <div class="form-group mt-3">
