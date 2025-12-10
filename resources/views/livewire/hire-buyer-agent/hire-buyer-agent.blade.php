@@ -1004,11 +1004,6 @@
 
         function initializeFullService() {
 
-            // Initialize all .multiple selects
-            $('.multiple').select2({
-                placeholder: "Select",
-                allowClear: true
-            });
 
             $('#property_items').select2({
                 placeholder: "Select property style",
@@ -1065,49 +1060,6 @@
                 });
             });
 
-            // Initialize Select2 for acceptable_unit_types (Acceptable Unit Type)
-            function initAcceptableUnitTypesSelect2() {
-                if ($('.acceptable-unit-types-select').length > 0 && !$('.acceptable-unit-types-select').hasClass('select2-hidden-accessible')) {
-                    $('.acceptable-unit-types-select').select2({
-                        width: '100%',
-                        placeholder: 'Select'
-                    });
-
-                    // Bind change event
-                    $('.acceptable-unit-types-select').off('change').on('change', function(e) {
-                        let selectedValues = $(this).val() || [];
-                        @this.set('acceptable_unit_types', selectedValues);
-                    });
-                }
-            }
-
-            // Reinitialize Select2 after Livewire update
-            Livewire.hook('message.processed', (message, component) => {
-                // Reinitialize all .multiple elements
-                $('.multiple').not('.select2-hidden-accessible').select2({
-                    placeholder: "Select",
-                    allowClear: true
-                });
-                initAcceptableUnitTypesSelect2();
-            });
-
-            // Initialize with any existing values
-            Livewire.hook('component.initialized', (component) => {
-                initAcceptableUnitTypesSelect2();
-            });
-
-            // Also try on DOMContentLoaded
-            document.addEventListener('DOMContentLoaded', function() {
-                initAcceptableUnitTypesSelect2();
-            });
-
-            // Call immediately in case DOM is already ready
-            initAcceptableUnitTypesSelect2();
-
-            // Also call after a short delay to handle dynamic rendering
-            setTimeout(function() {
-                initAcceptableUnitTypesSelect2();
-            }, 500);
 
             // Function to toggle "auction time" input field
             function toggleAuctionTime(selectElement) {
