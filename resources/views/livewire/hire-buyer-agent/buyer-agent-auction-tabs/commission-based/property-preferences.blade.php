@@ -798,7 +798,8 @@
         <span class="error mt-2" id="assets_error"></span>
     </div>
 @endif
-{{-- “Other” text input --}}
+{{-- "Other" text input (only for Income, Commercial, Business) --}}
+@if (in_array($property_type, ['Income', 'Commercial', 'Business']))
 <div class="form-group other_assets d-none" wire:ignore>
     <div class="input-cover">
         <input type="text" wire:model="assets_other" class="form-control has-icon" data-icon="fas fa-building"
@@ -806,6 +807,7 @@
     </div>
     <span class="error mt-2" id="assets_other_error"></span>
 </div>
+@endif
 
 {{-- 3) Income-only fields --}}
 @if ($property_type === 'Income')
