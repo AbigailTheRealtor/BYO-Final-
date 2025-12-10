@@ -94,6 +94,22 @@ This is a Laravel-based real estate auction platform that enables transparent bi
   - Fixed by changing tab name to "Broker Compensation" (line 1687 in tenant-agent-auction.blade.php)
   - Full title "Broker Compensation & Agency Agreement Terms" retained as H3 header inside tab content
 
+### Tab 3 Purchasing Terms & Livewire Fixes (December 10, 2025):
+- **Other Special Sale Provision Fix**: Removed label "Other Special Sale Provision:" to match Seller flow
+  - Updated placeholder to "Enter special sale provision (e.g., Divorce Sale, Third-Party Approval)" (removed "other")
+- **Assignment Fee to Broker**: Updated placeholder from "Enter flat fee (e.g., 2500)" to "Enter flat fee amount (e.g., 2500)"
+  - assignment_fee_type already initialized to '$' in TenantAgentAuction.php
+- **Livewire DOM Morphing Fixes**: Converted JavaScript d-none toggles to Blade @if conditionals with wire:key attributes:
+  - Business Type wrapper: `wire:key="business-type-wrapper"` with @if ($property_type === 'Business')
+  - Other Business Type: `wire:key="business-type-other"` with @if ($business_type_selected === 'Other')
+  - Other Property Items: `wire:key="other-property-items-wrapper"` with @if (in_array('Other', $property_items))
+  - Acceptable Property Conditions: `wire:key="property-conditions-wrapper"`
+  - Other Property Condition: `wire:key="other-property-condition-wrapper"` with @if (in_array('Other', $condition_prop_buyer))
+  - Other Bedrooms: `wire:key="other-bedrooms-wrapper"` with @if ($bedrooms === 'Other')
+  - Other Bathrooms: `wire:key="other-bathrooms-wrapper"` with @if ($bathrooms === 'Other')
+  - Other Assets: `wire:key="other-assets-wrapper"` with @if (in_array('Other', $assets))
+- **Technical Pattern**: Using Blade conditionals + wire:key is more reliable than JavaScript d-none toggling for Livewire reactivity
+
 ### Income Property Tabs Fix (December 9, 2025):
 - **Root Cause Found**: Unclosed `<div>` tag in property-preferences.blade.php
   - Line 936 opened `<div class="form-group">` for "Acceptable Number of Units" section
