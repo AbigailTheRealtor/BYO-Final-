@@ -1025,45 +1025,44 @@
 
 <!-- Lease Option -->
 @if ($offered_financing === 'Lease Option')
+    <!-- 1. Buyer's Desired Offering Price for Lease Option -->
     <div class="form-group">
         <label class="fw-bold">Buyer's Desired Offering Price for Lease Option:<span
                 class="text-danger">*</span></label>
-
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the price the Buyer is willing to pay if the purchase option is exercised.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
             <span class="input-group-text-seller">$</span>
-
             <input type="text" wire:model="lease_option_price" class="form-control has-icon"
                 placeholder="Enter offering price for lease option (e.g., 500000)"
-                 data-error-id="lease_option_price_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)" required
-                >
+                data-error-id="lease_option_price_error"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)" required>
         </div>
-
-            <span class="error mt-2" id="alease_option_price_error"></span>
-
+        <span class="error mt-2" id="lease_option_price_error"></span>
     </div>
 
-    <div class="form-group">
-        <label class="fw-bold">Specific Terms Proposed for Lease Option:<span class="text-danger">*</span></label>
-
+    <!-- 2. Monthly Payment Buyer is Offering -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Monthly Payment Buyer is Offering:<span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter any proposed terms for the lease option (e.g., inspections allowed during lease term).">
+            title="Enter the monthly lease payment the Buyer is offering.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <input type="text" wire:model="lease_option_terms" class="form-control has-icon"
-                data-icon="fa-solid fa-file-alt"
-                placeholder="Enter any conditions or requirements for the lease option (e.g., Buyer may conduct inspections during lease term, Seller to maintain property)" required>
+            <span class="input-group-text-seller">$</span>
+            <input type="text" wire:model="lease_option_payment" class="form-control has-icon"
+                placeholder="Enter monthly payment amount (e.g., 2500)"
+                data-error-id="lease_option_payment_error"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)" required>
         </div>
+        <span class="error mt-2" id="lease_option_payment_error"></span>
     </div>
 
-    <div class="form-group">
+    <!-- 3. Proposed Duration of Lease (Months) -->
+    <div class="form-group mt-3">
         <label class="fw-bold">Proposed Duration of Lease (Months):<span class="text-danger">*</span></label>
-
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the number of months the Buyer wishes to lease before having the option to purchase.">
             <i class="fa-solid fa-circle-info"></i>
@@ -1072,48 +1071,12 @@
             <input type="number" wire:model="lease_option_duration" class="form-control has-icon"
                 data-icon="fa-regular fa-calendar-days"
                 placeholder="Enter the proposed lease duration in months (e.g., 6)" required>
-
         </div>
     </div>
 
-    <div class="form-group">
-        <label class="fw-bold">Monthly Payment Buyer is Offering:<span class="text-danger">*</span></label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the monthly lease payment the Buyer is offering.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <span class="input-group-text-seller">$</span>
-
-            <input type="text" wire:model="lease_option_payment" class="form-control has-icon"
-                placeholder="Enter monthly payment amount (e.g., 2500)" required
-                 data-error-id="lease_option_payment_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
-               required >
-
-        </div>
-        <span class="error mt-2" id="lease_option_payment_error"></span>
-
-    </div>
-
-    <div class="form-group">
-        <label class="fw-bold">Conditions or Requirements for Lease Option:<span class="text-danger">*</span></label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter any additional requirements or limitations (e.g., option exercisable after 12 months).">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <input type="text" wire:model="lease_option_conditions" class="form-control has-icon"
-                data-icon="fa-solid fa-file-alt"
-                placeholder="Enter any conditions or requirements for the lease option (e.g., Buyer may exercise option after 12 months, Property must pass inspection)" required>
-        </div>
-    </div>
-
-    <div class="form-group">
+    <!-- 4. Offered Option Fee -->
+    <div class="form-group mt-3">
         <label class="fw-bold">Offered Option Fee:<span class="text-danger">*</span></label>
-
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the non-refundable fee the Buyer is offering for the option, if applicable.">
             <i class="fa-solid fa-circle-info"></i>
@@ -1129,22 +1092,20 @@
     </div>
 
     @if ($has_option_fee === 'Yes')
-        <div class="form-group">
-            <label class="fw-bold">Offered Option Fee:</label>
+        <div class="form-group mt-2">
+            <label class="fw-bold">Offered Option Fee Amount:</label>
             <div class="input-cover">
-
                 <span class="input-group-text-seller">$</span>
-
                 <input type="text" wire:model="option_fee_amount" class="form-control has-icon"
-                    placeholder="Enter option fee amount (e.g., 15000)"  data-error-id="option_fee_amount_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                    placeholder="Enter option fee amount (e.g., 15000)"
+                    data-error-id="option_fee_amount_error"
+                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             </div>
-                                    <span class="error mt-2" id="option_fee_amount_error"></span>
-
+            <span class="error mt-2" id="option_fee_amount_error"></span>
         </div>
     @endif
 
-    <!-- Option Fee Credit Toward Purchase Price -->
+    <!-- 5. Option Fee Credit Toward Purchase Price -->
     <div class="form-group mt-3">
         <label class="fw-bold">Option Fee Credit Toward Purchase Price:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1174,7 +1135,35 @@
     </div>
     @endif
 
-    <!-- Maintenance / Repair Responsibility -->
+    <!-- 6. Conditions or Requirements for Lease Option -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Conditions or Requirements for Lease Option:<span class="text-danger">*</span></label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter any additional requirements or limitations (e.g., option exercisable after 12 months).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <input type="text" wire:model="lease_option_conditions" class="form-control has-icon"
+                data-icon="fa-solid fa-file-alt"
+                placeholder="Enter any conditions or requirements for the lease option (e.g., Buyer may exercise option after 12 months, Property must pass inspection)" required>
+        </div>
+    </div>
+
+    <!-- 7. Specific Terms Proposed for Lease Option -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Specific Terms Proposed for Lease Option:<span class="text-danger">*</span></label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter any proposed terms for the lease option (e.g., inspections allowed during lease term).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <input type="text" wire:model="lease_option_terms" class="form-control has-icon"
+                data-icon="fa-solid fa-file-alt"
+                placeholder="Enter any conditions or requirements for the lease option (e.g., Buyer may conduct inspections during lease term, Seller to maintain property)" required>
+        </div>
+    </div>
+
+    <!-- 8. Maintenance / Repair Responsibility -->
     <div class="form-group mt-3">
         <label class="fw-bold">Maintenance / Repair Responsibility:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1193,7 +1182,7 @@
         </div>
     </div>
 
-    <!-- Extension Terms -->
+    <!-- 9. Extension Terms -->
     <div class="form-group mt-3">
         <label class="fw-bold">Extension Terms:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
