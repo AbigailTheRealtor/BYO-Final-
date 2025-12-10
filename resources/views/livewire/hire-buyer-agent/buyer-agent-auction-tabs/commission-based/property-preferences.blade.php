@@ -1182,7 +1182,7 @@
         </label>
 
 
-        <div class="input-cover">
+        <div class="input-cover" wire:ignore>
             <select wire:model="number_of_unit_type" id="number_of_unit_type"
                 class="form-control has-icon select2-multiple" data-icon="fa-solid fa-home input-icon2" multiple>
                 @foreach ($unit_types as $row_pt)
@@ -1192,6 +1192,38 @@
             </select>
         </div>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            initUnitTypeSelect2();
+        });
+        document.addEventListener('livewire:load', function() {
+            initUnitTypeSelect2();
+            Livewire.hook('message.processed', function() {
+                initUnitTypeSelect2();
+            });
+        });
+        function initUnitTypeSelect2() {
+            var $select = $('#number_of_unit_type');
+            if ($select.length && !$select.hasClass('select2-hidden-accessible')) {
+                $select.select2({
+                    placeholder: 'Select',
+                    allowClear: true,
+                    width: '100%'
+                }).on('change', function() {
+                    var values = $(this).val() || [];
+                    @this.set('number_of_unit_type', values);
+                    var wrapper = document.getElementById('other_unit_type_wrapper');
+                    if (wrapper) {
+                        if (values.includes('Other')) {
+                            wrapper.classList.remove('d-none');
+                        } else {
+                            wrapper.classList.add('d-none');
+                        }
+                    }
+                });
+            }
+        }
+    </script>
     <div class="form-group other_unit_type_wrapper {{ is_array($number_of_unit_type) && in_array('Other', $number_of_unit_type) ? '' : 'd-none' }}" id="other_unit_type_wrapper">
         <label class="fw-bold">Other Unit Type:</label>
         <div class="input-cover">
