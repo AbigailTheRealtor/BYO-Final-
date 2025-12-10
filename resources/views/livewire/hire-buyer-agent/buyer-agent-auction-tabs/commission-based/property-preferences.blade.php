@@ -259,17 +259,17 @@
     <span class="error mt-2" id="other_property_items_error"></span>
 </div>
 
-{{-- Business Type - shown inline for Vacant Land when Business is selected as property style --}}
-@if ($property_type === 'Vacant Land' && is_array($property_items) && in_array('Business', $property_items))
+{{-- Business Type - shown inline when Business is selected as Property Type --}}
+@if ($property_type === 'Business')
 <div class="form-group mt-3">
     <label class="fw-bold">Business Type:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select the type of business the Buyer is interested in for this vacant land.">
+            title="Select the type of business the Buyer is interested in purchasing.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
     <div class="input-cover">
-        <select wire:model="business_type_selected" id="business_type_vacant" class="form-control has-icon"
+        <select wire:model="business_type_selected" id="business_type_inline" class="form-control has-icon"
             data-icon="fa-solid fa-briefcase">
             <option value="">Select</option>
             @foreach ($business_type as $item)
@@ -287,28 +287,6 @@
     </div>
 </div>
 @endif
-@else
-{{-- For non-Vacant Land property types, keep the JavaScript-controlled version --}}
-<div class="form-group mt-3 business_type d-none">
-    <label class="fw-bold">Business Type:</label>
-    <div class="input-cover">
-        <select wire:model="business_type" id="business_type" class="form-control has-icon"
-            data-icon="fa-solid fa-home">
-            <option value="">Select</option>
-            @foreach ($business_type as $item)
-                <option value="{{ $item['name'] }}">{{ $item['name'] }}</option>
-            @endforeach
-        </select>
-    </div>
-</div>
-<!-- Other Business Type Input -->
-<div class="form-group other-business-input d-none">
-    <div class="input-cover">
-        <input type="text" wire:model="other_business_type" class="form-control has-icon"
-            data-icon="fa-solid fa-home"
-            placeholder="Enter other business type (e.g., Recording Studio, Event Venue, Repair Shop)">
-    </div>
-</div>
 @endif
 
 @if ($property_type !== 'Vacant Land')
