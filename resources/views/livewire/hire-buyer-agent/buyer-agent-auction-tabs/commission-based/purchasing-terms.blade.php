@@ -595,7 +595,6 @@
 
     @if (($seller_amortization_type ?? '') === 'Other')
     <div class="form-group mt-2">
-        <label class="fw-bold">Other Amortization Type:</label>
         <div class="input-cover">
             <input type="text" wire:model="seller_amortization_other" class="form-control has-icon"
                 data-icon="fa-solid fa-chart-line"
@@ -627,7 +626,6 @@
 
     @if (($seller_payment_frequency ?? '') === 'Other')
     <div class="form-group mt-2">
-        <label class="fw-bold">Other Payment Frequency:</label>
         <div class="input-cover">
             <input type="text" wire:model="seller_payment_frequency_other" class="form-control has-icon"
                 data-icon="fa-solid fa-calendar-check"
