@@ -1191,20 +1191,9 @@
                 @foreach ($unit_types as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach
-                <option value="Other">Other</option>
             </select>
         </div>
     </div>
-    @if (is_array($number_of_unit_type) && in_array('Other', $number_of_unit_type))
-        <div class="form-group">
-            <label class="fw-bold">Other Unit Type:</label>
-            <div class="input-cover">
-                <input type="text" wire:model="number_of_unit_type_other" class="form-control has-icon"
-                    data-icon="fa-solid fa-home" placeholder="Enter acceptable unit types (e.g., Live/Work Unit, Boarding House, Accessory Dwelling Unit)">
-            </div>
-            <span class="error mt-2" id="number_of_unit_type_error"></span>
-        </div>
-    @endif
 @endif
 @if ($property_type !== 'Residential' && $property_type !== 'Vacant Land')
 <div class="form-group">
