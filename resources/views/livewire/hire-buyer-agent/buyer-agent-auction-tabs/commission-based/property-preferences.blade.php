@@ -672,7 +672,8 @@
     </div>
 @endif
 
-<!-- Non-Negotiable Amenities and Property Features -->
+<!-- Non-Negotiable Amenities and Property Features (hidden for Vacant Land) -->
+@if ($property_type !== 'Vacant Land')
 <div class="form-group" wire:ignore.self>
     <label class="fw-bold">Non-Negotiable Amenities and Property Features:
 
@@ -724,6 +725,7 @@
 
     </div>
 </div>
+@endif
 
 {{-- 1) Business & Real Estate Purchase Requirements (Business Opportunity only) --}}
 @if ($property_type === 'Business')
