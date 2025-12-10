@@ -1184,7 +1184,8 @@
 
         <div class="input-cover" wire:ignore>
             <select wire:model="number_of_unit_type" id="number_of_unit_type"
-                class="form-control has-icon select2-multiple" data-icon="fa-solid fa-home input-icon2" multiple>
+                class="form-control has-icon select2-multiple multiple" data-icon="fa-solid fa-home input-icon2" multiple>
+                <option value="">Select</option>
                 @foreach ($unit_types as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach

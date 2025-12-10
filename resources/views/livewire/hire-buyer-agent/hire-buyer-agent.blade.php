@@ -1004,6 +1004,11 @@
 
         function initializeFullService() {
 
+            // Initialize all .multiple selects
+            $('.multiple').select2({
+                placeholder: "Select",
+                allowClear: true
+            });
 
             $('#property_items').select2({
                 placeholder: "Select property style",
@@ -1088,6 +1093,11 @@
 
             // Reinitialize Select2 after Livewire update
             Livewire.hook('message.processed', (message, component) => {
+                // Reinitialize all .multiple elements
+                $('.multiple').not('.select2-hidden-accessible').select2({
+                    placeholder: "Select",
+                    allowClear: true
+                });
                 initNumberOfUnitTypeSelect2();
             });
 
