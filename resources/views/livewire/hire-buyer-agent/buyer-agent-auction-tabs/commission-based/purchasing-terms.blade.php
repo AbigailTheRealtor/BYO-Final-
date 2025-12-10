@@ -62,64 +62,42 @@
 
     <!-- If Buyer is Under Contract (Yes) -->
     @if ($sale_provision_assignment === 'Yes')
-        {{-- <div class="form-group mt-3">
-            <label class="fw-bold">Assignment Fee to Broker:</label>
-            <div class="input-group">
-                <div class="input-group-prepend">
-                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown"
-                        aria-haspopup="true" aria-expanded="false" style="height: 100%;">
-                        {{ $assignment_fee_type }}
-                    </button>
-                    <div class="dropdown-menu">
-                        <a class="dropdown-item" href="#" wire:click.prevent="setAssignmentFeeType('$')">$ (Flat
-                            Fee)</a>
-                        <a class="dropdown-item" href="#" wire:click.prevent="setAssignmentFeeType('%')">%
-                            (Percentage)</a>
-                    </div>
-                </div>
-                <input type="number" wire:model="assignment_fee_amount" class="form-control"
-                    placeholder="{{ $assignment_fee_type === '$' ? 'Enter flat fee (e.g., 2500)' : 'Enter percentage of contract assignment value (e.g., 2)' }}">
-            </div>
-        </div> --}}
         <div class="form-group mt-3">
-            <label class="fw-bold">Assignment Fee to Broker:</label>
-            <div class="input-group">
+            <label class="fw-bold">Assignment Fee to Broker:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    title="Select how the assignment fee will be structured - either as a flat dollar amount or as a percentage of the contract assignment value.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+            <div class="input-cover mt-2">
+                <select wire:model="assignment_fee_type" class="form-control has-icon"
+                    data-icon="fa-solid fa-file-invoice-dollar">
+                    <option value="">Select</option>
+                    <option value="$">Flat Fee</option>
+                    <option value="%">Percentage of Contract Assignment Value</option>
+                </select>
+            </div>
+
+            <!-- Dynamic Inputs Based on Selection -->
+            <div class="mt-3">
                 @if ($assignment_fee_type === '$')
-                    <!-- Show dropdown button first for $ -->
-                    <div class="input-group-prepend">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown"
-                            aria-haspopup="true" aria-expanded="false" style="height: 100%;">
-                            {{ $assignment_fee_type }}
-                        </button>
-                        <div class="dropdown-menu">
-                            <a class="dropdown-item" href="#" wire:click.prevent="setAssignmentFeeType('$')">$
-                                (Flat Fee)</a>
-                            <a class="dropdown-item" href="#" wire:click.prevent="setAssignmentFeeType('%')">%
-                                (Percentage)</a>
-                        </div>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="text" wire:model="assignment_fee_amount" class="form-control"
+                            placeholder="Enter flat fee amount (e.g., 2500)"
+                            data-error-id="assignment_fee_amount_error"
+                            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
-                    <input type="number" wire:model="assignment_fee_amount" class="form-control"
-                        placeholder="Enter flat fee amount (e.g., 2500)">
-                @else
-                    <!-- Show input first for % -->
-                    <input type="number" wire:model="assignment_fee_amount" class="form-control"
-                        placeholder="Enter percentage (e.g., 2)">
-                    <div class="input-group-append">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown"
-                            aria-haspopup="true" aria-expanded="false" style="height: 100%;">
-                            {{ $assignment_fee_type }}
-                        </button>
-                        <div class="dropdown-menu">
-                            <a class="dropdown-item" href="#" wire:click.prevent="setAssignmentFeeType('$')">$
-                                (Flat Fee)</a>
-                            <a class="dropdown-item" href="#" wire:click.prevent="setAssignmentFeeType('%')">%
-                                (Percentage)</a>
-                        </div>
+                    <span class="error mt-2" id="assignment_fee_amount_error"></span>
+                @elseif($assignment_fee_type === '%')
+                    <div class="input-group">
+                        <input type="number" wire:model="assignment_fee_amount" class="form-control"
+                            placeholder="Enter percentage of contract assignment value (e.g., 2)">
+                        <span class="input-group-text">%</span>
                     </div>
                 @endif
             </div>
         </div>
-
     @endif
 
     <!-- If Buyer is NOT Under Contract (No) -->
