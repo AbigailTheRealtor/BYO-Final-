@@ -1183,7 +1183,7 @@
 
 
         <div class="input-cover">
-            <select wire:model="number_of_unit_type"
+            <select wire:model="number_of_unit_type" id="number_of_unit_type"
                 class="number_of_unit_type form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-home input-icon2" multiple>
                 @foreach ($unit_types as $row_pt)
@@ -1193,7 +1193,7 @@
             </select>
         </div>
     </div>
-    <div class="form-group other_unit_type_wrapper {{ is_array($number_of_unit_type) && in_array('Other', $number_of_unit_type) ? '' : 'd-none' }}">
+    <div class="form-group other_unit_type_wrapper {{ is_array($number_of_unit_type) && in_array('Other', $number_of_unit_type) ? '' : 'd-none' }}" id="other_unit_type_wrapper">
         <label class="fw-bold">Other Unit Type:</label>
         <div class="input-cover">
             <input type="text" wire:model="number_of_unit_type_other" class="form-control has-icon"

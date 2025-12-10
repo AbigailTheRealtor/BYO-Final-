@@ -1062,28 +1062,29 @@
 
             // Initialize Select2 for number_of_unit_type (Acceptable Unit Type)
             function initNumberOfUnitTypeSelect2() {
-                $('.number_of_unit_type').select2({
-                    placeholder: "Select unit types",
-                    allowClear: true,
-                });
-            }
-            initNumberOfUnitTypeSelect2();
+                if ($('#number_of_unit_type').length > 0 && !$('#number_of_unit_type').hasClass('select2-hidden-accessible')) {
+                    $('#number_of_unit_type').select2({
+                        placeholder: "Select unit types",
+                        allowClear: true,
+                    });
 
-            // Update Livewire property on change and toggle Other input
-            $('.number_of_unit_type').on('change', function(e) {
-                let selectedValues = $(this).val() || [];
-                @this.set('number_of_unit_type', selectedValues);
+                    // Bind change event
+                    $('#number_of_unit_type').off('change').on('change', function(e) {
+                        let selectedValues = $(this).val() || [];
+                        @this.set('number_of_unit_type', selectedValues);
 
-                // Toggle visibility of Other input
-                const otherWrapper = document.querySelector('.other_unit_type_wrapper');
-                if (otherWrapper) {
-                    if (selectedValues.includes('Other')) {
-                        otherWrapper.classList.remove('d-none');
-                    } else {
-                        otherWrapper.classList.add('d-none');
-                    }
+                        // Toggle visibility of Other input
+                        const otherWrapper = document.getElementById('other_unit_type_wrapper');
+                        if (otherWrapper) {
+                            if (selectedValues.includes('Other')) {
+                                otherWrapper.classList.remove('d-none');
+                            } else {
+                                otherWrapper.classList.add('d-none');
+                            }
+                        }
+                    });
                 }
-            });
+            }
 
             // Reinitialize Select2 after Livewire update
             Livewire.hook('message.processed', (message, component) => {
@@ -1092,6 +1093,11 @@
 
             // Initialize with any existing values
             Livewire.hook('component.initialized', (component) => {
+                initNumberOfUnitTypeSelect2();
+            });
+
+            // Also try on DOMContentLoaded
+            document.addEventListener('DOMContentLoaded', function() {
                 initNumberOfUnitTypeSelect2();
             });
 
