@@ -290,17 +290,15 @@
 @endif
 
 @if ($property_type !== 'Vacant Land')
-    <div class="form-group" wire:ignore>
+    <div class="form-group">
         <label class="fw-bold">Acceptable Property Conditions:
-
-                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                        title="Select the property conditions that are acceptable to the Buyer.">
-                        <i class="fa-solid fa-circle-info"></i>
-                    </span>
-
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select the property conditions that are acceptable to the Buyer.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
         </label>
 
-        <div class="input-cover">
+        <div class="input-cover" wire:ignore>
             <select wire:model="condition_prop_buyer" id="condition_prop_buyer"
                 class="condition_prop_buyer form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-screwdriver-wrench input-icon2" multiple>
