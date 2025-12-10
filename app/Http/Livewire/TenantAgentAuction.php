@@ -310,7 +310,9 @@ class TenantAgentAuction extends Component
     
     // Seller Financing additional fields
     public $seller_amortization_type = '';
+    public $seller_amortization_other = '';
     public $seller_payment_frequency = '';
+    public $seller_payment_frequency_other = '';
     public $seller_late_fee_type = '$';
     public $seller_late_fee_amount = '';
     public $lease_fee_type = '';

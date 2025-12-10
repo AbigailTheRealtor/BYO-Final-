@@ -1,0 +1,135 @@
+FINAL REPLIT INSTRUCTIONS — Hire a Buyer’s Agent → Tab 3 → Seller Financing
+
+Apply all changes below to the Seller Financing section under Offered Financing/Currency.
+
+1️⃣ Fix Extra Space in Placeholder — Desired Interest Rate
+
+There is an extra space before “Enter interest rate.”
+
+Remove it so the placeholder begins flush-left.
+
+Correct placeholder:
+
+Enter interest rate (e.g., 6.5)
+
+2️⃣ Balloon Payment Formatting Fixes
+If user selects Yes for Balloon Payment:
+A. Replace the icon
+
+Change the balloon payment input icon to match the standard currency symbol component used across all financing fields.
+
+B. Correct placeholder
+Enter balloon payment amount (e.g., 100000)
+
+C. Remove trailing $
+
+A second $ symbol is displaying at the right side of the input.
+
+Delete the extra $, so only one currency symbol appears on the left.
+
+3️⃣ Down Payment & Seller Financing Amount — Remove Extra “$”
+
+For:
+
+Down Payment
+
+Seller Financing Amount
+
+Remove the duplicate right-side $ symbol so formatting matches the rest of the UI.
+
+Each field should use:
+
+One $ symbol on the left
+
+No extra symbol on the right
+
+Placeholder text aligned to the left
+
+4️⃣ Ensure Consistent Currency Field Formatting
+
+All currency fields (Balloon Payment, Down Payment, Seller Financing) must use:
+
+The same input component
+
+The same left-positioned $ icon
+
+No trailing icons
+
+Left-aligned placeholder text
+
+Consistent padding/margins
+
+5️⃣ Amortization Type — Edit Options & Add Placeholder Logic
+Update the dropdown options
+
+Remove “Partially Amortized.”
+
+Add “Other” in its place.
+
+Final Amortization Type options:
+
+Fully Amortizing
+
+Interest-Only
+
+Other
+
+If user selects Other: show placeholder
+Enter custom amortization type (e.g., Hybrid, Graduated Payments, Step-Up Structure)
+
+Tooltip (unchanged but confirm displayed correctly):
+Select whether payments will fully amortize the loan over the term, be interest-only, or follow another structure.
+
+6️⃣ Payment Frequency — Update Options + Placeholder
+
+Location:
+Hire a Buyer’s Agent → Tab 3 → Seller Financing → Payment Frequency
+
+A. Update dropdown options to:
+
+Monthly
+
+Bi-Weekly
+
+Quarterly
+
+Annually
+
+Other
+
+B. If user selects Other: update placeholder
+
+New placeholder:
+
+Enter custom payment schedule (e.g., Semi-Annual, Lump Sum at Harvest)
+
+7️⃣ Late Payment Fee — Correct Placeholder & Tooltip
+Edit Placeholder
+Enter late fee and when it applies (e.g., $100 after 10 days late, or 5% of payment after 15 days)
+
+Edit Tooltip
+Enter the late payment fee and timing for when it applies. For example: “$100 after 10 days late” or “5% of the monthly payment after 15 days late.” This ensures both the amount and the grace period are clear.
+
+📌 Developer Summary (Copy/Paste)
+Under Hire a Buyer’s Agent → Tab 3 → Seller Financing:
+
+1. Remove leading space from Desired Interest Rate placeholder.
+2. Balloon Payment:
+   - Replace icon with standard currency symbol.
+   - Placeholder: "Enter balloon payment amount (e.g., 100000)"
+   - Remove trailing $ icon.
+3. Down Payment & Seller Financing:
+   - Remove trailing $ symbol.
+4. Standardize all currency fields to match the same component and formatting.
+5. Amortization Type:
+   - Replace "Partially Amortized" with "Other."
+   - If Other selected, show placeholder: 
+     "Enter custom amortization type (e.g., Hybrid, Graduated Payments, Step-Up Structure)"
+6. Payment Frequency:
+   - Options: Monthly, Bi-Weekly, Quarterly, Annually, Other.
+   - Update Other placeholder to: 
+     "Enter custom payment schedule (e.g., Semi-Annual, Lump Sum at Harvest)"
+7. Late Payment Fee:
+   - Placeholder: 
+     "Enter late fee and when it applies (e.g., $100 after 10 days late, or 5% of payment after 15 days)"
+   - Tooltip updated accordingly.

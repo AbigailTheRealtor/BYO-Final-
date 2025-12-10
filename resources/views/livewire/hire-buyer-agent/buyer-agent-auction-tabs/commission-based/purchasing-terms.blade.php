@@ -386,16 +386,8 @@
                         : 'Enter down payment amount (e.g., 100000)' }}"
                          data-error-id="down_payment_type_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)" required>
-
-                <!-- Suffix -->
-                <span class="input-group-text">
-                    {{ $down_payment_type === '$' ? '$' : '%' }}
-                </span>
-
-
-            <span class="error mt-2" id="down_payment_type_error"></span>
-
             </div>
+            <span class="error mt-2" id="down_payment_type_error"></span>
 
     </div>
 
@@ -426,16 +418,8 @@
                         : 'Enter seller financing amount (e.g., 400000)' }}"
                          data-error-id="seller_financing_amount_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)" required>
-
-                <!-- Suffix -->
-                <span class="input-group-text">
-                    {{ $seller_financing_type === '$' ? '$' : '%' }}
-                </span>
-
-
-            <span class="error mt-2" id="seller_financing_amount_error"></span>
-
             </div>
+            <span class="error mt-2" id="seller_financing_amount_error"></span>
 
     </div>
 
@@ -494,16 +478,14 @@
             title="Enter the interest rate the Buyer is offering.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover">
-            <input type="text" wire:model="interest_rate" class="form-control has-icon"
+        <div class="input-group">
+            <input type="text" wire:model="interest_rate" class="form-control"
                 placeholder="Enter interest rate (e.g., 6.5)"
                 data-error-id="interest_rate_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)" required>
-
-            <span class="input-group-text-seller">%</span>
-
+            <span class="input-group-text">%</span>
         </div>
-                    <span class="error mt-2" id="interest_rate_error"></span>
+        <span class="error mt-2" id="interest_rate_error"></span>
 
     </div>
 
@@ -573,17 +555,13 @@
         <div class="form-group">
             <label class="fw-bold">Balloon Payment Amount:</label>
             <div class="input-cover">
-
-                <input type="number" wire:model="balloon_payment_amount" class="form-control has-icon"
-                    data-icon="fa-solid fa-dollar-sign" placeholder="Enter balloon payment amount (e.g., 100000)"
-                    
-                     data-error-id="balloon_payment_amount_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)" 
-                >
+                <span class="input-group-text-seller">$</span>
+                <input type="text" wire:model="balloon_payment_amount" class="form-control has-icon"
+                    placeholder="Enter balloon payment amount (e.g., 100000)"
+                    data-error-id="balloon_payment_amount_error"
+                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             </div>
-
-                                <span class="error mt-2" id="balloon_payment_amount_error"></span>
-
+            <span class="error mt-2" id="balloon_payment_amount_error"></span>
         </div>
 
         <div class="form-group">
@@ -600,7 +578,7 @@
     <div class="form-group mt-3">
         <label class="fw-bold">Amortization Type:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select the loan repayment structure: Fully Amortized (equal payments over full term), Interest-Only (payments only cover interest), or Partially Amortized (remaining balance due at end).">
+                title="Select whether payments will fully amortize the loan over the term, be interest-only, or follow another structure.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -608,12 +586,23 @@
             <select wire:model="seller_amortization_type" class="form-control has-icon"
                 data-icon="fa-solid fa-chart-line">
                 <option value="">Select</option>
-                <option value="Fully Amortized">Fully Amortized</option>
+                <option value="Fully Amortizing">Fully Amortizing</option>
                 <option value="Interest-Only">Interest-Only</option>
-                <option value="Partially Amortized">Partially Amortized</option>
+                <option value="Other">Other</option>
             </select>
         </div>
     </div>
+
+    @if (($seller_amortization_type ?? '') === 'Other')
+    <div class="form-group mt-2">
+        <label class="fw-bold">Other Amortization Type:</label>
+        <div class="input-cover">
+            <input type="text" wire:model="seller_amortization_other" class="form-control has-icon"
+                data-icon="fa-solid fa-chart-line"
+                placeholder="Enter custom amortization type (e.g., Hybrid, Graduated Payments, Step-Up Structure)">
+        </div>
+    </div>
+    @endif
 
     <!-- Payment Frequency -->
     <div class="form-group mt-3">
@@ -631,32 +620,35 @@
                 <option value="Bi-Weekly">Bi-Weekly</option>
                 <option value="Quarterly">Quarterly</option>
                 <option value="Annually">Annually</option>
+                <option value="Other">Other</option>
             </select>
         </div>
     </div>
+
+    @if (($seller_payment_frequency ?? '') === 'Other')
+    <div class="form-group mt-2">
+        <label class="fw-bold">Other Payment Frequency:</label>
+        <div class="input-cover">
+            <input type="text" wire:model="seller_payment_frequency_other" class="form-control has-icon"
+                data-icon="fa-solid fa-calendar-check"
+                placeholder="Enter custom payment schedule (e.g., Semi-Annual, Lump Sum at Harvest)">
+        </div>
+    </div>
+    @endif
 
     <!-- Late Payment Fee -->
     <div class="form-group mt-3">
         <label class="fw-bold">Late Payment Fee:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter any late payment fee as a flat amount or percentage. If none, leave blank.">
+                title="Enter the late payment fee and timing for when it applies. For example: &quot;$100 after 10 days late&quot; or &quot;5% of the monthly payment after 15 days late.&quot; This ensures both the amount and the grace period are clear.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
-        <div class="input-group">
-            <select wire:model="seller_late_fee_type" class="form-select" style="max-width: 100px;">
-                <option value="$">$</option>
-                <option value="%">%</option>
-            </select>
-            <input type="text" wire:model="seller_late_fee_amount" class="form-control"
-                placeholder="{{ $seller_late_fee_type === '%' ? 'Enter late fee percentage (e.g., 5)' : 'Enter late fee amount (e.g., 50)' }}"
-                data-error-id="seller_late_fee_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-            <span class="input-group-text">
-                {{ $seller_late_fee_type === '$' ? '$' : '%' }}
-            </span>
+        <div class="input-cover">
+            <input type="text" wire:model="seller_late_fee_amount" class="form-control has-icon"
+                data-icon="fa-solid fa-clock"
+                placeholder="Enter late fee and when it applies (e.g., $100 after 10 days late, or 5% of payment after 15 days)">
         </div>
-        <span class="error mt-2" id="seller_late_fee_error"></span>
     </div>
 @endif
 
