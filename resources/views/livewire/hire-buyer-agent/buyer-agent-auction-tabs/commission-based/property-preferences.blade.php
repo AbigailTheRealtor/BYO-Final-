@@ -278,7 +278,7 @@
         </select>
     </div>
 </div>
-@if ($business_type_selected === 'Other')
+@if (($business_type_selected ?? '') === 'Other')
 <div class="form-group">
     <div class="input-cover">
         <input type="text" wire:model="other_business_type" class="form-control has-icon"
