@@ -1182,23 +1182,43 @@
         </label>
 
         <div class="input-cover">
-            <select wire:model="number_of_unit_type" id="number_of_unit_type"
-                class="form-control has-icon select2-multiple" data-icon="fa-solid fa-home input-icon2" multiple>
-                <option value="">Select</option>
-                @foreach ($unit_types as $row_pt)
-                    <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
-                @endforeach
+            <select wire:model="acceptable_unit_types"
+                class="form-control select2-multiple acceptable-unit-types-select"
+                name="acceptable_unit_types[]"
+                multiple
+                data-placeholder="Select">
+                <option value=""></option>
+                <option value="1 Bed/1 Bath">1 Bed/1 Bath</option>
+                <option value="1 Bedroom">1 Bedroom</option>
+                <option value="2 Bed/1 Bath">2 Bed/1 Bath</option>
+                <option value="2 Bed/2 Bath">2 Bed/2 Bath</option>
+                <option value="2 Bedroom">2 Bedroom</option>
+                <option value="3 Bed/1 Bath">3 Bed/1 Bath</option>
+                <option value="3 Bed/2 Bath">3 Bed/2 Bath</option>
+                <option value="3 Bedroom">3 Bedroom</option>
+                <option value="4 Bedroom or More">4 Bedroom or More</option>
+                <option value="4+ Bed/1 Bath">4+ Bed/1 Bath</option>
+                <option value="4+ Bed/2 Bath">4+ Bed/2 Bath</option>
+                <option value="Apartments">Apartments</option>
+                <option value="Efficiency">Efficiency</option>
+                <option value="Loft">Loft</option>
+                <option value="Manager's Unit">Manager's Unit</option>
+                <option value="Multi-Level">Multi-Level</option>
+                <option value="Penthouse">Penthouse</option>
+                <option value="Studio">Studio</option>
                 <option value="Other">Other</option>
             </select>
         </div>
-        <span class="error mt-2" id="number_of_unit_type_error"></span>
+        <span class="error mt-2" id="acceptable_unit_types_error"></span>
     </div>
-    <div class="form-group other_unit_type_wrapper {{ in_array('Other', $number_of_unit_type ?? []) ? '' : 'd-none' }}" id="other_unit_type_wrapper">
-        <div class="input-cover">
-            <input type="text" wire:model="number_of_unit_type_other" class="form-control has-icon"
-                data-icon="fa-solid fa-home" placeholder="Enter acceptable unit types (e.g., Live/Work Unit, Boarding House, Accessory Dwelling Unit)">
+    @if(in_array('Other', $acceptable_unit_types ?? []))
+        <div class="form-group mt-2">
+            <input type="text" class="form-control"
+                name="acceptable_unit_type_other"
+                wire:model="acceptable_unit_type_other"
+                placeholder="Enter acceptable unit types (e.g., Live/Work Unit, Boarding House, Accessory Dwelling Unit)">
         </div>
-    </div>
+    @endif
 @endif
 @if ($property_type !== 'Residential' && $property_type !== 'Vacant Land')
 <div class="form-group">

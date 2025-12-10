@@ -146,8 +146,8 @@ class BuyerAgentAuction extends Component
     public $property_criteria = '';
     public $unit_size = '';
     public $unit_size_other = '';
-    public $number_of_unit_type = [];
-    public $number_of_unit_type_other = '';
+    public $acceptable_unit_types = [];
+    public $acceptable_unit_type_other = '';
 
     public $leasing_55_plus = '';
     public $non_negotiable_amenities = [];

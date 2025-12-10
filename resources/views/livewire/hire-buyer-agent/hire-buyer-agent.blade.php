@@ -1065,28 +1065,18 @@
                 });
             });
 
-            // Initialize Select2 for number_of_unit_type (Acceptable Unit Type)
-            function initNumberOfUnitTypeSelect2() {
-                if ($('#number_of_unit_type').length > 0 && !$('#number_of_unit_type').hasClass('select2-hidden-accessible')) {
-                    $('#number_of_unit_type').select2({
-                        placeholder: "Select unit types",
-                        allowClear: true,
+            // Initialize Select2 for acceptable_unit_types (Acceptable Unit Type)
+            function initAcceptableUnitTypesSelect2() {
+                if ($('.acceptable-unit-types-select').length > 0 && !$('.acceptable-unit-types-select').hasClass('select2-hidden-accessible')) {
+                    $('.acceptable-unit-types-select').select2({
+                        width: '100%',
+                        placeholder: 'Select'
                     });
 
                     // Bind change event
-                    $('#number_of_unit_type').off('change').on('change', function(e) {
+                    $('.acceptable-unit-types-select').off('change').on('change', function(e) {
                         let selectedValues = $(this).val() || [];
-                        @this.set('number_of_unit_type', selectedValues);
-
-                        // Toggle visibility of Other input
-                        const otherWrapper = document.getElementById('other_unit_type_wrapper');
-                        if (otherWrapper) {
-                            if (selectedValues.includes('Other')) {
-                                otherWrapper.classList.remove('d-none');
-                            } else {
-                                otherWrapper.classList.add('d-none');
-                            }
-                        }
+                        @this.set('acceptable_unit_types', selectedValues);
                     });
                 }
             }
@@ -1098,25 +1088,25 @@
                     placeholder: "Select",
                     allowClear: true
                 });
-                initNumberOfUnitTypeSelect2();
+                initAcceptableUnitTypesSelect2();
             });
 
             // Initialize with any existing values
             Livewire.hook('component.initialized', (component) => {
-                initNumberOfUnitTypeSelect2();
+                initAcceptableUnitTypesSelect2();
             });
 
             // Also try on DOMContentLoaded
             document.addEventListener('DOMContentLoaded', function() {
-                initNumberOfUnitTypeSelect2();
+                initAcceptableUnitTypesSelect2();
             });
 
             // Call immediately in case DOM is already ready
-            initNumberOfUnitTypeSelect2();
+            initAcceptableUnitTypesSelect2();
 
             // Also call after a short delay to handle dynamic rendering
             setTimeout(function() {
-                initNumberOfUnitTypeSelect2();
+                initAcceptableUnitTypesSelect2();
             }, 500);
 
             // Function to toggle "auction time" input field
