@@ -503,6 +503,80 @@ This amount represents the portion of the purchase price that the Seller will fi
         </div>
     @endif
 
+    <!-- Amortization Type -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Amortization Type:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select whether payments will fully amortize the loan over the term, be interest-only, or follow another structure.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <select wire:model="seller_amortization_type" class="form-control has-icon"
+                data-icon="fa-solid fa-chart-line">
+                <option value="">Select</option>
+                <option value="Fully Amortizing">Fully Amortizing</option>
+                <option value="Interest-Only">Interest-Only</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+    </div>
+
+    @if (($seller_amortization_type ?? '') === 'Other')
+    <div class="form-group mt-2">
+        <div class="input-cover">
+            <input type="text" wire:model="seller_amortization_other" class="form-control has-icon"
+                data-icon="fa-solid fa-chart-line"
+                placeholder="Enter custom amortization type (e.g., Hybrid, Graduated Payments, Step-Up Structure)">
+        </div>
+    </div>
+    @endif
+
+    <!-- Payment Frequency -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Payment Frequency:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select how often payments will be made to the Seller.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <select wire:model="seller_payment_frequency" class="form-control has-icon"
+                data-icon="fa-solid fa-calendar-check">
+                <option value="">Select</option>
+                <option value="Monthly">Monthly</option>
+                <option value="Bi-Weekly">Bi-Weekly</option>
+                <option value="Quarterly">Quarterly</option>
+                <option value="Annually">Annually</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+    </div>
+
+    @if (($seller_payment_frequency ?? '') === 'Other')
+    <div class="form-group mt-2">
+        <div class="input-cover">
+            <input type="text" wire:model="seller_payment_frequency_other" class="form-control has-icon"
+                data-icon="fa-solid fa-calendar-check"
+                placeholder="Enter custom payment schedule (e.g., Semi-Annual, Lump Sum at Harvest)">
+        </div>
+    </div>
+    @endif
+
+    <!-- Late Payment Fee -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Late Payment Fee:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter the late payment fee and timing for when it applies. For example: &quot;$100 after 10 days late&quot; or &quot;5% of the monthly payment after 15 days late.&quot; This ensures both the amount and the grace period are clear.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <input type="text" wire:model="seller_late_fee_amount" class="form-control has-icon"
+                data-icon="fa-solid fa-clock"
+                placeholder="Enter late fee and when it applies (e.g., $100 after 10 days late, or 5% of payment after 15 days)">
+        </div>
+    </div>
 @endif
 
 @if (in_array('Assumable', $offered_financing))
@@ -1419,6 +1493,55 @@ This amount represents the portion of the purchase price that the Seller will fi
                 placeholder="Enter percentage of purchase price acceptable as cash (e.g., 60)">
             <span class="input-group-text-seller">%</span>
 
+        </div>
+    </div>
+
+    <!-- NFT Valuation Method -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">NFT Valuation Method:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Specify how the value of the NFT will be calculated at closing to avoid disputes over fluctuating market prices.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <input type="text" wire:model="nft_valuation_method" class="form-control has-icon"
+                data-icon="fa-solid fa-chart-line"
+                placeholder="Enter how NFT value will be determined (e.g., Floor price on OpenSea, Independent appraisal, Mutual agreement)">
+        </div>
+    </div>
+
+    <!-- NFT Transfer Method -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">NFT Transfer Method:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter the platform, wallet, or escrow service where the NFT will be transferred. Examples include a crypto wallet (e.g., MetaMask), a marketplace (e.g., OpenSea), or a crypto title/escrow provider (e.g., Propy Title). This ensures both parties agree on the transfer method and can verify ownership.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <input type="text" wire:model="nft_transfer_method" class="form-control has-icon"
+                data-icon="fa-solid fa-wallet"
+                placeholder="Enter wallet, marketplace, or escrow service for transfer (e.g., MetaMask, OpenSea, Propy Title, Escrow Smart Contract)">
+        </div>
+    </div>
+
+    <!-- Transaction Fees Responsibility (Gas Fees) -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Transaction Fees Responsibility (Gas Fees):
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select who will be responsible for blockchain transaction (gas) fees associated with transferring the NFT.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <select wire:model="nft_gas_fees" class="form-control has-icon"
+                data-icon="fa-solid fa-gas-pump">
+                <option value="">Select</option>
+                <option value="Buyer">Buyer</option>
+                <option value="Seller">Seller</option>
+                <option value="Split">Split</option>
+            </select>
         </div>
     </div>
 @endif

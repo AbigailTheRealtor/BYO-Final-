@@ -3963,6 +3963,9 @@ $lease_types = [
         const enhancementTriggerValue = "Provide digital photo enhancements";
         const enhancementWrapper = document.getElementById("enhancement-options-wrapper");
         const checkboxes = document.querySelectorAll('.enhancement-trigger');
+        
+        // Exit early if wrapper doesn't exist on this page
+        if (!enhancementWrapper) return;
 
         function toggleEnhancements() {
             const isChecked = Array.from(checkboxes).some(cb =>
@@ -4000,6 +4003,9 @@ $lease_types = [
 
         const inputWrapper = document.getElementById("open-house-input-wrapper");
         const checkboxes = document.querySelectorAll('.showings-trigger');
+        
+        // Exit early if wrapper doesn't exist on this page
+        if (!inputWrapper) return;
 
         function toggleInput() {
             const isChecked = Array.from(checkboxes).some(cb =>

@@ -275,6 +275,14 @@ class TenantAgentAuction extends Component
     
     // New properties for financing types (December 2025)
     public $assumable_loan_type = '';
+    public $assumable_monthly_escrow = '';
+    public $assumable_loan_term_remaining = '';
+    public $assumable_loan_origination_date = '';
+    public $assumable_loan_servicer = '';
+    public $assumable_fee_type = '$';
+    public $assumable_fee_amount = '';
+    public $assumable_occupancy_requirement = '';
+    public $assumable_occupancy_other = '';
     
     // Cryptocurrency additional fields
     public $crypto_exchange_method = '';
