@@ -1,3 +1,8 @@
+@php
+    // Ensure offered_financing is always an array to prevent in_array() errors
+    $offered_financing = is_array($offered_financing ?? []) ? ($offered_financing ?? []) : (array)($offered_financing ?? []);
+    $sale_provision = is_array($sale_provision ?? []) ? ($sale_provision ?? []) : (array)($sale_provision ?? []);
+@endphp
 <!-- Section Heading -->
 <h3> Sale Terms </h3>
 <div class="alert alert-info bg-light-info border-info mb-4">
