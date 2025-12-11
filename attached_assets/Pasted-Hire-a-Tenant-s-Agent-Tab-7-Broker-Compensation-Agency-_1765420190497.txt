@@ -1,0 +1,178 @@
+Hire a Tenant’s Agent → Tab 7: Broker Compensation & Agency Agreement Terms (Residential & Commercial).
+
+1) Tab label
+
+Under Hire a Tenant’s Agent → Tab 7:
+
+Change the tab title from:
+“Broker Compensation”
+to:
+“Broker Compensation & Agency Agreement Terms”
+
+Apply all of the functional changes below both on:
+
+The main Tenant listing form, and
+
+Any corresponding Agent Bid and Counter Bid screens that mirror these fields.
+
+2) Tenant’s Broker Commission Structure (top of Tab 7)
+
+Field: Tenant’s Broker Commission Structure
+
+Rename options
+
+Change option label:
+
+From: “Out of Pocket Payment”
+To: “Tenant Pays Out-of-Pocket”
+
+Change option label:
+
+From: “Included in Offer”
+To: “Requested From Landlord in the Offer”
+
+Update tooltip text
+
+Tooltip for Tenant’s Broker Commission Structure should read:
+
+Select how the Tenant’s Broker will be compensated—either paid directly by the Tenant (out-of-pocket) or requested from the Landlord as part of the offer. If the Landlord does not agree to pay, the Tenant remains responsible for the commission under the brokerage agreement.
+
+Fix selection error
+
+When testing in Residential, selecting the dropdown options (e.g., “Out of Pocket Payment / Included in Offer” – now renamed) currently throws a Str::studly() / ArgumentCountError in Livewire.
+
+Fix the underlying bug so that all options can be selected without any console or server errors and values persist correctly.
+
+3) Tenant’s Broker Lease Fee (Residential & Commercial)
+
+Fields: Tenant’s Broker Lease Fee (and its sub-inputs)
+
+Clear values when changing fee type
+
+When the user switches between different lease fee structures (e.g., Flat Fee, Percentage of Net Aggregate Rent, Flat Fee + Percentage, Other), all dependent numeric inputs for that selection must be cleared, just like you already implemented for the Landlord listings.
+
+This applies to both Residential and Commercial Tenant’s Broker Lease Fee structures.
+
+Payment Timing for Broker Fees
+
+Add a new field immediately after Tenant’s Broker Lease Fee:
+
+Label: Payment Timing for Broker Fees:
+
+Residential Tenant listings:
+
+Use the same options, format, tooltips, and placeholder text as Payment Timing for Broker Fees under Hire a Landlord’s Agent → Residential.
+(Options like “Deducted from Rent Collected”, “Paid Within Calendar Days After Executed Lease”, etc.)
+
+Commercial Tenant listings:
+
+Use the same options, format, tooltips, and placeholder text as Payment Timing for Broker Fees under Hire a Landlord’s Agent → Commercial.
+(Options like “Full amount upon execution of lease…”, “50% due upon execution, 50% due upon commencement…”, etc.)
+
+Ensure this new Payment Timing field appears in both:
+
+Tenant listing Tab 7, and
+
+Tenant Agent Bid / Counter Bid flows.
+
+Fix “Flat Fee + Percentage of the Net Aggregate Rent” error
+
+Currently, when Flat Fee + Percentage of the Net Aggregate Rent is selected for Tenant’s Broker Lease Fee, a Livewire / Str::studly() error appears.
+
+Fix this so that:
+
+The selection works without errors.
+
+The appropriate flat-fee and percentage inputs display and save correctly.
+
+4) Tenant’s Broker Purchase Fee (Residential & Commercial)
+
+Field: Tenant’s Broker Purchase Fee (flat fee mode)
+
+Static currency symbol
+
+For Tenant’s Broker Purchase Fee in Flat Fee mode:
+
+The left-side $ icon should be static (not a toggle).
+
+Remove the ability for the user to switch between $ and % for this field.
+
+Behavior should mirror any other static $ flat-fee fields in the app.
+
+Clear values on type change
+
+If there are multiple structures (Flat Fee, %, etc.), ensure that when the user changes the fee type, any previously entered amount inputs for that type are cleared (same behavior as Lease Fee and Landlord side).
+
+5) Lease-Option Compensation (Tenant interested in a Lease-Option Agreement)
+
+Under Hire a Tenant’s Agent → Tab 7 → “Interested in a Lease-Option Agreement” (if user selects Yes):
+
+You already have two fields:
+
+Compensation for Creating the Lease-Option Agreement:
+
+Compensation if Purchase Option is Exercised:
+
+Add blue header text above these two fields
+
+Add the same blue header formatting used under Hire a Buyer’s Agent → Broker Compensation tab (Lease Option) so that the section visually shows:
+
+Blue header line above both fields that reads:
+
+Compensation for Creating the Lease-Option Agreement and Compensation if Purchase Option is Exercised
+
+Match the font style, color, and spacing used in the Buyer version.
+
+Tooltips
+
+Tooltip for Compensation for Creating the Lease-Option Agreement:
+
+Specify how the Broker will be compensated at the time the lease-option agreement is created. This may include a flat fee or a percentage of the option consideration paid by the party granting the option. This compensation is typically paid upfront and is separate from any commission that may be owed if the purchase option is later exercised.
+
+Tooltip for Compensation if Purchase Option is Exercised:
+
+If the purchase option is exercised, the Broker may be entitled to additional compensation. Enter how the Broker will be compensated at that time, such as a flat fee or a percentage of the total purchase price. Any compensation already received under the lease-option agreement may be credited toward the final amount due, depending on the terms of the agreement.
+
+Ensure these tooltips display correctly on all Tenant flows (main listing, Agent Bid, Counter Bid).
+
+6) Currency formatting – comma behavior
+
+Under Hire a Tenant’s Agent → Tab 7:
+
+Fix comma formatting for static $ fields
+
+Currently, comma formatting appears to work only for inputs where the user can switch between $ and %.
+
+Extend the same thousands separator formatting to all static $ inputs, including but not limited to:
+
+Early Termination Fee
+
+Retainer Fee
+
+Retainer Fee Amount
+
+Any other Tenant Tab 7 fields that are pure dollar amounts with a static $ prefix.
+
+Result: entering 6000 should display as 6,000 consistently across all $ fields in Tenant Tab 7, regardless of whether a % toggle exists.
+
+7) General behavior notes for Tenant Tab 7
+
+Clearing values on compensation type changes
+
+For all select / toggle-based compensation fields in Tenant Tab 7 (Lease Fee, Purchase Fee, etc.), ensure that when a user changes:
+
+The main fee type (Flat Fee vs Percentage vs Flat + Percentage vs Other), or
+
+The $ / % toggle where applicable,
+
+…any associated numeric inputs for that selection are reset/cleared, so old values from a previous selection are not carried over.
+
+Apply to Agent Bids & Counter Bids
+
+All of the above Tenant Tab 7 behaviors (labels, tooltips, formatting, new fields, and bug fixes) must also be applied to:
+
+Tenant Agent Bid forms, and
+
+Tenant Agent Counter Bid forms,
+
+So that the Bid/Counter views match the Tenant listing Tab 7 logic exactly.

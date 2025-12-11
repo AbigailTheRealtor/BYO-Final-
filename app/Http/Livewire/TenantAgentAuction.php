@@ -813,6 +813,7 @@ class TenantAgentAuction extends Component
             'lease_fee_flat_combo',
             'lease_fee_percentage_combo',
             'lease_fee_percentage_net',
+            'lease_fee_flat_combo_net',
             'lease_fee_percentage_combo_net',
             'lease_fee_other',
         ]);

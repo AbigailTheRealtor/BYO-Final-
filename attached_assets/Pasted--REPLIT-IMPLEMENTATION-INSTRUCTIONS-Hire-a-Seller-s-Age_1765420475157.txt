@@ -1,0 +1,142 @@
+✅ **REPLIT IMPLEMENTATION INSTRUCTIONS – Hire a Seller’s Agent
+Tab 6: Broker Compensation**
+(Apply to Seller Listing, Seller Agent Bid, and Seller Agent Counter-Bid forms)
+________________________________________
+2. Apply Tenant Tab 7 Logic to Seller Listing
+All logic behaviors that currently work correctly under Hire a Tenant’s Agent → Tab 7 must also be applied to Seller’s Tab 6, including:
+•	Dropdown behaviors
+•	Tooltip behavior
+•	Placeholder formatting
+•	Clearing inputs when switching compensation types
+•	Dynamic show/hide rules
+•	Percentage vs. Flat Fee symbol logic
+•	Prevention of mixed or conflicting selections when switching types
+•	Correct number formatting (currency + commas)
+________________________________________
+✅ 3. FIELD-SPECIFIC EDITS
+________________________________________
+A. Change Field Label
+Replace:
+❌ Buyer’s Broker Commission Fee
+with:
+✔ Buyer’s Broker Commission Structure
+(All Property Types)
+________________________________________
+B. Update Dropdown Choice Text
+Change:
+❌ Seller’s Broker to Compensate Buyer’s Broker from Seller’s Commission
+to:
+✔ Seller’s Broker to Compensate Buyer’s Broker from Seller’s Broker Commission
+(Use this exact capitalization.)
+________________________________________
+C. Fix Seller’s Broker Leasing Fee Logic
+1. Fix Sales Tax Tooltip
+Issue: Sales tax tooltip remains stuck on screen.
+Instruction:
+Ensure tooltip closes on mouseleave and does not persist when scrolling.
+________________________________________
+2. Commercial & Business Logic Fix
+If user selects Percentage of Gross Rent, then:
+✔ Show only:
+•	% input with number field
+•	Sales Tax line
+❌ Hide:
+•	Percentage of Month’s Rent
+•	Number of Months
+________________________________________
+3. Percentage of Gross Rent – Placeholder
+Use:
+Enter the percentage of the gross rent (e.g., 6)
+________________________________________
+D. Percentage of the First Month’s Rent Logic Fix
+For Residential, Income, and Vacant Land:
+❌ REMOVE:
+•	Sales Tax line
+•	Number of Months
+✔ KEEP ONLY:
+•	Percentage input
+•	Placeholder: Enter percentage of month’s rent (e.g., 100)
+________________________________________
+For Commercial & Business Listings:
+Change label from:
+❌ Percentage of First Month’s Rent
+to:
+✔ Percentage of Month’s Rent
+Use same placeholder: Enter percentage of month’s rent (e.g., 100)
+________________________________________
+E. Remove Duplicate Option
+Under Residential, Income, Vacant Land:
+❌ Delete Percentage of Each Rental Period (duplicate)
+________________________________________
+F. Add Flat Fee and Other Options
+✔ Add option: Flat Fee
+Placeholder:
+Enter flat fee amount (e.g., 5000)
+✔ Add option: Other
+Placeholder:
+Enter lease fee structure (e.g., 100% of First Month’s Rent, or a Tiered Schedule for Multi-Year Leases)
+________________________________________
+✅ 4. Lease-Option Agreement Section (All Property Types)
+________________________________________
+A. Show Section Only If User Selects “Yes”
+If user selects Interested in Offering a Lease-Option Agreement → Yes, display:
+1. Compensation for Creating the Lease-Option Agreement
+2. Compensation if Purchase Option is Exercised
+________________________________________
+B. Apply Buyer’s Tab 7 Blue Header Formatting
+Add the same blue text headers used under Hire a Buyer’s Agent:
+Compensation for Creating the Lease-Option Agreement:
+Compensation if Purchase Option is Exercised:
+(These must be identical in design & styling to Buyer Tab 7.)
+________________________________________
+C. Placeholder Corrections
+✔ For Creating the Lease-Option Agreement:
+Use:
+Enter flat fee amount (e.g., 1500)
+✔ For Compensation if Purchase Option is Exercised:
+Change placeholder from 1500 → 5000
+Use:
+Enter flat fee amount (e.g., 5000)
+________________________________________
+D. Remove Duplicate $ Symbol
+Delete the second unwanted dollar sign icon.
+Only one should appear, static to the left.
+________________________________________
+E. Tooltips (Use Exactly the Buyer Version)
+Tooltip for Creating the Lease-Option Agreement
+Specify how the Broker will be compensated at the time the lease-option agreement is created. This may include a flat fee or a percentage of the option consideration paid by the party granting the option. This compensation is typically paid upfront and is separate from any commission that may be owed if the purchase option is later exercised.
+Tooltip for Purchase Option is Exercised
+If the purchase option is exercised, the Broker may be entitled to additional compensation. Enter how the Broker will be compensated at that time, such as a flat fee or a percentage of the total purchase price. Any compensation already received under the lease-option agreement may be credited toward the final amount due, depending on the terms of the agreement.
+________________________________________
+✅ 5. Add Payment Timing for Broker Fees
+Add directly after Seller’s Broker Leasing Fee.
+Use same options, tooltips, placeholders, and logic that are already working under:
+•	Residential Landlord version
+•	Commercial Landlord version
+Residential Payment Timing Options:
+•	Deducted from Rent Collected
+•	Paid Within Calendar Days After Executed Lease
+•	Paid Within Calendar Days of Tenant Rent Payment
+•	Other
+Commercial Payment Timing Options:
+•	Full amount upon execution of lease, sales contract, or transfer
+•	50% on execution, 50% on commencement
+•	50% on execution, 50% on occupancy
+•	Other
+________________________________________
+✅ 6. Input Clearing Logic (Required)
+When the user changes between any compensation type:
+✔ Clear all previously displayed fields
+✔ Only show the fields for the selected option
+✔ Prevent mixing Flat Fee with Percentage fields
+✔ Apply same clearing logic when switching property types
+This matches Tenant Tab 7 final behavior.
+________________________________________
+✅ 7. Comma Formatting Fix
+Fields with static “$” symbol MUST format numbers with commas exactly like fields where the user can switch between % and $.
+________________________________________
+✅ 8. Apply These Same Rules to:
+•	Seller Agent Bid Form
+•	Seller Agent Counter-Bid Form
+Bid and Counter-Bid views must mirror Seller Listing Tab 6 exactly.
+
