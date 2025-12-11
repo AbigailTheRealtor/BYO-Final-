@@ -359,10 +359,10 @@
                 data-error-id="down_payment_amount_error" oninput="validateInput(this)" onblur="reformatNumber(this)"
                 onpaste="handlePaste(event)">
 
-            <!-- Suffix -->
-            <span class="input-group-text">
-                {{ $down_payment_type === '%' ? '%' : '$' }}
-            </span>
+            <!-- Suffix (only show % when percentage is selected) -->
+            @if($down_payment_type === '%')
+            <span class="input-group-text">%</span>
+            @endif
         </div>
         <span class="error mt-2" id="down_payment_amount_error"></span>
 
@@ -385,15 +385,15 @@ This amount represents the portion of the purchase price that the Seller will fi
             <!-- Single input -->
             <input type="text" step="any" wire:model.lazy="seller_down_payment_amount" class="form-control"
                 placeholder="{{ $seller_financing_type === '%'
-                    ? 'Enter seller financing percentage (e.g., 80)'
+                    ? 'Enter seller financing amount (e.g., 80)'
                     : 'Enter seller financing amount (e.g., 400000)' }}"
                 data-error-id="seller_down_payment_amount_error" oninput="validateInput(this)"
                 onblur="reformatNumber(this)" onpaste="handlePaste(event)">
 
-            <!-- Suffix -->
-            <span class="input-group-text">
-                {{ $seller_financing_type === '%' ? '%' : '$' }}
-            </span>
+            <!-- Suffix (only show % when percentage is selected) -->
+            @if($seller_financing_type === '%')
+            <span class="input-group-text">%</span>
+            @endif
         </div>
         <span class="error mt-2" id="seller_down_payment_amount_error"></span>
 
