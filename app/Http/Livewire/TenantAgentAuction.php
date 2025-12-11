@@ -1126,9 +1126,7 @@ class TenantAgentAuction extends Component
     }
     public function updated($propertyName)
     {
-        if (!empty($propertyName) && array_key_exists($propertyName, $this->rules)) {
-            $this->validateOnly($propertyName);
-        }
+        $this->validateOnly($propertyName);
     }
 
 
