@@ -907,6 +907,10 @@
         </div>
 
     </div>
+
+    <div class="alert alert-warning mt-3 p-2 small">
+        <strong>Note:</strong> Select $ or % to switch between entering a dollar amount or a percentage.
+    </div>
 @endif
 
 {{-- 9. Interested in Selling --}}
