@@ -74,9 +74,9 @@
                     </div>
 
                 </div>
-            @elseif($purchase_fee_type === "Percentage of the First Month's Rent")
+            @elseif($purchase_fee_type === 'Percentage of the First Month's Rent')
                 <div class="form-group">
-                    {{-- <label class="fw-bold">Percentage of the First Month\'s Rent:</label> --}}
+                    {{-- <label class="fw-bold">Percentage of the First Month's Rent:</label> --}}
 
                     <div class="input-group">
 
@@ -155,7 +155,7 @@
                         </select>
                     </div>
                 </div>
-            @elseif ($purchase_fee_type === "Percentage of Month's Rent")
+            @elseif ($purchase_fee_type === 'Percentage of Month's Rent')
                 <div class="form-group mb-4">
                     {{-- <label class="fw-bold">Percentage of Month's Rent</label> --}}
                     <div class="input-group">
@@ -303,7 +303,7 @@
                             <span class="input-group-text">%</span>
                         </div>
                     </div>
-                @elseif ($tenant_broker_fee_structure === "Percentage of the First Month's Rent")
+                @elseif ($tenant_broker_fee_structure === 'Percentage of the First Month's Rent')
                     <div class="mb-3">
                         <div class="input-group">
                             <input type="number" wire:model.lazy="tenant_broker_first_month_rent"
@@ -621,7 +621,7 @@
                         </select>
                     </div>
                 </div>
-            @elseif ($renewal_fee_type === "Percentage of Month's Rent")
+            @elseif ($renewal_fee_type === 'Percentage of Month's Rent')
                 <div class="mb-3">
                     {{-- <label class="form-label">Percentage of Month's Rent</label> --}}
                     <div class="input-group">
