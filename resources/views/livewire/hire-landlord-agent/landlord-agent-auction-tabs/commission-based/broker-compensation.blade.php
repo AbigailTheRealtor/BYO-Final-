@@ -28,7 +28,7 @@
                 <option value="Percentage of the Rent Due Each Rental Period">Percentage of the Rent Due Each Rental
                     Period</option>
                 <option value="Percentage of the Gross Lease Value">Percentage of the Gross Lease Value</option>
-                <option value="Percentage of the First Month's Rent">Percentage of the First Month's Rent</option>
+                <option value="Percentage of the First Months Rent">Percentage of the First Month's Rent</option>
                 <option value="Flat Fee">Flat Fee</option>
                 <option value="other">Other</option>
             </select>
@@ -74,7 +74,7 @@
                     </div>
 
                 </div>
-            @elseif($purchase_fee_type === 'Percentage of the First Month's Rent')
+            @elseif($purchase_fee_type === 'Percentage of the First Months Rent')
                 <div class="form-group">
                     {{-- <label class="fw-bold">Percentage of the First Month's Rent:</label> --}}
 
@@ -114,7 +114,7 @@
                 <option value="">Select</option>
                 <option value="Percentage of the Net Aggregate Rent">Percentage of the Net Aggregate Rent</option>
                 <option value="Percentage of the Gross Rent">Percentage of the Gross Rent</option>
-                <option value="Percentage of Month's Rent">Percentage of Month's Rent</option>
+                <option value="Percentage of Months Rent">Percentage of Month's Rent</option>
                 <option value="Flat Fee">Flat Fee</option>
                 {{-- <option value="purchase_price">Percentage of Total Purchase Price</option> --}}
                 <option value="other">Other</option>
@@ -155,7 +155,7 @@
                         </select>
                     </div>
                 </div>
-            @elseif ($purchase_fee_type === 'Percentage of Month's Rent')
+            @elseif ($purchase_fee_type === 'Percentage of Months Rent')
                 <div class="form-group mb-4">
                     {{-- <label class="fw-bold">Percentage of Month's Rent</label> --}}
                     <div class="input-group">
@@ -277,7 +277,7 @@
                                 Each Rental Period</option>
                             <option value="Percentage of the Gross Lease Value">Percentage of the Gross Lease Value
                             </option>
-                            <option value="Percentage of the First Month's Rent">Percentage of the First Month's Rent
+                            <option value="Percentage of the First Months Rent">Percentage of the First Month's Rent
                             </option>
                             <option value="Flat fee">Flat fee</option>
                             <option value="Other">Other</option>
@@ -303,7 +303,7 @@
                             <span class="input-group-text">%</span>
                         </div>
                     </div>
-                @elseif ($tenant_broker_fee_structure === 'Percentage of the First Month's Rent')
+                @elseif ($tenant_broker_fee_structure === 'Percentage of the First Months Rent')
                     <div class="mb-3">
                         <div class="input-group">
                             <input type="number" wire:model.lazy="tenant_broker_first_month_rent"
@@ -501,7 +501,7 @@
                 @endif
                 <option value="Percentage of the Gross Lease Value">Percentage of the Gross Lease Value</option>
                 @if ($property_type === 'Residential Property')
-                    <option value="Percentage of the First Month's Rent">Percentage of the First Month's Rent</option>
+                    <option value="Percentage of the First Months Rent">Percentage of the First Month's Rent</option>
                     <option value="Flat Fee">Flat Fee</option>
                 @endif
                 <option value="other">Other</option>
@@ -528,7 +528,7 @@
                         <span class="input-group-text">%</span>
                     </div>
                 </div>
-            @elseif ($renewal_fee_type === "Percentage of the First Month's Rent")
+            @elseif ($renewal_fee_type === "Percentage of the First Months Rent")
                 <div class="mb-3">
                     {{-- <label class="form-label">Percentage of the First Month's Rent</label> --}}
                     <div class="input-group">
@@ -579,7 +579,7 @@
                 <option value="">Select </option>
                 <option value="Percentage of the Net Aggregate Rent">Percentage of the Net Aggregate Rent</option>
                 <option value="Percentage of the Gross Rent">Percentage of the Gross Rent</option>
-                <option value="Percentage of Month's Rent"> Percentage of Month's Rent</option>
+                <option value="Percentage of Months Rent"> Percentage of Month's Rent</option>
                 <option value="Flat Fee">Flat Fee</option>
 
                 <option value="other">Other</option>
@@ -621,7 +621,7 @@
                         </select>
                     </div>
                 </div>
-            @elseif ($renewal_fee_type === 'Percentage of Month's Rent')
+            @elseif ($renewal_fee_type === 'Percentage of Months Rent')
                 <div class="mb-3">
                     {{-- <label class="form-label">Percentage of Month's Rent</label> --}}
                     <div class="input-group">

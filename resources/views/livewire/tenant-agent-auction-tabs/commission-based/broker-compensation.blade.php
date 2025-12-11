@@ -39,13 +39,13 @@
 
         @if ($property_type === 'Residential Property')
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Choose how the Tenant’s Broker will be compensated if a residential property is leased. Options include a flat fee, a percentage of monthly rent, a percentage of the gross lease value, a combination of flat fee and percentage, or select “Other” to define a custom structure. Then enter the appropriate amount(s) based on your selection.">
+                title="Choose how the Tenant's Broker will be compensated if a residential property is leased. Options include a flat fee, a percentage of monthly rent, a percentage of the gross lease value, a combination of flat fee and percentage, or select "Other" to define a custom structure. Then enter the appropriate amount(s) based on your selection.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         @endif
         @if ($property_type === 'Commercial Property')
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Choose how the Tenant’s Broker will be compensated if a commercial property is leased. Options include a flat fee, a percentage of the net aggregate rent, a combination of flat fee and percentage, or select “Other” to define a custom structure. Then, enter the appropriate amount(s) based on your selection.">
+                title="Choose how the Tenant's Broker will be compensated if a commercial property is leased. Options include a flat fee, a percentage of the net aggregate rent, a combination of flat fee and percentage, or select "Other" to define a custom structure. Then, enter the appropriate amount(s) based on your selection.">
                 <i class="fa-solid fa-circle-info"></i>
 
             </span>
@@ -158,7 +158,7 @@
             </div>
         @elseif($lease_fee_type === 'other')
             <input type="text" wire:model="lease_fee_other" class="form-control mt-2"
-                placeholder="Enter the total lease fee amount and payment structure for the Tenant’s Broker (e.g., $1,500 upfront, $2,000 at lease execution)">
+                placeholder="Enter the total lease fee amount and payment structure for the Tenant's Broker (e.g., $1,500 upfront, $2,000 at lease execution)">
         @endif
     </div>
     @error('lease_fee_*')
@@ -252,7 +252,7 @@
     <label class="fw-bold ">
         Interested in Purchasing a Property:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Indicate whether the Tenant is also interested in purchasing a property.  If “Yes” is selected, you’ll be prompted to enter compensation details.">
+            title="Indicate whether the Tenant is also interested in purchasing a property.  If "Yes" is selected, you'll be prompted to enter compensation details.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -273,7 +273,7 @@
         <label class="fw-bold ">
             Tenant's Broker Purchase Fee:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Choose how the Tenant’s Broker will be compensated if the Tenant purchases a property. Options include a flat fee, a percentage of the purchase price, a combination of both, or select “Other” to define a custom structure. Then enter the appropriate amount(s) based on your selection.">
+                title="Choose how the Tenant's Broker will be compensated if the Tenant purchases a property. Options include a flat fee, a percentage of the purchase price, a combination of both, or select "Other" to define a custom structure. Then enter the appropriate amount(s) based on your selection.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -340,7 +340,7 @@
     <label class="fw-bold ">
         Interested in a Lease-Option Agreement:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Indicate whether the Tenant is interested in entering a lease with an option to purchase. If “Yes” is selected, you’ll be prompted to enter compensation details.">
+            title="Indicate whether the Tenant is interested in entering a lease with an option to purchase. If "Yes" is selected, you'll be prompted to enter compensation details.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -440,7 +440,7 @@
     <label class="fw-bold">
         Protection Period Timeframe (Days):
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the number of days after the agreement ends during which the Tenant’s Broker remains entitled to compensation if the Tenant leases, purchases, or otherwise acquires a property introduced during the agreement period.">
+            title="Enter the number of days after the agreement ends during which the Tenant's Broker remains entitled to compensation if the Tenant leases, purchases, or otherwise acquires a property introduced during the agreement period.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -458,7 +458,7 @@
     <label class="fw-bold ">
         Early Termination Fee:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select whether the Tenant agrees to pay a cancellation fee if the agreement is ended early. If “Yes” is selected, you’ll be prompted to enter the fee amount. This fee may be credited toward a future transaction during the protection period, depending on the Broker’s policy.">
+            title="Select whether the Tenant agrees to pay a cancellation fee if the agreement is ended early. If "Yes" is selected, you'll be prompted to enter the fee amount. This fee may be credited toward a future transaction during the protection period, depending on the Broker's policy.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -488,7 +488,7 @@
     <label class="fw-bold">
         Retainer Fee:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select whether the Tenant agrees to pay a non-refundable retainer fee to initiate Broker services. If “Yes,” enter the amount. This fee is separate from any commission owed unless otherwise specified.">
+            title="Select whether the Tenant agrees to pay a non-refundable retainer fee to initiate Broker services. If "Yes," enter the amount. This fee is separate from any commission owed unless otherwise specified.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -552,7 +552,7 @@
     <label class="fw-bold">
         Tenant Agency Agreement Timeframe:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select how long the agreement between the Tenant and the Broker will remain in effect. Choose from preset durations or select “Other” to enter a custom timeframe.">
+            title="Select how long the agreement between the Tenant and the Broker will remain in effect. Choose from preset durations or select "Other" to enter a custom timeframe.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
