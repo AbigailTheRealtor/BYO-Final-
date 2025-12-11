@@ -1,0 +1,157 @@
+Hire a Seller’s Agent → Tab 6 – Broker Compensation (and the matching Seller Agent Bid / Counter Bid forms).
+
+1. Apply logic to Seller Agent Bids & Counter Bids
+
+All Tab 6 behaviors for Hire a Seller’s Agent (labels, tooltips, formatting, new fields, and bug fixes below) must also be applied to:
+
+Seller Agent Bid forms, and
+
+Seller Agent Counter Bid forms.
+
+The Bid / Counter Bid views must match the Seller listing Tab 6: Broker Compensation logic exactly.
+
+When entering compensation, if the user:
+
+switches from a Flat Fee amount to a Percentage amount,
+
+switches back and forth between different compensation options, or
+
+switches between property types (Residential, Income, Commercial, Business, Vacant Land),
+then any previous numeric inputs tied to the old selection must be cleared so only the current selection’s values are stored and displayed.
+
+2. Buyer’s Broker Commission Structure (all property types)
+
+Field: Buyer’s Broker Commission …
+
+Rename the label everywhere in Seller Tab 6 (and Seller Agent Bid / Counter Bid) to:
+
+Buyer’s Broker Commission Structure:
+
+(replace the old label “Buyer’s Broker Commission Fee:”)
+
+In the dropdown options, update the first option text:
+
+Change
+“Seller’s Broker to Compensate Buyer’s Broker from Seller’s Commission”
+to
+“Seller’s Broker to Compensate Buyer’s Broker from Seller’s Broker Commission”.
+
+Keep all existing tooltip and placeholder text for this field; only the label and option wording above are changed.
+
+3. Seller’s Broker Leasing Fee – Tooltip bug
+
+Fix the Sales Tax tooltip behavior under Seller’s Broker Leasing Fee:
+
+Tooltip should appear only when the user hovers over the info icon.
+
+Tooltip must disappear when the user moves the cursor away.
+
+Ensure the tooltip does not remain stuck on screen or show on other tabs (e.g., Seller Information).
+
+4. Seller’s Broker Leasing Fee – Percentage of Gross Rent (Commercial & Business)
+
+For property types: Commercial and Business
+When the user selects “Percentage of Gross Rent” under Seller’s Broker Leasing Fee:
+
+Show:
+
+A numeric percentage input with a % suffix (same style as other % fields).
+
+The Sales Tax dropdown row under it.
+
+Do NOT show:
+
+“Percentage of Month’s Rent”
+
+“Number of Months”
+
+Set the placeholder on the percentage input to:
+
+Placeholder: Enter the percentage of the gross rent (e.g., 6)
+
+5. Seller’s Broker Leasing Fee – Percentage of First Month’s Rent / Months Rent
+
+For Residential, Income, and Vacant Land:
+
+When the user selects “Percentage of the First Month’s Rent”:
+
+Remove the Sales Tax row for this option.
+
+Remove the Number of Months field for this option.
+
+Keep a single percentage input with:
+
+Placeholder: Enter percentage of month’s rent (e.g., 100)
+
+For Commercial and Business:
+
+Rename the option “Percentage of First Month’s Rent” to:
+
+“Percentage of Months Rent”
+
+Keep the existing fields for that option (percentage input and number of months) and set:
+
+Placeholder: Enter percentage of month’s rent (e.g., 100)
+
+6. Seller’s Broker Leasing Fee – Residential, Income & Vacant Land options
+
+For property types: Residential, Income, Vacant Land, update the Seller’s Broker Leasing Fee dropdown:
+
+Remove the duplicate option:
+
+“Percentage of Each Rental Period”
+
+Add two options if not already present:
+
+“Flat Fee”
+
+“Other”
+
+When Flat Fee is selected:
+
+Show a currency input with static left-side $ prefix (no trailing $ icon).
+
+Placeholder: Enter flat fee amount (e.g., 5000)
+
+When Other is selected:
+
+Show a text input with:
+
+Placeholder:
+Enter lease fee structure (e.g., 100% of First Month’s Rent, or a Tiered Schedule for Multi-Year Leases)
+
+7. Lease-Option Compensation – All Property Types
+
+Under Interested in Offering a Lease-Option Agreement (All Property Types):
+
+When the user selects Yes, display the two compensation sections in blue header text (format to match Hire a Buyer’s Agent Lease-Option section):
+
+Compensation for Creating the Lease-Option Agreement:
+
+Compensation if Purchase Option is Exercised:
+
+For both sections, keep the existing $ / % toggle, but fix the currency formatting:
+
+Keep only the left-side $ select / icon.
+
+Remove the extra $ icon at the right side of the input in both fields.
+
+Placeholder examples (Flat Fee mode):
+
+Compensation for Creating the Lease-Option Agreement:
+Enter flat fee amount (e.g., 1500)
+
+Compensation if Purchase Option is Exercised:
+Enter flat fee amount (e.g., 5000)
+
+Note: Update this second example to 5000 (it is currently 1500).
+
+Tooltip text (match Buyer’s Agent version exactly):
+
+Tooltip – Compensation for Creating the Lease-Option Agreement:
+
+Specify how the Broker will be compensated at the time the lease-option agreement is created. This may include a flat fee or a percentage of the option consideration paid by the party granting the option. This compensation is typically paid upfront and is separate from any commission that may be owed if the purchase option is later exercised.
+
+Tooltip – Compensation if Purchase Option is Exercised:
+
+If the purchase option is exercised, the Broker may be entitled to additional compensation. Enter how the Broker will be compensated at that time, such as a flat fee or a percentage of the total purchase price. Any compensation already received under the lease-option agreement may be credited toward the final amount due, depending on the terms of the agreement.

@@ -1,24 +1,20 @@
-REPLIT IMPLEMENTATION INSTRUCTIONS – Hire a Seller’s Agent
+✅ **REPLIT IMPLEMENTATION INSTRUCTIONS – Hire a Seller’s Agent
 Tab 6: Broker Compensation**
 (Apply to Seller Listing, Seller Agent Bid, and Seller Agent Counter-Bid forms)
 ________________________________________
-1. 
-1. Apply logic tor Agent Bids & Counter Bids
-•	All Tab 6 behaviors for Hire a Seller’s Agent (labels, tooltips, formatting, new fields, and bug fixes below) must also be applied to:
-o	Seller Agent Bid forms, and
-o	Seller Agent Counter Bid forms.
-•	The Bid / Counter Bid views must match the Seller listing Tab 6: Broker Compensation logic exactly.
-•	When entering compensation, if the user:
-o	switches from a Flat Fee amount to a Percentage amount,
-o	switches back and forth between different compensation options, or
-o	switches between property types (Residential, Income, Commercial, Business, Vacant Land),
-then any previous numeric inputs tied to the old selection must be cleared so only the current selection’s values are stored and displayed.
-
+2. Apply Tenant Tab 7 Logic to Seller Listing
+All logic behaviors that currently work correctly under Hire a Tenant’s Agent → Tab 7 must also be applied to Seller’s Tab 6, including:
+•	Dropdown behaviors
+•	Tooltip behavior
+•	Placeholder formatting
+•	Clearing inputs when switching compensation types
+•	Dynamic show/hide rules
+•	Percentage vs. Flat Fee symbol logic
+•	Prevention of mixed or conflicting selections when switching types
+•	Correct number formatting (currency + commas)
 ________________________________________
-
 ✅ 3. FIELD-SPECIFIC EDITS
 ________________________________________
-
 A. Change Field Label
 Replace:
 ❌ Buyer’s Broker Commission Fee
@@ -143,5 +139,4 @@ ________________________________________
 •	Seller Agent Bid Form
 •	Seller Agent Counter-Bid Form
 Bid and Counter-Bid views must mirror Seller Listing Tab 6 exactly.
-________________________________________
 

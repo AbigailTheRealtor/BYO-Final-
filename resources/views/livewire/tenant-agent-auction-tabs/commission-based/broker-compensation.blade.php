@@ -54,7 +54,7 @@
     </label>
 
     <div class="input-cover mt-2">
-        <select wire:model="lease_fee_type" class="form-control has-icon" data-icon="fa-solid fa-file-invoice-dollar">
+        <select wire:model.lazy="lease_fee_type" class="form-control has-icon" data-icon="fa-solid fa-file-invoice-dollar">
             <option value="">Select</option>
             <option value="Flat Fee">Flat Fee</option>
             @if ($property_type === 'Residential Property')
@@ -166,13 +166,13 @@
     @enderror
 </div>
 
-<!-- Payment Timing for Broker Fees -->
 @if ($property_type === 'Residential Property')
+    <!-- Payment Timing for Broker Fees (Residential) -->
     <div class="form-group mb-4">
         <label class="fw-bold d-flex align-items-center">
             Payment Timing for Broker Fees:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select when the Broker's fee will be paid. Options include: deducting from rent collected, payment after lease execution, payment after the rent due date, or 'Other' to define a custom arrangement.">
+                title="Select when the Broker's fee will be paid. Options include: deducting from rent collected, payment after lease execution, payment after the rent due date, or "Other" to define a custom arrangement.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -217,11 +217,12 @@
 @endif
 
 @if ($property_type === 'Commercial Property')
+    <!-- Payment Timing for Broker Fees (Commercial) -->
     <div class="form-group mb-4">
         <label class="fw-bold d-flex align-items-center">
             Payment Timing for Broker Fees:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select when the Broker's fee will be paid. Options include: full payment upon execution of the lease, sales contract, or other transfer agreement; 50% upon execution with the remaining 50% due at commencement of the agreement; 50% upon execution with the remaining 50% due upon occupancy of the premises; or 'Other' to define a custom arrangement.">
+                title="Select when the Broker's fee will be paid. Options include: full payment upon execution of the lease, sales contract, or other transfer agreement; 50% upon execution with the remaining 50% due at commencement of the agreement; 50% upon execution with the remaining 50% due upon occupancy of the premises; or "Other" to define a custom arrangement.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -366,10 +367,16 @@
             </span>
         </h5>
 
-        <div class="form-group mt-2">
-            <label class="fw-bold d-block mb-1">Compensation Amount</label>
+        <div class="form-group">
+            <label class="fw-bold">
+                Tenant's Broker Lease-Option Fee:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    title="Choose how the Tenant's Broker will be compensated for the option consideration portion of a lease-option agreement. Options include a percentage of the option consideration or a flat fee.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
 
-            <div class="input-group">
+            <div class="input-group mt-2">
                 <select wire:model="lease_type" wire:change="setType('lease', $event.target.value)"
                     class="form-select" style="max-width: 100px;">
                     <option value="percent">%</option>
@@ -403,10 +410,16 @@
             </span>
         </h5>
 
-        <div class="form-group mt-2">
-            <label class="fw-bold d-block mb-1">Compensation Amount</label>
+        <div class="form-group">
+            <label class="fw-bold">
+                Tenant's Broker Purchase Fee (Lease-Option):
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    title="Choose how the Tenant's Broker will be compensated if the Tenant exercises their option to purchase the property. Options include a percentage of the purchase price or a flat fee.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
 
-            <div class="input-group">
+            <div class="input-group mt-2">
                 <select wire:model="purchase_type" wire:change="setType('purchase', $event.target.value)"
                     class="form-select" style="max-width: 100px;">
                     <option value="percent">%</option>
@@ -428,10 +441,6 @@
             </div>
             <span class="error mt-2" id="purchase_value_error"></span>
         </div>
-    </div>
-
-    <div class="alert alert-warning mt-3 p-2 small">
-        <strong>Note:</strong> Select $ or % to switch between entering a dollar amount or a percentage.
     </div>
 @endif
 
@@ -475,7 +484,8 @@
             <div class="input-group">
                 <span class="input-group-text">$</span>
                 <input type="text" wire:model.lazy="early_termination_fee_amount" class="form-control"
-                    placeholder="Enter early termination fee amount (e.g., 1,000)" data-error-id="early_termination_fee_amount_error" oninput="formatWithCommas(this)" onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
+                    placeholder="Enter early termination fee amount (e.g., 1,000)"
+                    oninput="formatWithCommas(this)" onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
             </div>
             @error('early_termination_fee_amount')
                 <span class="text-danger small">{{ $message }}</span>
@@ -516,7 +526,8 @@
                 <div class="input-group">
                     <span class="input-group-text">$</span>
                     <input type="text" wire:model.lazy="retainer_fee_amount" class="form-control"
-                        placeholder="Enter retainer fee amount (e.g., 500)" data-error-id="retainer_fee_amount_error" oninput="formatWithCommas(this)" onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
+                        placeholder="Enter retainer fee amount (e.g., 500)"
+                        oninput="formatWithCommas(this)" onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
                 </div>
 
             </div>
