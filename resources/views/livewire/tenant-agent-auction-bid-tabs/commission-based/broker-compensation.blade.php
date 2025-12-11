@@ -1,4 +1,4 @@
-<h3>Broker Compensation & Agency Agreement Terms</h3>
+<h3>Broker Compensation </h3>
 <div class="alert alert-info bg-light-info border-info mb-4">
     <div class="d-flex align-items-center">
         <div>
@@ -19,11 +19,11 @@
         </span>
     </label>
     <div class="input-cover mt-2">
-        <select wire:model.lazy="commission_structure" class="form-control has-icon"
+        <select wire:model="commission_structure" class="form-control has-icon"
             data-icon="fa-solid fa-file-invoice-dollar">
             <option value="">Select</option>
-            <option value="Tenant Pays Out-of-Pocket">Out-of-Pocket Payment</option>
-            <option value="Requested From Landlord in the Offer">Included in Offer</option>
+            <option value="Out-of-Pocket Payment">Out-of-Pocket Payment</option>
+            <option value="Included in Offer">Included in Offer</option>
         </select>
     </div>
     @error('commission_structure')
@@ -53,7 +53,7 @@
     </label>
 
     <div class="input-cover mt-2">
-        <select wire:model.lazy="lease_fee_type" class="form-control has-icon" data-icon="fa-solid fa-file-invoice-dollar">
+        <select wire:model="lease_fee_type" class="form-control has-icon" data-icon="fa-solid fa-file-invoice-dollar">
             <option value="">Select</option>
             <option value="Flat Fee">Flat Fee</option>
             @if ($property_type === 'Residential Property')
