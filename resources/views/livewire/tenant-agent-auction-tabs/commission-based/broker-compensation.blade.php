@@ -119,9 +119,12 @@
                 <div class="col-md-5">
                     <div class="input-group">
                         <span class="input-group-text">$</span>
-                        <input type="number" wire:model="lease_fee_flat_combo" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 1000)">
+                        <input type="text" wire:model.lazy="lease_fee_flat_combo" class="form-control"
+                            placeholder="Enter flat fee amount (e.g., 1,000)"
+                            data-error-id="lease_fee_flat_combo_error" oninput="formatWithCommas(this)"
+                            onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
                     </div>
+                    <span class="error mt-2" id="lease_fee_flat_combo_error"></span>
                 </div>
                 <div class="col-md-1 text-center pt-2">+</div>
                 <div class="col-md-6">
@@ -143,9 +146,12 @@
                 <div class="col-md-5">
                     <div class="input-group">
                         <span class="input-group-text">$</span>
-                        <input type="number" wire:model="lease_fee_flat_combo_net" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 1500)">
+                        <input type="text" wire:model.lazy="lease_fee_flat_combo_net" class="form-control"
+                            placeholder="Enter flat fee amount (e.g., 1,500)"
+                            data-error-id="lease_fee_flat_combo_net_error" oninput="formatWithCommas(this)"
+                            onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
                     </div>
+                    <span class="error mt-2" id="lease_fee_flat_combo_net_error"></span>
                 </div>
                 <div class="col-md-1 text-center pt-2">+</div>
                 <div class="col-md-6">
@@ -319,10 +325,13 @@
 
                     <div class="col-md-5">
                         <div class="input-group">
-                            <span class="input-group-text"> $</span>
-                            <input type="number" wire:model.lazy="purchase_fee_flat_combo" class="form-control"
-                                placeholder="Enter flat fee amount (e.g., 3000)">
+                            <span class="input-group-text">$</span>
+                            <input type="text" wire:model.lazy="purchase_fee_flat_combo" class="form-control"
+                                placeholder="Enter flat fee amount (e.g., 3,000)"
+                                data-error-id="purchase_fee_flat_combo_error" oninput="formatWithCommas(this)"
+                                onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
                         </div>
+                        <span class="error mt-2" id="purchase_fee_flat_combo_error"></span>
                     </div>
                 </div>
             @elseif($purchase_fee_type === 'other')
@@ -428,10 +437,6 @@
             </div>
             <span class="error mt-2" id="purchase_value_error"></span>
         </div>
-    </div>
-
-    <div class="alert alert-warning mt-3 p-2 small">
-        <strong>Note:</strong> Select $ or % to switch between entering a dollar amount or a percentage.
     </div>
 @endif
 
