@@ -15,16 +15,16 @@
         Tenant's Broker Commission Structure:
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Choose whether the Tenant's Broker is paid directly by the Tenant (out-of-pocket) or requested from the Landlord as part of the offer (included in offer). If the Landlord does not agree to pay, the Tenant remains responsible under the brokerage agreement.">
+            title="Select how the Tenant's Broker will be compensated—either paid directly by the Tenant (out-of-pocket) or requested from the Landlord as part of the offer. If the Landlord does not agree to pay, the Tenant remains responsible for the commission under the brokerage agreement.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
     <div class="input-cover mt-2">
-        <select wire:model="commission_structure" class="form-control has-icon"
+        <select wire:model.lazy="commission_structure" class="form-control has-icon"
             data-icon="fa-solid fa-file-invoice-dollar">
             <option value="">Select</option>
-            <option value="Out-of-Pocket Payment">Out-of-Pocket Payment</option>
-            <option value="Included in Offer">Included in Offer</option>
+            <option value="Tenant Pays Out-of-Pocket">Tenant Pays Out-of-Pocket</option>
+            <option value="Requested From Landlord in the Offer">Requested From Landlord in the Offer</option>
         </select>
     </div>
     @error('commission_structure')
@@ -166,6 +166,87 @@
     @enderror
 </div>
 
+<!-- Payment Timing for Broker Fees -->
+@if ($property_type === 'Residential Property')
+    <div class="form-group mb-4">
+        <label class="fw-bold d-flex align-items-center">
+            Payment Timing for Broker Fees:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select when the Broker's fee will be paid. Options include: deducting from rent collected, payment after lease execution, payment after the rent due date, or 'Other' to define a custom arrangement.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+
+        <div class="input-cover mt-2">
+            <select wire:model.lazy="broker_fee_timing" class="form-control has-icon" data-icon="fa-solid fa-clock">
+                <option value="">Select</option>
+                <option value="Deducted from Rent Collected">Deducted from Rent Collected</option>
+                <option value="Paid Within Calendar Days After Executed Lease">Paid Within Calendar Days After Executed Lease</option>
+                <option value="Paid Within Calendar Days of Tenant Rent Payment">Paid Within Calendar Days of Tenant Rent Payment</option>
+                <option value="other">Other</option>
+            </select>
+        </div>
+
+        <div class="mt-3">
+            @if ($broker_fee_timing === 'Deducted from Rent Collected')
+                <div class="input-group">
+                    <span class="input-group-text">#</span>
+                    <input type="number" wire:model.lazy="broker_fee_days_from_rent" class="form-control"
+                        placeholder="Enter number of calendar days (e.g., 5)">
+                </div>
+            @elseif ($broker_fee_timing === 'Paid Within Calendar Days After Executed Lease')
+                <div class="input-group">
+                    <span class="input-group-text">#</span>
+                    <input type="number" wire:model.lazy="broker_fee_days_after_lease" class="form-control"
+                        placeholder="Enter number of calendar days (e.g., 5)">
+                </div>
+            @elseif ($broker_fee_timing === 'Paid Within Calendar Days of Tenant Rent Payment')
+                <div class="input-group">
+                    <span class="input-group-text">#</span>
+                    <input type="number" wire:model.lazy="broker_fee_days_after_rent" class="form-control"
+                        placeholder="Enter number of calendar days (e.g., 5)">
+                </div>
+            @elseif ($broker_fee_timing === 'other')
+                <div class="input-group">
+                    <input type="text" wire:model.lazy="broker_fee_timing_other" class="form-control"
+                        placeholder="Describe payment arrangement (e.g., Broker to be paid 50% of commission upon lease execution and 50% upon tenant move-in)">
+                </div>
+            @endif
+        </div>
+    </div>
+@endif
+
+@if ($property_type === 'Commercial Property')
+    <div class="form-group mb-4">
+        <label class="fw-bold d-flex align-items-center">
+            Payment Timing for Broker Fees:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select when the Broker's fee will be paid. Options include: full payment upon execution of the lease, sales contract, or other transfer agreement; 50% upon execution with the remaining 50% due at commencement of the agreement; 50% upon execution with the remaining 50% due upon occupancy of the premises; or 'Other' to define a custom arrangement.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+
+        <div class="input-cover mt-2">
+            <select wire:model.lazy="broker_fee_timing" class="form-control has-icon" data-icon="fa-solid fa-clock">
+                <option value="">Select</option>
+                <option value="full_execution">Full amount upon execution of lease, sales contract, or other transfer agreement</option>
+                <option value="50% due upon execution, 50% due upon commencement of agreement">50% due upon execution, 50% due upon commencement of agreement</option>
+                <option value="50% due upon execution, 50% due upon occupancy of premises">50% due upon execution, 50% due upon occupancy of premises</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+
+        <div class="mt-3">
+            @if ($broker_fee_timing === 'Other')
+                <div class="input-group">
+                    <input type="text" wire:model.lazy="broker_fee_timing_other" class="form-control"
+                        placeholder="Describe payment arrangement (e.g., Broker to be paid 25% upon lease execution, 25% upon tenant move-in, and 50% upon first month's rent payment)">
+                </div>
+            @endif
+        </div>
+    </div>
+@endif
+
 <!-- Tenant's Broker Purchase Fee -->
 <div class="form-group mb-4">
     <label class="fw-bold ">
@@ -275,17 +356,20 @@
 </div>
 
 @if ($interested_lease_option_agreement === 'Yes')
+    <!-- TAB 1 -->
     <div id="tab1" class="tab-content mt-3">
-        <div class="form-group">
-            <label class="fw-bold">
-                Tenant's Broker Lease-Option Fee:
-                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Choose how the Tenant's Broker will be compensated for the option consideration portion of a lease-option agreement. Options include a percentage of the option consideration or a flat fee.">
-                    <i class="fa-solid fa-circle-info"></i>
-                </span>
-            </label>
+        <h5 class="compensation_tab">
+            Compensation for Creating the Lease-Option Agreement:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true" data-bs-trigger="hover focus"
+                title="Specify how the Broker will be compensated at the time the lease-option agreement is created. This may include a flat fee or a percentage of the option consideration paid by the party granting the option. This compensation is typically paid upfront and is separate from any commission that may be owed if the purchase option is later exercised.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </h5>
 
-            <div class="input-group mt-2">
+        <div class="form-group mt-2">
+            <label class="fw-bold d-block mb-1">Compensation Amount</label>
+
+            <div class="input-group">
                 <select wire:model="lease_type" wire:change="setType('lease', $event.target.value)"
                     class="form-select" style="max-width: 100px;">
                     <option value="percent">%</option>
@@ -309,17 +393,20 @@
         </div>
     </div>
 
+    <!-- TAB 2 -->
     <div id="tab2" class="tab-content mt-3">
-        <div class="form-group">
-            <label class="fw-bold">
-                Tenant's Broker Purchase Fee (Lease-Option):
-                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Choose how the Tenant's Broker will be compensated if the Tenant exercises their option to purchase the property. Options include a percentage of the purchase price or a flat fee.">
-                    <i class="fa-solid fa-circle-info"></i>
-                </span>
-            </label>
+        <h5 class="compensation_tab">
+            Compensation if Purchase Option is Exercised:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true" data-bs-trigger="hover focus"
+                title="If the purchase option is exercised, the Broker may be entitled to additional compensation. Enter how the Broker will be compensated at that time, such as a flat fee or a percentage of the total purchase price. Any compensation already received under the lease-option agreement may be credited toward the final amount due, depending on the terms of the agreement.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </h5>
 
-            <div class="input-group mt-2">
+        <div class="form-group mt-2">
+            <label class="fw-bold d-block mb-1">Compensation Amount</label>
+
+            <div class="input-group">
                 <select wire:model="purchase_type" wire:change="setType('purchase', $event.target.value)"
                     class="form-select" style="max-width: 100px;">
                     <option value="percent">%</option>
@@ -341,6 +428,10 @@
             </div>
             <span class="error mt-2" id="purchase_value_error"></span>
         </div>
+    </div>
+
+    <div class="alert alert-warning mt-3 p-2 small">
+        <strong>Note:</strong> Select $ or % to switch between entering a dollar amount or a percentage.
     </div>
 @endif
 
@@ -383,8 +474,8 @@
         <div class="mt-3">
             <div class="input-group">
                 <span class="input-group-text">$</span>
-                <input type="number" wire:model="early_termination_fee_amount" class="form-control"
-                    placeholder="Enter early termination fee amount (e.g., 1000)">
+                <input type="text" wire:model.lazy="early_termination_fee_amount" class="form-control"
+                    placeholder="Enter early termination fee amount (e.g., 1,000)" data-error-id="early_termination_fee_amount_error" oninput="formatWithCommas(this)" onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
             </div>
             @error('early_termination_fee_amount')
                 <span class="text-danger small">{{ $message }}</span>
@@ -424,8 +515,8 @@
                 </label>
                 <div class="input-group">
                     <span class="input-group-text">$</span>
-                    <input type="number" wire:model="retainer_fee_amount" class="form-control"
-                        placeholder="Enter retainer fee amount (e.g., 500)">
+                    <input type="text" wire:model.lazy="retainer_fee_amount" class="form-control"
+                        placeholder="Enter retainer fee amount (e.g., 500)" data-error-id="retainer_fee_amount_error" oninput="formatWithCommas(this)" onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
                 </div>
 
             </div>
