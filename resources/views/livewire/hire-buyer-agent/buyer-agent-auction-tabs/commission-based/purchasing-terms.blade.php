@@ -1177,8 +1177,11 @@
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
-        <textarea wire:model="lease_option_extension_terms" class="form-control" rows="3"
-            placeholder="Enter extension terms (e.g., Tenant-Buyer may extend for 6 months with additional $5,000 fee)"></textarea>
+        <div class="input-cover">
+            <input type="text" wire:model="lease_option_extension_terms" class="form-control has-icon"
+                data-icon="fa-solid fa-calendar-plus"
+                placeholder="Enter extension terms (e.g., Tenant-Buyer may extend for 6 months with additional $5,000 fee)">
+        </div>
     </div>
 @endif
 
@@ -1350,8 +1353,11 @@
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
-        <textarea wire:model="lease_purchase_extension_terms" class="form-control" rows="3"
-            placeholder="Enter extension terms (e.g., Lease may be extended for 6 months with adjusted purchase price)"></textarea>
+        <div class="input-cover">
+            <input type="text" wire:model="lease_purchase_extension_terms" class="form-control has-icon"
+                data-icon="fa-solid fa-calendar-plus"
+                placeholder="Enter extension terms (e.g., Lease may be extended for 6 months with adjusted purchase price)">
+        </div>
     </div>
 @endif
 

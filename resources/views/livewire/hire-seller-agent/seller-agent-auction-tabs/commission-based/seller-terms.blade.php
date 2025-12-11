@@ -1143,8 +1143,11 @@ This amount represents the portion of the purchase price that the Seller will fi
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
-        <textarea wire:model="lease_option_extension_terms" class="form-control" rows="2"
-            placeholder="Enter extension terms (e.g., Tenant-Buyer may extend for 6 months with additional $5,000 fee)"></textarea>
+        <div class="input-cover">
+            <input type="text" wire:model="lease_option_extension_terms" class="form-control has-icon"
+                data-icon="fa-solid fa-calendar-plus"
+                placeholder="Enter extension terms (e.g., Tenant-Buyer may extend for 6 months with additional $5,000 fee)">
+        </div>
     </div>
 @endif
 
@@ -1314,8 +1317,11 @@ This amount represents the portion of the purchase price that the Seller will fi
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
-        <textarea wire:model="lease_purchase_extension_terms" class="form-control" rows="2"
-            placeholder="Enter extension terms (e.g., Buyer may extend lease purchase for 6 months with additional $5,000 deposit)"></textarea>
+        <div class="input-cover">
+            <input type="text" wire:model="lease_purchase_extension_terms" class="form-control has-icon"
+                data-icon="fa-solid fa-calendar-plus"
+                placeholder="Enter extension terms (e.g., Buyer may extend lease purchase for 6 months with additional $5,000 deposit)">
+        </div>
     </div>
 @endif
 
