@@ -85,7 +85,7 @@
     <div class="service-section mb-4">
         <h5 class="section-header bg-info text-white p-2 mb-3">📋 Closing Coordination & Transaction Management</h5>
         <div class="service-options">
-            @foreach (['Coordinate scheduling for inspections, appraisals, and other requested evaluations', 'Coordinate with the Lender, Title, Escrow, and/or Attorney to prepare for Closing', 'Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed ', 'Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties', 'Schedule and confirm the Final Walkthrough', 'Schedule and confirm the Closing Appointment'] as $service)
+            @foreach (['Review and provide the Buyer with Seller-supplied due diligence documentation, including property disclosures, inspection reports, HOA documents, and utility summaries (as available)', 'Coordinate scheduling for inspections, appraisals, and other requested evaluations', 'Coordinate with the Lender, Title, Escrow, and/or Attorney to prepare for Closing', 'Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed ', 'Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties', 'Schedule and confirm the Final Walkthrough', 'Schedule and confirm the Closing Appointment'] as $service)
                 <div class="form-check service-item">
                     <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
                         id="closing-{{ Str::slug($service) }}">
@@ -403,10 +403,10 @@
     <h5 class="section-header bg-info text-white p-2 mb-3">💡 Buying Strategy & Guidance</h5>
     <div class="service-options">
         @foreach ([
-            'Provide a Comparative Market Analysis (CMA) with recent sales comps, lease comps, and an estimated value range (for informational purposes only — not a formal appraisal)',
-            'Answer general questions about zoning regulations, permitted uses, and rental income potential',
-            'Provide factual data on traffic counts, commercial market trends, and area demographics using third-party sources (no personal opinions or steering)',
-            'Offer general guidance on lease types, contingency timelines, due diligence, and environmental risks (non-legal advice only)'
+            'Provide a Comparative Market Analysis (CMA) with recent sales comps, lease comps, and an estimated value range',
+            'Provide general guidance on zoning regulations, permitted uses, and rental income potential',
+            'Provide factual data on traffic counts, commercial market trends, and area demographics using third-party sources',
+            'Provide general guidance on lease types, contingency timelines, due diligence, and environmental risks'
         ] as $service)
             <div class="form-check service-item">
                 <input class="form-check-input" type="checkbox" wire:model="services"
@@ -566,9 +566,9 @@
     <h5 class="section-header bg-info text-white p-2 mb-3">💡 Buying Strategy & Guidance</h5>
     <div class="service-options">
         @foreach ([
-            'Provide a Comparative Market Review based on similar business sales, financial performance, and industry benchmarks (for informational purposes only — not a formal appraisal or valuation)',
-            'Answer general questions about licensing, zoning, SBA financing, registration steps, and transition timing (non-legal guidance)',
-            'Offer general guidance on due diligence preparation, key documents to review, and red flags during the acquisition process (non-legal advice only)'
+            'Provide a Comparative Market Review based on similar business sales, financial performance, and industry benchmarks',
+            'Provide general guidance on licensing, zoning, SBA financing, registration steps, and transition timing',
+            'Provide general guidance on due diligence preparation, key documents to review, and red flags during the acquisition process'
         ] as $service)
             <div class="form-check service-item">
                 <input class="form-check-input" type="checkbox" wire:model="services"
@@ -637,7 +637,7 @@
             'Send property alerts for land listings that match the Buyer’s goals from MLS and land-specific platforms',
             'Search for off-market, pre-market, distressed, withdrawn, canceled, or expired properties that meet the Buyer’s purchase criteria',
             'Communicate with the Seller’s Agent or Seller to confirm zoning, access, utilities, and pricing',
-            'Assess development feasibility, land use restrictions, or agricultural potential (non-legal advice)'
+            'Evaluate development feasibility, land use restrictions, and agricultural potential with the Buyer'
         ] as $service)
             <div class="form-check service-item">
                 <input class="form-check-input" type="checkbox" wire:model="services"
@@ -680,10 +680,10 @@
             'Draft and submit offers using state-approved purchase forms',
             'Provide the Buyer with required state or local disclosure forms',
             'Draft and deliver counteroffers and manage revisions to the purchase agreement',
-            'Negotiate price, deposits, and contingencies ',
+            'Negotiate price, deposits, and contingencies with the Seller's Agent or Seller',
             'Manage communication with the Seller’s Agent or Seller',
             'Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed documents to all parties',
-            'Assist with due diligence coordination, including survey review, soil testing, zoning checks, and permit verification (non-legal guidance only)',
+            'Assist with due diligence coordination, including survey review, soil testing, zoning checks, and permit verification',
             'Monitor contract milestones, contingency deadlines, and financing timelines',
             'Provide referrals to Attorneys, Title Companies, Escrow Officers, Surveyors, or Land Use Consultants (referrals only — no endorsement or warranty is made)'
         ] as $service)
@@ -727,10 +727,10 @@
     <h5 class="section-header bg-info text-white p-2 mb-3">💡 Buying Strategy & Guidance</h5>
     <div class="service-options">
         @foreach ([
-            'Provide a Comparative Market Analysis (CMA) based on recent land sales, acreage comps, and price-per-acre benchmarks (for informational purposes only — not a formal appraisal)',
-            'Answer general questions about zoning, utilities, development potential, and environmental constraints (non-legal guidance only)',
-            'Provide factual data on flood zones, wetlands, and land use maps using third-party sources (no legal or engineering advice)',
-            'Offer general guidance on feasibility timelines, inspection steps, and rural financing considerations (non-legal advice only)'
+            'Provide a Comparative Market Analysis (CMA) with acreage comps, recent land sales, and price-per-acre benchmarks',
+            'Provide general guidance on zoning, utilities, development potential, and environmental constraints',
+            'Provide factual data on flood zones, wetlands, and land use maps using third-party sources',
+            'Provide general guidance on feasibility timelines, inspection steps, and rural financing considerations'
         ] as $service)
             <div class="form-check service-item">
                 <input class="form-check-input" type="checkbox" wire:model="services"
@@ -831,4 +831,16 @@
             >➕ Add Another Service</button>
         @endif
     </div>
+</div>
+
+<div class="alert alert-warning mt-3 p-2 small">
+    <strong> ⚖️ Note :</strong> All services described above are provided within the scope of real estate brokerage
+    duties as defined by state law. Services are administrative, advisory, or informational in nature and do not include
+    legal, tax, accounting, or financial advice. Analyses are not formal appraisals or valuations. The Agent does not
+    handle client funds outside of escrow or trust accounts as permitted by law. All information is relayed as provided
+    by third parties (e.g., Seller, Lender, Title, Escrow, Attorney, CPA, or other licensed professionals). The Buyer
+    and/or their Attorney, CPA, or other licensed professional remain solely responsible for reviewing, confirming, and
+    approving the accuracy, completeness, and compliance of all documents, disclosures, financial statements, contracts,
+    and transfers. Additional services must remain within the scope of brokerage law and fiduciary duties as outlined in
+    the signed brokerage agreement.
 </div>
