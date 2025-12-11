@@ -38,12 +38,30 @@
   wire:model.defer="phone_number"
   class="form-control has-icon"
   data-icon="fa-solid fa-phone"
-  placeholder="Enter phone number"
+  placeholder="555-555-5555"
   inputmode="numeric"
   autocomplete="tel"
+  maxlength="12"
+  oninput="formatPhoneNumber(this)"
 />
   </div>
 </div>
+
+<script>
+function formatPhoneNumber(input) {
+    let value = input.value.replace(/\D/g, '');
+    if (value.length > 10) {
+        value = value.substring(0, 10);
+    }
+    if (value.length >= 7) {
+        input.value = value.substring(0, 3) + '-' + value.substring(3, 6) + '-' + value.substring(6);
+    } else if (value.length >= 4) {
+        input.value = value.substring(0, 3) + '-' + value.substring(3);
+    } else {
+        input.value = value;
+    }
+}
+</script>
 
 <!-- Email -->
 <div class="form-group">
