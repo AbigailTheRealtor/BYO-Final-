@@ -711,17 +711,8 @@
                 }
                 if (otherTextarea) otherTextarea.classList.remove('is-invalid');
 
-                if (!hasServices && (!otherCheckbox || !otherCheckbox.checked)) {
-                    isValid = false;
-                    const errorDiv = document.createElement('div');
-                    errorDiv.className = 'service-error error mt-2';
-                    errorDiv.textContent = 'Please select at least one service or specify additional services.';
-
-                    const lastSection = currentTab.querySelector('.service-section:last-child') || currentTab;
-                    if (lastSection) {
-                        lastSection.appendChild(errorDiv);
-                    }
-                }
+                // Services validation removed - selecting services is now optional
+                // No validation error will be shown if no services are selected
 
                 // if (otherCheckbox && otherCheckbox.checked && (!otherTextarea || !hasOtherDescription)) {
                 //     isValid = false;

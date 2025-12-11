@@ -547,18 +547,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function validateServicesTab(tab){
         if(!tab || tab.id!=='services') return true;
-        const hasServices = tab.querySelectorAll('input[type="checkbox"][wire\\:model="services"]:checked:not(#other-services-checkbox)').length>0;
-        const otherCheckbox = tab.querySelector('#other-services-checkbox');
-        const otherTextarea = tab.querySelector('#other-services-input');
-        const hasOther = otherTextarea && otherTextarea.value.trim()!=='';
+        // Services validation removed - selecting services is now optional
         tab.querySelectorAll('.service-error').forEach(e=>e.remove());
-        if(!hasServices && (!otherCheckbox || !otherCheckbox.checked || !hasOther)){
-            const div=document.createElement('div');
-            div.className='service-error error mt-2';
-            div.textContent='Please select at least one service or specify additional services.';
-            (tab.querySelector('.service-section:last-child')||tab).appendChild(div);
-            return false;
-        }
         return true;
     }
 

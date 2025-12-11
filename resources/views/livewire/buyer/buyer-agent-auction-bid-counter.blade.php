@@ -197,7 +197,7 @@ function validateServicesTab(currentTab){
     isValid = false;
     const errorDiv = document.createElement('div');
     errorDiv.className='service-error error mt-2';
-    errorDiv.textContent='Please select at least one service or specify additional services.';
+    // Validation removed - services are optional
     const lastSection = currentTab.querySelector('.service-section:last-child') || currentTab;
     lastSection.appendChild(errorDiv);
   }
