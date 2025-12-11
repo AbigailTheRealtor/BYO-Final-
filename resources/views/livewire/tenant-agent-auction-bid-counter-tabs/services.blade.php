@@ -42,7 +42,7 @@
 </div>
 <!-- Search & Property Matching Section -->
 <div class="service-section mb-4">
-    <h5 class="section-header bg-info text-white p-2 mb-3">🔍 Search, Alerts & Property Matching</h5>
+    <h5 class="section-header bg-info text-white p-2 mb-3">🔍 Property Search, Alerts & Matching</h5>
     <div class="service-options">
         @foreach ([
             'Send email alerts with new listings from the MLS that match the Tenant’s rental criteria',
@@ -205,9 +205,9 @@
     </div>
 </div>
 
-<!-- Search, Alerts & Property Matching Section -->
+<!-- Property Search, Alerts & Matching Section -->
 <div class="service-section mb-4">
-    <h5 class="section-header bg-info text-white p-2 mb-3">🔍 Search, Alerts & Property Matching</h5>
+    <h5 class="section-header bg-info text-white p-2 mb-3">🔍 Property Search, Alerts & Matching</h5>
     <div class="service-options">
         @foreach ([
             'Send listing alerts from commercial platforms (e.g., LoopNet, Crexi, CoStar, or local MLS) that match the Tenant’s leasing criteria',

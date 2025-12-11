@@ -5,9 +5,11 @@
 <div class="alert alert-info bg-light-info border-info mb-4">
     <div class="d-flex align-items-center">
         <div>
-            <strong>🤝 Select the services the Buyer would like the Agent to provide throughout the purchase process. Services
-            are offered under a commission-based, full-service agreement. The final scope and compensation will be
-            outlined in the signed agreement. </strong>
+            <strong>🤝 Select the services the Buyer would like the Agent to provide throughout the purchase process.
+                Services are offered under a commission-based, full-service agreement, with the brokerage relationship
+                type determined in accordance with state law. Selections here are for guidance only; the signed
+                brokerage agreement governs the final scope of representation and compensation.
+            </strong>
         </div>
     </div>
 </div>
@@ -67,7 +69,7 @@
     <div class="service-section mb-4">
         <h5 class="section-header bg-info text-white p-2 mb-3">📝 Offer & Contract Coordination</h5>
         <div class="service-options">
-            @foreach (['Draft and submit offers using state-approved purchase forms', 'Provide the Buyer with the necessary disclosure forms required by state or local law', 'Draft and deliver counteroffers and manage revisions to the purchase agreement', 'Negotiate price, deposits, and contingencies with the Seller’s Agent or Seller (as permitted under the agency agreement)', 'Manage communications with the Seller’s Agent or Seller', 'Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties', 'Assist with inspection-related negotiations and Buyer requests for repairs', 'Monitor contract milestones, contingency periods, and financing deadlines', 'Provide referrals to Attorneys, Title Companies, Escrow Professionals, or Lenders (referrals only — no endorsement or warranty is made)'] as $service)
+            @foreach (['Draft and submit offers using state-approved purchase forms', 'Provide the Buyer with the necessary disclosure forms required by state or local law', 'Draft and deliver counteroffers and manage revisions to the purchase agreement', 'Negotiate price, deposits, and contingencies with the Seller’s Agent or Seller ', 'Manage communications with the Seller’s Agent or Seller', 'Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties', 'Assist with inspection-related negotiations and Buyer requests for repairs', 'Monitor contract milestones, contingency periods, and financing deadlines', 'Provide referrals to Attorneys, Title Companies, Escrow Professionals, or Lenders (referrals only — no endorsement or warranty is made)'] as $service)
                 <div class="form-check service-item">
                     <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
                         id="offer-{{ Str::slug($service) }}">
@@ -83,7 +85,7 @@
     <div class="service-section mb-4">
         <h5 class="section-header bg-info text-white p-2 mb-3">📋 Closing Coordination & Transaction Management</h5>
         <div class="service-options">
-            @foreach (['Coordinate inspections, appraisals, and lease audits (if applicable)', 'Coordinate with the Lender, Title, Escrow, and/or Attorney to prepare for Closing', 'Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed (no legal or financial advice provided)', 'Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties', 'Schedule and confirm the Final Walkthrough', 'Schedule and confirm the Closing Appointment'] as $service)
+            @foreach (['Coordinate scheduling for inspections, appraisals, and other requested evaluations', 'Coordinate with the Lender, Title, Escrow, and/or Attorney to prepare for Closing', 'Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed ', 'Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties', 'Schedule and confirm the Final Walkthrough', 'Schedule and confirm the Closing Appointment'] as $service)
                 <div class="form-check service-item">
                     <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
                         id="closing-{{ Str::slug($service) }}">
@@ -100,10 +102,10 @@
     <h5 class="section-header bg-info text-white p-2 mb-3">💡 Buying Strategy & Guidance</h5>
     <div class="service-options">
         @foreach ([
-            'Provide a Comparative Market Analysis (CMA) with pricing recommendations based on comparable sales, neighborhood trends, and current market conditions (for informational purposes only — not a formal appraisal)',
-            'Answer general questions about financing, loan options, property taxes, insurance, and escrow timelines (non-legal guidance)',
-            'Provide factual information about neighborhood characteristics, school zones, crime data, and local amenities using third-party sources (no personal opinions or steering)',
-            'Offer general guidance on inspection expectations, common repair requests, and contingency planning during the offer process (non-legal advice)'
+            'Provide a Comparative Market Analysis (CMA) with pricing recommendations based on comparable sales, neighborhood trends, and current market conditions',
+            'Provide general guidance on financing, loan options, property taxes, insurance, and escrow timelines',
+            'Provide factual information about neighborhood characteristics, school zones, crime data, and local amenities using third-party sources',
+            'Provide general guidance on inspection expectations, common repair requests, and contingency planning'
         ] as $service)
             <div class="form-check service-item">
                 <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
@@ -150,7 +152,7 @@
         @endforeach
     </div>
 </div>
-    <!-- Search, Alerts & Property Matching Section -->
+    <!-- Property Search, Alerts & Matching Section -->
 <!-- Property Search, Alerts & Matching Section -->
 <div class="service-section mb-4">
     <h5 class="section-header bg-info text-white p-2 mb-3">🔍 Property Search, Alerts & Matching</h5>
@@ -182,7 +184,7 @@
             'Schedule and attend property showings with the Buyer',
             'Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs',
             'Preview properties on behalf of the Buyer upon request',
-            'Provide observations on tenant occupancy, building condition, and operating expenses'
+            'Provide observations on Tenant occupancy, building condition, and operating expenses'
         ] as $service)
             <div class="form-check service-item">
                 <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
@@ -227,7 +229,7 @@
         @foreach ([
             'Review and provide due diligence documents such as lease agreements, estoppel certificates, rent rolls, utility summaries, and operating expense breakdowns (as available)',
             'Coordinate with the Seller’s Agent, Buyer’s Lender, Title, Escrow, and/or Attorney to prepare for Closing',
-            'Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed (no legal or financial advice provided)',
+            'Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed ',
             'Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties',
             'Schedule and confirm the Final Walkthrough',
             'Schedule and confirm the Closing Appointment'
@@ -248,10 +250,10 @@
     <h5 class="section-header bg-info text-white p-2 mb-3">💡 Buying Strategy & Guidance</h5>
     <div class="service-options">
         @foreach ([
-            'Provide a Comparative Market Analysis (CMA) with pricing recommendations, rental comps, and Cap Rate estimates (for informational purposes only — not a formal appraisal)',
-            'Answer general questions about financing options, rent control, property taxes, and Landlord responsibilities',
-            'Provide factual information on rental demand, turnover rates, and sub market conditions using third-party sources',
-            'Offer general guidance on due diligence steps, lease audits, and estoppel reviews (non-legal advice)'
+            'Provide a Comparative Market Analysis (CMA) with pricing recommendations, rental comps, and Cap Rate estimates',
+            'Provide general guidance on financing options, rent control, property taxes, and Landlord responsibilities',
+            'Provide factual information on rental demand, turnover rates, and submarket conditions using third-party sources',
+            'Provide general guidance on due diligence steps, lease audits, and estoppel reviews'
         ] as $service)
             <div class="form-check service-item">
                 <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
@@ -300,7 +302,7 @@
 </div>
 
 
-    <!-- Search, Alerts & Property Matching Section -->
+    <!-- Property Search, Alerts & Matching Section -->
     <div class="service-section mb-4">
     <h5 class="section-header bg-info text-white p-2 mb-3">🔍 Property Search, Alerts & Matching</h5>
     <div class="service-options">
@@ -330,7 +332,7 @@
             'Schedule and attend property showings with the Buyer',
             'Coordinate or conduct virtual showings via live video or recorded walkthroughs',
             'Preview properties on behalf of the Buyer upon request',
-            'Provide insights on layout, access, visibility, tenant mix, and surrounding infrastructure'
+            'Provide insights on layout, access, visibility, Tenant mix, and surrounding infrastructure'
         ] as $service)
             <div class="form-check service-item">
                 <input class="form-check-input" type="checkbox" wire:model="services"
@@ -379,7 +381,7 @@
             'Coordinate inspections, appraisals, environmental assessments, and estoppel certificate collection as needed',
             'Review and request due diligence documentation such as lease agreements, estoppel certificates, rent rolls, utility summaries, and operating expense breakdowns (as available)',
             'Coordinate with the Lender, Title Company, Escrow Officer, and/or Attorney to prepare for Closing',
-            'Review the Settlement Statement for accuracy and coordinate with all parties if corrections are needed (no legal or financial advice provided)',
+            'Review the Settlement Statement for accuracy and coordinate with all parties if corrections are needed ',
             'Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties',
             'Schedule and confirm the Final Walkthrough',
             'Schedule and confirm the Closing Appointment'
@@ -542,7 +544,7 @@
         @foreach ([
             'Coordinate inspections, licensing verifications, lease assignments, and inventory counts',
             'Coordinate with Lenders, Attorneys, Escrow Officers, Title Companies, CPAs, and other involved parties to prepare for Closing',
-            'Review the Settlement Statement or Closing Worksheet for accuracy and coordinate with all parties if corrections are needed (no legal or financial advice provided)',
+            'Review the Settlement Statement or Closing Worksheet for accuracy and coordinate with all parties if corrections are needed ',
             'Confirm delivery of final executed documents, wire instructions, and business transition materials',
             'Schedule and confirm the Final Walkthrough',
             'Schedule and confirm the Closing Appointment'
@@ -678,7 +680,7 @@
             'Draft and submit offers using state-approved purchase forms',
             'Provide the Buyer with required state or local disclosure forms',
             'Draft and deliver counteroffers and manage revisions to the purchase agreement',
-            'Negotiate price, deposits, and contingencies (as permitted under the agency agreement)',
+            'Negotiate price, deposits, and contingencies ',
             'Manage communication with the Seller’s Agent or Seller',
             'Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed documents to all parties',
             'Assist with due diligence coordination, including survey review, soil testing, zoning checks, and permit verification (non-legal guidance only)',
@@ -703,7 +705,7 @@
         @foreach ([
             'Coordinate surveys, appraisals, inspections, and environmental assessments',
             'Coordinate with the Lender, Title Company, Escrow Officer, and/or Attorney to prepare for Closing',
-            'Review the Settlement Statement for accuracy and coordinate with all parties if corrections are needed (no legal or financial advice provided)',
+            'Review the Settlement Statement for accuracy and coordinate with all parties if corrections are needed ',
             'Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties',
             'Schedule and confirm the Final Walkthrough',
             'Schedule and confirm the Closing Appointment'
@@ -754,7 +756,7 @@
             <input class="form-check-input" type="checkbox" wire:model="other_services_enabled"
                 id="other-services-checkbox">
             <label class="form-check-label" for="other-services-checkbox">
-                Other – Specify additional services as needed.
+                Other – Specify additional services as needed
             </label>
         </div>
 
@@ -788,7 +790,7 @@
                 wire:model="other_services_enabled"
             >
             <label class="form-check-label" for="other-services-checkbox">
-                Other – Specify additional services as needed.
+                Other – Specify additional services as needed
             </label>
         </div>
 

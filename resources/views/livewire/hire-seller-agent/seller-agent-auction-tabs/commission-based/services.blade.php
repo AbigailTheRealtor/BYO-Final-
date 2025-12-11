@@ -359,17 +359,6 @@
 @endif
 @if ($property_type == 'Commercial')
 
-    <div class="alert alert-info bg-light-info border-info mb-4">
-        <div class="d-flex align-items-center">
-            <i class="fas fa-info-circle me-2"></i>
-            <div>
-                These services are offered under a commission-based, full-service commercial listing agreement. The
-                agent may assist with marketing, listing presentation, property tours, offer negotiations, and closing
-                coordination, as defined in the executed agreement. The agency relationship, service scope, and
-                compensation terms are outlined in the agreement between the broker and seller. </div>
-        </div>
-    </div>
-
     <!-- 📢 Property Marketing & Listing Promotion -->
     <div class="service-section mb-4">
         <h5 class="section-header bg-info text-white p-2 mb-3">📢 Property Marketing & Listing Promotion</h5>
@@ -528,19 +517,6 @@
 
 @endif
 @if ($property_type == 'Business')
-
-    <div class="alert alert-info bg-light-info border-info mb-4">
-        <div class="d-flex align-items-center">
-            <i class="fas fa-info-circle me-2"></i>
-            <div>
-                These services are offered under a commission-based, full-service listing agreement for the sale of a
-                business opportunity. The agent may assist with listing preparation, marketing, buyer coordination,
-                offer review, and transaction management as outlined in the executed agreement. The scope of services
-                and compensation terms are defined in the agreement between the seller and broker. Sellers are
-                encouraged to consult with an attorney and CPA for legal, tax, and financial matters related to the
-                business sale. </div>
-        </div>
-    </div>
 
     <!-- 📢 Business Marketing & Listing Promotion -->
     <div class="service-section mb-4">
@@ -731,17 +707,6 @@
 
 @endif
 @if ($property_type == 'Vacant Land')
-
-    <div class="alert alert-info bg-light-info border-info mb-4">
-        <div class="d-flex align-items-center">
-            <i class="fas fa-info-circle me-2"></i>
-            <div>
-                These services are offered under a commission-based, full-service listing agreement for the sale of
-                vacant land. The agent may assist with pricing, marketing, showing coordination, offer review, and
-                closing support as outlined in the signed agreement. The scope of representation and compensation
-                structure are defined in the executed listing agreement between the seller and broker. </div>
-        </div>
-    </div>
 
     <div class="service-section mb-4">
         <h5 class="section-header bg-info text-white p-2 mb-3">📢 Property Marketing & Listing Promotion</h5>

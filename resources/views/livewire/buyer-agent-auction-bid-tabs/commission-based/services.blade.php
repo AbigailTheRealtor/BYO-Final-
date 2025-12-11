@@ -150,7 +150,7 @@
         @endforeach
     </div>
 </div>
-    <!-- Search, Alerts & Property Matching Section -->
+    <!-- Property Search, Alerts & Matching Section -->
 <!-- Property Search, Alerts & Matching Section -->
 <div class="service-section mb-4">
     <h5 class="section-header bg-info text-white p-2 mb-3">🔍 Property Search, Alerts & Matching</h5>
@@ -300,7 +300,7 @@
 </div>
 
 
-    <!-- Search, Alerts & Property Matching Section -->
+    <!-- Property Search, Alerts & Matching Section -->
     <div class="service-section mb-4">
     <h5 class="section-header bg-info text-white p-2 mb-3">🔍 Property Search, Alerts & Matching</h5>
     <div class="service-options">

@@ -128,10 +128,10 @@
     </div>
 </div>
 
-<!-- Search, Alerts & Property Matching Section -->
+<!-- Property Search, Alerts & Matching Section -->
 <div class="card mb-4">
     <div class="card-header bg-info">
-        <h5 class="mb-0 text-white">🔍 Search, Alerts & Property Matching</h5>
+        <h5 class="mb-0 text-white">🔍 Property Search, Alerts & Matching</h5>
     </div>
     <div class="card-body">
         <!-- Email Notifications -->
