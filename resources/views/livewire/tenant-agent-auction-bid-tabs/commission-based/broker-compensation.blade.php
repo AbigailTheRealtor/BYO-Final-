@@ -192,7 +192,7 @@
         </label>
 
         <div class="input-cover mt-2">
-            <select wire:model.lazy="broker_fee_timing" class="form-control has-icon" data-icon="fa-solid fa-clock">
+            <select wire:model="broker_fee_timing" class="form-control has-icon" data-icon="fa-solid fa-clock">
                 <option value="">Select</option>
                 <option value="Deducted from Rent Collected">Deducted from Rent Collected</option>
                 <option value="Paid Within Calendar Days After Executed Lease">Paid Within Calendar Days After Executed Lease</option>
@@ -242,17 +242,17 @@
         </label>
 
         <div class="input-cover mt-2">
-            <select wire:model.lazy="broker_fee_timing" class="form-control has-icon" data-icon="fa-solid fa-clock">
+            <select wire:model="broker_fee_timing" class="form-control has-icon" data-icon="fa-solid fa-clock">
                 <option value="">Select</option>
                 <option value="full_execution">Full amount upon execution of lease, sales contract, or other transfer agreement</option>
                 <option value="half_execution_half_commencement">50% due upon execution, 50% due upon commencement of agreement</option>
                 <option value="half_execution_half_occupancy">50% due upon execution, 50% due upon occupancy of premises</option>
-                <option value="Other">Other</option>
+                <option value="other">Other</option>
             </select>
         </div>
 
         <div class="mt-3">
-            @if ($broker_fee_timing === 'Other')
+            @if ($broker_fee_timing === 'other')
                 <div class="input-group">
                     <input type="text" wire:model.lazy="broker_fee_timing_other" class="form-control"
                         placeholder="Describe payment arrangement (e.g., Broker to be paid 25% upon lease execution, 25% upon tenant move-in, and 50% upon first month's rent payment)">
