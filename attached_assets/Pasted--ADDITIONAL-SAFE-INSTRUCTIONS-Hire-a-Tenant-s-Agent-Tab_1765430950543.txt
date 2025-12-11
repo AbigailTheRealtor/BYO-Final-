@@ -1,0 +1,76 @@
+🔒 ADDITIONAL SAFE INSTRUCTIONS – Hire a Tenant’s Agent → Tab 7
+(Broker Compensation & Agency Agreement Terms – Residential & Commercial)
+Do NOT delete, rename, or overwrite:
+•	Any Blade views, Livewire components, database fields, icons, or tabs.
+•	Do NOT touch any Buyer, Seller, or Landlord flows.
+•	Only apply the changes described in this section to Tenant Tab 7 + Tenant Bid + Tenant Counter Bid.
+These edits are in addition to the previous Tenant Tab 7 instructions.
+________________________________________
+A) Comma Formatting – Specific Tenant Broker Compensation Fields
+A.1 Residential – Tenant’s Broker Compensation Fee (Tab 7)
+Under Hire a Tenant’s Agent → Residential → Tab 7: Broker Compensation & Agency Agreement Terms:
+Add thousands-separator (comma) formatting so that typing 10000 shows as 10,000 for the following fields:
+1.	Tenant’s Broker Lease Fee
+o	When the structure is:
+“Flat Fee + Percentage of the Gross Lease Value”
+o	The left $ flat-fee input must format with commas (e.g., 10000 → 10,000).
+2.	Tenant’s Broker Purchase Fee
+o	When the structure is:
+“Percentage of the Total Purchase Price + Flat Fee”
+o	The right $ flat-fee input must format with commas (e.g., 23232333 → 23,232,333).
+________________________________________
+A.2 Commercial – Tenant’s Broker Compensation Fee (Tab 7)
+Under Hire a Tenant’s Agent → Commercial → Tab 7: Broker Compensation & Agency Agreement Terms:
+Apply the same thousands-separator formatting to:
+1.	Tenant’s Broker Purchase Fee
+o	When the structure is: “Percentage of the Total Purchase Price + Flat Fee”
+o	The right $ flat-fee field must format with commas (e.g., 45345 → 45,345).
+2.	Tenant’s Broker Lease Fee
+o	When the structure is: “Flat Fee + Percentage of the Net Aggregate Rent”
+o	The left $ flat-fee field must format with commas (e.g., 3453454 → 3,453,454).
+Keep all existing field names/values exactly the same.
+Only extend the input formatting logic to these fields.
+Apply this same formatting in:
+•	Tenant listing Tab 7 (Residential & Commercial)
+•	Tenant Agent Bid forms
+•	Tenant Agent Counter Bid forms
+________________________________________
+A.3 Static $ fields – Early Termination & Retainer Fee
+Still under Hire a Tenant’s Agent → Tab 7 (Residential & Commercial):
+Ensure that the thousands-separator formatting also works on static $ fields, not just fields with a $ / % toggle.
+Specifically, make sure comma formatting is enabled for at least:
+•	Early Termination Fee – dollar amount input
+•	Retainer Fee Amount – dollar amount input
+Behavior:
+•	When a user types 6000, it should display as 6,000 in all static $ fields, same as it does in the toggleable $ / % inputs.
+Do not change labels, tooltips, or underlying values—only the formatting logic.
+________________________________________
+B) Lease-Option Section – Remove Header Text
+Under Hire a Tenant’s Agent → Tab 7, in the section:
+Interested in a Lease-Option Agreement
+and in Bid / Counter Bid views:
+•	Keep the two existing fields:
+o	Compensation for Creating the Lease-Option Agreement:
+o	Compensation if Purchase Option is Exercised:
+•	Remove the text above these fields that says:
+Compensation for Creating the Lease-Option Agreement and Compensation if Purchase Option is Exercised
+
+Do not remove or rename the two compensation fields themselves—only delete the extra header bar 
+Tooltips for those two fields from the previous instructions should remain as-is.
+________________________________________
+C) Payment Timing for Broker Fees – Fix Livewire Error
+Under Hire a Tenant’s Agent → Tab 7 for both Residential and Commercial:
+Field: Payment Timing for Broker Fees:
+•	Currently, selecting a value in this dropdown can throw a Livewire ArgumentCountError related to Illuminate\Support\Str::studly().
+You must:
+1.	Fix the underlying cause of this error so that:
+o	Any option in Payment Timing for Broker Fees can be selected without triggering an exception.
+o	The selected value is correctly saved and reloaded on page refresh.
+2.	Do NOT:
+o	Rename or delete the existing options or their internal values.
+o	Remove the field.
+o	Change its label or tooltip.
+Apply the same fix wherever this field appears:
+•	Tenant Tab 7 (Residential & Commercial)
+•	Tenant Agent Bid forms
+•	Tenant Agent Counter Bid forms
