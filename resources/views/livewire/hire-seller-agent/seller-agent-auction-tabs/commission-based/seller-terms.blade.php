@@ -948,7 +948,7 @@ This amount represents the portion of the purchase price that the Seller will fi
         <div class="input-cover">
             <input type="text" wire:model="exchange_liens_details" class="form-control has-icon"
                 data-icon="fa-solid fa-file-contract"
-                placeholder="Enter lien/encumbrance details (e.g., auto loan balance, UCC filing)">
+                placeholder="Enter lien/encumbrance details (e.g., Auto loan balance, UCC filing)">
         </div>
     </div>
     @endif
@@ -1059,7 +1059,7 @@ This amount represents the portion of the purchase price that the Seller will fi
             </span>
         </label>
         <div class="input-cover">
-            <select wire:model="seller_lease_option_fee_credit" class="form-control has-icon"
+            <select wire:model="lease_option_fee_credit" class="form-control has-icon"
                 data-icon="fa-solid fa-hand-holding-usd">
                 <option value="">Select</option>
                 <option value="Yes">Yes</option>
@@ -1069,17 +1069,17 @@ This amount represents the portion of the purchase price that the Seller will fi
         </div>
     </div>
 
-    @if (($seller_lease_option_fee_credit ?? '') === 'Partial')
+    @if (($lease_option_fee_credit ?? '') === 'Partial')
     <div class="form-group mt-2">
         <label class="fw-bold">Percentage of Option Fee Credited Toward Purchase Price:</label>
         <div class="input-group">
-            <input type="text" wire:model="seller_lease_option_fee_credit_percent" class="form-control"
+            <input type="text" wire:model="lease_option_fee_credit_percentage" class="form-control"
                 placeholder="Enter percentage of option fee credited (e.g., 50)"
-                data-error-id="seller_lease_option_fee_credit_percent_error"
+                data-error-id="lease_option_fee_credit_percentage_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             <span class="input-group-text">%</span>
         </div>
-        <span class="error mt-2" id="seller_lease_option_fee_credit_percent_error"></span>
+        <span class="error mt-2" id="lease_option_fee_credit_percentage_error"></span>
     </div>
     @endif
 
@@ -1120,7 +1120,7 @@ This amount represents the portion of the purchase price that the Seller will fi
             </span>
         </label>
         <div class="input-cover">
-            <select wire:model="seller_lease_option_maintenance" class="form-control has-icon"
+            <select wire:model="lease_option_maintenance" class="form-control has-icon"
                 data-icon="fa-solid fa-tools">
                 <option value="">Select</option>
                 <option value="Seller">Seller</option>
@@ -1138,7 +1138,7 @@ This amount represents the portion of the purchase price that the Seller will fi
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
-        <textarea wire:model="seller_lease_option_extension_terms" class="form-control" rows="2"
+        <textarea wire:model="lease_option_extension_terms" class="form-control" rows="2"
             placeholder="Enter extension terms (e.g., Tenant-Buyer may extend for 6 months with additional $5,000 fee)"></textarea>
     </div>
 @endif
@@ -1210,7 +1210,7 @@ This amount represents the portion of the purchase price that the Seller will fi
             </span>
         </label>
         <div class="input-cover">
-            <select wire:model="seller_lease_purchase_rent_credit" class="form-control has-icon"
+            <select wire:model="lease_purchase_rent_credit" class="form-control has-icon"
                 data-icon="fa-solid fa-hand-holding-usd">
                 <option value="">Select</option>
                 <option value="Yes">Yes</option>
@@ -1220,20 +1220,20 @@ This amount represents the portion of the purchase price that the Seller will fi
         </div>
     </div>
 
-    @if (($seller_lease_purchase_rent_credit ?? '') === 'Yes' || ($seller_lease_purchase_rent_credit ?? '') === 'Partial')
+    @if (($lease_purchase_rent_credit ?? '') === 'Yes' || ($lease_purchase_rent_credit ?? '') === 'Partial')
     <div class="form-group mt-2">
         <label class="fw-bold">Rent Credit Amount Toward Purchase Price:</label>
         <div class="input-group">
-            <select wire:model="seller_lease_purchase_rent_credit_type" class="form-select" style="max-width: 80px;">
+            <select wire:model="lease_purchase_rent_credit_amount_type" class="form-select" style="max-width: 80px;">
                 <option value="$">$</option>
                 <option value="%">%</option>
             </select>
-            <input type="text" wire:model="seller_lease_purchase_rent_credit_amount" class="form-control"
-                placeholder="{{ ($seller_lease_purchase_rent_credit_type ?? '$') === '%' ? 'Enter rent credit percentage (e.g., 25)' : 'Enter rent credit dollar amount (e.g., 500)' }}"
-                data-error-id="seller_lease_purchase_rent_credit_amount_error"
+            <input type="text" wire:model="lease_purchase_rent_credit_amount" class="form-control"
+                placeholder="{{ ($lease_purchase_rent_credit_amount_type ?? '$') === '%' ? 'Enter rent credit percentage (e.g., 25)' : 'Enter rent credit dollar amount (e.g., 500)' }}"
+                data-error-id="lease_purchase_rent_credit_amount_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
         </div>
-        <span class="error mt-2" id="seller_lease_purchase_rent_credit_amount_error"></span>
+        <span class="error mt-2" id="lease_purchase_rent_credit_amount_error"></span>
     </div>
     @endif
 
@@ -1247,12 +1247,12 @@ This amount represents the portion of the purchase price that the Seller will fi
         </label>
         <div class="input-cover">
             <span class="input-group-text-seller">$</span>
-            <input type="text" wire:model="seller_lease_purchase_deposit" class="form-control has-icon"
+            <input type="text" wire:model="lease_purchase_deposit" class="form-control has-icon"
                 placeholder="Enter deposit amount (e.g., 10000)"
-                data-error-id="seller_lease_purchase_deposit_error"
+                data-error-id="lease_purchase_deposit_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
         </div>
-        <span class="error mt-2" id="seller_lease_purchase_deposit_error"></span>
+        <span class="error mt-2" id="lease_purchase_deposit_error"></span>
     </div>
 
     <!-- 6. Conditions or Requirements for Lease Purchase -->
@@ -1291,7 +1291,7 @@ This amount represents the portion of the purchase price that the Seller will fi
             </span>
         </label>
         <div class="input-cover">
-            <select wire:model="seller_lease_purchase_maintenance" class="form-control has-icon"
+            <select wire:model="lease_purchase_maintenance" class="form-control has-icon"
                 data-icon="fa-solid fa-tools">
                 <option value="">Select</option>
                 <option value="Seller">Seller</option>
@@ -1309,7 +1309,7 @@ This amount represents the portion of the purchase price that the Seller will fi
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
-        <textarea wire:model="seller_lease_purchase_extension_terms" class="form-control" rows="2"
+        <textarea wire:model="lease_purchase_extension_terms" class="form-control" rows="2"
             placeholder="Enter extension terms (e.g., Buyer may extend lease purchase for 6 months with additional $5,000 deposit)"></textarea>
     </div>
 @endif
