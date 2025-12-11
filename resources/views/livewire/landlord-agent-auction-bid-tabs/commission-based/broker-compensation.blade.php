@@ -249,14 +249,13 @@
         </div>
     </div>
 @endif
-<div class="form-group mb-2">
-    <label class="fw-bold d-flex align-items-center">
+
 @if ($property_type === 'Residential Property')
 
     <!-- Tenant's Broker Commission Structure -->
     <div class="form-group mb-4">
         <label class="fw-bold d-flex align-items-center">
-            Tenant's Broker Commission Fee:
+            Tenant's Broker Commission Structure:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Select how the Tenant’s Broker will be compensated. Options include: the Landlord’s Broker paying a portion of their commission, the Landlord paying the Tenant’s Broker directly, or offering no compensation.">
                 <i class="fa-solid fa-circle-info"></i>
@@ -283,7 +282,7 @@
                     commission received")
                 <div class="mb-3">
 
-                    <label class="form-label">Tenant's Broker Commission Fee Structure:
+                    <label class="form-label">Tenant's Broker Commission Fee:
 
                           <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                          title="Choose how the Tenant’s Broker will be compensated if a lease is secured. Options include: a percentage of the rent due each rental period, a percentage of the gross lease value, a percentage of the first month’s rent, a flat fee, or “Other” to define a custom payment structure. Then, enter the appropriate amount based on your selection.">
@@ -1173,7 +1172,7 @@ this agreement ends.">
         </div>
     @endif
 </div> --}}
-<!-- 10.	Landlord  Agency Agreement Timeframe -->
+<!-- 10.        Landlord  Agency Agreement Timeframe -->
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
         Landlord Agency Agreement Timeframe:
