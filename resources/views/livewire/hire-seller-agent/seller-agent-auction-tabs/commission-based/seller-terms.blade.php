@@ -1465,13 +1465,13 @@ This amount represents the portion of the purchase price that the Seller will fi
     <div class="form-group mt-3">
         <label class="fw-bold">Acceptable Non-Fungible Token (NFT):</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the type of NFT the Seller is willing to accept (e.g., tokenized real estate, digital artwork).">
+            title="Enter the type of NFT the Seller is willing to accept (e.g., Tokenized Real Estate, Digital Artwork).">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
             <input type="text" wire:model="nft_description" class="form-control has-icon"
                 data-icon="fa-solid fa-money-bill-wave"
-                placeholder="Enter the type of NFT the Seller is willing to accept (e.g., tokenized real estate, digital artwork)">
+                placeholder="Enter the type of NFT the Seller is willing to accept (e.g., Tokenized Real Estate, Digital Artwork)">
         </div>
     </div>
 
