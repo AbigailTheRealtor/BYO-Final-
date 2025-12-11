@@ -125,7 +125,7 @@
 
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        Buyer’s Broker Commission Structure:
+        Buyer’s Broker Commission Fee:
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select how the Buyer’s Broker will be compensated — either from the Seller’s Broker commission, directly by the Seller, or not at all.">
@@ -137,8 +137,8 @@
         <select wire:model="commission_structure" class="form-control has-icon"
             data-icon="fa-solid fa-file-invoice-dollar">
             <option value="">Select</option>
-            <option value="Seller’s Broker to Compensate Buyer’s Broker from Seller’s Broker Commission">Seller’s Broker to
-                Compensate Buyer’s Broker from Seller’s Broker Commission</option>
+            <option value="Seller’s Broker to Compensate Buyer’s Broker from Seller’s Commission">Seller’s Broker to
+                Compensate Buyer’s Broker from Seller’s Commission</option>
             <option value="Seller to Pay Buyer’s Broker Separately">Seller to Pay Buyer’s Broker Separately</option>
             <option value="No Compensation Offered to the Buyer’s Broker">No Compensation Offered to the Buyer’s Broker
             </option>
@@ -148,12 +148,12 @@
 
 </div>
 @if (
-    $commission_structure == 'Seller’s Broker to Compensate Buyer’s Broker from Seller’s Broker Commission' ||
+    $commission_structure == 'Seller’s Broker to Compensate Buyer’s Broker from Seller’s Commission' ||
         $commission_structure == 'Seller to Pay Buyer’s Broker Separately')
     <!-- Tenant's Broker Purchase Fee -->
     <div class="form-group mb-4">
         <label class="fw-bold d-flex align-items-center">
-            Buyer’s Broker Commission Structure:
+            Buyer’s Broker Commission Fee:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Enter the amount offered to the Buyer’s Broker. This can be a percentage of the purchase price, a flat fee, or select “Other” to define a custom compensation amount.">
                 <i class="fa-solid fa-circle-info"></i>
@@ -270,8 +270,8 @@
                         Period</option>
                     <option value="Percentage of the Gross Lease Value">Percentage of the Gross Lease Value</option>
                     <option value="Percentage of the First Month’s Rent">Percentage of the First Month’s Rent</option>
-                    <option value="Flat Fee">Flat Fee</option>
-                    <option value="other">Other</option>
+                    <option value="Percentage of Each Rental Period">Percentage of Each Rental Period</option>
+                    {{-- <option value="Flat Fee + Percentage of the Gross Lease Value">Flat Fee + Percentage of the Gross Lease Value</option> --}}
                 @elseif (in_array($property_type, ['Commercial', 'Business']))
                     <option value="Percentage of Net Aggregate Rent">Percentage of Net Aggregate Rent
                     <option value="Percentage of Gross Rent">Percentage of Gross Rent </option>
@@ -297,7 +297,7 @@
                 @if (in_array($property_type, ['Commercial', 'Business']))
                     <label class="fw-bold mt-2">Sales Tax:</label>
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                        title="Select whether commission amounts include sales tax or exclude sales tax." data-bs-trigger="hover focus">
+                        title="Select whether commission amounts include sales tax or exclude sales tax.">
                         <i class="fa-solid fa-circle-info"></i>
                     </span>
                     <div class="input-cover mt-2">
@@ -329,7 +329,7 @@
             <div class="mb-3">
                 <label class="fw-bold mt-2">Sales Tax:</label>
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Select whether commission amounts include sales tax or exclude sales tax." data-bs-trigger="hover focus">
+                    title="Select whether commission amounts include sales tax or exclude sales tax.">
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
                 <div class="input-cover mt-2">
@@ -396,7 +396,7 @@
             <div class="mb-3">
                 <label class="fw-bold mt-2">Sales Tax:</label>
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Select whether commission amounts include sales tax or exclude sales tax." data-bs-trigger="hover focus">
+                    title="Select whether commission amounts include sales tax or exclude sales tax.">
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
                 <div class="input-cover mt-2">
@@ -428,7 +428,7 @@
             <div class="mb-3">
                 <label class="fw-bold mt-2">Sales Tax:</label>
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Select whether commission amounts include sales tax or exclude sales tax." data-bs-trigger="hover focus">
+                    title="Select whether commission amounts include sales tax or exclude sales tax.">
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
                 <div class="input-cover mt-2">
