@@ -303,15 +303,8 @@ function validateServicesTab(currentTab){
   const hasServices = currentTab.querySelectorAll('input[type="checkbox"][wire\\:model="services"]:checked:not(#other-services-checkbox)').length>0;
   const otherCheckbox = currentTab.querySelector('#other-services-checkbox');
 
-  if(!hasServices && (!otherCheckbox || !otherCheckbox.checked)){
-    isValid = false;
-    const errorDiv = document.createElement('div');
-    errorDiv.className='service-error error mt-2';
-    // Validation removed - services are optional
-    const lastSection = currentTab.querySelector('.service-section:last-child') || currentTab;
-    lastSection.appendChild(errorDiv);
-  }
-  return isValid;
+  // Services validation removed - selecting services is now optional
+  return true;
 }
 function validateCurrentTabWithErrors(){
   const currentTab = document.querySelector('.tab-pane.active');
