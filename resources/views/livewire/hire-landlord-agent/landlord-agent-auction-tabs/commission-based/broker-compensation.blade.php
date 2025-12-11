@@ -250,7 +250,7 @@
     <label class="fw-bold d-flex align-items-center">
         Interested in Offering a Lease-Option Agreement:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select whether the Seller is open to a lease with option to purchase. If “Yes” is selected, you'll be prompted to enter compensation details.">
+            title="Select whether the Landlord is open to a lease with option to purchase. If “Yes” is selected, you'll be prompted to enter compensation details.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
