@@ -19,11 +19,11 @@
         </span>
     </label>
     <div class="input-cover mt-2">
-        <select wire:model="commission_structure" class="form-control has-icon"
+        <select wire:model.lazy="commission_structure" class="form-control has-icon"
             data-icon="fa-solid fa-file-invoice-dollar">
             <option value="">Select</option>
-            <option value="Out-of-Pocket Payment">Out-of-Pocket Payment</option>
-            <option value="Included in Offer">Included in Offer</option>
+            <option value="Tenant Pays Out-of-Pocket">Out-of-Pocket Payment</option>
+            <option value="Requested From Landlord in the Offer">Included in Offer</option>
         </select>
     </div>
     @error('commission_structure')
@@ -53,7 +53,7 @@
     </label>
 
     <div class="input-cover mt-2">
-        <select wire:model="lease_fee_type" class="form-control has-icon" data-icon="fa-solid fa-file-invoice-dollar">
+        <select wire:model.lazy="lease_fee_type" class="form-control has-icon" data-icon="fa-solid fa-file-invoice-dollar">
             <option value="">Select</option>
             <option value="Flat Fee">Flat Fee</option>
              @if ($property_type === 'Residential Property')

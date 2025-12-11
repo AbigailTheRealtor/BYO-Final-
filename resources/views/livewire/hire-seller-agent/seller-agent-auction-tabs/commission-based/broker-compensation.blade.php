@@ -23,7 +23,7 @@
         </span>
     </label>
     <div class="input-cover mt-2">
-        <select wire:model="commission_structure" class="form-control has-icon"
+        <select wire:model.lazy="commission_structure" class="form-control has-icon"
             data-icon="fa-solid fa-file-invoice-dollar">
             <option value="">Select</option>
             <option value="Out-of-Pocket Payment">Out-of-Pocket Payment</option>
@@ -45,7 +45,7 @@
         </span>
     </label>
     <div class="input-cover mt-2">
-        <select wire:model="purchase_fee_type" class="form-control has-icon"
+        <select wire:model.lazy="purchase_fee_type" class="form-control has-icon"
             data-icon="fa-solid fa-file-invoice-dollar">
             <option value="">Select</option>
             <option value="percentage">Percentage of the Total Purchase Price</option>
@@ -59,9 +59,9 @@
         @if ($purchase_fee_type === 'flat')
             <div class="input-group">
                 <span class="input-group-text">$</span>
-                <input type="text" wire:model="purchase_fee_flat" class="form-control"
-                    placeholder="Enter flat fee amount (e.g., 5000)" data-error-id="purchase_fee_flat_error"
-                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                <input type="text" wire:model.lazy="purchase_fee_flat" class="form-control"
+                    placeholder="Enter flat fee amount (e.g., 5,000)" data-error-id="purchase_fee_flat_error"
+                    oninput="formatWithCommas(this)" onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
 
                 <span class="error mt-2" id="purchase_fee_flat_error"></span>
 
@@ -86,10 +86,10 @@
                 <div class="col-md-5">
                     <div class="input-group">
                         <span class="input-group-text"> $</span>
-                        <input type="text" wire:model="purchase_fee_flat_combo" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 2000)"
-                            data-error-id="purchase_fee_flat_combo_error" oninput="validateInput(this)"
-                            onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                        <input type="text" wire:model.lazy="purchase_fee_flat_combo" class="form-control"
+                            placeholder="Enter flat fee amount (e.g., 2,000)"
+                            data-error-id="purchase_fee_flat_combo_error" oninput="formatWithCommas(this)"
+                            onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
                     </div>
 
                     <span class="error mt-2" id="purchase_fee_flat_combo_error"></span>
@@ -134,7 +134,7 @@
         </span>
     </label>
     <div class="input-cover mt-2">
-        <select wire:model="commission_structure" class="form-control has-icon"
+        <select wire:model.lazy="commission_structure" class="form-control has-icon"
             data-icon="fa-solid fa-file-invoice-dollar">
             <option value="">Select</option>
             <option value="Seller’s Broker to Compensate Buyer’s Broker from Seller’s Commission">Seller’s Broker to
@@ -161,7 +161,7 @@
             </span>
         </label>
         <div class="input-cover mt-2">
-            <select wire:model="commission_structure_type" class="form-control has-icon"
+            <select wire:model.lazy="commission_structure_type" class="form-control has-icon"
                 data-icon="fa-solid fa-file-invoice-dollar">
                 <option value="">Select</option>
                 <option value="Percentage of the Total Purchase Price">Percentage of the Total Purchase Price</option>
@@ -177,7 +177,7 @@
             @if ($commission_structure_type === 'Flat Fee')
                 <div class="input-group">
                     <span class="input-group-text">$</span>
-                    <input type="text" wire:model="commission_structure_type_fee_flat" class="form-control"
+                    <input type="text" wire:model.lazy="commission_structure_type_fee_flat" class="form-control"
                         placeholder="Enter flat fee amount (e.g., 4000)"
                         data-error-id="commission_structure_type_fee_flat_error" oninput="validateInput(this)"
                         onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -229,7 +229,7 @@
         </span>
     </label>
     <div class="input-cover mt-2">
-        <select wire:model="interested_purchase_fee_type" class="form-control has-icon"
+        <select wire:model.lazy="interested_purchase_fee_type" class="form-control has-icon"
             data-icon="fa-solid fa-file-invoice-dollar">
             <option value="">Select</option>
             <option value="Yes">Yes</option>
@@ -260,7 +260,7 @@
         </label>
 
         <div class="input-cover mt-2">
-            <select wire:model="seller_leasing_fee_type" class="form-control has-icon"
+            <select wire:model.lazy="seller_leasing_fee_type" class="form-control has-icon"
                 data-icon="fa-solid fa-file-invoice-dollar">
                 <option value="">Select</option>
 
@@ -508,7 +508,7 @@
                         : 'Enter flat fee amount (e.g., 1500)' }}"
 
                         data-error-id="lease_value_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
+                oninput="formatWithCommas(this)" onblur="formatWithCommas(this)" onpaste="handlePaste(event)"
                         >
 
                 <!-- Suffix -->
@@ -547,7 +547,7 @@
                         ? 'Enter percentage of the total purchase price (e.g., 6)'
                         : 'Enter flat fee amount (e.g., 1500)' }}"
                          data-error-id="purchase_value_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
+                oninput="formatWithCommas(this)" onblur="formatWithCommas(this)" onpaste="handlePaste(event)"
                 >
 
                 <!-- Suffix -->
@@ -603,7 +603,7 @@
         @endif
     </label>
     <div class="input-cover mt-2">
-        <select wire:model="early_termination_fee_option" class="form-control has-icon"
+        <select wire:model.lazy="early_termination_fee_option" class="form-control has-icon"
             data-icon="fa-solid fa-exclamation-triangle">
             <option value="">Select</option>
             <option value="yes">Yes</option>
@@ -617,7 +617,7 @@
                 <span class="input-group-text">$</span>
                 <input type="text" wire:model="early_termination_fee_amount" class="form-control"
                     placeholder="Enter early termination fee amount (e.g., 1000)"   data-error-id="early_termination_fee_amount_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                oninput="formatWithCommas(this)" onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
             </div>
 
                                     <span class="error mt-2" id="early_termination_fee_amount_error"></span>
@@ -637,7 +637,7 @@
         </span>
     </label>
     <div class="input-cover mt-2">
-        <select wire:model="retainer_fee_option" class="form-control has-icon"
+        <select wire:model.lazy="retainer_fee_option" class="form-control has-icon"
             data-icon="fa-solid fa-file-invoice-dollar">
             <option value="">Select</option>
             <option value="yes">Yes</option>
@@ -653,7 +653,7 @@
                     placeholder="Enter retainer fee amount (e.g., 500)"
 
                      data-error-id="retainer_fee_amount_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                oninput="formatWithCommas(this)" onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
 
                                         <span class="error mt-2" id="retainer_fee_amount_error"></span>
 
