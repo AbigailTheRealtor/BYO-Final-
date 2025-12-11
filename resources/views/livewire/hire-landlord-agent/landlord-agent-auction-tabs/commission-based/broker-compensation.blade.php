@@ -74,9 +74,9 @@
                     </div>
 
                 </div>
-            @elseif($purchase_fee_type === 'Percentage of the First Month's Rent')
+            @elseif($purchase_fee_type === 'Percentage of the First Month\'s Rent')
                 <div class="form-group">
-                    {{-- <label class="fw-bold">Percentage of the First Month's Rent:</label> --}}
+                    {{-- <label class="fw-bold">Percentage of the First Month\'s Rent:</label> --}}
 
                     <div class="input-group">
 
