@@ -1,5 +1,15 @@
 <h3>Services the Seller Requests from Their Agent </h3>
-
+<div class="alert alert-info bg-light-info border-info mb-4">
+    <div class="d-flex align-items-center">
+        <div>
+            <strong>🤝 Select the services the Seller would like the Agent to provide throughout the selling process.
+                Services are offered under a commission-based, full-service agreement, with the brokerage relationship
+                type determined in accordance with state law. Selections here are for guidance only; the signed
+                brokerage agreement governs the final scope of representation and compensation.
+            </strong>
+        </div>
+    </div>
+</div>
 @if ($property_type == 'Residential')
     <!-- Property Marketing & Listing Promotion -->
     <div class="service-section mb-4">
@@ -776,15 +786,16 @@
                         @foreach (['Basic edits (brightness, contrast, cropping)', 'Twilight conversion', 'Object removal (e.g., clutter, signage)', 'Sky replacement or color correction', 'Virtual twilight effect', 'Other'] as $enhancement)
                             <div class="form-check">
                                 <input class="form-check-input enhancement-checkbox" type="checkbox"
-                                    value="{{ $enhancement }}" id="enhancement-{{ Str::slug($enhancement) }}">
-                                <label class="form-check-label" for="enhancement-{{ Str::slug($enhancement) }}">
+                                    value="{{ $enhancement }}" id="vacant-enhancement-{{ Str::slug($enhancement) }}"
+                                    @if ($enhancement === 'Other') onclick="toggleVacantLandCustomEnhancement(this)" @endif>
+                                <label class="form-check-label" for="vacant-enhancement-{{ Str::slug($enhancement) }}">
                                     {{ $enhancement }}
                                 </label>
                             </div>
                         @endforeach
 
-                        <div class="mt-2" id="custom-enhancement" style="display: none;">
-                            <input type="text" class="form-control"
+                        <div class="mt-2" id="vacant-land-custom-enhancement" style="display: none;">
+                            <input type="text" class="form-control" wire:model="custom_enhancement"
                                 placeholder="Enter photo enhancement requests">
                         </div>
                     </div>
@@ -927,3 +938,19 @@
     disclosures, financial statements, contracts, and transfers. Additional services must remain within the scope of
     brokerage law and fiduciary duties as outlined in the signed brokerage agreement.
 </div>
+
+<script>
+    function toggleVacantLandCustomEnhancement(checkbox) {
+        const customEnhancementDiv = document.getElementById('vacant-land-custom-enhancement');
+        if (customEnhancementDiv) {
+            customEnhancementDiv.style.display = checkbox.checked ? 'block' : 'none';
+        }
+    }
+
+    function toggleEnhancements(checkbox) {
+        const enhancementOptions = document.getElementById('enhancement-options');
+        if (enhancementOptions) {
+            enhancementOptions.style.display = checkbox.checked ? 'block' : 'none';
+        }
+    }
+</script>
