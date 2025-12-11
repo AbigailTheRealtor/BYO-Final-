@@ -106,7 +106,7 @@
                 <div class="input-group">
 
                     <input type="text" wire:model.lazy="purchase_fee_other" class="form-control"
-                        placeholder="Enter purchase fee structure (e.g., Tiered: 5% on the first $500,000, 3% on any amount above $500,000)">
+                        placeholder="Enter lease fee structure (e.g., 100% of First Month's Rent, or a Tiered Schedule for Multi-Year Leases)">
                 </div>
             @endif
         </div>
@@ -155,14 +155,14 @@
                         <span class="input-group-text">%</span>
                     </div>
                     <label class="fw-bold mt-2">Sales Tax:</label>
-                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true" data-bs-trigger="hover focus"
                         title="Select whether commission amounts include sales tax or exclude sales tax.">
                         <i class="fa-solid fa-circle-info"></i>
                     </span>
 
                     <div class="input-cover mt-2">
 
-                        <select wire:model.lazy="sales_tax_option_gross"class="form-control has-icon"
+                        <select wire:model.lazy="sales_tax_option_gross" class="form-control has-icon"
                             data-icon="fa-solid fa-ruler">
                             <option value="">Select</option>
                             <option value="including">Including Sales Tax</option>
@@ -186,7 +186,7 @@
                             placeholder="Enter number of months (e.g., 1)">
                     </div>
                     <label class="fw-bold mt-3">Sales Tax:</label>
-                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true" data-bs-trigger="hover focus"
                         title="Select whether commission amounts include sales tax or exclude sales tax.">
                         <i class="fa-solid fa-circle-info"></i>
                     </span>
@@ -213,7 +213,7 @@
                     <span class="error mt-2" id="purchase_fee_flat_commercial_error"></span>
 
                     <label class="fw-bold mt-3">Sales Tax:</label>
-                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true" data-bs-trigger="hover focus"
                         title="Select whether commission amounts include sales tax or exclude sales tax.">
                         <i class="fa-solid fa-circle-info"></i>
                     </span>
@@ -268,9 +268,16 @@
 @if ($interested_lease_option_agreement === 'Yes')
     <!-- TAB 1 -->
     <div id="tab1" class="tab-content">
+        <h5 class="compensation_tab">
+            Compensation for Creating the Lease-Option Agreement:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true" data-bs-trigger="hover focus"
+                title="Specify how the Broker will be compensated at the time the lease-option agreement is created. This may include a flat fee or a percentage of the option consideration paid by the party granting the option. This compensation is typically paid upfront and is separate from any commission that may be owed if the purchase option is later exercised.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </h5>
 
         <div class="form-group mt-2">
-            {{-- <label class="fw-bold d-block mb-1">Compensation Amount:</label> --}}
+            <label class="fw-bold d-block mb-1">Compensation Amount</label>
 
             <div class="input-group">
                 <!-- Select for type -->
@@ -300,9 +307,16 @@
 
     <!-- TAB 2 -->
     <div id="tab2" class="tab-content">
+        <h5 class="compensation_tab">
+            Compensation if Purchase Option is Exercised:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true" data-bs-trigger="hover focus"
+                title="If the purchase option is exercised, the Broker may be entitled to additional compensation. Enter how the Broker will be compensated at that time, such as a flat fee or a percentage of the total purchase price. Any compensation already received under the lease-option agreement may be credited toward the final amount due, depending on the terms of the agreement.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </h5>
 
         <div class="form-group mt-2">
-            {{-- <label class="fw-bold d-block mb-1">Compensation Amount:</label> --}}
+            <label class="fw-bold d-block mb-1">Compensation Amount</label>
 
             <div class="input-group">
                 <!-- Select for type -->
@@ -328,6 +342,10 @@
             <span class="error mt-2" id="purchase_value_error"></span>
         </div>
 
+    </div>
+
+    <div class="alert alert-warning mt-3 p-2 small">
+        <strong>Note:</strong> Select $ or % to switch between entering a dollar amount or a percentage.
     </div>
 @endif
 
@@ -826,9 +844,9 @@
     <!-- Tenant's Broker Commission Structure -->
     <div class="form-group mb-4">
         <label class="fw-bold d-flex align-items-center">
-            Tenant's Broker Commission Fee:
+            Tenant's Broker Commission Structure:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select how the Tenant’s Broker will be compensated. Options include: the Landlord’s Broker paying a portion of their commission, the Landlord paying the Tenant’s Broker directly, or offering no compensation.">
+            title="Select how the Tenant's Broker will be compensated. Options include: the Landlord's Broker compensating the Tenant's Broker from the Landlord's Broker Commission, the Landlord paying the Tenant's Broker separately, or offering no compensation to the Tenant's Broker.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -837,27 +855,20 @@
             <select wire:model.lazy="tenant_broker_commission_structure" class="form-control has-icon"
                 data-icon="fa-solid fa-handshake">
                 <option value="">Select</option>
-                <option
-                    value="he Landlord's Broker will compensate the Tenant's Broker from the
-                    commission received">
-                    The Landlord's Broker will compensate the Tenant's Broker from the
-                    commission received</option>
-                <option value="The Landlord will pay the Tenant's Broker separately">The Landlord will pay the Tenant's
-                    Broker separately</option>
-                <option value="No compensation will be offered to the Tenant's Broker">No compensation will be offered to the Tenant's Broker</option>
+                <option value="Landlord's Broker to Compensate Tenant's Broker from Landlord's Broker Commission">Landlord's Broker to Compensate Tenant's Broker from Landlord's Broker Commission</option>
+                <option value="Landlord to Pay Tenant's Broker Separately">Landlord to Pay Tenant's Broker Separately</option>
+                <option value="No Compensation Offered to the Tenant's Broker">No Compensation Offered to the Tenant's Broker</option>
             </select>
         </div>
 
         <div class="mt-3">
 
             @if (
-                $tenant_broker_commission_structure === "The Landlord will pay the Tenant's Broker separately" ||
-                    $tenant_broker_commission_structure ===
-                        "he Landlord's Broker will compensate the Tenant's Broker from the
-                                commission received")
+                $tenant_broker_commission_structure === "Landlord to Pay Tenant's Broker Separately" ||
+                    $tenant_broker_commission_structure === "Landlord's Broker to Compensate Tenant's Broker from Landlord's Broker Commission")
                 <div class="mb-3">
 
-                    <label class="form-label">Tenant's Broker Commission Fee Structure:
+                    <label class="form-label">Tenant's Broker Commission Fee:
 
                         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                             title="Choose how the Tenant’s Broker will be compensated if a lease is secured. Options include: a percentage of the rent due each rental period, a percentage of the gross lease value, a percentage of the first month’s rent, a flat fee, or “Other” to define a custom payment structure. Then, enter the appropriate amount based on your selection.">
@@ -1145,7 +1156,7 @@ this agreement ends.">
         </div>
     @endif
 </div> --}}
-<!-- 10.	Landlord  Agency Agreement Timeframe -->
+<!-- 10.        Landlord  Agency Agreement Timeframe -->
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
         Landlord Agency Agreement Timeframe:
@@ -1339,7 +1350,7 @@ this agreement ends.">
             <div class="alert alert-warning mt-3 p-2 small">
                 <strong>⚠️ Legal Notice:</strong> Certain brokerage relationships are not permitted in all states. If
                 your selection is not allowed, the Broker will establish a permitted legal alternative. Real estate laws
-                change frequently. Both the Broker and Seller are responsible for complying with all current local,
+                change frequently. Both the Broker and Landlord are responsible for complying with all current local,
                 state, and federal laws.
             </div>
         </div>
