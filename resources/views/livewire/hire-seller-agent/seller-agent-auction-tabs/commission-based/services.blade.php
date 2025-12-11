@@ -927,7 +927,7 @@
 </div>
 
 <div class="alert alert-warning mt-3 p-2 small">
-    <strong> ⚖️ Note :</strong> All services described above are provided within the scope of real estate brokerage
+    <strong> ⚖️ Note:</strong> All services described above are provided within the scope of real estate brokerage
     duties as defined by state law. Services are administrative, advisory, or informational in nature and do not include
     legal, tax, accounting, or financial advice. Analyses are not formal appraisals or valuations. All services,
     including showings, lockbox access, signage, and marketing, are subject to applicable MLS, association, and/or local

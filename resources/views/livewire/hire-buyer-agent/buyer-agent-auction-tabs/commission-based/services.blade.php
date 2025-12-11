@@ -834,7 +834,7 @@
 </div>
 
 <div class="alert alert-warning mt-3 p-2 small">
-    <strong> ⚖️ Note :</strong> All services described above are provided within the scope of real estate brokerage
+    <strong> ⚖️ Note:</strong> All services described above are provided within the scope of real estate brokerage
     duties as defined by state law. Services are administrative, advisory, or informational in nature and do not include
     legal, tax, accounting, or financial advice. Analyses are not formal appraisals or valuations. The Agent does not
     handle client funds outside of escrow or trust accounts as permitted by law. All information is relayed as provided
