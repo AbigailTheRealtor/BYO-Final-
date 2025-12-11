@@ -1,27 +1,6 @@
 <h3>Services the Seller Requests from Their Agent </h3>
-<div class="alert alert-info bg-light-info border-info mb-4">
-    <div class="d-flex align-items-center">
-        <div>
-            <strong>🤝 Select the services the Seller would like the Agent to provide throughout the sales process.
-                Services are offered under a commission-based, full-service agreement, with the brokerage relationship
-                type determined in accordance with state law. Selections here are for guidance only; the signed
-                brokerage agreement governs the final scope of representation and compensation.
 
-            </strong>
-        </div>
-    </div>
-</div>
 @if ($property_type == 'Residential')
-    <div class="alert alert-info bg-light-info border-info mb-4">
-        <div class="d-flex align-items-center">
-            <i class="fas fa-info-circle me-2"></i>
-            <div>
-                These services are offered under a commission-based, full-service listing agreement. The agent may
-                assist with pricing strategy, property marketing, showings, contract negotiation, and closing
-                coordination, as defined in the executed agreement. The agency relationship, duties, and compensation
-                terms are governed by the listing agreement signed between the broker and seller. </div>
-        </div>
-    </div>
     <!-- Property Marketing & Listing Promotion -->
     <div class="service-section mb-4">
         <h5 class="section-header bg-info text-white p-2 mb-3">
@@ -91,7 +70,7 @@
 
                         <div class="mt-2" style="display: {{ $showCustomEnhancement ? 'block' : 'none' }};">
                             <input type="text" class="form-control" wire:model="custom_enhancement"
-                                placeholder="Enter other photo enhancement requests">
+                                placeholder="Enter photo enhancement requests">
                         </div>
                     </div>
                 @endif
@@ -99,7 +78,7 @@
         </div>
 
         <div class="alert alert-warning mt-3 p-2 small">
-            <strong> Note : </strong> These services may be provided by the Agent or through a third-party vendor.
+            <strong>Note:</strong> These services may be provided by the Agent or through a third-party vendor.
         </div>
 
     </div>
@@ -130,7 +109,7 @@
         </div>
 
         {{-- <div class="alert alert-warning mt-3 p-2 small">
-            <strong> Note : </strong> All services, including showings, lockbox access, signage, and marketing, are
+            <strong>Note:</strong> All services, including showings, lockbox access, signage, and marketing, are
             subject to applicable MLS, association, and/or local regulations.
         </div> --}}
 
@@ -187,20 +166,6 @@
 @endif
 
 @if ($property_type == 'Income')
-
-    <div class="alert alert-info bg-light-info border-info mb-4">
-        <div class="d-flex align-items-center">
-            <i class="fas fa-info-circle me-2"></i>
-            <div>
-                These services are offered under a commission-based, full-service listing agreement for the sale of a
-                residential income property (2–4 units). The agent may assist with pricing strategy, marketing, buyer
-                coordination, offer review, and transaction support through closing. The relationship type, scope of
-                representation, and compensation terms are defined in the signed agreement between the broker and
-                seller.
-
-            </div>
-        </div>
-    </div>
 
     <!-- 📢 Property Marketing & Listing Promotion -->
     <div class="service-section mb-4">
@@ -284,7 +249,7 @@
 
                         <div class="mt-2" style="display: {{ $showCustomEnhancement ? 'block' : 'none' }};">
                             <input type="text" class="form-control" wire:model="custom_enhancement"
-                                placeholder="Enter custom enhancement requests">
+                                placeholder="Enter photo enhancement requests">
                         </div>
                     </div>
                 @endif
@@ -292,7 +257,7 @@
         </div>
 
         <div class="alert alert-warning mt-3 p-2 small">
-            <strong> Note : </strong> These services may be provided by the Agent or through a third-party vendor.
+            <strong>Note:</strong> These services may be provided by the Agent or through a third-party vendor.
         </div>
 
     </div>
@@ -329,26 +294,15 @@
             @foreach (['Respond to Buyer inquiries and screen for general qualifications', 'Provide Non-Disclosure Agreement (NDA) templates for confidential showings or document access', 'Ensure proper notice is provided if the property is occupied', 'Install a real estate sign on the property', 'Install a lockbox for Agent access', 'Schedule and attend showings with prospective Buyers', 'Coordinate showings with Buyer’s Agents', 'Collect and relay feedback to the Seller after each showing'] as $service)
                 <div class="form-check service-item">
                     <input class="form-check-input service-checkbox" type="checkbox" wire:model="services"
-                        value="{{ $service }}" id="showings-{{ Str::slug($service) }}"
-                        @if ($service === 'Install a lockbox for Agent access') wire:change="$set('showOpenHouseInput', $event.target.checked)"
-                       onclick="handleOpenHouseToggle(this)"
-                       data-open-house-trigger @endif>
+                        value="{{ $service }}" id="showings-{{ Str::slug($service) }}">
                     <label class="form-check-label" for="showings-{{ Str::slug($service) }}">
                         {{ $service }}
                     </label>
                 </div>
             @endforeach
 
-            <!-- Optional input for # of open houses -->
-            <div class="form-group mt-2" id="openHouseInputContainer"
-                style="display: {{ $showOpenHouseInput ? 'block' : 'none' }};">
-                <input type="number" class="form-control" id="openHouseCount" wire:model="openHouseCount"
-                    placeholder="Enter # of broker tours">
-            </div>
-        </div>
-
         {{-- <div class="alert alert-warning mt-3 p-2 small">
-            <strong> Note : </strong> All services, including showings, lockbox access, signage, and marketing, are
+            <strong>Note:</strong> All services, including showings, lockbox access, signage, and marketing, are
             subject to applicable MLS, association, and/or local regulations.
         </div> --}}
 
@@ -482,7 +436,7 @@
 
                         <div class="mt-2" style="display: {{ $showCustomEnhancement ? 'block' : 'none' }};">
                             <input type="text" class="form-control" wire:model="custom_enhancement"
-                                placeholder="Enter other photo enhancement requests">
+                                placeholder="Enter photo enhancement requests">
                         </div>
                     </div>
                 @endif
@@ -490,7 +444,7 @@
         </div>
 
         <div class="alert alert-warning mt-3 p-2 small">
-            <strong> Note : </strong> These services may be provided by the Agent or through a third-party vendor.
+            <strong>Note:</strong> These services may be provided by the Agent or through a third-party vendor.
         </div>
 
     </div>
@@ -518,7 +472,7 @@
         </div>
 {{--
         <div class="alert alert-warning mt-3 p-2 small">
-            <strong> Note : </strong> All services, including showings, lockbox access, signage, and marketing, are
+            <strong>Note:</strong> All services, including showings, lockbox access, signage, and marketing, are
             subject to applicable MLS, association, and/or local regulations.
         </div> --}}
 
@@ -672,7 +626,7 @@
 
                         <div class="mt-2" style="display: {{ $showCustomEnhancement ? 'block' : 'none' }};">
                             <input type="text" class="form-control" wire:model="custom_enhancement"
-                                placeholder="Enter other photo enhancement requests">
+                                placeholder="Enter photo enhancement requests">
                         </div>
                     </div>
                 @endif
@@ -680,7 +634,7 @@
         </div>
 
         <div class="alert alert-warning mt-3 p-2 small">
-            <strong> Note : </strong> These services may be provided by the Agent or through a third-party vendor.
+            <strong>Note:</strong> These services may be provided by the Agent or through a third-party vendor.
         </div>
 
     </div>
@@ -711,7 +665,7 @@
         </div>
 
         {{-- <div class="alert alert-warning mt-3 p-2 small">
-            <strong> Note : </strong> All services, including showings, lockbox access, signage, and marketing, are
+            <strong>Note:</strong> All services, including showings, lockbox access, signage, and marketing, are
             subject to applicable MLS, association, and/or local regulations.
         </div> --}}
 
@@ -866,7 +820,7 @@
 
                         <div class="mt-2" id="custom-enhancement" style="display: none;">
                             <input type="text" class="form-control"
-                                placeholder="Enter custom enhancement requests">
+                                placeholder="Enter photo enhancement requests">
                         </div>
                     </div>
                 @endif
@@ -874,7 +828,7 @@
         </div>
 
         <div class="alert alert-warning mt-3 p-2 small">
-            <strong> Note : </strong> Services may be provided by the Agent or by a third-party vendor.
+            <strong>Note:</strong> Services may be provided by the Agent or by a third-party vendor.
         </div>
 
     </div>
@@ -895,7 +849,7 @@
         </div>
 
         {{-- <div class="alert alert-warning mt-3 p-2 small">
-            <strong> Note : </strong> All services, including showings, signage, and marketing, are subject to
+            <strong>Note:</strong> All services, including showings, signage, and marketing, are subject to
             applicable MLS, association, and/or local regulations.
         </div> --}}
 

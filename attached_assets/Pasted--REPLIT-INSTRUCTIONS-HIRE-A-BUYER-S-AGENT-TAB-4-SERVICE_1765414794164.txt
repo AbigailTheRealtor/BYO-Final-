@@ -1,0 +1,173 @@
+✅ REPLIT INSTRUCTIONS — HIRE A BUYER’S AGENT → TAB 4 (SERVICES)
+Applies to: Residential, Income, Commercial, Business Opportunity, Vacant Land
+🔧 GLOBAL FIXES FOR TAB 4 — APPLY TO ALL PROPERTY TYPES
+1. Remove the “required to select one service” rule
+
+Delete any validation that forces the Buyer to select at least one service.
+
+Delete any text indicating that one service must be selected.
+
+Fix the bug where checking one service unchecks another. All checkboxes should operate independently.
+
+2. Replace the current intro text with the updated version
+
+Replace the entire blue/black intro paragraph at the top of Tab 4 with:
+
+🤝 Select the services the Buyer would like the Agent to provide throughout the purchase process. Services are offered under a commission-based, full-service agreement, with the brokerage relationship type determined in accordance with state law. Selections here are for guidance only; the signed brokerage agreement governs the final scope of representation and compensation.
+
+3. Add the following disclaimer at the bottom of Tab 4 (all property types)
+
+Insert this exactly at the bottom of the Services page:
+
+⚖️ Note: All services described above are provided within the scope of real estate brokerage duties as defined by state law. Services are administrative, advisory, or informational in nature and do not include legal, tax, accounting, or financial advice. Analyses are not formal appraisals or valuations. The Agent does not handle client funds outside of escrow or trust accounts as permitted by law. All information is relayed as provided by third parties (e.g., Seller, Lender, Title, Escrow, Attorney, CPA, or other licensed professionals). The Buyer and/or their Attorney, CPA, or other licensed professional remain solely responsible for reviewing, confirming, and approving the accuracy, completeness, and compliance of all documents, disclosures, financial statements, settlement statements, and transfers. Additional services must remain within the scope of brokerage law and fiduciary duties as outlined in the signed brokerage agreement.
+
+4. Remove periods at the end of:
+
+Other – Specify additional services as needed. → remove the “.” (all property types)
+
+🏠 RESIDENTIAL — TAB 4 FIXES
+📝 Offer & Contract Coordination
+
+Update:
+
+Negotiate price, deposits, and contingencies with the Seller’s Agent or Seller (as permitted under the agency agreement)
+→
+Negotiate price, deposits, and contingencies with the Seller’s Agent or Seller
+
+📋 Closing Coordination & Transaction Management
+
+Add this as the FIRST item under this section:
+
+Review and provide the Buyer with Seller-supplied due diligence documentation, including property disclosures, inspection reports, HOA documents, and utility summaries (as available)
+
+Update wording of existing options:
+
+Coordinate inspections, appraisals, and lease audits (if applicable)
+→
+Coordinate scheduling for inspections, appraisals, and other requested evaluations
+
+Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed (no legal or financial advice provided)
+→
+Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed
+
+💡 Buying Strategy & Guidance — Replace ENTIRE section with:
+
+Provide a Comparative Market Analysis (CMA) with pricing recommendations based on comparable sales, neighborhood trends, and current market conditions
+
+Provide general guidance on financing, loan options, property taxes, insurance, and escrow timelines
+
+Provide factual information about neighborhood characteristics, school zones, crime data, and local amenities using third-party sources
+
+Provide general guidance on inspection expectations, common repair requests, and contingency planning
+
+🏢 INCOME — TAB 4 FIXES
+Fix capitalization:
+
+Provide observations on Tenant occupancy, building condition, and operating expenses
+(capitalize Tenant)
+
+📋 Closing Coordination & Transaction Management
+
+Update:
+
+Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed (no legal or financial advice provided)
+→
+Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed
+
+💡 Buying Strategy & Guidance — Replace ENTIRE section with:
+
+Provide a Comparative Market Analysis (CMA) with pricing recommendations, rental comps, and Cap Rate estimates
+
+Provide general guidance on financing options, rent control, property taxes, and Landlord responsibilities
+
+Provide factual information on rental demand, turnover rates, and submarket conditions using third-party sources
+
+Provide general guidance on due diligence steps, lease audits, and estoppel reviews
+
+🧱 COMMERCIAL — TAB 4 FIXES
+🏢 Property Showings & Virtual Tours
+
+Provide insights on layout, access, visibility, Tenant mix, and surrounding infrastructure
+→ Ensure Tenant is capitalized.
+
+📋 Closing Coordination & Transaction Management
+
+Update:
+
+Review the Settlement Statement for accuracy and coordinate with all parties if corrections are needed (no legal or financial advice provided)
+→
+Review the Settlement Statement for accuracy and coordinate with all parties if corrections are needed
+
+💡 Buying Strategy & Guidance — Replace ENTIRE section with:
+
+Provide a Comparative Market Analysis (CMA) with recent sales comps, lease comps, and an estimated value range
+
+Provide general guidance on zoning regulations, permitted uses, and rental income potential
+
+Provide factual data on traffic counts, commercial market trends, and area demographics using third-party sources
+
+Provide general guidance on lease types, contingency timelines, due diligence, and environmental risks
+
+🏪 BUSINESS OPPORTUNITY — TAB 4 FIXES
+📋 Closing Coordination & Transaction Management
+
+Update:
+
+Review the Settlement Statement or Closing Worksheet for accuracy and coordinate with all parties if corrections are needed (no legal or financial advice provided)
+→
+Review the Settlement Statement or Closing Worksheet for accuracy and coordinate with all parties if corrections are needed
+
+💡 Buying Strategy & Guidance — Replace ENTIRE section with:
+
+Provide a Comparative Market Review based on similar business sales, financial performance, and industry benchmarks
+
+Provide general guidance on licensing, zoning, SBA financing, registration steps, and transition timing
+
+Provide general guidance on due diligence preparation, key documents to review, and red flags during the acquisition process
+
+Also add the small sub-note (this is part of the section, not the bottom disclaimer):
+
+⚖️ Note: Buying strategy and guidance are provided for informational purposes only. Analyses are not formal valuations or appraisals, and no legal, tax, accounting, or financial advice is provided.
+
+🌲 VACANT LAND — TAB 4 FIXES
+🔍 Property Search, Alerts & Matching
+
+Update:
+
+Assess development feasibility, land use restrictions, or agricultural potential (non-legal advice)
+→
+Evaluate development feasibility, land use restrictions, and agricultural potential with the Buyer
+
+📝 Offer & Contract Coordination
+
+Update:
+
+Negotiate price, deposits, and contingencies (as permitted under the agency agreement)
+→
+Negotiate price, deposits, and contingencies with the Seller’s Agent or Seller
+
+Assist with due diligence coordination…
+
+Update:
+
+Assist with due diligence coordination, including survey review, soil testing, zoning checks, and permit verification (non-legal guidance only)
+→
+Assist with due diligence coordination, including survey review, soil testing, zoning checks, and permit verification
+
+📋 Closing Coordination & Transaction Management
+
+Update:
+
+Review the Settlement Statement for accuracy and coordinate with all parties if corrections are needed (no legal or financial advice provided)
+→
+Review the Settlement Statement for accuracy and coordinate with all parties if corrections are needed
+
+💡 Buying Strategy & Guidance — Replace ENTIRE section with:
+
+Provide a Comparative Market Analysis (CMA) with acreage comps, recent land sales, and price-per-acre benchmarks
+
+Provide general guidance on zoning, utilities, development potential, and environmental constraints
+
+Provide factual data on flood zones, wetlands, and land use maps using third-party sources
+
+Provide general guidance on feasibility timelines, inspection steps, and rural financing considerations

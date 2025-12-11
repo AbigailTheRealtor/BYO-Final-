@@ -1,0 +1,146 @@
+✅ REPLIT INSTRUCTIONS — HIRE A SELLER'S AGENT → TAB 4 (SERVICES)
+Applies to: Residential, Income, Commercial, Business Opportunity, Vacant Land
+Purpose: Fix spacing errors, remove incorrect text, correct placeholder grammar, and ensure consistent formatting.
+🔧 GLOBAL FIXES FOR TAB 4 (ALL PROPERTY TYPES)
+1. Remove the requirement forcing the user to select at least one service
+
+Delete any validation rule that prevents submitting the form unless one checkbox is selected.
+
+Delete any instructional text indicating the user “must select one service.”
+
+2. Remove the large teal information box at the top of Tab 4
+
+This box should be deleted entirely:
+
+“These services are offered under a commission-based, full-service listing agreement…”
+
+This box should not appear anywhere in Tab 4.
+
+🔧 NOTE LABEL FIX (ALL PROPERTY TYPES)
+
+Across Residential, Income, Commercial, Business Opportunity, and Vacant Land, fix the formatting for the yellow Note box:
+
+3. Fix extra spacing in Note label
+
+Change:
+
+Note : These services may be provided…
+
+
+To:
+
+Note: These services may be provided…
+
+
+(Important: Remove the space before the colon.)
+
+🔧 RESIDENTIAL – SPECIFIC FIXES
+4. Under “Photography, Video & Virtual Media” section
+
+Fix the spacing issue described above for Note:
+
+5. Under “Other” (within digital photo enhancements)
+
+Update the placeholder text:
+
+Change FROM:
+Enter other photo enhancement requests
+
+Change TO:
+Enter photo enhancement requests
+
+
+(Reason: Remove the word “other” when “Other” is already selected.)
+
+🔧 INCOME – SPECIFIC FIXES
+6. Fix “Note:” spacing
+
+Apply the same “Note:” correction.
+
+7. Under “Other” (Provide digital photo enhancements)
+
+Change placeholder:
+
+FROM:
+Enter custom enhancement requests
+
+TO:
+Enter photo enhancements requests
+
+
+(Remove the word custom for consistency.)
+
+🔧 INCOME – SHOWINGS & ACCESS COORDINATION FIX
+8. Remove the popup field that appears when user selects
+
+“Install a lockbox for Agent access”
+
+If a text input like:
+
+Enter # of broker tours
+
+
+appears, delete/remove this field entirely.
+There should be no additional input triggered by checking the lockbox service.
+
+🔧 COMMERCIAL – SPECIFIC FIXES
+9. Fix Note spacing
+
+Apply:
+
+Note: These services may be provided…
+
+10. Update placeholder under “Other” (digital photo enhancements)
+Change FROM:
+Enter other photo enhancement requests
+
+Change TO:
+Enter photo enhancement requests
+
+🔧 BUSINESS OPPORTUNITY – SPECIFIC FIXES
+11. Fix the Note spacing
+
+Same correction as above.
+
+12. Under “Provide digital photo enhancements” → If user selects “Other”
+
+Update placeholder:
+
+FROM:
+Enter photo enhancements requests
+
+
+(typo + incorrect structure)
+
+TO:
+Enter photo enhancement requests
+
+🔧 VACANT LAND – SPECIFIC FIXES
+13. Fix Note spacing
+
+Apply:
+
+Note: These services may be provided…
+
+14. Under “Provide digital photo enhancements” → If user selects Other
+
+Change placeholder:
+
+FROM:
+Enter photo enhancements requests
+
+TO:
+Enter photo enhancement requests
+
+🔧 ADDITIONAL CONSISTENCY RULES FOR ALL PROPERTY TYPES
+15. Remove the word “Other” from placeholders when the user selects an “Other” checkbox
+
+If the field label is already “Other,” the placeholder should not repeat the word.
+
+16. Ensure all placeholder text starts flush-left
+
+Remove any leading spaces before placeholder text.
+
+17. Ensure checkboxes do not auto-uncheck previously selected items
+
+Fix the bug where selecting one checkbox removes another selection.
