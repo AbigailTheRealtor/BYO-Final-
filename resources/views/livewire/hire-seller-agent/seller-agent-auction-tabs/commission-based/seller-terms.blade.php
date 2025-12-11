@@ -934,7 +934,7 @@ This amount represents the portion of the purchase price that the Seller will fi
             </span>
         </label>
         <div class="input-cover">
-            <select wire:model="exchange_liens_disclosure" class="form-control has-icon"
+            <select wire:model="exchange_liens" class="form-control has-icon"
                 data-icon="fa-solid fa-file-contract">
                 <option value="">Select</option>
                 <option value="Yes">Yes</option>
@@ -943,7 +943,7 @@ This amount represents the portion of the purchase price that the Seller will fi
         </div>
     </div>
 
-    @if (($exchange_liens_disclosure ?? '') === 'Yes')
+    @if (($exchange_liens ?? '') === 'Yes')
     <div class="form-group mt-2">
         <div class="input-cover">
             <input type="text" wire:model="exchange_liens_details" class="form-control has-icon"
