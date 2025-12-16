@@ -397,3 +397,65 @@ button.btn.btn-secondary.wizard-step-back:hover {
   border-color: #1557b0 !important;
   color: #ffffff !important;
 }
+
+/* Service Section Buttons - Ensure proper colors */
+.service-section .btn-danger,
+.service-options .btn-danger,
+button.btn.btn-danger.remove-service,
+.addListing .btn-danger,
+.btn-danger.btn-sm {
+  background-color: #dc3545 !important;
+  border-color: #dc3545 !important;
+  color: #ffffff !important;
+}
+
+.service-section .btn-danger:hover,
+.service-options .btn-danger:hover,
+button.btn.btn-danger.remove-service:hover,
+.addListing .btn-danger:hover,
+.btn-danger.btn-sm:hover {
+  background-color: #bb2d3b !important;
+  border-color: #bb2d3b !important;
+  color: #ffffff !important;
+}
+
+.service-section .btn-primary,
+.service-options .btn-primary,
+.addListing .btn-primary.btn-sm,
+#add-service-btn {
+  background-color: #0d6efd !important;
+  border-color: #0d6efd !important;
+  color: #ffffff !important;
+}
+
+.service-section .btn-primary:hover,
+.service-options .btn-primary:hover,
+.addListing .btn-primary.btn-sm:hover,
+#add-service-btn:hover {
+  background-color: #0b5ed7 !important;
+  border-color: #0b5ed7 !important;
+  color: #ffffff !important;
+}
+
+/* Submit Button - Green Success Style */
+.wizard-step-finish,
+button.btn.btn-success.wizard-step-finish,
+#save-button {
+  background-color: #198754 !important;
+  border-color: #198754 !important;
+  color: #ffffff !important;
+}
+
+.wizard-step-finish:hover,
+button.btn.btn-success.wizard-step-finish:hover,
+#save-button:hover {
+  background-color: #157347 !important;
+  border-color: #157347 !important;
+  color: #ffffff !important;
+}
+
+/* Remove disabled styling when Submit should be active */
+.wizard-step-finish:not(.disabled),
+#save-button:not(.disabled) {
+  opacity: 1 !important;
+}

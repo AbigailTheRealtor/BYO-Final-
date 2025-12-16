@@ -115,7 +115,6 @@
             'Coordinate lease negotiation with the Landlord’s Agent, Landlord, or Property Manager',
             'Assist with completing required lease disclosures and reviewing key lease terms',
             'Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties',
-            'Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods'
         ] as $service)
             <div class="form-check service-item">
                 <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"

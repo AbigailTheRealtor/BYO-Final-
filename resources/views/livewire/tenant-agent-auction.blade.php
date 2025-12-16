@@ -3440,11 +3440,38 @@ $lease_types = [
 
             let isValid = true;
 
-            // Validate all required fields in the current tab (your existing code)
+            // Helper function to check if element is visible (not hidden by d-none, display:none, etc.)
+            function isElementVisible(element) {
+                if (!element) return false;
+                if (element.disabled) return false;
+                if (element.type === 'hidden') return false;
+                
+                // Check if element or any parent has d-none, hidden class, or display:none
+                let el = element;
+                while (el && el !== document.body) {
+                    if (el.classList && (el.classList.contains('d-none') || el.classList.contains('hidden'))) {
+                        return false;
+                    }
+                    const style = window.getComputedStyle(el);
+                    if (style.display === 'none' || style.visibility === 'hidden') {
+                        return false;
+                    }
+                    el = el.parentElement;
+                }
+                return true;
+            }
+
+            // Validate all required fields in the current tab (skip hidden/disabled fields)
             const requiredFields = currentTabContent.querySelectorAll(
                 'input[required], select[required], textarea[required]');
             if (requiredFields) {
                 requiredFields.forEach(function(input) {
+                    // Skip hidden or disabled fields - they should not block navigation
+                    if (!isElementVisible(input)) {
+                        input.classList.remove('is-invalid');
+                        return;
+                    }
+                    
                     if (!input.value) {
                         isValid = false;
                         input.classList.add('is-invalid');
@@ -3611,11 +3638,38 @@ $lease_types = [
 
             let isValid = true;
 
-            // Validate all required fields in the current tab (your existing code)
+            // Helper function to check if element is visible (not hidden by d-none, display:none, etc.)
+            function isElementVisible(element) {
+                if (!element) return false;
+                if (element.disabled) return false;
+                if (element.type === 'hidden') return false;
+                
+                // Check if element or any parent has d-none, hidden class, or display:none
+                let el = element;
+                while (el && el !== document.body) {
+                    if (el.classList && (el.classList.contains('d-none') || el.classList.contains('hidden'))) {
+                        return false;
+                    }
+                    const style = window.getComputedStyle(el);
+                    if (style.display === 'none' || style.visibility === 'hidden') {
+                        return false;
+                    }
+                    el = el.parentElement;
+                }
+                return true;
+            }
+
+            // Validate all required fields in the current tab (skip hidden/disabled fields)
             const requiredFields = currentTabContent.querySelectorAll(
                 'input[required], select[required], textarea[required]');
             if (requiredFields) {
                 requiredFields.forEach(function(input) {
+                    // Skip hidden or disabled fields - they should not block navigation
+                    if (!isElementVisible(input)) {
+                        input.classList.remove('is-invalid');
+                        return;
+                    }
+                    
                     if (!input.value) {
                         isValid = false;
                         input.classList.add('is-invalid');
