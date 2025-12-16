@@ -162,6 +162,14 @@ class TenantAgentAuctionBidCounter extends Component
     public $agency_agreement_custom = '';
     public $brokerage_relationship = '';
     public $additional_details_broker = '';
+
+    // Broker Fee Timing
+    public $broker_fee_timing = '';
+    public $broker_fee_days_from_rent = '';
+    public $broker_fee_days_after_lease = '';
+    public $broker_fee_days_after_rent = '';
+    public $broker_fee_timing_other = '';
+
     public string $lease_type = 'percent';     // default as required
     public $lease_value = null;
 
