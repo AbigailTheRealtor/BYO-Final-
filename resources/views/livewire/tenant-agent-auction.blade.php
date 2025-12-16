@@ -2681,7 +2681,11 @@ $lease_types = [
                     const inputField = inputDiv.querySelector('input');
                     if (inputField) {
                         inputField.value = '';
-                        Livewire.emit('updateModel', inputField.getAttribute('wire:model'), '');
+                        const wireModel = inputField.getAttribute('wire:model');
+                        // Only emit if wire:model attribute exists
+                        if (wireModel) {
+                            Livewire.emit('updateModel', wireModel, '');
+                        }
                     }
                 }
             });

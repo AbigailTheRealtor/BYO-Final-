@@ -771,7 +771,25 @@ class TenantAgentAuction extends Component
         'updateRentIncludes' => 'updateRentIncludes',
         'updateLeaseTermOptions' => 'updateLeaseTermOptions',
         'assetsOption' => 'assetsOption',
+        'updateModel' => 'updateModel',
     ];
+
+    /**
+     * Safe handler for updateModel event from JavaScript
+     * Prevents ArgumentCountError by validating property name before updating
+     */
+    public function updateModel($propertyName, $value)
+    {
+        // Guard against null or empty property names
+        if (empty($propertyName) || !is_string($propertyName)) {
+            return;
+        }
+
+        // Only update if the property exists on this component
+        if (property_exists($this, $propertyName)) {
+            $this->{$propertyName} = $value;
+        }
+    }
 
 
 
@@ -893,6 +911,8 @@ class TenantAgentAuction extends Component
     }
     public function updatedLeaseFeeType($value)
     {
+        $this->resetValidation();
+        $this->resetErrorBag();
         $this->resetTenantBrokerLeaseFee();
     }
 
@@ -900,18 +920,25 @@ class TenantAgentAuction extends Component
     // Handle tenant broker fee structure changes
     public function updatedTenantBrokerFeeStructure($value)
     {
+        $this->resetValidation();
+        $this->resetErrorBag();
         $this->resetTenantBrokerFields();
     }
 
     // Handle property management fee changes
     public function updatedInterestedInPropertyManagementFee($value)
     {
+        $this->resetValidation();
+        $this->resetErrorBag();
         $this->resetPropertyManagementFields();
     }
 
     // Handle lease option agreement changes
     public function updatedInterestedLeaseOptionAgreement($value)
     {
+        $this->resetValidation();
+        $this->resetErrorBag();
+
         if ($value !== 'Yes') {
             $this->reset([
                 'lease_type',
@@ -925,6 +952,9 @@ class TenantAgentAuction extends Component
     // Handle interested in selling changes
     public function updatedInterestedInSelling($value)
     {
+        $this->resetValidation();
+        $this->resetErrorBag();
+
         if ($value !== 'Yes') {
             $this->reset([
                 'interested_in_selling_type',
@@ -940,6 +970,11 @@ class TenantAgentAuction extends Component
     // Handle broker fee timing changes
     public function updatedBrokerFeeTiming($value)
     {
+        // Reset validation and error bags first to prevent rendering issues
+        $this->resetValidation();
+        $this->resetErrorBag();
+
+        // Reset dependent fields
         $this->reset([
             'broker_fee_days_from_rent',
             'broker_fee_days_after_lease',
@@ -954,6 +989,9 @@ class TenantAgentAuction extends Component
     // Handle early termination fee option changes
     public function updatedEarlyTerminationFeeOption($value)
     {
+        $this->resetValidation();
+        $this->resetErrorBag();
+
         if ($value !== 'yes') {
             $this->reset(['early_termination_fee_amount']);
         }
@@ -962,6 +1000,9 @@ class TenantAgentAuction extends Component
     // Handle agency agreement timeframe changes
     public function updatedAgencyAgreementTimeframe($value)
     {
+        $this->resetValidation();
+        $this->resetErrorBag();
+
         if ($value !== 'Other') {
             $this->reset(['agency_agreement_custom']);
         }
@@ -970,6 +1011,9 @@ class TenantAgentAuction extends Component
     // Handle interested in property management changes
     public function updatedInterestedInPropertyManagement($value)
     {
+        $this->resetValidation();
+        $this->resetErrorBag();
+
         if ($value !== 'yes') {
             $this->reset([
                 'interested_in_property_management_fee',

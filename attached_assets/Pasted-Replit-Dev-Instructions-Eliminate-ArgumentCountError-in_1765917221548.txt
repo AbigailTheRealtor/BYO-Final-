@@ -1,0 +1,192 @@
+Replit / Dev Instructions — Eliminate ArgumentCountError in Hire a Tenant’s Agent (All Paths)
+Goal
+
+When a user selects any dropdown option in the Hire a Tenant’s Agent flow (including Broker Compensation), the app must never crash with:
+
+ArgumentCountError
+
+especially: Too few arguments to function Illuminate\Support\Str::studly(), 0 passed ...
+
+or any Livewire render/update exception
+
+This must be true for:
+
+Residential + Commercial
+
+Listing creation + Agent Bids + Counter Bids
+
+switching options back and forth repeatedly
+
+1) Find the Exact Crash Source (Mandatory)
+
+Search the codebase for these patterns and list every match:
+
+Str::studly(
+
+studly(
+
+Str::camel(
+
+Str::kebab(
+
+Str::snake(
+
+->name() or anything building a “key” dynamically from user input
+
+wire:key=
+
+key( (Livewire keys)
+
+helper functions that call string transforms internally
+
+Why: the error means one of these is being invoked with no argument during Livewire re-render.
+
+2) Hard Rule: Never Call Str Helpers With Empty/Null
+
+Anywhere the code currently does something like:
+
+Str::studly($value)
+
+Str::studly($someArray[$key])
+
+Str::studly($this->something)
+
+Update it so the argument is always a string, and never missing.
+
+Required safe pattern
+
+Use one of these (pick one approach consistently):
+
+Option A (simple default):
+
+Str::studly((string) ($value ?? ''))
+
+Option B (guard + fallback):
+
+if (!filled($value)) { $value = 'default'; }
+
+Str::studly($value)
+
+Option C (central helper):
+Create safeStudly($value) and use it everywhere:
+
+returns 'Default' if empty
+
+otherwise returns Str::studly((string)$value)
+
+✅ Acceptance: There is no place left where Str::studly() (or similar) can receive no parameter / null.
+
+3) Fix Livewire “Switching Options” Crash (Most Common Trigger)
+
+These crashes often happen mid-switch when:
+
+Livewire updates a select
+
+dependent fields become hidden
+
+render runs with missing values
+
+something builds keys/IDs from an empty value
+
+Required behavior for ALL controlling dropdowns
+
+For each dropdown that drives conditional fields (comp type, fee type, etc.):
+
+Add an updatedXxx() handler (or equivalent)
+
+In that handler, immediately:
+
+clear dependent fields that no longer apply
+
+clear error bags
+
+Required calls:
+
+$this->resetValidation();
+
+$this->resetErrorBag();
+
+And reset dependent properties to null or '' BEFORE the component re-renders.
+
+✅ Acceptance: Switching dropdown options rapidly does not crash.
+
+4) Stop “Dynamic wire:key” From Using Empty Values
+
+If any element uses:
+
+wire:key="{{ Str::studly($something) }}"
+
+or any dynamic key derived from user-selected values
+
+Then you must ensure $something is never empty.
+
+Required fix
+
+Build keys using stable constants + IDs, not labels:
+
+wire:key="tenant-comp-{{ $listingId }}-{{ $section }}"
+
+If you must use a string transform, wrap it with a fallback:
+
+wire:key="x-{{ Str::studly($something ?: 'default') }}"
+
+✅ Acceptance: No wire:key uses raw user-controlled values without a fallback.
+
+5) Add Logging So If It Ever Happens Again You See the Field Causing It
+
+Add a temporary debug log around the problematic transform (only until confirmed fixed):
+
+log the variable value when switching dropdowns
+
+log which option was selected
+
+log which component/method executed
+
+This makes it impossible for the bug to “hide” again.
+
+✅ Acceptance: If any future crash occurs, logs identify the exact variable causing it.
+
+6) QA Script (Developer Must Perform)
+In each of these locations:
+
+Hire a Tenant’s Agent → Listing Creation
+
+Agent Bid submission
+
+Counter Bid submission
+
+Do this for BOTH Residential + Commercial:
+
+Go to Broker Compensation area
+
+Change each dropdown option one-by-one
+
+After selecting each option:
+
+type values in every shown input
+
+switch to another option
+
+switch back
+
+repeat fast switching 10–15 times
+
+✅ Pass/Fail:
+
+PASS = no crash, no error page, no console Livewire errors
+
+FAIL = any ArgumentCountError or red exception page
+
+7) Final Deliverable
+
+Provide:
+
+the file names changed
+
+the exact line(s) where Str::studly() was made safe
+
+confirmation testing was done in:
+
+Residential + Commercial
+
+Listing + Agent Bids + Counter Bids
