@@ -1866,7 +1866,7 @@ $lease_types = [
                                 <!-- Broker Compensation Tab - Adjust index based on user_type -->
 
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 5 : 6) ? 'show active' : '' }}"
-                                    id="broker-compensation" role="tabpanel" aria-labelledby="broker-compensation-tab">
+                                    id="broker-compensation-&-agency-agreement-terms" role="tabpanel" aria-labelledby="broker-compensation-&-agency-agreement-terms-tab">
 
                                     @if ($user_type === 'tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.broker-compensation')
@@ -1880,9 +1880,17 @@ $lease_types = [
                                 </div>
 
                                 <!-- Info Tab - Adjust index based on user_type -->
-
+                                @php
+                                    $infoTabId = match($user_type) {
+                                        'tenant' => 'tenant-information',
+                                        'seller' => 'seller-information',
+                                        'buyer' => 'buyer-information',
+                                        'landlord' => 'landlord-information',
+                                        default => 'tenant-information'
+                                    };
+                                @endphp
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 6 : 7) ? 'show active' : '' }}"
-                                    id="tenant-info" role="tabpanel" aria-labelledby="tenant-info-tab">
+                                    id="{{ $infoTabId }}" role="tabpanel" aria-labelledby="{{ $infoTabId }}-tab">
 
                                     @if ($user_type === 'tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.tenant-info')
@@ -1915,8 +1923,8 @@ $lease_types = [
 
                                 </div>
 
-                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}" id="tenant-info"
-                                    role="tabpanel" aria-labelledby="tenant-info-tab">
+                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}" id="information"
+                                    role="tabpanel" aria-labelledby="information-tab">
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.tenant-info')
                                 </div>
                                 @endif

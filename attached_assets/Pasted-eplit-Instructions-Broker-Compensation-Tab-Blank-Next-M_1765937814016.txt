@@ -1,0 +1,143 @@
+eplit Instructions — Broker Compensation Tab Blank + Next Missing (Buyer/Seller/Landlord)
+Objective
+
+For Buyer, Seller, and Landlord listing flows:
+
+Clicking Next from Additional Details must go to Broker Compensation & Agency Agreement Terms
+
+Broker Compensation tab must render its full form content (not blank)
+
+Broker Compensation tab must include a working Next button that advances to the final info tab (Buyer/Seller/Landlord Information)
+
+This must work in:
+
+Create listing
+
+Edit listing
+
+All property types inside each flow
+
+1) Identify Which Blade File Renders Each Wizard (Do Not Assume Tenant File Applies)
+
+Tenant was edited in:
+
+resources/views/livewire/tenant-agent-auction.blade.php
+
+Now you must locate the equivalents for:
+
+Buyer wizard blade
+
+Seller wizard blade
+
+Landlord wizard blade
+
+Requirement
+
+List the file paths for each wizard’s main Blade file and the Broker Compensation sub-view include.
+
+2) Broker Compensation Tab Is Blank Because the Pane Is Showing But Livewire Content Isn’t Rendering
+Fix requirements
+
+A) Confirm the Broker Compensation tab pane’s ID matches its nav button exactly:
+
+nav: data-bs-target="#broker-compensation-..."
+
+pane: <div id="broker-compensation-...">
+
+These must match for Buyer/Seller/Landlord.
+
+B) Confirm the Livewire include that renders the Broker Compensation form exists inside that pane and is not wrapped in a wrong conditional (like @if ($activeTab === 6) with mismatched index).
+
+✅ Required approach:
+
+The pane should render its include when the pane is active, not based on a numeric index that now no longer matches.
+
+If you’re still using numeric $activeTab, then the ID-based navigation must also update $activeTab correctly for that flow (and tab order must include all tabs).
+
+3) Restore the “Next” Button on Broker Compensation (It’s Missing)
+
+The Broker Compensation pane must include:
+
+Previous
+
+Next
+
+Requirements
+
+Ensure the Next button exists in Buyer/Seller/Landlord Broker Compensation views.
+
+Ensure it is type="button" (not submit).
+
+Ensure it triggers the same Next handler used across the wizard.
+
+✅ If you created goToNextTab() only in Tenant, you must add it (or the shared wizard script include) to Buyer/Seller/Landlord wizard blades too.
+
+4) Standardize Navigation: Add Explicit Tab Order Arrays For Each Wizard
+
+You must create separate authoritative arrays (or a shared map object) for:
+
+TENANT_TAB_ORDER
+
+BUYER_TAB_ORDER
+
+SELLER_TAB_ORDER
+
+LANDLORD_TAB_ORDER
+
+Each must include all visible tabs in the correct order.
+
+Example structure:
+
+const WIZARD_TAB_ORDERS = {
+  tenant: [...],
+  buyer: [...],
+  seller: [...],
+  landlord: [...],
+};
+
+
+Then Next/Back must use the correct array based on the current wizard type.
+
+✅ This prevents “blank tab” and “missing Next” caused by mismatched IDs/order.
+
+5) Remove Any Mixed Old/New Navigation Code In Buyer/Seller/Landlord
+
+Tenant already had “old code mixed in.” Buyer/Seller/Landlord likely do too.
+
+Required
+
+Search in each wizard blade for:
+
+any old sibling navigation
+
+any duplicated handlers
+
+any second Next click binding
+
+There must be only one Next/Back system.
+
+6) QA Checklist (Must Prove Fix)
+
+For each: Buyer, Seller, Landlord
+
+Additional Details → Next → Broker Compensation shows full content (not blank)
+
+Broker Compensation → Next advances to final info tab
+
+Repeat for at least one other property type inside that flow if applicable
+
+Confirm no redirect to homepage, no bounce-back, no skipped tabs
+
+Deliver back:
+
+file paths changed
+
+tab ID list for each wizard
+
+short screen recording per wizard showing the flow works
+
+🔥 Add this line so they stop “half fixing”
+
+Paste this sentence at the end:
+
+“A tab switching visually is not considered fixed unless the corresponding tab-pane renders its form content AND Next advances. Broker Compensation must not be an empty pane.”
