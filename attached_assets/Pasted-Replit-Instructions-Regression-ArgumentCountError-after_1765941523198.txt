@@ -1,0 +1,96 @@
+Replit Instructions — Regression: ArgumentCountError after adding wire:key in Broker Compensation
+
+Issue: After recent changes adding wire:key directives in
+resources/views/livewire/tenant-agent-auction-tabs/commission-based/broker-compensation.blade.php,
+the Broker Compensation tab now throws:
+
+ArgumentCountError: Too few arguments to function Illuminate\Support\Str::studly() ...
+
+This occurs even on the first Broker Compensation selection (not only Commercial).
+
+Root Cause
+
+One or more wire:key expressions are referencing variables that are:
+
+not defined in that render scope, or
+
+temporarily null/empty during Livewire transitions,
+causing Livewire hydration/morphing to break and resulting in the Str::studly crash.
+
+Required Fix (Do NOT touch vendor files)
+1) Replace all dynamic wire:key expressions that rely on possibly-undefined vars
+
+In broker-compensation.blade.php, update keys to use ONLY values that are always present and safe:
+
+✅ Use Livewire component properties (must exist) OR hardcoded stable keys.
+
+2) Use a guaranteed-safe key builder
+
+At the top of the blade, define:
+
+@php
+  $key = function (...$parts) {
+      $parts = array_map(fn($p) => is_scalar($p) && $p !== '' ? $p : 'none', $parts);
+      return implode('-', $parts);
+  };
+@endphp
+
+
+Then rewrite wire:key blocks like:
+
+<div wire:key="{{ $key('tenant-lease-fee', $tenant_broker_lease_fee_type ?? null, $property_type ?? null) }}">
+
+
+Important: do NOT use variables that might not exist in scope (like $lease_fee_type if the actual property is named differently).
+
+3) Fix the variable names
+
+Confirm the exact Livewire property names used by the dropdowns, for example:
+
+tenant_broker_lease_fee_type
+
+tenant_broker_purchase_fee_type
+
+property_type or listing_property_type (whatever is actually in the component)
+
+Then make the keys reference those exact properties consistently.
+
+4) If unsure, temporarily remove wire:key from the high-risk blocks
+
+If you can’t guarantee correct scope right away:
+
+remove the new wire:key directives from Broker Compensation
+
+retest to confirm the regression disappears
+
+then re-add wire:key using the safe key builder above
+
+5) Clear caches and retest
+
+Run:
+
+php artisan view:clear && php artisan cache:clear
+
+Retest ALL:
+
+Residential Tenant Broker Compensation selections
+
+Commercial Tenant Broker Compensation selections
+
+Rapid switching between all lease fee types
+
+Ensure no crash and page does not get “stuck”
+
+Acceptance Criteria
+
+No ArgumentCountError anywhere in Broker Compensation tab
+
+Works for Residential + Commercial
+
+Works on first selection
+
+Rapid switching does not crash or corrupt the page state
+
+One sentence you should add (so they stop “inventing” variable names)
+
+“Do not reference ad-hoc Blade variables in wire:key unless you confirm they are defined in that scope; wire:key must use the actual Livewire component property names.”
