@@ -1032,13 +1032,37 @@ class TenantAgentAuction extends Component
         $this->emit('refreshTooltips'); // Emit the event to re-initialize tooltips
     }
 
+    // Ensure lease_type never becomes empty during transitions
+    public function updatedLeaseType($value)
+    {
+        $this->resetValidation();
+        $this->resetErrorBag();
+        
+        if (empty($value)) {
+            $this->lease_type = 'percent';
+        }
+        $this->lease_value = ''; // clear when type changes
+    }
+
+    // Ensure purchase_type never becomes empty during transitions
+    public function updatedPurchaseType($value)
+    {
+        $this->resetValidation();
+        $this->resetErrorBag();
+        
+        if (empty($value)) {
+            $this->purchase_type = 'percent';
+        }
+        $this->purchase_value = ''; // clear when type changes
+    }
+
     public function setType(string $which, string $type): void
     {
         if ($which === 'lease') {
-            $this->lease_type = $type;
+            $this->lease_type = $type ?: 'percent';
             $this->lease_value = ''; // clear lease input when switching type
         } elseif ($which === 'purchase') {
-            $this->purchase_type = $type;
+            $this->purchase_type = $type ?: 'percent';
             $this->purchase_value = ''; // clear purchase input when switching type
         }
 
