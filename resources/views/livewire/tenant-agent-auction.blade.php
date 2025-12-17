@@ -1662,6 +1662,15 @@ $lease_types = [
                     @if ($service_type === 'full_service')
 
                     @php
+                    // Safe slug function - removes special chars, keeps only a-z, 0-9, and dashes
+                    $safeSlug = function($str) {
+                        $slug = strtolower($str);
+                        $slug = preg_replace('/[^a-z0-9\s-]/', '', $slug); // Remove special chars like &
+                        $slug = preg_replace('/[\s]+/', '-', $slug); // Replace spaces with dashes
+                        $slug = preg_replace('/-+/', '-', $slug); // Collapse multiple dashes
+                        return trim($slug, '-');
+                    };
+
                     $baseTabs = ['Listing Details'];
 
                     // Conditionally set Property tab label based on user type
@@ -1670,18 +1679,16 @@ $lease_types = [
                     'seller', 'landlord' => 'Property Details',
                     };
 
-                    $propertyId = str_replace(' ', '-', strtolower($propertyTab));
+                    $propertyId = $safeSlug($propertyTab);
 
                     // Define rest tabs excluding 'Pre-Screening' for landlord
-                    // $restTabs = ['Leasing Terms', 'Services', 'Additional Details', 'Broker Compensation'];
-
                     $firstRest =
                     $user_type === 'buyer'
                     ? 'Purchasing Terms'
                     : ($user_type === 'seller'
                     ? 'Sale Terms'
                     : 'Leasing Terms');
-                    $restTabs = [$firstRest, 'Services', 'Additional Details', 'Broker Compensation & Agency Agreement Terms']; // Only include Pre-Screening if not landlord
+                    $restTabs = [$firstRest, 'Services', 'Additional Details', 'Broker Compensation & Agency Agreement Terms'];
                     if ($user_type !== 'landlord' and $user_type !== 'buyer' and $user_type !== 'seller') {
                     array_splice($restTabs, 1, 0, 'Pre-Screening');
                     }
@@ -1701,14 +1708,15 @@ $lease_types = [
                     <ul class="nav nav-tabs" id="myTab" role="tablist">
                         @foreach ($allTabs as $index => $tab)
                         @if ($tab)
+                        @php $tabSlug = $safeSlug($tab); @endphp
                         <li class="nav-item" role="presentation">
                             <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                 wire:click="setActiveTab({{ $index }})"
-                                id="{{ str_replace(' ', '-', strtolower($tab)) }}-tab"
+                                id="{{ $tabSlug }}-tab"
                                 data-bs-toggle="tab"
-                                data-bs-target="#{{ str_replace(' ', '-', strtolower($tab)) }}"
+                                data-bs-target="#{{ $tabSlug }}"
                                 type="button" role="tab"
-                                aria-controls="{{ str_replace(' ', '-', strtolower($tab)) }}"
+                                aria-controls="{{ $tabSlug }}"
                                 aria-selected="{{ $activeTab === $index ? 'true' : 'false' }}">
                                 {{ $tab }}
                             </button>
@@ -1866,7 +1874,7 @@ $lease_types = [
                                 <!-- Broker Compensation Tab - Adjust index based on user_type -->
 
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 5 : 6) ? 'show active' : '' }}"
-                                    id="broker-compensation-&-agency-agreement-terms" role="tabpanel" aria-labelledby="broker-compensation-&-agency-agreement-terms-tab">
+                                    id="broker-compensation-agency-agreement-terms" role="tabpanel" aria-labelledby="broker-compensation-agency-agreement-terms-tab">
 
                                     @if ($user_type === 'tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.broker-compensation')
