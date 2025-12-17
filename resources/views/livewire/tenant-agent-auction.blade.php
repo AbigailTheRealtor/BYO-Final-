@@ -3431,16 +3431,29 @@ $lease_types = [
             return isValid;
         }
 
-        // AUTHORITATIVE TAB ORDER - This is the ONE TRUE source for tab navigation
-        const TENANT_TAB_ORDER = [
-            'listing-details',
-            'leasing-terms',
-            'pre-screening',
-            'services',
-            'additional-details',
-            'broker-compensation',
-            'tenant-info'
-        ];
+        // AUTHORITATIVE TAB ORDER - Dynamically derived from actual DOM to ensure correctness
+        // This reads the actual tab order from the rendered page, so it works for all user types
+        function getTabOrder() {
+            const tabLinks = document.querySelectorAll('.nav-tabs .nav-link');
+            const order = [];
+            tabLinks.forEach(link => {
+                const target = link.getAttribute('data-bs-target');
+                if (target) {
+                    order.push(target.replace('#', ''));
+                }
+            });
+            console.log('Tab order derived from DOM:', order);
+            return order;
+        }
+        
+        // Cache the tab order once on page load
+        let TAB_ORDER = null;
+        function ensureTabOrder() {
+            if (!TAB_ORDER || TAB_ORDER.length === 0) {
+                TAB_ORDER = getTabOrder();
+            }
+            return TAB_ORDER;
+        }
 
         // Helper function to check if element is visible (not hidden by d-none, display:none, etc.)
         function isElementVisible(element) {
@@ -3560,20 +3573,21 @@ $lease_types = [
             return isValid;
         }
 
-        // GO TO NEXT TAB - Uses authoritative TENANT_TAB_ORDER (NO sibling logic)
+        // GO TO NEXT TAB - Uses dynamically derived tab order (NO sibling logic)
         function goToNextTab() {
+            const tabOrder = ensureTabOrder();
             const activeTab = document.querySelector('.nav-link.active');
             if (!activeTab) return false;
 
             const currentTarget = activeTab.getAttribute('data-bs-target')?.replace('#', '');
-            const currentIndex = TENANT_TAB_ORDER.indexOf(currentTarget);
+            const currentIndex = tabOrder.indexOf(currentTarget);
 
             if (currentIndex === -1) {
-                console.log('Current tab not found in TENANT_TAB_ORDER:', currentTarget);
+                console.log('Current tab not found in TAB_ORDER:', currentTarget, 'Available:', tabOrder);
                 return false;
             }
 
-            const nextTabId = TENANT_TAB_ORDER[currentIndex + 1];
+            const nextTabId = tabOrder[currentIndex + 1];
             if (!nextTabId) {
                 console.log('Already on last tab');
                 return false;
@@ -3585,31 +3599,34 @@ $lease_types = [
                 return false;
             }
 
+            console.log('Navigating from', currentTarget, 'to', nextTabId);
             bootstrap.Tab.getOrCreateInstance(nextTabEl).show();
             Livewire.emit('setActiveTab', currentIndex + 1);
             return true;
         }
 
-        // GO TO PREVIOUS TAB - Uses authoritative TENANT_TAB_ORDER (NO sibling logic)
+        // GO TO PREVIOUS TAB - Uses dynamically derived tab order (NO sibling logic)
         function goToPrevTab() {
+            const tabOrder = ensureTabOrder();
             const activeTab = document.querySelector('.nav-link.active');
             if (!activeTab) return false;
 
             const currentTarget = activeTab.getAttribute('data-bs-target')?.replace('#', '');
-            const currentIndex = TENANT_TAB_ORDER.indexOf(currentTarget);
+            const currentIndex = tabOrder.indexOf(currentTarget);
 
             if (currentIndex === -1 || currentIndex === 0) {
                 console.log('Already on first tab or tab not found');
                 return false;
             }
 
-            const prevTabId = TENANT_TAB_ORDER[currentIndex - 1];
+            const prevTabId = tabOrder[currentIndex - 1];
             const prevTabEl = document.querySelector(`[data-bs-target="#${prevTabId}"]`);
             if (!prevTabEl) {
                 console.log('Previous tab element not found for ID:', prevTabId);
                 return false;
             }
 
+            console.log('Navigating from', currentTarget, 'to', prevTabId);
             bootstrap.Tab.getOrCreateInstance(prevTabEl).show();
             Livewire.emit('setActiveTab', currentIndex - 1);
             return true;

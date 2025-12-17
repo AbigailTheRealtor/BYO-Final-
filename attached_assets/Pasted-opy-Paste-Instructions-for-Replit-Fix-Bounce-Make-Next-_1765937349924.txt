@@ -1,0 +1,152 @@
+opy/Paste Instructions for Replit (Fix Bounce + Make Next Work Everywhere)
+Goal
+
+Fix tab navigation (Next/Back) so it works for ALL listing types (Tenant, Buyer, Seller, Landlord) across:
+
+Services → Additional Details → Broker Compensation → Client Info
+
+No skipping
+
+No bounce-back
+
+Next works on Broker Compensation
+
+1) Create ONE Shared Wizard Navigation Module (No Per-Flow Hacks)
+Required
+
+Create a single JS navigation helper used by Tenant/Buyer/Seller/Landlord.
+
+Example location options:
+
+resources/js/wizard-navigation.js (preferred) OR
+
+a shared Blade include like resources/views/components/wizard-navigation.blade.php
+
+Do not duplicate navigation code in each listing blade.
+
+2) Define Authoritative Tab Orders That MATCH THE ACTUAL UI
+
+For each listing type, define a tab order array that includes every visible tab in the correct sequence.
+
+Tenant must include (based on UI):
+
+listing-details
+
+property-preferences
+
+leasing-terms
+
+pre-screening
+
+services
+
+additional-details
+
+broker-compensation
+
+tenant-information (or whatever the real ID is)
+
+Do not guess IDs. Pull them from the actual HTML:
+
+use each .nav-link’s data-bs-target="#..."
+
+✅ Requirement: print/log the collected IDs and confirm they match the array.
+
+3) Navigation Must Be ID-Based and DOM-Derived (No Numeric Index Emit)
+Critical rule
+
+Stop emitting numeric tab indices (like 4/5/6). That’s what caused earlier null/incorrect binding and skipping.
+
+Instead:
+
+navigate by tab ID (data-bs-target)
+
+optionally sync Livewire using a single stable property name like activeTabId
+
+Required Implementation
+
+goToNextTab()
+
+read active .nav-link → get data-bs-target
+
+find it in the order array
+
+bootstrap.Tab.getOrCreateInstance(nextTabEl).show();
+
+No nextSibling. No tabIndex + 1.
+
+4) Remove ALL Duplicate Next/Back Handlers (This is Causing the Bounce)
+
+Their notes admit old code was mixed in and there were duplicate handlers.
+
+Required
+
+In each listing blade (Tenant/Buyer/Seller/Landlord):
+
+Search for all occurrences of:
+
+addEventListener('click'
+
+Next
+
+Back
+
+goToNextTab
+
+initializeLimitedService
+
+any “validateServicesTab” / auto-advance logic
+
+There must be only ONE Next click binding per Next button.
+
+✅ Make Next/Back binding happen once during page load, not inside multiple init functions.
+
+5) Stop Any Auto-Redirect / Validation That Forces Services to Re-Open
+
+The bounce back from Additional Details → Services is typically caused by:
+
+a function that runs on tab change and forces Services active if something is “invalid”
+
+a Livewire re-render that resets active tab on update
+
+Required
+
+If you have a “validateServicesTab()” or similar:
+
+It must only run when the user clicks Next from Services
+
+It must NOT run on every tab change event
+
+Also ensure Livewire does NOT re-set the tab during render/mount.
+
+6) Broker Compensation Next Must Work (All Listing Types)
+
+For Broker Compensation tabs:
+
+Ensure the Next button is not inside a form with wrong type
+
+Ensure it uses the shared goToNextTab() handler
+
+Ensure no hidden-field validation blocks it silently
+
+show errors if blocking
+
+otherwise advance
+
+7) QA Requirements (Must Provide Proof)
+
+For each listing type (Tenant, Buyer, Seller, Landlord), test both Residential + Commercial if applicable:
+
+Services → Next → Additional Details (must stay there, no bounce)
+
+Additional Details → Next → Broker Compensation
+
+Broker Compensation → Next → Client Info
+
+Click each tab manually and Next still advances correctly
+
+Provide screen recording proof for Tenant + one other listing type minimum.
+
+The direct reason their “Tenant fix” didn’t work
+
+They created a tab order array that is missing tabs (Property Preferences), and they left duplicate Next handlers in different initialization paths (“Full Service” vs “Limited Service”). That combination causes skipping + bouncing.
