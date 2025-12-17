@@ -1,0 +1,74 @@
+Subject: Broker Compensation tab still crashing + Next button still broken — need stack-trace-based fix
+
+The ArgumentCountError: Too few arguments to Str::studly(), 0 passed is still happening on Hire a Tenant’s Agent → Broker Compensation & Agency Agreement Terms, especially under Commercial when loading/selecting Tenant’s Broker Lease Fee.
+
+The recent changes (updatedLeaseType/updatedPurchaseType forcing fallback to 'percent') did not resolve the crash. This indicates the error is not primarily caused by lease_type/purchase_type transitions, and we need the real call site.
+
+Required Fix Method (No More Guessing)
+
+Reproduce the crash.
+
+On the exception page → Stack Trace → Expand vendor frames.
+
+Identify the first non-vendor file path + line number (NOT anything in /vendor/).
+
+Fix the issue at that file/line.
+
+What we expect you to find (most likely)
+
+a Blade/Livewire line creating an empty wire:key, empty wire:model, or calling a Livewire helper with an empty argument.
+
+a dynamic value used in a key/name/event that resolves to empty during render.
+
+Requirements
+
+Do not change vendor files.
+
+Do not force-select 'percent' if a user chose Flat Fee or Flat Fee + %. Use null-safe defaults without overwriting user selection.
+
+Fix must cover Create listing, Edit listing, Agent Bid, Counter Bid.
+
+Progress Preservation (Must)
+
+If an error occurs, the user must not lose progress or have to start over:
+
+Save a draft on tab change / Next click (at minimum)
+
+Restore values and the last tab on reload
+
+Next Button Still Not Working (Separate Bug)
+
+The Next button does not advance from Broker Compensation for all property types.
+Fix it by:
+
+ensuring the Next button is bound to the correct handler
+
+ensuring it is not blocked by hidden-field validation
+
+ensuring it’s not an incorrect submit button type
+
+showing validation errors when present, otherwise advancing reliably
+
+Deliverables
+
+Reply back with:
+
+the first non-vendor file + line from the stack trace
+
+the exact code change made there
+
+confirmation Broker Compensation loads and dropdown switching works for Commercial
+
+confirmation Next works for Broker Compensation for all property types
+
+confirmation form data is preserved after reload
+
+Why this will work
+
+Because it removes “search and hope” and forces them to fix the actual line that triggers the error. If they can’t produce the first non-vendor line, they didn’t truly locate the cause.
+
+One more thing you should ask them to do (important)
+
+Add this extra requirement if you want to stop this forever:
+
+Create an automated smoke test / manual QA checklist that clicks through every Broker Compensation dropdown option for Residential + Commercial in Create/Edit/Bid/Counter flows and confirms no exception page appears.
