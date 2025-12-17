@@ -707,7 +707,26 @@ class TenantAgentAuctionEdit extends Component
         'updateRentIncludes' => 'updateRentIncludes',
         'updateLeaseTermOptions' => 'updateLeaseTermOptions',
         'assetsOption' => 'assetsOption',
+        'updateModel' => 'updateModel',
+        'setActiveTab' => 'setActiveTab',
     ];
+
+    /**
+     * Safe handler for updateModel event from JavaScript
+     * Prevents ArgumentCountError by validating property name before updating
+     */
+    public function updateModel($propertyName, $value)
+    {
+        // Guard against null or empty property names
+        if (empty($propertyName) || !is_string($propertyName)) {
+            return;
+        }
+
+        // Only update if the property exists on this component
+        if (property_exists($this, $propertyName)) {
+            $this->{$propertyName} = $value;
+        }
+    }
 
     private function resetResidentialFeeFields()
     {

@@ -772,6 +772,7 @@ class TenantAgentAuction extends Component
         'updateLeaseTermOptions' => 'updateLeaseTermOptions',
         'assetsOption' => 'assetsOption',
         'updateModel' => 'updateModel',
+        'setActiveTab' => 'setActiveTab',
     ];
 
     /**
