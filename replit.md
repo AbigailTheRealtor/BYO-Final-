@@ -11,7 +11,8 @@ I prefer detailed explanations. Ask before making major changes.
 ### UI/UX Decisions
 - **Frontend**: Utilizes Laravel Mix with TailwindCSS and AlpineJS for a modern and responsive user interface.
 - **Dynamic Content**: Extensive use of Livewire for dynamic form elements, auto-population features, and real-time UI updates, minimizing full page reloads.
-- **Tab Navigation**: Implemented Bootstrap tab system for organizing complex forms, with careful attention to correct ID matching and valid CSS selectors to prevent rendering issues.
+- **Tab Navigation**: Implemented Bootstrap tab system for organizing complex forms.
+  - **CRITICAL RULE**: Tab IDs must NEVER be generated directly from labels. All tab navigation must use the `$safeSlug` function (lowercase, alphanumeric + dashes only, no special characters like `&`). The same slug must be used for both the nav `data-bs-target` and the tab-pane `id`. This applies to all wizard flows (Tenant, Buyer, Seller, Landlord) in both Create and Edit blades.
 - **Location Autocomplete**: Replaced Google Places API with a U.S. Census-based local database for states, counties, and cities to provide efficient and cost-effective location lookups. Auto-populates state and county fields based on city selection.
 - **Listing ID Display**: Unique listing IDs are prominently displayed as badges on listing view pages.
 - **Pill Badges**: Enhanced styling for delete buttons on colored pill badges for better visibility.
