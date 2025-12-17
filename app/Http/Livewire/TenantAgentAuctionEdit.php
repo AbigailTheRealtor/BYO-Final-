@@ -2220,9 +2220,9 @@ class TenantAgentAuctionEdit extends Component
         $this->interested_lease_option_agreement = $auction->info('interested_lease_option_agreement');
 
 
-        $this->purchase_type = $auction->info('purchase_type');
+        $this->purchase_type = $auction->info('purchase_type') ?: 'percent';
         $this->purchase_value = $auction->info('purchase_value');
-        $this->lease_type = $auction->info('lease_type');
+        $this->lease_type = $auction->info('lease_type') ?: 'percent';
         $this->lease_value = $auction->info('lease_value');
         $this->other_services_enabled = $auction->info('other_services_enabled');
 

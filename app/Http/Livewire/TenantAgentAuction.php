@@ -2756,9 +2756,9 @@ class TenantAgentAuction extends Component
             $this->landlord_broker_flate_fee_type = $auction->get->landlord_broker_flate_fee_type;
 
 
-            $this->lease_type = $auction->get->lease_type;
+            $this->lease_type = $auction->get->lease_type ?: 'percent';
             $this->lease_value = $auction->get->lease_value;
-            $this->purchase_type = $auction->get->purchase_type;
+            $this->purchase_type = $auction->get->purchase_type ?: 'percent';
             $this->purchase_value = $auction->get->purchase_value;
 
 

@@ -154,8 +154,31 @@ window.addIconsToInputs = function (root = document) {
 };
 
 // =============== Validation ===============
+// Helper function to check if element is visible (not hidden by d-none, display:none, etc.)
+function isElementVisible(element) {
+  if (!element) return false;
+  if (element.disabled) return false;
+  if (element.type === 'hidden') return false;
+  
+  // Check if element or any parent has d-none, hidden class, or display:none
+  let el = element;
+  while (el && el !== document.body) {
+    if (el.classList && (el.classList.contains('d-none') || el.classList.contains('hidden'))) {
+      return false;
+    }
+    const style = window.getComputedStyle(el);
+    if (style.display === 'none' || style.visibility === 'hidden') {
+      return false;
+    }
+    el = el.parentElement;
+  }
+  return true;
+}
+
 function checkFieldValidity(field){
   if(!field.required) return true;
+  // Skip hidden or disabled fields
+  if (!isElementVisible(field)) return true;
   const value = field.value;
   if(!value) return false;
   if(field.type==='number' && field.hasAttribute('min') && parseInt(value)<parseInt(field.getAttribute('min'))) return false;
@@ -165,6 +188,11 @@ function checkFieldValidity(field){
 }
 function validateFieldWithErrors(field){
   if(!field.required) return true;
+  // Skip hidden or disabled fields
+  if (!isElementVisible(field)) {
+    field.classList.remove('is-invalid');
+    return true;
+  }
   const isValid = checkFieldValidity(field);
   let errorSpan = document.getElementById(`${field.id}_error`);
   if(!errorSpan){
