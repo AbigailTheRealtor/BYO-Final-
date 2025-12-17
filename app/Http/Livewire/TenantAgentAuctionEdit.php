@@ -1854,7 +1854,7 @@ class TenantAgentAuctionEdit extends Component
 
         $auctionClass = match ($this->user_type) {
             'tenant'   => HireTenantAgentAuction::class,
-            'landlord' => HireLandLordAgentAuction::class,
+            'landlord' => HirelandLordAgentAuction::class,
             'buyer'    => HireBuyerAgentAuction::class,
             'seller'   => HireSellerAgentAuction::class,
             default    => null,
@@ -1893,7 +1893,7 @@ class TenantAgentAuctionEdit extends Component
         // Fetch the auction object using the ID
         $auctionClass = match ($this->user_type) {
             'tenant'   => HireTenantAgentAuction::class,
-            'landlord' => HireLandLordAgentAuction::class,
+            'landlord' => HirelandLordAgentAuction::class,
             'buyer'    => HireBuyerAgentAuction::class,
             'seller'   => HireSellerAgentAuction::class,
             default    => null,
@@ -1953,7 +1953,7 @@ class TenantAgentAuctionEdit extends Component
 
         $auctionClass = match ($user_type) {
             'tenant'   => HireTenantAgentAuction::class,
-            'landlord' => HireLandLordAgentAuction::class,
+            'landlord' => HirelandLordAgentAuction::class,
             'buyer'    => HireBuyerAgentAuction::class,
             'seller'   => HireSellerAgentAuction::class,
             default    => null,
@@ -2387,7 +2387,7 @@ class TenantAgentAuctionEdit extends Component
 
             $auctionClass = match ($this->user_type) {
                 'tenant'   => HireTenantAgentAuction::class,
-                'landlord' => HireLandLordAgentAuction::class,
+                'landlord' => HirelandLordAgentAuction::class,
                 'buyer'    => HireBuyerAgentAuction::class,
                 'seller'   => HireSellerAgentAuction::class,
                 default    => null,
