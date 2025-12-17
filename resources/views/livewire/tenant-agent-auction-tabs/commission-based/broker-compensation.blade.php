@@ -72,9 +72,9 @@
     </div>
 
     <!-- Dynamic Inputs Based on Selection -->
-    <div class="mt-3">
+    <div class="mt-3" wire:key="lease-fee-inputs-{{ $lease_fee_type ?? 'none' }}">
         @if ($lease_fee_type === 'Flat Fee')
-            <div class="input-group">
+            <div class="input-group" wire:key="lease-fee-flat">
                 <span class="input-group-text">$</span>
                 <input type="text" wire:model.lazy="lease_fee_flat" class="form-control"
                     placeholder="Enter flat fee amount (e.g., 5,000)"
@@ -83,7 +83,7 @@
                 <span class="error mt-2" id="lease_fee_flat_error"></span>
             </div>
         @elseif($lease_fee_type === 'Percentage of the Gross Lease Value')
-            <div class="row g-2">
+            <div class="row g-2" wire:key="lease-fee-gross-lease">
                 <div class="col-md-12">
                     <div class="input-group">
                         <input type="number" wire:model="lease_fee_percentage" class="form-control"
@@ -94,7 +94,7 @@
 
             </div>
         @elseif($lease_fee_type === 'Percentage of Monthly Rent')
-            <div class="row g-2">
+            <div class="row g-2" wire:key="lease-fee-monthly-rent">
                 <div class="col-md-12">
                     <div class="input-group">
                         <input type="number" wire:model="lease_fee_percentage_monthly_rent" class="form-control"
@@ -104,18 +104,8 @@
                 </div>
 
             </div>
-            {{-- <div class="row mt-3">
-                <div class="col-md-12">
-                    <div class="input-group">
-                        <span class="input-group-text">#</span>
-                        <input type="number" wire:model="lease_fee_percentage_monthly_number" class="form-control"
-                            placeholder="Enter number of months (e.g., 1)">
-                    </div>
-                </div>
-
-            </div> --}}
         @elseif($lease_fee_type === 'Flat Fee + Percentage of the Gross Lease Value')
-            <div class="row g-2">
+            <div class="row g-2" wire:key="lease-fee-flat-gross-combo">
                 <div class="col-md-5">
                     <div class="input-group">
                         <span class="input-group-text">$</span>
@@ -134,13 +124,13 @@
                 </div>
             </div>
         @elseif($lease_fee_type === 'Percentage of the Net Aggregate Rent')
-            <div class="input-group">
+            <div class="input-group" wire:key="lease-fee-net-aggregate">
                 <input type="number" wire:model="lease_fee_percentage_net" class="form-control"
                     placeholder="Enter percentage of the net aggregate rent (e.g., 6)">
                 <span class="input-group-text">%</span>
             </div>
         @elseif($lease_fee_type === 'Flat Fee + Percentage of the Net Aggregate Rent')
-            <div class="row g-2">
+            <div class="row g-2" wire:key="lease-fee-flat-net-combo">
                 <div class="col-md-5">
                     <div class="input-group">
                         <span class="input-group-text">$</span>
@@ -189,9 +179,9 @@
             </select>
         </div>
 
-        <div class="mt-3">
+        <div class="mt-3" wire:key="broker-fee-timing-inputs-{{ $broker_fee_timing ?? 'none' }}">
             @if ($broker_fee_timing === 'Deducted from Rent Collected')
-                <div class="input-group">
+                <div class="input-group" wire:key="broker-fee-deducted">
                     <span class="input-group-text">#</span>
                     <input type="number" wire:model.lazy="broker_fee_days_from_rent" class="form-control"
                         placeholder="Enter number of calendar days (e.g., 5)">
