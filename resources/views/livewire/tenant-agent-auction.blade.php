@@ -3430,36 +3430,43 @@ $lease_types = [
         */
             return isValid;
         }
-        // MODIFY your existing next button click handler like this:
-        document.querySelector('.wizard-step-next')?.addEventListener('click', function() {
-            const currentTab = document.querySelector('.nav-tabs .nav-link.active');
-            if (!currentTab) return;
 
-            const currentTabContent = document.querySelector(currentTab.getAttribute('data-bs-target'));
-            if (!currentTabContent) return;
+        // AUTHORITATIVE TAB ORDER - This is the ONE TRUE source for tab navigation
+        const TENANT_TAB_ORDER = [
+            'listing-details',
+            'leasing-terms',
+            'pre-screening',
+            'services',
+            'additional-details',
+            'broker-compensation',
+            'tenant-info'
+        ];
 
-            let isValid = true;
-
-            // Helper function to check if element is visible (not hidden by d-none, display:none, etc.)
-            function isElementVisible(element) {
-                if (!element) return false;
-                if (element.disabled) return false;
-                if (element.type === 'hidden') return false;
-                
-                // Check if element or any parent has d-none, hidden class, or display:none
-                let el = element;
-                while (el && el !== document.body) {
-                    if (el.classList && (el.classList.contains('d-none') || el.classList.contains('hidden'))) {
-                        return false;
-                    }
-                    const style = window.getComputedStyle(el);
-                    if (style.display === 'none' || style.visibility === 'hidden') {
-                        return false;
-                    }
-                    el = el.parentElement;
+        // Helper function to check if element is visible (not hidden by d-none, display:none, etc.)
+        function isElementVisible(element) {
+            if (!element) return false;
+            if (element.disabled) return false;
+            if (element.type === 'hidden') return false;
+            
+            let el = element;
+            while (el && el !== document.body) {
+                if (el.classList && (el.classList.contains('d-none') || el.classList.contains('hidden'))) {
+                    return false;
                 }
-                return true;
+                const style = window.getComputedStyle(el);
+                if (style.display === 'none' || style.visibility === 'hidden') {
+                    return false;
+                }
+                el = el.parentElement;
             }
+            return true;
+        }
+
+        // Validate current tab content - returns true if valid
+        function validateCurrentTab(currentTabContent) {
+            if (!currentTabContent) return true;
+            
+            let isValid = true;
 
             // Validate all required fields in the current tab (skip hidden/disabled fields)
             const requiredFields = currentTabContent.querySelectorAll(
@@ -3545,43 +3552,93 @@ $lease_types = [
                 }
             }
 
-            // ADD THIS: Validate services tab if it's the current tab
+            // Validate services tab if it's the current tab
             if (currentTabContent.id === 'services') {
                 isValid = isValid && validateServicesTab(currentTabContent);
             }
 
-            // If all fields are valid, proceed to the next tab (your existing code)
-            if (isValid) {
-                const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector(
-                    '.nav-link');
-                if (nextTab) {
-                    const tabs = document.querySelectorAll('.nav-link');
-                    if (tabs) {
-                        const tabIndex = Array.from(tabs).indexOf(nextTab);
-                        if (tabIndex !== -1) {
-                            Livewire.emit('setActiveTab', tabIndex);
-                            nextTab.click();
-                        }
-                    }
-                }
+            return isValid;
+        }
+
+        // GO TO NEXT TAB - Uses authoritative TENANT_TAB_ORDER (NO sibling logic)
+        function goToNextTab() {
+            const activeTab = document.querySelector('.nav-link.active');
+            if (!activeTab) return false;
+
+            const currentTarget = activeTab.getAttribute('data-bs-target')?.replace('#', '');
+            const currentIndex = TENANT_TAB_ORDER.indexOf(currentTarget);
+
+            if (currentIndex === -1) {
+                console.log('Current tab not found in TENANT_TAB_ORDER:', currentTarget);
+                return false;
             }
 
-            // Update save button state after validation (your existing code)
+            const nextTabId = TENANT_TAB_ORDER[currentIndex + 1];
+            if (!nextTabId) {
+                console.log('Already on last tab');
+                return false;
+            }
+
+            const nextTabEl = document.querySelector(`[data-bs-target="#${nextTabId}"]`);
+            if (!nextTabEl) {
+                console.log('Next tab element not found for ID:', nextTabId);
+                return false;
+            }
+
+            bootstrap.Tab.getOrCreateInstance(nextTabEl).show();
+            Livewire.emit('setActiveTab', currentIndex + 1);
+            return true;
+        }
+
+        // GO TO PREVIOUS TAB - Uses authoritative TENANT_TAB_ORDER (NO sibling logic)
+        function goToPrevTab() {
+            const activeTab = document.querySelector('.nav-link.active');
+            if (!activeTab) return false;
+
+            const currentTarget = activeTab.getAttribute('data-bs-target')?.replace('#', '');
+            const currentIndex = TENANT_TAB_ORDER.indexOf(currentTarget);
+
+            if (currentIndex === -1 || currentIndex === 0) {
+                console.log('Already on first tab or tab not found');
+                return false;
+            }
+
+            const prevTabId = TENANT_TAB_ORDER[currentIndex - 1];
+            const prevTabEl = document.querySelector(`[data-bs-target="#${prevTabId}"]`);
+            if (!prevTabEl) {
+                console.log('Previous tab element not found for ID:', prevTabId);
+                return false;
+            }
+
+            bootstrap.Tab.getOrCreateInstance(prevTabEl).show();
+            Livewire.emit('setActiveTab', currentIndex - 1);
+            return true;
+        }
+
+        // NEXT BUTTON HANDLER - Validates then navigates using ID-based order
+        document.querySelector('.wizard-step-next')?.addEventListener('click', function() {
+            const activeTab = document.querySelector('.nav-link.active');
+            if (!activeTab) return;
+
+            const currentTabContent = document.querySelector(activeTab.getAttribute('data-bs-target'));
+            if (!currentTabContent) return;
+
+            const isValid = validateCurrentTab(currentTabContent);
+
+            if (isValid) {
+                goToNextTab();
+            }
+
+            // Update save button state after validation
             const saveButton = document.querySelector('.wizard-step-finish');
             if (saveButton) {
                 saveButton.disabled = !isValid;
             }
         });
 
-        // Handle back button click (new implementation that works with your code)
+        // BACK BUTTON HANDLER - Uses ID-based order (NO sibling logic)
         document.querySelector('.wizard-step-back')?.addEventListener('click', function() {
-            const currentTab = document.querySelector('.nav-tabs .nav-link.active');
-            const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
-            if (prevTab) {
-                Livewire.emit('setActiveTab', Array.from(document.querySelectorAll('.nav-link'))
-                    .indexOf(prevTab));
-                prevTab.click();
-            }
+            goToPrevTab();
         });
 
         // Add event listeners to update save button state when fields change
@@ -3628,122 +3685,17 @@ $lease_types = [
             return allValid;
         }
 
-        // MODIFY your existing next button click handler like this:
+        // LIMITED SERVICE: NEXT BUTTON HANDLER - Uses shared ID-based navigation
         document.querySelector('.wizard-step-next')?.addEventListener('click', function() {
-            const currentTab = document.querySelector('.nav-tabs .nav-link.active');
-            if (!currentTab) return;
+            const activeTab = document.querySelector('.nav-link.active');
+            if (!activeTab) return;
 
-            const currentTabContent = document.querySelector(currentTab.getAttribute('data-bs-target'));
+            const currentTabContent = document.querySelector(activeTab.getAttribute('data-bs-target'));
             if (!currentTabContent) return;
 
-            let isValid = true;
+            let isValid = validateCurrentTab(currentTabContent);
 
-            // Helper function to check if element is visible (not hidden by d-none, display:none, etc.)
-            function isElementVisible(element) {
-                if (!element) return false;
-                if (element.disabled) return false;
-                if (element.type === 'hidden') return false;
-                
-                // Check if element or any parent has d-none, hidden class, or display:none
-                let el = element;
-                while (el && el !== document.body) {
-                    if (el.classList && (el.classList.contains('d-none') || el.classList.contains('hidden'))) {
-                        return false;
-                    }
-                    const style = window.getComputedStyle(el);
-                    if (style.display === 'none' || style.visibility === 'hidden') {
-                        return false;
-                    }
-                    el = el.parentElement;
-                }
-                return true;
-            }
-
-            // Validate all required fields in the current tab (skip hidden/disabled fields)
-            const requiredFields = currentTabContent.querySelectorAll(
-                'input[required], select[required], textarea[required]');
-            if (requiredFields) {
-                requiredFields.forEach(function(input) {
-                    // Skip hidden or disabled fields - they should not block navigation
-                    if (!isElementVisible(input)) {
-                        input.classList.remove('is-invalid');
-                        return;
-                    }
-                    
-                    if (!input.value) {
-                        isValid = false;
-                        input.classList.add('is-invalid');
-
-                        const formGroup = input.closest('.form-group');
-                        if (formGroup) {
-                            const errorMessageContainer = formGroup.querySelector('.error');
-                            if (!errorMessageContainer) {
-                                const errorMessage = document.createElement('div');
-                                errorMessage.className = 'error mt-2';
-                                errorMessage.textContent = 'This field is required.';
-                                formGroup.appendChild(errorMessage);
-                            } else {
-                                errorMessageContainer.textContent = 'This field is required.';
-                            }
-                        }
-                    } else {
-                        input.classList.remove('is-invalid');
-                        const formGroup = input.closest('.form-group');
-                        if (formGroup) {
-                            const errorMessageContainer = formGroup.querySelector('.error');
-                            if (errorMessageContainer) {
-                                errorMessageContainer.remove();
-                            }
-                        }
-                    }
-                });
-            }
-
-            // Validate cities array (your existing code)
-            const citiesContainer = currentTabContent.querySelector('.cities-container');
-            if (citiesContainer) {
-                const cityBadges = citiesContainer.querySelectorAll('.badge');
-                if (!cityBadges || cityBadges.length === 0) {
-                    isValid = false;
-                    const existingError = citiesContainer.parentNode.querySelector('.error');
-                    if (!existingError) {
-                        const citiesError = document.createElement('div');
-                        citiesError.className = 'error';
-                        citiesError.textContent = 'At least one city is required.';
-                        citiesContainer.parentNode.insertBefore(citiesError, citiesContainer
-                            .nextSibling);
-                    }
-                } else {
-                    const existingError = citiesContainer.parentNode.querySelector('.error');
-                    if (existingError) {
-                        existingError.remove();
-                    }
-                }
-            }
-
-            // Validate counties array (your existing code)
-            const countiesContainer = currentTabContent.querySelector('.counties-container');
-            if (countiesContainer) {
-                const countyBadges = countiesContainer.querySelectorAll('.badge');
-                if (!countyBadges || countyBadges.length === 0) {
-                    isValid = false;
-                    const existingError = countiesContainer.parentNode.querySelector('.error');
-                    if (!existingError) {
-                        const countiesError = document.createElement('div');
-                        countiesError.className = 'error';
-                        countiesError.textContent = 'At least one county is required.';
-                        countiesContainer.parentNode.insertBefore(countiesError, countiesContainer
-                            .nextSibling);
-                    }
-                } else {
-                    const existingError = countiesContainer.parentNode.querySelector('.error');
-                    if (existingError) {
-                        existingError.remove();
-                    }
-                }
-            }
-
-
+            // Additional validation for service-selection-and-pricing tab
             if (currentTabContent.id === 'service-selection-and-pricing') {
                 const understandTerms = currentTabContent.querySelector('#understandTerms');
                 if (understandTerms && !understandTerms.checked) {
@@ -3755,7 +3707,7 @@ $lease_types = [
                         termsError.textContent = 'You must accept the terms to continue';
                         understandTerms.parentNode.appendChild(termsError);
                     }
-                } else {
+                } else if (understandTerms) {
                     const existingError = understandTerms.parentNode.querySelector('.error');
                     if (existingError) {
                         existingError.remove();
@@ -3763,42 +3715,19 @@ $lease_types = [
                 }
             }
 
-            // In your validation function
-
-
-
-            // If all fields are valid, proceed to the next tab (your existing code)
             if (isValid) {
-                const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector(
-                    '.nav-link');
-                if (nextTab) {
-                    const tabs = document.querySelectorAll('.nav-link');
-                    if (tabs) {
-                        const tabIndex = Array.from(tabs).indexOf(nextTab);
-                        if (tabIndex !== -1) {
-                            Livewire.emit('setActiveTab', tabIndex);
-                            nextTab.click();
-                        }
-                    }
-                }
+                goToNextTab();
             }
 
-            // Update save button state after validation (your existing code)
             const saveButton = document.querySelector('.wizard-step-finish');
             if (saveButton) {
                 saveButton.disabled = !isValid;
             }
         });
 
-        // Handle back button click (new implementation that works with your code)
+        // LIMITED SERVICE: BACK BUTTON HANDLER - Uses shared ID-based navigation
         document.querySelector('.wizard-step-back')?.addEventListener('click', function() {
-            const currentTab = document.querySelector('.nav-tabs .nav-link.active');
-            const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
-            if (prevTab) {
-                Livewire.emit('setActiveTab', Array.from(document.querySelectorAll('.nav-link'))
-                    .indexOf(prevTab));
-                prevTab.click();
-            }
+            goToPrevTab();
         });
 
         // Add event listeners to update save button state when fields change

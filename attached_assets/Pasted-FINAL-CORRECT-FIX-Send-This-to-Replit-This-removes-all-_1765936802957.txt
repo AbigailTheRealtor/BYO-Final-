@@ -1,0 +1,149 @@
+FINAL, CORRECT FIX (Send This to Replit)
+
+This removes all guessing and permanently fixes Next / Back for all Tenant listings.
+
+Replit Instructions — FIX Tenant Wizard Navigation (Authoritative Tab Mapping)
+❌ STOP Using DOM “next sibling” Logic
+
+The current Next button logic that:
+
+finds the active .nav-link
+
+clicks the next sibling
+
+or increments a numeric index
+
+must be removed.
+It cannot work with this tab layout.
+
+✅ REQUIRED SOLUTION: Single Authoritative TAB ORDER (By ID)
+Step 1: Define the ONE TRUE tab order
+
+In
+resources/views/livewire/tenant-agent-auction.blade.php
+define a single JavaScript constant once:
+
+const TENANT_TAB_ORDER = [
+  'listing-details',
+  'property-preferences',
+  'leasing-terms',
+  'pre-screening',
+  'services',
+  'additional-details',
+  'broker-compensation',
+  'tenant-information'
+];
+
+
+⚠️ IDs must match the actual data-bs-target / tab-pane IDs exactly.
+
+Step 2: Rewrite Next button logic (NO sibling logic)
+
+Replace all “next tab” logic with:
+
+function goToNextTab() {
+  const activeTab = document.querySelector('.nav-link.active');
+  if (!activeTab) return;
+
+  const currentTarget = activeTab.getAttribute('data-bs-target')?.replace('#', '');
+  const currentIndex = TENANT_TAB_ORDER.indexOf(currentTarget);
+
+  if (currentIndex === -1) return;
+
+  const nextTabId = TENANT_TAB_ORDER[currentIndex + 1];
+  if (!nextTabId) return;
+
+  const nextTabEl = document.querySelector(`[data-bs-target="#${nextTabId}"]`);
+  if (!nextTabEl) return;
+
+  bootstrap.Tab.getOrCreateInstance(nextTabEl).show();
+  Livewire.emit('setActiveTab', currentIndex + 1);
+}
+
+
+Attach every Next button to this function.
+
+Step 3: Ensure Broker Compensation uses the SAME Next handler
+
+Confirm the Broker Compensation tab:
+
+Uses the same Next button markup
+
+Calls goToNextTab()
+
+Is not missing or overriding the handler
+
+Is not blocked by an overlay or disabled state
+
+There must be zero special-case logic for Broker Compensation.
+
+Step 4: Livewire MUST listen for tab changes
+
+In both components:
+
+TenantAgentAuction.php
+
+TenantAgentAuctionEdit.php
+
+Ensure:
+
+protected $listeners = [
+    'setActiveTab' => 'setActiveTab',
+];
+
+
+And:
+
+public function setActiveTab($index)
+{
+    $this->activeTab = (int) $index;
+}
+
+
+The Blade must read from the same $activeTab property.
+
+Step 5: REMOVE any auto-jump logic
+
+Search and delete any logic that:
+
+auto-advances tabs
+
+changes tabs based on property type
+
+sets active tab during render/mount
+
+Tabs should change only when:
+
+user clicks Next / Back
+
+user clicks a tab
+
+✅ Expected Result After This Fix
+
+✔ Services → Next → Additional Details
+✔ Additional Details → Next → Broker Compensation
+✔ Broker Compensation → Next → Tenant Information
+✔ Works for Residential & Commercial
+✔ Works for Create & Edit
+✔ No skipping
+✔ No dead Next button
+
+🚨 Why this was failing no matter how many times you asked
+
+Because the dev kept:
+
+patching symptoms (Livewire errors, listeners)
+
+without fixing the core structural mismatch between:
+
+the tab layout
+
+and the navigation logic
+
+Until the wizard uses an explicit ordered map, it will always skip or stall.
+
+What you should say if they push back
+
+You can copy this line verbatim:
+
+“The tab layout is not linear in the DOM. Next/Back must use an explicit ID-based tab order. Sibling or index-based navigation will always skip Broker Compensation in this layout.”
