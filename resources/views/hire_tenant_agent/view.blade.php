@@ -77,6 +77,16 @@
     hr {
         margin-top: 1.25rem;
         margin-bottom: 0.5rem;
+        border: 0;
+        border-top: 1px solid #dee2e6;
+    }
+
+    /* Section dividers inside Broker Compensation - match main hr style */
+    hr.section-divider {
+        margin: 1rem 0;
+        border: 0;
+        border-top: 1px solid #dee2e6;
+        width: 100%;
     }
 
     /* Field row styling - improved line-height for scan-readability */
@@ -1029,7 +1039,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </div>
                 @endif
 
-                <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
+                <hr class="section-divider">
 
                 <!-- Purchase Fee Details Sub-section -->
                 <h5 class="mt-3 mb-2"><strong>Purchase Fee Details:</strong></h5>
@@ -1079,7 +1089,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </div>
                 @endif
 
-                <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
+                <hr class="section-divider">
 
                 <!-- Lease-Option Details Sub-section -->
                 <h5 class="mt-3 mb-2"><strong>Lease-Option Details:</strong></h5>
@@ -1119,7 +1129,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @endif
                 @endif
 
-                <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
+                <hr class="section-divider">
 
                 <!-- Legal Terms Sub-section -->
                 <h5 class="mt-3 mb-2"><strong>Legal Terms:</strong></h5>
@@ -1177,7 +1187,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </div>
                 @endif
 
-                <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
+                <hr class="section-divider">
 
                 <!-- Brokerage Relationship Sub-section -->
                 <h5 class="mt-3 mb-2"><strong>Brokerage Relationship:</strong></h5>
@@ -1190,7 +1200,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @endif
 
                 @if (@$auction->get->additional_details_broker != null)
-                <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
+                <hr class="section-divider">
 
                 <!-- Additional Terms Sub-section (Separate from Brokerage Relationship) -->
                 <h5 class="mt-3 mb-2"><strong>Additional Terms:</strong></h5>
