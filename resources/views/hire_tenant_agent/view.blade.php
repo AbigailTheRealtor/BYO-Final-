@@ -163,11 +163,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </div>
                 <div class="card-body">
                     <div class="row" style="flex-wrap: wrap;">
-                        {{-- Listing Status - FIRST field, always shown --}}
-                        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
-                            Listing Status:
-                            <span class="removeBold">{{ @$auction->status ?? 'Active' }}</span>
-                        </div>
+                        {{-- Listing Status removed from here - now only shown as badge above Listing ID in header --}}
                         @if (@$auction->get->listing_title != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
                             Listing Title:
