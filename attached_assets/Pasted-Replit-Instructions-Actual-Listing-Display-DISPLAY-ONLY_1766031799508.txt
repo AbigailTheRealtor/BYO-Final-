@@ -1,0 +1,143 @@
+Replit Instructions — Actual Listing Display (DISPLAY-ONLY)
+Scope
+
+Apply only to the actual listing display UI for Hire a Tenant’s Agent
+(Residential + Commercial).
+
+❌ Do not touch listing creation
+❌ Do not touch data storage
+❌ Do not repeat or re-implement completed edits
+
+1) Section Title Hierarchy (Display Only)
+Requirement
+
+All section titles must be visually stronger than the content inside them.
+
+Applies to section headers like:
+
+Listing Details
+
+Property Preferences
+
+Leasing Terms
+
+Pre-Screening
+
+Services
+
+Broker Compensation & Agency Agreement Terms
+
+Brokerage Relationship
+
+Additional Terms
+
+Tenant Information
+
+Display rules
+
+Section titles must be:
+
+Larger font size than field text
+
+Bold
+
+Clearly separated with spacing above/below
+
+Field rows remain smaller and secondary
+
+No icons or checkmarks on section titles
+
+This is a visual hierarchy change only.
+
+2) Field Rows = Read-Only “Label: Value” Display
+Requirement
+
+All read-only listing fields must render as:
+
+Label: Value
+
+Display rules
+
+Remove any checkbox/checkmark UI from field rows
+
+No icons next to labels
+
+Labels slightly emphasized; values normal weight
+
+Applies to all non-Services sections.
+
+3) Services Section — Display Requirements (
+
+Required Display
+
+On the actual listing display:
+
+Show one main section titled: Services
+
+Inside that section:
+
+Render the category titles (emoji + bold)
+
+Render the services the user selected under each category
+
+Preserve the exact order from listing creation
+
+Residential Category Titles (exact text + order)
+📢 Tenant Criteria Marketing & Promotion
+🔍 Property Search, Alerts & Matching
+🏡 Property Showings & Virtual Tours
+📝 Tenant Application Support
+📃 Lease Preparation & Execution
+🚚 Move-In Support & Coordination
+💡 Leasing Strategy & Guidance
+✍️ Additional Services
+
+Commercial Category Titles (exact text + order)
+📢 Tenant Criteria Marketing & Promotion
+🔍 Property Search, Alerts & Matching
+🏡 Property Showings & Virtual Tours
+📝 Tenant Application Support
+📃 Lease Preparation, LOI & Execution
+🚚 Move-In Support & Coordination
+💡 Leasing Strategy & Guidance
+✍️ Additional Services
+
+Services Formatting Rules
+
+No checkboxes
+
+No form UI
+
+Display each service as a simple arrow bullet:
+
+→ Service description
+
+
+Only show a category if at least one service exists
+
+Service order must match listing creation exactly
+
+4) Hide Anything Not Provided (Display Rule Reminder)
+Requirement
+
+If a field, service, or category was not selected, it should not display.
+
+No empty rows
+
+No empty categories
+
+No placeholders
+
+No inferred values
+
+QA Checklist (Display-Only)
+
+Section titles are clearly larger than field text
+
+No checkmarks anywhere outside Services
+
+Services show grouped by category with arrows
+
+Category and service order matches listing creation
+
+No empty fields or categories render

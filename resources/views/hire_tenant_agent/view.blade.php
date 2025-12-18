@@ -38,6 +38,32 @@
         margin-bottom: 15px;
     }
 
+    /* Section Title Hierarchy - Larger, bold, spaced */
+    .card-header h4,
+    .section-title {
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        margin-top: 1rem;
+        margin-bottom: 0.75rem;
+        color: #2c3e50;
+    }
+
+    /* Field row styling - Label: Value format */
+    .field-row {
+        padding: 0.5rem 0;
+        font-size: 0.95rem;
+    }
+
+    .field-label {
+        font-weight: 600;
+        color: #34465c;
+    }
+
+    .field-value {
+        font-weight: normal;
+        color: #34465c;
+    }
+
     ul {
         --icon-size: 1em;
         --gutter: .5em;
@@ -58,27 +84,34 @@
         color: #11b7cf;
     }
 
-    ul.services li {
-        padding-left: var(--gutter);
-        color: #34465c;
+    /* Services section - Arrow bullet styling */
+    ul.services {
         list-style: none;
-        /* Remove default list style */
+        padding-left: 1.5em;
+        margin-top: 0.5rem;
+    }
+
+    ul.services li {
+        padding: 0.25rem 0;
+        color: #34465c;
         position: relative;
-        /* Set position relative for ::before pseudo-element */
+        padding-left: 0;
     }
 
     ul.services li::before {
-        content: "\f101";
-        /* FontAwesome icon content */
-        font-family: FontAwesome;
-        font-size: var(--icon-size);
-        /* Set the desired icon size */
+        content: "→";
         position: absolute;
-        /* Position the icon */
-        left: -1.5em;
-        /* Adjust the icon position */
+        left: -1.25em;
         color: #11b7cf;
-        /* Set the icon color */
+        font-weight: bold;
+    }
+
+    /* Service category title styling */
+    .service-category-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
     }
 
     .removeBold {
