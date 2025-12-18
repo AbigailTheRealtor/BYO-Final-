@@ -198,41 +198,41 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     <div class="row" style="flex-wrap: wrap;">
                         {{-- Listing Status removed from here - now only shown as badge above Listing ID in header --}}
                         @if (@$auction->get->listing_title != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
                             Listing Title:
                             <span class="removeBold">{{ @$auction->get->listing_title }}</span>
                         </div>
                         @endif
                         @if (@$auction->get->working_with_agent != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
                             Current Representation Status with Broker:
                             <span class="removeBold">{{ @$auction->get->working_with_agent }}</span>
                         </div>
                         @endif
 
                         @if (@$auction->get->desired_agent_hire_date != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
                             Desired Agent Hire Date:
                             <span class="removeBold">
                                 {{ date('F j, Y', strtotime(@$auction->get->desired_agent_hire_date)) }}</span>
                         </div>
                         @endif
                         @if (@$auction->get->listing_date != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
                             Listing Date:
                             <span
                                 class="removeBold">{{ date('F j, Y', strtotime(@$auction->get->listing_date)) }}</span>
                         </div>
                         @endif
                         @if (@$auction->get->expiration_date != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
                             Expiration Date:
                             <span class="removeBold">{{ date('F j, Y', strtotime(@$auction->get->expiration_date)) }}
                             </span>
                         </div>
                         @endif
                         @if (@$auction->get->auction_type != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
                             Listing Type:
                             <span class="removeBold"> {{ @$auction->get->auction_type }}
                             </span>
@@ -240,21 +240,21 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         @endif
 
                         @if (@$auction->get->auction_time != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
                             Bidding Period Length:
                             <span class="removeBold"> {{ @$auction->get->auction_time }}
                             </span>
                         </div>
                         @endif
                         @if (@$auction->get->agent_bid_visibility != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
                             Agent Bid Visibility Preference:
                             <span class="removeBold"> {{ @$auction->get->agent_bid_visibility }}
                             </span>
                         </div>
                         @endif
                         @if (@$auction->get->meeting_Preference != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
                             Meeting Preference:
                             <span class="removeBold"> {{ @$auction->get->meeting_Preference }}
                             </span>
@@ -270,7 +270,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     <div class="row" style="flex-wrap: wrap;">
 
                         @if (@$auction->get->cities != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i> Acceptable Cities:
+                        <div class="col-md-12 col-12 pt-2 fw-bold"> Acceptable Cities:
                             @if (gettype(@$auction->get->cities) == 'array')
                             @php
                                 $cleanCities = array_map(function($city) {
@@ -282,7 +282,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         </div>
                         @endif
                         @if (@$auction->get->counties != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
                             Acceptable Counties:
                             @if (gettype(@$auction->get->counties) == 'array')
                             @php
@@ -295,7 +295,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         </div>
                         @endif
                         @if (@$auction->get->states != null || @$auction->get->state != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
                             Acceptable State:
                             <span class="removeBold">
                                 @if (is_array(@$auction->get->states))
@@ -307,7 +307,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         </div>
                         @endif
                         @if (!empty($auction->get->zipCodes) && is_array($auction->get->zipCodes))
-                        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
                             Zip Code:
 
                             @foreach ($auction->get->zipCodes as $zip)
@@ -319,16 +319,16 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         </div>
                         @endif
                         {{-- @if (@$auction->get->state != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i> State:
+                                <div class="col-md-12 col-12 pt-2 fw-bold"> State:
                                     <span class="removeBold">{{ @$auction->get->state }}</span>
                     </div>
                     @endif --}}
 
-                    <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                    <div class="col-md-12 col-12 pt-2 fw-bold">
                         Acceptable Property Type:
                         <span class="removeBold">{{ @$auction->get->property_type }}</span>
                     </div>
-                    <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                    <div class="col-md-12 col-12 pt-2 fw-bold">
                         Acceptable Property Styles:
                         @if (gettype(@$auction->get->property_items) == 'array')
                         @foreach (@$auction->get->property_items as $item)
@@ -336,7 +336,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         @endforeach
                         @endif
                     </div>
-                    <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                    <div class="col-md-12 col-12 pt-2 fw-bold">
                         Acceptable Property Conditions:
                         @if (gettype(@$auction->get->condition_prop_buyer) == 'array')
                         @foreach (array_filter(@$auction->get->condition_prop_buyer) as $item)
@@ -349,7 +349,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                     </div>
                     @if (@$auction->get->condition_prop != null)
-                    <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                    <div class="col-md-12 col-12 pt-2 fw-bold">
                         Acceptable Leasing
                         Space:
                         <span class="removeBold">{{ $auction->get->leasing_space }}
@@ -358,7 +358,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </div>
                     @endif
                     @if (@$auction->get->bedrooms != null)
-                    <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                    <div class="col-md-12 col-12 pt-2 fw-bold">
                         Minimum Bedrooms
                         Needed:
                         <span class="removeBold">
@@ -371,7 +371,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </div>
                     @endif
                     @if (@$auction->get->bathrooms != null)
-                    <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                    <div class="col-md-12 col-12 pt-2 fw-bold">
                         Minimum Bathrooms
                         Needed:
                         <span class="removeBold">
@@ -385,7 +385,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     @endif
 
                     @if (@$auction->get->minimum_heated_square != null && @$auction->get->minimum_heated_square != 'null')
-                    <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                    <div class="col-md-12 col-12 pt-2 fw-bold">
                         Minimum Sqft Needed:
                         <span class="removeBold">
 
@@ -395,7 +395,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </div>
                     @endif
                     @if (@$auction->get->minimum_leaseable != null && @$auction->get->minimum_leaseable != 'null')
-                    <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                    <div class="col-md-12 col-12 pt-2 fw-bold">
                         Minimum Net Leasable
                         Sqft Needed:
                         <span class="removeBold">
@@ -407,7 +407,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     {{-- Garage/Parking Features Needed (Commercial only) - IMMEDIATELY after Min Net Leasable --}}
                     @if (@$auction->get->property_type === 'Commercial Property')
                         @if (@$auction->get->garage_parking_spaces != null && @$auction->get->garage_parking_spaces != '')
-                        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
                             Garage/Parking Features Needed:
                             <span class="removeBold">{{ @$auction->get->garage_parking_spaces }}</span>
                         </div>
@@ -420,7 +420,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             $garageParkingOptions = is_array($garageParkingOptions) ? array_filter($garageParkingOptions) : [];
                         @endphp
                         @if (!empty($garageParkingOptions))
-                        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
                             Garage/Parking Features:
                             @foreach ($garageParkingOptions as $feature)
                                 @if ($feature !== 'Other' && !empty($feature))
@@ -436,7 +436,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                     {{-- Furnishings Needed (Residential only) --}}
                     @if (@$auction->get->property_type === 'Residential Property' && @$auction->get->tenant_require != null)
-                    <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                    <div class="col-md-12 col-12 pt-2 fw-bold">
                         Furnishings Needed:
                         <span class="removeBold badge bg-secondary">{{ @$auction->get->tenant_require }}</span>
                     </div>
@@ -444,12 +444,12 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                     {{-- Carport Needed with conditional spaces --}}
                     @if (@$auction->get->carport_needed != null)
-                    <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                    <div class="col-md-12 col-12 pt-2 fw-bold">
                         Carport Needed:
                         <span class="removeBold">{{ @$auction->get->carport_needed }}</span>
                     </div>
                     @if (@$auction->get->carport_needed === 'Yes' && !empty(@$auction->get->other_carport_needed) && @$auction->get->other_carport_needed !== 'null')
-                    <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                    <div class="col-md-12 col-12 pt-2 fw-bold">
                         Number of Carport Spaces Needed:
                         <span class="removeBold">{{ @$auction->get->other_carport_needed }}</span>
                     </div>
@@ -458,12 +458,12 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                     {{-- Garage Needed with conditional spaces (Residential) --}}
                     @if (@$auction->get->property_type === 'Residential Property' && @$auction->get->garage_needed != null)
-                    <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                    <div class="col-md-12 col-12 pt-2 fw-bold">
                         Garage Needed:
                         <span class="removeBold">{{ @$auction->get->garage_needed }}</span>
                     </div>
                     @if (@$auction->get->garage_needed === 'Yes' && !empty(@$auction->get->other_garage_needed) && @$auction->get->other_garage_needed !== 'null')
-                    <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                    <div class="col-md-12 col-12 pt-2 fw-bold">
                         Number of Garage Spaces Needed:
                         <span class="removeBold">{{ @$auction->get->other_garage_needed }}</span>
                     </div>
@@ -490,20 +490,20 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                     @if (optional($auction->get)->pool_needed === 'Yes' && $poolTypeList !== '')
                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                        <i class="fa-regular fa-check-square"></i>
+                        
                         Pool Needed:
                         <span class="removeBold">Yes ({{ ucwords($poolTypeList) }})</span>
                     </div>
                     @elseif (in_array(optional($auction->get)->pool_needed, ['No', 'Optional'], true))
                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                        <i class="fa-regular fa-check-square"></i>
+                        
                         Pool Needed:
                         <span class="removeBold">{{ optional($auction->get)->pool_needed }}</span>
                     </div>
                     @endif
 
                     @if (@$auction->get->view_preference != null || @$auction->get->other_preferences != null)
-                    <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i> View
+                    <div class="col-md-12 col-12 pt-2 fw-bold"> View
                         Preference Needed:
                         @if (is_array(@$auction->get->view_preference))
                         @foreach (@$auction->get->view_preference as $item)
@@ -518,14 +518,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </div>
                     @endif
                     @if (@$auction->get->property_type === 'Residential Property' && !empty(@$auction->get->leasing_55_plus))
-                    <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                    <div class="col-md-12 col-12 pt-2 fw-bold">
                         Age-Restricted Community:
                         <span class="removeBold">{{ @$auction->get->leasing_55_plus }}</span>
                     </div>
                     @endif
 
                     @if (@$auction->get->non_negotiable_amenities != null || @$auction->get->other_non_negotiable_amenities != null)
-                    <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                    <div class="col-md-12 col-12 pt-2 fw-bold">
                         Non-Negotiable Amenities and Property Features:
                         @if (is_array(@$auction->get->non_negotiable_amenities))
                         @foreach (@$auction->get->non_negotiable_amenities as $item)
@@ -544,14 +544,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 <div class="card-header">
                     <h4>Leasing Terms: </h4>
                 </div>
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i> Maximum
+                <div class="col-md-12 col-12 pt-2 fw-bold"> Maximum
                     Monthly Lease Price:
                     <span class="removeBold">
                         ${{ str_replace(',', '', $auction->get->budget ?? '') }}</span>
                 </div>
 
                 @if (@$auction->get->lease_for != null || $auction->get->other_lease_for != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i> Offered
+                <div class="col-md-12 col-12 pt-2 fw-bold"> Offered
                     Lease Term:
 
                     <ul>
@@ -569,7 +569,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                 </div>
                 @endif
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i> Offered
+                <div class="col-md-12 col-12 pt-2 fw-bold"> Offered
                     Lease Date:
                     <span class="removeBold">
                         @if (@$auction->get->lease_date)
@@ -578,7 +578,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </span>
                 </div>
 
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i> Leasing
+                <div class="col-md-12 col-12 pt-2 fw-bold"> Leasing
                     Space:
 
                 </div>
@@ -597,14 +597,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     <h4>Pre-Screening: </h4>
                 </div>
                 @if ($auction->get->number_occupant)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i> Number
+                <div class="col-md-12 col-12 pt-2 fw-bold"> Number
                     of Occupants:
                     <span class="removeBold">
                         {{ $auction->get->number_occupant ?? '' }}</span>
                 </div>
                 @endif
                 @if ($auction->get->monthly_income)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Estimated Monthly Net Household Income:
                     <span class="removeBold">
 
@@ -614,38 +614,38 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </div>
                 @endif
                 @if (@$auction->get->pets)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i> Pets:
+                <div class="col-md-12 col-12 pt-2 fw-bold"> Pets:
                     <span class="removeBold">
                         {{ @$auction->get->pets }}</span>
                 </div>
                 @endif
                 @if (@$auction->get->pets == 'Yes')
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i> Number
+                <div class="col-md-12 col-12 pt-2 fw-bold"> Number
                     of Pets:
                     <span class="removeBold">
                         {{ @$auction->get->number_of_pets != '' ? @$auction->get->number_of_pets : '' }}</span>
                 </div>
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i> Type of
+                <div class="col-md-12 col-12 pt-2 fw-bold"> Type of
                     Pets:
                     <span class="removeBold">
                         {{ @$auction->get->type_of_pets != '' ? @$auction->get->type_of_pets : '' }}</span>
                 </div>
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i> Breed of
+                <div class="col-md-12 col-12 pt-2 fw-bold"> Breed of
                     Pets:
                     <span class="removeBold">
                         {{ @$auction->get->breed_of_pets != '' ? @$auction->get->breed_of_pets : '' }}</span>
                 </div>
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i> Weight
+                <div class="col-md-12 col-12 pt-2 fw-bold"> Weight
                     of Pets (lbs):
                     <span class="removeBold">
                         {{ @$auction->get->weight_of_pets != '' ? @$auction->get->weight_of_pets : '' }}</span>
                 </div>
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i> Service
+                <div class="col-md-12 col-12 pt-2 fw-bold"> Service
                     Animal:
                     <span class="removeBold">
                         {{ @$auction->get->service_animal != '' ? @$auction->get->service_animal : '' }}</span>
                 </div>
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Emotional Support Animal:
                     <span class="removeBold">
                         {{ @$auction->get->support_animal != '' ? @$auction->get->support_animal : '' }}</span>
@@ -653,7 +653,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @endif
 
                 @if (@$auction->get->screening_concerns != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Screening Concerns That May Affect Rental Approval:
                     <span class="removeBold">
                         {{ $auction->get->screening_concerns ?? '' }}</span>
@@ -835,7 +835,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     <h4>Additional Details: </h4>
                 </div>
 
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Additional Details:<span class="removeBold">
                         {{ $auction->get->additional_details ?? '' }}</span>
                 </div>
@@ -850,7 +850,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 <h5 class="mt-3 mb-2"><strong>Tenant’s Broker Compensation:</strong></h5>
 
                 @if (@$auction->get->commission_structure != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Tenant’s Broker Commission Structure:
                     <span class="removeBold">
                         @php
@@ -867,7 +867,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @endif
 
                 @if (@$auction->get->lease_fee_type != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Tenant’s Broker Lease Fee:
                     <span class="removeBold">
                         @if (@$auction->get->lease_fee_type === 'other')
@@ -880,57 +880,57 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @endif
 
                 @if (@$auction->get->lease_fee_type === 'Flat Fee' && @$auction->get->lease_fee_flat != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Flat Fee Amount:
                     <span class="removeBold">${{ number_format((float)str_replace(',', '', $auction->get->lease_fee_flat), 0) }}</span>
                 </div>
                 @endif
 
                 @if (@$auction->get->lease_fee_type === 'Percentage of the Gross Lease Value' && @$auction->get->lease_fee_percentage != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Percentage Amount:
                     <span class="removeBold">{{ $auction->get->lease_fee_percentage }}%</span>
                 </div>
                 @endif
 
                 @if (@$auction->get->lease_fee_type === 'Percentage of Monthly Rent' && @$auction->get->lease_fee_percentage_monthly_rent != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Percentage Amount:
                     <span class="removeBold">{{ $auction->get->lease_fee_percentage_monthly_rent }}%</span>
                 </div>
                 @endif
 
                 @if (@$auction->get->lease_fee_type === 'Flat Fee + Percentage of the Gross Lease Value' && @$auction->get->lease_fee_flat_combo != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Flat Fee Amount:
                     <span class="removeBold">${{ number_format((float)str_replace(',', '', $auction->get->lease_fee_flat_combo), 0) }}</span>
                 </div>
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Percentage Amount:
                     <span class="removeBold">{{ $auction->get->lease_fee_percentage_combo }}%</span>
                 </div>
                 @endif
 
                 @if (@$auction->get->lease_fee_type === 'Percentage of the Net Aggregate Rent' && @$auction->get->lease_fee_percentage_net != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Percentage Amount:
                     <span class="removeBold">{{ $auction->get->lease_fee_percentage_net }}%</span>
                 </div>
                 @endif
 
                 @if (@$auction->get->lease_fee_type === 'Flat Fee + Percentage of the Net Aggregate Rent' && @$auction->get->lease_fee_flat_combo_net != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Flat Fee Amount:
                     <span class="removeBold">${{ number_format((float)str_replace(',', '', $auction->get->lease_fee_flat_combo_net), 0) }}</span>
                 </div>
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Percentage Amount:
                     <span class="removeBold">{{ $auction->get->lease_fee_percentage_combo_net }}%</span>
                 </div>
                 @endif
 
                 @if (@$auction->get->broker_fee_timing != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Payment Timing for Broker Fees:
                     <span class="removeBold">
                         @if (@$auction->get->broker_fee_timing === 'other')
@@ -943,7 +943,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @endif
 
                 @if (@$auction->get->broker_fee_days_from_rent != null || @$auction->get->broker_fee_days_after_lease != null || @$auction->get->broker_fee_days_after_rent != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Calendar Days to Pay:
                     <span class="removeBold">{{ @$auction->get->broker_fee_days_from_rent ?? @$auction->get->broker_fee_days_after_lease ?? @$auction->get->broker_fee_days_after_rent ?? '' }}</span>
                 </div>
@@ -955,14 +955,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 <h5 class="mt-3 mb-2"><strong>Purchase Fee Details:</strong></h5>
 
                 @if (@$auction->get->interested_purchase_fee_type != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Interested in Purchasing a Property:
                     <span class="removeBold">{{ $auction->get->interested_purchase_fee_type ?? '' }}</span>
                 </div>
                 @endif
 
                 @if (@$auction->get->interested_purchase_fee_type === 'Yes' && @$auction->get->purchase_fee_type != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Purchase Fee Type:
                     <span class="removeBold">
                         @if (@$auction->get->purchase_fee_type === 'other')
@@ -975,25 +975,25 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @endif
 
                 @if (@$auction->get->purchase_fee_type === 'Flat Fee' && @$auction->get->purchase_fee_flat != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Flat Fee Amount:
                     <span class="removeBold">${{ number_format((float)str_replace(',', '', $auction->get->purchase_fee_flat), 0) }}</span>
                 </div>
                 @endif
 
                 @if (@$auction->get->purchase_fee_type === 'Percentage of the Total Purchase Price' && @$auction->get->purchase_fee_percentage != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Purchase Percentage:
                     <span class="removeBold">{{ $auction->get->purchase_fee_percentage }}%</span>
                 </div>
                 @endif
 
                 @if (@$auction->get->purchase_fee_type === 'Percentage of the Total Purchase Price + Flat Fee' && @$auction->get->purchase_fee_percentage_combo != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Purchase Percentage:
                     <span class="removeBold">{{ $auction->get->purchase_fee_percentage_combo }}%</span>
                 </div>
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Additional Flat Fee:
                     <span class="removeBold">${{ number_format((float)str_replace(',', '', $auction->get->purchase_fee_flat_combo ?? '0'), 0) }}</span>
                 </div>
@@ -1005,7 +1005,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 <h5 class="mt-3 mb-2"><strong>Lease-Option Details:</strong></h5>
 
                 @if (@$auction->get->interested_lease_option_agreement != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Interested in a Lease-Option Agreement:
                     <span class="removeBold">{{ $auction->get->interested_lease_option_agreement ?? '' }}</span>
                 </div>
@@ -1013,7 +1013,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                 @if (@$auction->get->interested_lease_option_agreement === 'Yes')
                 @if (@$auction->get->lease_value != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Compensation Type (When Option Is Created):
                     <span class="removeBold">
                         @if (@$auction->get->lease_type === 'percent')
@@ -1026,7 +1026,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @endif
 
                 @if (@$auction->get->purchase_value != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Compensation Type (If Purchase Option is Exercised):
                     <span class="removeBold">
                         @if (@$auction->get->purchase_type === 'percent')
@@ -1045,42 +1045,42 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 <h5 class="mt-3 mb-2"><strong>Legal Terms:</strong></h5>
 
                 @if (@$auction->get->protection_period != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Protection Period Timeframe:
                     <span class="removeBold">{{ $auction->get->protection_period ?? '' }} Days</span>
                 </div>
                 @endif
 
                 @if (@$auction->get->early_termination_fee_option != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Early Termination Fee:
                     <span class="removeBold">{{ $auction->get->early_termination_fee_option ?? '' }}</span>
                 </div>
                 @endif
 
                 @if (@$auction->get->early_termination_fee_option === 'Yes' && @$auction->get->early_termination_fee_amount != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Termination Fee Amount:
                     <span class="removeBold">${{ number_format((float)str_replace(',', '', $auction->get->early_termination_fee_amount), 0) }}</span>
                 </div>
                 @endif
 
                 @if (@$auction->get->retainer_fee_option != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Retainer Fee:
                     <span class="removeBold">{{ $auction->get->retainer_fee_option ?? '' }}</span>
                 </div>
                 @endif
 
                 @if (@$auction->get->retainer_fee_option === 'Yes' && @$auction->get->retainer_fee_amount != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Retainer Fee Amount:
                     <span class="removeBold">${{ number_format((float)str_replace(',', '', $auction->get->retainer_fee_amount), 0) }}</span>
                 </div>
                 @endif
 
                 @if (@$auction->get->retainer_fee_option === 'Yes' && @$auction->get->retainer_fee_application != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Retainer Fee Application:
                     <span class="removeBold">
                         {{ $auction->get->retainer_fee_application === 'applied' ? 'Applied toward final compensation' : 'Charged in addition to final compensation' }}
@@ -1089,7 +1089,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @endif
 
                 @if (@$auction->get->agency_agreement_timeframe != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Tenant Agency Agreement Timeframe:
                     <span class="removeBold">
                         {{ $auction->get->agency_agreement_timeframe === 'Other' ? $auction->get->agency_agreement_custom : $auction->get->agency_agreement_timeframe }}
@@ -1103,7 +1103,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 <h5 class="mt-3 mb-2"><strong>Brokerage Relationship:</strong></h5>
 
                 @if (@$auction->get->brokerage_relationship != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Acceptable Brokerage Relationship:
                     <span class="removeBold">{{ $auction->get->brokerage_relationship ?? '' }}</span>
                 </div>
@@ -1115,7 +1115,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 <!-- Additional Terms Sub-section (Separate from Brokerage Relationship) -->
                 <h5 class="mt-3 mb-2"><strong>Additional Terms:</strong></h5>
 
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
                     Additional Terms Details:
                     <span class="removeBold">{{ $auction->get->additional_details_broker }}</span>
                 </div>
@@ -1126,7 +1126,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     <h4>Tenant’s Info </h4>
                 </div>
                 @if (!empty($auction->get->first_name))
-                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i> First
+                <div class="col-md-12 col-12 pt-2 fw-bold"> First
                     Name:
                     <span class="removeBold">
                         {{ $auction->get->first_name }}
