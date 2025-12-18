@@ -1,0 +1,109 @@
+Height
+
+Applies to: Hire a Tenant’s Agent listing display (Residential + Commercial)
+Files: resources/views/hire_tenant_agent/view.blade.php (and shared CSS if used)
+
+0) Safeguards (do not break anything)
+
+Do NOT change any database fields, controllers, Livewire logic, or conditional display logic.
+
+Do NOT rename any section titles/text.
+
+Only adjust CSS + header markup classes (presentation only).
+
+1) Identify the section header containers
+
+In resources/views/hire_tenant_agent/view.blade.php, locate each section header area (examples):
+
+Listing Details
+
+Property Preferences
+
+Leasing Terms
+
+Pre-Screening
+
+Services
+
+Additional Details
+
+Broker Compensation & Agency Agreement Terms
+
+Tenant’s Info
+
+They are likely using something like a Bootstrap card header (.card-header) or a custom header div.
+
+2) Add ONE shared class to every section header container
+
+For each section header container, add a class like:
+
+Example pattern:
+
+<div class="card-header section-header">
+  <h4 class="section-title">Listing Details:</h4>
+</div>
+
+
+Do this consistently for every section header container.
+
+Important: Don’t add new wrappers that could break layout—just add the class(es).
+
+3) Force true vertical centering by controlling BOTH the container + the title element
+
+Add this CSS (best placed in your main stylesheet, or inside the view in a <style> block if that’s how the project is structured):
+
+/* SECTION HEADER BAR — make it shorter + true vertical centering */
+.section-header{
+  display: flex !important;
+  align-items: center !important;     /* vertical center */
+  justify-content: flex-start;        /* keep left aligned */
+  padding: 12px 18px !important;      /* reduce header bar height */
+  min-height: 0 !important;           /* remove forced tall header */
+}
+
+/* SECTION TITLE TEXT — remove default heading spacing that pushes it down */
+.section-header .section-title{
+  margin: 0 !important;               /* kills default h* top/bottom margins */
+  padding: 0 !important;
+  line-height: 1 !important;          /* prevents baseline drop */
+  display: block;
+}
+
+Why this fixes it
+
+Right now, even if the container uses flex, the <h*> default margins/line-height can still visually push the text down. This removes that and makes the header bar shorter.
+
+4) If the project is using Bootstrap .card-header, override it ONLY when it’s a section header
+
+Sometimes Bootstrap adds padding/line-height that fights your reminders. Add this (safe + scoped):
+
+.card-header.section-header{
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+}
+
+5) Clear view cache + hard refresh
+
+Run:
+
+php artisan view:clear
+php artisan cache:clear
+
+
+Then do a hard refresh:
+
+Windows: Ctrl + Shift + R
+
+Mac: Cmd + Shift + R
+
+6) Quick visual validation checklist
+
+Confirm each header bar:
+
+Is shorter (not oversized)
+
+Title is centered vertically
+
+Title stays left aligned (not centered horizontally)
+
+Works for both Residential + Commercial Tenant display pages
