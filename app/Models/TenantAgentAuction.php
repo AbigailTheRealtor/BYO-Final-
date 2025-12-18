@@ -10,13 +10,27 @@ use Illuminate\Database\Eloquent\Model;
 class TenantAgentAuction extends Model
 {
     use HasFactory, HasListingId;
-    protected $appends = ["get"];
+    protected $appends = ["get", "status"];
     
     protected $attributes = [
         'is_approved' => true,
         'is_draft' => false,
         'is_sold' => false,
     ];
+
+    public function getStatusAttribute()
+    {
+        if ($this->is_sold) {
+            return 'Hired Agent';
+        }
+        if ($this->auction_ended) {
+            return 'Expired';
+        }
+        if (!$this->is_approved) {
+            return 'Pending';
+        }
+        return 'Active';
+    }
 
     public function user()
     {

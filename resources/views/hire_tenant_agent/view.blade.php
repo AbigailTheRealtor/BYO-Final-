@@ -149,7 +149,7 @@
 </style>
 @endpush
 @section('content')
-
+<!-- DEBUG: Hire Tenant Actual Listing Display -->
 @php
 $auth_id = auth()->user() ? auth()->user()->id : 0;
 @endphp
@@ -163,16 +163,15 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </div>
                 <div class="card-body">
                     <div class="row" style="flex-wrap: wrap;">
-                        @if (@$auction->get->listing_title != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
-                            Listing Title
-                            <span class="removeBold">{{ @$auction->get->listing_title }}</span>
-                        </div>
-                        @endif
-                        @if (@$auction->status != null)
+                        {{-- Listing Status - FIRST field, always shown --}}
                         <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
                             Listing Status:
-                            <span class="removeBold">{{ @$auction->status }}</span>
+                            <span class="removeBold">{{ @$auction->status ?? 'Active' }}</span>
+                        </div>
+                        @if (@$auction->get->listing_title != null)
+                        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                            Listing Title:
+                            <span class="removeBold">{{ @$auction->get->listing_title }}</span>
                         </div>
                         @endif
                         @if (@$auction->get->working_with_agent != null)
@@ -376,6 +375,36 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </div>
                     @endif
 
+                    {{-- Garage/Parking Features Needed (Commercial only) - IMMEDIATELY after Min Net Leasable --}}
+                    @if (@$auction->get->property_type === 'Commercial Property')
+                        @if (@$auction->get->garage_parking_spaces != null && @$auction->get->garage_parking_spaces != '')
+                        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                            Garage/Parking Features Needed:
+                            <span class="removeBold">{{ @$auction->get->garage_parking_spaces }}</span>
+                        </div>
+                        @endif
+                        @php
+                            $garageParkingOptions = @$auction->get->garage_parking_spaces_option;
+                            if (is_string($garageParkingOptions)) {
+                                $garageParkingOptions = json_decode($garageParkingOptions, true) ?? [];
+                            }
+                            $garageParkingOptions = is_array($garageParkingOptions) ? array_filter($garageParkingOptions) : [];
+                        @endphp
+                        @if (!empty($garageParkingOptions))
+                        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                            Garage/Parking Features:
+                            @foreach ($garageParkingOptions as $feature)
+                                @if ($feature !== 'Other' && !empty($feature))
+                                <span class="removeBold badge bg-secondary">{{ $feature }}</span>
+                                @endif
+                            @endforeach
+                            @if (!empty(@$auction->get->other_parking_space_wrapper))
+                            <span class="removeBold badge bg-secondary">{{ @$auction->get->other_parking_space_wrapper }}</span>
+                            @endif
+                        </div>
+                        @endif
+                    @endif
+
                     {{-- Furnishings Needed (Residential only) --}}
                     @if (@$auction->get->property_type === 'Residential Property' && @$auction->get->tenant_require != null)
                     <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
@@ -410,29 +439,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         <span class="removeBold">{{ @$auction->get->other_garage_needed }}</span>
                     </div>
                     @endif
-                    @endif
-
-                    {{-- Garage/Parking Features Needed (Commercial only) --}}
-                    @if (@$auction->get->property_type === 'Commercial Property')
-                        @if (@$auction->get->garage_parking_needed != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
-                            Garage/Parking Features Needed:
-                            <span class="removeBold">{{ @$auction->get->garage_parking_needed }}</span>
-                        </div>
-                        @endif
-                        @if (!empty(@$auction->get->garage_parking_features) && is_array(@$auction->get->garage_parking_features))
-                        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
-                            Garage/Parking Features:
-                            @foreach (@$auction->get->garage_parking_features as $feature)
-                                @if ($feature !== 'Other')
-                                <span class="removeBold badge bg-secondary">{{ $feature }}</span>
-                                @endif
-                            @endforeach
-                            @if (!empty(@$auction->get->other_garage_parking_features))
-                            <span class="removeBold badge bg-secondary">{{ @$auction->get->other_garage_parking_features }}</span>
-                            @endif
-                        </div>
-                        @endif
                     @endif
 
                     @php
