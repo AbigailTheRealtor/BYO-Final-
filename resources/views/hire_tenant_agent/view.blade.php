@@ -38,20 +38,38 @@
         margin-bottom: 15px;
     }
 
-    /* Section Title Hierarchy - Larger, bold, spaced */
+    /* Section Title Hierarchy - Larger, bold, spaced, more prominent */
     .card-header h4,
     .section-title {
         font-size: 1.5rem !important;
-        font-weight: 700 !important;
-        margin-top: 1rem;
+        font-weight: 800 !important;
+        margin-top: 1.5rem;
         margin-bottom: 0.75rem;
-        color: #2c3e50;
+        color: #1a252f;
     }
 
-    /* Field row styling - Label: Value format */
+    /* Major section spacing - breathing room between sections */
+    .card-header {
+        margin-top: 1.25rem;
+        padding-top: 0.5rem;
+    }
+
+    hr {
+        margin-top: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Field row styling - improved line-height for scan-readability */
+    .col-md-12.col-12.pt-2.fw-bold {
+        line-height: 1.6;
+        padding-top: 0.6rem !important;
+        padding-bottom: 0.2rem;
+    }
+
     .field-row {
         padding: 0.5rem 0;
         font-size: 0.95rem;
+        line-height: 1.6;
     }
 
     .field-label {
@@ -62,6 +80,12 @@
     .field-value {
         font-weight: normal;
         color: #34465c;
+    }
+
+    /* Broker Compensation subsection headers - breathing room */
+    h5.mt-3.mb-2 {
+        padding-top: 0.75rem;
+        margin-top: 1rem !important;
     }
 
     ul {
@@ -84,19 +108,21 @@
         color: #11b7cf;
     }
 
-    /* Services section - Dot bullet styling ONLY */
+    /* Services section - Tighter spacing and indentation */
     ul.services {
         list-style: none !important;
-        padding-left: 1.5em;
-        margin-top: 0.5rem;
+        padding-left: 1.2em;
+        margin-top: 0.35rem;
+        margin-bottom: 0.5rem;
     }
 
     ul.services li {
-        padding: 0.25rem 0;
+        padding: 0.15rem 0;
         color: #34465c;
         position: relative;
         padding-left: 0;
         list-style: none !important;
+        line-height: 1.4;
     }
 
     ul.services li::marker {
@@ -106,9 +132,9 @@
     ul.services li::before {
         content: "•";
         position: absolute;
-        left: -1em;
+        left: -0.9em;
         color: #34465c;
-        font-size: 1.2em;
+        font-size: 1.1em;
     }
 
     /* Service category title styling */
