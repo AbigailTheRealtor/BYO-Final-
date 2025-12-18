@@ -108,6 +108,23 @@
         margin-top: 1rem !important;
     }
 
+    /* Fix blank space under section headers - reduce gap to first content */
+    .card-body {
+        padding-top: 12px !important;
+    }
+
+    .card-body > :first-child {
+        margin-top: 0 !important;
+    }
+
+    /* Broker Compensation section text - match other section text color */
+    .broker-compensation-section,
+    .broker-compensation-section p,
+    .broker-compensation-section .col-md-12,
+    .broker-compensation-section .fw-bold {
+        color: #34465c !important;
+    }
+
     ul {
         --icon-size: 1em;
         --gutter: .5em;
@@ -910,6 +927,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                 <!-- Tenant’s Broker Compensation Sub-section -->
                 <h5 class="mt-3 mb-2"><strong>Tenant’s Broker Compensation:</strong></h5>
+                <div class="broker-compensation-section">
 
                 @if (@$auction->get->commission_structure != null)
                 <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -1183,6 +1201,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </div>
                 @endif
 
+                </div> <!-- end broker-compensation-section -->
                 <hr />
                 <div class="card-header section-header">
                     <h4 class="section-title">Tenant’s Info </h4>
