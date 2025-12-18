@@ -1,0 +1,101 @@
+Replit Instructions — Final UI Polish (Display-Only)
+Actual Listing Display (Hire a Tenant’s Agent — Residential + Commercial)
+Scope / Safeguards
+
+Apply ONLY to the Actual Listing Display page for Hire a Tenant’s Agent (Residential + Commercial).
+
+Display-only changes (CSS/layout only).
+
+❌ Do not change listing creation.
+
+❌ Do not change database fields, stored values, or rendering logic.
+
+❌ Do not change wording, labels, icons, bullets, or section order.
+
+1) Add Slight Vertical Spacing Before Subsection Headers (Key Improvement)
+Goal
+
+Improve readability for long listings by giving the eye a small “reset” before each subsection inside the page.
+
+Where to apply
+
+Only to subsection headers like:
+
+Purchase Fee Details
+
+Lease-Option Details
+
+Legal Terms
+
+Brokerage Relationship
+
+(and any similar “subheader” rows inside the Broker Compensation area)
+
+Requirement
+
+Add ~6–8px additional spacing above each subsection header.
+
+Keep font size/weight exactly the same.
+
+Do NOT add icons, backgrounds, or borders to the subsection headers.
+
+✅ This should be a minimal margin/padding adjustment on the existing subsection header class.
+
+2) Add Very Subtle Dividers Between Major Blocks (Optional but Recommended)
+Goal
+
+Make the page feel intentional and easier to scan by lightly separating major blocks.
+
+Add a thin divider ONLY between these major blocks:
+
+Services → Additional Details
+
+Additional Details → Broker Compensation & Agency Agreement Terms
+
+Divider style requirements
+
+1px height
+
+Light gray
+
+Full width of the content column
+
+Small spacing above/below (keep it subtle)
+
+❌ No box outlines
+❌ No background shading
+❌ No heavy borders
+
+3) Remove “Example …” Display Text on the Actual Listing (Display-Only)
+Goal
+
+Ensure the listing display looks production-ready (no test/example strings).
+
+Requirement
+
+On the actual listing display only:
+
+Do not render any placeholder-style lines such as:
+
+“Example: …”
+
+“Example Offered Lease Terms”
+
+any “Example …” badges/labels
+
+✅ The real selected values should still display normally.
+❌ Do not affect listing creation placeholders or saved data.
+
+QA Checklist
+
+ Subsection headers have slightly more breathing room above them (6–8px).
+
+ Thin, light divider appears only between:
+
+Services → Additional Details
+
+Additional Details → Broker Compensation
+
+ No “Example …” text shows anywhere on the actual listing display.
+
+ No changes to logic, saved values, labels, or section order.
