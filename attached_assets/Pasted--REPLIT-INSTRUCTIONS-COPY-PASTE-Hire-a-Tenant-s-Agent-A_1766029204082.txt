@@ -1,0 +1,94 @@
+✅ REPLIT INSTRUCTIONS (COPY/PASTE)
+Hire a Tenant’s Agent → Actual Listing Display (Residential + Commercial)
+0) NON-DESTRUCTIVE SAFEGUARDS (REQUIRED)
+
+These edits are DISPLAY-ONLY for the Actual Listing Display / listing details view.
+
+Do NOT:
+
+Change listing creation forms, options, validations, or tab logic.
+
+Change or delete database schema, stored keys, or saved listing values.
+
+DO:
+
+Update only UI rendering: labels, placement, visibility, and conditional display.
+
+If data exists but is not showing, render the stored values (do not add new DB fields unless confirmed missing in saved data).
+
+1) LISTING HEADER: Add “Listing Status” above Listing ID (Residential + Commercial)
+Requirement
+
+On the actual listing display page, in the top header area where Listing ID appears:
+
+Show “Listing Status” directly ABOVE “Listing ID”
+
+Format example:
+
+Listing Status: Active
+
+Listing ID: #12345
+
+Allowed values
+
+Listing Status must display exactly one of:
+
+Active
+
+Pending
+
+Hired Agent
+
+Expired
+
+Logic
+
+Use the listing’s existing saved status value (or existing status mapping already used elsewhere).
+
+Do not hardcode status text in multiple places—reuse the same mapping used by the platform for listing status.
+
+COMMERCIAL ONLY UPDATES
+2) Commercial → Property Preferences: Restore missing Garage/Parking fields
+
+On Commercial listings only, inside the Property Preferences section, add the following fields back to the actual listing display:
+
+A) Add missing field 1
+
+Label: Garage/Parking Features Needed:
+
+Value: display the stored value(s) exactly as saved.
+
+If it’s a Yes/No field, show Yes or No.
+
+If it’s a multi-select list, show a clean comma-separated list.
+
+If empty/null, either hide the row or show “—” (match existing UI conventions).
+
+B) Add missing field 2
+
+Label: Garage/Parking Features:
+
+Value: display the stored value(s) exactly as saved.
+
+Same formatting rules as above.
+
+Placement (Commercial Property Preferences)
+
+Insert these fields in a logical spot consistent with the listing creation order for Commercial Property Preferences (do not place them in Leasing Terms).
+If unsure where, place them near other “Property Features / Amenities” style fields in Property Preferences.
+
+3) QA CHECK (REQUIRED)
+
+After implementing:
+
+Open an existing Commercial Hire a Tenant’s Agent listing that has garage/parking info saved.
+
+Confirm both fields display under Property Preferences:
+
+Garage/Parking Features Needed:
+
+Garage/Parking Features:
+
+Confirm Listing Status shows above Listing ID on both Residential + Commercial listing displays.
+
+Confirm the status text matches one of: Active / Pending / Hired Agent / Expired.
