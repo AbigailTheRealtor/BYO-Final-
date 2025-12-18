@@ -1,0 +1,123 @@
+Replit Fix — Services Not Showing on Actual Listing Display
+Hire a Tenant’s Agent (Residential + Commercial)
+SAFE-GUARDS (Do not break other sections)
+
+DO NOT refactor or rename existing Services data structures, keys, field names, components, or DB columns.
+
+DO NOT change how services are saved. This is a display-only fix.
+
+Restore rendering using the same saved values from listing creation.
+
+Preserve emojis + bold formatting + spacing exactly as shown in the listing creation Services UI.
+
+Scope
+
+Apply ONLY to:
+
+Hire a Tenant’s Agent → Residential listing details display
+
+Hire a Tenant’s Agent → Commercial listing details display
+
+Do not apply to Buyer/Seller/Landlord pages.
+
+Problem
+
+On the actual listing display page, the Services section is showing only a generic “Additional Services / Example 1 / Example 2” type output and none of the selected checklist services.
+
+Required Outcome (must match listing creation)
+
+On the actual listing display, show one main section:
+
+Services:
+
+Inside that section, re-render the category titles (emoji + bold) and then list the selected services under each category in the exact same order they appear on listing creation.
+
+Residential category titles (exact text + order)
+
+📢 Tenant Criteria Marketing & Promotion
+
+🔍 Property Search, Alerts & Matching
+
+🏡 Property Showings & Virtual Tours
+
+📝 Tenant Application Support
+
+📃 Lease Preparation & Execution
+
+🚚 Move-In Support & Coordination
+
+💡 Leasing Strategy & Guidance
+
+✍️ Additional Services
+
+Commercial category titles (exact text + order)
+
+📢 Tenant Criteria Marketing & Promotion
+
+🔍 Property Search, Alerts & Matching
+
+🏡 Property Showings & Virtual Tours
+
+📝 Tenant Application Support
+
+📃 Lease Preparation, LOI & Execution
+
+🚚 Move-In Support & Coordination
+
+💡 Leasing Strategy & Guidance
+
+✍️ Additional Services
+
+Display Rules (must follow)
+1) Render ONLY selected services
+
+If a service checkbox was selected during listing creation → display it
+
+If not selected → do not show it
+
+2) Do not render empty categories
+
+Only show a category title if that category contains at least one selected service
+
+Exception: If “✍️ Additional Services” has a custom typed input, show that category even if no checkboxes exist
+
+3) Order must match listing creation
+
+Category order must match the list above
+
+Service item order inside each category must match the order from listing creation (top-to-bottom)
+
+4) Formatting must match
+
+Keep the category title styling consistent (emoji + bold)
+
+Use consistent bullet/indent formatting under each category
+
+Remove any placeholder “Example 1 / Example 2” output
+
+Data/Mapping Requirements (important)
+Use the same saved structure as listing creation
+
+If services are saved by category (recommended), render from that structure directly.
+
+If services are saved as a flat list, map them back into categories using the same category keys used on the listing creation page.
+
+Do not hardcode “Example” values. Do not replace with static sample services.
+
+QA Checklist (must pass)
+
+ Residential listing shows all selected services grouped under the correct categories and in correct order
+
+ Commercial listing shows all selected services grouped under the correct categories and in correct order
+
+ Category titles display exactly as provided (emoji + wording)
+
+ No empty categories display
+
+ No “Example 1 / Example 2” placeholders show
+
+ No services disappear from the saved listing—this is display-only
+
+If they need a single sentence summary to pin:
+
+“Rebuild the Services display by rendering the saved selected checklist services grouped by the same category headers (emoji + bold) and in the same order as the listing creation UI (Residential vs Commercial).”

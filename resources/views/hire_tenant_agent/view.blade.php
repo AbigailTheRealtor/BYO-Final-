@@ -635,6 +635,12 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                 <hr>
 
+                @php
+                // Check if services exist before showing the section
+                $hasServices = !empty(@$auction->get->services) || !empty(@$auction->get->other_services);
+                @endphp
+
+                @if ($hasServices)
                 <div class="card-header">
                     <h4>Services: </h4>
                 </div>
@@ -644,74 +650,111 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 $isResidential = @$auction->get->property_type === 'Residential Property';
                 $isCommercial = @$auction->get->property_type === 'Commercial Property';
 
-                // Residential service categories
+                // Residential service categories (exact match with listing creation form)
                 $residentialCategories = [
                     '📢 Tenant Criteria Marketing & Promotion' => [
-                        'Create a Tenant Profile to Share with Landlords',
-                        'Market Tenant Criteria to Listing Agents',
-                        'Market Tenant Criteria via Direct Outreach to Landlords (FSBO)',
+                        'Create a branded flyer summarizing the Tenant’s rental criteria',
+                        'Post the Tenant’s rental criteria on Craigslist under the "Real Estate Wanted" section',
+                        'Share the Tenant’s rental criteria on Nextdoor in Neighborhood or Community Groups',
+                        'Promote the Tenant’s rental criteria on Facebook in Rental or Housing Groups',
+                        'Share the Tenant’s rental criteria on Instagram using posts, stories, or reels',
+                        'Promote the Tenant’s rental criteria on LinkedIn in Real Estate or Housing Groups',
+                        'Upload a TikTok video summarizing the Tenant’s rental criteria',
+                        'Upload a YouTube video summarizing the Tenant’s rental criteria',
+                        'Launch a mass email campaign promoting the Tenant’s rental criteria',
+                        'Distribute branded postcards or flyers in the Tenant’s preferred neighborhoods',
+                        'Launch hyperlocal digital ads targeting the Tenant’s preferred rental areas',
                     ],
                     '🔍 Property Search, Alerts & Matching' => [
-                        'Property Search Assistance',
-                        'Property Matching & Alerts',
+                        'Send email alerts with new listings from the MLS that match the Tenant’s rental criteria',
+                        'Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant’s rental criteria',
+                        'Communicate with the Landlord’s Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions',
+                        'Evaluate properties with the Tenant and provide insights on pricing, lease terms, and overall fit',
                     ],
                     '🏡 Property Showings & Virtual Tours' => [
-                        'Property Showings & Tours',
-                        'Virtual Tour Assistance',
+                        'Schedule and attend property showings with the Tenant',
+                        'Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs',
+                        'Preview properties on behalf of the Tenant upon request',
+                        'Provide factual observations on property layout and condition',
                     ],
                     '📝 Tenant Application Support' => [
-                        'Rental Application Submission Assistance',
-                        'Pre-screening Guidance (Credit, Income, Rental History)',
+                        'Provide the Tenant with application instructions or links to an online rental application platform',
+                        'Gather and organize required supporting documents (e.g., identification, income verification, reference letters)',
+                        'Submit complete and organized application packages to the Landlord’s Agent, Landlord, or Property Manager for review',
+                        'Answer questions about the application process, screening timelines, and required documentation',
                     ],
                     '📃 Lease Preparation & Execution' => [
-                        'Lease Review & Explanation',
-                        'Negotiation of Lease Terms (Rent, Deposits, Move-in Date)',
-                        'Lease Signing Coordination',
+                        'Review lease offers and assist the Tenant in preparing questions or requested changes',
+                        'Coordinate lease negotiation with the Landlord’s Agent, Landlord, or Property Manager',
+                        'Assist with completing required lease disclosures and reviewing key lease terms',
+                        'Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties',
                     ],
                     '🚚 Move-In Support & Coordination' => [
-                        'Move-in Walkthrough & Inspection',
-                        'Key Pickup Coordination',
+                        'Coordinate move-in date and key handoff logistics with the Landlord’s Agent, Landlord or Property Manager',
+                        'Confirm completion of any agreed-upon pre-move-in cleaning or repairs',
+                        'Provide a utility setup checklist and local provider resources',
+                        'Share a move-in checklist for documentation and property condition review',
+                        'Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods',
                     ],
                     '💡 Leasing Strategy & Guidance' => [
-                        'Rent Comparison Analysis (Comps)',
-                        'Neighborhood & Community Information',
-                        'Budget & Affordability Guidance',
+                        'Provide a Rental Market Analysis (RMA) with pricing insights based on comparable rentals, neighborhood trends, and current market conditions',
+                        'Advise on lease types and structures (e.g., month-to-month, annual, furnished, lease-option)',
+                        'Provide general guidance on Tenant rights and Landlord responsibilities under state law',
+                        'Provide general guidance on lease clauses, payment terms, and renewal options',
                     ],
                 ];
 
-                // Commercial service categories
+                // Commercial service categories (exact match with listing creation form)
                 $commercialCategories = [
                     '📢 Tenant Criteria Marketing & Promotion' => [
-                        'Create a Tenant Profile to Share with Landlords',
-                        'Market Tenant Criteria to Listing Agents',
-                        'Market Tenant Criteria via Direct Outreach to Landlords (FSBO)',
+                        'Create a branded flyer summarizing the Tenant’s leasing criteria',
+                        'Post the Tenant’s leasing criteria on Craigslist under the "Office/Commercial" or "Retail" section',
+                        'Promote the Tenant’s leasing criteria on Facebook in Commercial Leasing or Business Groups',
+                        'Share the Tenant’s leasing criteria on Instagram using posts, stories, or reels',
+                        'Promote the Tenant’s leasing criteria on LinkedIn in Professional, Real Estate, or Commercial Investment Groups',
+                        'Upload a TikTok video summarizing the Tenant’s leasing criteria',
+                        'Upload a YouTube video summarizing the Tenant’s leasing criteria',
+                        'Launch a mass email campaign promoting the Tenant’s leasing criteria',
+                        'Distribute branded postcards or flyers in the Tenant’s preferred neighborhoods',
+                        'Launch hyperlocal digital ads targeting the Tenant’s preferred leasing areas',
                     ],
                     '🔍 Property Search, Alerts & Matching' => [
-                        'Property Search Assistance',
-                        'Property Matching & Alerts',
+                        'Send listing alerts from commercial platforms (e.g., LoopNet, Crexi, CoStar, or local MLS) that match the Tenant’s leasing criteria',
+                        'Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant’s rental criteria',
+                        'Communicate with the Landlord’s Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions',
+                        'Evaluate properties for layout efficiency, building specs, logistics, zoning fit, and operational alignment',
                     ],
-                    '🏡 Property Showings & Virtual Tours' => [
-                        'Property Showings & Tours',
-                        'Virtual Tour Assistance',
+                    '🏢 Property Showings & Virtual Tours' => [
+                        'Schedule and attend property tours with the Tenant',
+                        'Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs',
+                        'Preview properties on behalf of the Tenant upon request',
+                        'Provide factual notes on layout, access, parking, visibility, and other operational considerations',
                     ],
                     '📝 Tenant Application Support' => [
-                        'Rental Application Submission Assistance',
-                        'Pre-screening Guidance (Credit, Business Financials, Rental History)',
+                        'Provide the Tenant with application instructions or links to online platforms',
+                        'Gather and organize required supporting documents (e.g., business licenses, financials, references)',
+                        'Submit complete and organized application packages to the Landlord’s Agent, Landlord, or Property Manager',
                     ],
                     '📃 Lease Preparation, LOI & Execution' => [
-                        'Letter of Intent (LOI) Preparation & Submission',
-                        'Lease Review & Explanation',
-                        'Negotiation of Lease Terms (Rent, Build-out, TI Allowance, CAM)',
-                        'Lease Signing Coordination',
+                        'Draft or assist with preparing a Letter of Intent (LOI) summarizing the Tenant’s business needs and proposed terms',
+                        'Assist with negotiating rent, CAM, lease term, TI allowance, exclusivity clauses, renewal options, and other provisions (as permitted under the agency agreement)',
+                        'Coordinate with the Landlord’s Agent, Landlord or Property Manager to finalize lease terms',
+                        'Review lease drafts and coordinate revisions through appropriate channels',
+                        'Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties',
+                        'Track required deposits, rent commencement, and key lease dates to ensure move-in readiness',
                     ],
                     '🚚 Move-In Support & Coordination' => [
-                        'Move-in Walkthrough & Inspection',
-                        'Key Pickup Coordination',
+                        'Coordinate move-in date and key handoff logistics with the Landlord, Landlord’s Agent, or Property Manager',
+                        'Confirm completion of any agreed-upon pre-move-in repairs, cleaning, or buildout',
+                        'Provide a utility setup checklist and local provider resources',
+                        'Share a move-in checklist for documentation and property condition review',
+                        'Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods',
                     ],
                     '💡 Leasing Strategy & Guidance' => [
-                        'Rent Comparison Analysis (Comps)',
-                        'Zoning & Permitting Guidance',
-                        'Site Selection Strategy',
+                        'Provide a Comparative Lease Market Analysis (CLMA) with pricing insights, comps, and vacancy trends',
+                        'Advise on lease types and structures (e.g., NNN, Modified Gross, Full Service) with general explanations of differences',
+                        'Provide general guidance on Tenant rights and Landlord responsibilities under commercial leasing law',
+                        'Provide general guidance on lease clauses, escalation terms, and space usage considerations',
                     ],
                 ];
 
@@ -750,6 +793,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </div>
                     @endif
                 </div>
+                @endif
                 <hr>
                 @if (@$auction->get->additional_details != null)
                 <div class="card-header">
@@ -767,12 +811,12 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     <h4>Broker Compensation & Agency Agreement Terms</h4>
                 </div>
 
-                <!-- Tenant's Broker Compensation Sub-section -->
-                <h5 class="mt-3 mb-2"><strong>Tenant's Broker Compensation:</strong></h5>
+                <!-- Tenant’s Broker Compensation Sub-section -->
+                <h5 class="mt-3 mb-2"><strong>Tenant’s Broker Compensation:</strong></h5>
 
                 @if (@$auction->get->commission_structure != null)
                 <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
-                    Tenant's Broker Commission Structure:
+                    Tenant’s Broker Commission Structure:
                     <span class="removeBold">
                         @php
                             $commissionDisplay = @$auction->get->commission_structure;
@@ -789,7 +833,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                 @if (@$auction->get->lease_fee_type != null)
                 <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
-                    Tenant's Broker Lease Fee:
+                    Tenant’s Broker Lease Fee:
                     <span class="removeBold">
                         @if (@$auction->get->lease_fee_type === 'other')
                             {{ $auction->get->lease_fee_other ?? '' }}
@@ -2761,7 +2805,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         @if (!empty($allMeta['commission_structure']))
                                                         <div class="mb-1"
                                                             style="font-size: 12px;"><span
-                                                                style="font-size: 13px; font-weight: 600;">Tenant's
+                                                                style="font-size: 13px; font-weight: 600;">Tenant’s
                                                                 Broker Commission
                                                                 Structure:</span>
                                                             {{ $allMeta['commission_structure'] }}
@@ -2772,7 +2816,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         @if (!empty($allMeta['lease_fee_type']))
                                                         <div class="mb-1"
                                                             style="font-size: 12px;"><span
-                                                                style="font-size: 13px; font-weight: 600;">Tenant's
+                                                                style="font-size: 13px; font-weight: 600;">Tenant’s
                                                                 Broker Lease Fee:</span>
                                                             {{ $allMeta['lease_fee_type'] }}
                                                         </div>
@@ -2892,7 +2936,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         <div class="mb-1"
                                                             style="font-size: 12px;">
                                                             <span
-                                                                style="font-size: 13px; font-weight: 600;">Tenant's
+                                                                style="font-size: 13px; font-weight: 600;">Tenant’s
                                                                 Broker Purchase
                                                                 Fee:</span>
                                                             {{ $allMeta['purchase_fee_type'] }}
