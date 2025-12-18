@@ -75,7 +75,7 @@
         color: #34465c;
     }
 
-    ul li::marker {
+    ul:not(.services) li::marker {
         content: "\f101";
         /* FontAwesome Unicode */
         font-family: FontAwesome;
@@ -84,9 +84,9 @@
         color: #11b7cf;
     }
 
-    /* Services section - Dot bullet styling */
+    /* Services section - Dot bullet styling ONLY */
     ul.services {
-        list-style: none;
+        list-style: none !important;
         padding-left: 1.5em;
         margin-top: 0.5rem;
     }
@@ -96,6 +96,11 @@
         color: #34465c;
         position: relative;
         padding-left: 0;
+        list-style: none !important;
+    }
+
+    ul.services li::marker {
+        content: none !important;
     }
 
     ul.services li::before {
@@ -1116,7 +1121,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 <h5 class="mt-3 mb-2"><strong>Additional Terms:</strong></h5>
 
                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Additional Terms Details:
+                    Additional Terms:
                     <span class="removeBold">{{ $auction->get->additional_details_broker }}</span>
                 </div>
                 @endif
