@@ -49,9 +49,14 @@
     }
 
     /* Major section spacing - breathing room between sections */
+    /* Section headers - vertically centered text */
     .card-header {
         margin-top: 1.25rem;
-        padding-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+        min-height: 2.5rem;
     }
 
     /* Services section - extra breathing room before header */
