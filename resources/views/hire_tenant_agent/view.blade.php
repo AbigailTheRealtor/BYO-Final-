@@ -38,40 +38,31 @@
         margin-bottom: 15px;
     }
 
-    /* Section Title Hierarchy - Larger, bold, spaced, more prominent */
-    .card-header h4,
-    .section-title {
-        font-size: 1.5rem !important;
-        font-weight: 700 !important;
-        margin-top: 1.5rem;
-        margin-bottom: 0.75rem;
-        color: #0f1a24;
-    }
-
-    /* SECTION HEADER BAR — shorter + true vertical centering */
-    .card-header.section-header {
-        display: flex !important;
-        align-items: center !important;
+    /* SECTION HEADER BAR - fixed height, true vertical centering */
+    .listing-section-header {
+        display: flex;
+        align-items: center;
         justify-content: flex-start;
-        padding: 12px 18px !important;
-        min-height: 0 !important;
-        margin-top: 1.25rem;
+        height: 56px;
+        padding: 0 18px;
+        border-bottom: 1px solid #ddd;
+        margin-top: 1rem;
     }
 
-    /* SECTION TITLE TEXT — remove default heading spacing */
-    .section-header .section-title {
-        margin: 0 !important;
-        padding: 0 !important;
-        line-height: 1 !important;
+    /* TITLE TEXT - no margins, no drift */
+    .listing-section-title {
+        margin: 0;
+        padding: 0;
+        line-height: 1;
         display: block;
-        font-size: 1.5rem !important;
-        font-weight: 700 !important;
+        font-size: 1.5rem;
+        font-weight: 700;
         color: #0f1a24;
     }
 
-    /* Services section - extra breathing room before header */
-    .services-section-header {
-        margin-top: 0.75rem !important;
+    /* Services section - extra breathing room */
+    .listing-section-header.services-header {
+        margin-top: 1.25rem;
     }
 
     hr {
@@ -253,8 +244,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
     <div class="row">
         <div class="col-sm-12 col-md-8 col-lg-8 leftCol">
             <div class="card description">
-                <div class="card-header section-header">
-                    <h4 class="section-title">Listing Details:</h4>
+                <div class="listing-section-header">
+                    <div class="listing-section-title">Listing Details:</div>
                 </div>
                 <div class="card-body">
                     <div class="row" style="flex-wrap: wrap;">
@@ -325,8 +316,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                     </div>
                     <hr>
-                    <div class="card-header section-header">
-                        <h4 class="section-title">Property Preferences: </h4>
+                    <div class="listing-section-header">
+                        <div class="listing-section-title">Property Preferences: </div>
                     </div>
 
                     <div class="row" style="flex-wrap: wrap;">
@@ -603,8 +594,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     @endif
                 </div>
                 <hr>
-                <div class="card-header section-header">
-                    <h4 class="section-title">Leasing Terms: </h4>
+                <div class="listing-section-header">
+                    <div class="listing-section-title">Leasing Terms: </div>
                 </div>
                 <div class="col-md-12 col-12 pt-2 fw-bold"> Maximum
                     Monthly Lease Price:
@@ -655,8 +646,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </ul>
                 @endif
                 <hr>
-                <div class="card-header section-header">
-                    <h4 class="section-title">Pre-Screening: </h4>
+                <div class="listing-section-header">
+                    <div class="listing-section-title">Pre-Screening: </div>
                 </div>
                 @if ($auction->get->number_occupant)
                 <div class="col-md-12 col-12 pt-2 fw-bold"> Number
@@ -738,8 +729,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @endphp
 
                 @if ($hasServices)
-                <div class="card-header section-header services-section-header">
-                    <h4 class="section-title">Services: </h4>
+                <div class="listing-section-header services-header">
+                    <div class="listing-section-title">Services: </div>
                 </div>
 
                 @php
@@ -893,8 +884,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @endif
                 <hr>
                 @if (@$auction->get->additional_details != null)
-                <div class="card-header section-header">
-                    <h4 class="section-title">Additional Details: </h4>
+                <div class="listing-section-header">
+                    <div class="listing-section-title">Additional Details: </div>
                 </div>
 
                 <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -904,8 +895,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @endif
 
                 <hr />
-                <div class="card-header section-header">
-                    <h4 class="section-title">Broker Compensation & Agency Agreement Terms</h4>
+                <div class="listing-section-header">
+                    <div class="listing-section-title">Broker Compensation & Agency Agreement Terms</div>
                 </div>
 
                 <!-- Tenant’s Broker Compensation Sub-section -->
@@ -1184,8 +1175,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @endif
 
                 <hr />
-                <div class="card-header section-header">
-                    <h4 class="section-title">Tenant’s Info </h4>
+                <div class="listing-section-header">
+                    <div class="listing-section-title">Tenant’s Info </div>
                 </div>
                 @if (!empty($auction->get->first_name))
                 <div class="col-md-12 col-12 pt-2 fw-bold"> First
