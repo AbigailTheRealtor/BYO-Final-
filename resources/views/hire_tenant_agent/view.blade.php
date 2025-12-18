@@ -203,6 +203,17 @@
         padding: 23px !important;
     }
 
+    /* Left column content - vertically centered with symmetrical padding */
+    .leftCol .card.description .card-body {
+        padding-top: 1.75rem;
+        padding-bottom: 1.75rem;
+    }
+
+    .leftCol .card.description {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+
     @media screen and (max-width: 800px) {
         .accordion-body-padding {
             padding: 7px !important;
