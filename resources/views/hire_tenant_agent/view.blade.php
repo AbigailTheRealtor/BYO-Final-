@@ -119,19 +119,6 @@
         margin-bottom: 0.5rem;
     }
 
-    /* Subsection headers - Add breathing room (6-8px additional spacing) */
-    .card-body h5 {
-        margin-top: 1.5rem !important;
-        padding-top: 0.5rem;
-    }
-
-    /* Subtle dividers between major blocks */
-    .section-divider {
-        border: 0;
-        border-top: 1px solid #e0e0e0;
-        margin: 1rem 0;
-    }
-
     .removeBold {
         font-weight: normal;
     }
@@ -847,10 +834,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     @endif
                 </div>
                 @endif
-
-                {{-- Subtle divider: Services → Additional Details --}}
-                <hr class="section-divider">
-
+                <hr>
                 @if (@$auction->get->additional_details != null)
                 <div class="card-header">
                     <h4>Additional Details: </h4>
@@ -860,14 +844,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     Additional Details:<span class="removeBold">
                         {{ $auction->get->additional_details ?? '' }}</span>
                 </div>
-
-                {{-- Subtle divider: Additional Details → Broker Compensation --}}
-                <hr class="section-divider">
-                @else
-                {{-- If no Additional Details, still show divider before Broker Compensation --}}
-                <hr class="section-divider">
                 @endif
 
+                <hr />
                 <div class="card-header">
                     <h4>Broker Compensation & Agency Agreement Terms</h4>
                 </div>
