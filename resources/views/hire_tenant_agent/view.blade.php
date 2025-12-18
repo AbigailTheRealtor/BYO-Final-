@@ -84,7 +84,7 @@
         color: #11b7cf;
     }
 
-    /* Services section - Arrow bullet styling */
+    /* Services section - Dot bullet styling */
     ul.services {
         list-style: none;
         padding-left: 1.5em;
@@ -99,11 +99,11 @@
     }
 
     ul.services li::before {
-        content: "→";
+        content: "•";
         position: absolute;
-        left: -1.25em;
-        color: #11b7cf;
-        font-weight: bold;
+        left: -1em;
+        color: #34465c;
+        font-size: 1.2em;
     }
 
     /* Service category title styling */
