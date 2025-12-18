@@ -42,15 +42,21 @@
     .card-header h4,
     .section-title {
         font-size: 1.5rem !important;
-        font-weight: 800 !important;
+        font-weight: 700 !important;
         margin-top: 1.5rem;
         margin-bottom: 0.75rem;
-        color: #1a252f;
+        color: #0f1a24;
     }
 
     /* Major section spacing - breathing room between sections */
     .card-header {
         margin-top: 1.25rem;
+        padding-top: 0.5rem;
+    }
+
+    /* Services section - extra breathing room before header */
+    .services-section-header {
+        margin-top: 0.5rem !important;
         padding-top: 0.5rem;
     }
 
@@ -707,7 +713,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @endphp
 
                 @if ($hasServices)
-                <div class="card-header">
+                <div class="card-header services-section-header">
                     <h4>Services: </h4>
                 </div>
 
