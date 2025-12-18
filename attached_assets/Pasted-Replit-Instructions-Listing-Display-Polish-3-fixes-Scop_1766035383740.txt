@@ -1,0 +1,129 @@
+Replit Instructions — Listing Display Polish (3 fixes)
+
+Scope: Listing display page(s) (example: resources/views/hire_tenant_agent/view.blade.php)
+Goal: Fix header typography (restore original), remove awkward top gap caused by removed field, and improve divider line appearance.
+Important: Do not change any field labels or content text. Do not remove any user-entered “Example” values. CSS/layout only.
+
+1) Restore the ORIGINAL section-title font (it changed)
+
+Problem: Section headers (ex: “Listing Details:”, “Property Preferences:”) are using a different font/spacing than before (looks heavier / different tracking).
+
+Fix:
+
+Revert section header typography to match the original site styling.
+
+Specifically remove any forced letter-spacing, uppercase, or font overrides that got added during “centering” attempts.
+
+Do this:
+
+Locate the CSS rules applied to section headers (the wrapper that contains “Listing Details”, “Property Preferences”, etc.).
+
+Remove/undo any of these if present:
+
+letter-spacing: ...
+
+text-transform: uppercase;
+
+custom font-family: ...
+
+heavier font-weight than before
+
+Add/force these safe defaults (only on section headers):
+
+.section-header,
+.section-header * {
+  font-family: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.section-header h2,
+.section-header h3,
+.section-header h4 {
+  font-weight: 600; /* match original */
+}
+
+
+✅ Result: headers look exactly like they did before the recent CSS change.
+
+2) Fix the extra blank space under “Listing Details:” (gap from removed content)
+
+Problem: There’s too much vertical space between the “Listing Details” header and the first row (“Current Representation Status with Broker…”). This happened because a removed field left padding/margin behind.
+
+Fix:
+
+Reduce top spacing on the first content block under each section header.
+
+Remove margin/padding that applies to the container below the header.
+
+Do this:
+
+Identify the container directly beneath the section header (often something like .card-body, .section-body, .content, .details-body).
+
+Add CSS (adjust selectors to match your markup):
+
+.section-body,
+.card-body {
+  padding-top: 12px;   /* reduce if currently larger */
+}
+
+.section-body > :first-child,
+.card-body > :first-child {
+  margin-top: 0 !important;
+}
+
+
+✅ Result: The first line of content starts closer to the header (no awkward empty gap).
+
+3) Make divider lines go full width and slightly darker
+
+Problem: Horizontal divider lines don’t extend to the end of the card and they look too light.
+
+Fix:
+
+Ensure dividers span the full container width.
+
+Darken slightly for clearer section separation (still subtle).
+
+Do this:
+
+Locate the divider element(s): hr, .divider, .section-divider, or border rules on header wrappers.
+
+Add/adjust:
+
+.section-divider,
+hr {
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+  border: 0;
+  border-top: 1px solid rgba(0,0,0,0.18); /* slightly darker */
+}
+
+
+If dividers are borders on containers (instead of <hr>), update that border color similarly:
+
+.section-header,
+.section-footer {
+  border-color: rgba(0,0,0,0.18);
+}
+
+
+✅ Result: Lines look cleaner, span the full width, and improve readability.
+
+Final Requirements / Safeguards
+
+Do not change or rewrite any text (titles, labels, values, user-entered “Example” text).
+
+CSS/layout only — spacing, typography restoration, divider styling.
+
+Test on:
+
+Tenant Residential listing display
+
+Tenant Commercial listing display
+
+After changes:
+
+Run php artisan view:clear
+
+Hard refresh (Ctrl+Shift+R / Cmd+Shift+R)

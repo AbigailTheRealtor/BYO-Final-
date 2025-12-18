@@ -45,19 +45,22 @@
         justify-content: flex-start;
         height: 56px;
         padding: 0 18px;
-        border-bottom: 1px solid #ddd;
+        border-bottom: 1px solid rgba(0,0,0,0.18);
         margin-top: 1rem;
     }
 
-    /* TITLE TEXT - no margins, no drift */
+    /* TITLE TEXT - original font restored */
     .listing-section-title {
         margin: 0;
         padding: 0;
         line-height: 1;
         display: block;
         font-size: 1.5rem;
-        font-weight: 700;
+        font-weight: 600;
         color: #0f1a24;
+        font-family: inherit;
+        letter-spacing: normal;
+        text-transform: none;
     }
 
     /* Services section - extra breathing room */
@@ -65,9 +68,23 @@
         margin-top: 1.25rem;
     }
 
+    /* Reduce gap after section headers */
+    .card-body {
+        padding-top: 12px;
+    }
+    .card-body > :first-child {
+        margin-top: 0 !important;
+    }
+
+    /* Dividers - full width, slightly darker */
     hr {
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
         margin-top: 1.25rem;
         margin-bottom: 0.5rem;
+        border: 0;
+        border-top: 1px solid rgba(0,0,0,0.18);
     }
 
     /* Field row styling - improved line-height for scan-readability */
