@@ -243,19 +243,26 @@ class TenantAgentAuctionBid extends Component
     protected function rules(): array
     {
         return [
+            'commission_structure' => 'required|string',
+            'lease_fee_type' => 'required|string',
             'promoMaterials.*.type'  => ['nullable', 'string'],
             'promoMaterials.*.other' => ['nullable', 'string'],
-            'promoMaterials.*.text'  => ['nullable', 'text'],
+            'promoMaterials.*.text'  => ['nullable', 'string'],
             'promoMaterials.*.files' => ['nullable', 'array'],
             'promoMaterials.*.files.*' => [
                 'file',
-                'max:20480', // 20MB each
+                'max:51200', // 50MB each
                 'mimes:pdf,jpg,jpeg,png,doc,docx,ppt,pptx'
             ],
             'year_licensed' => 'required|numeric|min:1900|max:' . date('Y'),
 
         ];
     }
+
+    protected $messages = [
+        'commission_structure.required' => 'Please select a Tenant\'s Broker Commission Structure.',
+        'lease_fee_type.required' => 'Please select a Tenant\'s Broker Lease Fee.',
+    ];
 
     public function updatePlaceholder($index, $platform)
     {
@@ -467,6 +474,18 @@ class TenantAgentAuctionBid extends Component
         $this->website_link = [''];
         $this->reviews_links = [['text' => '']];
         $this->social_media = [['platform' => '', 'text' => '']];
+
+        // Auto-fill Agent Information from profile (Tab 6)
+        $user = Auth::user();
+        if ($user) {
+            $this->first_name = $user->first_name ?? '';
+            $this->last_name = $user->last_name ?? '';
+            $this->phone = $user->phone ?? '';
+            $this->email = $user->email ?? '';
+            $this->brokerage = $user->brokerage ?? '';
+            $this->license_no = $user->license_no ?? '';
+            $this->nar_id = $user->nar_id ?? '';
+        }
     }
 
     public function setActiveTab($index)

@@ -1,0 +1,220 @@
+Replit Instructions — Agent Bids (Hire a Tenant Listing)
+⚠️ Required Safeguards (Must Follow)
+
+Do NOT delete, rename, or restructure any existing tabs, fields, tooltips, database columns, or bid logic.
+
+Only make “additive” or “surgical” edits (CSS/validation/message copy/limits/autofill).
+
+Before editing, create a new git commit: pre-agent-bids-edits
+
+After each section below, re-test the Agent Bids flow to confirm:
+
+No tabs are blank
+
+Commercial icons stay intact
+
+No content disappears from any tab
+
+A) Fix the “Please enter a number” pop-up when clicking + Add Social Media
+Problem
+
+On Agent Presentation & Marketing Materials, when the user clicks + Add Social Media, a browser validation bubble appears: “Please enter a number.” This should not happen.
+
+Required Fix
+
+Locate the Social Media repeater/row that gets added when clicking + Add Social Media.
+
+One of the inputs in that row is incorrectly set to type="number" or has numeric validation (min, step, numeric rules) causing the browser’s built-in message.
+
+Change that field to a non-numeric type (usually type="text" or type="url") OR remove the HTML numeric constraint that triggers the bubble.
+
+Ensure the “Add Social Media” button does not trigger form submission:
+
+If it’s a <button> inside a form, make sure it is type="button" (not submit).
+
+Acceptance Test
+
+Click + Add Social Media
+
+✅ A new Social Media row appears
+
+✅ No “Please enter a number” pop-up appears
+
+B) Tab 2 — Make these required fields
+Where
+
+Tab 2: Broker Compensation & Agency Agreement Timeframe
+
+Requirement
+
+Make BOTH fields required:
+
+Tenant’s Broker Commission Structure
+
+Tenant’s Broker Lease Fee
+
+Implementation Notes
+
+Apply required validation on:
+
+Front-end (required UI/validation)
+
+Back-end/server validation (so it can’t be bypassed)
+
+Acceptance Test
+
+Try submitting the bid without selecting/entering these.
+
+✅ User cannot submit
+
+✅ Clear required-field messaging appears
+
+C) Tab 2 — Update tooltip to match the listing-creation tooltip (use this exact copy)
+Where
+
+Tooltip icon next to the Tenant broker compensation selection (as shown in your screenshot).
+
+Replace tooltip text with (exact):
+
+“Select how the Tenant’s Broker will be compensated—either paid directly by the Tenant (out-of-pocket) or requested from the Landlord as part of the offer. If the Landlord does not agree to pay, the Tenant remains responsible for the commission under the brokerage agreement.”
+
+Acceptance Test
+
+Hover the tooltip icon.
+
+✅ Tooltip matches exactly and displays cleanly (no cut-off / weird formatting)
+
+D) Tab 2 — Update the section instruction title text
+Replace this existing line:
+
+“📌 Complete the compensation terms that apply.”
+
+With this exact text (keep it as the section’s instruction block):
+
+“📌 Complete the compensation terms and agreement timeframe that apply.
+The compensation terms previously selected by the Tenant are pre-checked below.
+The Agent may edit, add, or remove terms as needed to reflect what the Agent is offering.”
+
+Notes
+
+Preserve the same styling behavior you’re using for these instruction blocks.
+
+Do not change any field order—this is copy-only.
+
+E) Tab 4 — Offered Services: Replace the section instruction paragraph
+Where
+
+Tab 4: Offered Services instruction text block at the top.
+
+Replace the existing paragraph with this exact copy:
+
+“🤝 Select or review the services the Agent will provide to the Tenant throughout the leasing process. The services previously selected by the Tenant are pre-checked below. The Agent may edit, add, or remove services as needed to match what the Agent offers. Services are offered under a commission-based, full-service agreement, with the brokerage relationship type determined in accordance with state law. Your selections help outline the intended scope of services, but the signed brokerage agreement will ultimately confirm the final terms of representation and compensation.”
+
+Acceptance Test
+
+Tab 4 loads
+
+✅ Text displays correctly
+
+✅ Services checklist still functions normally
+
+F) Tab 5 — Marketing Materials Upload: Increase file size limit
+Problem
+
+Upload shows: “promoMaterials.0.files.0 must not be greater than 12288 kilobytes.”
+
+Requirement
+
+Increase upload max so users can upload larger marketing PDFs (and other allowed types).
+
+Implementation Notes (must check all three)
+
+Backend validator (where file max is enforced)
+
+Server/PHP config limit (if PHP/Laravel)
+
+Frontend helper text (optional—only if it currently misleads users)
+
+Acceptance Test
+
+Upload a file larger than 12MB (example: 20–30MB PDF)
+
+✅ Upload succeeds
+
+✅ No validation error appears
+
+✅ File persists on save and reload
+
+G) Tab 5 — Virtual Agent Presentation link: embed the video
+Requirement
+
+In Tab 5, where it says:
+Virtual Agent Presentation (Link):
+If the Agent pastes a YouTube/Vimeo (or supported) link, show an embedded video player under the field.
+
+Rules
+
+If link is empty: show nothing.
+
+If link is present but not embeddable: show a simple “Open link” clickable fallback.
+
+Must be responsive (mobile friendly).
+
+Acceptance Test
+
+Paste a YouTube link
+
+✅ Embedded player appears under the field
+
+H) Tab 6 — Agent Information should auto-fill from the Agent profile
+Requirement
+
+In Tab 6: Agent Information, the answers should auto-populate from the Agent’s saved profile (because it’s the same questions). Agents shouldn’t have to re-enter credentials every time they bid.
+
+Implementation Notes
+
+On opening Tab 6 in the bid flow:
+
+Pre-fill fields from the agent’s profile record (name, license, brokerage, phone, email, etc. — whatever matches)
+
+Agents can still edit values for this specific bid if needed (do not overwrite their master profile unless they explicitly save profile changes elsewhere).
+
+Acceptance Test
+
+Log in as an Agent with a completed profile
+
+Open an Agent Bid
+
+Go to Tab 6
+
+✅ Fields are already filled in
+
+Final QA Checklist (Must Confirm Before Marking Complete)
+
+All Agent Bid tabs load without blanks:
+
+Agent Overview
+
+Broker Compensation & Agency Agreement
+
+Additional Details
+
+Offered Services
+
+Agent Presentation & Marketing Materials
+
+Agent Information
+
+No missing icons (especially commercial)
+
+“Add Social Media” no longer triggers “Please enter a number.”
+
+Tab 2 required fields enforced (front + back end)
+
+Tooltips and instruction text match exactly
+
+Upload limit increased and tested with a larger PDF
+
+Virtual Agent Presentation link embeds video
+
+Agent Information auto-fills from profile

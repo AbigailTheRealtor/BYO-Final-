@@ -169,7 +169,7 @@
             </div>
         </div>
     @endforeach
-    <button wire:click="addSocialMedia" class="btn btn-primary btn-sm">
+    <button type="button" wire:click="addSocialMedia" class="btn btn-primary btn-sm">
         <i class="fas fa-plus"></i> Add Social Media
     </button>
 </div>

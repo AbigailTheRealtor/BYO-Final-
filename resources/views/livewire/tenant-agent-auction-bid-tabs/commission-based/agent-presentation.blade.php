@@ -21,13 +21,51 @@
                 <i class="fa-solid fa-circle-info"></i>
             </span>
             <div class="input-cover">
-                <input type="text" wire:model="presentation_link" class="form-control has-icon"
+                <input type="text" wire:model.lazy="presentation_link" class="form-control has-icon"
                     placeholder="Enter virtual agent presentation link (e.g., https://youtube.com/example)"
                     data-icon="fa-solid fa-link">
             </div>
             <small class="text-muted">Enter YouTube, Vimeo, or other video platform URL</small>
         </div>
 
+        <!-- Video Embed Preview -->
+        @if (!empty($presentation_link))
+            @php
+                $embedUrl = null;
+                $isEmbeddable = false;
+                
+                // YouTube patterns
+                if (preg_match('/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/', $presentation_link, $ytMatches)) {
+                    $embedUrl = 'https://www.youtube.com/embed/' . $ytMatches[1];
+                    $isEmbeddable = true;
+                }
+                // Vimeo patterns
+                elseif (preg_match('/vimeo\.com\/(?:video\/)?(\d+)/', $presentation_link, $vimeoMatches)) {
+                    $embedUrl = 'https://player.vimeo.com/video/' . $vimeoMatches[1];
+                    $isEmbeddable = true;
+                }
+            @endphp
+
+            @if ($isEmbeddable && $embedUrl)
+                <div class="mt-3 mb-3">
+                    <label class="fw-bold text-muted mb-2">Video Preview:</label>
+                    <div class="ratio ratio-16x9" style="max-width: 560px;">
+                        <iframe src="{{ $embedUrl }}" 
+                            title="Virtual Agent Presentation" 
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+                </div>
+            @else
+                <div class="mt-2 mb-3">
+                    <a href="{{ $presentation_link }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-external-link-alt me-1"></i> Open Video Link
+                    </a>
+                </div>
+            @endif
+        @endif
 
     </div>
 </div>

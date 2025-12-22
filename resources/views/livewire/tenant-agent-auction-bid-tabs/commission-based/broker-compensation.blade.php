@@ -2,7 +2,9 @@
 <div class="alert alert-info bg-light-info border-info mb-4">
     <div class="d-flex align-items-center">
         <div>
-            <strong>📝 Complete the compensation terms that apply.
+            <strong>📌 Complete the compensation terms and agreement timeframe that apply.<br>
+            The compensation terms previously selected by the Tenant are pre-checked below.<br>
+            The Agent may edit, add, or remove terms as needed to reflect what the Agent is offering.
             </strong>
         </div>
     </div>
@@ -11,7 +13,7 @@
 <!-- Tenant's Broker Commission Structure -->
 <div class="form-group mb-4">
     <label class="fw-bold ">
-        Tenant's Broker Commission Structure:
+        Tenant's Broker Commission Structure:<span class="text-danger">*</span>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select how the Tenant's Broker will be compensated—either paid directly by the Tenant (out-of-pocket) or requested from the Landlord as part of the offer. If the Landlord does not agree to pay, the Tenant remains responsible for the commission under the brokerage agreement.">
@@ -19,7 +21,7 @@
         </span>
     </label>
     <div class="input-cover mt-2">
-        <select wire:model="commission_structure" class="form-control has-icon"
+        <select wire:model="commission_structure" class="form-control has-icon" required
             data-icon="fa-solid fa-file-invoice-dollar">
             <option value="">Select</option>
             <option value="Out-of-Pocket Payment">Tenant Pays Out-of-Pocket</option>
@@ -34,7 +36,7 @@
 <!-- Tenant's Broker Lease Fee -->
 <div class="form-group mb-4">
     <label class="fw-bold ">
-        Tenant's Broker Lease Fee:
+        Tenant's Broker Lease Fee:<span class="text-danger">*</span>
 
         @if ($property_type === 'Residential Property')
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -53,7 +55,7 @@
     </label>
 
     <div class="input-cover mt-2">
-        <select wire:model="lease_fee_type" class="form-control has-icon" data-icon="fa-solid fa-file-invoice-dollar">
+        <select wire:model="lease_fee_type" class="form-control has-icon" required data-icon="fa-solid fa-file-invoice-dollar">
             <option value="">Select</option>
             <option value="Flat Fee">Flat Fee</option>
             @if ($property_type === 'Residential Property')

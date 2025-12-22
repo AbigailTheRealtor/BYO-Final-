@@ -1,8 +1,8 @@
-<h3>Services the Tenant Requests from Their Agent</h3>
+<h3>Offered Services</h3>
 <div class="alert alert-info bg-light-info border-info mb-4">
     <div class="d-flex align-items-center">
         <div>
-            <strong>🤝 Select the services the Tenant would like the Agent to provide throughout the leasing process. Services are offered under a commission-based, full-service agreement, with the brokerage relationship type determined in accordance with state law. Selections here are for guidance only; the signed brokerage agreement governs the final scope of representation and compensation.
+            <strong>🤝 Select or review the services the Agent will provide to the Tenant throughout the leasing process. The services previously selected by the Tenant are pre-checked below. The Agent may edit, add, or remove services as needed to match what the Agent offers. Services are offered under a commission-based, full-service agreement, with the brokerage relationship type determined in accordance with state law. Your selections help outline the intended scope of services, but the signed brokerage agreement governs the final scope of representation and compensation.
             </strong>
         </div>
     </div>
