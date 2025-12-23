@@ -1676,36 +1676,190 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             Overview & Qualifications
                                                         </h6>
 
+                                                        <!-- Licensed Since -->
+                                                        @if (data_get($bid, 'get.year_licensed'))
+                                                        <div class="mb-3">
+                                                            <div class="fw-semibold"
+                                                                style="color: #049399;">Licensed Since:</div>
+                                                            <div class="text-muted">
+                                                                {{ data_get($bid, 'get.year_licensed') }}
+                                                            </div>
+                                                        </div>
+                                                        @endif
+
                                                         <!-- About Agent -->
                                                         @if (data_get($bid, 'get.bio'))
                                                         <div class="mb-3">
                                                             <div class="fw-semibold"
-                                                                style="color: #049399;">About Agent
-                                                            </div>
+                                                                style="color: #049399;">About Agent:</div>
                                                             <div class="text-muted">
                                                                 {{ data_get($bid, 'get.bio') }}
                                                             </div>
                                                         </div>
                                                         @endif
 
-                                                        <!-- Why Hire You -->
+                                                        <!-- Why Hire This Agent -->
                                                         @if (data_get($bid, 'get.why_hire_you'))
                                                         <div class="mb-3">
                                                             <div class="fw-semibold"
-                                                                style="color: #049399;">Why Should
-                                                                You Be Hired</div>
+                                                                style="color: #049399;">Why Hire This Agent:</div>
                                                             <div class="text-muted">
                                                                 {{ data_get($bid, 'get.why_hire_you') }}
                                                             </div>
                                                         </div>
                                                         @endif
 
-                                                        <!-- Reviews Links -->
+                                                        <!-- Marketing Strategy -->
+                                                        @if (data_get($bid, 'get.marketing_plan'))
+                                                        <div class="mb-3">
+                                                            <div class="fw-semibold"
+                                                                style="color: #049399;">Marketing Strategy:</div>
+                                                            <div class="text-muted">
+                                                                {{ data_get($bid, 'get.marketing_plan') }}
+                                                            </div>
+                                                        </div>
+                                                        @endif
+
+                                                        <!-- What Sets This Agent Apart -->
+                                                        @if (data_get($bid, 'get.what_sets_you_apart'))
+                                                        <div class="mb-3">
+                                                            <div class="fw-semibold"
+                                                                style="color: #049399;">What Sets This Agent Apart:</div>
+                                                            <div class="text-muted">
+                                                                {{ data_get($bid, 'get.what_sets_you_apart') }}
+                                                            </div>
+                                                        </div>
+                                                        @endif
+
+                                                        <!-- Services Offered with Category Subtitles -->
+                                                        @php 
+                                                        $servicesList = (array) data_get($bid, 'get.services', []);
+                                                        $propertyType = data_get($auction, 'property_type', 'Residential');
+                                                        
+                                                        if ($propertyType === 'Residential') {
+                                                            $categories = [
+                                                                '📣 Tenant Criteria Marketing & Promotion' => [
+                                                                    'Distribute the Tenant's rental criteria to licensed agents within the desired area(s)',
+                                                                    'Market the Tenant's rental criteria through licensed agent networks and platforms',
+                                                                    'Notify the Tenant when matching listings become available based on stated preferences',
+                                                                ],
+                                                                '🔎 Property Search, Alerts & Matching' => [
+                                                                    'Search MLS and licensed agent databases for properties matching the Tenant's criteria',
+                                                                    'Set up automated property alerts based on Tenant-provided preferences',
+                                                                    'Research off-market, FSBO, and pre-listing opportunities when available',
+                                                                    'Prepare and share summaries of vetted listings for Tenant review',
+                                                                ],
+                                                                '🏡 Property Showings & Virtual Tours' => [
+                                                                    'Schedule and accompany the Tenant on property showings',
+                                                                    'Schedule and coordinate virtual or video tours as requested by the Tenant',
+                                                                    'Provide observations on property condition, neighborhood context, and layout',
+                                                                    'Follow up with listing agents after showings to check availability and gather additional info',
+                                                                ],
+                                                                '📝 Tenant Application Support' => [
+                                                                    'Provide the Tenant with application instructions or links to online platforms',
+                                                                    'Gather and organize required supporting documents (e.g., income, ID, rental history)',
+                                                                    'Submit complete and organized application packages to the Landlord's Agent, Landlord, or Property Manager',
+                                                                ],
+                                                                '📄 Lease Preparation & Execution' => [
+                                                                    'Assist with negotiating rent, lease terms, and other provisions (as permitted under the agency agreement)',
+                                                                    'Coordinate with the Landlord's Agent, Landlord, or Property Manager to finalize lease terms',
+                                                                    'Review lease drafts and coordinate revisions through appropriate channels',
+                                                                    'Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties',
+                                                                    'Track deposit deadlines and assist the Tenant with understanding amounts due',
+                                                                ],
+                                                                '🚚 Move-In Support & Coordination' => [
+                                                                    'Coordinate move-in date and key handoff logistics with the Landlord's Agent, Landlord or Property Manager',
+                                                                    'Confirm completion of any agreed-upon pre-move-in cleaning or repairs',
+                                                                    'Provide a utility setup checklist and local provider resources',
+                                                                    'Share a move-in checklist for documentation and property condition review',
+                                                                    'Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods',
+                                                                ],
+                                                                '💡 Leasing Strategy & Guidance' => [
+                                                                    'Provide a Comparative Rental Market Analysis (CRMA) with pricing insights and local trends',
+                                                                    'Explain lease structures, typical terms, and negotiation strategies',
+                                                                    'Provide general guidance on Tenant rights and Landlord responsibilities under local rental law',
+                                                                    'Provide general guidance on lease clauses, renewal options, and move-in costs',
+                                                                ],
+                                                            ];
+                                                        } else {
+                                                            $categories = [
+                                                                '📣 Tenant Criteria Marketing & Promotion' => [
+                                                                    'Distribute the Tenant's rental criteria to licensed agents within the desired area(s)',
+                                                                    'Market the Tenant's rental criteria through licensed agent networks and commercial listing platforms',
+                                                                    'Notify the Tenant when matching listings become available based on stated preferences',
+                                                                ],
+                                                                '🔎 Property Search, Alerts & Matching' => [
+                                                                    'Search commercial databases and listings for properties matching the Tenant's criteria',
+                                                                    'Set up automated property alerts based on Tenant-provided preferences',
+                                                                    'Research off-market, FSBO, and pre-listing commercial opportunities when available',
+                                                                    'Prepare and share summaries of vetted commercial listings for Tenant review',
+                                                                ],
+                                                                '🏡 Property Showings & Virtual Tours' => [
+                                                                    'Schedule and accompany the Tenant on property showings',
+                                                                    'Schedule and coordinate virtual or video tours as requested by the Tenant',
+                                                                    'Provide observations on property condition, zoning, access, buildout potential, and neighborhood context',
+                                                                    'Follow up with listing agents after showings to check availability and gather additional info',
+                                                                ],
+                                                                '📝 Tenant Application Support' => [
+                                                                    'Provide the Tenant with application instructions or links to online platforms',
+                                                                    'Gather and organize required supporting documents (e.g., business licenses, financials, references)',
+                                                                    'Submit complete and organized application packages to the Landlord's Agent, Landlord, or Property Manager',
+                                                                ],
+                                                                '📄 Lease Preparation, LOI & Execution' => [
+                                                                    'Draft or assist with preparing a Letter of Intent (LOI) summarizing the Tenant's business needs and proposed terms',
+                                                                    'Assist with negotiating rent, CAM, lease term, TI allowance, exclusivity clauses, renewal options, and other provisions (as permitted under the agency agreement)',
+                                                                    'Coordinate with the Landlord's Agent, Landlord or Property Manager to finalize lease terms',
+                                                                    'Review lease drafts and coordinate revisions through appropriate channels',
+                                                                    'Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties',
+                                                                    'Track required deposits, rent commencement, and key lease dates to ensure move-in readiness',
+                                                                ],
+                                                                '🚚 Move-In Support & Coordination' => [
+                                                                    'Coordinate move-in date and key handoff logistics with the Landlord, Landlord's Agent, or Property Manager',
+                                                                    'Confirm completion of any agreed-upon pre-move-in repairs, cleaning, or buildout',
+                                                                    'Provide a utility setup checklist and local provider resources',
+                                                                    'Share a move-in checklist for documentation and property condition review',
+                                                                    'Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods',
+                                                                ],
+                                                                '💡 Leasing Strategy & Guidance' => [
+                                                                    'Provide a Comparative Lease Market Analysis (CLMA) with pricing insights, comps, and vacancy trends',
+                                                                    'Advise on lease types and structures (e.g., NNN, Modified Gross, Full Service) with general explanations of differences',
+                                                                    'Provide general guidance on Tenant rights and Landlord responsibilities under commercial leasing law',
+                                                                    'Provide general guidance on lease clauses, escalation terms, and space usage considerations',
+                                                                ],
+                                                            ];
+                                                        }
+                                                        @endphp
+                                                        
+                                                        @if (!empty($servicesList))
+                                                        <div class="mb-3">
+                                                            <div class="fw-semibold mb-2"
+                                                                style="color: #049399;">Services Offered:</div>
+                                                            
+                                                            @foreach ($categories as $categoryName => $categoryServices)
+                                                                @php
+                                                                    $matchedServices = array_filter($servicesList, function($s) use ($categoryServices) {
+                                                                        return in_array($s, $categoryServices);
+                                                                    });
+                                                                @endphp
+                                                                @if (!empty($matchedServices))
+                                                                <div class="mb-2">
+                                                                    <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">{{ $categoryName }}</div>
+                                                                    <ul class="services mb-2" style="margin-top: 0.25rem;">
+                                                                        @foreach ($matchedServices as $service)
+                                                                            <li style="font-size: 0.9rem;">{{ $service }}</li>
+                                                                        @endforeach
+                                                                    </ul>
+                                                                </div>
+                                                                @endif
+                                                            @endforeach
+                                                        </div>
+                                                        @endif
+
+                                                        <!-- Review Links -->
                                                         @if (data_get($bid, 'get.reviews_links'))
                                                         <div class="mb-3">
                                                             <div class="fw-semibold"
-                                                                style="color: #049399;">Reviews
-                                                                Links</div>
+                                                                style="color: #049399;">Review Links:</div>
                                                             <div>
                                                                 @foreach (data_get($bid, 'get.reviews_links') as $reviewLink)
                                                                 @if (!empty($reviewLink->url))
@@ -1727,14 +1881,19 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         @if (data_get($bid, 'get.website_link'))
                                                         <div class="mb-3">
                                                             <div class="fw-semibold"
-                                                                style="color: #049399;">Website
-                                                                Link</div>
+                                                                style="color: #049399;">Website Link:</div>
                                                             <div>
-                                                                <a href="{{ data_get($bid, 'get.website_link') }}"
+                                                                @php
+                                                                    $websiteLink = data_get($bid, 'get.website_link');
+                                                                    if (!empty($websiteLink) && !str_starts_with($websiteLink, 'http://') && !str_starts_with($websiteLink, 'https://')) {
+                                                                        $websiteLink = 'https://' . $websiteLink;
+                                                                    }
+                                                                @endphp
+                                                                <a href="{{ $websiteLink }}"
                                                                     target="_blank"
+                                                                    rel="noopener noreferrer"
                                                                     class="text-primary text-decoration-none">
-                                                                    <i
-                                                                        class="fa fa-globe me-1"></i>
+                                                                    <i class="fa fa-globe me-1"></i>
                                                                     Visit Website
                                                                 </a>
                                                             </div>
@@ -1812,425 +1971,197 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     <div class="mb-5">
                                                         <h6 class="mb-3"
                                                             style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                            <i
-                                                                class="fa fa-handshake me-2"></i>Broker
-                                                            Compensation & Agency Agreement Terms
+                                                            <i class="fa fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
                                                         </h6>
 
-                                                        <!-- Commission Structure -->
-                                                        @if (data_get($bid, 'get.commission_structure'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">
-                                                                Commission Structure</div>
-                                                            <div class="text-muted">
-                                                                {{ data_get($bid, 'get.commission_structure') }}
-                                                            </div>
-                                                        </div>
-                                                        @endif
-
-                                                        <!-- Lease Fee Type -->
-                                                        @if (data_get($bid, 'get.lease_fee_type'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">Lease
-                                                                Fee Type</div>
-                                                            <div class="text-muted">
-                                                                {{ data_get($bid, 'get.lease_fee_type') }}
-                                                            </div>
-                                                        </div>
-                                                        @endif
-
-                                                        <!-- Lease Fee Amounts -->
-                                                        @if (data_get($bid, 'get.lease_fee_type') === 'Flat Fee' && data_get($bid, 'get.lease_fee_flat'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">Flat
-                                                                Fee Amount</div>
-                                                            <div class="text-muted">
-                                                                @if (data_get($bid, 'get.lease_fee_flat_type') === '$')
-                                                                ${{ number_format((float)data_get($bid, 'get.lease_fee_flat'), 2) }}
-                                                                @else
-                                                                {{ data_get($bid, 'get.lease_fee_flat') }}%
+                                                        <!-- A) Tenant's Broker Compensation -->
+                                                        @if (data_get($bid, 'get.commission_structure') || data_get($bid, 'get.lease_fee_type') || data_get($bid, 'get.payment_timing') || data_get($bid, 'get.days_to_pay'))
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Tenant's Broker Compensation</h6>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                @if (data_get($bid, 'get.commission_structure'))
+                                                                <li class="mb-1"><span class="fw-semibold">Tenant's Broker Commission Structure:</span> {{ data_get($bid, 'get.commission_structure') }}</li>
                                                                 @endif
-                                                            </div>
-                                                        </div>
-                                                        @endif
-
-                                                        @if (data_get($bid, 'get.lease_fee_type') === 'Percentage of the Gross Lease Value' &&
-                                                        data_get($bid, 'get.lease_fee_percentage'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">
-                                                                Percentage of Gross Lease Value
-                                                            </div>
-                                                            <div class="text-muted">
-                                                                {{ data_get($bid, 'get.lease_fee_percentage') }}%
-                                                            </div>
-                                                        </div>
-                                                        @endif
-
-                                                        @if (data_get($bid, 'get.lease_fee_type') === 'Percentage of Monthly Rent' &&
-                                                        data_get($bid, 'get.lease_fee_percentage_monthly_rent'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">
-                                                                Percentage of Monthly Rent</div>
-                                                            <div class="text-muted">
-                                                                {{ data_get($bid, 'get.lease_fee_percentage_monthly_rent') }}%
-                                                            </div>
-                                                        </div>
-                                                        @endif
-
-                                                        @if (data_get($bid, 'get.lease_fee_type') === 'Flat Fee + Percentage of the Gross Lease Value')
-                                                        @if (data_get($bid, 'get.lease_fee_flat_combo'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">
-                                                                Flat Fee Portion</div>
-                                                            <div class="text-muted">
-                                                                ${{ number_format((float)data_get($bid, 'get.lease_fee_flat_combo'), 2) }}
-                                                            </div>
-                                                        </div>
-                                                        @endif
-                                                        @if (data_get($bid, 'get.lease_fee_percentage_combo'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">
-                                                                Percentage Portion</div>
-                                                            <div class="text-muted">
-                                                                {{ data_get($bid, 'get.lease_fee_percentage_combo') }}%
-                                                            </div>
-                                                        </div>
-                                                        @endif
-                                                        @endif
-
-                                                        @if (data_get($bid, 'get.lease_fee_type') === 'Percentage of the Net Aggregate Rent' &&
-                                                        data_get($bid, 'get.lease_fee_percentage_net'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">
-                                                                Percentage of Net Aggregate Rent
-                                                            </div>
-                                                            <div class="text-muted">
-                                                                {{ data_get($bid, 'get.lease_fee_percentage_net') }}%
-                                                            </div>
-                                                        </div>
-                                                        @endif
-
-                                                        @if (data_get($bid, 'get.lease_fee_type') === 'Flat Fee + Percentage of the Net Aggregate Rent')
-                                                        @if (data_get($bid, 'get.lease_fee_flat_combo_net'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">
-                                                                Flat Fee Portion</div>
-                                                            <div class="text-muted">
-                                                                ${{ number_format((float)data_get($bid, 'get.lease_fee_flat_combo_net'), 2) }}
-                                                            </div>
-                                                        </div>
-                                                        @endif
-                                                        @if (data_get($bid, 'get.lease_fee_percentage_combo_net'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">
-                                                                Percentage Portion</div>
-                                                            <div class="text-muted">
-                                                                {{ data_get($bid, 'get.lease_fee_percentage_combo_net') }}%
-                                                            </div>
-                                                        </div>
-                                                        @endif
-                                                        @endif
-
-                                                        @if (data_get($bid, 'get.lease_fee_type') === 'other' && data_get($bid, 'get.lease_fee_other'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">Other
-                                                                Lease Fee</div>
-                                                            <div class="text-muted">
-                                                                {{ data_get($bid, 'get.lease_fee_other') }}
-                                                            </div>
-                                                        </div>
-                                                        @endif
-
-                                                        <!-- Purchase Fee Section -->
-                                                        @if (data_get($bid, 'get.interested_purchase_fee_type') === 'Yes')
-                                                        <div class="mt-4 pt-3 border-top">
-                                                            <h6 class="mb-3"
-                                                                style="color: #049399; font-weight: 600;">
-                                                                Purchase Fee Details</h6>
-
-                                                            @if (data_get($bid, 'get.purchase_fee_type'))
-                                                            <div class="mb-3">
-                                                                <div class="fw-semibold"
-                                                                    style="color: #049399;">
-                                                                    Purchase Fee Type</div>
-                                                                <div class="text-muted">
-                                                                    {{ data_get($bid, 'get.purchase_fee_type') }}
-                                                                </div>
-                                                            </div>
-                                                            @endif
-
-                                                            @if (data_get($bid, 'get.purchase_fee_type') === 'Flat Fee' && data_get($bid, 'get.purchase_fee_flat'))
-                                                            <div class="mb-3">
-                                                                <div class="fw-semibold"
-                                                                    style="color: #049399;">
-                                                                    Purchase Flat Fee</div>
-                                                                <div class="text-muted">
-                                                                    @if (data_get($bid, 'get.purchase_fee_flat_type') === '$')
-                                                                    ${{ number_format((float)data_get($bid, 'get.purchase_fee_flat'), 2) }}
-                                                                    @else
-                                                                    {{ data_get($bid, 'get.purchase_fee_flat') }}%
-                                                                    @endif
-                                                                </div>
-                                                            </div>
-                                                            @endif
-
-                                                            @if (data_get($bid, 'get.purchase_fee_type') === 'Percentage of the Total Purchase Price' &&
-                                                            data_get($bid, 'get.purchase_fee_percentage'))
-                                                            <div class="mb-3">
-                                                                <div class="fw-semibold"
-                                                                    style="color: #049399;">
-                                                                    Purchase Percentage
-                                                                </div>
-                                                                <div class="text-muted">
-                                                                    {{ data_get($bid, 'get.purchase_fee_percentage') }}%
-                                                                </div>
-                                                            </div>
-                                                            @endif
-
-                                                            @if (data_get($bid, 'get.purchase_fee_type') === 'Percentage of the Total Purchase Price + Flat Fee')
-                                                            @if (data_get($bid, 'get.purchase_fee_percentage_combo'))
-                                                            <div class="mb-2">
-                                                                <div class="fw-semibold"
-                                                                    style="color: #049399;">
-                                                                    Purchase Percentage
-                                                                </div>
-                                                                <div
-                                                                    class="text-muted">
-                                                                    {{ data_get($bid, 'get.purchase_fee_percentage_combo') }}%
-                                                                </div>
-                                                            </div>
-                                                            @endif
-                                                            @if (data_get($bid, 'get.purchase_fee_flat_combo'))
-                                                            <div class="mb-3">
-                                                                <div class="fw-semibold"
-                                                                    style="color: #049399;">
-                                                                    Purchase Flat Fee
-                                                                </div>
-                                                                <div
-                                                                    class="text-muted">
-                                                                    ${{ number_format((float)data_get($bid, 'get.purchase_fee_flat_combo'), 2) }}
-                                                                </div>
-                                                            </div>
-                                                            @endif
-                                                            @endif
-
-                                                            @if (data_get($bid, 'get.purchase_fee_type') === 'other' && data_get($bid, 'get.purchase_fee_other'))
-                                                            <div class="mb-3">
-                                                                <div class="fw-semibold"
-                                                                    style="color: #049399;">
-                                                                    Other Purchase Fee</div>
-                                                                <div class="text-muted">
-                                                                    {{ data_get($bid, 'get.purchase_fee_other') }}
-                                                                </div>
-                                                            </div>
-                                                            @endif
-                                                        </div>
-                                                        @endif
-
-                                                        <!-- Lease Option Agreement -->
-                                                        @if (data_get($bid, 'get.interested_lease_option_agreement') === 'Yes')
-                                                        <div class="mt-4 pt-3 border-top">
-                                                            <h6 class="mb-3"
-                                                                style="color: #049399; font-weight: 600;">
-                                                                Lease-Option Agreement Details
-                                                            </h6>
-
-                                                            @if (data_get($bid, 'get.lease_value'))
-                                                            <div class="mb-3">
-                                                                <div class="fw-semibold"
-                                                                    style="color: #049399;">
-                                                                    Lease Option
-                                                                    Compensation</div>
-                                                                <div class="text-muted">
-                                                                    @if (data_get($bid, 'get.lease_type') === 'percent')
-                                                                    {{ data_get($bid, 'get.lease_value') }}%
-                                                                    @else
-                                                                    ${{ number_format((float)data_get($bid, 'get.lease_value'), 2) }}
-                                                                    @endif
-                                                                </div>
-                                                            </div>
-                                                            @endif
-
-                                                            @if (data_get($bid, 'get.purchase_value'))
-                                                            <div class="mb-3">
-                                                                <div class="fw-semibold"
-                                                                    style="color: #049399;">
-                                                                    Purchase Option
-                                                                    Compensation</div>
-                                                                <div class="text-muted">
-                                                                    @if (data_get($bid, 'get.purchase_type') === 'percent')
-                                                                    {{ data_get($bid, 'get.purchase_value') }}%
-                                                                    @else
-                                                                    ${{ number_format((float)data_get($bid, 'get.purchase_value'), 2) }}
-                                                                    @endif
-                                                                </div>
-                                                            </div>
-                                                            @endif
-                                                        </div>
-                                                        @endif
-
-                                                        <!-- Protection Period -->
-                                                        @if (data_get($bid, 'get.protection_period'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">
-                                                                Protection Period</div>
-                                                            <div class="text-muted">
-                                                                {{ data_get($bid, 'get.protection_period') }}
-                                                                days
-                                                            </div>
-                                                        </div>
-                                                        @endif
-
-                                                        <!-- Early Termination Fee -->
-                                                        @if (data_get($bid, 'get.early_termination_fee_option'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">Early
-                                                                Termination Fee</div>
-                                                            <div class="text-muted">
-                                                                {{ data_get($bid, 'get.early_termination_fee_option') }}
-                                                            </div>
-                                                        </div>
-
-                                                        @if (data_get($bid, 'get.early_termination_fee_option') === 'Yes' && data_get($bid, 'get.early_termination_fee_amount'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">
-                                                                Termination Fee Amount</div>
-                                                            <div class="text-muted">
-                                                                ${{ number_format((float)data_get($bid, 'get.early_termination_fee_amount'), 2) }}
-                                                            </div>
-                                                        </div>
-                                                        @endif
-                                                        @endif
-
-                                                        <!-- Retainer Fee -->
-                                                        @if (data_get($bid, 'get.retainer_fee_option'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">
-                                                                Retainer Fee</div>
-                                                            <div class="text-muted">
-                                                                {{ data_get($bid, 'get.retainer_fee_option') }}
-                                                            </div>
-                                                        </div>
-
-                                                        @if (data_get($bid, 'get.retainer_fee_option') === 'Yes')
-                                                        @if (data_get($bid, 'get.retainer_fee_amount'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">
-                                                                Retainer Fee Amount
-                                                            </div>
-                                                            <div class="text-muted">
-                                                                ${{ number_format((float)data_get($bid, 'get.retainer_fee_amount'), 2) }}
-                                                            </div>
-                                                        </div>
-                                                        @endif
-
-                                                        @if (data_get($bid, 'get.retainer_fee_application'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">
-                                                                Retainer Fee Application
-                                                            </div>
-                                                            <div class="text-muted">
-                                                                @if (data_get($bid, 'get.retainer_fee_application') === 'applied')
-                                                                Applied toward final
-                                                                compensation
-                                                                @else
-                                                                Charged in addition
-                                                                to final
-                                                                compensation
+                                                                @if (data_get($bid, 'get.lease_fee_type'))
+                                                                <li class="mb-1"><span class="fw-semibold">Tenant's Broker Lease Fee:</span> {{ data_get($bid, 'get.lease_fee_type') }}</li>
                                                                 @endif
-                                                            </div>
+                                                                @if (data_get($bid, 'get.lease_fee_type') === 'Flat Fee' && data_get($bid, 'get.lease_fee_flat'))
+                                                                <li class="mb-1"><span class="fw-semibold">Flat Fee Amount:</span> 
+                                                                    @if (data_get($bid, 'get.lease_fee_flat_type') === '$')
+                                                                    ${{ number_format((float)data_get($bid, 'get.lease_fee_flat'), 2) }}
+                                                                    @else
+                                                                    {{ data_get($bid, 'get.lease_fee_flat') }}%
+                                                                    @endif
+                                                                </li>
+                                                                @endif
+                                                                @if (data_get($bid, 'get.lease_fee_type') === 'Percentage of the Gross Lease Value' && data_get($bid, 'get.lease_fee_percentage'))
+                                                                <li class="mb-1"><span class="fw-semibold">Percentage of Gross Lease Value:</span> {{ data_get($bid, 'get.lease_fee_percentage') }}%</li>
+                                                                @endif
+                                                                @if (data_get($bid, 'get.lease_fee_type') === 'Percentage of Monthly Rent' && data_get($bid, 'get.lease_fee_percentage_monthly_rent'))
+                                                                <li class="mb-1"><span class="fw-semibold">Percentage of Monthly Rent:</span> {{ data_get($bid, 'get.lease_fee_percentage_monthly_rent') }}%</li>
+                                                                @endif
+                                                                @if (data_get($bid, 'get.lease_fee_type') === 'Flat Fee + Percentage of the Gross Lease Value')
+                                                                    @if (data_get($bid, 'get.lease_fee_flat_combo'))
+                                                                    <li class="mb-1"><span class="fw-semibold">Flat Fee Portion:</span> ${{ number_format((float)data_get($bid, 'get.lease_fee_flat_combo'), 2) }}</li>
+                                                                    @endif
+                                                                    @if (data_get($bid, 'get.lease_fee_percentage_combo'))
+                                                                    <li class="mb-1"><span class="fw-semibold">Percentage Portion:</span> {{ data_get($bid, 'get.lease_fee_percentage_combo') }}%</li>
+                                                                    @endif
+                                                                @endif
+                                                                @if (data_get($bid, 'get.lease_fee_type') === 'Percentage of the Net Aggregate Rent' && data_get($bid, 'get.lease_fee_percentage_net'))
+                                                                <li class="mb-1"><span class="fw-semibold">Percentage of Net Aggregate Rent:</span> {{ data_get($bid, 'get.lease_fee_percentage_net') }}%</li>
+                                                                @endif
+                                                                @if (data_get($bid, 'get.lease_fee_type') === 'Flat Fee + Percentage of the Net Aggregate Rent')
+                                                                    @if (data_get($bid, 'get.lease_fee_flat_combo_net'))
+                                                                    <li class="mb-1"><span class="fw-semibold">Flat Fee Portion:</span> ${{ number_format((float)data_get($bid, 'get.lease_fee_flat_combo_net'), 2) }}</li>
+                                                                    @endif
+                                                                    @if (data_get($bid, 'get.lease_fee_percentage_combo_net'))
+                                                                    <li class="mb-1"><span class="fw-semibold">Percentage Portion:</span> {{ data_get($bid, 'get.lease_fee_percentage_combo_net') }}%</li>
+                                                                    @endif
+                                                                @endif
+                                                                @if (data_get($bid, 'get.lease_fee_type') === 'other' && data_get($bid, 'get.lease_fee_other'))
+                                                                <li class="mb-1"><span class="fw-semibold">Other Lease Fee:</span> {{ data_get($bid, 'get.lease_fee_other') }}</li>
+                                                                @endif
+                                                                @if (data_get($bid, 'get.payment_timing'))
+                                                                <li class="mb-1"><span class="fw-semibold">Payment Timing for Broker Fees:</span> {{ data_get($bid, 'get.payment_timing') }}</li>
+                                                                @endif
+                                                                @if (data_get($bid, 'get.days_to_pay'))
+                                                                <li class="mb-1"><span class="fw-semibold">Calendar Days To Pay:</span> {{ data_get($bid, 'get.days_to_pay') }}</li>
+                                                                @endif
+                                                            </ul>
                                                         </div>
                                                         @endif
-                                                        @endif
-                                                        @endif
 
-                                                        <!-- Agency Agreement Timeframe -->
-                                                        @if (data_get($bid, 'get.agency_agreement_timeframe'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">Agency
-                                                                Agreement Timeframe</div>
-                                                            <div class="text-muted">
-                                                                {{ data_get($bid, 'get.agency_agreement_timeframe') }}
-                                                            </div>
+                                                        <!-- B) Purchase Fee Details -->
+                                                        @if (data_get($bid, 'get.interested_purchase_fee_type'))
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">B) Purchase Fee Details</h6>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                <li class="mb-1"><span class="fw-semibold">Interested in Purchasing a Property:</span> {{ data_get($bid, 'get.interested_purchase_fee_type') }}</li>
+                                                                @if (data_get($bid, 'get.interested_purchase_fee_type') === 'Yes')
+                                                                    @if (data_get($bid, 'get.purchase_fee_type'))
+                                                                    <li class="mb-1"><span class="fw-semibold">Purchase Fee Type:</span> {{ data_get($bid, 'get.purchase_fee_type') }}</li>
+                                                                    @endif
+                                                                    @if (data_get($bid, 'get.purchase_fee_type') === 'Percentage of the Total Purchase Price' && data_get($bid, 'get.purchase_fee_percentage'))
+                                                                    <li class="mb-1"><span class="fw-semibold">Purchase Percentage:</span> {{ data_get($bid, 'get.purchase_fee_percentage') }}%</li>
+                                                                    @endif
+                                                                    @if (data_get($bid, 'get.purchase_fee_type') === 'Flat Fee' && data_get($bid, 'get.purchase_fee_flat'))
+                                                                    <li class="mb-1"><span class="fw-semibold">Additional Flat Fee:</span> 
+                                                                        @if (data_get($bid, 'get.purchase_fee_flat_type') === '$')
+                                                                        ${{ number_format((float)data_get($bid, 'get.purchase_fee_flat'), 2) }}
+                                                                        @else
+                                                                        {{ data_get($bid, 'get.purchase_fee_flat') }}%
+                                                                        @endif
+                                                                    </li>
+                                                                    @endif
+                                                                    @if (data_get($bid, 'get.purchase_fee_type') === 'Percentage of the Total Purchase Price + Flat Fee')
+                                                                        @if (data_get($bid, 'get.purchase_fee_percentage_combo'))
+                                                                        <li class="mb-1"><span class="fw-semibold">Purchase Percentage:</span> {{ data_get($bid, 'get.purchase_fee_percentage_combo') }}%</li>
+                                                                        @endif
+                                                                        @if (data_get($bid, 'get.purchase_fee_flat_combo'))
+                                                                        <li class="mb-1"><span class="fw-semibold">Additional Flat Fee:</span> ${{ number_format((float)data_get($bid, 'get.purchase_fee_flat_combo'), 2) }}</li>
+                                                                        @endif
+                                                                    @endif
+                                                                    @if (data_get($bid, 'get.purchase_fee_type') === 'other' && data_get($bid, 'get.purchase_fee_other'))
+                                                                    <li class="mb-1"><span class="fw-semibold">Other Purchase Fee:</span> {{ data_get($bid, 'get.purchase_fee_other') }}</li>
+                                                                    @endif
+                                                                @endif
+                                                            </ul>
                                                         </div>
+                                                        @endif
 
-                                                        @if (data_get($bid, 'get.agency_agreement_timeframe') === 'Other' && data_get($bid, 'get.agency_agreement_custom'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">
-                                                                Custom Timeframe</div>
-                                                            <div class="text-muted">
-                                                                {{ data_get($bid, 'get.agency_agreement_custom') }}
-                                                            </div>
+                                                        <!-- C) Lease-Option Details -->
+                                                        @if (data_get($bid, 'get.interested_lease_option_agreement'))
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">C) Lease-Option Details</h6>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                <li class="mb-1"><span class="fw-semibold">Interested in a Lease-Option Agreement:</span> {{ data_get($bid, 'get.interested_lease_option_agreement') }}</li>
+                                                                @if (data_get($bid, 'get.interested_lease_option_agreement') === 'Yes')
+                                                                    @if (data_get($bid, 'get.lease_type'))
+                                                                    <li class="mb-1"><span class="fw-semibold">Compensation Type (When Option Is Created):</span> {{ data_get($bid, 'get.lease_type') === 'percent' ? 'Percentage' : 'Flat Fee' }}</li>
+                                                                    @endif
+                                                                    @if (data_get($bid, 'get.lease_type') === 'percent' && data_get($bid, 'get.lease_value'))
+                                                                    <li class="mb-1"><span class="fw-semibold">Percentage Amount:</span> {{ data_get($bid, 'get.lease_value') }}%</li>
+                                                                    @elseif (data_get($bid, 'get.lease_value'))
+                                                                    <li class="mb-1"><span class="fw-semibold">Flat Fee Amount:</span> ${{ number_format((float)data_get($bid, 'get.lease_value'), 2) }}</li>
+                                                                    @endif
+                                                                    @if (data_get($bid, 'get.purchase_type'))
+                                                                    <li class="mb-1"><span class="fw-semibold">Compensation Type (If Purchase Option Is Exercised):</span> {{ data_get($bid, 'get.purchase_type') === 'percent' ? 'Percentage' : 'Flat Fee' }}</li>
+                                                                    @endif
+                                                                    @if (data_get($bid, 'get.purchase_type') === 'percent' && data_get($bid, 'get.purchase_value'))
+                                                                    <li class="mb-1"><span class="fw-semibold">Percentage Amount:</span> {{ data_get($bid, 'get.purchase_value') }}%</li>
+                                                                    @elseif (data_get($bid, 'get.purchase_value'))
+                                                                    <li class="mb-1"><span class="fw-semibold">Flat Fee Amount:</span> ${{ number_format((float)data_get($bid, 'get.purchase_value'), 2) }}</li>
+                                                                    @endif
+                                                                @endif
+                                                            </ul>
                                                         </div>
                                                         @endif
+
+                                                        <!-- D) Legal Terms -->
+                                                        @if (data_get($bid, 'get.protection_period') || data_get($bid, 'get.early_termination_fee_option') || data_get($bid, 'get.retainer_fee_option') || data_get($bid, 'get.agency_agreement_timeframe'))
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">D) Legal Terms</h6>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                @if (data_get($bid, 'get.protection_period'))
+                                                                <li class="mb-1"><span class="fw-semibold">Protection Period Timeframe:</span> {{ data_get($bid, 'get.protection_period') }} days</li>
+                                                                @endif
+                                                                @if (data_get($bid, 'get.early_termination_fee_option'))
+                                                                <li class="mb-1"><span class="fw-semibold">Early Termination Fee:</span> {{ data_get($bid, 'get.early_termination_fee_option') }}</li>
+                                                                    @if (data_get($bid, 'get.early_termination_fee_option') === 'Yes' && data_get($bid, 'get.early_termination_fee_amount'))
+                                                                    <li class="mb-1"><span class="fw-semibold">Termination Fee Amount:</span> ${{ number_format((float)data_get($bid, 'get.early_termination_fee_amount'), 2) }}</li>
+                                                                    @endif
+                                                                @endif
+                                                                @if (data_get($bid, 'get.retainer_fee_option'))
+                                                                <li class="mb-1"><span class="fw-semibold">Retainer Fee:</span> {{ data_get($bid, 'get.retainer_fee_option') }}</li>
+                                                                    @if (data_get($bid, 'get.retainer_fee_option') === 'Yes')
+                                                                        @if (data_get($bid, 'get.retainer_fee_amount'))
+                                                                        <li class="mb-1"><span class="fw-semibold">Retainer Fee Amount:</span> ${{ number_format((float)data_get($bid, 'get.retainer_fee_amount'), 2) }}</li>
+                                                                        @endif
+                                                                        @if (data_get($bid, 'get.retainer_fee_application'))
+                                                                        <li class="mb-1"><span class="fw-semibold">Retainer Fee Application:</span> 
+                                                                            @if (data_get($bid, 'get.retainer_fee_application') === 'applied')
+                                                                            Applied toward final compensation
+                                                                            @else
+                                                                            Charged in addition to final compensation
+                                                                            @endif
+                                                                        </li>
+                                                                        @endif
+                                                                    @endif
+                                                                @endif
+                                                                @if (data_get($bid, 'get.agency_agreement_timeframe'))
+                                                                <li class="mb-1"><span class="fw-semibold">Tenant Agency Agreement Timeframe:</span> {{ data_get($bid, 'get.agency_agreement_timeframe') }}
+                                                                    @if (data_get($bid, 'get.agency_agreement_timeframe') === 'Other' && data_get($bid, 'get.agency_agreement_custom'))
+                                                                    ({{ data_get($bid, 'get.agency_agreement_custom') }})
+                                                                    @endif
+                                                                </li>
+                                                                @endif
+                                                            </ul>
+                                                        </div>
                                                         @endif
 
-                                                        <!-- Brokerage Relationship -->
+                                                        <!-- E) Brokerage Relationship -->
                                                         @if (data_get($bid, 'get.brokerage_relationship'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">
-                                                                Brokerage Relationship</div>
-                                                            <div class="text-muted">
-                                                                {{ data_get($bid, 'get.brokerage_relationship') }}
-                                                            </div>
-                                                        </div>
-                                                        @endif
-                                                    </div>
-                                                    @endif
-
-                                                    <!-- 3. Additional Terms & Details -->
-                                                    @if (data_get($bid, 'get.additional_details_broker') || data_get($bid, 'get.additional_details'))
-                                                    <div class="mb-5">
-                                                        <h6 class="mb-3"
-                                                            style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                            <i
-                                                                class="fa fa-file-contract me-2"></i>Additional
-                                                            Terms & Details
-                                                        </h6>
-
-                                                        <!-- Additional Terms -->
-                                                        @if (data_get($bid, 'get.additional_details_broker'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">
-                                                                Additional Terms</div>
-                                                            <div class="text-muted"
-                                                                style="font-style: italic;">
-                                                                {{ data_get($bid, 'get.additional_details_broker') }}
-                                                            </div>
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">E) Brokerage Relationship</h6>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                <li class="mb-1"><span class="fw-semibold">Acceptable Brokerage Relationship:</span> {{ data_get($bid, 'get.brokerage_relationship') }}</li>
+                                                            </ul>
                                                         </div>
                                                         @endif
 
-                                                        <!-- Additional Details -->
-                                                        @if (data_get($bid, 'get.additional_details'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">
-                                                                Additional Details</div>
-                                                            <div class="text-muted"
-                                                                style="font-style: italic;">
-                                                                {{ data_get($bid, 'get.additional_details') }}
-                                                            </div>
+                                                        <!-- F) Additional Terms / Additional Details -->
+                                                        @if (data_get($bid, 'get.additional_details_broker') || data_get($bid, 'get.additional_details'))
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">F) Additional Terms / Additional Details</h6>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                @if (data_get($bid, 'get.additional_details_broker'))
+                                                                <li class="mb-1"><span class="fw-semibold">Additional Terms:</span> {{ data_get($bid, 'get.additional_details_broker') }}</li>
+                                                                @endif
+                                                                @if (data_get($bid, 'get.additional_details'))
+                                                                <li class="mb-1"><span class="fw-semibold">Additional Details:</span> {{ data_get($bid, 'get.additional_details') }}</li>
+                                                                @endif
+                                                            </ul>
                                                         </div>
                                                         @endif
                                                     </div>
@@ -2326,96 +2257,68 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         <div class="mb-4">
                                                             <div class="fw-semibold mb-2"
                                                                 style="color: #049399;">
-                                                                Business Card</div>
+                                                                Business Card:</div>
 
                                                             @if (data_get($bid, 'get.business_card_link'))
-                                                            <div class="mb-2">
+                                                            <div class="mb-3">
                                                                 @php
-                                                                $businessCardLink = data_get(
-                                                                $bid,
-                                                                'get.business_card_link',
-                                                                );
-                                                                // Agar link mein http:// ya https:// nahi hai toh add karo
-                                                                if (
-                                                                !empty(
-                                                                $businessCardLink
-                                                                ) &&
-                                                                !str_starts_with(
-                                                                $businessCardLink,
-                                                                'http://',
-                                                                ) &&
-                                                                !str_starts_with(
-                                                                $businessCardLink,
-                                                                'https://',
-                                                                )
-                                                                ) {
-                                                                $businessCardLink =
-                                                                'https://' .
-                                                                $businessCardLink;
-                                                                }
+                                                                    $businessCardLink = data_get($bid, 'get.business_card_link');
+                                                                    if (!empty($businessCardLink) && !str_starts_with($businessCardLink, 'http://') && !str_starts_with($businessCardLink, 'https://')) {
+                                                                        $businessCardLink = 'https://' . $businessCardLink;
+                                                                    }
                                                                 @endphp
                                                                 <a href="{{ $businessCardLink }}"
                                                                     target="_blank"
-                                                                    class="text-primary text-decoration-none">
-                                                                    <i
-                                                                        class="fa fa-external-link-alt me-1"></i>
-                                                                    View Business Card
+                                                                    rel="noopener noreferrer"
+                                                                    class="btn btn-outline-primary btn-sm">
+                                                                    <i class="fa fa-external-link-alt me-1"></i>
+                                                                    View Business Card (Link)
                                                                 </a>
                                                             </div>
                                                             @endif
 
                                                             @if (data_get($bid, 'get.business_card'))
                                                             <div class="mb-2">
-                                                                <div class="fw-medium mb-1"
-                                                                    style="color: #049399;">
-                                                                    Uploaded Business Card:
-                                                                </div>
                                                                 @if (is_string(data_get($bid, 'get.business_card')))
                                                                 @php
-                                                                $businessCardPath = data_get(
-                                                                $bid,
-                                                                'get.business_card',
-                                                                );
-                                                                $businessCardExtension = pathinfo(
-                                                                $businessCardPath,
-                                                                PATHINFO_EXTENSION,
-                                                                );
+                                                                    $businessCardPath = data_get($bid, 'get.business_card');
+                                                                    $businessCardExtension = pathinfo($businessCardPath, PATHINFO_EXTENSION);
+                                                                    $businessCardUrl = asset('storage/' . $businessCardPath);
                                                                 @endphp
 
                                                                 @if (in_array(strtolower($businessCardExtension), ['jpg', 'jpeg', 'png', 'gif', 'webp']))
-                                                                <img src="{{ asset('storage/' . $businessCardPath) }}"
-                                                                    style="max-width: 300px; max-height: 200px; border-radius: 6px; border: 1px solid #e0e0e0;"
-                                                                    alt="Business Card"
-                                                                    class="img-fluid">
+                                                                <div class="business-card-preview mb-2">
+                                                                    <a href="{{ $businessCardUrl }}" target="_blank" rel="noopener noreferrer" title="Click to view full size">
+                                                                        <img src="{{ $businessCardUrl }}"
+                                                                            style="max-width: 450px; width: 100%; height: auto; border-radius: 8px; border: 2px solid #e0e0e0; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"
+                                                                            alt="Business Card"
+                                                                            class="img-fluid">
+                                                                    </a>
+                                                                </div>
+                                                                <div class="d-flex gap-2 mt-2">
+                                                                    <a href="{{ $businessCardUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">
+                                                                        <i class="fa fa-expand me-1"></i> View Full Size
+                                                                    </a>
+                                                                    <a href="{{ $businessCardUrl }}" download class="btn btn-outline-success btn-sm">
+                                                                        <i class="fa fa-download me-1"></i> Download
+                                                                    </a>
+                                                                </div>
                                                                 @else
-                                                                <div
-                                                                    class="d-flex align-items-center text-muted">
-                                                                    <i
-                                                                        class="fa fa-file me-2"></i>
-                                                                    <div>
-                                                                        <div>
-                                                                            Business
-                                                                            Card
-                                                                            File
-                                                                        </div>
-                                                                        <small>{{ $businessCardExtension }}
-                                                                            file</small>
+                                                                <div class="d-flex align-items-center p-3 border rounded bg-light">
+                                                                    <i class="fa fa-file-alt fa-2x text-muted me-3"></i>
+                                                                    <div class="flex-grow-1">
+                                                                        <div class="fw-medium">Business Card File</div>
+                                                                        <small class="text-muted">{{ strtoupper($businessCardExtension) }} file</small>
                                                                     </div>
-                                                                    <a href="{{ asset('storage/' . $businessCardPath) }}"
-                                                                        target="_blank"
-                                                                        class="btn btn-sm btn-outline-primary ms-2">
-                                                                        <i
-                                                                            class="fa fa-download"></i>
+                                                                    <a href="{{ $businessCardUrl }}" download class="btn btn-outline-primary btn-sm">
+                                                                        <i class="fa fa-download me-1"></i> Download
                                                                     </a>
                                                                 </div>
                                                                 @endif
                                                                 @else
-                                                                <div
-                                                                    class="text-muted">
-                                                                    <i
-                                                                        class="fa fa-id-card me-1"></i>
-                                                                    Business card
-                                                                    uploaded
+                                                                <div class="text-muted">
+                                                                    <i class="fa fa-id-card me-1"></i>
+                                                                    Business card uploaded
                                                                 </div>
                                                                 @endif
                                                             </div>
@@ -2425,152 +2328,91 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                                                         <!-- Marketing Materials Section -->
                                                         @if (data_get($bid, 'get.promoMaterials'))
+                                                        @php
+                                                            $hasAnyMaterials = false;
+                                                            foreach(data_get($bid, 'get.promoMaterials', []) as $m) {
+                                                                if (!empty($m['type']) || !empty($m['link']) || !empty($m['files'])) {
+                                                                    $hasAnyMaterials = true;
+                                                                    break;
+                                                                }
+                                                            }
+                                                        @endphp
                                                         <div>
                                                             <div class="fw-semibold mb-2"
                                                                 style="color: #049399;">
-                                                                Marketing Materials</div>
+                                                                Marketing Materials:</div>
 
+                                                            @if ($hasAnyMaterials)
                                                             @foreach (data_get($bid, 'get.promoMaterials') as $index => $material)
                                                             @if (!empty($material['type']) || !empty($material['link']) || !empty($material['files']))
-                                                            <div
-                                                                class="mb-3 p-3 border rounded">
+                                                            <div class="mb-3 p-3 border rounded bg-light">
                                                                 @if (!empty($material['type']))
-                                                                <div class="fw-medium mb-2"
-                                                                    style="color: #049399;">
+                                                                <div class="fw-medium mb-2" style="color: #049399; font-size: 1rem;">
+                                                                    <i class="fa fa-folder-open me-1"></i>
                                                                     {{ $material['type'] }}
                                                                     @if ($material['type'] === 'Other' && !empty($material['other']))
-                                                                    -
-                                                                    {{ $material['other'] }}
+                                                                    - {{ $material['other'] }}
                                                                     @endif
                                                                 </div>
                                                                 @endif
 
                                                                 @if (!empty($material['link']))
-                                                                <div
-                                                                    class="mb-2">
+                                                                <div class="mb-2">
                                                                     @php
-                                                                    $materialLink =
-                                                                    $material[
-                                                                    'link'
-                                                                    ];
-                                                                    // Agar link mein http:// ya https:// nahi hai toh add karo
-                                                                    if (
-                                                                    !empty(
-                                                                    $materialLink
-                                                                    ) &&
-                                                                    !str_starts_with(
-                                                                    $materialLink,
-                                                                    'http://',
-                                                                    ) &&
-                                                                    !str_starts_with(
-                                                                    $materialLink,
-                                                                    'https://',
-                                                                    )
-                                                                    ) {
-                                                                    $materialLink =
-                                                                    'https://' .
-                                                                    $materialLink;
-                                                                    }
+                                                                        $materialLink = $material['link'];
+                                                                        if (!empty($materialLink) && !str_starts_with($materialLink, 'http://') && !str_starts_with($materialLink, 'https://')) {
+                                                                            $materialLink = 'https://' . $materialLink;
+                                                                        }
                                                                     @endphp
                                                                     <a href="{{ $materialLink }}"
                                                                         target="_blank"
-                                                                        class="text-primary text-decoration-none">
-                                                                        <i
-                                                                            class="fa fa-external-link-alt me-1"></i>
-                                                                        View
-                                                                        Material
-                                                                        Link
+                                                                        rel="noopener noreferrer"
+                                                                        class="btn btn-outline-primary btn-sm">
+                                                                        <i class="fa fa-external-link-alt me-1"></i>
+                                                                        Open Link
                                                                     </a>
                                                                 </div>
                                                                 @endif
 
                                                                 @if (!empty($material['files']))
-                                                                <div
-                                                                    class="mb-2">
-                                                                    <div class="fw-medium mb-1"
-                                                                        style="color: #049399;">
-                                                                        Uploaded
-                                                                        Files:</div>
-                                                                    <div
-                                                                        class="row">
+                                                                <div class="mb-2">
+                                                                    <div class="fw-medium mb-2" style="color: #34465c; font-size: 0.9rem;">Uploaded Files:</div>
+                                                                    <div class="row g-2">
                                                                         @foreach ($material['files'] as $fileIndex => $filePath)
                                                                         @if (is_string($filePath))
                                                                         @php
-                                                                        $fileExtension = pathinfo(
-                                                                        $filePath,
-                                                                        PATHINFO_EXTENSION,
-                                                                        );
-                                                                        $fileName = basename(
-                                                                        $filePath,
-                                                                        );
-                                                                        $imageExtensions = [
-                                                                        'jpg',
-                                                                        'jpeg',
-                                                                        'png',
-                                                                        'gif',
-                                                                        'webp',
-                                                                        ];
-                                                                        $isImage = in_array(
-                                                                        strtolower(
-                                                                        $fileExtension,
-                                                                        ),
-                                                                        $imageExtensions,
-                                                                        );
+                                                                            $fileExtension = pathinfo($filePath, PATHINFO_EXTENSION);
+                                                                            $fileName = basename($filePath);
+                                                                            $fileUrl = asset('storage/' . $filePath);
+                                                                            $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                                                                            $isImage = in_array(strtolower($fileExtension), $imageExtensions);
                                                                         @endphp
 
-                                                                        <div
-                                                                            class="col-md-6 col-lg-4 mb-2">
-                                                                            <div
-                                                                                class="border rounded p-2 d-flex align-items-center">
+                                                                        <div class="col-md-6 mb-2">
+                                                                            <div class="border rounded p-2 bg-white d-flex align-items-center">
                                                                                 @if ($isImage)
-                                                                                <img src="{{ asset('storage/' . $filePath) }}"
-                                                                                    style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; margin-right: 10px;"
-                                                                                    alt="Marketing Material">
+                                                                                <a href="{{ $fileUrl }}" target="_blank" rel="noopener noreferrer">
+                                                                                    <img src="{{ $fileUrl }}"
+                                                                                        style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; margin-right: 10px;"
+                                                                                        alt="Marketing Material">
+                                                                                </a>
                                                                                 @else
                                                                                 <div class="bg-light rounded d-flex align-items-center justify-content-center me-2"
                                                                                     style="width: 60px; height: 60px;">
-                                                                                    <i
-                                                                                        class="fa fa-file text-muted"></i>
+                                                                                    <i class="fa fa-file fa-lg text-muted"></i>
                                                                                 </div>
                                                                                 @endif
-                                                                                <div
-                                                                                    class="flex-grow-1">
-                                                                                    <div
-                                                                                        class="small text-truncate">
-                                                                                        {{ $fileName }}
-                                                                                    </div>
-                                                                                    <small
-                                                                                        class="text-muted">{{ strtoupper($fileExtension) }}
-                                                                                        file</small>
+                                                                                <div class="flex-grow-1 overflow-hidden">
+                                                                                    <div class="small text-truncate fw-medium">{{ $fileName }}</div>
+                                                                                    <small class="text-muted">{{ strtoupper($fileExtension) }} file</small>
                                                                                 </div>
-                                                                                <a href="{{ asset('storage/' . $filePath) }}"
-                                                                                    target="_blank"
-                                                                                    class="btn btn-sm btn-outline-primary ms-1">
-                                                                                    <i
-                                                                                        class="fa fa-eye"></i>
-                                                                                </a>
-                                                                            </div>
-                                                                        </div>
-                                                                        @else
-                                                                        <div
-                                                                            class="col-md-6 col-lg-4 mb-2">
-                                                                            <div
-                                                                                class="border rounded p-2 d-flex align-items-center">
-                                                                                <div class="bg-light rounded d-flex align-items-center justify-content-center me-2"
-                                                                                    style="width: 60px; height: 60px;">
-                                                                                    <i
-                                                                                        class="fa fa-file text-muted"></i>
-                                                                                </div>
-                                                                                <div
-                                                                                    class="flex-grow-1">
-                                                                                    <div
-                                                                                        class="small">
-                                                                                        File
-                                                                                        {{ $fileIndex + 1 }}
-                                                                                    </div>
-                                                                                    <small
-                                                                                        class="text-muted">Uploaded
-                                                                                        file</small>
+                                                                                <div class="d-flex gap-1 ms-2">
+                                                                                    <a href="{{ $fileUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary" title="View">
+                                                                                        <i class="fa fa-eye"></i>
+                                                                                    </a>
+                                                                                    <a href="{{ $fileUrl }}" download class="btn btn-sm btn-outline-success" title="Download">
+                                                                                        <i class="fa fa-download"></i>
+                                                                                    </a>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -2582,6 +2424,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             </div>
                                                             @endif
                                                             @endforeach
+                                                            @else
+                                                            <div class="text-muted"><i class="fa fa-info-circle me-1"></i> Not provided</div>
+                                                            @endif
+                                                        </div>
+                                                        @else
+                                                        <div class="mb-4">
+                                                            <div class="fw-semibold mb-2" style="color: #049399;">Marketing Materials:</div>
+                                                            <div class="text-muted"><i class="fa fa-info-circle me-1"></i> Not provided</div>
                                                         </div>
                                                         @endif
                                                     </div>

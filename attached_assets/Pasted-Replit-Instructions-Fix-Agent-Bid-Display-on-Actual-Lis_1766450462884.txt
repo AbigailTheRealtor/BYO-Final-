@@ -1,0 +1,305 @@
+Replit Instructions — Fix Agent Bid Display on Actual Listing (Hire a Tenant’s Agent)
+⚠️ Required Safeguards (Non-Destructive Only)
+
+DO NOT delete or rename any existing bid fields, tabs, view files, or database columns.
+
+DO NOT change bid submission logic. This request is display-only.
+
+If any fields are missing on display, retrieve them from the existing saved bid data (the same source used in the bid form).
+
+Make changes in small commits:
+
+fix-tenant-agent-bid-display-step1
+
+fix-tenant-agent-bid-display-step2
+
+1) “Private Compensation & Agreement Terms” must show the FULL bid (not partial)
+Problem
+
+On the listing display, the “Private Compensation & Agreement Terms” section is not showing the full bid details. It is missing the Agent Overview details that exist on the bid.
+
+Requirement
+
+Under Private Compensation & Agreement Terms, display the full bid content including:
+
+✅ Agent Overview & Qualifications (must display inside this section)
+
+Licensed Since
+
+Marketing Strategy
+
+What Sets This Agent Apart
+
+Services Offered (the services the agent checked)
+
+Formatting Requirement
+
+Match the Landlord version formatting:
+
+Use a section header like: Agent Overview & Qualifications
+
+Add colons after labels, exactly like:
+
+About Agent:
+
+Why Hire This Agent:
+
+Marketing Strategy:
+
+What Sets This Agent Apart:
+
+Also fix label text
+
+Change: “Why Should You Be Hired”
+
+To: “Why Hire This Agent:”
+…and keep the colon at the end.
+
+Acceptance Criteria
+
+On the listing display → the “Private Compensation & Agreement Terms” area includes:
+
+Agent Overview fields + Services Offered (not missing)
+
+Labels include colons and match the Landlord display style
+
+2) Fix the “Visit Website” link crash (null address error)
+Problem
+
+Clicking Visit Website causes an error:
+
+“Attempt to read property ‘address’ on null”
+
+Requirement
+
+The website link should open safely and never crash the listing page.
+
+Implementation Notes
+
+Do not route this through an action that expects a Listing/Property address.
+
+If the saved Agent Website URL exists:
+
+Render as a normal external link: target="_blank" rel="noopener noreferrer"
+
+If it is blank/null:
+
+Hide the “Visit Website” link entirely OR show “Not provided”
+
+Acceptance Criteria
+
+Clicking “Visit Website” never throws an exception
+
+No dependency on property address is used for this link
+
+3) Fix header text: “Reviews Links:” label
+Requirement
+
+Change display label from:
+
+“Reviews Links:”
+to:
+
+“Review Links:”
+
+(Keep colon.)
+
+4) “Broker Compensation & Agency Agreement Terms” display formatting must match your example
+Problem
+
+Current listing display formatting is not matching the clean bullet/section formatting you showed in your example image.
+
+Requirement
+
+Inside Broker Compensation & Agency Agreement Terms, format like your example:
+
+A) Tenant’s Broker Compensation (show as bullet list)
+
+Tenant’s Broker Commission Structure: ___
+
+Tenant’s Broker Lease Fee: ___
+
+Flat Fee Amount: ___ (only if applicable)
+
+Payment Timing for Broker Fees: ___
+
+Calendar Days To Pay: ___
+
+B) Purchase Fee Details (only if tenant selected purchase interest)
+
+Interested in Purchasing a Property: Yes/No
+
+Purchase Fee Type: ___
+
+Purchase Percentage: ___ (only if applicable)
+
+Additional Flat Fee: ___ (only if applicable)
+
+C) Lease-Option Details (only if tenant selected lease-option interest)
+
+Interested in a Lease-Option Agreement: Yes/No
+
+Compensation Type (When Option Is Created): ___
+
+Percentage Amount: ___ (if percent)
+
+Compensation Type (If Purchase Option Is Exercised): ___
+
+Flat Fee Amount: ___ (if flat fee)
+
+D) Legal Terms (always show if present)
+
+Protection Period Timeframe: ___
+
+Early Termination Fee: Yes/No
+
+Termination Fee Amount: ___
+
+Retainer Fee: Yes/No
+
+Retainer Fee Amount: ___
+
+Retainer Fee Application: ___
+
+Tenant Agency Agreement Timeframe: ___
+
+E) Brokerage Relationship
+
+Acceptable Brokerage Relationship: ___
+
+F) Additional Terms / Additional Details (if present)
+
+Additional Terms: ___
+
+Additional Details: ___
+
+Formatting Rules
+
+Keep clean section headings (like your example)
+
+Use consistent bullet formatting
+
+Use colons after each label
+
+Only show conditional subsections when applicable
+
+Acceptance Criteria
+
+Listing display matches the example layout you provided (clear headings + bullets)
+
+No empty headings (hide sections with no data)
+
+5) Services Offered section — keep ONE “Services” container but reinsert category subtitles (with emojis)
+Problem
+
+You want everything under one main Services section, but with category titles added back for clarity.
+
+Requirement
+
+On the listing display (agent bid display), show:
+
+One main header: Services:
+
+Under it, show category subtitles in bold with emojis, followed by the selected checklist items under that category.
+
+Residential category order (must match exactly)
+
+📣 Tenant Criteria Marketing & Promotion
+
+🔎 Property Search, Alerts & Matching
+
+🏡 Property Showings & Virtual Tours
+
+📝 Tenant Application Support
+
+📄 Lease Preparation & Execution
+
+🚚 Move-In Support & Coordination
+
+💡 Leasing Strategy & Guidance
+
+✍️ Additional Services
+
+Commercial category order (must match exactly)
+
+📣 Tenant Criteria Marketing & Promotion
+
+🔎 Property Search, Alerts & Matching
+
+🏡 Property Showings & Virtual Tours
+
+📝 Tenant Application Support
+
+📄 Lease Preparation, LOI & Execution
+
+🚚 Move-In Support & Coordination
+
+💡 Leasing Strategy & Guidance
+
+✍️ Additional Services
+
+Critical Rules
+
+Do not move any service items under “Additional Services” unless they belong there.
+
+Category subtitle must appear above its related items.
+
+Preserve spacing/indentation consistent with your example.
+
+Acceptance Criteria
+
+Services display is grouped with emojis + bold category titles
+
+Correct list for Residential vs Commercial
+
+Correct order
+
+6) Marketing Materials / Business Card display fixes (Agent Presentation & Promotional Materials)
+Problems
+
+Business card image is too small to read
+
+Marketing materials that the agent uploaded/linked are missing from the listing display
+
+User should be able to download
+
+Requirements
+
+A) Business Card
+
+Show a readable preview (larger)
+
+Add a Download link/button
+
+Clicking preview should open full-size (modal/lightbox or new tab)
+
+B) Marketing Materials
+Create a display area that shows all items the agent provided:
+
+If the agent uploaded files → show file name + Download link
+
+If the agent provided a link → show “Open Link” (new tab)
+
+If none → show “Not provided”
+
+Acceptance Criteria
+
+Business card can be viewed at readable size + downloaded
+
+Marketing materials are visible and downloadable/openable on the listing display
+
+Final QA Checklist (must confirm)
+
+Private Compensation & Agreement Terms includes: Licensed Since, Marketing Strategy, What Sets This Agent Apart, Services Offered
+
+“Why Hire This Agent:” label updated (and colons added like Landlord)
+
+Visit Website no longer errors (null-safe)
+
+“Review Links:” label corrected
+
+Broker Compensation section matches example formatting with conditional subsections
+
+Services section has ONE container + category subtitles with emojis in correct order (Residential & Commercial)
+
+Marketing materials and business card show preview + download

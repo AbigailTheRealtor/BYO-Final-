@@ -1,0 +1,210 @@
+Replit Instructions — Actual Listing Display (Agent Bids & Counter Bids)
+
+Applies to: Hire a Tenant’s Agent listings (Residential + Commercial)
+
+⚠️ Global Safeguards (Must Follow)
+
+DO NOT delete or rename existing fields, tooltips, or database tables
+
+DO NOT expose private compensation/agency terms publicly
+
+Changes should be display + permission logic only (use existing stored bid/listing status data)
+
+Agent anonymity + bid order must persist across refreshes
+
+1) Remove Compliance Notice from Public Listing Display
+
+Remove this notice entirely from the listing page:
+
+“Compliance Note: No Broker Compensation, Agency Agreement Terms, or Counter Offers are ever displayed publicly…”
+
+✅ Acceptance: Notice does not appear anywhere on the actual listing page.
+
+2) Make ALL Agent Bids Fully Anonymous (Public View)
+A) Anonymous Labels
+
+Replace all agent names/usernames/first names with:
+
+Agent 1, Agent 2, Agent 3… based on bid submission order.
+
+✅ Must remain consistent across refresh.
+
+B) “Last Bidder” Text
+
+Replace:
+
+“Abby is the last bidder.”
+
+With:
+
+“Agent X was the last bidder.”
+
+(X = most recent bid)
+
+3) Public Listing View — REMOVE These Fields Entirely
+
+Do not show publicly:
+
+❌ Licensed Since
+
+❌ Marketing Strategy
+
+❌ What Sets This Agent Apart
+
+❌ About Agent
+
+❌ Why Hire This Agent
+
+4) Public Listing View — Show ONLY This Information per Bid
+
+Each bid card shows only:
+
+A) Header
+
+Agent X
+
+Bid Status: Active / Accepted / Rejected / Countered
+
+B) Services Summary
+
+Offered Services: {#} Services
+
+Count each custom “Additional Service” as 1 service
+
+C) Broker Compensation Summary (Public-safe only)
+
+Show only:
+
+Tenant’s Broker Commission Structure
+
+Tenant’s Broker Lease Fee
+
+❌ Do not show amounts, timelines, retainers, protection period, termination fee, etc. publicly.
+
+D) Link
+
+Show link:
+
+View Full Services & Broker Compensation Terms
+
+5) “View Full Services & Broker Compensation Terms” — Gated Access
+If viewer is the listing creator
+
+Show:
+
+✅ All services selected (grouped + correct order)
+
+✅ Full Broker Compensation & Agency Agreement Terms (approved order)
+
+If viewer is not the listing creator
+
+Hide the link OR show “Private — visible only to listing creator”
+
+Do not expose any private bid content.
+
+6) Agent Permissions — Edit vs Withdraw vs Locked States (NEW)
+🔹 Agents CAN EDIT their bid only if ALL are true:
+
+Bid Status = Active
+
+No counter has been sent (no open counter thread)
+
+Bid is not accepted
+
+Listing Status is NOT Pending or Hired
+
+If Bidding Period listing: countdown is still active
+
+✅ If any of these fail → disable/hide Edit button.
+
+🔹 Agents CAN WITHDRAW their bid only if ALL are true:
+
+Bid Status = Active
+
+Bid not accepted
+
+No counter has been received (no open counter thread)
+
+Listing Status is NOT Pending or Hired
+
+✅ If any of these fail → disable/hide Withdraw button.
+
+🔹 Agents CANNOT EDIT OR WITHDRAW if ANY are true:
+
+Bid has been Accepted
+
+There is an open counter (either direction)
+
+Listing is Pending or Hired
+
+Bidding Period has ended (edit only must be blocked once timer ends)
+
+7) Bid Submission Lock (NEW)
+A) Disable/Hide “Bid Now”
+
+Once either is reached:
+
+Listing expiration date/time, OR
+
+Bidding Period end time
+
+Then:
+
+Hide or disable “Bid Now” button
+
+B) Server-side Enforcement (Required)
+
+Even if someone bypasses the UI, any attempt to submit a bid after expiration must:
+
+Fail validation
+
+Return an error message like:
+
+“Bidding is closed for this listing.”
+
+✅ Must be enforced at controller/service level, not just front-end.
+
+8) Counter-Bid Logic (Display + Prefill Rules)
+A) Public view
+
+Only bid status changes publicly:
+
+Active → Countered / Rejected / Accepted
+
+No terms or services change publicly.
+
+B) Private counter forms (Tenant + involved Agent only)
+
+Counter form must always prefill with the MOST RECENT:
+
+✅ Services selections
+
+✅ Broker Compensation & Agency Agreement Terms
+
+Rules:
+
+Tenant counters → load Agent’s latest
+
+Agent counters → load Tenant’s latest
+
+No blank forms, no re-entering data
+
+✅ Final Acceptance Checklist
+
+Compliance notice removed
+
+Bids anonymous (Agent 1, Agent 2…)
+
+“Last bidder” shows Agent X
+
+Public bid card shows only: status + services count + 2 comp fields
+
+Full details link is gated to listing creator only
+
+Edit/Withdraw rules implemented exactly
+
+“Bid Now” disabled/hidden after expiration or bidding end
+
+Server blocks late bids with error message
+
+Counter forms prefill latest terms/services
