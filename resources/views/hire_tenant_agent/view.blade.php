@@ -1549,146 +1549,118 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         @foreach (@$auction->bids as $bid)
                         @php
                             $agentNumber = $agentNumberMap[$bid->id] ?? $loop->iteration;
+                            $bidState = data_get($bid, 'accepted', 'active');
+                            $hasCounterBids = \App\Models\TenantCounterBidding::where('tenant_agent_auction_bid_id', data_get($bid, 'id'))->exists();
+                            $bidStatusLabel = match($bidState) {
+                                'accepted' => 'Accepted',
+                                'rejected' => 'Rejected',
+                                'countered' => 'Countered',
+                                default => $hasCounterBids ? 'Countered' : 'Active',
+                            };
+                            $bidStatusColor = match($bidState) {
+                                'accepted' => '#28a745',
+                                'rejected' => '#dc3545',
+                                'countered' => '#ffc107',
+                                default => $hasCounterBids ? '#ffc107' : '#1a4a6e',
+                            };
+                            $servicesList = (array) data_get($bid,'get.services',[]);
+                            $additionalServices = (array) data_get($bid,'get.other_services',[]);
+                            $totalServicesCount = count(array_filter($servicesList, fn($s) => $s !== 'Other')) + count($additionalServices);
+                            $isBidOwner = (data_get($bid, 'user_id') == $auth_id);
+                            $bidAccepted = data_get($bid, 'accepted');
+                            $canEditWithdraw = $isBidOwner && !$isExpired && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected';
+                            
+                            $commissionStructure = data_get($bid, 'get.commission_structure', 'Not specified');
+                            $leaseFeeType = data_get($bid, 'get.lease_fee_type', '');
+                            $leaseFeeFlat = data_get($bid, 'get.lease_fee_flat', '');
+                            $leaseFeePercentage = data_get($bid, 'get.lease_fee_percentage', '');
+                            
+                            $commissionFeeDisplay = 'Not specified';
+                            if ($leaseFeeType === 'Flat Fee' && $leaseFeeFlat) {
+                                $commissionFeeDisplay = 'Flat Fee: $' . number_format((float)$leaseFeeFlat, 0);
+                            } elseif ($leaseFeeType === 'Percentage' && $leaseFeePercentage) {
+                                $commissionFeeDisplay = 'Percentage: ' . $leaseFeePercentage . '%';
+                            } elseif ($leaseFeeType) {
+                                $commissionFeeDisplay = $leaseFeeType;
+                            }
                         @endphp
-                        <!-- Item loop -->
-                        <div class="accordion-header" style="cursor: pointer;" role="button" data-bs-toggle="collapse"
-                            data-bs-target="#item{{ data_get($bid, 'id') }}" aria-expanded="false"
-                            aria-controls="item{{ data_get($bid, 'id') }}">
-                            <div class="d-flex small mr-0 text-center p-2 border rounded mb-1" style="background: #f8f9fa;">
-                                <div class="col-1">
-                                    <span class="badge bg-primary">{{ $agentNumber }}</span>
+                        
+                        <!-- Bid Card - Match Screenshot Design -->
+                        <div class="card mb-3" style="border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                            <div class="card-body" style="padding: 20px;">
+                                
+                                <!-- A) Card Header Row: Agent X + Status -->
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0" style="font-weight: 700; color: #1a3a5c; font-size: 1.4rem;">Agent {{ $agentNumber }}</h5>
+                                    <span style="font-weight: 600; color: {{ $bidStatusColor }}; font-size: 1.1rem;">{{ $bidStatusLabel }}</span>
                                 </div>
-                                <div class="col-5">
-                                    Agent {{ $agentNumber }}
+                                <hr style="margin: 15px 0; border-color: #e0e0e0;">
+                                
+                                <!-- B) Offered Services Count Row -->
+                                <p class="mb-0" style="font-size: 1.1rem; color: #1a3a5c;">
+                                    <span style="font-weight: 600;">Offered Services:</span> {{ $totalServicesCount }} Services
+                                </p>
+                                <hr style="margin: 15px 0; border-color: #e0e0e0;">
+                                
+                                <!-- C) Broker Compensation Summary Section -->
+                                <h6 style="font-weight: 600; color: #1a3a5c; font-size: 1.15rem; margin-bottom: 12px;">Broker Compensation Summary:</h6>
+                                
+                                <div class="mb-2">
+                                    <p class="mb-1" style="font-size: 1rem; color: #333;">
+                                        <span style="font-weight: 600;">Tenant's Broker Commission Structure:</span>
+                                    </p>
+                                    <p class="mb-0" style="font-size: 1rem; color: #555;">{{ $commissionStructure }}</p>
                                 </div>
-                                <div class="col-3 text-right">
-                                    @php
-                                        $bidState = data_get($bid, 'state', 'active');
-                                        $hasCounterBids = \App\Models\TenantCounterBidding::where('tenant_agent_auction_bid_id', data_get($bid, 'id'))->exists();
-                                        $bidStatusLabel = match($bidState) {
-                                            'accepted' => 'Accepted',
-                                            'rejected' => 'Rejected',
-                                            'countered' => 'Countered',
-                                            default => $hasCounterBids ? 'Countered' : 'Active',
-                                        };
-                                        $bidStatusClass = match($bidState) {
-                                            'accepted' => 'bg-success',
-                                            'rejected' => 'bg-danger',
-                                            'countered' => 'bg-warning text-dark',
-                                            default => $hasCounterBids ? 'bg-warning text-dark' : 'bg-info',
-                                        };
-                                    @endphp
-                                    <span class="badge {{ $bidStatusClass }}">{{ $bidStatusLabel }}</span>
+                                
+                                <div class="mb-3">
+                                    <p class="mb-1" style="font-size: 1rem; color: #333;">
+                                        <span style="font-weight: 600;">Tenant's Broker Commission Fee:</span>
+                                    </p>
+                                    <p class="mb-0" style="font-size: 1rem; color: #555;">{{ $commissionFeeDisplay }}</p>
                                 </div>
-                                <div class="col-3 d-flex justify-content-end">
-                                    <span class="text-primary">Terms ↓</span>
+                                
+                                <!-- D) View Full Terms Link -->
+                                @if (data_get($auction, 'user_id') == $auth_id)
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#privateDataModal{{ data_get($bid, 'id') }}"
+                                   style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
+                                    View Full Services & Broker Compensation Terms
+                                </a>
+                                @else
+                                <span style="color: #888; font-style: italic; font-size: 0.95rem;">
+                                    <i class="fa fa-lock me-1"></i> Private — visible only to listing creator
+                                </span>
+                                @endif
+                                
+                                <!-- Edit/Withdraw Actions for Bid Owner -->
+                                @if ($canEditWithdraw)
+                                <div class="d-flex gap-2 mt-3">
+                                    <a href="{{ route('agent.tenant.agent.auction.bid', $auction->id) }}?edit={{ data_get($bid, 'id') }}" 
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="fa fa-edit me-1"></i> Edit Bid
+                                    </a>
+                                    <form action="{{ route('tenant.hire.agent.auction.bid.withdraw') }}" method="POST" 
+                                          onsubmit="return confirm('Are you sure you want to withdraw your bid? This action cannot be undone.');">
+                                        @csrf
+                                        <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                            <i class="fa fa-times-circle me-1"></i> Withdraw Bid
+                                        </button>
+                                    </form>
                                 </div>
-                            </div>
-                        </div>
-
-                        <div id="item{{ data_get($bid, 'id') }}" class="accordion-collapse collapse"
-                            aria-labelledby="headingOne" data-bs-parent="#accordionExample">
-                            <div class="accordion-body-padding" style="padding: 20px;">
-                                <div id="bidding_history_data">
-                                    <div>
-                                        @php 
-                                            $servicesList = (array) data_get($bid,'get.services',[]);
-                                            $additionalServices = (array) data_get($bid,'get.other_services',[]);
-                                            $totalServicesCount = count(array_filter($servicesList, fn($s) => $s !== 'Other')) + count($additionalServices);
-                                            $isBidOwner = (data_get($bid, 'user_id') == $auth_id);
-                                        @endphp
-                                        
-                                        <!-- PUBLIC SECTION - Visible to everyone -->
-                                        <!-- A) Header - Agent X + Status already shown above -->
-                                        
-                                        <!-- B) Services Summary -->
-                                        <div class="mb-3">
-                                            <p class="d-flex justify-content-between small" style="font-size:large; color: #333;">
-                                                <span class="fw-semibold">Offered Services:</span>
-                                                <span class="fw-normal" style="font-size: 16px; color: #555;">
-                                                    {{ $totalServicesCount }} Services
-                                                </span>
-                                            </p>
-                                        </div>
-                                        
-                                        <!-- C) Broker Compensation Summary (Public-Safe Only) -->
-                                        @if (data_get($bid, 'get.commission_structure'))
-                                        <div class="mb-2">
-                                            <p class="d-flex justify-content-between small" style="font-size:large; color: #333;">
-                                                <span class="fw-semibold">Commission Structure:</span>
-                                                <span class="fw-normal" style="font-size: 16px; color: #555;">
-                                                    {{ data_get($bid, 'get.commission_structure', 'Not specified') }}
-                                                </span>
-                                            </p>
-                                        </div>
-                                        @endif
-                                        
-                                        @if (data_get($bid, 'get.lease_fee_type'))
-                                        <div class="mb-2">
-                                            <p class="d-flex justify-content-between small" style="font-size:large; color: #333;">
-                                                <span class="fw-semibold">Lease Fee Type:</span>
-                                                <span class="fw-normal" style="font-size: 16px; color: #555;">
-                                                    {{ data_get($bid, 'get.lease_fee_type', 'Not specified') }}
-                                                </span>
-                                            </p>
-                                        </div>
-                                        @endif
-
-                                        <!-- D) Link to Full Terms -->
-                                        <!-- PRIVATE DATA SECTION - Only visible to listing owner -->
-                                        @if (data_get($auction, 'user_id') == $auth_id)
-                                        <!-- Button to trigger modal -->
-                                        <div class="text-center mt-3">
-                                            <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
-                                                data-bs-target="#privateDataModal{{ data_get($bid, 'id') }}"
-                                                style="padding: 12px 30px; width: 100%; background: #049399; border: none; border-radius: 8px; font-weight: 600; color: white;">
-                                                <i class="fa fa-eye me-2"></i> View Full Services & Broker Compensation Terms
-                                            </button>
-                                        </div>
-                                        @else
-                                        <!-- Non-owner sees disabled text -->
-                                        <div class="text-center mt-3">
-                                            <span class="text-muted" style="font-style: italic;">
-                                                <i class="fa fa-lock me-1"></i> Private — visible only to listing creator
-                                            </span>
-                                        </div>
-                                        @endif
-                                        
-                                        @php
-                                            $bidAccepted = data_get($bid, 'accepted');
-                                            $canEditWithdraw = $isBidOwner && !$isExpired && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected';
-                                        @endphp
-                                        
-                                        @if ($canEditWithdraw)
-                                        <div class="d-flex gap-2 mt-3 justify-content-center">
-                                            <a href="{{ route('agent.tenant.agent.auction.bid', $auction->id) }}?edit={{ data_get($bid, 'id') }}" 
-                                               class="btn btn-outline-primary btn-sm">
-                                                <i class="fa fa-edit me-1"></i> Edit Bid
-                                            </a>
-                                            <form action="{{ route('tenant.hire.agent.auction.bid.withdraw') }}" method="POST" 
-                                                  onsubmit="return confirm('Are you sure you want to withdraw your bid? This action cannot be undone.');">
-                                                @csrf
-                                                <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
-                                                <button type="submit" class="btn btn-outline-danger btn-sm">
-                                                    <i class="fa fa-times-circle me-1"></i> Withdraw Bid
-                                                </button>
-                                            </form>
-                                        </div>
-                                        @elseif ($isBidOwner && $isExpired)
-                                        <div class="text-center mt-3">
-                                            <span class="text-muted small">
-                                                <i class="fa fa-clock me-1"></i> Bidding has ended — edit/withdraw unavailable
-                                            </span>
-                                        </div>
-                                        @elseif ($isBidOwner && ($bidAccepted === 'accepted' || $bidAccepted === 'rejected'))
-                                        <div class="text-center mt-3">
-                                            <span class="text-muted small">
-                                                <i class="fa fa-lock me-1"></i> Bid {{ $bidAccepted }} — edit/withdraw unavailable
-                                            </span>
-                                        </div>
-                                        @endif
-                                    </div>
+                                @elseif ($isBidOwner && $isExpired)
+                                <div class="mt-3">
+                                    <span class="text-muted small">
+                                        <i class="fa fa-clock me-1"></i> Bidding has ended — edit/withdraw unavailable
+                                    </span>
                                 </div>
+                                @elseif ($isBidOwner && ($bidAccepted === 'accepted' || $bidAccepted === 'rejected'))
+                                <div class="mt-3">
+                                    <span class="text-muted small">
+                                        <i class="fa fa-lock me-1"></i> Bid {{ $bidAccepted }} — edit/withdraw unavailable
+                                    </span>
+                                </div>
+                                @endif
+                                
                             </div>
                         </div>
                         

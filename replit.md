@@ -78,3 +78,14 @@ I prefer detailed explanations. Ask before making major changes.
 - **Bid Submission Lock**: Server-side validation prevents bid submission after auction expiration or when listing is sold
 - **Counter-Bid Prefill**: Counter bid form now loads data from latest counter bid or original bid for easier editing
 - **Dashboard Enhancements**: Tenant agent dashboard shows bid status badges (Active/Countered/Accepted/Rejected) and per-bid actions (Edit/Withdraw)
+
+### Public Bid Card UI Redesign (December 2025)
+- **Card Layout**: Matches screenshot design exactly with proper spacing and dividers
+- **Header Row**: "Agent X" (bold, dark blue) on left, status (colored text) on right, horizontal divider below
+- **Offered Services Row**: "Offered Services: X Services" count including Additional Services entries, horizontal divider below
+- **Broker Compensation Summary**: Header + two fields only:
+  - "Tenant's Broker Commission Structure:" with value
+  - "Tenant's Broker Commission Fee:" with formatted value (e.g., "Flat Fee: $1,000")
+- **View Full Terms Link**: Blue text link at bottom, only visible to listing owner
+- **Privacy Enforced**: Non-owners see "Private — visible only to listing creator"
+- **Removed**: Accordion expand/collapse behavior - content now always visible in card format
