@@ -7,12 +7,7 @@
         </div>
     </div>
 </div>
-
-
-
 @if ($property_type === 'Residential Property')
-
-
     <!-- Marketing Services Section -->
 <div class="service-section mb-4">
     <h5 class="section-header bg-info text-white p-2 mb-3">📢 Tenant Criteria Marketing & Promotion</h5>
@@ -60,7 +55,6 @@
         @endforeach
     </div>
 </div>
-
 <!-- Showings & Virtual Tours Section -->
 <div class="service-section mb-4">
     <h5 class="section-header bg-info text-white p-2 mb-3">🏡 Property Showings & Virtual Tours</h5>
@@ -81,10 +75,6 @@
         @endforeach
     </div>
 </div>
-
-
-
-
 <!-- Tenant Application Support Section -->
 <div class="service-section mb-4">
     <h5 class="section-header bg-info text-white p-2 mb-3">📝 Tenant Application Support</h5>
@@ -105,7 +95,6 @@
         @endforeach
     </div>
 </div>
-
 <!-- Lease Preparation & Execution Section -->
 <div class="service-section mb-4">
     <h5 class="section-header bg-info text-white p-2 mb-3">📃 Lease Preparation & Execution</h5>
@@ -115,7 +104,6 @@
             'Coordinate lease negotiation with the Landlord’s Agent, Landlord, or Property Manager',
             'Assist with completing required lease disclosures and reviewing key lease terms',
             'Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties',
-            'Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods'
         ] as $service)
             <div class="form-check service-item">
                 <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
@@ -136,7 +124,6 @@
             'Confirm completion of any agreed-upon pre-move-in cleaning or repairs',
             'Provide a utility setup checklist and local provider resources',
             'Share a move-in checklist for documentation and property condition review',
-            'Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods'
         ] as $service)
             <div class="form-check service-item">
                 <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
@@ -148,7 +135,6 @@
         @endforeach
     </div>
 </div>
-
 <!-- Leasing Strategy & Guidance Section -->
 <div class="service-section mb-4">
     <h5 class="section-header bg-info text-white p-2 mb-3">💡 Leasing Strategy & Guidance</h5>
@@ -169,15 +155,8 @@
         @endforeach
     </div>
 </div>
-
-
 @endif
-
 @if ($property_type === 'Commercial Property')
-
-
-
-
 <!-- Tenant Criteria Marketing & Promotion Section -->
 <div class="service-section mb-4">
     <h5 class="section-header bg-info text-white p-2 mb-3">📢 Tenant Criteria Marketing & Promotion</h5>
@@ -204,7 +183,6 @@
         @endforeach
     </div>
 </div>
-
 <!-- Property Search, Alerts & Matching Section -->
 <div class="service-section mb-4">
     <h5 class="section-header bg-info text-white p-2 mb-3">🔍 Property Search, Alerts & Matching</h5>
@@ -245,7 +223,6 @@
         @endforeach
     </div>
 </div>
-
 <!-- Tenant Application Support Section -->
 <div class="service-section mb-4">
     <h5 class="section-header bg-info text-white p-2 mb-3">📝 Tenant Application Support</h5>
@@ -265,7 +242,6 @@
         @endforeach
     </div>
 </div>
-
 <!-- Lease Preparation, LOI & Execution Section -->
 <div class="service-section mb-4">
     <h5 class="section-header bg-info text-white p-2 mb-3">📃 Lease Preparation, LOI & Execution</h5>
@@ -297,7 +273,6 @@
             'Confirm completion of any agreed-upon pre-move-in repairs, cleaning, or buildout',
             'Provide a utility setup checklist and local provider resources',
             'Share a move-in checklist for documentation and property condition review',
-            'Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods'
         ] as $service)
             <div class="form-check service-item">
                 <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
@@ -309,7 +284,6 @@
         @endforeach
     </div>
 </div>
-
 <!-- Leasing Strategy & Guidance Section -->
 <div class="service-section mb-4">
     <h5 class="section-header bg-info text-white p-2 mb-3">💡 Leasing Strategy & Guidance</h5>
@@ -330,8 +304,6 @@
         @endforeach
     </div>
 </div>
-
-
 @endif
 {{-- <!-- Additional Services Section -->
 <div class="service-section mb-4">
@@ -345,24 +317,18 @@
                 Other – Specify additional services as needed.
             </label>
         </div>
-
         <!-- Other Services Input (shown when checkbox is checked) -->
         @if ($other_services_enabled)
             <div class="mb-3">
-
                 <textarea class="form-control" id="other-services-input" wire:model="other_services" rows="3"
                     placeholder="Please describe any additional services you require"></textarea>
             </div>
         @endif
     </div>
 </div> --}}
-
-
-
 <!-- Custom Services Section -->
 <div class="service-section mb-4">
     <h5 class="section-header bg-info text-white p-2 mb-3">✍️ Additional Services</h5>
-
     <div class="service-options">
         <!-- Toggle -->
         <div class="form-check service-item mb-3">
@@ -376,7 +342,6 @@
                 Other – Specify additional services as needed
             </label>
         </div>
-
         @if ($other_services_enabled)
             <div id="other-services-fieldset">
                 @foreach ($other_services as $i => $value)
@@ -384,7 +349,6 @@
                         <label class="form-label" for="other-services-input-{{ $i }}">
                             Specify any additional services requested
                         </label>
-
                         <input
                             id="other-services-input-{{ $i }}"
                             type="text"
@@ -392,11 +356,9 @@
                             placeholder="Specify any additional services requested"
                             wire:model="other_services.{{ $i }}"
                         >
-
                         @error("other_services.$i")
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
-
                         <button
                             type="button"
                             class="btn btn-danger btn-sm remove-service"
@@ -405,7 +367,6 @@
                     </div>
                 @endforeach
             </div>
-
             <button
                 type="button"
                 class="btn btn-primary btn-sm"

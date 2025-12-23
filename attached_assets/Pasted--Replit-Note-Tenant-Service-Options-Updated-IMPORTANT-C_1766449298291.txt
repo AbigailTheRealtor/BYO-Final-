@@ -1,0 +1,125 @@
+🔔 Replit Note — Tenant Service Options Updated (IMPORTANT)
+Context
+
+We have updated and finalized the Tenant service options for both Residential and Commercial listings under Hire a Tenant’s Agent.
+
+These updates are intentional and must now be reflected in:
+
+✅ The actual listing display (what users and agents see after creation)
+
+✅ Agent Bids → Offered Services (pre-checked behavior)
+
+❌ Not just the listing creation form
+
+The attached screenshots represent the final, approved service lists.
+
+✅ Required Change
+1️⃣ Sync listing display to the finalized service lists
+
+When a Tenant selects services during listing creation:
+
+The listing display must show those services
+
+Using the exact service titles
+
+In the exact order shown below
+
+With separate rendering logic for Residential vs Commercial
+
+Do NOT:
+
+Alphabetize
+
+Group differently
+
+Collapse or reorder sections
+
+Substitute legacy service labels
+
+🏠 Residential Tenant Services — Final Display Order (Must Match Exactly)
+
+Tenant Criteria Marketing & Promotion
+
+Property Search, Alerts & Matching
+
+Property Showings & Virtual Tours
+
+Tenant Application Support
+
+Lease Preparation & Execution
+
+Move-In Support & Coordination
+
+Leasing Strategy & Guidance
+
+Additional Services
+
+Each section must display only the services selected by the Tenant, in the same order they appear in the master list.
+
+🏢 Commercial Tenant Services — Final Display Order (Must Match Exactly)
+
+Tenant Criteria Marketing & Promotion
+
+Property Search, Alerts & Matching
+
+Property Showings & Virtual Tours
+
+Tenant Application Support
+
+Lease Preparation, LOI & Execution
+
+Move-In Support & Coordination
+
+Leasing Strategy & Guidance
+
+Additional Services
+
+Again:
+
+Order matters
+
+Labels must match exactly
+
+Only selected services should render
+
+🔁 Agent Bids Dependency (Important)
+
+Because Agent Bids → Offered Services pre-checks the Tenant’s selected services:
+
+The same updated service lists and order must be used
+
+Residential agents should never see Commercial-only services
+
+Commercial agents should never see Residential-only services
+
+This prevents mismatch between:
+
+What the Tenant selected
+
+What Agents are bidding on
+
+What the listing publicly displays
+
+⚠️ Safeguards (Do Not Break Existing Logic)
+
+❌ Do NOT delete existing service IDs
+
+❌ Do NOT rename database keys
+
+✅ If labels changed, update display text only
+
+✅ Preserve existing selected values for previously created listings
+
+✅ New listings should use the updated lists immediately
+
+✅ Acceptance Criteria (Must Pass)
+
+Residential listings show Residential services only, in the correct order
+
+Commercial listings show Commercial services only, in the correct order
+
+The listing display matches the attached screenshots exactly
+
+Agent Bids reflect the same services and order
+
+No services disappear or move positions unintentionally
