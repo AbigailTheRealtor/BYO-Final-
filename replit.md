@@ -134,3 +134,12 @@ I prefer detailed explanations. Ask before making major changes.
 - **Button Styling**: Counter Bid button changed from orange (btn-warning) to blue (btn-primary) matching Accept (green) and Reject (red)
 - **Counter Terms Table**: Created missing `tenant_counter_terms` and `tenant_counter_terms_meta` database tables
 - **CSS Updates**: Updated `.btn-counter` class from orange (#f0ad4e) to blue (#0d6efd)
+
+### Private Terms Modal Services Display Fix (December 2025)
+- **Single Source of Truth**: Private Terms modal now uses the SAME service categories as the Actual Listing display
+- **Exact Match Logic**: Changed from keyword-based matching (`str_contains`) to exact string matching (`in_array`) - identical to listing
+- **No Auto-Mapping**: Removed keyword-based grouping that was silently moving services into wrong categories
+- **No "Other Services" Bucket**: Removed the automatic "Other Services" bucket for unmatched items
+- **Additional Services Only**: Shows "✍️ Additional Services" section only when `other_services` array has actual entries
+- **Property Type Switch**: Correctly switches between Residential and Commercial category sets based on `$auction->get->property_type`
+- **Category Order**: Same category order as listing display (Marketing, Search, Showings, Application, Lease, Move-In, Strategy)
