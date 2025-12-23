@@ -96,3 +96,13 @@ I prefer detailed explanations. Ask before making major changes.
 - **Additional Services section**: Shows custom entries when provided, or "Other option selected" message when checked but empty
 - **Deduplication**: Removes duplicate service entries for clean display
 - **Fallback messages**: Appropriate error/warning/empty states for all scenarios
+
+### Bid Authorization Security Fixes (December 2025)
+- **Cross-Auction Protection**: All bid mutation methods now derive auction from bid's database relationship (not user-supplied auction_id)
+- **Relationship Verification**: If auction_id is provided in request, it must match the bid's actual auction or abort(403)
+- **accept_bid**: Validates bid exists, derives auction from bid, verifies listing owner, uses DB transaction, auto-rejects competing bids
+- **reject_bid**: Validates bid exists, derives auction from bid, verifies listing owner
+- **accept_counter_bid**: Traverses full chain (counter_bid -> original_bid -> auction), allows listing owner OR original bid owner to accept
+- **reject_counter_bid**: Traverses full chain, allows listing owner OR original bid owner to reject
+- **Transaction Safety**: Accept operations wrapped in DB::beginTransaction() for atomic state changes
+- **Idempotency**: All methods check if bid is already accepted/rejected before making changes
