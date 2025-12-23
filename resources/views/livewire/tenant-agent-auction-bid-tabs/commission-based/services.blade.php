@@ -124,6 +124,7 @@
             'Confirm completion of any agreed-upon pre-move-in cleaning or repairs',
             'Provide a utility setup checklist and local provider resources',
             'Share a move-in checklist for documentation and property condition review',
+            'Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods'
         ] as $service)
             <div class="form-check service-item">
                 <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
@@ -273,6 +274,7 @@
             'Confirm completion of any agreed-upon pre-move-in repairs, cleaning, or buildout',
             'Provide a utility setup checklist and local provider resources',
             'Share a move-in checklist for documentation and property condition review',
+            'Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods'
         ] as $service)
             <div class="form-check service-item">
                 <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
