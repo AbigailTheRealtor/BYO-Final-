@@ -1,0 +1,214 @@
+Replit Instructions — Agent Bids Fixes (Social Media Button + Marketing Materials Upload + Submit Error)
+
+Applies to: Hire a Tenant’s Agent → Agent Bid flow → Agent Presentation & Promotional Materials tab
+Goal: Fix UI styling + allow PDF uploads + allow Next/Submit without errors.
+
+Global Safeguards (Must Follow)
+
+DO NOT delete/rename any existing fields, tooltips, components, routes, or DB tables.
+
+Fixes must be non-destructive: update CSS + Livewire upload handling + model casts / DB column type only.
+
+Keep current layout and wording—only fix the issues below.
+
+1) “Add Social Media” Button Is White Unless Hovered
+Problem
+
+The button appears white by default and only turns blue on hover. It should be blue background + white text at all times.
+
+Required Fix
+
+Find the button markup for Add Social Media in the Agent Bid view (likely in:
+resources/views/livewire/tenant-agent-auction-bid-tabs/.../agent-overview.blade.php
+or the Agent Presentation tab blade).
+
+Ensure it uses a consistent primary button class, not hover-only styles.
+
+Implementation requirement (pick ONE approach):
+
+A) Bootstrap-style (preferred if Bootstrap is already used):
+
+Add/ensure classes: btn btn-primary
+
+Remove any conflicting btn-light, bg-white, text-dark, or custom class that overrides background.
+
+B) Custom CSS class (if project uses custom UI):
+
+Add class: btn-primary-solid (or whatever naming convention you use)
+
+In the relevant CSS file, force the default state:
+
+.btn-primary-solid {
+  background-color: #0d6efd !important;
+  color: #ffffff !important;
+  border-color: #0d6efd !important;
+}
+.btn-primary-solid:hover,
+.btn-primary-solid:focus {
+  background-color: #0b5ed7 !important;
+  color: #ffffff !important;
+  border-color: #0b5ed7 !important;
+}
+
+
+✅ Acceptance test: Button appears blue with white text without hovering, and stays readable on hover/focus.
+
+2) Marketing Materials PDF Upload Fails (“promoMaterials.1.files failed to upload”)
+Problem
+
+Uploading a PDF under Marketing Materials fails and shows:
+
+“The promoMaterials.1.files failed to upload.”
+
+This usually happens when multiple file uploads aren’t configured correctly (Livewire), validation is wrong, or the DB/save logic expects a string but receives an array of files.
+
+Required Fix (Livewire multi-file upload done correctly)
+
+Locate the Livewire component handling this tab (the one that owns promoMaterials).
+
+Confirm the file input is set up correctly:
+
+It must include multiple if you allow multiple files
+
+It must bind to a Livewire property that is an array
+
+Example:
+
+<input type="file" wire:model="promoMaterials" multiple>
+
+
+If your UI structure uses nested keys like promoMaterials.1.files, then your Livewire state must match that structure exactly.
+
+Validation rules (must support PDF)
+
+In the Livewire component:
+
+If promoMaterials is a flat array of files:
+
+protected $rules = [
+  'promoMaterials' => 'nullable|array',
+  'promoMaterials.*' => 'file|mimes:pdf,jpg,jpeg,png,doc,docx,ppt,pptx|max:10240',
+];
+
+
+If it’s nested like promoMaterials.*.files:
+
+protected $rules = [
+  'promoMaterials' => 'nullable|array',
+  'promoMaterials.*.files' => 'nullable|array',
+  'promoMaterials.*.files.*' => 'file|mimes:pdf,jpg,jpeg,png,doc,docx,ppt,pptx|max:10240',
+];
+
+Storage handling (must store file paths, not file arrays)
+
+When saving:
+
+Loop through files
+
+Store each file
+
+Save the resulting paths as JSON (not the UploadedFile objects)
+
+Example (flat array):
+
+$paths = [];
+
+if (is_array($this->promoMaterials)) {
+  foreach ($this->promoMaterials as $file) {
+    $paths[] = $file->store('promo-materials', 'public');
+  }
+}
+
+// Save $paths as JSON in DB
+$model->promo_materials = $paths; // requires JSON cast or json_encode
+
+
+✅ Acceptance test: Uploading 1+ PDFs works and persists; no “failed to upload” error.
+
+3) “Next” Button Doesn’t Work, Then Submit Throws “Error Saving Auction: Array to string conversion”
+Problem
+
+You can’t click Next on Agent Presentation & Promotional Materials, and when trying to submit you get:
+
+“Error saving auction: Array to string conversion”
+
+That error means somewhere you are trying to save an array (likely promoMaterials paths, social media array, etc.) into a string column OR into a string variable without encoding/casting.
+
+Required Fix (DB + Model cast must match saved data)
+
+Identify which field is causing the conversion error by checking:
+
+Laravel logs
+
+Stack trace
+
+The save method where the auction/bid is persisted
+
+Common culprits:
+
+promo_materials
+
+social_media
+
+marketing_materials
+
+any field that stores multiple items
+
+Fix it using one of these safe options:
+
+Option A (Preferred): Use JSON column + model casts
+
+Ensure the DB column type is json (or text if DB doesn’t support json cleanly).
+
+In the model:
+
+protected $casts = [
+  'promo_materials' => 'array',
+  'social_media' => 'array',
+];
+
+
+Then you can do:
+
+$model->promo_materials = $paths; // array
+$model->social_media = $this->social_media; // array
+
+Option B: json_encode on save (if you must keep string column)
+$model->promo_materials = json_encode($paths);
+
+Fix “Next” being blocked
+
+Your “Next” is likely disabled because:
+
+validation fails silently
+
+Livewire state isn’t updating
+
+the component throws the array/string error before advancing
+
+Requirements:
+
+Display validation errors under the upload field (so you can see what’s failing).
+
+Do not advance to next step if validation fails.
+
+Do not attempt to save UploadedFile objects directly—only save stored paths.
+
+✅ Acceptance tests:
+
+After uploading PDFs, Next is clickable and moves to the next tab/step.
+
+Submitting the bid succeeds (no “Array to string conversion”).
+
+Saved marketing materials are stored as paths and can be displayed later.
+
+4) UI: Uploaded Marketing Materials Must Be Downloadable Later (No Broken Links)
+
+Once files are saved as stored paths:
+
+Display each as a link using the storage URL:
+
+Storage::disk('public')->url($path)
+
+
+✅ Acceptance test: Uploaded PDFs show a working “Download” link.

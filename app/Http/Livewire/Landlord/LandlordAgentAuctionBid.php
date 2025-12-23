@@ -708,7 +708,10 @@ class LandlordAgentAuctionBid extends Component
             $bid->saveMeta('what_sets_you_apart', $this->what_sets_you_apart);
             $bid->saveMeta('marketing_plan', $this->marketing_plan);
             $bid->saveMeta('reviews_links', json_encode($this->reviews_links));
-            $bid->saveMeta('website_link', $this->website_link);
+            $websiteLinkValue = is_array($this->website_link) 
+                ? (count($this->website_link) > 0 ? $this->website_link[0] : '')
+                : $this->website_link;
+            $bid->saveMeta('website_link', $websiteLinkValue);
             $bid->saveMeta('social_media', json_encode($this->social_media));
 
             $bid->saveMeta('services', json_encode($this->services));
@@ -861,6 +864,7 @@ class LandlordAgentAuctionBid extends Component
                     if (!empty($entry['files'])) {
                         foreach ($entry['files'] as $file) {
                             if (!$file) continue;
+                            if (!is_object($file) || !method_exists($file, 'getClientOriginalExtension')) continue;
                             $ext = strtolower($file->getClientOriginalExtension());
                             if (!in_array($ext, $allowed, true)) continue;
 
@@ -873,12 +877,11 @@ class LandlordAgentAuctionBid extends Component
                     $toPersist[] = [
                         'type'  => $type,
                         'link'  => $link ?: null,
-                        'files' => $stored,   // array of storage paths
+                        'files' => $stored,
                     ];
                 }
 
-                // assuming you have a $bid model instance
-                $bid->promo_materials = $toPersist; // cast will JSON it
+                $bid->saveMeta('promoMaterials', json_encode($toPersist));
             }
 
             // Save agent information

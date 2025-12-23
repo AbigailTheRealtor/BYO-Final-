@@ -106,3 +106,11 @@ I prefer detailed explanations. Ask before making major changes.
 - **reject_counter_bid**: Traverses full chain, allows listing owner OR original bid owner to reject
 - **Transaction Safety**: Accept operations wrapped in DB::beginTransaction() for atomic state changes
 - **Idempotency**: All methods check if bid is already accepted/rejected before making changes
+
+### Agent Bid Form Fixes (December 2025)
+- **Add Social Media Button**: Fixed button styling to always appear blue with white text by adding explicit inline styles
+- **Marketing Materials PDF Upload**: Fixed file upload handling by adding object type validation before accessing file methods
+- **Array to String Conversion**: Fixed website_link saving - now properly extracts string value from array before storing
+- **PromoMaterials Storage**: Changed from direct property assignment to saveMeta() with proper JSON encoding
+- **Meta Key Consistency**: Uses `promoMaterials` (camelCase) key to match view expectations
+- **Download Links**: Marketing materials display includes View and Download buttons using proper storage URLs
