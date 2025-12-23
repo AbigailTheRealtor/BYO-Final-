@@ -269,13 +269,23 @@ class TenantAgentAuctionController extends Controller
 
     public function view($id, Request $request)
     {
-
-        // $tenant = TenantAgentAuction::with('meta')->find($id);
-        // return $tenant->get;
-        $page_data['auction'] = $auction = TenantAgentAuction::with(['bids.user', 'bids.meta'])->find($id);
-        $page_data['title'] = $auction->address;
+        $page_data['auction'] = $auction = TenantAgentAuction::with(['bids.user', 'bids.meta', 'user'])->find($id);
+        
+        // Handle null auction - return 404 if not found
+        if (!$auction) {
+            abort(404, 'Listing not found');
+        }
+        
+        $page_data['title'] = $auction->address ?? 'Listing Details';
         $page_data['counties'] = County::all();
         $page_data['id'] = $id;
+        
+        // Get the last bidder (most recent bid) for display
+        $page_data['lowest_bidder'] = $auction->bids->sortByDesc('created_at')->first();
+        
+        // Set auth_id safely for view permission checks
+        $page_data['auth_id'] = auth()->id();
+        
         return view('hire_tenant_agent.view', $page_data);
     }
 

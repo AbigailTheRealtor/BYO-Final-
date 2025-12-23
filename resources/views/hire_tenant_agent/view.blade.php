@@ -1523,9 +1523,23 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
         <div class="card higestBider">
             <div class="card-body card-body-padding">
-                @if ($lowest_bidder)
-                <p><b>{{ $lowest_bidder->user->first_name ?? '' }}</b> is the last bidder.</p>
-                {{-- <p><b>{{ $lowest_bidder->user->name ?? '' }}</b> is the lowest bidder.</p> --}}
+                @php
+                    // Create anonymous agent mapping based on bid submission order
+                    $bidsByOrder = $auction->bids->sortBy('created_at')->values();
+                    $agentNumberMap = [];
+                    foreach ($bidsByOrder as $index => $orderedBid) {
+                        $agentNumberMap[$orderedBid->id] = $index + 1;
+                    }
+                    // Find the last bidder's anonymous number
+                    $lastBidderNumber = null;
+                    if ($lowest_bidder) {
+                        $lastBidderNumber = $agentNumberMap[$lowest_bidder->id] ?? null;
+                    }
+                    // Check if current user is the listing owner
+                    $isListingOwner = ($auth_id == data_get($auction, 'user_id'));
+                @endphp
+                @if ($lowest_bidder && $lastBidderNumber)
+                <p><b>Agent {{ $lastBidderNumber }}</b> was the last bidder.</p>
                 @else
                 <p>No one has bid on this auction.</p>
                 @endif
@@ -1533,19 +1547,38 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     <div class="accordion-item border-0">
 
                         @foreach (@$auction->bids as $bid)
+                        @php
+                            $agentNumber = $agentNumberMap[$bid->id] ?? $loop->iteration;
+                        @endphp
                         <!-- Item loop -->
                         <div class="accordion-header" style="cursor: pointer;" role="button" data-bs-toggle="collapse"
                             data-bs-target="#item{{ data_get($bid, 'id') }}" aria-expanded="false"
                             aria-controls="item{{ data_get($bid, 'id') }}">
                             <div class="d-flex small mr-0 text-center p-2 border rounded mb-1" style="background: #f8f9fa;">
                                 <div class="col-1">
-                                    <span class="badge bg-primary">{{ $loop->iteration }}</span>
+                                    <span class="badge bg-primary">{{ $agentNumber }}</span>
                                 </div>
                                 <div class="col-5">
-                                    {{ data_get($bid, 'user.first_name', '') }}
+                                    Agent {{ $agentNumber }}
                                 </div>
                                 <div class="col-3 text-right">
-                                    {{ data_get($bid, 'get.agent_fee', data_get($bid, 'agent_fee', '')) }}
+                                    @php
+                                        $bidState = data_get($bid, 'state', 'active');
+                                        $hasCounterBids = \App\Models\TenantCounterBidding::where('tenant_agent_auction_bid_id', data_get($bid, 'id'))->exists();
+                                        $bidStatusLabel = match($bidState) {
+                                            'accepted' => 'Accepted',
+                                            'rejected' => 'Rejected',
+                                            'countered' => 'Countered',
+                                            default => $hasCounterBids ? 'Countered' : 'Active',
+                                        };
+                                        $bidStatusClass = match($bidState) {
+                                            'accepted' => 'bg-success',
+                                            'rejected' => 'bg-danger',
+                                            'countered' => 'bg-warning text-dark',
+                                            default => $hasCounterBids ? 'bg-warning text-dark' : 'bg-info',
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $bidStatusClass }}">{{ $bidStatusLabel }}</span>
                                 </div>
                                 <div class="col-3 d-flex justify-content-end">
                                     <span class="text-primary">Terms ↓</span>
@@ -1558,94 +1591,74 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             <div class="accordion-body-padding" style="padding: 20px;">
                                 <div id="bidding_history_data">
                                     <div>
-                                        <!-- Agent Information -->
-                                        {{-- <p class="d-flex justify-content-between  align-items-center small"
-                                                        style="color: #333;">
-                                                        <span>
-                                                            Agent First Name:
-                                                        </span>
-                                                        <span class="fw-normal" style="font-size: 16px; color: #555;">
-                                                            {{ data_get($bid, 'get.first_name', '') }}
-                                        </span>
-                                        </p> --}}
-                                        <p class="d-flex justify-content-between small"
-                                            style="font-size:large; color: #333;">
-                                            Licensed Since:
-                                            <span class="fw-normal" style="font-size: 16px; color: #555;">
-                                                {{ data_get($bid, 'get.year_licensed', '') }}
-                                            </span>
-                                        </p>
-                                        <p class="d-flex justify-content-between small"
-                                            style="font-size:large; color: #333;">
-                                            Marketing Strategy:
-                                            <span class="fw-normal" style="font-size: 16px; color: #555;">
-                                                {{ data_get($bid, 'get.marketing_plan', '') }}
-                                            </span>
-                                        </p>
-                                        <p class="d-flex justify-content-between small"
-                                            style="font-size:large; color: #333;">
-                                            What Sets This Agent Apart:
-                                            <span class="fw-normal" style="font-size: 16px; color: #555;">
-                                                {{ data_get($bid, 'get.what_sets_you_apart', '') }}
-                                            </span>
-                                        </p>
-
-                                        {{-- <p class="d-flex justify-content-between small"
-                                                        style="font-size:large; color: #333;">
-                                                        Why Should You Be Hired as Their Agent?
-                                                    </p>
-                                                    <p class="d-flex justify-content-between small"
-                                                        style="font-size:large; color: #333;">
-                                                        <span class="fw-normal" style="font-size: 16px; color: #555;">
-                                                            {{ data_get($bid, 'get.why_hire_you', '') }}
-                                        </span>
-                                        </p> --}}
-
-                                        <!-- Services Offered -->
-                                        @php $servicesList = (array) data_get($bid,'get.services',[]); @endphp
-                                        @if (!empty($servicesList))
-                                        <div>
-                                            <label style="font-size: large;">
-                                                Services Offered:</label>
-                                            <ul class="services services-offered">
-                                                @foreach ($servicesList as $service)
-                                                @if ($service == 'Other')
-                                                @continue
-                                                @endif
-                                                <li class="alert-font"
-                                                    style="font-size: 16px; margin-top:15px;">
-                                                    {{ $service }}
-                                                </li>
-                                                @endforeach
-                                            </ul>
+                                        @php 
+                                            $servicesList = (array) data_get($bid,'get.services',[]);
+                                            $additionalServices = (array) data_get($bid,'get.other_services',[]);
+                                            $totalServicesCount = count(array_filter($servicesList, fn($s) => $s !== 'Other')) + count($additionalServices);
+                                            $isBidOwner = (data_get($bid, 'user_id') == $auth_id);
+                                        @endphp
+                                        
+                                        <!-- PUBLIC SECTION - Visible to everyone -->
+                                        <!-- A) Header - Agent X + Status already shown above -->
+                                        
+                                        <!-- B) Services Summary -->
+                                        <div class="mb-3">
+                                            <p class="d-flex justify-content-between small" style="font-size:large; color: #333;">
+                                                <span class="fw-semibold">Offered Services:</span>
+                                                <span class="fw-normal" style="font-size: 16px; color: #555;">
+                                                    {{ $totalServicesCount }} Services
+                                                </span>
+                                            </p>
+                                        </div>
+                                        
+                                        <!-- C) Broker Compensation Summary (Public-Safe Only) -->
+                                        @if (data_get($bid, 'get.commission_structure'))
+                                        <div class="mb-2">
+                                            <p class="d-flex justify-content-between small" style="font-size:large; color: #333;">
+                                                <span class="fw-semibold">Commission Structure:</span>
+                                                <span class="fw-normal" style="font-size: 16px; color: #555;">
+                                                    {{ data_get($bid, 'get.commission_structure', 'Not specified') }}
+                                                </span>
+                                            </p>
+                                        </div>
+                                        @endif
+                                        
+                                        @if (data_get($bid, 'get.lease_fee_type'))
+                                        <div class="mb-2">
+                                            <p class="d-flex justify-content-between small" style="font-size:large; color: #333;">
+                                                <span class="fw-semibold">Lease Fee Type:</span>
+                                                <span class="fw-normal" style="font-size: 16px; color: #555;">
+                                                    {{ data_get($bid, 'get.lease_fee_type', 'Not specified') }}
+                                                </span>
+                                            </p>
                                         </div>
                                         @endif
 
-                                        {{-- @php $otherServicesList = (array) data_get($bid,'get.other_services',[]); @endphp
-                                                    @if (!empty($otherServicesList))
-                                                        <div>
-                                                            <label style="font-size: large;">Other Services Offered by the
-                                                                Agent:</label>
-                                                            <ul class="services services-offered">
-                                                                @foreach ($otherServicesList as $service)
-                                                                    <li style="font-size: 16px; margin-top:15px;">
-                                                                        {{ $service }}</li>
-                                        @endforeach
-                                        </ul>
+                                        <!-- D) Link to Full Terms -->
+                                        <!-- PRIVATE DATA SECTION - Only visible to listing owner -->
+                                        @if (data_get($auction, 'user_id') == $auth_id)
+                                        <!-- Button to trigger modal -->
+                                        <div class="text-center mt-3">
+                                            <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                                                data-bs-target="#privateDataModal{{ data_get($bid, 'id') }}"
+                                                style="padding: 12px 30px; width: 100%; background: #049399; border: none; border-radius: 8px; font-weight: 600; color: white;">
+                                                <i class="fa fa-eye me-2"></i> View Full Services & Broker Compensation Terms
+                                            </button>
+                                        </div>
+                                        @else
+                                        <!-- Non-owner sees disabled text -->
+                                        <div class="text-center mt-3">
+                                            <span class="text-muted" style="font-style: italic;">
+                                                <i class="fa fa-lock me-1"></i> Private — visible only to listing creator
+                                            </span>
+                                        </div>
+                                        @endif
                                     </div>
-                                    @endif --}}
-
-                                    <!-- PRIVATE DATA SECTION - Only visible to listing owner -->
-                                    @if (data_get($auction, 'user_id') == $auth_id)
-                                    <!-- Button to trigger modal -->
-                                    <div class="text-center">
-                                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
-                                            data-bs-target="#privateDataModal{{ data_get($bid, 'id') }}"
-                                            style="margin-top: -25px; padding: 12px 30px; width: 100%; background: #049399; border: none; border-radius: 8px; font-weight: 600; color: white;">
-                                            <i class="fa fa-lock me-2"></i> View Private Compensation &
-                                            Agreement Terms
-                                        </button>
-                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        @if (data_get($auction, 'user_id') == $auth_id)
 
                                     <!-- Private Data Modal -->
                                     <div class="modal fade"
@@ -3427,14 +3440,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </div>
                     @endforeach
 
-                    @if ($auction->bids->count() > 0)
-                    <div class="alert alert-warning mt-3 p-2 small">
-                        <strong> 🛡️ Compliance Note: </strong> No Broker Compensation, Agency Agreement
-                        Terms,
-                        or Counter Offers are ever displayed publicly. These must remain private to avoid
-                        antitrust/commission advertising issues.
-                    </div>
-                    @endif
 
                 </div>
             </div>

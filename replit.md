@@ -61,3 +61,13 @@ I prefer detailed explanations. Ask before making major changes.
 - **Services Offered Display**: Added category subtitles with emoji prefixes in correct order for Residential and Commercial property types
 - **Business Card Display**: Larger preview (450px), clickable full-size view, View Full Size and Download buttons
 - **Marketing Materials Display**: Improved with Open Link and Download buttons, better styling, "Not provided" message when empty
+
+### Agent Bid Privacy & Anonymity (December 2025)
+- **Agent Anonymity**: Replaced agent names with "Agent 1", "Agent 2", etc. based on bid submission order
+- **Last Bidder Display**: Changed "X is the last bidder" to "Agent X was the last bidder"
+- **Compliance Notice Removed**: Removed the "No Broker Compensation, Agency Agreement Terms..." alert from public view
+- **Private Fields Hidden**: Licensed Since, Marketing Strategy, What Sets This Agent Apart, About Agent, Why Hire This Agent are now only visible in the private modal for listing owner
+- **Public Bid Cards**: Show only Services count, Commission Structure type, and Lease Fee Type - no dollar amounts, retainers, or protection periods
+- **Gated Full Terms**: "View Full Services & Broker Compensation Terms" button only visible to listing creator, others see "Private — visible only to listing creator"
+- **Bid Status Badges**: Active/Countered/Accepted/Rejected status badges with color coding (blue/yellow/green/red)
+- **Controller Null Safety**: Added 404 handling and null safety to TenantAgentAuctionController::view()
