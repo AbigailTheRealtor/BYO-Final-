@@ -143,3 +143,13 @@ I prefer detailed explanations. Ask before making major changes.
 - **Additional Services Only**: Shows "✍️ Additional Services" section only when `other_services` array has actual entries
 - **Property Type Switch**: Correctly switches between Residential and Commercial category sets based on `$auction->get->property_type`
 - **Category Order**: Same category order as listing display (Marketing, Search, Showings, Application, Lease, Move-In, Strategy)
+
+### Accept/Counter/Reject Button Fixes (December 2025)
+- **Button Styling Updated**: Enhanced CSS with `!important` overrides to ensure buttons always display correct colors:
+  - Accept: Solid green (#28a745) with white text
+  - Counter: Solid blue (#0d6efd) with white text
+  - Reject: Solid red (#dc3545) with white text
+- **Consistent Sizing**: Added padding, min-width, border-radius to `.btn-custom` base class
+- **Database Columns Added**: Migration added `accepted_date`, `rejected_date`, `countered_date` (nullable timestamps) to `tenant_agent_auction_bids` table
+- **Counter Term Broker Fee Timing**: Added missing `broker_fee_timing`, `broker_fee_timing_other`, `broker_fee_days_from_rent`, `broker_fee_days_after_lease`, `broker_fee_days_after_rent` properties to TenantAgentAuctionCounterTerm Livewire component
+- **Model PHPDoc**: Added @method annotations to TenantCounterTerm model for static analysis compatibility
