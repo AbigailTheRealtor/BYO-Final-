@@ -1,0 +1,144 @@
+Replit Instructions — Public Bid Card UI (Hire a Tenant’s Agent Listings)
+
+Applies to: Hire a Tenant’s Agent listings (Residential + Commercial)
+Goal: Each bid card must match the attached screenshot design exactly.
+
+1) Public Bid Card Layout (Match Screenshot Exactly)
+
+For each bid displayed on the listing page, render a single bid card with this structure:
+
+A) Card Header Row
+
+Left: Agent X (anonymous label; Agent 1, Agent 2, Agent 3… based on submission order)
+
+Right: Active (or Countered, Rejected, Accepted) shown as the bid status label
+
+✅ Add a thin horizontal divider line below the header row.
+
+B) Offered Services Count Row
+
+Show exactly:
+
+Offered Services: {#} Services
+
+Rules:
+
+Count all checked services as 1 each.
+
+If “Additional Services” has custom typed entries, each custom entry counts as 1 service.
+
+Display the total as a whole number.
+
+✅ Add a thin horizontal divider line below this row.
+
+C) Broker Compensation Summary Section
+
+Show header:
+
+Broker Compensation Summary:
+
+Then show ONLY these two fields (public-safe summary):
+
+Tenant’s Broker Commission Structure:
+{value} (example: Included in Offer)
+
+Tenant’s Broker Commission Fee:
+{value} (example: Flat Fee: $1,000)
+
+✅ The label text must be bold like the screenshot.
+
+⚠️ IMPORTANT:
+
+Public card may show the fee amount like in the screenshot ONLY for Tenant’s Broker Commission Fee.
+
+Do NOT show any other compensation fields publicly (timing, days to pay, retainers, termination fees, protection period, etc.).
+
+D) Link (Bottom of Card)
+
+Show a single link (blue text) exactly:
+
+View Full Services & Broker Compensation Terms
+
+This link must appear below the summary section like the screenshot.
+
+2) Anonymity Rules (Must Persist)
+
+Replace any agent name, username, or first name with Agent X
+
+X is based on the order the bids were submitted (oldest = Agent 1)
+
+This must persist across refresh (store ordering using bid created_at ordering + stable mapping)
+
+Also update “last bidder” text to:
+Agent X was the last bidder.
+
+3) Fix “Bid Details Shows for 1 Second Then Disappears” (Critical)
+
+When user clicks View Full Services & Broker Compensation Terms, the expanded content/modal must NOT flash and disappear.
+
+Required behavior:
+
+Clicking the link opens a modal or expandable panel that stays open until user closes it.
+
+Do NOT clear state after loading.
+
+Do NOT remount component by changing key values.
+
+Permission checks must happen before rendering details.
+
+Allowed states:
+
+Loading: show “Loading bid details…”
+
+Error: show “Unable to load bid details. Please refresh.”
+
+Success: show full details (see section 4)
+
+❌ Never show a blank white panel.
+
+4) Link Behavior — Gated Access (Privacy Rules)
+If viewer = Listing Creator:
+
+Show full details in the modal/panel:
+
+A) Full Services list
+
+Show all selected services
+
+Grouped under the correct category titles
+
+Order must match the Hire-a-Tenant flow exactly (Residential vs Commercial)
+
+B) Full Broker Compensation & Agency Agreement Terms
+
+Show in the approved order/format (all terms)
+
+If viewer ≠ Listing Creator:
+
+Either:
+
+Hide the link entirely, OR
+
+Show it but clicking displays:
+“Private — visible only to listing creator.”
+
+Do not fetch the private bid payload for non-authorized viewers.
+
+5) Bid Card Must Be Individually Actionable (Per Bid)
+
+If Accept / Reject / Counter actions exist:
+
+They must apply to the specific bid card selected
+
+Not global to the listing
+
+Dashboard must also show each bid’s current status clearly
+
+6) Acceptance Checklist
+
+✅ Bid card matches screenshot (spacing + dividers + label ordering)
+✅ “Agent X” anonymity persists across refresh
+✅ Services count correct (including Additional Services entries)
+✅ Only 2 comp fields shown publicly
+✅ Link opens details and does NOT disappear
+✅ Full details visible only to listing creator

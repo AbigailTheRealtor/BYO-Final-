@@ -501,6 +501,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Route::get('/hire/agent/auctions/list', [LivewireTenantAgentAuctionController::class, 'list'])->name('agent.auctions.list');
         Route::post('hire/agent/auction/bid/accept', [TenantAgentAuctionBidController::class, 'accept_bid'])->name('hire.agent.auction.bid.accept');
         Route::post('hire/agent/auction/bid/reject', [TenantAgentAuctionBidController::class, 'reject_bid'])->name('hire.agent.auction.bid.reject');
+        Route::post('hire/agent/auction/bid/withdraw', [TenantAgentAuctionBidController::class, 'withdraw_bid'])->name('hire.agent.auction.bid.withdraw');
 
         Route::post('hire/agent/auction/bid/counter', [TenantAgentAuctionBidController::class, 'counter_bid'])->name('hire.agent.auction.bid.counter');
         Route::post('hire/agent/auction/counter/bid/accept', [TenantAgentAuctionBidController::class, 'accept_counter_bid'])->name('hire.agent.auction.counter.bid.accept');

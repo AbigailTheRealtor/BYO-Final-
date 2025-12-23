@@ -195,4 +195,45 @@ class TenantAgentAuctionBidController extends Controller
             return redirect()->back()->with('error', 'Some problem in bid acceptance!');
         }
     }
+
+    public function withdraw_bid(Request $request)
+    {
+        $bid = TenantAgentAuctionBid::find($request->bid_id);
+        
+        if (!$bid) {
+            return redirect()->back()->with('error', 'Bid not found.');
+        }
+        
+        if ($bid->user_id !== Auth::id()) {
+            return redirect()->back()->with('error', 'You can only withdraw your own bid.');
+        }
+        
+        if ($bid->accepted === 'accepted') {
+            return redirect()->back()->with('error', 'Cannot withdraw an accepted bid.');
+        }
+        
+        if ($bid->accepted === 'rejected') {
+            return redirect()->back()->with('error', 'Cannot withdraw a rejected bid.');
+        }
+        
+        $auction = TenantAgentAuction::find($bid->tenant_agent_auction_id);
+        if (!$auction) {
+            return redirect()->back()->with('error', 'Auction not found.');
+        }
+        
+        if ($auction->is_sold) {
+            return redirect()->back()->with('error', 'Cannot withdraw a bid on a sold listing.');
+        }
+        
+        $endDate = strtotime($auction->end_date . ' ' . ($auction->end_time ?? '23:59:59'));
+        if (time() > $endDate) {
+            return redirect()->back()->with('error', 'Cannot withdraw a bid after the auction has ended.');
+        }
+        
+        TenantCounterBidding::where('tenant_agent_auction_bid_id', $bid->id)->delete();
+        $bid->meta()->delete();
+        $bid->delete();
+        
+        return redirect()->back()->with('success', 'Your bid has been withdrawn successfully.');
+    }
 }

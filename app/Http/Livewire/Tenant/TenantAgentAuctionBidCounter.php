@@ -338,12 +338,100 @@ class TenantAgentAuctionBidCounter extends Component
     {
         $this->activeTab = $index;
     }
-    public function mount($pab, $bidId)
+    public function mount($pab, $bidId, $parent_counter_id = null)
     {
-
         $this->pab   = $pab;
         $this->bidId = $bidId;
+        $this->parent_counter_id = $parent_counter_id;
         $this->property_type = $pab->get->property_type;
+        
+        $sourceData = null;
+        
+        if ($parent_counter_id) {
+            $latestCounter = TenantCounterBidding::find($parent_counter_id);
+            if ($latestCounter) {
+                $sourceData = $latestCounter->get;
+            }
+        }
+        
+        if (!$sourceData) {
+            $latestCounter = TenantCounterBidding::where('tenant_agent_auction_bid_id', $bidId)
+                ->orderBy('created_at', 'desc')
+                ->first();
+            if ($latestCounter) {
+                $sourceData = $latestCounter->get;
+            }
+        }
+        
+        if (!$sourceData) {
+            $originalBid = \App\Models\TenantAgentAuctionBid::find($bidId);
+            if ($originalBid) {
+                $sourceData = $originalBid->get;
+            }
+        }
+        
+        if ($sourceData) {
+            $this->commission_structure = $sourceData->commission_structure ?? '';
+            $this->lease_fee_type = $sourceData->lease_fee_type ?? '';
+            $this->lease_fee_flat = $sourceData->lease_fee_flat ?? '';
+            $this->lease_fee_percentage = $sourceData->lease_fee_percentage ?? '';
+            $this->lease_fee_flat_amount = $sourceData->lease_fee_flat_amount ?? '';
+            $this->lease_fee_percentage_amount = $sourceData->lease_fee_percentage_amount ?? '';
+            $this->lease_fee_mixed_flat = $sourceData->lease_fee_mixed_flat ?? '';
+            $this->lease_fee_mixed_percentage = $sourceData->lease_fee_mixed_percentage ?? '';
+            $this->lease_fee_percentage_monthly_rent = $sourceData->lease_fee_percentage_monthly_rent ?? '';
+            $this->lease_fee_flat_combo = $sourceData->lease_fee_flat_combo ?? '';
+            $this->lease_fee_percentage_combo = $sourceData->lease_fee_percentage_combo ?? '';
+            $this->lease_fee_percentage_net = $sourceData->lease_fee_percentage_net ?? '';
+            $this->lease_fee_flat_combo_net = $sourceData->lease_fee_flat_combo_net ?? '';
+            $this->lease_fee_percentage_combo_net = $sourceData->lease_fee_percentage_combo_net ?? '';
+            $this->lease_fee_other = $sourceData->lease_fee_other ?? '';
+            $this->lease_fee_months = $sourceData->lease_fee_months ?? '';
+            
+            $this->interested_purchase_fee_type = $sourceData->interested_purchase_fee_type ?? '';
+            $this->purchase_fee_type = $sourceData->purchase_fee_type ?? '';
+            $this->purchase_fee_flat = $sourceData->purchase_fee_flat ?? '';
+            $this->purchase_fee_percentage = $sourceData->purchase_fee_percentage ?? '';
+            $this->purchase_fee_percentage_combo = $sourceData->purchase_fee_percentage_combo ?? '';
+            $this->purchase_fee_flat_combo = $sourceData->purchase_fee_flat_combo ?? '';
+            $this->purchase_fee_mixed_percentage = $sourceData->purchase_fee_mixed_percentage ?? '';
+            $this->purchase_fee_mixed_flat = $sourceData->purchase_fee_mixed_flat ?? '';
+            $this->purchase_fee_other = $sourceData->purchase_fee_other ?? '';
+            
+            $this->interested_lease_option_agreement = $sourceData->interested_lease_option_agreement ?? '';
+            $this->lease_option_fee_type = $sourceData->lease_option_fee_type ?? '';
+            $this->lease_option_fee_flat = $sourceData->lease_option_fee_flat ?? '';
+            $this->lease_option_fee_percentage = $sourceData->lease_option_fee_percentage ?? '';
+            $this->lease_option_fee_other = $sourceData->lease_option_fee_other ?? '';
+            $this->lease_type = $sourceData->lease_type ?? 'percent';
+            $this->lease_value = $sourceData->lease_value ?? '';
+            $this->purchase_type = $sourceData->purchase_type ?? 'percent';
+            $this->purchase_value = $sourceData->purchase_value ?? '';
+            
+            $this->protection_period = $sourceData->protection_period ?? '';
+            $this->early_termination_fee = $sourceData->early_termination_fee ?? '';
+            $this->early_termination_fee_option = $sourceData->early_termination_fee_option ?? '';
+            $this->early_termination_fee_amount = $sourceData->early_termination_fee_amount ?? '';
+            $this->retainer_fee = $sourceData->retainer_fee ?? 'No';
+            $this->retainer_fee_option = $sourceData->retainer_fee_option ?? '';
+            $this->retainer_fee_amount = $sourceData->retainer_fee_amount ?? '';
+            $this->retainer_fee_application = $sourceData->retainer_fee_application ?? '';
+            $this->agreement_timeframe = $sourceData->agreement_timeframe ?? '';
+            $this->agreement_timeframe_custom = $sourceData->agreement_timeframe_custom ?? '';
+            $this->agency_agreement_timeframe = $sourceData->agency_agreement_timeframe ?? '';
+            $this->agency_agreement_custom = $sourceData->agency_agreement_custom ?? '';
+            $this->brokerage_relationship = $sourceData->brokerage_relationship ?? '';
+            $this->additional_terms = $sourceData->additional_terms ?? '';
+            $this->additional_details = $sourceData->additional_details ?? '';
+            $this->additional_details_broker = $sourceData->additional_details_broker ?? '';
+            
+            $services = $sourceData->services ?? '';
+            $this->services = is_string($services) ? json_decode($services, true) ?? [] : (array) $services;
+            
+            $otherServices = $sourceData->other_services ?? '';
+            $this->other_services = is_string($otherServices) ? json_decode($otherServices, true) ?? [] : (array) $otherServices;
+            $this->other_services_enabled = !empty($this->other_services);
+        }
     }
 
 
@@ -363,6 +451,17 @@ class TenantAgentAuctionBidCounter extends Component
     public function submit()
     {
         try {
+            $endDate = strtotime($this->pab->end_date . ' ' . ($this->pab->end_time ?? '23:59:59'));
+            if (time() > $endDate) {
+                session()->flash('error', 'This auction has ended. Counter bids are no longer available.');
+                return redirect()->route('tenant.agent.auction.view', $this->pab->id);
+            }
+            
+            if ($this->pab->is_sold) {
+                session()->flash('error', 'This listing has been sold. Counter bids are no longer available.');
+                return redirect()->route('tenant.agent.auction.view', $this->pab->id);
+            }
+            
             DB::beginTransaction();
 
             // 1. Create main counter bidding record

@@ -164,26 +164,51 @@
                                             <th>City</th>
                                             <th>State</th>
                                             <th>Creation Date</th>
-                                            <th class="text-center">Bids</th>
+                                            <th class="text-center">Bid Status</th>
                                             <th class="text-center">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <div>
                                             @foreach ($auctions as $auction)
-
+                                                @php
+                                                    $userBid = $auction->bids->where('user_id', auth()->id())->first();
+                                                    $hasCounterBids = $userBid ? \App\Models\TenantCounterBidding::where('tenant_agent_auction_bid_id', $userBid->id)->exists() : false;
+                                                    $bidState = $userBid ? $userBid->accepted : null;
+                                                    $bidStatusLabel = match($bidState) {
+                                                        'accepted' => 'Accepted',
+                                                        'rejected' => 'Rejected',
+                                                        'countered' => 'Countered',
+                                                        default => $hasCounterBids ? 'Countered' : 'Active',
+                                                    };
+                                                    $bidStatusClass = match($bidState) {
+                                                        'accepted' => 'bg-success',
+                                                        'rejected' => 'bg-danger',
+                                                        'countered' => 'bg-warning text-dark',
+                                                        default => $hasCounterBids ? 'bg-warning text-dark' : 'bg-info',
+                                                    };
+                                                    $endDate = strtotime($auction->end_date . ' ' . ($auction->end_time ?? '23:59:59'));
+                                                    $isExpired = time() > $endDate;
+                                                    $canEditWithdraw = $userBid && !$isExpired && $bidState !== 'accepted' && $bidState !== 'rejected';
+                                                @endphp
                                                 <tr>
                                                     <td class="text-center">{{ $loop->iteration }}</td>
                                                     <td><a
                                                             href="{{ route('tenant.agent.view.auction.view', @$auction->id) }}">{{ @$auction->title }}</a>
                                                     </td>
-                                                    <td>{{ $auction->get->counties[0] }}</td>
+                                                    <td>{{ $auction->get->counties[0] ?? '' }}</td>
 
-                                                    <td> {{ $auction->get->cities[0] }}</td>
+                                                    <td> {{ $auction->get->cities[0] ?? '' }}</td>
                                                     <td>{{ @$auction->get->state }}</td>
                                                     <td>{{ Carbon\Carbon::parse(@$auction->created_at)->format('M d, Y') }}
                                                     </td>
-                                                    <td class="text-center">{{ @$auction->bids->count() }}</td>
+                                                    <td class="text-center">
+                                                        @if($userBid)
+                                                        <span class="badge {{ $bidStatusClass }}">{{ $bidStatusLabel }}</span>
+                                                        @else
+                                                        <span class="text-muted">-</span>
+                                                        @endif
+                                                    </td>
                                                     <td class="text-center">
                                                         <div class="dropdown">
                                                             <button class="btn btn-secondary dropdown-toggle btn-sm"
@@ -198,9 +223,47 @@
                                                                         href="{{ route('tenant.agent.view.auction.view', @$auction->id) }}">
                                                                         <i class="fa-solid fa-eye"
                                                                             style="font-size:14px;"></i>
-                                                                        <span style="font-size:14px;">View</span>
+                                                                        <span style="font-size:14px;">View Listing</span>
                                                                     </a>
                                                                 </li>
+                                                                @if($canEditWithdraw && $userBid)
+                                                                <li><hr class="dropdown-divider"></li>
+                                                                <li>
+                                                                    <a class="dropdown-item"
+                                                                        href="{{ route('agent.tenant.agent.auction.bid', $auction->id) }}?edit={{ $userBid->id }}">
+                                                                        <i class="fa-solid fa-edit"
+                                                                            style="font-size:14px;"></i>
+                                                                        <span style="font-size:14px;">Edit Bid</span>
+                                                                    </a>
+                                                                </li>
+                                                                <li>
+                                                                    <form action="{{ route('tenant.hire.agent.auction.bid.withdraw') }}" method="POST"
+                                                                          onsubmit="return confirm('Are you sure you want to withdraw your bid? This action cannot be undone.');">
+                                                                        @csrf
+                                                                        <input type="hidden" name="bid_id" value="{{ $userBid->id }}">
+                                                                        <button type="submit" class="dropdown-item text-danger">
+                                                                            <i class="fa-solid fa-times-circle" style="font-size:14px;"></i>
+                                                                            <span style="font-size:14px;">Withdraw Bid</span>
+                                                                        </button>
+                                                                    </form>
+                                                                </li>
+                                                                @elseif($userBid && $isExpired)
+                                                                <li><hr class="dropdown-divider"></li>
+                                                                <li>
+                                                                    <span class="dropdown-item text-muted">
+                                                                        <i class="fa-solid fa-clock" style="font-size:14px;"></i>
+                                                                        <span style="font-size:14px;">Auction Ended</span>
+                                                                    </span>
+                                                                </li>
+                                                                @elseif($userBid && ($bidState === 'accepted' || $bidState === 'rejected'))
+                                                                <li><hr class="dropdown-divider"></li>
+                                                                <li>
+                                                                    <span class="dropdown-item text-muted">
+                                                                        <i class="fa-solid fa-lock" style="font-size:14px;"></i>
+                                                                        <span style="font-size:14px;">Bid {{ ucfirst($bidState) }}</span>
+                                                                    </span>
+                                                                </li>
+                                                                @endif
 
 
                                                             </ul>

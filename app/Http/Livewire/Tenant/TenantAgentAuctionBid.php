@@ -14,6 +14,8 @@ class TenantAgentAuctionBid extends Component
     use WithFileUploads;
 
     public $auctionId;
+    public $editBidId = null;
+    public $isEditMode = false;
     public $service_type; // 'full_service' or 'limited_service'
     public $user_type;
     public $property_type;
@@ -404,6 +406,8 @@ class TenantAgentAuctionBid extends Component
 
     public function mount($auctionId = null)
     {
+        $this->editBidId = request()->query('edit');
+        $this->isEditMode = !empty($this->editBidId);
 
         $this->promoMaterials = [
             [
@@ -416,6 +420,24 @@ class TenantAgentAuctionBid extends Component
 
 
         $auction = \App\Models\TenantAgentAuction::find($auctionId);
+        
+        if (!$auction) {
+            session()->flash('error', 'Auction not found.');
+            return redirect()->route('home');
+        }
+        
+        $endDate = strtotime($auction->end_date . ' ' . ($auction->end_time ?? '23:59:59'));
+        $isExpired = time() > $endDate;
+        
+        if ($isExpired) {
+            session()->flash('error', 'This auction has ended. Bidding is no longer available.');
+            return redirect()->route('tenant.agent.auction.view', $auctionId);
+        }
+        
+        if ($auction->is_sold) {
+            session()->flash('error', 'This listing has been sold. Bidding is no longer available.');
+            return redirect()->route('tenant.agent.auction.view', $auctionId);
+        }
         // $this->additional_details = $auction->get->additional_details ?? '';
 
         $this->services = is_string($auction->get->services) ? json_decode($auction->get->services, true) ?? [] : (array)$auction->get->services;
@@ -486,6 +508,115 @@ class TenantAgentAuctionBid extends Component
             $this->license_no = $user->license_no ?? '';
             $this->nar_id = $user->nar_id ?? '';
         }
+        
+        if ($this->isEditMode && $this->editBidId) {
+            $existingBid = TenantAgentAuctionBidData::find($this->editBidId);
+            if ($existingBid && $existingBid->user_id == Auth::id()) {
+                if ($existingBid->accepted === 'accepted') {
+                    session()->flash('error', 'Cannot edit an accepted bid.');
+                    $this->isEditMode = false;
+                    $this->editBidId = null;
+                    return redirect()->route('tenant.agent.view.auction.view', $auctionId);
+                }
+                if ($existingBid->accepted === 'rejected') {
+                    session()->flash('error', 'Cannot edit a rejected bid.');
+                    $this->isEditMode = false;
+                    $this->editBidId = null;
+                    return redirect()->route('tenant.agent.view.auction.view', $auctionId);
+                }
+                
+                $bidData = $existingBid->get;
+                
+                $this->bio = $bidData->bio ?? '';
+                $this->why_hire_you = $bidData->why_hire_you ?? '';
+                $this->what_sets_you_apart = $bidData->what_sets_you_apart ?? '';
+                $this->marketing_plan = $bidData->marketing_plan ?? '';
+                $this->year_licensed = $bidData->year_licensed ?? '';
+                $this->additional_details = $bidData->additional_details ?? '';
+                
+                $reviewsLinks = $bidData->reviews_links ?? '';
+                if (is_string($reviewsLinks)) {
+                    $decoded = json_decode($reviewsLinks, true);
+                    $this->reviews_links = is_array($decoded) ? $decoded : [['text' => '']];
+                } else {
+                    $this->reviews_links = (array) $reviewsLinks ?: [['text' => '']];
+                }
+                
+                $websiteLink = $bidData->website_link ?? '';
+                $this->website_link = is_array($websiteLink) ? $websiteLink : [$websiteLink];
+                
+                $socialMedia = $bidData->social_media ?? '';
+                if (is_string($socialMedia)) {
+                    $decoded = json_decode($socialMedia, true);
+                    $this->social_media = is_array($decoded) ? $decoded : [['platform' => '', 'text' => '']];
+                } else {
+                    $this->social_media = (array) $socialMedia ?: [['platform' => '', 'text' => '']];
+                }
+                
+                $services = $bidData->services ?? '';
+                $this->services = is_string($services) ? json_decode($services, true) ?? [] : (array) $services;
+                
+                $otherServices = $bidData->other_services ?? '';
+                $this->other_services = is_string($otherServices) ? json_decode($otherServices, true) ?? [] : (array) $otherServices;
+                $this->other_services_enabled = $bidData->other_services_enabled ?? false;
+                
+                $this->commission_structure = $bidData->commission_structure ?? '';
+                $this->lease_fee_type = $bidData->lease_fee_type ?? '';
+                $this->lease_fee_flat_type = $bidData->lease_fee_flat_type ?? '$';
+                $this->lease_fee_flat = $bidData->lease_fee_flat ?? '';
+                $this->lease_fee_percentage = $bidData->lease_fee_percentage ?? '';
+                $this->lease_fee_percentage_monthly_rent = $bidData->lease_fee_percentage_monthly_rent ?? '';
+                $this->lease_fee_percentage_monthly_number = $bidData->lease_fee_percentage_monthly_number ?? '';
+                $this->lease_fee_flat_combo = $bidData->lease_fee_flat_combo ?? '';
+                $this->lease_fee_percentage_combo = $bidData->lease_fee_percentage_combo ?? '';
+                $this->lease_fee_percentage_net = $bidData->lease_fee_percentage_net ?? '';
+                $this->lease_fee_flat_combo_net = $bidData->lease_fee_flat_combo_net ?? '';
+                $this->lease_fee_percentage_combo_net = $bidData->lease_fee_percentage_combo_net ?? '';
+                $this->lease_fee_other = $bidData->lease_fee_other ?? '';
+                
+                $this->interested_purchase_fee_type = $bidData->interested_purchase_fee_type ?? '';
+                $this->purchase_fee_type = $bidData->purchase_fee_type ?? '';
+                $this->purchase_fee_flat_type = $bidData->purchase_fee_flat_type ?? '$';
+                $this->purchase_fee_flat = $bidData->purchase_fee_flat ?? '';
+                $this->purchase_fee_percentage = $bidData->purchase_fee_percentage ?? '';
+                $this->purchase_fee_percentage_combo = $bidData->purchase_fee_percentage_combo ?? '';
+                $this->purchase_fee_flat_combo = $bidData->purchase_fee_flat_combo ?? '';
+                $this->purchase_fee_other = $bidData->purchase_fee_other ?? '';
+                
+                $this->interested_lease_option_agreement = $bidData->interested_lease_option_agreement ?? '';
+                $this->lease_type = $bidData->lease_type ?? 'percent';
+                $this->lease_value = $bidData->lease_value ?? '';
+                $this->purchase_type = $bidData->purchase_type ?? 'percent';
+                $this->purchase_value = $bidData->purchase_value ?? '';
+                
+                $this->protection_period = $bidData->protection_period ?? '';
+                $this->early_termination_fee_option = $bidData->early_termination_fee_option ?? '';
+                $this->early_termination_fee_amount = $bidData->early_termination_fee_amount ?? '';
+                $this->retainer_fee_option = $bidData->retainer_fee_option ?? '';
+                $this->retainer_fee_amount = $bidData->retainer_fee_amount ?? '';
+                $this->retainer_fee_application = $bidData->retainer_fee_application ?? '';
+                $this->agency_agreement_timeframe = $bidData->agency_agreement_timeframe ?? '';
+                $this->agency_agreement_custom = $bidData->agency_agreement_custom ?? '';
+                $this->brokerage_relationship = $bidData->brokerage_relationship ?? '';
+                $this->additional_details_broker = $bidData->additional_details_broker ?? '';
+                
+                $this->presentation_link = $bidData->presentation_link ?? '';
+                $this->business_card_link = $bidData->business_card_link ?? '';
+                $this->promo_materials_link = $bidData->promo_materials_link ?? '';
+                
+                $this->total_marketing_fee = $bidData->total_marketing_fee ?? 0;
+                $this->total_flat_fee = $bidData->total_flat_fee ?? 0;
+                
+                $promoMaterials = $bidData->promo_materials ?? '';
+                if (is_string($promoMaterials) && !empty($promoMaterials)) {
+                    $decoded = json_decode($promoMaterials, true);
+                    $this->promoMaterials = is_array($decoded) ? $decoded : $this->promoMaterials;
+                }
+            } else {
+                $this->isEditMode = false;
+                $this->editBidId = null;
+            }
+        }
     }
 
     public function setActiveTab($index)
@@ -513,14 +644,51 @@ class TenantAgentAuctionBid extends Component
 
         try {
             $this->validate();
+            
+            $auction = \App\Models\TenantAgentAuction::find($this->auctionId);
+            if (!$auction) {
+                session()->flash('error', 'Auction not found.');
+                return;
+            }
+            
+            $endDate = strtotime($auction->end_date . ' ' . ($auction->end_time ?? '23:59:59'));
+            if (time() > $endDate) {
+                session()->flash('error', 'This auction has ended. Bidding is no longer available.');
+                return redirect()->route('tenant.agent.auction.view', $this->auctionId);
+            }
+            
+            if ($auction->is_sold) {
+                session()->flash('error', 'This listing has been sold. Bidding is no longer available.');
+                return redirect()->route('tenant.agent.auction.view', $this->auctionId);
+            }
 
             $allowedVideos = ['mp4', 'mov', 'avi'];
             $allowedPhotos = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx', 'ppt', 'pptx'];
 
-            $bid = new TenantAgentAuctionBidData();
-            $bid->user_id = Auth::id();
-            $bid->tenant_agent_auction_id = $this->auctionId;
-            $bid->save();
+            if ($this->isEditMode && $this->editBidId) {
+                $bid = TenantAgentAuctionBidData::find($this->editBidId);
+                if (!$bid || $bid->user_id != Auth::id()) {
+                    session()->flash('error', 'You cannot edit this bid.');
+                    return;
+                }
+                if ($bid->accepted === 'accepted' || $bid->accepted === 'rejected') {
+                    session()->flash('error', 'Cannot edit a bid that has been accepted or rejected.');
+                    return;
+                }
+                $auction = \App\Models\TenantAgentAuction::find($bid->tenant_agent_auction_id);
+                if ($auction) {
+                    $endDate = strtotime($auction->end_date . ' ' . ($auction->end_time ?? '23:59:59'));
+                    if (time() > $endDate) {
+                        session()->flash('error', 'Cannot edit a bid after the auction has ended.');
+                        return;
+                    }
+                }
+            } else {
+                $bid = new TenantAgentAuctionBidData();
+                $bid->user_id = Auth::id();
+                $bid->tenant_agent_auction_id = $this->auctionId;
+                $bid->save();
+            }
 
 
 
@@ -666,7 +834,8 @@ class TenantAgentAuctionBid extends Component
             $bid->saveMeta('year_licensed', $this->year_licensed);
             $bid->saveMeta('nar_id', $this->nar_id);
 
-            session()->flash('success', 'Your bid has been submitted successfully!');
+            $message = $this->isEditMode ? 'Your bid has been updated successfully!' : 'Your bid has been submitted successfully!';
+            session()->flash('success', $message);
 
             return redirect()->route('tenant.agent.auction.view', $this->auctionId);
         } catch (\Exception $e) {

@@ -1653,6 +1653,40 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                             </span>
                                         </div>
                                         @endif
+                                        
+                                        @php
+                                            $bidAccepted = data_get($bid, 'accepted');
+                                            $canEditWithdraw = $isBidOwner && !$isExpired && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected';
+                                        @endphp
+                                        
+                                        @if ($canEditWithdraw)
+                                        <div class="d-flex gap-2 mt-3 justify-content-center">
+                                            <a href="{{ route('agent.tenant.agent.auction.bid', $auction->id) }}?edit={{ data_get($bid, 'id') }}" 
+                                               class="btn btn-outline-primary btn-sm">
+                                                <i class="fa fa-edit me-1"></i> Edit Bid
+                                            </a>
+                                            <form action="{{ route('tenant.hire.agent.auction.bid.withdraw') }}" method="POST" 
+                                                  onsubmit="return confirm('Are you sure you want to withdraw your bid? This action cannot be undone.');">
+                                                @csrf
+                                                <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                    <i class="fa fa-times-circle me-1"></i> Withdraw Bid
+                                                </button>
+                                            </form>
+                                        </div>
+                                        @elseif ($isBidOwner && $isExpired)
+                                        <div class="text-center mt-3">
+                                            <span class="text-muted small">
+                                                <i class="fa fa-clock me-1"></i> Bidding has ended — edit/withdraw unavailable
+                                            </span>
+                                        </div>
+                                        @elseif ($isBidOwner && ($bidAccepted === 'accepted' || $bidAccepted === 'rejected'))
+                                        <div class="text-center mt-3">
+                                            <span class="text-muted small">
+                                                <i class="fa fa-lock me-1"></i> Bid {{ $bidAccepted }} — edit/withdraw unavailable
+                                            </span>
+                                        </div>
+                                        @endif
                                     </div>
                                 </div>
                             </div>

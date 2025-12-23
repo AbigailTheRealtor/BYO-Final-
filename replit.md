@@ -71,3 +71,10 @@ I prefer detailed explanations. Ask before making major changes.
 - **Gated Full Terms**: "View Full Services & Broker Compensation Terms" button only visible to listing creator, others see "Private — visible only to listing creator"
 - **Bid Status Badges**: Active/Countered/Accepted/Rejected status badges with color coding (blue/yellow/green/red)
 - **Controller Null Safety**: Added 404 handling and null safety to TenantAgentAuctionController::view()
+
+### Agent Bid Management Features (December 2025)
+- **Edit Bid**: Agents can edit their own bids via Edit button on listing page or dashboard (only if auction not expired, bid not accepted/rejected)
+- **Withdraw Bid**: Agents can withdraw their own bids with confirmation dialog (only if auction not expired, bid not accepted/rejected)
+- **Bid Submission Lock**: Server-side validation prevents bid submission after auction expiration or when listing is sold
+- **Counter-Bid Prefill**: Counter bid form now loads data from latest counter bid or original bid for easier editing
+- **Dashboard Enhancements**: Tenant agent dashboard shows bid status badges (Active/Countered/Accepted/Rejected) and per-bid actions (Edit/Withdraw)
