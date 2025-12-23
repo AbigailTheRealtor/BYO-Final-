@@ -115,36 +115,88 @@ class TenantAgentAuctionBidController extends Controller
     public function accept_bid(Request $request)
     {
         $pab = TenantAgentAuctionBid::whereId($request->bid_id)->first();
-        $pab->accepted = "accepted";
-        $pab->accepted_date = date('Y-m-d H:i:s');
+        if (!$pab) {
+            return redirect()->back()->with('error', 'Bid not found.');
+        }
+        
+        $pa = TenantAgentAuction::find($pab->tenant_agent_auction_id);
+        if (!$pa) {
+            return redirect()->back()->with('error', 'Auction not found.');
+        }
+        
+        if ($request->has('auction_id') && (int)$request->auction_id !== (int)$pa->id) {
+            abort(403, 'Bid does not belong to this auction.');
+        }
+        
+        if ($pa->user_id !== Auth::id()) {
+            abort(403, 'Only the listing owner can accept bids.');
+        }
+        
+        if ($pab->accepted === 'accepted' || $pab->accepted === 'rejected') {
+            return redirect()->back()->with('error', 'This bid has already been ' . $pab->accepted . '.');
+        }
 
-        $pa = TenantAgentAuction::whereId($request->auction_id)->first();
-        $pa->is_sold = true;
-        $pa->sold_date = date('Y-m-d H:i:s');
+        try {
+            DB::beginTransaction();
+            
+            $pab->accepted = "accepted";
+            $pab->accepted_date = date('Y-m-d H:i:s');
+            $pab->save();
 
-        $ua = new UserAgent();
-        $ua->user_id = Auth::user()->id;
-        $ua->agent_id = $pab->user_id;
-        $ua->type = 'tenant';
-        $ua->save();
+            $pa->is_sold = true;
+            $pa->sold_date = date('Y-m-d H:i:s');
+            $pa->save();
+            
+            TenantAgentAuctionBid::where('tenant_agent_auction_id', $pa->id)
+                ->where('id', '!=', $pab->id)
+                ->where('accepted', '!=', 'accepted')
+                ->update(['accepted' => 'rejected', 'accepted_date' => date('Y-m-d H:i:s')]);
 
-        if ($pab->save() && $pa->save()) {
+            $ua = new UserAgent();
+            $ua->user_id = Auth::user()->id;
+            $ua->agent_id = $pab->user_id;
+            $ua->type = 'tenant';
+            $ua->save();
+            
+            DB::commit();
             return redirect()->back()->with('success', 'Bid Accepted successfully!');
-        } else {
-            return redirect()->back()->with('error', 'Some problem in bid acceptance!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Error accepting bid: ' . $e->getMessage());
         }
     }
+    
     public function reject_bid(Request $request)
     {
         $pab = TenantAgentAuctionBid::whereId($request->bid_id)->first();
+        if (!$pab) {
+            return redirect()->back()->with('error', 'Bid not found.');
+        }
+        
+        $pa = TenantAgentAuction::find($pab->tenant_agent_auction_id);
+        if (!$pa) {
+            return redirect()->back()->with('error', 'Auction not found.');
+        }
+        
+        if ($request->has('auction_id') && (int)$request->auction_id !== (int)$pa->id) {
+            abort(403, 'Bid does not belong to this auction.');
+        }
+        
+        if ($pa->user_id !== Auth::id()) {
+            abort(403, 'Only the listing owner can reject bids.');
+        }
+        
+        if ($pab->accepted === 'accepted' || $pab->accepted === 'rejected') {
+            return redirect()->back()->with('error', 'This bid has already been ' . $pab->accepted . '.');
+        }
+        
         $pab->accepted = "rejected";
         $pab->accepted_date = date('Y-m-d H:i:s');
-
 
         if ($pab->save()) {
             return redirect()->back()->with('success', 'Bid Rejected successfully!');
         } else {
-            return redirect()->back()->with('error', 'Some problem in bid acceptance!');
+            return redirect()->back()->with('error', 'Some problem in bid rejection!');
         }
     }
     public function counter_bid(Request $request)
@@ -159,40 +211,105 @@ class TenantAgentAuctionBidController extends Controller
 
     public function accept_counter_bid(Request $request)
     {
+        $counterBid = TenantCounterBidding::whereId($request->counter_bid_id)->first();
+        if (!$counterBid) {
+            return redirect()->back()->with('error', 'Counter bid not found.');
+        }
+        
+        $originalBid = TenantAgentAuctionBid::find($counterBid->tenant_agent_auction_bid_id);
+        if (!$originalBid) {
+            return redirect()->back()->with('error', 'Original bid not found.');
+        }
+        
+        $pa = TenantAgentAuction::find($originalBid->tenant_agent_auction_id);
+        if (!$pa) {
+            return redirect()->back()->with('error', 'Auction not found.');
+        }
+        
+        if ($request->has('auction_id') && (int)$request->auction_id !== (int)$pa->id) {
+            abort(403, 'Counter bid does not belong to this auction.');
+        }
+        
+        $isListingOwner = $pa->user_id === Auth::id();
+        $isOriginalBidOwner = $originalBid->user_id === Auth::id();
+        
+        if (!$isListingOwner && !$isOriginalBidOwner) {
+            abort(403, 'You are not authorized to accept this counter bid.');
+        }
+        
+        if ($counterBid->accepted === 'accepted' || $counterBid->accepted === 'rejected') {
+            return redirect()->back()->with('error', 'This counter bid has already been ' . $counterBid->accepted . '.');
+        }
 
+        try {
+            DB::beginTransaction();
+            
+            $counterBid->accepted = "accepted";
+            $counterBid->accepted_date = date('Y-m-d H:i:s');
+            $counterBid->save();
+            
+            $originalBid->accepted = "accepted";
+            $originalBid->accepted_date = date('Y-m-d H:i:s');
+            $originalBid->save();
 
-        $pab = TenantCounterBidding::whereId($request->counter_bid_id)->first();
-        $pab->accepted = "accepted";
-        $pab->accepted_date = date('Y-m-d H:i:s');
+            $pa->is_sold = true;
+            $pa->sold_date = date('Y-m-d H:i:s');
+            $pa->save();
+            
+            TenantAgentAuctionBid::where('tenant_agent_auction_id', $pa->id)
+                ->where('id', '!=', $originalBid->id)
+                ->where('accepted', '!=', 'accepted')
+                ->update(['accepted' => 'rejected', 'accepted_date' => date('Y-m-d H:i:s')]);
 
-        $pa = TenantAgentAuction::whereId($request->auction_id)->first();
-        $pa->is_sold = true;
-        $pa->sold_date = date('Y-m-d H:i:s');
-
-        $ua = new UserAgent();
-        $ua->user_id = Auth::user()->id;
-        $ua->agent_id = $pab->user_id;
-        $ua->type = 'tenant';
-        $ua->save();
-
-        if ($pab->save() && $pa->save()) {
+            $ua = new UserAgent();
+            $ua->user_id = Auth::user()->id;
+            $ua->agent_id = $originalBid->user_id;
+            $ua->type = 'tenant';
+            $ua->save();
+            
+            DB::commit();
             return redirect()->back()->with('success', 'Counter Bid Accepted successfully!');
-        } else {
-            return redirect()->back()->with('error', 'Some problem in bid acceptance!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Error accepting counter bid: ' . $e->getMessage());
         }
     }
+    
     public function reject_counter_bid(Request $request)
     {
+        $counterBid = TenantCounterBidding::whereId($request->counter_bid_id)->first();
+        if (!$counterBid) {
+            return redirect()->back()->with('error', 'Counter bid not found.');
+        }
+        
+        $originalBid = TenantAgentAuctionBid::find($counterBid->tenant_agent_auction_bid_id);
+        if (!$originalBid) {
+            return redirect()->back()->with('error', 'Original bid not found.');
+        }
+        
+        $pa = TenantAgentAuction::find($originalBid->tenant_agent_auction_id);
+        if (!$pa) {
+            return redirect()->back()->with('error', 'Auction not found.');
+        }
+        
+        $isListingOwner = $pa->user_id === Auth::id();
+        $isOriginalBidOwner = $originalBid->user_id === Auth::id();
+        
+        if (!$isListingOwner && !$isOriginalBidOwner) {
+            abort(403, 'You are not authorized to reject this counter bid.');
+        }
+        
+        if ($counterBid->accepted === 'accepted' || $counterBid->accepted === 'rejected') {
+            return redirect()->back()->with('error', 'This counter bid has already been ' . $counterBid->accepted . '.');
+        }
+        
+        $counterBid->accepted = "rejected";
+        $counterBid->accepted_date = date('Y-m-d H:i:s');
 
-        $pab = TenantCounterBidding::whereId($request->counter_bid_id)->first();
-        $pab->accepted = "rejected";
-        $pab->accepted_date = date('Y-m-d H:i:s');
-
-
-        if ($pab->save()) {
+        if ($counterBid->save()) {
             return redirect()->back()->with('success', 'Counter Bid Rejected successfully!');
         } else {
-            return redirect()->back()->with('error', 'Some problem in bid acceptance!');
+            return redirect()->back()->with('error', 'Some problem in counter bid rejection!');
         }
     }
 
