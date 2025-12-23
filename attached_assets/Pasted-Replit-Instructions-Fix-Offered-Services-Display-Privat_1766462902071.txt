@@ -1,0 +1,116 @@
+Replit Instructions — Fix “Offered Services” Display (Private “Terms”)
+
+Applies to: Hire a Tenant’s Agent (Residential + Commercial) → Actual Bids Display → Private “Terms” modal/panel
+Problem: Services are being re-grouped incorrectly (ex: system creates an “Other Services” bucket and moves normal selections into it). The Private Terms view must match the Actual Listing services grouping/order exactly.
+
+Goal (Exact Expected Result)
+
+In the Private “Terms” bid details, “Offered Services” must display:
+
+The same category headings as the Actual Listing (ex: Tenant Criteria Marketing & Promotion, Property Search, Alerts & Matching, etc.)
+
+The same services under each correct category
+
+No auto-created “Other Services” category unless the Agent explicitly selected “Other – Specify…” (or equivalent “Other” input)
+
+Same order of categories + services as the Actual Listing (do not re-sort alphabetically)
+
+1) Use the SAME source data + grouping logic as the Actual Listing
+
+Right now the bid “Terms” view is using different grouping rules than the listing display.
+
+✅ Fix: In the Private Terms bid view, render services using the exact same function/partial/component used by the Actual Listing services section.
+
+Implementation requirement:
+
+Find the template/component that renders services on the Actual Listing page (the one that’s correct).
+
+Reuse that same renderer inside the bid “Terms” modal/panel instead of rebuilding the list a different way.
+
+Acceptance: If the listing shows a service under “Property Search, Alerts & Matching,” the bid Terms must show it in that same category too.
+
+2) Stop creating “Other Services” as a catch-all bucket
+
+Right now, some services are being dumped into “Other Services” even though they belong to real categories.
+
+✅ Fix: Only show an “Other Services”/“Other” block when an actual “Other” free-text field exists and is not empty.
+
+Rules:
+
+If additional_services (or similar field) is empty/null → do NOT render “Other Services”
+
+If additional_services has values → render only those values under Additional Services (or the correct label you use on the listing), and do not move normal checkbox services into it
+
+Acceptance: Normal services never appear under “Other Services.”
+
+3) Group by the canonical category key (NOT by label text)
+
+This bug usually happens when code groups services by:
+
+a text label that changes, OR
+
+a partial match (“other”, “additional”), OR
+
+missing category values defaulting into “Other Services”
+
+✅ Fix: Group selected services using a stable category identifier:
+
+category_id, category_key, or group_key (whatever your canonical service schema uses)
+
+Required behavior:
+
+If a selected service does not have a valid category key, do not silently push it to “Other Services.”
+
+Instead:
+
+log it for debugging, AND
+
+display it under a “Uncategorized (Debug)” section ONLY in dev (or just fix the underlying mapping)
+
+Acceptance: No services are misplaced due to missing/blank category keys.
+
+4) Preserve the exact order from the service definition
+
+Your listing display is correct because it likely uses a predefined ordered structure.
+
+✅ Fix: In the bid Terms view:
+
+Categories must display in the same order as your canonical service definition array
+
+Services inside each category must display in the same order as that definition
+
+Do not sort selected services alphabetically
+
+Acceptance: Bid Terms service order matches listing order.
+
+5) Residential + Commercial must use the correct service set
+
+Make sure the bid Terms view is rendering from the correct service configuration based on listing type:
+
+Residential Tenant services set for Residential listings
+
+Commercial Tenant services set for Commercial listings
+
+✅ Fix:
+
+Confirm the bid record references the listing’s property_type / listing_type / is_commercial
+
+Use that same switch to select the correct canonical service definition file/array
+
+Acceptance: No residential-only items appear in commercial and vice versa.
+
+Final Acceptance Test
+
+Using a test bid where you know exactly which services were selected:
+
+Private “Terms” → Offered Services shows:
+
+✅ Correct categories
+
+✅ Correct services under each category
+
+✅ Correct order
+
+✅ No incorrect “Other Services” bucket
+
+✅ Additional Services only shows true “Other” text inputs (if any)
