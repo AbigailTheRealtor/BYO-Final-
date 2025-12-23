@@ -135,6 +135,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     @foreach ($social_media as $index => $media)
+        @php $mediaArray = is_object($media) ? (array) $media : (is_array($media) ? $media : []); @endphp
         <div class="row mb-2">
             <div class="col-md-6">
                 <div class="input-cover">
@@ -155,7 +156,7 @@
                 <div class="input-cover">
                   <input type="text" wire:model="social_media.{{ $index }}.url"
        class="form-control has-icon"
-       placeholder="{{ $media['placeholder'] ?? 'Enter profile link' }}"
+       placeholder="{{ $mediaArray['placeholder'] ?? 'Enter profile link' }}"
        data-icon="fa-solid fa-link">
                 </div>
             </div>

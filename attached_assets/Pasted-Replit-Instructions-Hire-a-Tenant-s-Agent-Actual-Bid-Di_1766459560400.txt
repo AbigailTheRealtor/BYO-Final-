@@ -1,0 +1,205 @@
+Replit Instructions — Hire a Tenant’s Agent → Actual Bid Displays (Only New Edits)
+
+Applies to: Hire a Tenant’s Agent listings (Residential + Commercial)
+Scope: Bid display UI + bid detail (“Terms”) view + edit bid error + missing services/categories + missing files + missing buttons/permissions
+Do not change listing creation fields, tooltips, or database schema unless required to fix a bug.
+
+1) Public Bid Card Must Match the Provided Mockup Image
+
+Update the bid card UI on the actual listing page so each bid card looks like the screenshot I’m providing (Agent 1 left, Status right, Services count, Broker Compensation Summary, and the “View Full…” link).
+
+Must show on the public bid card:
+
+Agent X (anonymous label)
+
+Bid Status (Active / Countered / Accepted / Rejected)
+
+Offered Services: {#} Services
+
+Broker Compensation Summary:
+
+Tenant’s Broker Commission Structure
+
+Tenant’s Broker Commission Fee / Lease Fee
+
+Include the actual Flat Fee amount and/or Percentage (right now it’s not showing on the public card)
+
+✅ Acceptance: The public bid card displays the actual flat fee and/or percentage (not just the type).
+
+2) Fix “Edit Bid” Button Styling (Too Large + White Background)
+
+The Edit Bid button is currently oversized and has an ugly white background box.
+
+Update:
+
+Make the Edit Bid button a normal-sized button (same visual weight as Withdraw)
+
+Remove the large white background container around it
+
+Keep it aligned cleanly inside the bid card
+
+✅ Acceptance: Edit button is not inside a large white box and matches the layout cleanly.
+
+3) Fix Edit Bid Error (stdClass as array)
+
+When clicking Edit Bid, it throws:
+
+“Cannot use object of type stdClass as array (View: …/agent-overview.blade.php)”
+
+Fix:
+
+Locate the exact line(s) in resources/views/livewire/tenant-agent-auction-bid-tabs/commission-based/agent-overview.blade.php
+
+Replace array-style access on stdClass objects with proper object access (->) OR cast to array consistently before use
+
+Do not break any other fields
+
+✅ Acceptance: Edit Bid opens with no error for all roles.
+
+4) Public Bid Card Summary Must Show the Actual Flat Fee / Percentage
+
+Right now, the real numbers only show in the private section—not in the public card.
+
+Update the summary renderer so:
+
+If the agent selected Flat Fee → show $X
+
+If percentage → show X%
+
+If Flat Fee + Percentage → show both
+
+✅ Acceptance: Public card shows numbers like the provided example.
+
+5) “Terms” / View Full Link Bug — Content Shows for 1 Second Then Goes White
+
+When clicking Terms (or viewing full bid details), the content flashes then disappears/turns white.
+
+Fix:
+
+Ensure the “Terms” / “View Full…” view stays open and does not blank out
+
+If it’s Livewire-related, prevent re-render from clearing it (e.g., keep modal/panel state stable per bid)
+
+No redirects; it should remain visible until closed
+
+✅ Acceptance: Clicking Terms consistently shows the full bid details and stays visible.
+
+6) Services Offered in Private Bid Must Show Category Headings (Not Just a Flat List)
+
+In the private bid view, Services Offered is not listing every service correctly and is not showing the category structure.
+
+Update the private bid Services section so it shows:
+
+Category headings (like your “correct” screenshot)
+
+Then the bullet services under each category
+
+Must include every service selected by the agent (no missing services)
+
+✅ Acceptance: Private Services display matches the “how it should look” screenshot: grouped categories + all selected items.
+
+7) Bids Should Be Collapsible
+
+Implement collapsible behavior for bids so the listing page is not overloaded.
+
+Requirement:
+
+Show the bid card summary by default
+
+Expand/collapse the full details when user clicks “View Full Services & Broker Compensation Terms” (or Terms)
+
+✅ Acceptance: Each bid expands/collapses independently without breaking the page.
+
+8) Edit + Withdraw Buttons Are Showing on the Wrong Account
+
+Right now, Edit Bid and Withdraw Bid are showing to the Tenant who created the listing.
+
+Fix:
+
+Edit/Withdraw buttons should appear only for the Agent who submitted that bid
+
+Tenant listing creator should not see Edit/Withdraw for agent bids
+
+✅ Acceptance: Tenant cannot see Edit/Withdraw. The bid’s Agent can.
+
+9) Agent Must Be Able to View Their Own Private Compensation & Agency Agreement Terms
+
+Agents need access to their own full private terms.
+
+Fix:
+
+The Agent viewing their own bid must be able to open the private terms/details without restrictions
+
+Ensure the private terms section loads for the Agent without blank screens or permission blocks
+
+✅ Acceptance: Agent can view full private terms for their own bid.
+
+10) Accept / Counter / Reject Buttons Are Missing on Bids
+
+Add the missing action buttons so bids can be acted on directly.
+
+Requirement:
+
+Add Accept / Counter / Reject to bids where appropriate (based on existing role logic)
+
+These actions must be visible and functional on the bids (not only somewhere else)
+
+✅ Acceptance: Accept/Counter/Reject buttons appear and work as expected.
+
+11) Private “Terms” Section Order Must Match This Exact Sequence
+
+In the private bid details, enforce this section order:
+
+Private Compensation & Agreement Terms
+
+Agent Overview & Qualifications
+
+About Agent
+
+Why Hire This Agent
+
+What Sets This Agent Apart
+
+Marketing Strategy
+
+Reviews Link
+
+Website Link
+
+Social Media Platforms
+
+Licensed Year
+
+Broker Compensation and Agency Agreement Terms
+
+Additional Terms
+
+Offered Services
+
+Agent Presentation & Marketing Materials
+
+Agent Credentials and Contact Information
+
+✅ Acceptance: The private bid details appear in exactly this order.
+
+12) Agent Presentation & Marketing Materials — Missing Business Card + Marketing Materials + Must Be Downloadable
+
+In Agent Bids, under Agent Presentation & Marketing Materials, the uploaded business card and marketing materials are missing.
+
+Fix:
+
+Show Business Card if uploaded (with a download button)
+
+Show Marketing Materials if uploaded (with download buttons)
+
+If multiple files exist, show all file links
+
+Must work from the private bid details view
+
+✅ Acceptance: Business card + marketing materials appear and can be downloaded.
+
+Final Notes
+
+Do not rewrite fields, rename sections, or change wording beyond what’s required for these display fixes.
+
+These updates should apply to Hire a Tenant’s Agent bid displays only.

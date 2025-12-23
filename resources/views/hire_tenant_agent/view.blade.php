@@ -1619,8 +1619,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     <p class="mb-0" style="font-size: 1rem; color: #555;">{{ $commissionFeeDisplay }}</p>
                                 </div>
                                 
-                                <!-- D) View Full Terms Link -->
-                                @if (data_get($auction, 'user_id') == $auth_id)
+                                <!-- D) View Full Terms Link - visible to listing owner OR bid owner (agent) -->
+                                @if ($isListingOwner || $isBidOwner)
                                 <a href="#" data-bs-toggle="modal" data-bs-target="#privateDataModal{{ data_get($bid, 'id') }}"
                                    style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
                                     View Full Services & Broker Compensation Terms
@@ -1664,9 +1664,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             </div>
                         </div>
                         
-                        @if (data_get($auction, 'user_id') == $auth_id)
+                        @if ($isListingOwner || $isBidOwner)
 
-                                    <!-- Private Data Modal -->
+                                    <!-- Private Data Modal - visible to listing owner OR bid owner (agent) -->
                                     <div class="modal fade"
                                         id="privateDataModal{{ data_get($bid, 'id') }}"
                                         tabindex="-1"
@@ -1750,7 +1750,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         </div>
                                                         @endif
 
-                                                        <!-- Services Offered - Display All Selected Services -->
+                                                        <!-- Services Offered - Display with Category Headings -->
                                                         @php 
                                                         $flattenServices = function($data, $excludeValues = ['Other']) use (&$flattenServices) {
                                                             $result = [];
@@ -1800,13 +1800,53 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         $additionalServicesList = array_values($additionalServicesList);
                                                         
                                                         $hasOtherEnabled = data_get($bid, 'get.other_services_enabled', false);
-                                                        
                                                         $hasAnyServices = !empty($servicesList) || !empty($additionalServicesList) || $hasOtherEnabled;
+                                                        
+                                                        $propType = data_get($auction, 'get.property_type', data_get($auction, 'property_type', 'Residential'));
+                                                        $isResidentialProp = str_contains(strtolower($propType ?? ''), 'residential');
+                                                        
+                                                        $serviceCategories = $isResidentialProp ? [
+                                                            '📣 Tenant Criteria Marketing & Promotion' => ['rental criteria', 'marketing', 'distribute', 'notify', 'market the tenant'],
+                                                            '🔍 Property Search, Alerts & Matching' => ['search', 'alert', 'matching', 'mls', 'fsbo', 'off-market', 'listings'],
+                                                            '🏠 Property Showings & Virtual Tours' => ['showing', 'virtual tour', 'accompany', 'schedule'],
+                                                            '📝 Tenant Application Support' => ['application', 'supporting documents', 'submit complete'],
+                                                            '📄 Lease Preparation & Execution' => ['lease', 'negotiat', 'signing', 'deposit deadline', 'e-signature'],
+                                                            '🚚 Move-In Support & Coordination' => ['move-in', 'key handoff', 'utility', 'cleaning', 'repairs'],
+                                                            '💡 Leasing Strategy & Guidance' => ['comparative', 'crma', 'guidance', 'strategy', 'lease structure', 'tenant rights'],
+                                                        ] : [
+                                                            '📣 Tenant Criteria Marketing & Promotion' => ['rental criteria', 'marketing', 'distribute', 'notify', 'market the tenant'],
+                                                            '🔍 Property Search, Alerts & Matching' => ['search', 'alert', 'matching', 'commercial database', 'fsbo', 'off-market'],
+                                                            '🏠 Property Showings & Virtual Tours' => ['showing', 'virtual tour', 'accompany', 'schedule', 'zoning'],
+                                                            '📝 Tenant Application Support' => ['application', 'supporting documents', 'business license', 'financials'],
+                                                            '📄 Lease Preparation, LOI & Execution' => ['lease', 'loi', 'letter of intent', 'negotiat', 'cam', 'ti allowance'],
+                                                            '🚚 Move-In Support & Coordination' => ['move-in', 'key handoff', 'utility', 'buildout', 'repairs'],
+                                                            '💡 Leasing Strategy & Guidance' => ['comparative', 'clma', 'nnn', 'modified gross', 'full service', 'guidance'],
+                                                        ];
+                                                        
+                                                        $categorizedServices = [];
+                                                        $unmatchedServices = [];
+                                                        foreach ($servicesList as $service) {
+                                                            $matched = false;
+                                                            $serviceLower = strtolower($service);
+                                                            foreach ($serviceCategories as $catName => $keywords) {
+                                                                foreach ($keywords as $keyword) {
+                                                                    if (str_contains($serviceLower, strtolower($keyword))) {
+                                                                        $categorizedServices[$catName][] = $service;
+                                                                        $matched = true;
+                                                                        break 2;
+                                                                    }
+                                                                }
+                                                            }
+                                                            if (!$matched) {
+                                                                $unmatchedServices[] = $service;
+                                                            }
+                                                        }
                                                         @endphp
                                                         
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold mb-2"
-                                                                style="color: #049399;">Services Offered:</div>
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                                <i class="fa fa-clipboard-list me-2"></i>Services:
+                                                            </h6>
                                                             
                                                             @if ($servicesParseError && empty($servicesList) && empty($additionalServicesList) && !$hasOtherEnabled)
                                                             <div class="text-danger" style="font-style: italic;">Unable to load service selections for this bid.</div>
@@ -1815,19 +1855,33 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 <div class="text-warning mb-2" style="font-size: 0.85rem;">Warning: Some service data could not be loaded.</div>
                                                                 @endif
                                                                 
-                                                                @if (!empty($servicesList))
-                                                                <ul class="services mb-2" style="padding-left: 1.2rem;">
-                                                                    @foreach ($servicesList as $service)
-                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $service }}</li>
-                                                                    @endforeach
-                                                                </ul>
+                                                                @foreach ($categorizedServices as $categoryName => $categoryServices)
+                                                                <div class="mb-3">
+                                                                    <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">{{ $categoryName }}</div>
+                                                                    <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
+                                                                        @foreach ($categoryServices as $service)
+                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $service }}</li>
+                                                                        @endforeach
+                                                                    </ul>
+                                                                </div>
+                                                                @endforeach
+                                                                
+                                                                @if (!empty($unmatchedServices))
+                                                                <div class="mb-3">
+                                                                    <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">📋 Other Services</div>
+                                                                    <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
+                                                                        @foreach ($unmatchedServices as $service)
+                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $service }}</li>
+                                                                        @endforeach
+                                                                    </ul>
+                                                                </div>
                                                                 @endif
                                                                 
                                                                 @if (!empty($additionalServicesList) || $hasOtherEnabled)
-                                                                <div class="mt-2">
+                                                                <div class="mb-3">
                                                                     <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">➕ Additional Services</div>
                                                                     @if (!empty($additionalServicesList))
-                                                                    <ul class="services mb-2" style="margin-top: 0.25rem; padding-left: 1.2rem;">
+                                                                    <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
                                                                         @foreach ($additionalServicesList as $additionalService)
                                                                             <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $additionalService }}</li>
                                                                         @endforeach
@@ -2527,9 +2581,50 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         style="background: #e8f4f5; border-radius: 6px; color: #049399;">
                                                         <i class="fa fa-shield me-2"></i>
                                                         <strong>Confidential:</strong> This information
-                                                        is private and only visible to you as the
-                                                        listing owner.
+                                                        is private and only visible to you{{ $isListingOwner ? ' as the listing owner' : '' }}.
                                                     </div>
+                                                    
+                                                    @if ($isListingOwner && !$isExpired && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected')
+                                                    <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mb-3">
+                                                        <form action="{{ route('tenant.hire.agent.auction.bid.accept') }}" method="POST" class="d-inline"
+                                                              onsubmit="return confirm('Are you sure you want to accept this bid? This will reject all other bids.');">
+                                                            @csrf
+                                                            <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
+                                                            <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                                            <button type="submit" class="btn btn-success">
+                                                                <i class="fa fa-check me-1"></i> Accept Bid
+                                                            </button>
+                                                        </form>
+                                                        
+                                                        <a href="{{ route('tenant.counter-terms', ['id' => data_get($bid, 'id')]) }}" 
+                                                           class="btn btn-warning">
+                                                            <i class="fa fa-exchange-alt me-1"></i> Counter Bid
+                                                        </a>
+                                                        
+                                                        <form action="{{ route('tenant.hire.agent.auction.bid.reject') }}" method="POST" class="d-inline"
+                                                              onsubmit="return confirm('Are you sure you want to reject this bid?');">
+                                                            @csrf
+                                                            <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
+                                                            <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                                            <button type="submit" class="btn btn-danger">
+                                                                <i class="fa fa-times me-1"></i> Reject Bid
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                    @elseif ($isListingOwner && $bidAccepted === 'accepted')
+                                                    <div class="w-100 mb-3 p-2 text-center" style="background: #d4edda; border-radius: 6px; color: #155724;">
+                                                        <i class="fa fa-check-circle me-1"></i> This bid has been accepted
+                                                    </div>
+                                                    @elseif ($isListingOwner && $bidAccepted === 'rejected')
+                                                    <div class="w-100 mb-3 p-2 text-center" style="background: #f8d7da; border-radius: 6px; color: #721c24;">
+                                                        <i class="fa fa-times-circle me-1"></i> This bid has been rejected
+                                                    </div>
+                                                    @elseif ($isListingOwner && $isExpired)
+                                                    <div class="w-100 mb-3 p-2 text-center" style="background: #ffc107; border-radius: 6px; color: #856404;">
+                                                        <i class="fa fa-clock me-1"></i> Auction has expired - no further actions available
+                                                    </div>
+                                                    @endif
+                                                    
                                                     <button type="button" class="btn btn-secondary"
                                                         data-bs-dismiss="modal"
                                                         style="background: #6c757d; border: none; border-radius: 6px; padding: 8px 20px;">Close</button>

@@ -196,6 +196,33 @@ class TenantAgentAuctionBidController extends Controller
         }
     }
 
+    public function add_counter_bid($id, $bid_id)
+    {
+        $auction = TenantAgentAuction::with('user', 'meta', 'bids', 'bids.user')->find($id);
+        if (!$auction) {
+            abort(404, 'Auction not found');
+        }
+        
+        $bid = TenantAgentAuctionBid::with('meta', 'user', 'counterBids')->find($bid_id);
+        if (!$bid) {
+            abort(404, 'Bid not found');
+        }
+        
+        if ($auction->user_id !== Auth::id()) {
+            return redirect()->back()->with('error', 'Only the listing owner can counter bids.');
+        }
+        
+        $latestCounter = TenantCounterBidding::where('tenant_agent_auction_bid_id', $bid_id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+        
+        return view('hire_tenant_agent.counter_bid', [
+            'auction' => $auction,
+            'bid' => $bid,
+            'latestCounter' => $latestCounter,
+        ]);
+    }
+
     public function withdraw_bid(Request $request)
     {
         $bid = TenantAgentAuctionBid::find($request->bid_id);

@@ -503,6 +503,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('hire/agent/auction/bid/reject', [TenantAgentAuctionBidController::class, 'reject_bid'])->name('hire.agent.auction.bid.reject');
         Route::post('hire/agent/auction/bid/withdraw', [TenantAgentAuctionBidController::class, 'withdraw_bid'])->name('hire.agent.auction.bid.withdraw');
 
+        Route::get('hire/agent/auction/counter-bid/{id}/{bid_id}', [TenantAgentAuctionBidController::class, 'add_counter_bid'])->name('hire.agent.auction.counter-bid');
         Route::post('hire/agent/auction/bid/counter', [TenantAgentAuctionBidController::class, 'counter_bid'])->name('hire.agent.auction.bid.counter');
         Route::post('hire/agent/auction/counter/bid/accept', [TenantAgentAuctionBidController::class, 'accept_counter_bid'])->name('hire.agent.auction.counter.bid.accept');
         Route::post('hire/agent/auction/counter/bid/reject', [TenantAgentAuctionBidController::class, 'reject_counter_bid'])->name('hire.agent.auction.counter.bid.reject');
