@@ -43,3 +43,21 @@ I prefer detailed explanations. Ask before making major changes.
 - **Laravel Mix**: Webpack wrapper for compiling frontend assets.
 - **U.S. Census Gazetteer Files**: Used for seeding the local `us_states`, `us_counties`, and `us_cities` databases.
 - **Google Places API**: Retained for specific address and postal code validation, but no longer used for general location autocomplete.
+
+## Recent Changes (December 2025)
+
+### Agent Bid Display Enhancements (Tenant Agent Listings)
+- **Agent Overview & Qualifications**: Added Licensed Since, Marketing Strategy, What Sets This Agent Apart, and Services Offered sections to the Private Compensation modal
+- **Label Standardization**: Updated all labels to use colons (e.g., "Why Hire This Agent:")
+- **Visit Website Link**: Made null-safe with URL normalization (adds https:// if missing) and security attributes
+- **Review Links**: Fixed label from plural to singular ("Review Links:")
+- **Broker Compensation Section**: Reformatted with proper A-F subsections:
+  - A) Tenant's Broker Compensation
+  - B) Purchase Fee Details
+  - C) Lease-Option Details
+  - D) Legal Terms
+  - E) Brokerage Relationship
+  - F) Additional Terms / Additional Details
+- **Services Offered Display**: Added category subtitles with emoji prefixes in correct order for Residential and Commercial property types
+- **Business Card Display**: Larger preview (450px), clickable full-size view, View Full Size and Download buttons
+- **Marketing Materials Display**: Improved with Open Link and Download buttons, better styling, "Not provided" message when empty
