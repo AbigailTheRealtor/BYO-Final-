@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @method static TenantCounterTerm create(array $attributes = [])
+ * @method static TenantCounterTerm findOrFail($id)
+ * @method static TenantCounterTerm|null find($id)
+ */
 class TenantCounterTerm extends Model
 {
     use HasFactory;

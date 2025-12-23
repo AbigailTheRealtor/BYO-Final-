@@ -80,6 +80,12 @@ class TenantAgentAuctionCounterTerm extends Component
     public $purchase_fee_flat_type = '$';
     public $purchase_fee_rental_period = '';
 
+    // Payment Timing for Broker Fees
+    public $broker_fee_timing = '';
+    public $broker_fee_timing_other = '';
+    public $broker_fee_days_from_rent = '';
+    public $broker_fee_days_after_lease = '';
+    public $broker_fee_days_after_rent = '';
 
     // Additional
     public $additional_details_broker = '';
@@ -299,6 +305,11 @@ class TenantAgentAuctionCounterTerm extends Component
             'brokerage_relationship',
             'additional_details_broker',
             'other_services_enabled',
+            'broker_fee_timing',
+            'broker_fee_timing_other',
+            'broker_fee_days_from_rent',
+            'broker_fee_days_after_lease',
+            'broker_fee_days_after_rent',
         ];
 
         foreach ($assign as $key) {
@@ -425,6 +436,12 @@ class TenantAgentAuctionCounterTerm extends Component
         $counterTerm->saveMeta('agency_agreement_custom', $this->agency_agreement_custom);
         $counterTerm->saveMeta('brokerage_relationship', $this->brokerage_relationship);
 
+        // Payment Timing for Broker Fees
+        $counterTerm->saveMeta('broker_fee_timing', $this->broker_fee_timing);
+        $counterTerm->saveMeta('broker_fee_timing_other', $this->broker_fee_timing_other);
+        $counterTerm->saveMeta('broker_fee_days_from_rent', $this->broker_fee_days_from_rent);
+        $counterTerm->saveMeta('broker_fee_days_after_lease', $this->broker_fee_days_after_lease);
+        $counterTerm->saveMeta('broker_fee_days_after_rent', $this->broker_fee_days_after_rent);
 
         // Additional Details
         $counterTerm->saveMeta('additional_details_broker', $this->additional_details_broker ?? null);
