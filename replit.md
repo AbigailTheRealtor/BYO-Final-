@@ -89,3 +89,10 @@ I prefer detailed explanations. Ask before making major changes.
 - **View Full Terms Link**: Blue text link at bottom, only visible to listing owner
 - **Privacy Enforced**: Non-owners see "Private — visible only to listing creator"
 - **Removed**: Accordion expand/collapse behavior - content now always visible in card format
+
+### Services Offered Display Fix (December 2025)
+- **Recursive flatten helper**: Extracts all string service entries from any depth of nested arrays/objects
+- **JSON parse error handling**: Resets error state before each decode, shows warning if some data recovered
+- **Additional Services section**: Shows custom entries when provided, or "Other option selected" message when checked but empty
+- **Deduplication**: Removes duplicate service entries for clean display
+- **Fallback messages**: Appropriate error/warning/empty states for all scenarios

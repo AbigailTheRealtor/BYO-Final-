@@ -1750,129 +1750,97 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         </div>
                                                         @endif
 
-                                                        <!-- Services Offered with Category Subtitles -->
+                                                        <!-- Services Offered - Display All Selected Services -->
                                                         @php 
-                                                        $servicesList = (array) data_get($bid, 'get.services', []);
-                                                        $propertyType = data_get($auction, 'property_type', 'Residential');
+                                                        $flattenServices = function($data, $excludeValues = ['Other']) use (&$flattenServices) {
+                                                            $result = [];
+                                                            if (is_array($data) || is_object($data)) {
+                                                                foreach ((array)$data as $value) {
+                                                                    if (is_string($value) && !empty(trim($value)) && !in_array($value, $excludeValues)) {
+                                                                        $result[] = trim($value);
+                                                                    } elseif (is_array($value) || is_object($value)) {
+                                                                        $result = array_merge($result, $flattenServices($value, $excludeValues));
+                                                                    }
+                                                                }
+                                                            } elseif (is_string($data) && !empty(trim($data)) && !in_array($data, $excludeValues)) {
+                                                                $result[] = trim($data);
+                                                            }
+                                                            return $result;
+                                                        };
                                                         
-                                                        if ($propertyType === 'Residential') {
-                                                            $categories = [
-                                                                "📣 Tenant Criteria Marketing & Promotion" => [
-                                                                    "Distribute the Tenant's rental criteria to licensed agents within the desired area(s)",
-                                                                    "Market the Tenant's rental criteria through licensed agent networks and platforms",
-                                                                    "Notify the Tenant when matching listings become available based on stated preferences",
-                                                                ],
-                                                                "🔎 Property Search, Alerts & Matching" => [
-                                                                    "Search MLS and licensed agent databases for properties matching the Tenant's criteria",
-                                                                    "Set up automated property alerts based on Tenant-provided preferences",
-                                                                    "Research off-market, FSBO, and pre-listing opportunities when available",
-                                                                    "Prepare and share summaries of vetted listings for Tenant review",
-                                                                ],
-                                                                "🏡 Property Showings & Virtual Tours" => [
-                                                                    "Schedule and accompany the Tenant on property showings",
-                                                                    "Schedule and coordinate virtual or video tours as requested by the Tenant",
-                                                                    "Provide observations on property condition, neighborhood context, and layout",
-                                                                    "Follow up with listing agents after showings to check availability and gather additional info",
-                                                                ],
-                                                                "📝 Tenant Application Support" => [
-                                                                    "Provide the Tenant with application instructions or links to online platforms",
-                                                                    "Gather and organize required supporting documents (e.g., income, ID, rental history)",
-                                                                    "Submit complete and organized application packages to the Landlord's Agent, Landlord, or Property Manager",
-                                                                ],
-                                                                "📄 Lease Preparation & Execution" => [
-                                                                    "Assist with negotiating rent, lease terms, and other provisions (as permitted under the agency agreement)",
-                                                                    "Coordinate with the Landlord's Agent, Landlord, or Property Manager to finalize lease terms",
-                                                                    "Review lease drafts and coordinate revisions through appropriate channels",
-                                                                    "Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties",
-                                                                    "Track deposit deadlines and assist the Tenant with understanding amounts due",
-                                                                ],
-                                                                "🚚 Move-In Support & Coordination" => [
-                                                                    "Coordinate move-in date and key handoff logistics with the Landlord's Agent, Landlord or Property Manager",
-                                                                    "Confirm completion of any agreed-upon pre-move-in cleaning or repairs",
-                                                                    "Provide a utility setup checklist and local provider resources",
-                                                                    "Share a move-in checklist for documentation and property condition review",
-                                                                    "Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods",
-                                                                ],
-                                                                "💡 Leasing Strategy & Guidance" => [
-                                                                    "Provide a Comparative Rental Market Analysis (CRMA) with pricing insights and local trends",
-                                                                    "Explain lease structures, typical terms, and negotiation strategies",
-                                                                    "Provide general guidance on Tenant rights and Landlord responsibilities under local rental law",
-                                                                    "Provide general guidance on lease clauses, renewal options, and move-in costs",
-                                                                ],
-                                                            ];
-                                                        } else {
-                                                            $categories = [
-                                                                "📣 Tenant Criteria Marketing & Promotion" => [
-                                                                    "Distribute the Tenant's rental criteria to licensed agents within the desired area(s)",
-                                                                    "Market the Tenant's rental criteria through licensed agent networks and commercial listing platforms",
-                                                                    "Notify the Tenant when matching listings become available based on stated preferences",
-                                                                ],
-                                                                "🔎 Property Search, Alerts & Matching" => [
-                                                                    "Search commercial databases and listings for properties matching the Tenant's criteria",
-                                                                    "Set up automated property alerts based on Tenant-provided preferences",
-                                                                    "Research off-market, FSBO, and pre-listing commercial opportunities when available",
-                                                                    "Prepare and share summaries of vetted commercial listings for Tenant review",
-                                                                ],
-                                                                "🏡 Property Showings & Virtual Tours" => [
-                                                                    "Schedule and accompany the Tenant on property showings",
-                                                                    "Schedule and coordinate virtual or video tours as requested by the Tenant",
-                                                                    "Provide observations on property condition, zoning, access, buildout potential, and neighborhood context",
-                                                                    "Follow up with listing agents after showings to check availability and gather additional info",
-                                                                ],
-                                                                "📝 Tenant Application Support" => [
-                                                                    "Provide the Tenant with application instructions or links to online platforms",
-                                                                    "Gather and organize required supporting documents (e.g., business licenses, financials, references)",
-                                                                    "Submit complete and organized application packages to the Landlord's Agent, Landlord, or Property Manager",
-                                                                ],
-                                                                "📄 Lease Preparation, LOI & Execution" => [
-                                                                    "Draft or assist with preparing a Letter of Intent (LOI) summarizing the Tenant's business needs and proposed terms",
-                                                                    "Assist with negotiating rent, CAM, lease term, TI allowance, exclusivity clauses, renewal options, and other provisions (as permitted under the agency agreement)",
-                                                                    "Coordinate with the Landlord's Agent, Landlord or Property Manager to finalize lease terms",
-                                                                    "Review lease drafts and coordinate revisions through appropriate channels",
-                                                                    "Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties",
-                                                                    "Track required deposits, rent commencement, and key lease dates to ensure move-in readiness",
-                                                                ],
-                                                                "🚚 Move-In Support & Coordination" => [
-                                                                    "Coordinate move-in date and key handoff logistics with the Landlord, Landlord's Agent, or Property Manager",
-                                                                    "Confirm completion of any agreed-upon pre-move-in repairs, cleaning, or buildout",
-                                                                    "Provide a utility setup checklist and local provider resources",
-                                                                    "Share a move-in checklist for documentation and property condition review",
-                                                                    "Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods",
-                                                                ],
-                                                                "💡 Leasing Strategy & Guidance" => [
-                                                                    "Provide a Comparative Lease Market Analysis (CLMA) with pricing insights, comps, and vacancy trends",
-                                                                    "Advise on lease types and structures (e.g., NNN, Modified Gross, Full Service) with general explanations of differences",
-                                                                    "Provide general guidance on Tenant rights and Landlord responsibilities under commercial leasing law",
-                                                                    "Provide general guidance on lease clauses, escalation terms, and space usage considerations",
-                                                                ],
-                                                            ];
+                                                        $rawServices = data_get($bid, 'get.services', []);
+                                                        $servicesParseError = false;
+                                                        $parsedServices = [];
+                                                        
+                                                        if (is_string($rawServices) && !empty($rawServices)) {
+                                                            json_decode('null');
+                                                            $decoded = json_decode($rawServices, true);
+                                                            $servicesParseError = (json_last_error() !== JSON_ERROR_NONE);
+                                                            if (!$servicesParseError) {
+                                                                $parsedServices = $decoded ?? [];
+                                                            }
+                                                        } elseif (is_array($rawServices) || is_object($rawServices)) {
+                                                            $parsedServices = $rawServices;
                                                         }
+                                                        
+                                                        $servicesList = array_unique($flattenServices($parsedServices));
+                                                        
+                                                        $rawOtherServices = data_get($bid, 'get.other_services', []);
+                                                        $additionalServicesList = [];
+                                                        json_decode('null');
+                                                        if (is_string($rawOtherServices) && !empty($rawOtherServices)) {
+                                                            $decoded = json_decode($rawOtherServices, true);
+                                                            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                                                                $additionalServicesList = $decoded;
+                                                            }
+                                                        } elseif (is_array($rawOtherServices) || is_object($rawOtherServices)) {
+                                                            $additionalServicesList = (array) $rawOtherServices;
+                                                        }
+                                                        $additionalServicesList = array_filter($additionalServicesList, fn($s) => is_string($s) && !empty(trim($s)));
+                                                        $additionalServicesList = array_values($additionalServicesList);
+                                                        
+                                                        $hasOtherEnabled = data_get($bid, 'get.other_services_enabled', false);
+                                                        
+                                                        $hasAnyServices = !empty($servicesList) || !empty($additionalServicesList) || $hasOtherEnabled;
                                                         @endphp
                                                         
-                                                        @if (!empty($servicesList))
                                                         <div class="mb-3">
                                                             <div class="fw-semibold mb-2"
                                                                 style="color: #049399;">Services Offered:</div>
                                                             
-                                                            @foreach ($categories as $categoryName => $categoryServices)
-                                                                @php
-                                                                    $matchedServices = array_filter($servicesList, function($s) use ($categoryServices) {
-                                                                        return in_array($s, $categoryServices);
-                                                                    });
-                                                                @endphp
-                                                                @if (!empty($matchedServices))
-                                                                <div class="mb-2">
-                                                                    <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">{{ $categoryName }}</div>
-                                                                    <ul class="services mb-2" style="margin-top: 0.25rem;">
-                                                                        @foreach ($matchedServices as $service)
-                                                                            <li style="font-size: 0.9rem;">{{ $service }}</li>
+                                                            @if ($servicesParseError && empty($servicesList) && empty($additionalServicesList) && !$hasOtherEnabled)
+                                                            <div class="text-danger" style="font-style: italic;">Unable to load service selections for this bid.</div>
+                                                            @elseif ($hasAnyServices)
+                                                                @if ($servicesParseError)
+                                                                <div class="text-warning mb-2" style="font-size: 0.85rem;">Warning: Some service data could not be loaded.</div>
+                                                                @endif
+                                                                
+                                                                @if (!empty($servicesList))
+                                                                <ul class="services mb-2" style="padding-left: 1.2rem;">
+                                                                    @foreach ($servicesList as $service)
+                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $service }}</li>
+                                                                    @endforeach
+                                                                </ul>
+                                                                @endif
+                                                                
+                                                                @if (!empty($additionalServicesList) || $hasOtherEnabled)
+                                                                <div class="mt-2">
+                                                                    <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">➕ Additional Services</div>
+                                                                    @if (!empty($additionalServicesList))
+                                                                    <ul class="services mb-2" style="margin-top: 0.25rem; padding-left: 1.2rem;">
+                                                                        @foreach ($additionalServicesList as $additionalService)
+                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $additionalService }}</li>
                                                                         @endforeach
                                                                     </ul>
+                                                                    @elseif($hasOtherEnabled)
+                                                                    <div class="text-muted" style="font-size: 0.9rem; margin-top: 0.25rem;">"Other" option selected — no additional details provided.</div>
+                                                                    @endif
                                                                 </div>
                                                                 @endif
-                                                            @endforeach
+                                                            @else
+                                                            <div class="text-muted" style="font-style: italic;">No services selected for this bid.</div>
+                                                            @endif
                                                         </div>
-                                                        @endif
 
                                                         <!-- Review Links -->
                                                         @if (data_get($bid, 'get.reviews_links'))

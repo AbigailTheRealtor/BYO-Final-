@@ -1,0 +1,114 @@
+Replit Fix — “Services Offered” Not Showing All Selected Services (Agent Bid → Private Terms View)
+
+Applies to: Hire a Tenant’s Agent (Residential + Commercial) → Private Compensation & Agreement Terms → Services Offered section
+
+Issue
+
+In the Private Terms view, Services Offered is not listing every service the Agent selected. It only shows a partial subset.
+
+Required Outcome
+
+✅ Display ALL selected services for that bid, in the correct category order, with each category showing every checked item underneath it.
+
+1) Data Source Must Be the Bid’s Saved Service Selections (Not Static / Not Tenant Defaults)
+
+Ensure the Services Offered section is rendering from the Agent’s bid record, not from:
+
+the listing’s original Tenant service selections
+
+the “service template”
+
+a hardcoded category list
+
+a partially filtered query
+
+✅ Use the bid’s stored selections (whatever is currently used to calculate “Offered Services: X Services”).
+
+2) Render Logic Must NOT Stop After First Match
+
+Fix any logic like:
+
+find() instead of filter()
+
+returning early inside a loop
+
+overwriting an array instead of appending
+
+only rendering the first category that has a selection
+
+✅ Use a loop that accumulates all selected items across all categories.
+
+3) Category Structure + Order Must Match Hire-a-Tenant Service List
+Residential categories (in order):
+
+Tenant Criteria Marketing & Promotion
+
+Property Search, Alerts & Matching
+
+Property Showings & Virtual Tours
+
+Tenant Application Support
+
+Lease Preparation & Execution
+
+Move-In Support & Coordination
+
+Leasing Strategy & Guidance
+
+Additional Services
+
+Commercial categories (in order):
+
+Tenant Criteria Marketing & Promotion
+
+Property Search, Alerts & Matching
+
+Property Showings & Virtual Tours
+
+Tenant Application Support
+
+Lease Preparation, LOI & Execution
+
+Move-In Support & Coordination
+
+Leasing Strategy & Guidance
+
+Additional Services
+
+✅ Each category heading should display only if at least 1 item in that category is selected.
+
+4) Additional Services Must Always Render Correctly
+
+If the Agent selected:
+
+“Other – Specify additional services as needed” and typed custom items
+
+Then under Additional Services, show:
+
+each typed custom entry as its own bullet item
+
+✅ Each custom entry counts as one service and must appear in the Services Offered list.
+
+5) Storage / Parsing Fix (If Needed)
+
+If the bid services are stored as JSON:
+
+make sure the view is decoding/parsing properly
+
+ensure it’s not failing silently and falling back to an empty array
+
+✅ Add a defensive check:
+
+if parsing fails, show error: “Unable to load service selections for this bid.”
+
+6) Acceptance Test
+
+Create a bid selecting services from at least 5 categories + add 2 custom Additional Services.
+
+✅ Private Terms view must display:
+
+all categories that have selections
+
+every checked service item under each category
+
+all custom additional items at the bottom under Additional Services
