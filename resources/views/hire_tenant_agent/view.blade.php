@@ -215,15 +215,14 @@
         background-color: #c82333;
     }
 
-    /* Counter (orange) */
+    /* Counter (blue) */
     .btn-counter {
-        background-color: #f0ad4e;
-        color: #212529;
-        /* dark text for better contrast */
+        background-color: #0d6efd;
+        color: #ffffff;
     }
 
     .btn-counter:hover {
-        background-color: #ec971f;
+        background-color: #0b5ed7;
     }
 
     .view-btn {
@@ -1695,17 +1694,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             Overview & Qualifications
                                                         </h6>
 
-                                                        <!-- Licensed Since -->
-                                                        @if (data_get($bid, 'get.year_licensed'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">Licensed Since:</div>
-                                                            <div class="text-muted">
-                                                                {{ data_get($bid, 'get.year_licensed') }}
-                                                            </div>
-                                                        </div>
-                                                        @endif
-
                                                         <!-- About Agent -->
                                                         @if (data_get($bid, 'get.bio'))
                                                         <div class="mb-3">
@@ -1728,17 +1716,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         </div>
                                                         @endif
 
-                                                        <!-- Marketing Strategy -->
-                                                        @if (data_get($bid, 'get.marketing_plan'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">Marketing Strategy:</div>
-                                                            <div class="text-muted">
-                                                                {{ data_get($bid, 'get.marketing_plan') }}
-                                                            </div>
-                                                        </div>
-                                                        @endif
-
                                                         <!-- What Sets This Agent Apart -->
                                                         @if (data_get($bid, 'get.what_sets_you_apart'))
                                                         <div class="mb-3">
@@ -1750,151 +1727,16 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         </div>
                                                         @endif
 
-                                                        <!-- Services Offered - Display with Category Headings -->
-                                                        @php 
-                                                        $flattenServices = function($data, $excludeValues = ['Other']) use (&$flattenServices) {
-                                                            $result = [];
-                                                            if (is_array($data) || is_object($data)) {
-                                                                foreach ((array)$data as $value) {
-                                                                    if (is_string($value) && !empty(trim($value)) && !in_array($value, $excludeValues)) {
-                                                                        $result[] = trim($value);
-                                                                    } elseif (is_array($value) || is_object($value)) {
-                                                                        $result = array_merge($result, $flattenServices($value, $excludeValues));
-                                                                    }
-                                                                }
-                                                            } elseif (is_string($data) && !empty(trim($data)) && !in_array($data, $excludeValues)) {
-                                                                $result[] = trim($data);
-                                                            }
-                                                            return $result;
-                                                        };
-                                                        
-                                                        $rawServices = data_get($bid, 'get.services', []);
-                                                        $servicesParseError = false;
-                                                        $parsedServices = [];
-                                                        
-                                                        if (is_string($rawServices) && !empty($rawServices)) {
-                                                            json_decode('null');
-                                                            $decoded = json_decode($rawServices, true);
-                                                            $servicesParseError = (json_last_error() !== JSON_ERROR_NONE);
-                                                            if (!$servicesParseError) {
-                                                                $parsedServices = $decoded ?? [];
-                                                            }
-                                                        } elseif (is_array($rawServices) || is_object($rawServices)) {
-                                                            $parsedServices = $rawServices;
-                                                        }
-                                                        
-                                                        $servicesList = array_unique($flattenServices($parsedServices));
-                                                        
-                                                        $rawOtherServices = data_get($bid, 'get.other_services', []);
-                                                        $additionalServicesList = [];
-                                                        json_decode('null');
-                                                        if (is_string($rawOtherServices) && !empty($rawOtherServices)) {
-                                                            $decoded = json_decode($rawOtherServices, true);
-                                                            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                                                                $additionalServicesList = $decoded;
-                                                            }
-                                                        } elseif (is_array($rawOtherServices) || is_object($rawOtherServices)) {
-                                                            $additionalServicesList = (array) $rawOtherServices;
-                                                        }
-                                                        $additionalServicesList = array_filter($additionalServicesList, fn($s) => is_string($s) && !empty(trim($s)));
-                                                        $additionalServicesList = array_values($additionalServicesList);
-                                                        
-                                                        $hasOtherEnabled = data_get($bid, 'get.other_services_enabled', false);
-                                                        $hasAnyServices = !empty($servicesList) || !empty($additionalServicesList) || $hasOtherEnabled;
-                                                        
-                                                        $propType = data_get($auction, 'get.property_type', data_get($auction, 'property_type', 'Residential'));
-                                                        $isResidentialProp = str_contains(strtolower($propType ?? ''), 'residential');
-                                                        
-                                                        $serviceCategories = $isResidentialProp ? [
-                                                            '📣 Tenant Criteria Marketing & Promotion' => ['rental criteria', 'marketing', 'distribute', 'notify', 'market the tenant'],
-                                                            '🔍 Property Search, Alerts & Matching' => ['search', 'alert', 'matching', 'mls', 'fsbo', 'off-market', 'listings'],
-                                                            '🏠 Property Showings & Virtual Tours' => ['showing', 'virtual tour', 'accompany', 'schedule'],
-                                                            '📝 Tenant Application Support' => ['application', 'supporting documents', 'submit complete'],
-                                                            '📄 Lease Preparation & Execution' => ['lease', 'negotiat', 'signing', 'deposit deadline', 'e-signature'],
-                                                            '🚚 Move-In Support & Coordination' => ['move-in', 'key handoff', 'utility', 'cleaning', 'repairs'],
-                                                            '💡 Leasing Strategy & Guidance' => ['comparative', 'crma', 'guidance', 'strategy', 'lease structure', 'tenant rights'],
-                                                        ] : [
-                                                            '📣 Tenant Criteria Marketing & Promotion' => ['rental criteria', 'marketing', 'distribute', 'notify', 'market the tenant'],
-                                                            '🔍 Property Search, Alerts & Matching' => ['search', 'alert', 'matching', 'commercial database', 'fsbo', 'off-market'],
-                                                            '🏠 Property Showings & Virtual Tours' => ['showing', 'virtual tour', 'accompany', 'schedule', 'zoning'],
-                                                            '📝 Tenant Application Support' => ['application', 'supporting documents', 'business license', 'financials'],
-                                                            '📄 Lease Preparation, LOI & Execution' => ['lease', 'loi', 'letter of intent', 'negotiat', 'cam', 'ti allowance'],
-                                                            '🚚 Move-In Support & Coordination' => ['move-in', 'key handoff', 'utility', 'buildout', 'repairs'],
-                                                            '💡 Leasing Strategy & Guidance' => ['comparative', 'clma', 'nnn', 'modified gross', 'full service', 'guidance'],
-                                                        ];
-                                                        
-                                                        $categorizedServices = [];
-                                                        $unmatchedServices = [];
-                                                        foreach ($servicesList as $service) {
-                                                            $matched = false;
-                                                            $serviceLower = strtolower($service);
-                                                            foreach ($serviceCategories as $catName => $keywords) {
-                                                                foreach ($keywords as $keyword) {
-                                                                    if (str_contains($serviceLower, strtolower($keyword))) {
-                                                                        $categorizedServices[$catName][] = $service;
-                                                                        $matched = true;
-                                                                        break 2;
-                                                                    }
-                                                                }
-                                                            }
-                                                            if (!$matched) {
-                                                                $unmatchedServices[] = $service;
-                                                            }
-                                                        }
-                                                        @endphp
-                                                        
-                                                        <div class="mb-4">
-                                                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                                <i class="fa fa-clipboard-list me-2"></i>Services:
-                                                            </h6>
-                                                            
-                                                            @if ($servicesParseError && empty($servicesList) && empty($additionalServicesList) && !$hasOtherEnabled)
-                                                            <div class="text-danger" style="font-style: italic;">Unable to load service selections for this bid.</div>
-                                                            @elseif ($hasAnyServices)
-                                                                @if ($servicesParseError)
-                                                                <div class="text-warning mb-2" style="font-size: 0.85rem;">Warning: Some service data could not be loaded.</div>
-                                                                @endif
-                                                                
-                                                                @foreach ($categorizedServices as $categoryName => $categoryServices)
-                                                                <div class="mb-3">
-                                                                    <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">{{ $categoryName }}</div>
-                                                                    <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
-                                                                        @foreach ($categoryServices as $service)
-                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $service }}</li>
-                                                                        @endforeach
-                                                                    </ul>
-                                                                </div>
-                                                                @endforeach
-                                                                
-                                                                @if (!empty($unmatchedServices))
-                                                                <div class="mb-3">
-                                                                    <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">📋 Other Services</div>
-                                                                    <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
-                                                                        @foreach ($unmatchedServices as $service)
-                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $service }}</li>
-                                                                        @endforeach
-                                                                    </ul>
-                                                                </div>
-                                                                @endif
-                                                                
-                                                                @if (!empty($additionalServicesList) || $hasOtherEnabled)
-                                                                <div class="mb-3">
-                                                                    <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">➕ Additional Services</div>
-                                                                    @if (!empty($additionalServicesList))
-                                                                    <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
-                                                                        @foreach ($additionalServicesList as $additionalService)
-                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $additionalService }}</li>
-                                                                        @endforeach
-                                                                    </ul>
-                                                                    @elseif($hasOtherEnabled)
-                                                                    <div class="text-muted" style="font-size: 0.9rem; margin-top: 0.25rem;">"Other" option selected — no additional details provided.</div>
-                                                                    @endif
-                                                                </div>
-                                                                @endif
-                                                            @else
-                                                            <div class="text-muted" style="font-style: italic;">No services selected for this bid.</div>
-                                                            @endif
+                                                        <!-- Marketing Strategy -->
+                                                        @if (data_get($bid, 'get.marketing_plan'))
+                                                        <div class="mb-3">
+                                                            <div class="fw-semibold"
+                                                                style="color: #049399;">Marketing Strategy:</div>
+                                                            <div class="text-muted">
+                                                                {{ data_get($bid, 'get.marketing_plan') }}
+                                                            </div>
                                                         </div>
+                                                        @endif
 
                                                         <!-- Review Links -->
                                                         @if (data_get($bid, 'get.reviews_links'))
@@ -1946,7 +1788,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         <div class="mb-3">
                                                             <div class="fw-semibold"
                                                                 style="color: #049399;">Social
-                                                                Media</div>
+                                                                Media Platforms:</div>
                                                             <div>
                                                                 @foreach (data_get($bid, 'get.social_media') as $social)
                                                                 @php
@@ -1993,6 +1835,17 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 </div>
                                                                 @endif
                                                                 @endforeach
+                                                            </div>
+                                                        </div>
+                                                        @endif
+
+                                                        <!-- Licensed Year -->
+                                                        @if (data_get($bid, 'get.year_licensed'))
+                                                        <div class="mb-3">
+                                                            <div class="fw-semibold"
+                                                                style="color: #049399;">Licensed Year:</div>
+                                                            <div class="text-muted">
+                                                                {{ data_get($bid, 'get.year_licensed') }}
                                                             </div>
                                                         </div>
                                                         @endif
@@ -2207,6 +2060,152 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         @endif
                                                     </div>
                                                     @endif
+
+                                                    <!-- 3. Offered Services -->
+                                                    @php 
+                                                    $flattenServices = function($data, $excludeValues = ['Other']) use (&$flattenServices) {
+                                                        $result = [];
+                                                        if (is_array($data) || is_object($data)) {
+                                                            foreach ((array)$data as $value) {
+                                                                if (is_string($value) && !empty(trim($value)) && !in_array($value, $excludeValues)) {
+                                                                    $result[] = trim($value);
+                                                                } elseif (is_array($value) || is_object($value)) {
+                                                                    $result = array_merge($result, $flattenServices($value, $excludeValues));
+                                                                }
+                                                            }
+                                                        } elseif (is_string($data) && !empty(trim($data)) && !in_array($data, $excludeValues)) {
+                                                            $result[] = trim($data);
+                                                        }
+                                                        return $result;
+                                                    };
+                                                    
+                                                    $rawServices = data_get($bid, 'get.services', []);
+                                                    $servicesParseError = false;
+                                                    $parsedServices = [];
+                                                    
+                                                    if (is_string($rawServices) && !empty($rawServices)) {
+                                                        json_decode('null');
+                                                        $decoded = json_decode($rawServices, true);
+                                                        $servicesParseError = (json_last_error() !== JSON_ERROR_NONE);
+                                                        if (!$servicesParseError) {
+                                                            $parsedServices = $decoded ?? [];
+                                                        }
+                                                    } elseif (is_array($rawServices) || is_object($rawServices)) {
+                                                        $parsedServices = $rawServices;
+                                                    }
+                                                    
+                                                    $servicesList = array_unique($flattenServices($parsedServices));
+                                                    
+                                                    $rawOtherServices = data_get($bid, 'get.other_services', []);
+                                                    $additionalServicesList = [];
+                                                    json_decode('null');
+                                                    if (is_string($rawOtherServices) && !empty($rawOtherServices)) {
+                                                        $decoded = json_decode($rawOtherServices, true);
+                                                        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                                                            $additionalServicesList = $decoded;
+                                                        }
+                                                    } elseif (is_array($rawOtherServices) || is_object($rawOtherServices)) {
+                                                        $additionalServicesList = (array) $rawOtherServices;
+                                                    }
+                                                    $additionalServicesList = array_filter($additionalServicesList, fn($s) => is_string($s) && !empty(trim($s)));
+                                                    $additionalServicesList = array_values($additionalServicesList);
+                                                    
+                                                    $hasOtherEnabled = data_get($bid, 'get.other_services_enabled', false);
+                                                    $hasAnyServices = !empty($servicesList) || !empty($additionalServicesList) || $hasOtherEnabled;
+                                                    
+                                                    $propType = data_get($auction, 'get.property_type', data_get($auction, 'property_type', 'Residential'));
+                                                    $isResidentialProp = str_contains(strtolower($propType ?? ''), 'residential');
+                                                    
+                                                    $serviceCategories = $isResidentialProp ? [
+                                                        '📣 Tenant Criteria Marketing & Promotion' => ['rental criteria', 'marketing', 'distribute', 'notify', 'market the tenant'],
+                                                        '🔍 Property Search, Alerts & Matching' => ['search', 'alert', 'matching', 'mls', 'fsbo', 'off-market', 'listings'],
+                                                        '🏠 Property Showings & Virtual Tours' => ['showing', 'virtual tour', 'accompany', 'schedule'],
+                                                        '📝 Tenant Application Support' => ['application', 'supporting documents', 'submit complete'],
+                                                        '📄 Lease Preparation & Execution' => ['lease', 'negotiat', 'signing', 'deposit deadline', 'e-signature'],
+                                                        '🚚 Move-In Support & Coordination' => ['move-in', 'key handoff', 'utility', 'cleaning', 'repairs'],
+                                                        '💡 Leasing Strategy & Guidance' => ['comparative', 'crma', 'guidance', 'strategy', 'lease structure', 'tenant rights'],
+                                                    ] : [
+                                                        '📣 Tenant Criteria Marketing & Promotion' => ['rental criteria', 'marketing', 'distribute', 'notify', 'market the tenant'],
+                                                        '🔍 Property Search, Alerts & Matching' => ['search', 'alert', 'matching', 'commercial database', 'fsbo', 'off-market'],
+                                                        '🏠 Property Showings & Virtual Tours' => ['showing', 'virtual tour', 'accompany', 'schedule', 'zoning'],
+                                                        '📝 Tenant Application Support' => ['application', 'supporting documents', 'business license', 'financials'],
+                                                        '📄 Lease Preparation, LOI & Execution' => ['lease', 'loi', 'letter of intent', 'negotiat', 'cam', 'ti allowance'],
+                                                        '🚚 Move-In Support & Coordination' => ['move-in', 'key handoff', 'utility', 'buildout', 'repairs'],
+                                                        '💡 Leasing Strategy & Guidance' => ['comparative', 'clma', 'nnn', 'modified gross', 'full service', 'guidance'],
+                                                    ];
+                                                    
+                                                    $categorizedServices = [];
+                                                    $unmatchedServices = [];
+                                                    foreach ($servicesList as $service) {
+                                                        $matched = false;
+                                                        $serviceLower = strtolower($service);
+                                                        foreach ($serviceCategories as $catName => $keywords) {
+                                                            foreach ($keywords as $keyword) {
+                                                                if (str_contains($serviceLower, strtolower($keyword))) {
+                                                                    $categorizedServices[$catName][] = $service;
+                                                                    $matched = true;
+                                                                    break 2;
+                                                                }
+                                                            }
+                                                        }
+                                                        if (!$matched) {
+                                                            $unmatchedServices[] = $service;
+                                                        }
+                                                    }
+                                                    @endphp
+                                                    
+                                                    <div class="mb-5">
+                                                        <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                            <i class="fa fa-clipboard-list me-2"></i>Offered Services
+                                                        </h6>
+                                                        
+                                                        @if ($servicesParseError && empty($servicesList) && empty($additionalServicesList) && !$hasOtherEnabled)
+                                                        <div class="text-danger" style="font-style: italic;">Unable to load service selections for this bid.</div>
+                                                        @elseif ($hasAnyServices)
+                                                            @if ($servicesParseError)
+                                                            <div class="text-warning mb-2" style="font-size: 0.85rem;">Warning: Some service data could not be loaded.</div>
+                                                            @endif
+                                                            
+                                                            @foreach ($categorizedServices as $categoryName => $categoryServices)
+                                                            <div class="mb-3">
+                                                                <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">{{ $categoryName }}</div>
+                                                                <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
+                                                                    @foreach ($categoryServices as $service)
+                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $service }}</li>
+                                                                    @endforeach
+                                                                </ul>
+                                                            </div>
+                                                            @endforeach
+                                                            
+                                                            @if (!empty($unmatchedServices))
+                                                            <div class="mb-3">
+                                                                <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">📋 Other Services</div>
+                                                                <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
+                                                                    @foreach ($unmatchedServices as $service)
+                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $service }}</li>
+                                                                    @endforeach
+                                                                </ul>
+                                                            </div>
+                                                            @endif
+                                                            
+                                                            @if (!empty($additionalServicesList) || $hasOtherEnabled)
+                                                            <div class="mb-3">
+                                                                <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">➕ Additional Services</div>
+                                                                @if (!empty($additionalServicesList))
+                                                                <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
+                                                                    @foreach ($additionalServicesList as $additionalService)
+                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $additionalService }}</li>
+                                                                    @endforeach
+                                                                </ul>
+                                                                @elseif($hasOtherEnabled)
+                                                                <div class="text-muted" style="font-size: 0.9rem; margin-top: 0.25rem;">"Other" option selected — no additional details provided.</div>
+                                                                @endif
+                                                            </div>
+                                                            @endif
+                                                        @else
+                                                        <div class="text-muted" style="font-style: italic;">No services selected for this bid.</div>
+                                                        @endif
+                                                    </div>
 
                                                     <!-- 4. Agent Presentation & Promotional Materials -->
                                                     @if (data_get($bid, 'get.presentation_link') ||
@@ -2478,13 +2477,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     </div>
                                                     @endif
 
-                                                    <!-- 5. Agent Information -->
+                                                    <!-- 5. Agent Credentials and Contact Information -->
                                                     <div class="mb-4">
                                                         <h6 class="mb-3"
                                                             style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
                                                             <i
                                                                 class="fa fa-address-card me-2"></i>Agent
-                                                            Information
+                                                            Credentials and Contact Information
                                                         </h6>
 
                                                         <div class="row">
@@ -2597,7 +2596,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         </form>
                                                         
                                                         <a href="{{ route('tenant.counter-terms', ['id' => data_get($bid, 'id')]) }}" 
-                                                           class="btn btn-warning">
+                                                           class="btn btn-primary" style="background-color: #0d6efd; border-color: #0d6efd; color: #ffffff;">
                                                             <i class="fa fa-exchange-alt me-1"></i> Counter Bid
                                                         </a>
                                                         

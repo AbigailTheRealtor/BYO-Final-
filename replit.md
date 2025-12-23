@@ -114,3 +114,23 @@ I prefer detailed explanations. Ask before making major changes.
 - **PromoMaterials Storage**: Changed from direct property assignment to saveMeta() with proper JSON encoding
 - **Meta Key Consistency**: Uses `promoMaterials` (camelCase) key to match view expectations
 - **Download Links**: Marketing materials display includes View and Download buttons using proper storage URLs
+
+### Private Terms Modal Restructure (December 2025)
+- **Section Order**: Enforced exact 15-item sequence for private bid details modal:
+  1. Private Compensation & Agreement Terms (header)
+  2. Agent Overview & Qualifications (heading)
+  3. About Agent
+  4. Why Hire This Agent
+  5. What Sets This Agent Apart
+  6. Marketing Strategy
+  7. Reviews Link
+  8. Website Link
+  9. Social Media Platforms
+  10. Licensed Year
+  11. Broker Compensation and Agency Agreement Terms
+  12. Offered Services (moved to standalone section after Broker Compensation)
+  13. Agent Presentation & Marketing Materials
+  14. Agent Credentials and Contact Information (renamed from Agent Information)
+- **Button Styling**: Counter Bid button changed from orange (btn-warning) to blue (btn-primary) matching Accept (green) and Reject (red)
+- **Counter Terms Table**: Created missing `tenant_counter_terms` and `tenant_counter_terms_meta` database tables
+- **CSS Updates**: Updated `.btn-counter` class from orange (#f0ad4e) to blue (#0d6efd)
