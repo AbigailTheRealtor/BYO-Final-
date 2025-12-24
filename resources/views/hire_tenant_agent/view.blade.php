@@ -2092,11 +2092,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                     @endif
                                                                 @endif
                                                                 @if (data_get($bid, 'get.agency_agreement_timeframe'))
-                                                                <li class="mb-1"><span class="fw-semibold">Tenant Agency Agreement Timeframe:</span> {{ data_get($bid, 'get.agency_agreement_timeframe') }}
-                                                                    @if (data_get($bid, 'get.agency_agreement_timeframe') === 'Other' && data_get($bid, 'get.agency_agreement_custom'))
-                                                                    ({{ data_get($bid, 'get.agency_agreement_custom') }})
-                                                                    @endif
-                                                                </li>
+                                                                @php
+                                                                    $agencyTimeframe = data_get($bid, 'get.agency_agreement_timeframe');
+                                                                    $agencyTimeframeCustom = data_get($bid, 'get.agency_agreement_custom');
+                                                                    $isOtherTimeframe = is_string($agencyTimeframe) && strtolower(trim($agencyTimeframe)) === 'other';
+                                                                    $agencyTimeframeDisplay = $isOtherTimeframe ? ($agencyTimeframeCustom ?: 'Other') : ($agencyTimeframe ?: '');
+                                                                @endphp
+                                                                <li class="mb-1"><span class="fw-semibold">Tenant Agency Agreement Timeframe:</span> {{ $agencyTimeframeDisplay }}</li>
                                                                 @endif
                                                             </ul>
                                                         </div>
@@ -3306,21 +3308,18 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                                                         <!-- Agency Agreement Timeframe -->
                                                         @if (!empty($allMeta['agency_agreement_timeframe']))
+                                                        @php
+                                                            $metaTimeframe = $allMeta['agency_agreement_timeframe'] ?? '';
+                                                            $metaTimeframeCustom = $allMeta['agency_agreement_custom'] ?? '';
+                                                            $isMetaOther = is_string($metaTimeframe) && strtolower(trim($metaTimeframe)) === 'other';
+                                                            $metaTimeframeDisplay = $isMetaOther ? ($metaTimeframeCustom ?: 'Other') : ($metaTimeframe ?: '');
+                                                        @endphp
                                                         <div class="mb-1"
                                                             style="font-size: 12px;"><span
                                                                 style="font-size: 13px; font-weight: 600;">Tenant
                                                                 Agency Agreement
                                                                 Timeframe:</span>
-                                                            {{ $allMeta['agency_agreement_timeframe'] }}
-                                                        </div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['agency_agreement_custom']) && $allMeta['agency_agreement_timeframe'] === 'Other')
-                                                        <div class="mb-1"
-                                                            style="font-size: 12px;"><span
-                                                                style="font-size: 13px; font-weight: 600;">Custom
-                                                                Timeframe:</span>
-                                                            {{ $allMeta['agency_agreement_custom'] }}
+                                                            {{ $metaTimeframeDisplay }}
                                                         </div>
                                                         @endif
 
