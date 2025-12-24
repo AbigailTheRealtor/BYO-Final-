@@ -266,6 +266,17 @@
             font-size: 15px;
         }
     }
+    
+    /* Bid card accordion chevron rotation */
+    .card-header[data-bs-toggle="collapse"][aria-expanded="true"] .fa-chevron-down {
+        transform: rotate(180deg);
+    }
+    .card-header[data-bs-toggle="collapse"] .fa-chevron-down {
+        transition: transform 0.3s ease;
+    }
+    .card-header[data-bs-toggle="collapse"]:hover {
+        background-color: #f8f9fa !important;
+    }
 </style>
 @endpush
 @section('content')
@@ -1593,16 +1604,28 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             }
                         @endphp
                         
-                        <!-- Bid Card - Match Screenshot Design -->
+                        <!-- Bid Card - Collapsible Accordion Design -->
                         <div class="card mb-3" style="border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                            
+                            <!-- A) Card Header - Clickable to expand/collapse -->
+                            <div class="card-header d-flex justify-content-between align-items-center" 
+                                 style="cursor: pointer; background: #fff; border-bottom: 1px solid #e0e0e0; padding: 15px 20px;"
+                                 data-bs-toggle="collapse" 
+                                 data-bs-target="#bidCollapse-{{ data_get($bid, 'id') }}"
+                                 aria-expanded="false" 
+                                 aria-controls="bidCollapse-{{ data_get($bid, 'id') }}">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="fa fa-chevron-down" id="bidChevron-{{ data_get($bid, 'id') }}" style="transition: transform 0.3s; color: #1a3a5c;"></i>
+                                    <h5 class="mb-0" style="font-weight: 700; color: #1a3a5c; font-size: 1.4rem;">Agent {{ $agentNumber }}</h5>
+                                </div>
+                                <span style="font-weight: 600; color: {{ $bidStatusColor }}; font-size: 1.1rem;">{{ $bidStatusLabel }}</span>
+                            </div>
+                            
+                            <!-- Collapsible Content - Default collapsed -->
+                            <div class="collapse" id="bidCollapse-{{ data_get($bid, 'id') }}">
                             <div class="card-body" style="padding: 20px;">
                                 
-                                <!-- A) Card Header Row: Agent X + Status -->
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <h5 class="mb-0" style="font-weight: 700; color: #1a3a5c; font-size: 1.4rem;">Agent {{ $agentNumber }}</h5>
-                                    <span style="font-weight: 600; color: {{ $bidStatusColor }}; font-size: 1.1rem;">{{ $bidStatusLabel }}</span>
-                                </div>
-                                <hr style="margin: 15px 0; border-color: #e0e0e0;">
+                                <hr style="margin: 0 0 15px 0; border-color: #e0e0e0;">
                                 
                                 <!-- B) Offered Services Count Row -->
                                 <p class="mb-0" style="font-size: 1.1rem; color: #1a3a5c;">
@@ -1639,18 +1662,19 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 </span>
                                 @endif
                                 
-                                <!-- Edit/Withdraw Actions for Bid Owner -->
+                                <!-- Edit/Withdraw Actions for Bid Owner - Same row, solid colors, no white border -->
                                 @if ($canEditWithdraw)
-                                <div class="d-flex gap-2 mt-3">
+                                <div class="d-flex gap-2 mt-3 justify-content-end">
                                     <a href="{{ route('agent.tenant.agent.auction.bid', $auction->id) }}?edit={{ data_get($bid, 'id') }}" 
-                                       class="btn btn-outline-primary btn-sm">
+                                       class="btn btn-primary btn-sm" style="border: none;">
                                         <i class="fa fa-edit me-1"></i> Edit Bid
                                     </a>
                                     <form action="{{ route('tenant.hire.agent.auction.bid.withdraw') }}" method="POST" 
-                                          onsubmit="return confirm('Are you sure you want to withdraw your bid? This action cannot be undone.');">
+                                          onsubmit="return confirm('Are you sure you want to withdraw your bid? This action cannot be undone.');"
+                                          class="d-inline">
                                         @csrf
                                         <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
-                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <button type="submit" class="btn btn-danger btn-sm" style="border: none;">
                                             <i class="fa fa-times-circle me-1"></i> Withdraw Bid
                                         </button>
                                     </form>
@@ -1670,6 +1694,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 @endif
                                 
                             </div>
+                            </div> {{-- End of collapse div --}}
                         </div>
                         
                         @if ($isListingOwner || $isBidOwner)
@@ -1695,7 +1720,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                 <div class="modal-body"
                                                     style="background: #fafafa; padding: 25px;">
 
-                                                    <!-- 1. Agent Overview & Qualifications -->
+                                                    <!-- 1. Agent Overview & Qualifications - ONLY visible to listing owner -->
+                                                    @if ($isListingOwner)
                                                     <div class="mb-5">
                                                         <h6 class="mb-3"
                                                             style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
@@ -1860,6 +1886,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         @endif
 
                                                     </div>
+                                                    @endif
+                                                    {{-- End of Agent Overview section (listing owner only) --}}
 
                                                     <!-- 2. Broker Compensation & Agency Agreement Terms -->
                                                     @if (data_get($bid, 'get.commission_structure') ||
@@ -2559,7 +2587,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     </div>
                                                     @endif
 
-                                                    <!-- 5. Agent Credentials and Contact Information -->
+                                                    <!-- 5. Agent Credentials and Contact Information - ONLY visible to listing owner -->
+                                                    @if ($isListingOwner)
                                                     <div class="mb-4">
                                                         <h6 class="mb-3"
                                                             style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
@@ -2654,6 +2683,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             @endif
                                                         </div>
                                                     </div>
+                                                    @endif
+                                                    {{-- End of Agent Credentials section (listing owner only) --}}
 
                                                 </div>
                                                 <div class="modal-footer"
