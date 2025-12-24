@@ -37,3 +37,10 @@ I prefer detailed explanations. Ask before making major changes.
 - **Laravel Mix**: Used for compiling frontend assets.
 - **U.S. Census Gazetteer Files**: Source for seeding local geographical databases (`us_states`, `us_counties`, `us_cities`).
 - **Google Places API**: Used for specific address and postal code validation.
+### Livewire File Upload Fix (December 2025)
+- **PHP Upload Limits Increased**: Workflow command now passes `-d upload_max_filesize=50M -d post_max_size=55M -d memory_limit=256M -d max_file_uploads=50`
+- **Livewire Config Updated**: Set `disk => 'local'`, `directory => 'livewire-tmp'`, `rules => ['file', 'max:51200']` in config/livewire.php
+- **Storage Directory Created**: Created `storage/app/livewire-tmp` with proper permissions for temporary file uploads
+- **Storage Link**: Ensured `php artisan storage:link` is run to connect public/storage to storage/app/public
+- **Validation Rules Already Correct**: Components have proper validation for `promoMaterials.*.files` (array) and `promoMaterials.*.files.*` (file with mimes/max)
+- **Blade Error Display Already Correct**: Both `@error('promoMaterials.$idx.files')` and `@error('promoMaterials.$idx.files.*')` present

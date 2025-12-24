@@ -1,0 +1,149 @@
+Replit Instructions — Fix “promoMaterials.0.files failed to upload” (Livewire)
+🔒 Safeguards
+
+Do NOT change UI text, layout, tooltips, or tab structure.
+
+Do NOT refactor unrelated upload logic.
+
+Only touch:
+
+the Livewire component for this bid tab
+
+Livewire upload config / PHP upload limits
+
+the Blade file input binding for Marketing Materials
+
+1) Confirm the file input is indexed correctly (REQUIRED)
+
+In the Marketing Materials loop, the upload input must be:
+
+<input type="file" wire:model="promoMaterials.{{ $index }}.files" multiple>
+@error("promoMaterials.$index.files") <div class="text-danger">{{ $message }}</div> @enderror
+@error("promoMaterials.$index.files.*") <div class="text-danger">{{ $message }}</div> @enderror
+
+
+✅ If it’s promoMaterials.files or promoMaterials.0.file etc — fix it to the above.
+
+2) Fix the Livewire validation rules for multi-file uploads
+
+In the Livewire component, ensure rules include BOTH:
+
+'promoMaterials' => 'array',
+'promoMaterials.*.files' => 'nullable|array',
+'promoMaterials.*.files.*' => 'file|max:10240', // keep your size if different
+
+
+Also include the allowed file types if you want them restricted:
+
+'promoMaterials.*.files.*' => 'file|mimes:pdf,jpg,jpeg,png,doc,docx,ppt,pptx|max:10240',
+
+
+⚠️ If you validate only promoMaterials.*.files as file (not array), Livewire will break on multiple.
+
+3) Increase PHP upload limits (MOST LIKELY CAUSE ON REPLIT)
+
+If the server rejects the request due to size, Livewire shows “failed to upload”.
+
+REQUIRED: set these PHP values high enough
+
+upload_max_filesize
+
+post_max_size
+
+memory_limit
+
+Target minimums (safe):
+
+upload_max_filesize = 25M
+
+post_max_size = 30M
+
+memory_limit = 256M
+
+Where to set depends on your Replit/Laravel setup. Use whichever exists in your project:
+
+✅ If you have a php.ini / user.ini / .user.ini in the repo, set:
+
+upload_max_filesize=25M
+post_max_size=30M
+memory_limit=256M
+max_file_uploads=20
+
+
+✅ If Replit uses a container/Dockerfile, set it there.
+
+After changes, restart the app.
+
+4) Ensure Livewire temp upload directory is writable
+
+Livewire uploads to storage/app/livewire-tmp by default.
+
+REQUIRED checks
+
+Ensure directory exists:
+
+storage/app/livewire-tmp
+
+Ensure writable permissions.
+
+If needed, run (or implement in startup):
+
+create folder if missing
+
+set proper permissions
+
+Also ensure Laravel storage link exists:
+
+php artisan storage:link
+
+5) Publish Livewire config and set a reliable temp disk (if needed)
+
+If temp uploads are failing due to disk config, explicitly configure it.
+
+Run:
+
+php artisan livewire:publish --config
+
+Then in config/livewire.php set:
+
+'temporary_file_upload' => [
+    'disk' => 'public', // or 'local' if public not desired
+    'directory' => 'livewire-tmp',
+    'rules' => 'file|max:10240', // keep consistent with component rules
+],
+
+6) Add one debug check so we can stop guessing (REQUIRED)
+
+Open DevTools → Network when uploading.
+
+Livewire will hit something like:
+
+/livewire/upload-file
+
+Required outcome
+
+Response must be 200
+
+If 413 → file too large (PHP/nginx limit)
+
+If 500 → storage/temp permissions/config issue
+
+If 419 → CSRF/session issue
+
+Have Replit dev confirm which status code occurs and fix accordingly.
+
+7) Testing checklist (must pass)
+
+On Agent Presentation & Marketing Materials tab
+
+Upload 1 JPG to row 1 ✅
+
+Add another marketing material row
+
+Upload 1 JPG to row 2 ✅
+
+Click Next ✅
+
+Submit ✅
+
+Reopen bid/listing and confirm files stored/displayed ✅
