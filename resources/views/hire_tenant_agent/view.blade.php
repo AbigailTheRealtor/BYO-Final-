@@ -309,6 +309,23 @@
     .card.higestBider .accordion-item > .card.mb-3 > .collapse {
         height: auto;
     }
+    
+    /* Bid action buttons - matched sizing for Edit/Withdraw */
+    .bid-action-btn {
+        min-width: 140px;
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        border: none !important;
+        box-shadow: none;
+    }
+    .bid-action-btn:hover {
+        opacity: 0.9;
+    }
 </style>
 @endpush
 @section('content')
@@ -1730,11 +1747,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 </span>
                                 @endif
                                 
-                                <!-- Edit/Withdraw Actions for Bid Owner - Same row, solid colors, no white border -->
+                                <!-- Edit/Withdraw Actions for Bid Owner - Same row, matched sizing -->
                                 @if ($canEditWithdraw)
-                                <div class="d-flex gap-2 mt-3 justify-content-end">
+                                <div class="d-flex gap-2 mt-3 justify-content-end align-items-center">
                                     <a href="{{ route('agent.tenant.agent.auction.bid', $auction->id) }}?edit={{ data_get($bid, 'id') }}" 
-                                       class="btn btn-primary btn-sm" style="border: none;">
+                                       class="btn btn-primary bid-action-btn">
                                         <i class="fa fa-edit me-1"></i> Edit Bid
                                     </a>
                                     <form action="{{ route('tenant.hire.agent.auction.bid.withdraw') }}" method="POST" 
@@ -1742,7 +1759,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                           class="d-inline">
                                         @csrf
                                         <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
-                                        <button type="submit" class="btn btn-danger btn-sm" style="border: none;">
+                                        <button type="submit" class="btn btn-danger bid-action-btn">
                                             <i class="fa fa-times-circle me-1"></i> Withdraw Bid
                                         </button>
                                     </form>

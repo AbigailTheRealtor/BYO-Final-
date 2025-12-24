@@ -1,0 +1,177 @@
+ere are copy/paste Replit instructions to fix BOTH issues for Hire a Tenant’s Agent (Residential + Commercial):
+
+Edited bids don’t refresh / show new terms
+
+Edit Bid button sizing + styling to match Withdraw Bid
+
+Replit Instructions — Tenant Agent Bids: Edit Bid Refresh + Button Styling (Residential + Commercial)
+✅ Applies to
+
+Hire a Tenant’s Agent → Bid cards (“Agent 1…”) and Edit Bid flow
+
+Residential + Commercial Tenant listings
+
+🔒 SAFEGUARDS (MANDATORY)
+
+Do NOT change tooltips, labels, headings, section order, or any existing bid fields.
+
+Do NOT change bid saving logic/structure beyond what is required to refresh the display.
+
+Do NOT change database schema.
+
+Apply fixes only to Tenant Agent bid display + edit update flow.
+
+Keep all privacy rules unchanged (listing creator vs agent viewing).
+
+PART A — Fix: After editing a bid, the bid card must show the updated terms
+A1) Root issue to investigate (most common)
+
+After saving an edit, the UI is likely still showing:
+
+cached $bids array
+
+old Livewire state
+
+or the page redirects without reloading fresh bid data
+
+✅ Required behavior:
+
+When an agent clicks Edit Bid, changes values, and saves:
+
+The user is returned to the listing/bids view
+
+The bid card immediately shows updated compensation + services summary
+
+The “View Full Services & Broker Compensation Terms” also reflects new values
+
+A2) Fix requirement (choose the approach used in your codebase)
+Option 1 (preferred if Livewire is used)
+
+If the bid card list is Livewire-driven, you must refresh bids after update by re-querying from DB.
+
+In the component that renders bids list (Tenant Agent listing view component):
+
+After successful update event, call a refresh:
+
+$this->loadBids(); // re-query bids from DB
+$this->dispatchBrowserEvent('bid-updated'); // optional
+
+
+Ensure loadBids() actually does:
+
+$this->bids = TenantAgentAuctionBid::where('auction_id', $this->auctionId)
+  ->latest()
+  ->get();
+
+
+If you are using computed properties, call:
+
+$this->reset('bids');
+$this->mount($this->auctionId); // only if mount does the re-query
+
+Option 2 (standard controller/redirect flow)
+
+If edit is a normal POST and redirect:
+
+Ensure the update controller redirects back to the listing page without using stale session data.
+
+The listing view must always fetch fresh bids from DB, not from a cached variable.
+
+✅ Required check:
+
+In the listing controller action that loads the bids, confirm it always does a new query:
+
+$bids = TenantAgentAuctionBid::where('auction_id', $id)->get();
+return view('hire_tenant_agent.view', compact('bids', ...));
+
+
+Do NOT rely on $auction->bids if it is cached/loaded earlier without refresh.
+
+A3) Fix the “terms JSON” refresh specifically (very important)
+
+Your bid summary uses $bid->get (JSON decoded). If the update saves to a different attribute (ex: promoMaterials vs promo_materials issue you had), the view may still be reading the wrong key.
+
+✅ Required instruction:
+
+After edit save, ensure the exact same attribute used in display is updated.
+
+If display reads $bid->get, then update must persist to $bid->get (or whatever column backs it).
+
+If update writes to promoMaterials but display reads promo_materials, you will see old values forever.
+
+Replit must confirm:
+
+The edit save writes to the same JSON keys the bid display reads.
+
+A4) Acceptance test (must pass)
+
+Place a bid: Lease fee $2,323 + 3% of Gross Lease Value
+
+Save and confirm bid card shows that value
+
+Click Edit Bid
+
+Change to: $3,000 + 4% of Gross Lease Value
+
+Save
+✅ Bid card must immediately show $3,000 + 4% of Gross Lease Value
+✅ Full terms panel must also show updated values
+✅ Works in both Residential + Commercial tenant listings
+
+PART B — Fix button sizing + styling: Edit Bid must match Withdraw Bid
+B1) Required behavior
+
+Edit Bid button must be the same height and width as Withdraw Bid
+
+Edit Bid must NOT be a tall oversized button
+
+Buttons should align nicely on the same row
+
+B2) Implementation requirements
+
+Wrap both buttons in a container that forces same sizing:
+
+<div class="d-flex gap-2 align-items-center">
+  <!-- Edit -->
+  <a class="btn btn-primary btn-sm bid-action-btn" ...>Edit Bid</a>
+
+  <!-- Withdraw -->
+  <button class="btn btn-danger btn-sm bid-action-btn" ...>Withdraw Bid</button>
+</div>
+
+
+Add a shared CSS rule (scoped to bids only; do not affect global buttons):
+
+.bid-action-btn{
+  min-width: 170px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-weight: 600;
+  border: none;
+}
+
+
+✅ This ensures both are the same size and no white border appears.
+
+B3) Style rules (must match your requirement)
+
+Edit Bid: blue background / white text
+
+Withdraw Bid: red background / white text
+
+No white outline/border on either unless hovered (and hover should still look good)
+
+If any “outline” class exists (like btn-outline-primary) remove it for Edit Bid.
+
+FILES TO UPDATE (Tenant only)
+
+Bid card display view/partial used in:
+
+Tenant Agent Residential listing bids
+
+Tenant Agent Commercial listing bids
+
+The edit-save handler (controller or Livewire component) that updates the bid
