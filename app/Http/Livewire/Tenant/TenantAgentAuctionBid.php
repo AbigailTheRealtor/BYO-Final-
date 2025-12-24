@@ -607,10 +607,17 @@ class TenantAgentAuctionBid extends Component
                 $this->total_marketing_fee = $bidData->total_marketing_fee ?? 0;
                 $this->total_flat_fee = $bidData->total_flat_fee ?? 0;
                 
-                $promoMaterials = $bidData->promo_materials ?? '';
-                if (is_string($promoMaterials) && !empty($promoMaterials)) {
-                    $decoded = json_decode($promoMaterials, true);
-                    $this->promoMaterials = is_array($decoded) ? $decoded : $this->promoMaterials;
+                // Check both key names (legacy promo_materials and new promoMaterials)
+                $promoMaterialsRaw = $bidData->promoMaterials ?? $bidData->promo_materials ?? null;
+                if (!empty($promoMaterialsRaw)) {
+                    if (is_string($promoMaterialsRaw)) {
+                        $decoded = json_decode($promoMaterialsRaw, true);
+                        if (is_array($decoded)) {
+                            $this->promoMaterials = $decoded;
+                        }
+                    } elseif (is_array($promoMaterialsRaw)) {
+                        $this->promoMaterials = $promoMaterialsRaw;
+                    }
                 }
             } else {
                 $this->isEditMode = false;
@@ -788,24 +795,24 @@ class TenantAgentAuctionBid extends Component
             }
 
             // Handle promotional materials upload
-
-
             if ($this->promoMaterials) {
                 $allowed = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'ppt', 'pptx'];
                 $toPersist = [];
 
                 foreach ($this->promoMaterials as $entry) {
-                    $type = ($entry['type'] ?? '') === 'Other'
-                        ? trim((string)($entry['other'] ?? ''))
-                        : trim((string)($entry['type'] ?? ''));
-
-                    if ($type === '') continue;
-
+                    $rawType = trim((string)($entry['type'] ?? ''));
+                    $other = trim((string)($entry['other'] ?? ''));
                     $link = trim((string)($entry['link'] ?? ''));
 
+                    // Process files - handle both single file and array of files
                     $stored = [];
-                    if (!empty($entry['files'])) {
-                        foreach ($entry['files'] as $file) {
+                    $files = $entry['files'] ?? [];
+                    // Normalize to array if single file
+                    if (!is_array($files) && is_object($files)) {
+                        $files = [$files];
+                    }
+                    if (is_array($files) && !empty($files)) {
+                        foreach ($files as $file) {
                             if (!$file) continue;
                             if (!is_object($file) || !method_exists($file, 'getClientOriginalExtension')) continue;
                             $ext = strtolower($file->getClientOriginalExtension());
@@ -817,8 +824,14 @@ class TenantAgentAuctionBid extends Component
                         }
                     }
 
+                    // Only skip if ALL fields are empty
+                    if ($rawType === '' && $link === '' && empty($stored)) {
+                        continue;
+                    }
+
                     $toPersist[] = [
-                        'type'  => $type,
+                        'type'  => $rawType,
+                        'other' => $other,
                         'link'  => $link ?: null,
                         'files' => $stored,
                     ];

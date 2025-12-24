@@ -2437,10 +2437,17 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         @if (data_get($bid, 'get.promoMaterials'))
                                                         @php
                                                             $hasAnyMaterials = false;
-                                                            foreach(data_get($bid, 'get.promoMaterials', []) as $m) {
-                                                                if (!empty($m['type']) || !empty($m['link']) || !empty($m['files'])) {
-                                                                    $hasAnyMaterials = true;
-                                                                    break;
+                                                            $promoMaterialsRaw = data_get($bid, 'get.promoMaterials', []);
+                                                            // Normalize: ensure we have an array of arrays (not stdClass)
+                                                            $promoMaterialsNormalized = [];
+                                                            if (is_array($promoMaterialsRaw) || is_object($promoMaterialsRaw)) {
+                                                                foreach($promoMaterialsRaw as $m) {
+                                                                    // Convert stdClass to array
+                                                                    $mArr = is_object($m) ? (array) $m : (is_array($m) ? $m : []);
+                                                                    $promoMaterialsNormalized[] = $mArr;
+                                                                    if (!empty($mArr['type']) || !empty($mArr['link']) || !empty($mArr['files'])) {
+                                                                        $hasAnyMaterials = true;
+                                                                    }
                                                                 }
                                                             }
                                                         @endphp
@@ -2450,23 +2457,31 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 Marketing Materials:</div>
 
                                                             @if ($hasAnyMaterials)
-                                                            @foreach (data_get($bid, 'get.promoMaterials') as $index => $material)
-                                                            @if (!empty($material['type']) || !empty($material['link']) || !empty($material['files']))
+                                                            @foreach ($promoMaterialsNormalized as $index => $material)
+                                                            @php
+                                                                $matType = data_get($material, 'type', '');
+                                                                $matOther = data_get($material, 'other', '');
+                                                                $matLink = data_get($material, 'link', '');
+                                                                $matFiles = data_get($material, 'files', []);
+                                                                // Normalize files array too
+                                                                if (is_object($matFiles)) { $matFiles = (array) $matFiles; }
+                                                            @endphp
+                                                            @if (!empty($matType) || !empty($matLink) || !empty($matFiles))
                                                             <div class="mb-3 p-3 border rounded bg-light">
-                                                                @if (!empty($material['type']))
+                                                                @if (!empty($matType))
                                                                 <div class="fw-medium mb-2" style="color: #049399; font-size: 1rem;">
                                                                     <i class="fa fa-folder-open me-1"></i>
-                                                                    {{ $material['type'] }}
-                                                                    @if ($material['type'] === 'Other' && !empty($material['other']))
-                                                                    - {{ $material['other'] }}
+                                                                    {{ $matType }}
+                                                                    @if ($matType === 'Other' && !empty($matOther))
+                                                                    - {{ $matOther }}
                                                                     @endif
                                                                 </div>
                                                                 @endif
 
-                                                                @if (!empty($material['link']))
+                                                                @if (!empty($matLink))
                                                                 <div class="mb-2">
                                                                     @php
-                                                                        $materialLink = $material['link'];
+                                                                        $materialLink = $matLink;
                                                                         if (!empty($materialLink) && !str_starts_with($materialLink, 'http://') && !str_starts_with($materialLink, 'https://')) {
                                                                             $materialLink = 'https://' . $materialLink;
                                                                         }
@@ -2481,11 +2496,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 </div>
                                                                 @endif
 
-                                                                @if (!empty($material['files']))
+                                                                @if (!empty($matFiles))
                                                                 <div class="mb-2">
                                                                     <div class="fw-medium mb-2" style="color: #34465c; font-size: 0.9rem;">Uploaded Files:</div>
                                                                     <div class="row g-2">
-                                                                        @foreach ($material['files'] as $fileIndex => $filePath)
+                                                                        @foreach ($matFiles as $fileIndex => $filePath)
                                                                         @if (is_string($filePath))
                                                                         @php
                                                                             $fileExtension = pathinfo($filePath, PATHINFO_EXTENSION);

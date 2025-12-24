@@ -1,7 +1,7 @@
 # Bid Your Offer - Laravel Real Estate Auction Platform
 
 ## Overview
-Bid Your Offer is a Laravel-based real estate auction platform designed for transparent property sales through bidding. It supports various auction types including property, buyer, seller, landlord, and tenant agent auctions. The platform aims to streamline the real estate transaction process by providing robust listing, bidding, and agent interaction functionalities.
+Bid Your Offer is a Laravel-based real estate auction platform designed for transparent property sales through bidding. It supports various auction types including property, buyer, seller, landlord, and tenant agent auctions. The platform aims to streamline the real estate transaction process by providing robust listing, bidding, and agent interaction functionalities, enhancing transparency and efficiency in real estate transactions.
 
 ## User Preferences
 I prefer detailed explanations. Ask before making major changes.
@@ -9,147 +9,31 @@ I prefer detailed explanations. Ask before making major changes.
 ## System Architecture
 
 ### UI/UX Decisions
-- **Frontend**: Utilizes Laravel Mix with TailwindCSS and AlpineJS for a modern and responsive user interface.
-- **Dynamic Content**: Extensive use of Livewire for dynamic form elements, auto-population features, and real-time UI updates, minimizing full page reloads.
-- **Tab Navigation**: Implemented Bootstrap tab system for organizing complex forms.
-  - **CRITICAL RULE**: Tab IDs must NEVER be generated directly from labels. All tab navigation must use the `$safeSlug` function (lowercase, alphanumeric + dashes only, no special characters like `&`). The same slug must be used for both the nav `data-bs-target` and the tab-pane `id`. This applies to all wizard flows (Tenant, Buyer, Seller, Landlord) in both Create and Edit blades.
-- **Location Autocomplete**: Replaced Google Places API with a U.S. Census-based local database for states, counties, and cities to provide efficient and cost-effective location lookups. Auto-populates state and county fields based on city selection.
-- **Listing ID Display**: Unique listing IDs are prominently displayed as badges on listing view pages.
-- **Pill Badges**: Enhanced styling for delete buttons on colored pill badges for better visibility.
+- **Frontend Frameworks**: Uses Laravel Mix with TailwindCSS and AlpineJS for a responsive and modern interface.
+- **Dynamic Content**: Leverages Livewire extensively for dynamic forms, real-time UI updates, and auto-population, minimizing page reloads.
+- **Tab Navigation**: Implements a Bootstrap tab system for form organization, enforcing safe slug generation for tab IDs (`$safeSlug` function).
+- **Location Autocomplete**: Utilizes a U.S. Census-based local database for states, counties, and cities, replacing Google Places API for cost-effectiveness and efficiency, with auto-population of related fields.
+- **Listing Display**: Unique listing IDs are prominently displayed as badges. Pill badges for actions like delete are styled for enhanced visibility.
 
 ### Technical Implementations
-- **Framework**: Laravel 8.x.
-- **Database**: PostgreSQL is the primary database. Database migrations are managed by Laravel, including checks for existing tables to handle optional features gracefully.
-- **PHP Version**: 8.2.23.
-- **Node.js**: v20, used for frontend asset compilation via Laravel Mix.
-- **Unique Listing IDs**: Implemented a `HasListingId` trait to automatically generate unique, prefixed listing IDs (e.g., `TAA-XXXXXXXX`) for all auction types, ensuring data integrity and easy identification.
-- **Location Data**: Integrated a comprehensive U.S. Census-based location database (`us_states`, `us_counties`, `us_cities`) for all location-based autocomplete and auto-population features, significantly reducing reliance on external APIs.
-- **Dynamic Form Handling**: Livewire components dynamically manage form fields, including conditional rendering using Blade `@if` directives with `wire:key` for reliable DOM morphing, especially for complex financing options and property preferences.
-- **Form Enhancements**:
-    - **Hire Agent Listings**: Standardized input fields, added required field indicators, phone auto-formatting, and updated tooltips.
-    - **Financing Types**: Expanded options for Assumable Financing, Cryptocurrency, Exchange/Trade, NFT, Seller Financing, Lease Option, and Lease Purchase with detailed sub-fields and conditional logic.
-    - **"Other" fields**: Implemented dynamic visibility for "Other" text inputs across various selections (e.g., business type, property items, conditions, bedrooms, bathrooms, assets).
+- **Framework & Language**: Laravel 8.x with PHP 8.2.23.
+- **Database**: PostgreSQL is the primary database, with Laravel migrations managing schema and handling optional features.
+- **Frontend Tooling**: Node.js v20 is used for asset compilation via Laravel Mix.
+- **Unique Listing IDs**: A `HasListingId` trait automatically generates unique, prefixed IDs (e.g., `TAA-XXXXXXXX`) for various auction types.
+- **Location Data**: Integrated U.S. Census-based `us_states`, `us_counties`, and `us_cities` databases for all location-based functionalities.
+- **Dynamic Form Handling**: Livewire components manage dynamic form fields, including conditional rendering and support for complex financing options and property preferences using Blade `@if` with `wire:key`.
+- **Form Enhancements**: Standardized input fields, added required field indicators, phone auto-formatting, and dynamic visibility for "Other" text inputs across various selections. Expanded financing options with detailed sub-fields and conditional logic.
 
 ### System Design Choices
-- **Modularity**: Utilizes Laravel's modular structure for features, with Livewire components handling specific UI interactions.
-- **Database-First Approach**: Prioritizes local database solutions for core functionalities like location services to ensure performance, reliability, and reduce external dependencies.
-- **Clear Separation of Concerns**: Frontend assets compiled via Laravel Mix, backend logic in Laravel controllers and Livewire components, and data persistence with PostgreSQL.
-- **Deployment Ready**: Configuration includes optimized Composer installs, NPM builds, and Laravel caching for production environments.
+- **Modularity**: Adopts Laravel's modular structure for features, with Livewire components handling specific UI interactions.
+- **Database-First Approach**: Prioritizes local database solutions for core services like location to ensure performance, reliability, and reduced external API dependency.
+- **Clear Separation of Concerns**: Distinct roles for frontend asset compilation (Laravel Mix), backend logic (Laravel controllers, Livewire components), and data persistence (PostgreSQL).
+- **Deployment Ready**: Configuration includes optimizations for production environments, such as Composer installs, NPM builds, and Laravel caching.
 
 ## External Dependencies
-- **PostgreSQL**: Primary database for the application.
-- **TailwindCSS**: CSS framework for styling.
-- **AlpineJS**: Lightweight JavaScript framework for interactive UI.
-- **Laravel Mix**: Webpack wrapper for compiling frontend assets.
-- **U.S. Census Gazetteer Files**: Used for seeding the local `us_states`, `us_counties`, and `us_cities` databases.
-- **Google Places API**: Retained for specific address and postal code validation, but no longer used for general location autocomplete.
-
-## Recent Changes (December 2025)
-
-### Agent Bid Display Enhancements (Tenant Agent Listings)
-- **Agent Overview & Qualifications**: Added Licensed Since, Marketing Strategy, What Sets This Agent Apart, and Services Offered sections to the Private Compensation modal
-- **Label Standardization**: Updated all labels to use colons (e.g., "Why Hire This Agent:")
-- **Visit Website Link**: Made null-safe with URL normalization (adds https:// if missing) and security attributes
-- **Review Links**: Fixed label from plural to singular ("Review Links:")
-- **Broker Compensation Section**: Reformatted with proper A-F subsections:
-  - A) Tenant's Broker Compensation
-  - B) Purchase Fee Details
-  - C) Lease-Option Details
-  - D) Legal Terms
-  - E) Brokerage Relationship
-  - F) Additional Terms / Additional Details
-- **Services Offered Display**: Added category subtitles with emoji prefixes in correct order for Residential and Commercial property types
-- **Business Card Display**: Larger preview (450px), clickable full-size view, View Full Size and Download buttons
-- **Marketing Materials Display**: Improved with Open Link and Download buttons, better styling, "Not provided" message when empty
-
-### Agent Bid Privacy & Anonymity (December 2025)
-- **Agent Anonymity**: Replaced agent names with "Agent 1", "Agent 2", etc. based on bid submission order
-- **Last Bidder Display**: Changed "X is the last bidder" to "Agent X was the last bidder"
-- **Compliance Notice Removed**: Removed the "No Broker Compensation, Agency Agreement Terms..." alert from public view
-- **Private Fields Hidden**: Licensed Since, Marketing Strategy, What Sets This Agent Apart, About Agent, Why Hire This Agent are now only visible in the private modal for listing owner
-- **Public Bid Cards**: Show only Services count, Commission Structure type, and Lease Fee Type - no dollar amounts, retainers, or protection periods
-- **Gated Full Terms**: "View Full Services & Broker Compensation Terms" button only visible to listing creator, others see "Private — visible only to listing creator"
-- **Bid Status Badges**: Active/Countered/Accepted/Rejected status badges with color coding (blue/yellow/green/red)
-- **Controller Null Safety**: Added 404 handling and null safety to TenantAgentAuctionController::view()
-
-### Agent Bid Management Features (December 2025)
-- **Edit Bid**: Agents can edit their own bids via Edit button on listing page or dashboard (only if auction not expired, bid not accepted/rejected)
-- **Withdraw Bid**: Agents can withdraw their own bids with confirmation dialog (only if auction not expired, bid not accepted/rejected)
-- **Bid Submission Lock**: Server-side validation prevents bid submission after auction expiration or when listing is sold
-- **Counter-Bid Prefill**: Counter bid form now loads data from latest counter bid or original bid for easier editing
-- **Dashboard Enhancements**: Tenant agent dashboard shows bid status badges (Active/Countered/Accepted/Rejected) and per-bid actions (Edit/Withdraw)
-
-### Public Bid Card UI Redesign (December 2025)
-- **Card Layout**: Matches screenshot design exactly with proper spacing and dividers
-- **Header Row**: "Agent X" (bold, dark blue) on left, status (colored text) on right, horizontal divider below
-- **Offered Services Row**: "Offered Services: X Services" count including Additional Services entries, horizontal divider below
-- **Broker Compensation Summary**: Header + two fields only:
-  - "Tenant's Broker Commission Structure:" with value
-  - "Tenant's Broker Commission Fee:" with formatted value (e.g., "Flat Fee: $1,000")
-- **View Full Terms Link**: Blue text link at bottom, only visible to listing owner
-- **Privacy Enforced**: Non-owners see "Private — visible only to listing creator"
-- **Removed**: Accordion expand/collapse behavior - content now always visible in card format
-
-### Services Offered Display Fix (December 2025)
-- **Recursive flatten helper**: Extracts all string service entries from any depth of nested arrays/objects
-- **JSON parse error handling**: Resets error state before each decode, shows warning if some data recovered
-- **Additional Services section**: Shows custom entries when provided, or "Other option selected" message when checked but empty
-- **Deduplication**: Removes duplicate service entries for clean display
-- **Fallback messages**: Appropriate error/warning/empty states for all scenarios
-
-### Bid Authorization Security Fixes (December 2025)
-- **Cross-Auction Protection**: All bid mutation methods now derive auction from bid's database relationship (not user-supplied auction_id)
-- **Relationship Verification**: If auction_id is provided in request, it must match the bid's actual auction or abort(403)
-- **accept_bid**: Validates bid exists, derives auction from bid, verifies listing owner, uses DB transaction, auto-rejects competing bids
-- **reject_bid**: Validates bid exists, derives auction from bid, verifies listing owner
-- **accept_counter_bid**: Traverses full chain (counter_bid -> original_bid -> auction), allows listing owner OR original bid owner to accept
-- **reject_counter_bid**: Traverses full chain, allows listing owner OR original bid owner to reject
-- **Transaction Safety**: Accept operations wrapped in DB::beginTransaction() for atomic state changes
-- **Idempotency**: All methods check if bid is already accepted/rejected before making changes
-
-### Agent Bid Form Fixes (December 2025)
-- **Add Social Media Button**: Fixed button styling to always appear blue with white text by adding explicit inline styles
-- **Marketing Materials PDF Upload**: Fixed file upload handling by adding object type validation before accessing file methods
-- **Array to String Conversion**: Fixed website_link saving - now properly extracts string value from array before storing
-- **PromoMaterials Storage**: Changed from direct property assignment to saveMeta() with proper JSON encoding
-- **Meta Key Consistency**: Uses `promoMaterials` (camelCase) key to match view expectations
-- **Download Links**: Marketing materials display includes View and Download buttons using proper storage URLs
-
-### Private Terms Modal Restructure (December 2025)
-- **Section Order**: Enforced exact 15-item sequence for private bid details modal:
-  1. Private Compensation & Agreement Terms (header)
-  2. Agent Overview & Qualifications (heading)
-  3. About Agent
-  4. Why Hire This Agent
-  5. What Sets This Agent Apart
-  6. Marketing Strategy
-  7. Reviews Link
-  8. Website Link
-  9. Social Media Platforms
-  10. Licensed Year
-  11. Broker Compensation and Agency Agreement Terms
-  12. Offered Services (moved to standalone section after Broker Compensation)
-  13. Agent Presentation & Marketing Materials
-  14. Agent Credentials and Contact Information (renamed from Agent Information)
-- **Button Styling**: Counter Bid button changed from orange (btn-warning) to blue (btn-primary) matching Accept (green) and Reject (red)
-- **Counter Terms Table**: Created missing `tenant_counter_terms` and `tenant_counter_terms_meta` database tables
-- **CSS Updates**: Updated `.btn-counter` class from orange (#f0ad4e) to blue (#0d6efd)
-
-### Private Terms Modal Services Display Fix (December 2025)
-- **Single Source of Truth**: Private Terms modal now uses the SAME service categories as the Actual Listing display
-- **Exact Match Logic**: Changed from keyword-based matching (`str_contains`) to exact string matching (`in_array`) - identical to listing
-- **No Auto-Mapping**: Removed keyword-based grouping that was silently moving services into wrong categories
-- **No "Other Services" Bucket**: Removed the automatic "Other Services" bucket for unmatched items
-- **Additional Services Only**: Shows "✍️ Additional Services" section only when `other_services` array has actual entries
-- **Property Type Switch**: Correctly switches between Residential and Commercial category sets based on `$auction->get->property_type`
-- **Category Order**: Same category order as listing display (Marketing, Search, Showings, Application, Lease, Move-In, Strategy)
-
-### Accept/Counter/Reject Button Fixes (December 2025)
-- **Button Styling Updated**: Enhanced CSS with `!important` overrides to ensure buttons always display correct colors:
-  - Accept: Solid green (#28a745) with white text
-  - Counter: Solid blue (#0d6efd) with white text
-  - Reject: Solid red (#dc3545) with white text
-- **Consistent Sizing**: Added padding, min-width, border-radius to `.btn-custom` base class
-- **Database Columns Added**: Migration added `accepted_date`, `rejected_date`, `countered_date` (nullable timestamps) to `tenant_agent_auction_bids` table
-- **Counter Term Broker Fee Timing**: Added missing `broker_fee_timing`, `broker_fee_timing_other`, `broker_fee_days_from_rent`, `broker_fee_days_after_lease`, `broker_fee_days_after_rent` properties to TenantAgentAuctionCounterTerm Livewire component
-- **Model PHPDoc**: Added @method annotations to TenantCounterTerm model for static analysis compatibility
+- **PostgreSQL**: Primary database.
+- **TailwindCSS**: CSS framework.
+- **AlpineJS**: JavaScript framework for UI interactivity.
+- **Laravel Mix**: Used for compiling frontend assets.
+- **U.S. Census Gazetteer Files**: Source for seeding local geographical databases (`us_states`, `us_counties`, `us_cities`).
+- **Google Places API**: Used for specific address and postal code validation.
