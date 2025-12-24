@@ -542,20 +542,11 @@ class TenantAgentAuctionBid extends Component
                 
                 $bidData = $existingBid->get;
                 
-                // Load agent info fields from saved bid data (override user profile defaults)
-                $this->first_name = $bidData->first_name ?? $this->first_name;
-                $this->last_name = $bidData->last_name ?? $this->last_name;
-                $this->phone = $bidData->phone ?? $this->phone;
-                $this->email = $bidData->email ?? $this->email;
-                $this->brokerage = $bidData->brokerage ?? $this->brokerage;
-                $this->license_no = $bidData->license_no ?? $this->license_no;
-                $this->year_licensed = $bidData->year_licensed ?? '';
-                $this->nar_id = $bidData->nar_id ?? $this->nar_id;
-                
                 $this->bio = $bidData->bio ?? '';
                 $this->why_hire_you = $bidData->why_hire_you ?? '';
                 $this->what_sets_you_apart = $bidData->what_sets_you_apart ?? '';
                 $this->marketing_plan = $bidData->marketing_plan ?? '';
+                $this->year_licensed = $bidData->year_licensed ?? '';
                 $this->additional_details = $bidData->additional_details ?? '';
                 
                 $reviewsLinks = $bidData->reviews_links ?? '';
