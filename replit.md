@@ -38,10 +38,16 @@ I prefer detailed explanations. Ask before making major changes.
 - **U.S. Census Gazetteer Files**: Source for seeding local geographical databases (`us_states`, `us_counties`, `us_cities`).
 - **Google Places API**: Used for specific address and postal code validation.
 ### Bootstrap Accordion Fix (December 2025)
-- **Root Cause**: Duplicate Bootstrap JS loading in main.blade.php caused accordion flash/close issue
-- **Fix Applied**: Removed duplicate Bootstrap 5.3.2 include from head (line 40), keeping only Bootstrap 5.0.2 at line 229
-- **Commission Fee Display**: Enhanced formatting to normalize currency strings (removing $, commas, spaces) before parsing with `preg_replace('/[,$\s]/', '', $value)`
-- **Fee Type Matching**: Display logic now matches exact form option values ("Flat Fee", "Percentage of Monthly Rent", "Percentage of the Gross Lease Value", combo types, "other")
+- **Root Cause**: Bootstrap data-api conflicts caused accordion flash/close issue
+- **Fix Applied**: Replaced Bootstrap `data-bs-toggle="collapse"` with custom JavaScript toggle using `e.stopPropagation()` and manual display toggling
+- **Custom Accordion Pattern**: For bid accordions, use `.bid-accordion-header` class with `data-target` attribute and custom JS handler
+
+### Combined Fee Display Format (December 2025)
+- **Helper Functions**: Added `$fmtMoney`, `$fmtPercent`, `$joinParts`, `$basisText` at top of view.blade.php
+- **Combined Format**: Fees now display as "$2,323 + 3% of Gross Lease Value" instead of separate lines
+- **Sections Updated**: Tenant's Broker Commission Fee, Purchase Fee, Lease-Option Details, Termination Fee
+- **No Storage Changes**: Display-only formatting, no database schema or save logic changes
+- **Currency Normalization**: Uses `preg_replace('/[^0-9.]/', '', $value)` to strip all non-numeric characters safely
 
 ### Livewire File Upload Fix (December 2025)
 - **PHP Upload Limits Increased**: Workflow command now passes `-d upload_max_filesize=50M -d post_max_size=55M -d memory_limit=256M -d max_file_uploads=50`

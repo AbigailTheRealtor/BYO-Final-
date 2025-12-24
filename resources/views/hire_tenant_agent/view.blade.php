@@ -1,5 +1,32 @@
 @extends('layouts.main')
 
+{{-- Combined Fee Display Helper Functions (display-only, no storage changes) --}}
+@php
+  $fmtMoney = function($v) {
+    if ($v === null || $v === '') return null;
+    $raw = preg_replace('/[^0-9.]/', '', (string)$v);
+    if ($raw === '' || !is_numeric($raw)) return null;
+    return '$' . number_format((float)$raw, 0);
+  };
+
+  $fmtPercent = function($v) {
+    if ($v === null || $v === '') return null;
+    $raw = preg_replace('/[^0-9.]/', '', (string)$v);
+    if ($raw === '' || !is_numeric($raw)) return null;
+    $num = (float)$raw;
+    return (floor($num) == $num ? (string)(int)$num : (string)$num) . '%';
+  };
+
+  $joinParts = function($parts) {
+    $parts = array_values(array_filter($parts, fn($p) => $p !== null && $p !== ''));
+    return count($parts) ? implode(' + ', $parts) : null;
+  };
+
+  $basisText = function($basis) {
+    return $basis ? ('of ' . $basis) : null;
+  };
+@endphp
+
 @push('styles')
 <!-- //Listing Description css  -->
 <link rel="stylesheet" href="{{ asset('assets/css/listingDescription.css') }}" />
@@ -1607,40 +1634,78 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             $leaseFeePercentageComboNet = data_get($bid, 'get.lease_fee_percentage_combo_net', '');
                             $leaseFeeOther = data_get($bid, 'get.lease_fee_other', '');
                             
-                            // Helper to normalize currency strings (remove $, commas, spaces) before parsing
-                            $normalizeCurrency = function($val) {
-                                if (!$val) return 0;
-                                return (float) preg_replace('/[,$\s]/', '', (string) $val);
-                            };
-                            
-                            // Build commission fee display with actual values (matching form option values)
-                            $commissionFeeDisplay = 'Not specified';
+                            // Build commission fee display using helper functions (combined format: $2,323 + 3% of Gross Lease Value)
+                            $commissionFeeDisplay = '—';
                             if ($leaseFeeType === 'Flat Fee' && $leaseFeeFlat) {
-                                $commissionFeeDisplay = '$' . number_format($normalizeCurrency($leaseFeeFlat), 0) . ' Flat Fee';
+                                $commissionFeeDisplay = $fmtMoney($leaseFeeFlat);
                             } elseif ($leaseFeeType === 'Percentage of the Gross Lease Value' && $leaseFeePercentage) {
-                                $commissionFeeDisplay = $leaseFeePercentage . '% of the Gross Lease Value';
+                                $commissionFeeDisplay = $fmtPercent($leaseFeePercentage) . ' of Gross Lease Value';
                             } elseif ($leaseFeeType === 'Percentage of Monthly Rent' && $leaseFeePercentageMonthlyRent) {
-                                $display = $leaseFeePercentageMonthlyRent . '% of Monthly Rent';
+                                $display = $fmtPercent($leaseFeePercentageMonthlyRent) . ' of Monthly Rent';
                                 if ($leaseFeePercentageMonthlyNumber) {
                                     $display .= ' x ' . $leaseFeePercentageMonthlyNumber . ' Months';
                                 }
                                 $commissionFeeDisplay = $display;
                             } elseif ($leaseFeeType === 'Flat Fee + Percentage of the Gross Lease Value') {
-                                $parts = [];
-                                if ($leaseFeeFlatCombo) $parts[] = '$' . number_format($normalizeCurrency($leaseFeeFlatCombo), 0);
-                                if ($leaseFeePercentageCombo) $parts[] = $leaseFeePercentageCombo . '% of Gross Lease Value';
-                                $commissionFeeDisplay = count($parts) ? implode(' + ', $parts) : $leaseFeeType;
+                                $commissionFeeDisplay = $joinParts([
+                                    $fmtMoney($leaseFeeFlatCombo),
+                                    $leaseFeePercentageCombo ? ($fmtPercent($leaseFeePercentageCombo) . ' of Gross Lease Value') : null,
+                                ]) ?? '—';
                             } elseif ($leaseFeeType === 'Percentage of the Net Aggregate Rent' && $leaseFeePercentageNet) {
-                                $commissionFeeDisplay = $leaseFeePercentageNet . '% of Net Aggregate Rent';
+                                $commissionFeeDisplay = $fmtPercent($leaseFeePercentageNet) . ' of Net Aggregate Rent';
                             } elseif ($leaseFeeType === 'Flat Fee + Percentage of the Net Aggregate Rent') {
-                                $parts = [];
-                                if ($leaseFeeFlatComboNet) $parts[] = '$' . number_format($normalizeCurrency($leaseFeeFlatComboNet), 0);
-                                if ($leaseFeePercentageComboNet) $parts[] = $leaseFeePercentageComboNet . '% of Net Aggregate Rent';
-                                $commissionFeeDisplay = count($parts) ? implode(' + ', $parts) : $leaseFeeType;
+                                $commissionFeeDisplay = $joinParts([
+                                    $fmtMoney($leaseFeeFlatComboNet),
+                                    $leaseFeePercentageComboNet ? ($fmtPercent($leaseFeePercentageComboNet) . ' of Net Aggregate Rent') : null,
+                                ]) ?? '—';
                             } elseif (strtolower($leaseFeeType) === 'other' && $leaseFeeOther) {
                                 $commissionFeeDisplay = $leaseFeeOther;
                             } elseif ($leaseFeeType) {
                                 $commissionFeeDisplay = $leaseFeeType;
+                            }
+                            
+                            // Build Purchase Fee combined display
+                            $purchaseFeeDisplay = '—';
+                            $purchaseFeeType = data_get($bid, 'get.purchase_fee_type', '');
+                            if ($purchaseFeeType === 'Flat Fee') {
+                                $purchaseFeeDisplay = $fmtMoney(data_get($bid, 'get.purchase_fee_flat')) ?? '—';
+                            } elseif ($purchaseFeeType === 'Percentage of the Total Purchase Price') {
+                                $pct = data_get($bid, 'get.purchase_fee_percentage');
+                                $purchaseFeeDisplay = $pct ? ($fmtPercent($pct) . ' of Total Purchase Price') : '—';
+                            } elseif ($purchaseFeeType === 'Percentage of the Total Purchase Price + Flat Fee') {
+                                $purchaseFeeDisplay = $joinParts([
+                                    $fmtMoney(data_get($bid, 'get.purchase_fee_flat_combo')),
+                                    data_get($bid, 'get.purchase_fee_percentage_combo') ? ($fmtPercent(data_get($bid, 'get.purchase_fee_percentage_combo')) . ' of Total Purchase Price') : null,
+                                ]) ?? '—';
+                            } elseif ($purchaseFeeType === 'other') {
+                                $purchaseFeeDisplay = data_get($bid, 'get.purchase_fee_other') ?? '—';
+                            }
+                            
+                            // Build Lease-Option combined display
+                            $leaseOptionCreatedDisplay = '—';
+                            $leaseOptionExercisedDisplay = '—';
+                            if (data_get($bid, 'get.interested_lease_option_agreement') === 'Yes') {
+                                $leaseType = data_get($bid, 'get.lease_type');
+                                $leaseValue = data_get($bid, 'get.lease_value');
+                                if ($leaseType === 'percent' && $leaseValue) {
+                                    $leaseOptionCreatedDisplay = $fmtPercent($leaseValue);
+                                } elseif ($leaseValue) {
+                                    $leaseOptionCreatedDisplay = $fmtMoney($leaseValue) ?? '—';
+                                }
+                                
+                                $purchaseType = data_get($bid, 'get.purchase_type');
+                                $purchaseValue = data_get($bid, 'get.purchase_value');
+                                if ($purchaseType === 'percent' && $purchaseValue) {
+                                    $leaseOptionExercisedDisplay = $fmtPercent($purchaseValue);
+                                } elseif ($purchaseValue) {
+                                    $leaseOptionExercisedDisplay = $fmtMoney($purchaseValue) ?? '—';
+                                }
+                            }
+                            
+                            // Termination Fee display
+                            $terminationFeeDisplay = '—';
+                            if (data_get($bid, 'get.early_termination_fee_option') === 'Yes') {
+                                $terminationFeeDisplay = $fmtMoney(data_get($bid, 'get.early_termination_fee_amount')) ?? '—';
                             }
                         @endphp
                         
@@ -1952,44 +2017,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 <li class="mb-1"><span class="fw-semibold">Tenant's Broker Commission Structure:</span> {{ data_get($bid, 'get.commission_structure') }}</li>
                                                                 @endif
                                                                 @if (data_get($bid, 'get.lease_fee_type'))
-                                                                <li class="mb-1"><span class="fw-semibold">Tenant's Broker Lease Fee:</span> {{ data_get($bid, 'get.lease_fee_type') }}</li>
-                                                                @endif
-                                                                @if (data_get($bid, 'get.lease_fee_type') === 'Flat Fee' && data_get($bid, 'get.lease_fee_flat'))
-                                                                <li class="mb-1"><span class="fw-semibold">Flat Fee Amount:</span> 
-                                                                    @if (data_get($bid, 'get.lease_fee_flat_type') === '$')
-                                                                    ${{ number_format((float)data_get($bid, 'get.lease_fee_flat'), 2) }}
-                                                                    @else
-                                                                    {{ data_get($bid, 'get.lease_fee_flat') }}%
-                                                                    @endif
-                                                                </li>
-                                                                @endif
-                                                                @if (data_get($bid, 'get.lease_fee_type') === 'Percentage of the Gross Lease Value' && data_get($bid, 'get.lease_fee_percentage'))
-                                                                <li class="mb-1"><span class="fw-semibold">Percentage of Gross Lease Value:</span> {{ data_get($bid, 'get.lease_fee_percentage') }}%</li>
-                                                                @endif
-                                                                @if (data_get($bid, 'get.lease_fee_type') === 'Percentage of Monthly Rent' && data_get($bid, 'get.lease_fee_percentage_monthly_rent'))
-                                                                <li class="mb-1"><span class="fw-semibold">Percentage of Monthly Rent:</span> {{ data_get($bid, 'get.lease_fee_percentage_monthly_rent') }}%</li>
-                                                                @endif
-                                                                @if (data_get($bid, 'get.lease_fee_type') === 'Flat Fee + Percentage of the Gross Lease Value')
-                                                                    @if (data_get($bid, 'get.lease_fee_flat_combo'))
-                                                                    <li class="mb-1"><span class="fw-semibold">Flat Fee Portion:</span> ${{ number_format((float)data_get($bid, 'get.lease_fee_flat_combo'), 2) }}</li>
-                                                                    @endif
-                                                                    @if (data_get($bid, 'get.lease_fee_percentage_combo'))
-                                                                    <li class="mb-1"><span class="fw-semibold">Percentage Portion:</span> {{ data_get($bid, 'get.lease_fee_percentage_combo') }}%</li>
-                                                                    @endif
-                                                                @endif
-                                                                @if (data_get($bid, 'get.lease_fee_type') === 'Percentage of the Net Aggregate Rent' && data_get($bid, 'get.lease_fee_percentage_net'))
-                                                                <li class="mb-1"><span class="fw-semibold">Percentage of Net Aggregate Rent:</span> {{ data_get($bid, 'get.lease_fee_percentage_net') }}%</li>
-                                                                @endif
-                                                                @if (data_get($bid, 'get.lease_fee_type') === 'Flat Fee + Percentage of the Net Aggregate Rent')
-                                                                    @if (data_get($bid, 'get.lease_fee_flat_combo_net'))
-                                                                    <li class="mb-1"><span class="fw-semibold">Flat Fee Portion:</span> ${{ number_format((float)data_get($bid, 'get.lease_fee_flat_combo_net'), 2) }}</li>
-                                                                    @endif
-                                                                    @if (data_get($bid, 'get.lease_fee_percentage_combo_net'))
-                                                                    <li class="mb-1"><span class="fw-semibold">Percentage Portion:</span> {{ data_get($bid, 'get.lease_fee_percentage_combo_net') }}%</li>
-                                                                    @endif
-                                                                @endif
-                                                                @if (data_get($bid, 'get.lease_fee_type') === 'other' && data_get($bid, 'get.lease_fee_other'))
-                                                                <li class="mb-1"><span class="fw-semibold">Other Lease Fee:</span> {{ data_get($bid, 'get.lease_fee_other') }}</li>
+                                                                <li class="mb-1"><span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $commissionFeeDisplay }}</li>
                                                                 @endif
                                                                 @if (data_get($bid, 'get.payment_timing'))
                                                                 <li class="mb-1"><span class="fw-semibold">Payment Timing for Broker Fees:</span> {{ data_get($bid, 'get.payment_timing') }}</li>
@@ -2007,33 +2035,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">B) Purchase Fee Details</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 <li class="mb-1"><span class="fw-semibold">Interested in Purchasing a Property:</span> {{ data_get($bid, 'get.interested_purchase_fee_type') }}</li>
-                                                                @if (data_get($bid, 'get.interested_purchase_fee_type') === 'Yes')
-                                                                    @if (data_get($bid, 'get.purchase_fee_type'))
-                                                                    <li class="mb-1"><span class="fw-semibold">Purchase Fee Type:</span> {{ data_get($bid, 'get.purchase_fee_type') }}</li>
-                                                                    @endif
-                                                                    @if (data_get($bid, 'get.purchase_fee_type') === 'Percentage of the Total Purchase Price' && data_get($bid, 'get.purchase_fee_percentage'))
-                                                                    <li class="mb-1"><span class="fw-semibold">Purchase Percentage:</span> {{ data_get($bid, 'get.purchase_fee_percentage') }}%</li>
-                                                                    @endif
-                                                                    @if (data_get($bid, 'get.purchase_fee_type') === 'Flat Fee' && data_get($bid, 'get.purchase_fee_flat'))
-                                                                    <li class="mb-1"><span class="fw-semibold">Additional Flat Fee:</span> 
-                                                                        @if (data_get($bid, 'get.purchase_fee_flat_type') === '$')
-                                                                        ${{ number_format((float)data_get($bid, 'get.purchase_fee_flat'), 2) }}
-                                                                        @else
-                                                                        {{ data_get($bid, 'get.purchase_fee_flat') }}%
-                                                                        @endif
-                                                                    </li>
-                                                                    @endif
-                                                                    @if (data_get($bid, 'get.purchase_fee_type') === 'Percentage of the Total Purchase Price + Flat Fee')
-                                                                        @if (data_get($bid, 'get.purchase_fee_percentage_combo'))
-                                                                        <li class="mb-1"><span class="fw-semibold">Purchase Percentage:</span> {{ data_get($bid, 'get.purchase_fee_percentage_combo') }}%</li>
-                                                                        @endif
-                                                                        @if (data_get($bid, 'get.purchase_fee_flat_combo'))
-                                                                        <li class="mb-1"><span class="fw-semibold">Additional Flat Fee:</span> ${{ number_format((float)data_get($bid, 'get.purchase_fee_flat_combo'), 2) }}</li>
-                                                                        @endif
-                                                                    @endif
-                                                                    @if (data_get($bid, 'get.purchase_fee_type') === 'other' && data_get($bid, 'get.purchase_fee_other'))
-                                                                    <li class="mb-1"><span class="fw-semibold">Other Purchase Fee:</span> {{ data_get($bid, 'get.purchase_fee_other') }}</li>
-                                                                    @endif
+                                                                @if (data_get($bid, 'get.interested_purchase_fee_type') === 'Yes' && $purchaseFeeDisplay !== '—')
+                                                                <li class="mb-1"><span class="fw-semibold">Purchase Fee:</span> {{ $purchaseFeeDisplay }}</li>
                                                                 @endif
                                                             </ul>
                                                         </div>
@@ -2046,21 +2049,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 <li class="mb-1"><span class="fw-semibold">Interested in a Lease-Option Agreement:</span> {{ data_get($bid, 'get.interested_lease_option_agreement') }}</li>
                                                                 @if (data_get($bid, 'get.interested_lease_option_agreement') === 'Yes')
-                                                                    @if (data_get($bid, 'get.lease_type'))
-                                                                    <li class="mb-1"><span class="fw-semibold">Compensation Type (When Option Is Created):</span> {{ data_get($bid, 'get.lease_type') === 'percent' ? 'Percentage' : 'Flat Fee' }}</li>
+                                                                    @if ($leaseOptionCreatedDisplay !== '—')
+                                                                    <li class="mb-1"><span class="fw-semibold">Compensation (When Option Is Created):</span> {{ $leaseOptionCreatedDisplay }}</li>
                                                                     @endif
-                                                                    @if (data_get($bid, 'get.lease_type') === 'percent' && data_get($bid, 'get.lease_value'))
-                                                                    <li class="mb-1"><span class="fw-semibold">Percentage Amount:</span> {{ data_get($bid, 'get.lease_value') }}%</li>
-                                                                    @elseif (data_get($bid, 'get.lease_value'))
-                                                                    <li class="mb-1"><span class="fw-semibold">Flat Fee Amount:</span> ${{ number_format((float)data_get($bid, 'get.lease_value'), 2) }}</li>
-                                                                    @endif
-                                                                    @if (data_get($bid, 'get.purchase_type'))
-                                                                    <li class="mb-1"><span class="fw-semibold">Compensation Type (If Purchase Option Is Exercised):</span> {{ data_get($bid, 'get.purchase_type') === 'percent' ? 'Percentage' : 'Flat Fee' }}</li>
-                                                                    @endif
-                                                                    @if (data_get($bid, 'get.purchase_type') === 'percent' && data_get($bid, 'get.purchase_value'))
-                                                                    <li class="mb-1"><span class="fw-semibold">Percentage Amount:</span> {{ data_get($bid, 'get.purchase_value') }}%</li>
-                                                                    @elseif (data_get($bid, 'get.purchase_value'))
-                                                                    <li class="mb-1"><span class="fw-semibold">Flat Fee Amount:</span> ${{ number_format((float)data_get($bid, 'get.purchase_value'), 2) }}</li>
+                                                                    @if ($leaseOptionExercisedDisplay !== '—')
+                                                                    <li class="mb-1"><span class="fw-semibold">Compensation (If Purchase Option Exercised):</span> {{ $leaseOptionExercisedDisplay }}</li>
                                                                     @endif
                                                                 @endif
                                                             </ul>
@@ -2077,8 +2070,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 @endif
                                                                 @if (data_get($bid, 'get.early_termination_fee_option'))
                                                                 <li class="mb-1"><span class="fw-semibold">Early Termination Fee:</span> {{ data_get($bid, 'get.early_termination_fee_option') }}</li>
-                                                                    @if (data_get($bid, 'get.early_termination_fee_option') === 'Yes' && data_get($bid, 'get.early_termination_fee_amount'))
-                                                                    <li class="mb-1"><span class="fw-semibold">Termination Fee Amount:</span> ${{ number_format((float)data_get($bid, 'get.early_termination_fee_amount'), 2) }}</li>
+                                                                    @if ($terminationFeeDisplay !== '—')
+                                                                    <li class="mb-1"><span class="fw-semibold">Termination Fee Amount:</span> {{ $terminationFeeDisplay }}</li>
                                                                     @endif
                                                                 @endif
                                                                 @if (data_get($bid, 'get.retainer_fee_option'))

@@ -1,0 +1,172 @@
+Replit Instructions — Actual Listing Display: Show Combined Compensation Format (Tenant Agent Bids)
+
+Applies to: Hire a Tenant’s Agent (Residential + Commercial) → Actual Listing Display (bids/terms panel)
+
+🔒 SAFEGUARDS (MANDATORY)
+
+Do NOT change any labels, headings, tooltips, section order, or layout.
+
+Do NOT change any save logic, JSON structure, database schema, or model attributes.
+
+Display-only changes in the Actual Listing Display view/partial only.
+
+Must work for both viewer roles:
+
+Listing Creator (full access to private terms)
+
+Agents viewing listing (restricted private info rules remain intact)
+
+Apply only to Hire a Tenant’s Agent (do not touch Buyer/Seller/Landlord).
+
+1) Locate the Actual Listing Display template for Tenant Agent listings
+
+This is the page that renders the listing + bids list/accordion.
+
+✅ Likely file:
+
+resources/views/hire_tenant_agent/view.blade.php
+
+✅ If bids are rendered via an include/partial, update the partial used by that listing view (do not change unrelated views).
+
+2) Implement a shared display formatter for combined fee strings (REQUIRED)
+
+Inside the listing view (or a small included helper partial used only by this page), create a small local formatter (safe, display-only) to build combined fee lines:
+
+Add these helper functions at the top of the view (or in an included partial)
+@php
+  $fmtMoney = function($v) {
+    if ($v === null || $v === '') return null;
+    $raw = preg_replace('/[^0-9.]/', '', (string)$v);
+    if ($raw === '' || !is_numeric($raw)) return null;
+    return '$' . number_format((float)$raw, 0);
+  };
+
+  $fmtPercent = function($v) {
+    if ($v === null || $v === '') return null;
+    $raw = preg_replace('/[^0-9.]/', '', (string)$v);
+    if ($raw === '' || !is_numeric($raw)) return null;
+    $num = (float)$raw;
+    return (floor($num) == $num ? (string)(int)$num : (string)$num) . '%';
+  };
+
+  $joinParts = function($parts) {
+    $parts = array_values(array_filter($parts, fn($p) => $p !== null && $p !== ''));
+    return count($parts) ? implode(' + ', $parts) : null;
+  };
+
+  $basisText = function($basis) {
+    return $basis ? ('of ' . $basis) : null;
+  };
+@endphp
+
+
+Do not divide or multiply values. This prevents the $8000 → $8.00 bug.
+
+3) Update “Tenant’s Broker Commission Fee” line on the Actual Listing Display
+
+In the bids list where you currently show the broker compensation summary, you likely have something like:
+
+“Tenant’s Broker Lease Fee: Flat Fee + Percentage of Gross Lease Value”
+
+but missing the actual numbers.
+
+✅ REQUIRED OUTPUT (display-only)
+
+Show a combined line like:
+
+$2,323 + 3% of Gross Lease Value
+
+10% of Gross Lease Value
+
+$2,323
+
+Implementation (use data_get with fallbacks)
+
+Inside the bid loop, wherever compensation is displayed:
+
+@php
+  // NOTE: replace these keys with the exact keys already stored in your bid "get" JSON.
+  // Use fallbacks (camelCase + snake_case) but DO NOT rename anything.
+
+  $leaseFlat  = data_get($bid, 'get.tenantBrokerLeaseFlatFee')
+            ?? data_get($bid, 'get.tenant_broker_lease_flat_fee');
+
+  $leasePct   = data_get($bid, 'get.tenantBrokerLeasePercent')
+            ?? data_get($bid, 'get.tenant_broker_lease_percent');
+
+  $leaseBasis = data_get($bid, 'get.leaseFeeBasis')
+            ?? data_get($bid, 'get.tenantBrokerLeaseBasis')
+            ?? data_get($bid, 'get.tenant_broker_lease_basis'); // e.g., "Gross Lease Value", "Net Aggregate Rent"
+
+  $leaseSummary = $joinParts([
+    $fmtMoney($leaseFlat),
+    $leasePct ? ($fmtPercent($leasePct) . ' ' . $basisText($leaseBasis)) : null,
+  ]);
+@endphp
+
+
+Then in the listing display, under the existing label Tenant’s Broker Commission Fee: replace the value output with:
+
+{{ $leaseSummary ?? '—' }}
+
+
+✅ This should be shown to both listing creator and agents (since it’s the fee itself, not the “private” agent bio details).
+If you intend this fee line to be private, keep your privacy lock logic — but still display the combined string where allowed.
+
+4) Repeat the same combined-format approach for Purchase + Lease-Option + Termination (if those appear on listing)
+
+Only if those sections are already displayed on the Actual Listing Display, update them to show combined strings too:
+
+Purchase Fee Summary
+
+3% of Total Purchase Price + $8,000
+
+Lease-Option Summary
+
+Creation: 4%
+
+If exercised: $9,000
+
+Termination Fee Amount
+
+$4,545
+
+Use the same $fmtMoney, $fmtPercent, $joinParts, $basisText.
+
+5) Keep privacy rules EXACTLY the same
+
+You already have logic like:
+
+“Private — visible only to listing creator”
+
+✅ Requirement:
+
+Agents should still NOT see the private agent-only sections (About Agent, contact, etc.).
+
+But the listing creator sees everything as before.
+
+Only change the format of compensation display where it’s already allowed.
+
+6) Acceptance Test (MUST PASS)
+
+Create Tenant Agent bid values:
+
+Lease Flat Fee: 2323
+
+Lease Percent: 3
+
+Basis: Gross Lease Value
+
+✅ On the Actual Listing Display, it must show:
+
+$2,323 + 3% of Gross Lease Value
+
+Also confirm:
+
+No scaling errors ($2.00, $8.00, $9.00)
+
+Works in Residential + Commercial tenant listings
+
+IMPORTANT NOTE FOR REPLIT
+
+If the listing display is pulling from a different variable than the bid edit form (ex: $bid->get vs $bid->terms), you must use the same stored values and just format them correctly. Do not change storage.
