@@ -6,6 +6,35 @@ Bid Your Offer is a Laravel-based real estate auction platform designed for tran
 ## User Preferences
 I prefer detailed explanations. Ask before making major changes.
 
+## Critical UI/Data Safeguards
+
+### Canonical UI Source (MANDATORY)
+The **Tenant-created "Broker Compensation & Agency Agreement Terms" form** (Residential & Commercial) is the **canonical reference** for all Agent workflows.
+
+All Agent workflows must match this UI exactly:
+- **Agent Bids**
+- **Agent Counter-Bids**
+- **Agent Bid Edits**
+
+This includes:
+- Identical field structure
+- Identical input types (static flat-fee inputs, percent inputs only when applicable)
+- Identical conditional logic
+- Identical formatting and value handling
+
+**DO NOT:**
+- Introduce alternate input controls (e.g., $/% toggles) in Agent flows
+- Change labels, field keys, or data structure
+- Deviate from the Tenant form in any way
+
+**Treat the Tenant form as the single source of truth.**
+
+### Database Schema Safeguard (MANDATORY)
+- **DO NOT** remove, rename, or repurpose existing database fields
+- **DO NOT** change primary key ID column types
+- Changes must be **UI-alignment only** unless explicitly instructed otherwise
+- All fee format updates are **display-only** - no storage, save logic, or database schema modifications
+
 ## System Architecture
 
 ### UI/UX Decisions
