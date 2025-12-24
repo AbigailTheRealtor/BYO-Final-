@@ -311,6 +311,10 @@ class TenantAgentAuctionBid extends Component
     }
     public function addMaterial(): void
     {
+        // Clear any file upload errors before adding new material
+        $this->resetErrorBag('promoMaterials.*.files');
+        $this->resetErrorBag('promoMaterials.*.files.*');
+        
         $new = [
             'type'  => '',
             'other' => '',
