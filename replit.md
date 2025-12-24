@@ -56,6 +56,12 @@ I prefer detailed explanations. Ask before making major changes.
 - **Submit Button Updated**: Changed button to use `wire:loading.attr="disabled"` for visual feedback during save
 - **Error Logging Added**: Added `Log::error()` in catch block for debugging
 
+### Edit Bid Agent Info Persistence Fix (December 2025)
+- **Root Cause**: Edit mode loaded agent info from user profile but didn't override with saved bid values
+- **Fields Affected**: first_name, last_name, phone, email, brokerage, license_no, year_licensed, nar_id
+- **Fix Applied**: In mount() edit mode section, now loads all agent info fields from `$bidData` (bid's meta) with fallback to user profile values
+- **Pattern**: `$this->field = $bidData->field ?? $this->field;` ensures saved value takes precedence over profile default
+
 ### Livewire File Upload Fix (December 2025)
 - **PHP Upload Limits Increased**: Workflow command now passes `-d upload_max_filesize=50M -d post_max_size=55M -d memory_limit=256M -d max_file_uploads=50`
 - **Livewire Config Updated**: Set `disk => 'local'`, `directory => 'livewire-tmp'`, `rules => ['file', 'max:51200']` in config/livewire.php
