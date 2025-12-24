@@ -997,66 +997,43 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </div>
                 @endif
 
-                @if (@$auction->get->lease_fee_type != null)
+@if (@$auction->get->lease_fee_type != null)
+                @php
+                    // Build combined Tenant's Broker Commission Fee display for listing
+                    $listingLeaseFeeType = @$auction->get->lease_fee_type ?? '';
+                    $listingLeaseFeeCombined = '—';
+                    
+                    if ($listingLeaseFeeType === 'Flat Fee' && @$auction->get->lease_fee_flat) {
+                        $listingLeaseFeeCombined = $fmtMoney(@$auction->get->lease_fee_flat);
+                    } elseif ($listingLeaseFeeType === 'Percentage of the Gross Lease Value' && @$auction->get->lease_fee_percentage) {
+                        $listingLeaseFeeCombined = $fmtPercent(@$auction->get->lease_fee_percentage) . ' of Gross Lease Value';
+                    } elseif ($listingLeaseFeeType === 'Percentage of Monthly Rent' && @$auction->get->lease_fee_percentage_monthly_rent) {
+                        $display = $fmtPercent(@$auction->get->lease_fee_percentage_monthly_rent) . ' of Monthly Rent';
+                        if (@$auction->get->lease_fee_percentage_monthly_number) {
+                            $display .= ' x ' . @$auction->get->lease_fee_percentage_monthly_number . ' Months';
+                        }
+                        $listingLeaseFeeCombined = $display;
+                    } elseif ($listingLeaseFeeType === 'Flat Fee + Percentage of the Gross Lease Value') {
+                        $listingLeaseFeeCombined = $joinParts([
+                            $fmtMoney(@$auction->get->lease_fee_flat_combo),
+                            @$auction->get->lease_fee_percentage_combo ? ($fmtPercent(@$auction->get->lease_fee_percentage_combo) . ' of Gross Lease Value') : null,
+                        ]) ?? '—';
+                    } elseif ($listingLeaseFeeType === 'Percentage of the Net Aggregate Rent' && @$auction->get->lease_fee_percentage_net) {
+                        $listingLeaseFeeCombined = $fmtPercent(@$auction->get->lease_fee_percentage_net) . ' of Net Aggregate Rent';
+                    } elseif ($listingLeaseFeeType === 'Flat Fee + Percentage of the Net Aggregate Rent') {
+                        $listingLeaseFeeCombined = $joinParts([
+                            $fmtMoney(@$auction->get->lease_fee_flat_combo_net),
+                            @$auction->get->lease_fee_percentage_combo_net ? ($fmtPercent(@$auction->get->lease_fee_percentage_combo_net) . ' of Net Aggregate Rent') : null,
+                        ]) ?? '—';
+                    } elseif (strtolower($listingLeaseFeeType) === 'other' && @$auction->get->lease_fee_other) {
+                        $listingLeaseFeeCombined = @$auction->get->lease_fee_other;
+                    } elseif ($listingLeaseFeeType) {
+                        $listingLeaseFeeCombined = $listingLeaseFeeType;
+                    }
+                @endphp
                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Tenant’s Broker Lease Fee:
-                    <span class="removeBold">
-                        @if (@$auction->get->lease_fee_type === 'other')
-                            {{ $auction->get->lease_fee_other ?? '' }}
-                        @else
-                            {{ $auction->get->lease_fee_type ?? '' }}
-                        @endif
-                    </span>
-                </div>
-                @endif
-
-                @if (@$auction->get->lease_fee_type === 'Flat Fee' && @$auction->get->lease_fee_flat != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Flat Fee Amount:
-                    <span class="removeBold">${{ number_format((float)str_replace(',', '', $auction->get->lease_fee_flat), 0) }}</span>
-                </div>
-                @endif
-
-                @if (@$auction->get->lease_fee_type === 'Percentage of the Gross Lease Value' && @$auction->get->lease_fee_percentage != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Percentage Amount:
-                    <span class="removeBold">{{ $auction->get->lease_fee_percentage }}%</span>
-                </div>
-                @endif
-
-                @if (@$auction->get->lease_fee_type === 'Percentage of Monthly Rent' && @$auction->get->lease_fee_percentage_monthly_rent != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Percentage Amount:
-                    <span class="removeBold">{{ $auction->get->lease_fee_percentage_monthly_rent }}%</span>
-                </div>
-                @endif
-
-                @if (@$auction->get->lease_fee_type === 'Flat Fee + Percentage of the Gross Lease Value' && @$auction->get->lease_fee_flat_combo != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Flat Fee Amount:
-                    <span class="removeBold">${{ number_format((float)str_replace(',', '', $auction->get->lease_fee_flat_combo), 0) }}</span>
-                </div>
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Percentage Amount:
-                    <span class="removeBold">{{ $auction->get->lease_fee_percentage_combo }}%</span>
-                </div>
-                @endif
-
-                @if (@$auction->get->lease_fee_type === 'Percentage of the Net Aggregate Rent' && @$auction->get->lease_fee_percentage_net != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Percentage Amount:
-                    <span class="removeBold">{{ $auction->get->lease_fee_percentage_net }}%</span>
-                </div>
-                @endif
-
-                @if (@$auction->get->lease_fee_type === 'Flat Fee + Percentage of the Net Aggregate Rent' && @$auction->get->lease_fee_flat_combo_net != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Flat Fee Amount:
-                    <span class="removeBold">${{ number_format((float)str_replace(',', '', $auction->get->lease_fee_flat_combo_net), 0) }}</span>
-                </div>
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Percentage Amount:
-                    <span class="removeBold">{{ $auction->get->lease_fee_percentage_combo_net }}%</span>
+                    Tenant's Broker Commission Fee:
+                    <span class="removeBold">{{ $listingLeaseFeeCombined }}</span>
                 </div>
                 @endif
 
@@ -1092,41 +1069,29 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </div>
                 @endif
 
-                @if (@$auction->get->interested_purchase_fee_type === 'Yes' && @$auction->get->purchase_fee_type != null)
+@if (@$auction->get->interested_purchase_fee_type === 'Yes' && @$auction->get->purchase_fee_type != null)
+                @php
+                    // Build combined Purchase Fee display for listing
+                    $listingPurchaseFeeType = @$auction->get->purchase_fee_type ?? '';
+                    $listingPurchaseFeeCombined = '—';
+                    
+                    if ($listingPurchaseFeeType === 'Flat Fee') {
+                        $listingPurchaseFeeCombined = $fmtMoney(@$auction->get->purchase_fee_flat) ?? '—';
+                    } elseif ($listingPurchaseFeeType === 'Percentage of the Total Purchase Price') {
+                        $pct = @$auction->get->purchase_fee_percentage;
+                        $listingPurchaseFeeCombined = $pct ? ($fmtPercent($pct) . ' of Total Purchase Price') : '—';
+                    } elseif ($listingPurchaseFeeType === 'Percentage of the Total Purchase Price + Flat Fee') {
+                        $listingPurchaseFeeCombined = $joinParts([
+                            $fmtMoney(@$auction->get->purchase_fee_flat_combo),
+                            @$auction->get->purchase_fee_percentage_combo ? ($fmtPercent(@$auction->get->purchase_fee_percentage_combo) . ' of Total Purchase Price') : null,
+                        ]) ?? '—';
+                    } elseif ($listingPurchaseFeeType === 'other') {
+                        $listingPurchaseFeeCombined = @$auction->get->purchase_fee_other ?? '—';
+                    }
+                @endphp
                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Purchase Fee Type:
-                    <span class="removeBold">
-                        @if (@$auction->get->purchase_fee_type === 'other')
-                            {{ $auction->get->purchase_fee_other ?? '' }}
-                        @else
-                            {{ $auction->get->purchase_fee_type ?? '' }}
-                        @endif
-                    </span>
-                </div>
-                @endif
-
-                @if (@$auction->get->purchase_fee_type === 'Flat Fee' && @$auction->get->purchase_fee_flat != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Flat Fee Amount:
-                    <span class="removeBold">${{ number_format((float)str_replace(',', '', $auction->get->purchase_fee_flat), 0) }}</span>
-                </div>
-                @endif
-
-                @if (@$auction->get->purchase_fee_type === 'Percentage of the Total Purchase Price' && @$auction->get->purchase_fee_percentage != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Purchase Percentage:
-                    <span class="removeBold">{{ $auction->get->purchase_fee_percentage }}%</span>
-                </div>
-                @endif
-
-                @if (@$auction->get->purchase_fee_type === 'Percentage of the Total Purchase Price + Flat Fee' && @$auction->get->purchase_fee_percentage_combo != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Purchase Percentage:
-                    <span class="removeBold">{{ $auction->get->purchase_fee_percentage_combo }}%</span>
-                </div>
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Additional Flat Fee:
-                    <span class="removeBold">${{ number_format((float)str_replace(',', '', $auction->get->purchase_fee_flat_combo ?? '0'), 0) }}</span>
+                    Purchase Fee:
+                    <span class="removeBold">{{ $listingPurchaseFeeCombined }}</span>
                 </div>
                 @endif
 
