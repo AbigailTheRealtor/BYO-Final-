@@ -23,6 +23,7 @@ CACHE_DRIVER = "file"
 SESSION_DRIVER = "file"
 QUEUE_CONNECTION = "sync"
 BROADCAST_DRIVER = "log"
+ASSET_URL = "https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev"
 
 [workflows]
 runButton = "Project"
