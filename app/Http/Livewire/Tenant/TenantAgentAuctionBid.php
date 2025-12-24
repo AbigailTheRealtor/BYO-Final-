@@ -655,16 +655,20 @@ class TenantAgentAuctionBid extends Component
     {
         Log::info('NEXT STEP ADVANCE', ['from' => $this->activeTab]);
         
-        // Validate only non-file fields on Next (files validated on Submit only)
-        $this->validate([
-            'promoMaterials' => 'array',
-            'promoMaterials.*.type' => 'nullable|string',
-            'promoMaterials.*.link' => 'nullable|string',
-            'promoMaterials.*.other' => 'nullable|string',
-            // NO files validation here - upload errors should not block navigation
-        ]);
-        
-        $this->activeTab = $this->activeTab + 1;
+        // No validation on Next - just advance to allow navigation even if uploads fail
+        // Files are validated on Submit only
+        $maxTab = $this->service_type === 'full_service' ? 5 : 4;
+        if ($this->activeTab < $maxTab) {
+            $this->activeTab = $this->activeTab + 1;
+        }
+    }
+    
+    public function goToPreviousStep()
+    {
+        Log::info('PREVIOUS STEP', ['from' => $this->activeTab]);
+        if ($this->activeTab > 0) {
+            $this->activeTab = $this->activeTab - 1;
+        }
     }
 
     public function addWebsiteLink()

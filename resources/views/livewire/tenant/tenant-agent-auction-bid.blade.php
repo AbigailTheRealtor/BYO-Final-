@@ -331,12 +331,12 @@
                     <!-- Navigation Buttons -->
                     <div class="d-flex justify-content-between form-group mt-4">
                         <div>
-                            <button type="button" class="btn btn-secondary wizard-step-back">
+                            <button type="button" class="btn btn-secondary wizard-step-back" wire:click="goToPreviousStep">
                                 Previous
                             </button>
                         </div>
                         <div>
-                            <button type="button" class="btn btn-primary wizard-step-next">
+                            <button type="button" class="btn btn-primary wizard-step-next" wire:click="goToNextStep">
                                 Next
                             </button>
 
