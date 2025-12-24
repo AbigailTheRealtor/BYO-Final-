@@ -1,0 +1,77 @@
+Replit Instructions — Fix Upload Type Handling + Stop Upload Errors From Blocking Next
+🔒 Safeguards
+
+Don’t change tab names, fields, tooltips, layout.
+
+Only adjust: (1) file type acceptance + validation messaging, (2) Next button wiring/logic for this tab.
+
+1) File types: support JPG/JPEG/PNG/PDF + optionally WEBP
+A) Update the HTML accept attribute (so users aren’t picking unsupported files)
+
+On the Marketing Materials upload input:
+
+<input type="file"
+  wire:model="promoMaterials.{{ $index }}.files"
+  multiple
+  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.ppt,.pptx,.webp">
+
+
+If you do NOT want WEBP, remove it and show a clear error message: “WEBP not supported, please upload JPG/PNG”.
+
+B) Update Livewire validation rules to match
+
+In the Livewire component:
+
+'promoMaterials.*.files' => 'nullable|array',
+'promoMaterials.*.files.*' => 'file|mimes:pdf,jpg,jpeg,png,webp,doc,docx,ppt,pptx|max:51200',
+
+
+(If you don’t want WEBP, remove it here too.)
+
+✅ This answers your question: Yes, JPG/JPEG should be accepted as long as jpeg is included in mimes:. Many devs forget jpeg and only allow jpg.
+
+2) Next button: make it advance even if uploads failed
+
+Right now the upload error is producing a validation block that prevents Next.
+
+Required change
+
+For this tab only:
+
+Do not validate promoMaterials.*.files inside goToNextStep().
+
+Validate uploads on Submit only.
+
+public function goToNextStep()
+{
+    $this->validate([
+      'promoMaterials' => 'array',
+      'promoMaterials.*.type' => 'nullable|string',
+      'promoMaterials.*.link' => 'nullable|string',
+      'promoMaterials.*.other' => 'nullable|string',
+      // NO files validation here
+    ]);
+
+    $this->currentStep++;
+}
+
+3) The real root cause: identify the Livewire upload HTTP status code
+
+Because the error text “failed to upload” can also be caused by 413/419/500, Replit must confirm.
+
+Required diagnostic (must report back)
+
+In DevTools → Network:
+
+Attempt upload
+
+Click request: /livewire/upload-file
+
+Report status code:
+
+If 413: reverse proxy body limit (not PHP)
+If 419: session/CSRF mismatch
+If 500: temp directory permissions/disk misconfig
+If 422: validation (mime/max)
+
+They must report this code before saying “fixed”.

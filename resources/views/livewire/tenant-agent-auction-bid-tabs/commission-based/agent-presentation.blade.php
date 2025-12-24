@@ -230,10 +230,10 @@
                     </span>
                     <div class="input-cover">
                         <input type="file" wire:model="promoMaterials.{{ $idx }}.files"
-                            class="form-control" multiple accept="image/*,.pdf,.doc,.docx,.ppt,.pptx"
+                            class="form-control" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.ppt,.pptx"
                             id="promo-materials-{{ $idx }}">
                     </div>
-                    <small class="text-muted">Upload one or more files (PDF, JPG, PNG, DOC, PPT)</small>
+                    <small class="text-muted">Upload one or more files (PDF, JPG, JPEG, PNG, WEBP, DOC, PPT)</small>
                     @error('promoMaterials.' . $idx . '.files')
                         <small class="text-danger d-block">{{ $message }}</small>
                     @enderror

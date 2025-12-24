@@ -255,7 +255,7 @@ class TenantAgentAuctionBid extends Component
             'promoMaterials.*.files.*' => [
                 'file',
                 'max:51200', // 50MB each
-                'mimes:pdf,jpg,jpeg,png,doc,docx,ppt,pptx'
+                'mimes:pdf,jpg,jpeg,png,webp,doc,docx,ppt,pptx'
             ],
             'year_licensed' => 'required|numeric|min:1900|max:' . date('Y'),
 
@@ -654,6 +654,16 @@ class TenantAgentAuctionBid extends Component
     public function goToNextStep()
     {
         Log::info('NEXT STEP ADVANCE', ['from' => $this->activeTab]);
+        
+        // Validate only non-file fields on Next (files validated on Submit only)
+        $this->validate([
+            'promoMaterials' => 'array',
+            'promoMaterials.*.type' => 'nullable|string',
+            'promoMaterials.*.link' => 'nullable|string',
+            'promoMaterials.*.other' => 'nullable|string',
+            // NO files validation here - upload errors should not block navigation
+        ]);
+        
         $this->activeTab = $this->activeTab + 1;
     }
 
