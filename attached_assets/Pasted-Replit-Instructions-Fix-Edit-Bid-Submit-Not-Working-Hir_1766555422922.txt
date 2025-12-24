@@ -1,0 +1,190 @@
+Replit Instructions — Fix “Edit Bid” Submit Not Working (Hire a Tenant’s Agent Bids | Residential + Commercial)
+✅ Applies to
+
+Hire a Tenant’s Agent → Edit Bid flow (Residential + Commercial)
+
+Issue: Submit button does nothing / bid does not update
+
+🔒 SAFEGUARDS (MANDATORY)
+
+Do NOT change any field labels, tooltips, section order, or UI layout.
+
+Do NOT modify DB schema.
+
+Fix only the Edit Bid submit/update flow for Tenant Agent bids.
+
+Must work for both Residential + Commercial Tenant listings.
+
+1) Confirm the Edit Bid form is actually submitting
+A) If this is a normal HTML/Laravel POST form
+
+In the Edit Bid blade view, ensure:
+
+The <form> has the correct action="" route for update
+
+The method is correct:
+
+HTML must be method="POST" plus @method('PUT') (or PATCH)
+
+@csrf exists
+
+The submit button is inside the <form> tag
+
+✅ Required structure:
+
+<form method="POST" action="{{ route('tenant.agent.bid.update', $bid->id) }}" enctype="multipart/form-data">
+  @csrf
+  @method('PUT')
+
+  <!-- all fields -->
+
+  <button type="submit" class="btn btn-success">Submit</button>
+</form>
+
+
+Fix if broken: Replit must verify the submit button did not end up outside the form (common after layout edits).
+
+B) If this is Livewire (most likely)
+
+The submit button may not work because:
+
+it’s missing wire:submit.prevent="save" on the form
+
+the button is missing type="submit"
+
+a JS error is breaking Livewire
+
+validation is failing but errors aren’t shown
+
+the component method name changed (ex: submitBid() vs saveBid())
+
+✅ Required Livewire structure:
+
+<form wire:submit.prevent="updateBid" enctype="multipart/form-data">
+  <!-- fields -->
+  <button type="submit" class="btn btn-success" wire:loading.attr="disabled">
+    <span wire:loading.remove>Submit</span>
+    <span wire:loading>Saving...</span>
+  </button>
+</form>
+
+
+✅ Required Livewire method exists:
+
+public function updateBid()
+{
+    // validate, save, emit refresh, redirect or reload
+}
+
+
+Fix if broken: Ensure the method name in Blade matches the method in the Livewire component exactly.
+
+2) Fix the update route/controller vs create route mismatch (common bug)
+
+Sometimes Edit Bid still posts to the create/store route (or wrong auction id), which silently fails.
+
+✅ Required behavior:
+
+Create Bid uses store()
+
+Edit Bid uses update($bidId) and updates the existing bid row
+
+Controller requirement:
+public function update(Request $request, $bidId)
+{
+   $bid = TenantAgentAuctionBid::findOrFail($bidId);
+
+   // IMPORTANT: ensure auth user owns this bid or has permission
+   // then update the same JSON structure used by display
+
+   $bid->get = json_encode($payload); // or whatever column you use
+   $bid->save();
+
+   return redirect()->route('tenant.hire.agent.auction.view', $bid->auction_id)
+     ->with('success','Bid updated');
+}
+
+
+Fix if broken: Replit must confirm:
+
+Edit form action points to update route with bid id
+
+Not posting to store route
+
+3) Remove any “disabled/blocked submit” caused by JS or duplicate IDs
+
+If Replit added “Test Livewire Connection” or duplicated inputs, the form may have:
+
+duplicate id="" attributes
+
+nested <form> tags (invalid HTML)
+
+JS preventing default on submit
+
+✅ Replit must verify:
+
+Only one form wraps the edit fields (no nested forms)
+
+Submit button has type="submit"
+
+No JS handler like event.preventDefault() running on submit click
+
+4) Ensure validation errors are visible (so it doesn’t fail silently)
+
+If update is failing due to validation, but the user sees nothing, it looks like “submit doesn’t work.”
+
+✅ Requirement:
+
+Add standard error display at top of the edit form:
+
+@if ($errors->any())
+  <div class="alert alert-danger">
+    <ul class="mb-0">
+      @foreach ($errors->all() as $error)
+        <li>{{ $error }}</li>
+      @endforeach
+    </ul>
+  </div>
+@endif
+
+
+Livewire equivalent:
+
+@error('fieldName') <div class="text-danger">{{ $message }}</div> @enderror
+
+5) After save, force refreshed display (so updated terms appear immediately)
+
+Even after update works, you already saw the UI sometimes shows old values.
+
+✅ Requirement after successful update:
+
+Re-query bids (or redirect with fresh DB query)
+
+Livewire:
+
+$this->dispatch('bidUpdated');
+$this->loadBids();
+
+
+Controller:
+
+return redirect()->route(...); // listing view must query bids from DB
+
+6) Acceptance test (must pass)
+
+Place bid with Lease Fee: $2,323 + 3% of Gross Lease Value
+
+Click Edit Bid
+
+Change Lease Fee to $3,000 + 4% of Gross Lease Value
+
+Click Submit
+✅ No console errors
+✅ Returns to listing view
+✅ Bid card + full terms show new values
+✅ Works in Residential + Commercial tenant listings
+
+Extra note to Replit (important)
+
+This is Edit Bid only for Tenant Agent bids.
+Do not change any create-bid flow, and do not modify other roles.

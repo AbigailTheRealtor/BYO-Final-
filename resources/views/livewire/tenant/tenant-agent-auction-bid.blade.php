@@ -153,6 +153,7 @@
             background-color: #f8f9fa;
         }
 
+        /* Removed: #save-button.disabled - now using Livewire wire:loading for button state */
         #save-button.disabled {
             opacity: 0.5;
             cursor: not-allowed;
@@ -340,8 +341,9 @@
                                 Next
                             </button>
 
-                            <button type="submit" class="btn btn-success wizard-step-finish disable" id="save-button">
-                                Submit
+                            <button type="submit" class="btn btn-success wizard-step-finish" id="save-button" wire:loading.attr="disabled">
+                                <span wire:loading.remove>Submit</span>
+                                <span wire:loading>Saving...</span>
                             </button>
                         </div>
                     </div>
@@ -825,16 +827,11 @@
                 return allValid;
             }
 
-            // Update save button state
+            // Update save button state - REMOVED: Was blocking submit when hidden tabs failed validation
+            // Livewire server-side validation now handles this
             function updateSaveButton() {
-                const saveButton = document.getElementById('save-button');
-                if (checkAllTabsValidity()) {
-                    saveButton.classList.remove('disabled');
-                    saveButton.disabled = false;
-                } else {
-                    saveButton.classList.add('disabled');
-                    saveButton.disabled = true;
-                }
+                // No-op: Allow form submission to reach Livewire for proper server-side validation
+                return;
             }
             // Add this function to validate services tab
 

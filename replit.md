@@ -49,6 +49,13 @@ I prefer detailed explanations. Ask before making major changes.
 - **No Storage Changes**: Display-only formatting, no database schema or save logic changes
 - **Currency Normalization**: Uses `preg_replace('/[^0-9.]/', '', $value)` to strip all non-numeric characters safely
 
+### Edit Bid Submit Fix (December 2025)
+- **Root Cause**: JavaScript `updateSaveButton()` disabled submit button when hidden tabs failed validation (e.g., file inputs lacking files)
+- **Fix Applied**: Made `updateSaveButton()` a no-op, allowing form submission to reach Livewire for proper server-side validation
+- **Transaction Handling Fixed**: Added `DB::beginTransaction()` and `DB::commit()` to wrap the submit() method's database operations
+- **Submit Button Updated**: Changed button to use `wire:loading.attr="disabled"` for visual feedback during save
+- **Error Logging Added**: Added `Log::error()` in catch block for debugging
+
 ### Livewire File Upload Fix (December 2025)
 - **PHP Upload Limits Increased**: Workflow command now passes `-d upload_max_filesize=50M -d post_max_size=55M -d memory_limit=256M -d max_file_uploads=50`
 - **Livewire Config Updated**: Set `disk => 'local'`, `directory => 'livewire-tmp'`, `rules => ['file', 'max:51200']` in config/livewire.php

@@ -702,7 +702,7 @@ class TenantAgentAuctionBid extends Component
 
     public function submit()
     {
-
+        DB::beginTransaction();
         try {
             $this->validate();
             
@@ -904,13 +904,16 @@ class TenantAgentAuctionBid extends Component
             $bid->saveMeta('year_licensed', $this->year_licensed);
             $bid->saveMeta('nar_id', $this->nar_id);
 
+            DB::commit();
+            
             $message = $this->isEditMode ? 'Your bid has been updated successfully!' : 'Your bid has been submitted successfully!';
             session()->flash('success', $message);
 
             return redirect()->route('tenant.agent.auction.view', $this->auctionId);
         } catch (\Exception $e) {
             DB::rollBack();
-            session()->flash('error', 'Error saving auction: ' . $e->getMessage());
+            Log::error('Bid submission error: ' . $e->getMessage(), ['exception' => $e]);
+            session()->flash('error', 'Error saving bid: ' . $e->getMessage());
         }
     }
 
