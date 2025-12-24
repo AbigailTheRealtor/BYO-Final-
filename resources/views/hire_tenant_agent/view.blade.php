@@ -277,6 +277,14 @@
     .card-header[data-bs-toggle="collapse"]:hover {
         background-color: #f8f9fa !important;
     }
+    
+    /* Fix white space below bid cards - ensure collapse content uses natural height */
+    .card.higestBider .accordion-item > .card.mb-3 {
+        margin-bottom: 0.75rem;
+    }
+    .card.higestBider .accordion-item > .card.mb-3 > .collapse {
+        height: auto;
+    }
 </style>
 @endpush
 @section('content')
@@ -1593,12 +1601,47 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             $leaseFeeType = data_get($bid, 'get.lease_fee_type', '');
                             $leaseFeeFlat = data_get($bid, 'get.lease_fee_flat', '');
                             $leaseFeePercentage = data_get($bid, 'get.lease_fee_percentage', '');
+                            $leaseFeePercentageMonthlyRent = data_get($bid, 'get.lease_fee_percentage_monthly_rent', '');
+                            $leaseFeePercentageMonthlyNumber = data_get($bid, 'get.lease_fee_percentage_monthly_number', '');
+                            $leaseFeeFlatCombo = data_get($bid, 'get.lease_fee_flat_combo', '');
+                            $leaseFeePercentageCombo = data_get($bid, 'get.lease_fee_percentage_combo', '');
+                            $leaseFeePercentageNet = data_get($bid, 'get.lease_fee_percentage_net', '');
+                            $leaseFeeFlatComboNet = data_get($bid, 'get.lease_fee_flat_combo_net', '');
+                            $leaseFeePercentageComboNet = data_get($bid, 'get.lease_fee_percentage_combo_net', '');
+                            $leaseFeeOther = data_get($bid, 'get.lease_fee_other', '');
                             
+                            // Helper to normalize currency strings (remove $, commas, spaces) before parsing
+                            $normalizeCurrency = function($val) {
+                                if (!$val) return 0;
+                                return (float) preg_replace('/[,$\s]/', '', (string) $val);
+                            };
+                            
+                            // Build commission fee display with actual values (matching form option values)
                             $commissionFeeDisplay = 'Not specified';
                             if ($leaseFeeType === 'Flat Fee' && $leaseFeeFlat) {
-                                $commissionFeeDisplay = 'Flat Fee: $' . number_format((float)$leaseFeeFlat, 0);
-                            } elseif ($leaseFeeType === 'Percentage' && $leaseFeePercentage) {
-                                $commissionFeeDisplay = 'Percentage: ' . $leaseFeePercentage . '%';
+                                $commissionFeeDisplay = '$' . number_format($normalizeCurrency($leaseFeeFlat), 0) . ' Flat Fee';
+                            } elseif ($leaseFeeType === 'Percentage of the Gross Lease Value' && $leaseFeePercentage) {
+                                $commissionFeeDisplay = $leaseFeePercentage . '% of the Gross Lease Value';
+                            } elseif ($leaseFeeType === 'Percentage of Monthly Rent' && $leaseFeePercentageMonthlyRent) {
+                                $display = $leaseFeePercentageMonthlyRent . '% of Monthly Rent';
+                                if ($leaseFeePercentageMonthlyNumber) {
+                                    $display .= ' x ' . $leaseFeePercentageMonthlyNumber . ' Months';
+                                }
+                                $commissionFeeDisplay = $display;
+                            } elseif ($leaseFeeType === 'Flat Fee + Percentage of the Gross Lease Value') {
+                                $parts = [];
+                                if ($leaseFeeFlatCombo) $parts[] = '$' . number_format($normalizeCurrency($leaseFeeFlatCombo), 0);
+                                if ($leaseFeePercentageCombo) $parts[] = $leaseFeePercentageCombo . '% of Gross Lease Value';
+                                $commissionFeeDisplay = count($parts) ? implode(' + ', $parts) : $leaseFeeType;
+                            } elseif ($leaseFeeType === 'Percentage of the Net Aggregate Rent' && $leaseFeePercentageNet) {
+                                $commissionFeeDisplay = $leaseFeePercentageNet . '% of Net Aggregate Rent';
+                            } elseif ($leaseFeeType === 'Flat Fee + Percentage of the Net Aggregate Rent') {
+                                $parts = [];
+                                if ($leaseFeeFlatComboNet) $parts[] = '$' . number_format($normalizeCurrency($leaseFeeFlatComboNet), 0);
+                                if ($leaseFeePercentageComboNet) $parts[] = $leaseFeePercentageComboNet . '% of Net Aggregate Rent';
+                                $commissionFeeDisplay = count($parts) ? implode(' + ', $parts) : $leaseFeeType;
+                            } elseif (strtolower($leaseFeeType) === 'other' && $leaseFeeOther) {
+                                $commissionFeeDisplay = $leaseFeeOther;
                             } elseif ($leaseFeeType) {
                                 $commissionFeeDisplay = $leaseFeeType;
                             }
@@ -1622,7 +1665,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             </div>
                             
                             <!-- Collapsible Content - Default collapsed -->
-                            <div class="collapse" id="bidCollapse-{{ data_get($bid, 'id') }}">
+                            <div class="collapse" id="bidCollapse-{{ data_get($bid, 'id') }}" wire:ignore.self>
                             <div class="card-body" style="padding: 20px;">
                                 
                                 <hr style="margin: 0 0 15px 0; border-color: #e0e0e0;">
