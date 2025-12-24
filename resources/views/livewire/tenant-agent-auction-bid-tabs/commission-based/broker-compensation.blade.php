@@ -76,26 +76,13 @@
     <div class="mt-3">
         @if ($lease_fee_type === 'Flat Fee')
             <div class="input-group">
-
-                <select wire:model="lease_fee_flat_type" class="form-select"
-                    wire:change="setType('lease_fee_flat', $event.target.value)" style="max-width: 100px;">
-                    <option value="$">$</option>
-                    <option value="%">%</option>
-                </select>
-
+                <span class="input-group-text">$</span>
                 <input type="text" step="any" wire:model.lazy="lease_fee_flat" class="form-control"
-                    placeholder="{{ $lease_fee_flat_type === '%'
-                        ? 'Enter percentage of the total flat fee (e.g., 6)'
-                        : 'Enter flat fee amount (e.g., 5000)' }}"
-                    data-error-id="lease_fee_flat_error" oninput="validateInput(this)" onblur="reformatNumber(this)"
+                    placeholder="Enter flat fee amount (e.g., 5000)"
+                    oninput="formatWithCommas(this)" onblur="formatWithCommas(this)"
                     onpaste="handlePaste(event)">
-
-                <span class="input-group-text">
-                    {{ $lease_fee_flat_type === '%' ? '%' : '$' }}
-                </span>
-            <span class="error mt-2" id="lease_fee_flat_error"></span>
-
             </div>
+            <span class="error mt-2" id="lease_fee_flat_error"></span>
         @elseif($lease_fee_type === 'Percentage of the Gross Lease Value')
             <div class="row g-2">
                 <div class="col-md-12">
@@ -309,32 +296,13 @@
         <div class="mt-3">
             @if ($purchase_fee_type === 'Flat Fee')
                 <div class="input-group">
-                    {{-- <span class="input-group-text">$</span>
-                <input type="number" wire:model="purchase_fee_flat" class="form-control"
-                    placeholder="Enter flat fee amount (e.g., 5000)"> --}}
-
-                    <select wire:model="purchase_fee_flat_type"
-                        wire:change="setType('purchase_fee_flat', $event.target.value)" class="form-select"
-                        style="max-width: 100px;">
-                        <option value="$">$</option>
-                        <option value="%">%</option>
-                    </select>
-
-                    <!-- Single input -->
+                    <span class="input-group-text">$</span>
                     <input type="text" step="any" wire:model.lazy="purchase_fee_flat" class="form-control"
-                        placeholder="{{ $purchase_fee_flat_type === '%'
-                            ? 'Enter percentage of the total flat fee (e.g., 6)'
-                            : 'Enter flat fee amount (e.g., 5000)' }}"
-                        data-error-id="purchase_fee_flat_error" oninput="validateInput(this)"
-                        onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-
-                    <!-- Suffix -->
-                    <span class="input-group-text">
-                        {{ $purchase_fee_flat_type === '%' ? '%' : '$' }}
-                    </span>
-                    <span class="error mt-2" id="purchase_fee_flat_error"></span>
-
+                        placeholder="Enter flat fee amount (e.g., 5000)"
+                        oninput="formatWithCommas(this)" onblur="formatWithCommas(this)"
+                        onpaste="handlePaste(event)">
                 </div>
+                <span class="error mt-2" id="purchase_fee_flat_error"></span>
             @elseif($purchase_fee_type === 'Percentage of the Total Purchase Price')
                 <div class="input-group">
                     <input type="number" wire:model.lazy="purchase_fee_percentage" class="form-control"

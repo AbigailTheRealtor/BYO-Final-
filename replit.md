@@ -49,6 +49,13 @@ I prefer detailed explanations. Ask before making major changes.
 - **No Storage Changes**: Display-only formatting, no database schema or save logic changes
 - **Currency Normalization**: Uses `preg_replace('/[^0-9.]/', '', $value)` to strip all non-numeric characters safely
 
+### Static USD Flat Fee Inputs (December 2025)
+- **UI Change**: Flat-fee amount inputs now use static USD prefix ($) instead of $/% dropdown toggle
+- **Affected Fields**: lease_fee_flat, purchase_fee_flat in broker-compensation.blade.php
+- **No Logic Changes**: Fee type selection still controlled by main dropdown (lease_fee_type, purchase_fee_type)
+- **Formatting**: Uses formatWithCommas() for consistent currency display
+- **Backend Unchanged**: lease_fee_flat_type and purchase_fee_flat_type still default to '$' in Livewire component
+
 ### Edit Bid Submit Fix (December 2025)
 - **Root Cause**: JavaScript `updateSaveButton()` disabled submit button when hidden tabs failed validation (e.g., file inputs lacking files)
 - **Fix Applied**: Made `updateSaveButton()` a no-op, allowing form submission to reach Livewire for proper server-side validation
