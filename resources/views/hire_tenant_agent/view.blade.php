@@ -1665,7 +1665,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             </div>
                             
                             <!-- Collapsible Content - Default collapsed -->
-                            <div class="collapse" id="bidCollapse-{{ data_get($bid, 'id') }}" wire:ignore.self>
+                            <div class="collapse" id="bidCollapse-{{ data_get($bid, 'id') }}">
                             <div class="card-body" style="padding: 20px;">
                                 
                                 <hr style="margin: 0 0 15px 0; border-color: #e0e0e0;">

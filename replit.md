@@ -37,6 +37,12 @@ I prefer detailed explanations. Ask before making major changes.
 - **Laravel Mix**: Used for compiling frontend assets.
 - **U.S. Census Gazetteer Files**: Source for seeding local geographical databases (`us_states`, `us_counties`, `us_cities`).
 - **Google Places API**: Used for specific address and postal code validation.
+### Bootstrap Accordion Fix (December 2025)
+- **Root Cause**: Duplicate Bootstrap JS loading in main.blade.php caused accordion flash/close issue
+- **Fix Applied**: Removed duplicate Bootstrap 5.3.2 include from head (line 40), keeping only Bootstrap 5.0.2 at line 229
+- **Commission Fee Display**: Enhanced formatting to normalize currency strings (removing $, commas, spaces) before parsing with `preg_replace('/[,$\s]/', '', $value)`
+- **Fee Type Matching**: Display logic now matches exact form option values ("Flat Fee", "Percentage of Monthly Rent", "Percentage of the Gross Lease Value", combo types, "other")
+
 ### Livewire File Upload Fix (December 2025)
 - **PHP Upload Limits Increased**: Workflow command now passes `-d upload_max_filesize=50M -d post_max_size=55M -d memory_limit=256M -d max_file_uploads=50`
 - **Livewire Config Updated**: Set `disk => 'local'`, `directory => 'livewire-tmp'`, `rules => ['file', 'max:51200']` in config/livewire.php
