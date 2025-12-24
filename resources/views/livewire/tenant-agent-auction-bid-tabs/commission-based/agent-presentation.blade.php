@@ -1,4 +1,12 @@
 <h4>Agent Presentation & Promotional Materials</h4>
+
+{{-- Debug message display --}}
+@if (session()->has('message'))
+    <div class="alert alert-success mt-2 mb-3">
+        {{ session('message') }}
+    </div>
+@endif
+
 <div class="alert alert-info bg-light-info border-info mb-4">
     <div class="d-flex align-items-center">
         <div>
@@ -253,5 +261,13 @@
             wire:target="promoMaterials.*.files">
             + Add Another Marketing Material
         </button>
+        
+        {{-- Debug button to test Livewire connection - REMOVE AFTER TESTING --}}
+        <div class="mt-3 p-3 bg-light border rounded">
+            <small class="text-muted d-block mb-2">Debug: Test if Livewire is connected</small>
+            <button type="button" class="btn btn-warning btn-sm" wire:click="debugNextClicked">
+                Test Livewire Connection
+            </button>
+        </div>
     </div>
 </div>

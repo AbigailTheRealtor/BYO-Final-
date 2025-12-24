@@ -1,0 +1,231 @@
+Do **both in one set of instructions**.
+
+Reason: the “Next” problem might be caused by the same root issue that breaks uploads (Livewire not mounted/scripts missing/wrong component scope). If you fix only Next first, they may “hack” it with JS and you’ll still be broken on submit/uploads.
+
+Here’s a **single, copy/paste** instruction set that fixes **both** — but still forces them to **prove** each part works.
+
+---
+
+## Replit Instructions — Fix BOTH: (1) Next Not Connected + (2) Marketing Materials Upload Failing
+
+**Applies to:** Hire a Tenant’s Agent (Residential + Commercial) → Agent Presentation & Marketing Materials tab (Agent bid flow)
+
+### 🔒 SAFEGUARDS (MANDATORY)
+
+1. Do **NOT** change any labels, tooltips, field names, tab names, or layout spacing.
+2. Do **NOT** refactor other tabs or other listing types (Buyer/Seller/Landlord).
+3. Do **NOT** implement a “JS-only Next” workaround. Next must work through the same step system as other tabs.
+4. Only edit:
+
+   * The Livewire component controlling this bid form
+   * The Blade view for this tab
+   * The shared layout only if Livewire scripts are missing
+   * Livewire temp upload config only if required
+
+---
+
+# PART A — Fix “Next” Not Connected (Prove the Click Fires)
+
+### A1) Confirm Livewire is mounted on this page (REQUIRED)
+
+In the layout used by this flow, ensure BOTH exist exactly once:
+
+* `@livewireStyles` in `<head>`
+* `@livewireScripts` before `</body>`
+
+If missing, add them. If duplicated, keep only one.
+
+---
+
+### A2) Temporary debug Next button (REQUIRED)
+
+On this tab’s Blade, replace the Next button temporarily with:
+
+```html
+<button type="button"
+        class="btn btn-primary"
+        wire:click="debugNextClicked">
+  Next
+</button>
+
+@if (session()->has('message'))
+  <div class="alert alert-success mt-2">
+    {{ session('message') }}
+  </div>
+@endif
+```
+
+In the Livewire component add:
+
+```php
+use Illuminate\Support\Facades\Log;
+
+public function debugNextClicked()
+{
+    Log::info('DEBUG NEXT CLICKED', [
+        'step' => $this->currentStep ?? null,
+        'component' => static::class,
+    ]);
+
+    session()->flash('message', 'Next button click detected');
+}
+```
+
+✅ Acceptance for A2:
+
+* Clicking Next shows **“Next button click detected”** immediately.
+* Logs show **DEBUG NEXT CLICKED**.
+
+If it does not: the button is outside the Livewire scope, Livewire scripts are missing, or an overlay/disabled state is blocking click. Fix that before proceeding.
+
+---
+
+### A3) Wire Next to the real stepper (after A2 passes)
+
+Replace the debug call with the real method:
+
+```html
+<button type="button"
+        class="btn btn-primary"
+        wire:click.prevent="goToNextStep">
+  Next
+</button>
+```
+
+Add/confirm method:
+
+```php
+public function goToNextStep()
+{
+    Log::info('NEXT STEP ADVANCE', ['from' => $this->currentStep ?? null]);
+
+    // DO NOT validate files here
+    $this->currentStep = ($this->currentStep ?? 1) + 1;
+}
+```
+
+✅ Acceptance for A3:
+
+* With NO uploads, click Next → it advances to the next tab.
+
+---
+
+# PART B — Fix Upload Failure for Marketing Materials (row 1 and row 2)
+
+### B1) Add `wire:key` to each marketing material row (REQUIRED)
+
+In the Blade loop that renders each marketing material block, wrap each row like:
+
+```html
+<div wire:key="promoMaterialRow-{{ $index }}">
+  <!-- existing fields for type/link/upload -->
+</div>
+```
+
+This prevents Livewire DOM reuse from breaking file inputs (especially after “Add Another”).
+
+---
+
+### B2) Ensure file input is indexed (REQUIRED)
+
+```html
+<input type="file"
+       wire:model="promoMaterials.{{ $index }}.files"
+       multiple
+       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.ppt,.pptx">
+
+@error("promoMaterials.$index.files") <div class="text-danger">{{ $message }}</div> @enderror
+@error("promoMaterials.$index.files.*") <div class="text-danger">{{ $message }}</div> @enderror
+```
+
+---
+
+### B3) Ensure every new row initializes `files: []` (REQUIRED)
+
+Livewire component:
+
+```php
+public function addMarketingMaterial()
+{
+    $this->promoMaterials[] = [
+        'type' => '',
+        'link' => '',
+        'other' => '',
+        'files' => [],
+    ];
+}
+```
+
+Also normalize on load/edit:
+
+```php
+$this->promoMaterials = array_map(function ($m) {
+    if (is_object($m)) $m = (array) $m;
+    $m['files'] = $m['files'] ?? [];
+    return $m;
+}, $this->promoMaterials ?? []);
+```
+
+---
+
+### B4) Configure Livewire temp uploads + permissions (REQUIRED)
+
+In `config/livewire.php`:
+
+```php
+'temporary_file_upload' => [
+  'disk' => 'local',
+  'directory' => 'livewire-tmp',
+],
+```
+
+Ensure folder exists and writable:
+
+* `storage/app/livewire-tmp`
+
+---
+
+### B5) REQUIRED: Identify upload request status code (no guessing)
+
+In DevTools → Network, upload a file and click:
+
+* `/livewire/upload-file`
+
+Record status:
+
+* **413** → proxy/body limit (must raise web server body limit)
+* **419** → session/csrf mismatch (APP_URL/cookies)
+* **422** → validation (mimes/max wrong)
+* **500** → permissions/temp disk error
+
+Developer must report the status code before marking complete.
+
+---
+
+# PART C — Final Validation / Storage (submit)
+
+On submit, validate files:
+
+```php
+$this->validate([
+  'promoMaterials.*.files' => 'nullable|array',
+  'promoMaterials.*.files.*' => 'file|mimes:pdf,jpg,jpeg,png,doc,docx,ppt,pptx|max:51200',
+]);
+```
+
+Store file paths only, then clear temp files from state.
+
+---
+
+## ✅ Final Acceptance Checklist
+
+1. Click Next with NO uploads → advances ✅
+2. Upload JPG to row 1 → succeeds ✅
+3. Add row 2 → upload PDF/JPG → succeeds ✅
+4. Click Next → advances ✅
+5. Submit → succeeds ✅
+6. Reopen listing/bid view → no errors ✅
+
+---
+
+If you want the fastest path: send Replit **this whole block**. It prevents them from “patching symptoms” and forces proof that **Next is connected** and **uploads are actually working**.

@@ -1,0 +1,207 @@
+Below are **copy/paste Replit instructions** to implement **ONLY** the changes you requested for **Hire a Tenant’s Agent (Residential + Commercial)**, with strict safeguards.
+
+---
+
+## Replit Instructions — Hire a Tenant’s Agent (Residential + Commercial)
+
+### Scope: Actual Bids Display (Agent card) + “View Full Services & Broker Compensation Terms” modal/panel
+
+### 🔒 SAFEGUARDS (MANDATORY)
+
+1. **Do NOT** change or delete any existing field labels, tooltips, database schema, or bid-saving logic.
+2. **Do NOT** modify any other tabs or listing types (Buyer/Seller/Landlord).
+3. Only edit:
+
+   * The **bid card UI** for Hire a Tenant’s Agent (Residential + Commercial)
+   * The **collapse/expand behavior**
+   * The **button styling/placement**
+   * The **display of Tenant’s Broker Commission Fee value**
+   * The **permission gating inside “View Full Services & Broker Compensation Terms”**
+4. No refactors. Addition-only changes. Keep existing CSS framework conventions.
+
+---
+
+# A) Make each Agent Bid Card Collapsible (Accordion)
+
+### Required behavior
+
+* Each bid card shows a **collapsed summary** by default.
+* Clicking the bid header (or a caret icon) expands/collapses:
+
+  * Expanded content shows current summary + “View Full…” link + action buttons.
+* Maintain “Agent 1 was the last bidder” text and status.
+
+### Implementation
+
+1. Wrap each bid card content in a collapsible container:
+
+   * Use Bootstrap collapse OR your existing JS/tailwind approach.
+2. Ensure **unique IDs per bid** (use bid id).
+
+✅ Example pattern (Bootstrap):
+
+* Header button toggles: `data-bs-toggle="collapse"` and `data-bs-target="#bidCollapse-{{ $bid->id }}"`
+* Collapsible div: `id="bidCollapse-{{ $bid->id }}" class="collapse"`
+
+**Important:** Default collapsed should be **collapsed**.
+
+---
+
+# B) Edit + Withdraw Buttons — Same row, same size, correct colors, no white border
+
+### Required UI
+
+* Buttons must appear **side-by-side on the same row**, aligned right or evenly spaced.
+* **Edit Bid button:**
+
+  * Blue background
+  * White text
+  * No white border
+  * Same height/width style as Withdraw button currently
+* **Withdraw Bid button:**
+
+  * Red background
+  * White text
+  * No white border
+
+### Implementation
+
+1. Place both buttons in a single flex row container:
+
+   * `display:flex; gap: 10px; justify-content:flex-end;`
+2. Ensure both buttons use same button classes (size/padding/font).
+3. Remove any `btn-outline-*` or border styles on Edit.
+
+✅ Required class outcomes (adjust to your CSS framework):
+
+* Edit: use “primary solid” button class (NOT outline)
+* Withdraw: use “danger solid” button class (NOT outline)
+
+Example:
+
+* Edit: `btn btn-primary`
+* Withdraw: `btn btn-danger`
+
+---
+
+# C) Fix Missing “Tenant’s Broker Commission Fee” Value (percentage/flat fee)
+
+### Problem you reported
+
+On the bid card summary it shows:
+
+* “Tenant’s Broker Commission Fee:”
+  but the **actual input value** (flat fee or percentage) is missing.
+
+### Required behavior
+
+Under “Tenant’s Broker Commission Fee:” display the stored value exactly as saved:
+
+* If percentage: show `X%`
+* If flat fee: show `$X`
+* If value contains a text formula (e.g., “2% of Gross Lease Value”), show it as-is.
+* If the bid uses multiple fields (flat + %), show both in one line.
+
+### Implementation steps
+
+1. Identify where the bid stores the Tenant Broker Commission Fee fields (in the `get` JSON / bid model).
+2. Update the bid summary view to print the actual value(s).
+
+✅ Requirements:
+
+* Use safe accessors (`data_get`) to avoid stdClass issues.
+* Do **not** change the saved data structure—only fix display.
+
+Example logic (pseudo):
+
+* `$feeType = data_get($bid,'get.tenantBrokerCommissionFeeType')`
+* `$feeAmount = data_get($bid,'get.tenantBrokerCommissionFeeAmount')`
+* `$feePercent = data_get($bid,'get.tenantBrokerCommissionFeePercent')`
+* Render whichever is populated.
+
+**If the value exists in the DB but isn’t rendering, fix the key mismatch** (common issue: camelCase vs snake_case).
+
+---
+
+# D) Permission Rules for “View Full Services & Broker Compensation Terms”
+
+### Critical requirement (your new rule)
+
+When clicking **“View Full Offered Services & Broker Compensation Terms”**:
+
+✅ Agents (viewing as **Agent Profiles Only**) should see:
+
+* **Full Offered Services**
+* **Full Broker Compensation & Agency Agreement Terms**
+
+❌ Agents should NOT see:
+
+* About Agent (bidder’s narrative)
+* Agent contact info
+* Any other private profile fields in the bid
+
+✅ Only the listing creator (Tenant) can see:
+
+* About Agent
+* Contact details
+* Anything else intended only for the listing creator
+
+### Implementation
+
+1. Determine viewer role/context:
+
+   * listing creator vs agent viewer
+2. In the “Full Terms” modal/panel:
+
+   * Always render **Services** and **Broker Compensation & Agency Agreement Terms**
+   * Conditionally render “About Agent / Contact” **ONLY if viewer is listing creator**
+
+✅ Exact conditional logic
+
+* If `auth()->id() === $listing->user_id` (or equivalent owner check): show everything.
+* Else: show ONLY:
+
+  * Services section
+  * Broker Compensation & Agency Agreement Terms section
+  * Hide About Agent / contact / any private fields
+
+**Do NOT rely on front-end hiding only.** Enforce this in Blade/server-render logic too.
+
+---
+
+# E) Apply to BOTH Residential and Commercial Tenant Agent flows
+
+### Required
+
+* These same UI + permission changes must apply to:
+
+  * Hire a Tenant’s Agent — Residential
+  * Hire a Tenant’s Agent — Commercial
+
+### Safeguard
+
+Do not “globally” apply to unrelated listing types unless they share the same view and you can confirm no side effects.
+
+---
+
+# F) Test Plan (Must pass before closing)
+
+1. Residential Tenant listing:
+
+   * Bid card collapses/expands ✅
+   * Edit + Withdraw appear same row ✅
+   * Edit is blue/white no border ✅
+   * Withdraw is red/white no border ✅
+   * Tenant’s Broker Commission Fee shows the actual value ✅
+   * Agent viewer clicks “View Full…” and sees only:
+
+     * Full Services
+     * Full Broker Compensation & Agency Agreement Terms ✅
+     * Does NOT see About Agent / contact ✅
+   * Listing creator sees full details ✅
+
+2. Repeat all tests for Commercial Tenant listing ✅
+
+---
+
+If you want, paste the **file path(s)** Replit is editing for the bid card + the “View Full…” modal, and I’ll tailor these instructions to the exact line blocks (so they can’t implement in the wrong place).

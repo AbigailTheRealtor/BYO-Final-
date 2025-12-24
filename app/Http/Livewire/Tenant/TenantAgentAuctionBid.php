@@ -5,6 +5,7 @@ namespace App\Http\Livewire\Tenant;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use App\Models\TenantAgentAuctionBid as TenantAgentAuctionBidData;
 use Illuminate\Support\Facades\DB;
@@ -619,12 +620,15 @@ class TenantAgentAuctionBid extends Component
                         $this->promoMaterials = $promoMaterialsRaw;
                     }
                     
-                    // Ensure each row has files => [] to prevent null binding issues
-                    foreach ($this->promoMaterials as $idx => $material) {
-                        if (!isset($this->promoMaterials[$idx]['files']) || !is_array($this->promoMaterials[$idx]['files'])) {
-                            $this->promoMaterials[$idx]['files'] = [];
-                        }
-                    }
+                    // Normalize promoMaterials: ensure each row has all required keys
+                    $this->promoMaterials = array_map(function ($m) {
+                        if (is_object($m)) $m = (array) $m;
+                        $m['type'] = $m['type'] ?? '';
+                        $m['link'] = $m['link'] ?? '';
+                        $m['other'] = $m['other'] ?? '';
+                        $m['files'] = (isset($m['files']) && is_array($m['files'])) ? $m['files'] : [];
+                        return $m;
+                    }, $this->promoMaterials);
                 }
             } else {
                 $this->isEditMode = false;
@@ -636,6 +640,21 @@ class TenantAgentAuctionBid extends Component
     public function setActiveTab($index)
     {
         $this->activeTab = $index;
+    }
+
+    public function debugNextClicked()
+    {
+        Log::info('DEBUG NEXT CLICKED', [
+            'activeTab' => $this->activeTab,
+            'component' => static::class,
+        ]);
+        session()->flash('message', 'Next button click detected - Livewire is connected!');
+    }
+
+    public function goToNextStep()
+    {
+        Log::info('NEXT STEP ADVANCE', ['from' => $this->activeTab]);
+        $this->activeTab = $this->activeTab + 1;
     }
 
     public function addWebsiteLink()
