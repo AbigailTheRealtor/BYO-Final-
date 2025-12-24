@@ -1,0 +1,310 @@
+You’re giving them **all the right requirements**, but Replit is still “fixing around” the real problems.
+
+From your screenshots:
+
+* Upload error now shows **`promoMaterials.1.files failed to upload`** (so the binding is indexed, but the upload request is failing).
+* **Next button still does nothing** (this is almost always **button wiring / form submit behavior / validation silently blocking**).
+
+Below are **copy/paste Replit instructions** that force them to diagnose and fix the *actual causes* — without refactoring anything else.
+
+---
+
+## Replit Instructions — Fix ONLY (1) Next Button + (2) Livewire Upload Failures
+
+**Applies to:** Hire a Tenant’s Agent (Residential + Commercial) → Agent Presentation & Marketing Materials tab (Agent bid flow)
+
+### 🔒 SAFEGUARDS (MANDATORY)
+
+1. Do **NOT** change or remove any existing fields, tooltips, labels, tab names, or database schema.
+2. Do **NOT** refactor the stepper across other tabs.
+3. Make changes **ONLY** in:
+
+   * The **Livewire component** that controls the bid form for this flow
+   * The **Blade view** for the Agent Presentation & Marketing Materials tab
+   * Any minimal server config **only as required** to make Livewire uploads work
+4. All fixes must work for both **Residential + Commercial** tenant agent bids.
+
+---
+
+# PART 1 — FIX “NEXT” BUTTON (still not working)
+
+## A) Force Next to be a Livewire click (not submit) and not silently blocked
+
+### Required change (Blade)
+
+On this tab ONLY:
+
+* The “Next” button must be:
+
+✅ `type="button"`
+✅ `wire:click.prevent="goToNextStep"`
+✅ NOT `type="submit"`
+✅ NOT relying on plain JS navigation
+
+Example (exact requirement):
+
+```html
+<button type="button" class="btn btn-primary"
+        wire:click.prevent="goToNextStep">
+  Next
+</button>
+```
+
+### If the button is inside a `<form>`
+
+Make sure the form tag is:
+
+```html
+<form wire:submit.prevent="submitBid">
+```
+
+so clicking Next does not submit.
+
+---
+
+## B) Add hard logging so we can prove whether Next is firing
+
+### Required change (Livewire component)
+
+Inside `goToNextStep()`:
+
+```php
+use Illuminate\Support\Facades\Log;
+
+public function goToNextStep()
+{
+    Log::info('NEXT CLICKED: Agent Presentation tab', [
+        'currentStep' => $this->currentStep ?? null,
+        'hasPromoMaterials' => isset($this->promoMaterials) ? count($this->promoMaterials) : null,
+    ]);
+
+    $this->validateOnlyMarketingMaterialsStep(); // see next section
+
+    $this->currentStep = ($this->currentStep ?? 1) + 1;
+
+    Log::info('NEXT ADVANCED', ['currentStep' => $this->currentStep]);
+}
+```
+
+### Required outcome
+
+* When you click Next, logs must show **NEXT CLICKED**.
+* If logs don’t show, the button is not wired to Livewire correctly OR Livewire JS isn’t attached.
+
+---
+
+## C) Stop “silent validation blocks” on Next
+
+Most common reason Next “does nothing” is validation fails but the tab isn’t displaying errors.
+
+### Required fix
+
+Create a step-only validator that validates ONLY the fields on this tab and shows errors.
+
+Example:
+
+```php
+private function validateOnlyMarketingMaterialsStep()
+{
+    $this->validate([
+        'virtualAgentPresentationLink' => 'nullable|string',
+        'digitalBusinessCardLink' => 'nullable|string',
+        'promoMaterials' => 'array',
+        'promoMaterials.*.type' => 'nullable|string',
+        'promoMaterials.*.link' => 'nullable|string',
+        'promoMaterials.*.other' => 'nullable|string',
+        // IMPORTANT: do NOT block Next due to files
+        // Files will validate on submit or only if present
+        'promoMaterials.*.files' => 'nullable|array',
+        'promoMaterials.*.files.*' => 'file|mimes:pdf,jpg,jpeg,png,doc,docx,ppt,pptx|max:51200',
+    ]);
+}
+```
+
+### Required view change
+
+Under the Next button, add:
+
+```html
+@if ($errors->any())
+  <div class="alert alert-danger mt-2">
+    Please fix the highlighted fields before continuing.
+  </div>
+@endif
+```
+
+And per-field errors in the marketing materials rows:
+
+```html
+@error("promoMaterials.$index.files") <div class="text-danger">{{ $message }}</div> @enderror
+@error("promoMaterials.$index.files.*") <div class="text-danger">{{ $message }}</div> @enderror
+```
+
+---
+
+# PART 2 — FIX LIVEWIRE UPLOAD FAILURES (still failing on row 2)
+
+The message **`promoMaterials.1.files failed to upload`** means the upload request is failing **before it ever gets saved**.
+
+We must find the HTTP status code for `/livewire/upload-file`, then apply the correct fix.
+
+## A) REQUIRED: Identify the upload error code (no guessing)
+
+Open browser DevTools → Network
+Try uploading the file to row 2
+Click the request that looks like:
+
+* `/livewire/upload-file`
+
+Record:
+
+* Status code (413 / 419 / 422 / 500)
+* Response body (first line is enough)
+
+**Then implement the matching fix below.**
+(Do not “mark complete” until the status code is resolved.)
+
+---
+
+## B) Fix by status code (choose the one that matches)
+
+### ✅ If status is **413 (Payload Too Large)**
+
+PHP limits are not the only limit — the reverse proxy/web server is blocking it.
+
+**Fix:** Raise server/body limits at the web server layer:
+
+* If using **Nginx**: set `client_max_body_size 50M;`
+* If using **Caddy**/proxy: set request body max higher (project-specific)
+* If Replit proxy has limits, reduce max file size and show a friendly error (fallback).
+
+Also ensure:
+
+* `post_max_size` > `upload_max_filesize`
+
+---
+
+### ✅ If status is **419 (CSRF / session expired)**
+
+Livewire upload fails when:
+
+* session cookie settings / domain mismatch / https issues
+
+**Fix checklist:**
+
+1. Ensure layout includes:
+
+   * `@livewireStyles`
+   * `@livewireScripts`
+   * `<meta name="csrf-token" content="{{ csrf_token() }}">`
+2. Ensure `APP_URL` in `.env` matches the domain you are using.
+3. Ensure session cookie config isn’t blocking:
+
+   * `SESSION_SECURE_COOKIE=true` if using https
+   * `SESSION_SAME_SITE=lax` (or none if embedded/iframe scenario)
+
+---
+
+### ✅ If status is **422 (validation rejecting file)**
+
+That means file rules or mime rules are wrong.
+
+**Fix:**
+
+* Ensure rules include:
+
+  * `promoMaterials.*.files` is `nullable|array`
+  * `promoMaterials.*.files.*` is `file|mimes:...|max:...`
+
+Also note: iPhone “jpg” screenshots sometimes upload as HEIC-ish. Allow:
+
+* `heic` if needed OR show a clear error that HEIC isn’t allowed.
+
+---
+
+### ✅ If status is **500 (server error)**
+
+Almost always temp directory / permissions / disk misconfig.
+
+**Fix checklist:**
+
+1. Ensure folder exists and writable:
+
+   * `storage/app/livewire-tmp`
+2. Ensure your `config/livewire.php` temporary upload is correct:
+
+```php
+'temporary_file_upload' => [
+  'disk' => 'local',
+  'directory' => 'livewire-tmp',
+],
+```
+
+3. Ensure `storage` is writable in the Replit environment.
+4. Confirm no code is trying to json_encode the TemporaryUploadedFile before storing.
+
+---
+
+## C) REQUIRED: Fix per-row initialization so row 2 can upload
+
+Even if the binding is correct, row 2 fails if the row doesn’t have `files` initialized to an array.
+
+In the method that adds a new marketing material row:
+
+```php
+public function addMarketingMaterial()
+{
+    $this->promoMaterials[] = [
+        'type' => '',
+        'link' => '',
+        'other' => '',
+        'files' => [], // REQUIRED
+    ];
+}
+```
+
+And on mount/edit load:
+
+* If promoMaterials exist, ensure every row has `files => []` to prevent null binding issues.
+
+---
+
+# PART 3 — Acceptance Criteria (Must pass)
+
+### Upload
+
+✅ Upload a JPG to row 1
+✅ Add row 2
+✅ Upload a JPG to row 2
+✅ No “failed to upload” message
+
+### Next button
+
+✅ Click Next on this tab → advances to next tab
+✅ If something is invalid, errors show (no silent failure)
+
+### Submit + View
+
+✅ Submit bid works
+✅ Viewing listing/bid after submission works
+
+---
+
+## Why their “PHP limit fix” wasn’t enough
+
+They changed PHP limits and Livewire config, but **upload failures often come from**:
+
+* **413 reverse proxy body limit** (very common)
+* **419 session/csrf mismatch** (common on Replit domains)
+* **422 validation rules wrong for multiple files**
+* **Row 2 missing `files: []` initialization**
+
+And Next not working is almost always:
+
+* wrong button type / wrong wire:click
+* validation failing with no error display
+* method not firing (prove with logs)
+
+---
+
+If you want, paste the **DevTools Network status code** you see for `/livewire/upload-file` (413/419/422/500) and I’ll tell you the **exact** fix path to apply, no extras.

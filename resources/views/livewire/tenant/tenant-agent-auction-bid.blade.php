@@ -295,7 +295,7 @@
                             </div>
 
                             <!-- Tab 5: Promotional Materials -->
-                            <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}">
+                            <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}" id="promotional-materials">
                                 @include('livewire.tenant-agent-auction-bid-tabs.commission-based.agent-presentation')
 
                             </div>
@@ -317,7 +317,7 @@
                                 @include('livewire.tenant-agent-auction-bid-tabs.commission-based.additional-details')
 
                             </div>
-                            <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}">
+                            <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}" id="promotional-materials">
                                 @include('livewire.tenant-agent-auction-bid-tabs.commission-based.agent-presentation')
 
                             </div>
@@ -345,6 +345,18 @@
                             </button>
                         </div>
                     </div>
+                    
+                    {{-- Error display for debugging --}}
+                    @if ($errors->any())
+                        <div class="alert alert-danger mt-2" id="validation-errors">
+                            <strong>Please fix the following errors:</strong>
+                            <ul class="mb-0">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
                 </form>
             </div>
         </div>
@@ -830,17 +842,24 @@
             // Next button click handler - FIXED TAB NAVIGATION
             document.querySelector('.wizard-step-next')?.addEventListener('click', function(e) {
                 e.preventDefault();
-                // Validate current tab with error messages
-                if (validateCurrentTabWithErrors()) {
+                console.log('NEXT CLICKED');
+                
+                const currentTab = document.querySelector('.tab-pane.active');
+                console.log('Current tab ID:', currentTab ? currentTab.id : 'no-id');
+                
+                // Skip validation for promotional-materials tab (file inputs shouldn't block navigation)
+                const skipValidation = currentTab && currentTab.id === 'promotional-materials';
+                
+                // Validate current tab with error messages (unless skipped)
+                if (skipValidation || validateCurrentTabWithErrors()) {
+                    console.log('Validation passed or skipped, advancing...');
                     const currentTabIndex = Array.from(document.querySelectorAll('.nav-link')).indexOf(
                         document.querySelector('.nav-link.active')
                     );
 
-
                     if (currentTabIndex < 5) { // Assuming 6 tabs (0-5)
                         // Find the next tab button and click it
-
-                        console.log("Assuming 6 tabs (0-5)");
+                        console.log("Advancing from tab index", currentTabIndex, "to", currentTabIndex + 1);
                         const nextTabButton = document.querySelectorAll('.nav-link')[currentTabIndex + 1];
                         if (nextTabButton) {
                             nextTabButton.click();
@@ -850,9 +869,9 @@
                             behavior: 'smooth'
                         });
                     }
+                } else {
+                    console.log('Validation FAILED - Next blocked');
                 }
-
-
             });
 
             // Back button click handler - FIXED TAB NAVIGATION

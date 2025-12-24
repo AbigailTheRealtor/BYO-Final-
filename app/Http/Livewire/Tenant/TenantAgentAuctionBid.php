@@ -618,6 +618,13 @@ class TenantAgentAuctionBid extends Component
                     } elseif (is_array($promoMaterialsRaw)) {
                         $this->promoMaterials = $promoMaterialsRaw;
                     }
+                    
+                    // Ensure each row has files => [] to prevent null binding issues
+                    foreach ($this->promoMaterials as $idx => $material) {
+                        if (!isset($this->promoMaterials[$idx]['files']) || !is_array($this->promoMaterials[$idx]['files'])) {
+                            $this->promoMaterials[$idx]['files'] = [];
+                        }
+                    }
                 }
             } else {
                 $this->isEditMode = false;
