@@ -230,10 +230,12 @@
                     </span>
                     <div class="input-cover">
                         <input type="file" wire:model="promoMaterials.{{ $idx }}.files"
+                            wire:click="clearFileError({{ $idx }})"
                             class="form-control" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.ppt,.pptx"
                             id="promo-materials-{{ $idx }}">
                     </div>
                     <small class="text-muted">Upload one or more files (PDF, JPG, JPEG, PNG, WEBP, DOC, PPT)</small>
+                    <small class="text-info d-block"><i class="fa-solid fa-info-circle"></i> Tip: If upload fails, use the link field above instead.</small>
                     @error('promoMaterials.' . $idx . '.files')
                         <small class="text-danger d-block">{{ $message }}</small>
                     @enderror
@@ -261,13 +263,5 @@
             wire:target="promoMaterials.*.files">
             + Add Another Marketing Material
         </button>
-        
-        {{-- Debug button to test Livewire connection - REMOVE AFTER TESTING --}}
-        <div class="mt-3 p-3 bg-light border rounded">
-            <small class="text-muted d-block mb-2">Debug: Test if Livewire is connected</small>
-            <button type="button" class="btn btn-warning btn-sm" wire:click="debugNextClicked">
-                Test Livewire Connection
-            </button>
-        </div>
     </div>
 </div>

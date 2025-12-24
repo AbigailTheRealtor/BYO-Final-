@@ -311,9 +311,13 @@ class TenantAgentAuctionBid extends Component
     }
     public function addMaterial(): void
     {
-        // Clear any file upload errors before adding new material
-        $this->resetErrorBag('promoMaterials.*.files');
-        $this->resetErrorBag('promoMaterials.*.files.*');
+        // Clear all file upload errors for promoMaterials
+        $errorBag = $this->getErrorBag();
+        foreach ($errorBag->keys() as $key) {
+            if (str_starts_with($key, 'promoMaterials.') && str_contains($key, '.files')) {
+                $this->resetErrorBag($key);
+            }
+        }
         
         $new = [
             'type'  => '',
@@ -335,6 +339,12 @@ class TenantAgentAuctionBid extends Component
             array_splice($this->promoMaterials, $index, 1);
             $this->promoMaterials = array_values($this->promoMaterials);
         }
+    }
+
+    public function clearFileError(int $index): void
+    {
+        $this->resetErrorBag("promoMaterials.{$index}.files");
+        $this->resetErrorBag("promoMaterials.{$index}.files.*");
     }
 
 
