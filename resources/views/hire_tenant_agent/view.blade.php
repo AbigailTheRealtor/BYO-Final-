@@ -267,14 +267,11 @@
         }
     }
     
-    /* Bid card accordion chevron rotation */
-    .card-header[data-bs-toggle="collapse"][aria-expanded="true"] .fa-chevron-down {
-        transform: rotate(180deg);
-    }
-    .card-header[data-bs-toggle="collapse"] .fa-chevron-down {
+    /* Bid card accordion chevron rotation (custom JS toggle) */
+    .bid-accordion-header .bid-chevron {
         transition: transform 0.3s ease;
     }
-    .card-header[data-bs-toggle="collapse"]:hover {
+    .bid-accordion-header:hover {
         background-color: #f8f9fa !important;
     }
     
@@ -1650,22 +1647,20 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         <!-- Bid Card - Collapsible Accordion Design -->
                         <div class="card mb-3" style="border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
                             
-                            <!-- A) Card Header - Clickable to expand/collapse -->
-                            <div class="card-header d-flex justify-content-between align-items-center" 
+                            <!-- A) Card Header - Clickable to expand/collapse (using custom JS toggle) -->
+                            <div class="card-header d-flex justify-content-between align-items-center bid-accordion-header" 
                                  style="cursor: pointer; background: #fff; border-bottom: 1px solid #e0e0e0; padding: 15px 20px;"
-                                 data-bs-toggle="collapse" 
-                                 data-bs-target="#bidCollapse-{{ data_get($bid, 'id') }}"
-                                 aria-expanded="false" 
-                                 aria-controls="bidCollapse-{{ data_get($bid, 'id') }}">
+                                 data-target="bidCollapse-{{ data_get($bid, 'id') }}"
+                                 aria-expanded="false">
                                 <div class="d-flex align-items-center gap-2">
-                                    <i class="fa fa-chevron-down" id="bidChevron-{{ data_get($bid, 'id') }}" style="transition: transform 0.3s; color: #1a3a5c;"></i>
+                                    <i class="fa fa-chevron-down bid-chevron" style="transition: transform 0.3s; color: #1a3a5c;"></i>
                                     <h5 class="mb-0" style="font-weight: 700; color: #1a3a5c; font-size: 1.4rem;">Agent {{ $agentNumber }}</h5>
                                 </div>
                                 <span style="font-weight: 600; color: {{ $bidStatusColor }}; font-size: 1.1rem;">{{ $bidStatusLabel }}</span>
                             </div>
                             
-                            <!-- Collapsible Content - Default collapsed -->
-                            <div class="collapse" id="bidCollapse-{{ data_get($bid, 'id') }}">
+                            <!-- Collapsible Content - Default collapsed (custom toggle, no Bootstrap) -->
+                            <div class="bid-collapse-content" id="bidCollapse-{{ data_get($bid, 'id') }}" style="display: none;">
                             <div class="card-body" style="padding: 20px;">
                                 
                                 <hr style="margin: 0 0 15px 0; border-color: #e0e0e0;">
@@ -3846,6 +3841,33 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 @push('scripts')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/timer.jquery/0.9.0/timer.jquery.min.js"
     crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+{{-- Custom Bid Accordion Toggle (bypasses Bootstrap to avoid double-toggle conflicts) --}}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.bid-accordion-header').forEach(function(header) {
+        header.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            var targetId = this.getAttribute('data-target');
+            var content = document.getElementById(targetId);
+            var chevron = this.querySelector('.bid-chevron');
+            var isExpanded = this.getAttribute('aria-expanded') === 'true';
+            
+            if (isExpanded) {
+                content.style.display = 'none';
+                this.setAttribute('aria-expanded', 'false');
+                if (chevron) chevron.style.transform = 'rotate(0deg)';
+            } else {
+                content.style.display = 'block';
+                this.setAttribute('aria-expanded', 'true');
+                if (chevron) chevron.style.transform = 'rotate(180deg)';
+            }
+        });
+    });
+});
+</script>
 
 @if ($expiration && !$isExpired)
 <script>
