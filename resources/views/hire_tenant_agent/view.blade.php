@@ -2317,7 +2317,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         @endif
                                                     </div>
 
-                                                    <!-- 4. Agent Presentation & Promotional Materials -->
+                                                    <!-- 4. Agent Presentation & Promotional Materials - ONLY visible to listing owner -->
+                                                    @if ($isListingOwner)
                                                     @if (data_get($bid, 'get.presentation_link') ||
                                                     data_get($bid, 'get.video_upload') ||
                                                     data_get($bid, 'get.business_card_link') ||
@@ -2601,6 +2602,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         @endif
                                                     </div>
                                                     @endif
+                                                    @endif {{-- End isListingOwner for Agent Presentation --}}
 
                                                     <!-- 5. Agent Credentials and Contact Information - ONLY visible to listing owner -->
                                                     @if ($isListingOwner)
