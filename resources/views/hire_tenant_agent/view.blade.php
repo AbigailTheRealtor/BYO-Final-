@@ -1587,6 +1587,24 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @else
                 <p>No one has bid on this auction.</p>
                 @endif
+                
+                {{-- 🔹 Agent Visibility Info Messages --}}
+                @php
+                    $isAgentViewer = $auth_id && in_array(auth()->user()->user_type ?? '', ['agent']);
+                    $otherBidsExist = $auction->bids->where('user_id', '!=', $auth_id)->count() > 0;
+                @endphp
+                @if ($isAgentViewer && !$isListingOwner)
+                    @if ($isTraditionalListing && $otherBidsExist)
+                    <div class="alert alert-info small mb-3 py-2">
+                        <i class="fa fa-lock me-1"></i> <strong>Traditional Listing:</strong> You can only view your own bid. Other agents' bids remain private.
+                    </div>
+                    @elseif ($isBiddingPeriodListing && $otherBidsExist)
+                    <div class="alert alert-secondary small mb-3 py-2">
+                        <i class="fa fa-users me-1"></i> <strong>Bidding Period Listing:</strong> Anonymous bid summaries from all agents are visible below.
+                    </div>
+                    @endif
+                @endif
+                
                 <div class="accordion" id="accordionExample">
                     <div class="accordion-item border-0">
 
@@ -1613,6 +1631,17 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             $isBidOwner = (data_get($bid, 'user_id') == $auth_id);
                             $bidAccepted = data_get($bid, 'accepted');
                             $canEditWithdraw = $isBidOwner && !$isExpired && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected';
+                            
+                            // 🔹 Agent Bid Visibility Logic:
+                            // - Traditional: Agents can ONLY see their own bids (not other agents' bids)
+                            // - Bidding Period: Agents can see anonymous summaries of all bids
+                            // - Listing Owner: Always sees all bids
+                            $isAgent = $auth_id && in_array(auth()->user()->user_type ?? '', ['agent']);
+                            $canViewBid = $isListingOwner || $isBidOwner || ($isBiddingPeriodListing && $isAgent);
+                            // Skip rendering this bid if agent cannot view it
+                            if (!$canViewBid && $isAgent) {
+                                continue;
+                            }
                             
                             $commissionStructure = data_get($bid, 'get.commission_structure', 'Not specified');
                             $leaseFeeType = data_get($bid, 'get.lease_fee_type', '');
