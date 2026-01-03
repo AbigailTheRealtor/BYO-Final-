@@ -926,6 +926,14 @@ class TenantAgentAuctionBid extends Component
                     if (is_array($files) && !empty($files)) {
                         foreach ($files as $file) {
                             if (!$file) continue;
+                            
+                            // Preserve existing file paths (strings) from previous uploads
+                            if (is_string($file) && !empty($file)) {
+                                $stored[] = $file;
+                                continue;
+                            }
+                            
+                            // Process new file uploads (objects)
                             if (!is_object($file) || !method_exists($file, 'getClientOriginalExtension')) continue;
                             $ext = strtolower($file->getClientOriginalExtension());
                             if (!in_array($ext, $allowed, true)) continue;
