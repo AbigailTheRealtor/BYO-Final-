@@ -505,7 +505,8 @@
         <span class="error mt-2" id="auction_time_error"></span>
     </div>
 
-    <div class="form-group mt-3" @if ($auction_type !== 'Traditional') style="display: none;" @endif>
+    <!-- Agent Bid Visibility (Hidden for Traditional, shown for Bidding Period) -->
+    <div class="form-group mt-3" @if ($auction_type === 'Traditional') style="display: none;" @endif>
         <label class="fw-bold">Agent Bid Visibility Preference:<span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Choose whether Agent bids will be public or private. Public bids encourage competition; private bids are only visible to the listing creator.">
@@ -513,7 +514,7 @@
         </span>
         <div class="input-cover">
             <select wire:model="agent_bid_visibility" id="agent_bid_visibility" class="form-control has-icon"
-                data-icon="fa-solid fa-eye" @if ($auction_type === 'Traditional') required @endif>
+                data-icon="fa-solid fa-eye" @if ($auction_type !== 'Traditional') required @endif>
                 <option value="">Select</option>
                 <option value="Agent bids will be visible to other Agents">Agent bids will be visible to other Agents</option>
                 <option value="Agent bids will remain private">Agent bids will remain private</option>
