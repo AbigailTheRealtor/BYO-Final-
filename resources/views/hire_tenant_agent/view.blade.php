@@ -2852,7 +2852,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     <h5 class="modal-title" id="limitedBidModalLabel{{ data_get($bid, 'id') }}" style="font-weight: 600;">
                                                         <i class="fa fa-handshake me-2"></i> Services & Broker Compensation Terms
                                                     </h5>
-                                                    <button type="button" class="btn p-0" data-bs-dismiss="modal" aria-label="Close" style="position: absolute; right: 8px; top: 5px; background: transparent; border: none; color: #fff; font-size: 1.75rem; line-height: 1; font-weight: 300;">
+                                                    <button type="button" class="btn p-0" data-bs-dismiss="modal" aria-label="Close" style="position: absolute; right: 0; top: 0; background: transparent; border: none; color: #fff; font-size: 1.5rem; line-height: 1; font-weight: 300; padding: 5px 10px;">
                                                         &times;
                                                     </button>
                                                 </div>
