@@ -1581,16 +1581,25 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     }
                     // Check if current user is the listing owner
                     $isListingOwner = ($auth_id == data_get($auction, 'user_id'));
+                    // Check if current user is an agent
+                    $isAgentViewer = $auth_id && in_array(auth()->user()->user_type ?? '', ['agent']);
+                    // For Traditional listings, agents should not see other agents' bid info
+                    $canSeeBidSummary = $isListingOwner || !$isAgentViewer || $isBiddingPeriodListing;
                 @endphp
-                @if ($lowest_bidder && $lastBidderNumber)
-                <p><b>Agent {{ $lastBidderNumber }}</b> was the last bidder.</p>
+                @if ($canSeeBidSummary)
+                    @if ($lowest_bidder && $lastBidderNumber)
+                    <p><b>Agent {{ $lastBidderNumber }}</b> was the last bidder.</p>
+                    @else
+                    <p>No one has bid on this auction.</p>
+                    @endif
                 @else
-                <p>No one has bid on this auction.</p>
+                    {{-- Traditional listing - agents cannot see bid summary --}}
+                    <p class="text-muted"><i class="fa fa-lock me-1"></i> Bid information is private for traditional listings.</p>
                 @endif
                 
                 {{-- 🔹 Agent Visibility Info Messages --}}
                 @php
-                    $isAgentViewer = $auth_id && in_array(auth()->user()->user_type ?? '', ['agent']);
+                    // $isAgentViewer already defined above
                     $otherBidsExist = $auction->bids->where('user_id', '!=', $auth_id)->count() > 0;
                 @endphp
                 @if ($isAgentViewer && !$isListingOwner)
