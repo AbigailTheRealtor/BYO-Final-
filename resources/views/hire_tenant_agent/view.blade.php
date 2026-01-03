@@ -1484,32 +1484,35 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </a>
 
 
-        {{-- ⏳ Countdown Timer --}}
-        @if ($expiration && !$isExpired)
-        <div class="time d-flex justify-content-between text-center flex-wrap pb-2"
-            data-expiration="{{ $expiration->toIso8601String() }}">
-            <div>
-                <h5><b class="timer-d">{{ $diff_d }}</b></h5>
-                <h6 class="opacity-50">Days</h6>
+        {{-- ⏳ Countdown Timer - Only shown for Bidding Period listings --}}
+        @if ($isBiddingPeriodListing)
+            @if ($isBiddingTimerActive)
+            <div class="time d-flex justify-content-between text-center flex-wrap pb-2"
+                data-expiration="{{ $expiration->toIso8601String() }}">
+                <div>
+                    <h5><b class="timer-d">{{ $diff_d }}</b></h5>
+                    <h6 class="opacity-50">Days</h6>
+                </div>
+                <div>
+                    <h5><b class="timer-h">{{ $diff_H }}</b></h5>
+                    <h6 class="opacity-50">Hrs</h6>
+                </div>
+                <div>
+                    <h5><b class="timer-m">{{ $diff_I }}</b></h5>
+                    <h6 class="opacity-50">Mins</h6>
+                </div>
+                <div>
+                    <h5><b class="timer-s">{{ $diff_S }}</b></h5>
+                    <h6 class="opacity-50">Secs</h6>
+                </div>
             </div>
-            <div>
-                <h5><b class="timer-h">{{ $diff_H }}</b></h5>
-                <h6 class="opacity-50">Hrs</h6>
+            @elseif ($isExpired)
+            <div class="alert alert-warning text-center mt-2 mb-0 p-2">
+                <strong>Bidding Ended</strong>
             </div>
-            <div>
-                <h5><b class="timer-m">{{ $diff_I }}</b></h5>
-                <h6 class="opacity-50">Mins</h6>
-            </div>
-            <div>
-                <h5><b class="timer-s">{{ $diff_S }}</b></h5>
-                <h6 class="opacity-50">Secs</h6>
-            </div>
-        </div>
-        @else
-        <div class="alert alert-warning text-center mt-2 mb-0 p-2">
-            <strong>Bidding Ended</strong>
-        </div>
+            @endif
         @endif
+        {{-- Traditional listings: No timer displayed --}}
 
 
 
