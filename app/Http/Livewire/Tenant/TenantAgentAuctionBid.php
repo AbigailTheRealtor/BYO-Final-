@@ -773,25 +773,7 @@ class TenantAgentAuctionBid extends Component
     {
         DB::beginTransaction();
         try {
-            // Step 1: Wrap validate with error logging for debugging
-            try {
-                $this->validate();
-            } catch (\Illuminate\Validation\ValidationException $e) {
-                $errors = $e->errors();
-                Log::error('EDIT BID VALIDATION FAILED', [
-                    'bid_id' => $this->editBidId,
-                    'auction_id' => $this->auctionId,
-                    'is_edit_mode' => $this->isEditMode,
-                    'errors' => $errors,
-                    'year_licensed' => $this->year_licensed,
-                    'commission_structure' => $this->commission_structure,
-                    'lease_fee_type' => $this->lease_fee_type,
-                ]);
-                
-                // Store errors for display in the UI
-                session()->flash('validation_errors', $errors);
-                throw $e; // Re-throw to trigger the original error handling
-            }
+            $this->validate();
             
             $auction = \App\Models\TenantAgentAuction::find($this->auctionId);
             if (!$auction) {

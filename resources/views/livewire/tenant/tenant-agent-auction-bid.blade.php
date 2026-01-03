@@ -200,19 +200,7 @@
                     </div>
                 @endif
                 
-                {{-- DEBUG: Display detailed validation errors --}}
-                @if (session()->has('validation_errors'))
-                    <div class="alert alert-warning">
-                        <strong>Validation Errors (Debug):</strong>
-                        <ul class="mb-0 mt-2">
-                            @foreach (session('validation_errors') as $field => $messages)
-                                <li><strong>{{ $field }}:</strong> {{ implode(', ', $messages) }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
-                
-                {{-- Display Livewire validation errors --}}
+                {{-- Display validation errors --}}
                 @if ($errors->any())
                     <div class="alert alert-danger">
                         <strong>Please fix the following errors:</strong>

@@ -34,6 +34,7 @@ I prefer detailed explanations. Ask before making major changes.
 - **Agent Self-View**: Agents viewing their own bid see all 6 sections (Agent Overview & Qualifications, Broker Compensation & Agency Agreement Terms, Additional Details, Offered Services, Agent Presentation & Marketing Materials, Agent Credentials & Contact Information).
 - **Timer-Based Action Locking**: Accept/Counter/Reject buttons are locked until the bidding period timer ends for "Bidding Period" listings.
 - **Livewire Str::studly() Crash Fix**: All `updated($propertyName)` methods include an empty guard (`if (empty($propertyName)) { return; }`) to prevent crashes when Livewire passes blank property names. Applied to: TenantAgentAuction.php, TenantAgentAuctionEdit.php, TenantAgentAuctionBid.php, BuyerAgentAuctionBid.php, LandlordAgentAuctionBid.php.
+- **Edit Bid File Preservation**: In edit mode, existing uploaded files (promoMaterials) are preserved and displayed with thumbnails/icons. Users can delete individual files via trash button. File deletions are validated for ownership (only files belonging to the current bid) and directory bounds before removal from storage.
 
 ### System Design Choices
 - **Modularity**: Laravel's modular structure with Livewire components for UI interactions.
