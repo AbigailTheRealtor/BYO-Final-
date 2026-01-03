@@ -1791,11 +1791,12 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                    style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
                                     View Full Bid
                                 </a>
-                                @elseif ($isBiddingPeriodListing && $isAgentViewer)
-                                {{-- Bidding Period: Agent viewing another agent's bid - show summary note --}}
-                                <span style="color: #666; font-style: italic; font-size: 0.95rem;">
-                                    <i class="fa fa-eye-slash me-1"></i> Full terms visible only to bid creator
-                                </span>
+                                @elseif ($isBiddingPeriodListing && $isAgentViewer && !$isBidOwner)
+                                {{-- Bidding Period: Agent viewing another agent's bid - show limited view button --}}
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#limitedBidModal{{ data_get($bid, 'id') }}"
+                                   style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
+                                    View Full Services & Broker Compensation Terms
+                                </a>
                                 @else
                                 {{-- Default: Private message --}}
                                 <span style="color: #888; font-style: italic; font-size: 0.95rem;">
@@ -2847,6 +2848,365 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     </div>
                                     @endif
                                     @endif
+
+                                    {{-- Limited Modal for Bidding Period: Agent viewing another agent's bid (Anonymous) --}}
+                                    @if ($isBiddingPeriodListing && $isAgentViewer && !$isBidOwner && !$isListingOwner)
+                                    <div class="modal fade"
+                                        id="limitedBidModal{{ data_get($bid, 'id') }}"
+                                        tabindex="-1"
+                                        aria-labelledby="limitedBidModalLabel{{ data_get($bid, 'id') }}"
+                                        aria-hidden="true">
+                                        <div class="modal-dialog modal-lg">
+                                            <div class="modal-content" style="border-radius: 10px; border: none;">
+                                                <div class="modal-header text-white" style="background: #049399; border-bottom: none; padding: 20px;">
+                                                    <h5 class="modal-title" id="limitedBidModalLabel{{ data_get($bid, 'id') }}" style="font-weight: 600;">
+                                                        <i class="fa fa-handshake me-2"></i> Services & Broker Compensation Terms
+                                                    </h5>
+                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body" style="background: #fafafa; padding: 25px;">
+
+                                                    {{-- Anonymous Notice --}}
+                                                    <div class="alert mb-4" style="background: #e8f4f5; color: #049399; border: none; border-radius: 6px;">
+                                                        <i class="fa fa-user-secret me-2"></i>
+                                                        <strong>Anonymous Bid:</strong> Agent identity is hidden during the bidding period.
+                                                    </div>
+
+                                                    {{-- Section 1: Broker Compensation & Agency Agreement Terms --}}
+                                                    @if (data_get($bid, 'get.commission_structure') ||
+                                                    data_get($bid, 'get.lease_fee_type') ||
+                                                    data_get($bid, 'get.interested_purchase_fee_type') ||
+                                                    data_get($bid, 'get.interested_lease_option_agreement') ||
+                                                    data_get($bid, 'get.protection_period') ||
+                                                    data_get($bid, 'get.early_termination_fee_option') ||
+                                                    data_get($bid, 'get.retainer_fee_option') ||
+                                                    data_get($bid, 'get.agency_agreement_timeframe') ||
+                                                    data_get($bid, 'get.brokerage_relationship'))
+                                                    <div class="mb-5">
+                                                        <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                            <i class="fa fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
+                                                        </h6>
+
+                                                        {{-- A) Tenant's Broker Compensation --}}
+                                                        @if (data_get($bid, 'get.commission_structure') || data_get($bid, 'get.lease_fee_type') || data_get($bid, 'get.payment_timing') || data_get($bid, 'get.days_to_pay'))
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Tenant's Broker Compensation</h6>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                @if (data_get($bid, 'get.commission_structure'))
+                                                                <li class="mb-1"><span class="fw-semibold">Tenant's Broker Commission Structure:</span> {{ data_get($bid, 'get.commission_structure') }}</li>
+                                                                @endif
+                                                                @if (data_get($bid, 'get.lease_fee_type'))
+                                                                <li class="mb-1"><span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $commissionFeeDisplay }}</li>
+                                                                @endif
+                                                                @if (data_get($bid, 'get.payment_timing'))
+                                                                <li class="mb-1"><span class="fw-semibold">Payment Timing for Broker Fees:</span> {{ data_get($bid, 'get.payment_timing') }}</li>
+                                                                @endif
+                                                                @if (data_get($bid, 'get.days_to_pay'))
+                                                                <li class="mb-1"><span class="fw-semibold">Calendar Days To Pay:</span> {{ data_get($bid, 'get.days_to_pay') }}</li>
+                                                                @endif
+                                                            </ul>
+                                                        </div>
+                                                        @endif
+
+                                                        {{-- B) Purchase Fee Details --}}
+                                                        @if (data_get($bid, 'get.interested_purchase_fee_type'))
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">B) Purchase Fee Details</h6>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                <li class="mb-1"><span class="fw-semibold">Interested in Purchasing a Property:</span> {{ data_get($bid, 'get.interested_purchase_fee_type') }}</li>
+                                                                @if (data_get($bid, 'get.interested_purchase_fee_type') === 'Yes' && $purchaseFeeDisplay !== '—')
+                                                                <li class="mb-1"><span class="fw-semibold">Purchase Fee:</span> {{ $purchaseFeeDisplay }}</li>
+                                                                @endif
+                                                            </ul>
+                                                        </div>
+                                                        @endif
+
+                                                        {{-- C) Lease-Option Details --}}
+                                                        @if (data_get($bid, 'get.interested_lease_option_agreement'))
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">C) Lease-Option Details</h6>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                <li class="mb-1"><span class="fw-semibold">Interested in a Lease-Option Agreement:</span> {{ data_get($bid, 'get.interested_lease_option_agreement') }}</li>
+                                                                @if (data_get($bid, 'get.interested_lease_option_agreement') === 'Yes')
+                                                                    @if ($leaseOptionCreatedDisplay !== '—')
+                                                                    <li class="mb-1"><span class="fw-semibold">Compensation (When Option Is Created):</span> {{ $leaseOptionCreatedDisplay }}</li>
+                                                                    @endif
+                                                                    @if ($leaseOptionExercisedDisplay !== '—')
+                                                                    <li class="mb-1"><span class="fw-semibold">Compensation (If Purchase Option Exercised):</span> {{ $leaseOptionExercisedDisplay }}</li>
+                                                                    @endif
+                                                                @endif
+                                                            </ul>
+                                                        </div>
+                                                        @endif
+
+                                                        {{-- D) Legal Terms --}}
+                                                        @if (data_get($bid, 'get.protection_period') || data_get($bid, 'get.early_termination_fee_option') || data_get($bid, 'get.retainer_fee_option') || data_get($bid, 'get.agency_agreement_timeframe'))
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">D) Legal Terms</h6>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                @if (data_get($bid, 'get.protection_period'))
+                                                                <li class="mb-1"><span class="fw-semibold">Protection Period Timeframe:</span> {{ data_get($bid, 'get.protection_period') }} days</li>
+                                                                @endif
+                                                                @if (data_get($bid, 'get.early_termination_fee_option'))
+                                                                <li class="mb-1"><span class="fw-semibold">Early Termination Fee:</span> {{ data_get($bid, 'get.early_termination_fee_option') }}</li>
+                                                                    @if ($terminationFeeDisplay !== '—')
+                                                                    <li class="mb-1"><span class="fw-semibold">Termination Fee Amount:</span> {{ $terminationFeeDisplay }}</li>
+                                                                    @endif
+                                                                @endif
+                                                                @if (data_get($bid, 'get.retainer_fee_option'))
+                                                                <li class="mb-1"><span class="fw-semibold">Retainer Fee:</span> {{ data_get($bid, 'get.retainer_fee_option') }}</li>
+                                                                    @if (data_get($bid, 'get.retainer_fee_option') === 'Yes')
+                                                                        @if (data_get($bid, 'get.retainer_fee_amount'))
+                                                                        <li class="mb-1"><span class="fw-semibold">Retainer Fee Amount:</span> ${{ number_format((float)data_get($bid, 'get.retainer_fee_amount'), 2) }}</li>
+                                                                        @endif
+                                                                        @if (data_get($bid, 'get.retainer_fee_application'))
+                                                                        <li class="mb-1"><span class="fw-semibold">Retainer Fee Application:</span> 
+                                                                            @if (data_get($bid, 'get.retainer_fee_application') === 'applied')
+                                                                            Applied toward final compensation
+                                                                            @else
+                                                                            Charged in addition to final compensation
+                                                                            @endif
+                                                                        </li>
+                                                                        @endif
+                                                                    @endif
+                                                                @endif
+                                                                @if (data_get($bid, 'get.agency_agreement_timeframe'))
+                                                                @php
+                                                                    $limitedAgencyTimeframe = data_get($bid, 'get.agency_agreement_timeframe');
+                                                                    $limitedAgencyTimeframeCustom = data_get($bid, 'get.agency_agreement_custom');
+                                                                    $limitedIsOtherTimeframe = is_string($limitedAgencyTimeframe) && strtolower(trim($limitedAgencyTimeframe)) === 'other';
+                                                                    $limitedAgencyTimeframeDisplay = $limitedIsOtherTimeframe ? ($limitedAgencyTimeframeCustom ?: 'Other') : ($limitedAgencyTimeframe ?: '');
+                                                                @endphp
+                                                                <li class="mb-1"><span class="fw-semibold">Tenant Agency Agreement Timeframe:</span> {{ $limitedAgencyTimeframeDisplay }}</li>
+                                                                @endif
+                                                            </ul>
+                                                        </div>
+                                                        @endif
+
+                                                        {{-- E) Brokerage Relationship --}}
+                                                        @if (data_get($bid, 'get.brokerage_relationship'))
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">E) Brokerage Relationship</h6>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                <li class="mb-1"><span class="fw-semibold">Acceptable Brokerage Relationship:</span> {{ data_get($bid, 'get.brokerage_relationship') }}</li>
+                                                            </ul>
+                                                        </div>
+                                                        @endif
+                                                    </div>
+                                                    @endif
+
+                                                    {{-- Section 2: Offered Services --}}
+                                                    @php
+                                                    // Reuse the same service categories (already defined above in main modal context)
+                                                    $limitedPropType = @$auction->get->property_type ?? 'Residential Property';
+                                                    $limitedIsResidential = $limitedPropType === 'Residential Property';
+                                                    $limitedIsCommercial = $limitedPropType === 'Commercial Property';
+
+                                                    $limitedResidentialCategories = [
+                                                    '📢 Tenant Criteria Marketing & Promotion' => [
+                                                        'Create a branded flyer summarizing the Tenant's rental criteria',
+                                                        'Post the Tenant's rental criteria on Craigslist under the "Real Estate Wanted" section',
+                                                        'Share the Tenant's rental criteria on Nextdoor in Neighborhood or Community Groups',
+                                                        'Promote the Tenant's rental criteria on Facebook in Rental or Housing Groups',
+                                                        'Share the Tenant's rental criteria on Instagram using posts, stories, or reels',
+                                                        'Promote the Tenant's rental criteria on LinkedIn in Real Estate or Housing Groups',
+                                                        'Upload a TikTok video summarizing the Tenant's rental criteria',
+                                                        'Upload a YouTube video summarizing the Tenant's rental criteria',
+                                                        'Launch a mass email campaign promoting the Tenant's rental criteria',
+                                                        'Distribute branded postcards or flyers in the Tenant's preferred neighborhoods',
+                                                        'Launch hyperlocal digital ads targeting the Tenant's preferred rental areas',
+                                                    ],
+                                                    '🔍 Property Search, Alerts & Matching' => [
+                                                        'Send email alerts with new listings from the MLS that match the Tenant's rental criteria',
+                                                        'Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant's rental criteria',
+                                                        'Communicate with the Landlord's Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions',
+                                                        'Evaluate properties with the Tenant and provide insights on pricing, lease terms, and overall fit',
+                                                    ],
+                                                    '🏡 Property Showings & Virtual Tours' => [
+                                                        'Schedule and attend property showings with the Tenant',
+                                                        'Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs',
+                                                        'Preview properties on behalf of the Tenant upon request',
+                                                        'Provide factual observations on property layout and condition',
+                                                    ],
+                                                    '📝 Tenant Application Support' => [
+                                                        'Provide the Tenant with application instructions or links to an online rental application platform',
+                                                        'Gather and organize required supporting documents (e.g., identification, income verification, reference letters)',
+                                                        'Submit complete and organized application packages to the Landlord's Agent, Landlord, or Property Manager for review',
+                                                        'Answer questions about the application process, screening timelines, and required documentation',
+                                                    ],
+                                                    '📃 Lease Preparation & Execution' => [
+                                                        'Review lease offers and assist the Tenant in preparing questions or requested changes',
+                                                        'Coordinate lease negotiation with the Landlord's Agent, Landlord, or Property Manager',
+                                                        'Assist with completing required lease disclosures and reviewing key lease terms',
+                                                        'Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties',
+                                                    ],
+                                                    '🚚 Move-In Support & Coordination' => [
+                                                        'Coordinate move-in date and key handoff logistics with the Landlord's Agent, Landlord or Property Manager',
+                                                        'Confirm completion of any agreed-upon pre-move-in cleaning or repairs',
+                                                        'Provide a utility setup checklist and local provider resources',
+                                                        'Share a move-in checklist for documentation and property condition review',
+                                                        'Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods',
+                                                    ],
+                                                    '💡 Leasing Strategy & Guidance' => [
+                                                        'Provide a Rental Market Analysis (RMA) with pricing insights based on comparable rentals, neighborhood trends, and current market conditions',
+                                                        'Advise on lease types and structures (e.g., month-to-month, annual, furnished, lease-option)',
+                                                        'Provide general guidance on Tenant rights and Landlord responsibilities under state law',
+                                                        'Provide general guidance on lease clauses, payment terms, and renewal options',
+                                                    ],
+                                                    ];
+
+                                                    $limitedCommercialCategories = [
+                                                    '📢 Tenant Criteria Marketing & Promotion' => [
+                                                        'Create a branded flyer summarizing the Tenant's leasing criteria',
+                                                        'Post the Tenant's leasing criteria on Craigslist under the "Office/Commercial" or "Retail" section',
+                                                        'Promote the Tenant's leasing criteria on Facebook in Commercial Leasing or Business Groups',
+                                                        'Share the Tenant's leasing criteria on Instagram using posts, stories, or reels',
+                                                        'Promote the Tenant's leasing criteria on LinkedIn in Professional, Real Estate, or Commercial Investment Groups',
+                                                        'Upload a TikTok video summarizing the Tenant's leasing criteria',
+                                                        'Upload a YouTube video summarizing the Tenant's leasing criteria',
+                                                        'Launch a mass email campaign promoting the Tenant's leasing criteria',
+                                                        'Distribute branded postcards or flyers in the Tenant's preferred neighborhoods',
+                                                        'Launch hyperlocal digital ads targeting the Tenant's preferred leasing areas',
+                                                    ],
+                                                    '🔍 Property Search, Alerts & Matching' => [
+                                                        'Send listing alerts from commercial platforms (e.g., LoopNet, Crexi, CoStar, or local MLS) that match the Tenant's leasing criteria',
+                                                        'Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant's rental criteria',
+                                                        'Communicate with the Landlord's Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions',
+                                                        'Evaluate properties for layout efficiency, building specs, logistics, zoning fit, and operational alignment',
+                                                    ],
+                                                    '🏢 Property Showings & Virtual Tours' => [
+                                                        'Schedule and attend property tours with the Tenant',
+                                                        'Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs',
+                                                        'Preview properties on behalf of the Tenant upon request',
+                                                        'Provide factual notes on layout, access, parking, visibility, and other operational considerations',
+                                                    ],
+                                                    '📝 Tenant Application Support' => [
+                                                        'Provide the Tenant with application instructions or links to online platforms',
+                                                        'Gather and organize required supporting documents (e.g., business licenses, financials, references)',
+                                                        'Submit complete and organized application packages to the Landlord's Agent, Landlord, or Property Manager',
+                                                    ],
+                                                    '📃 Lease Preparation, LOI & Execution' => [
+                                                        'Draft or assist with preparing a Letter of Intent (LOI) summarizing the Tenant's business needs and proposed terms',
+                                                        'Assist with negotiating rent, CAM, lease term, TI allowance, exclusivity clauses, renewal options, and other provisions (as permitted under the agency agreement)',
+                                                        'Coordinate with the Landlord's Agent, Landlord or Property Manager to finalize lease terms',
+                                                        'Review lease drafts and coordinate revisions through appropriate channels',
+                                                        'Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties',
+                                                        'Track required deposits, rent commencement, and key lease dates to ensure move-in readiness',
+                                                    ],
+                                                    '🚚 Move-In Support & Coordination' => [
+                                                        'Coordinate move-in date and key handoff logistics with the Landlord, Landlord's Agent, or Property Manager',
+                                                        'Confirm completion of any agreed-upon pre-move-in repairs, cleaning, or buildout',
+                                                        'Provide a utility setup checklist and local provider resources',
+                                                        'Share a move-in checklist for documentation and property condition review',
+                                                        'Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods',
+                                                    ],
+                                                    '💡 Leasing Strategy & Guidance' => [
+                                                        'Provide a Comparative Lease Market Analysis (CLMA) with pricing insights, comps, and vacancy trends',
+                                                        'Advise on lease types and structures (e.g., NNN, Modified Gross, Full Service) with general explanations of differences',
+                                                        'Provide general guidance on Tenant rights and Landlord responsibilities under commercial leasing law',
+                                                        'Provide general guidance on lease clauses, escalation terms, and space usage considerations',
+                                                    ],
+                                                    ];
+
+                                                    $limitedCategories = $limitedIsCommercial ? $limitedCommercialCategories : $limitedResidentialCategories;
+                                                    
+                                                    // Flatten function for limited modal
+                                                    $flattenLimitedServices = function($data) use (&$flattenLimitedServices) {
+                                                        $result = [];
+                                                        if (is_array($data) || is_object($data)) {
+                                                            foreach ((array)$data as $value) {
+                                                                if (is_string($value) && !empty(trim($value)) && $value !== 'Other') {
+                                                                    $result[] = trim($value);
+                                                                } elseif (is_array($value) || is_object($value)) {
+                                                                    $result = array_merge($result, $flattenLimitedServices($value));
+                                                                }
+                                                            }
+                                                        } elseif (is_string($data) && !empty(trim($data)) && $data !== 'Other') {
+                                                            $result[] = trim($data);
+                                                        }
+                                                        return $result;
+                                                    };
+                                                    
+                                                    // Parse services for limited modal
+                                                    $rawLimitedServices = data_get($bid, 'get.services', []);
+                                                    if (is_string($rawLimitedServices) && !empty($rawLimitedServices)) {
+                                                        $decoded = json_decode($rawLimitedServices, true);
+                                                        $parsedLimitedServices = (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) ? $decoded : [];
+                                                    } elseif (is_array($rawLimitedServices) || is_object($rawLimitedServices)) {
+                                                        $parsedLimitedServices = $rawLimitedServices;
+                                                    } else {
+                                                        $parsedLimitedServices = [];
+                                                    }
+                                                    $limitedAllServices = array_unique($flattenLimitedServices($parsedLimitedServices));
+                                                    
+                                                    // Parse other_services for limited modal
+                                                    $rawLimitedOtherServices = data_get($bid, 'get.other_services', []);
+                                                    if (is_string($rawLimitedOtherServices) && !empty($rawLimitedOtherServices)) {
+                                                        $decoded = json_decode($rawLimitedOtherServices, true);
+                                                        $limitedOtherServices = (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) ? $decoded : [];
+                                                    } elseif (is_array($rawLimitedOtherServices) || is_object($rawLimitedOtherServices)) {
+                                                        $limitedOtherServices = (array)$rawLimitedOtherServices;
+                                                    } else {
+                                                        $limitedOtherServices = [];
+                                                    }
+                                                    $limitedOtherServices = array_filter($limitedOtherServices, fn($s) => is_string($s) && !empty(trim($s)));
+                                                    $limitedOtherServices = array_values($limitedOtherServices);
+                                                    
+                                                    $hasAnyLimitedServices = !empty($limitedAllServices) || !empty($limitedOtherServices);
+                                                    @endphp
+                                                    
+                                                    <div class="mb-4">
+                                                        <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                            <i class="fa fa-clipboard-list me-2"></i>Offered Services
+                                                        </h6>
+                                                        
+                                                        @if ($hasAnyLimitedServices)
+                                                            @foreach ($limitedCategories as $limitedCategoryName => $limitedCategoryServices)
+                                                                @php
+                                                                    $limitedMatchedServices = array_filter($limitedAllServices, function($service) use ($limitedCategoryServices) {
+                                                                        return in_array($service, $limitedCategoryServices);
+                                                                    });
+                                                                @endphp
+                                                                @if (!empty($limitedMatchedServices))
+                                                                <div class="mb-3">
+                                                                    <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">{{ $limitedCategoryName }}</div>
+                                                                    <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
+                                                                        @foreach ($limitedMatchedServices as $limitedService)
+                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $limitedService }}</li>
+                                                                        @endforeach
+                                                                    </ul>
+                                                                </div>
+                                                                @endif
+                                                            @endforeach
+
+                                                            @if (!empty($limitedOtherServices))
+                                                            <div class="mb-3">
+                                                                <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Additional Services</div>
+                                                                <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
+                                                                    @foreach ($limitedOtherServices as $limitedOtherService)
+                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $limitedOtherService }}</li>
+                                                                    @endforeach
+                                                                </ul>
+                                                            </div>
+                                                            @endif
+                                                        @else
+                                                        <div class="text-muted" style="font-style: italic;">No services selected for this bid.</div>
+                                                        @endif
+                                                    </div>
+
+                                                </div>
+                                                <div class="modal-footer" style="background: #fafafa; border-top: 1px solid #e0e0e0; padding: 20px;">
+                                                    <div class="w-100 mb-3 p-3 text-center" style="background: #e8f4f5; border-radius: 6px; color: #049399;">
+                                                        <i class="fa fa-user-secret me-2"></i>
+                                                        <strong>Bidding Period:</strong> Agent identity remains anonymous until the listing owner accepts a bid.
+                                                    </div>
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="background: #6c757d; border: none; border-radius: 6px; padding: 8px 20px;">Close</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @endif
+                                    {{-- End of Limited Modal for Bidding Period --}}
 
                                     <!-- Counter Bids -->
 
