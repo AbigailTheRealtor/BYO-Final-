@@ -1789,11 +1789,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 {{-- Listing Owner or Bid Owner: Full access --}}
                                 <a href="#" data-bs-toggle="modal" data-bs-target="#privateDataModal{{ data_get($bid, 'id') }}"
                                    style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
-                                    @if ($isBidOwner)
                                     View Full Bid
-                                    @else
-                                    View Full Services & Broker Compensation Terms
-                                    @endif
                                 </a>
                                 @elseif ($isBiddingPeriodListing && $isAgentViewer)
                                 {{-- Bidding Period: Agent viewing another agent's bid - show summary note --}}
@@ -2771,33 +2767,45 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         is private and only visible to you{{ $isListingOwner ? ' as the listing owner' : '' }}.
                                                     </div>
                                                     
-                                                    @if ($isListingOwner && !$isExpired && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected')
-                                                    <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mb-3">
-                                                        <form action="{{ route('tenant.hire.agent.auction.bid.accept') }}" method="POST" class="d-inline"
-                                                              onsubmit="return confirm('Are you sure you want to accept this bid? This will reject all other bids.');">
-                                                            @csrf
-                                                            <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
-                                                            <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                                                            <button type="submit" class="btn btn-success">
-                                                                <i class="fa fa-check me-1"></i> Accept Bid
-                                                            </button>
-                                                        </form>
-                                                        
-                                                        <a href="{{ route('tenant.counter-terms', ['id' => data_get($bid, 'id')]) }}" 
-                                                           class="btn btn-primary" style="background-color: #0d6efd; border-color: #0d6efd; color: #ffffff;">
-                                                            <i class="fa fa-exchange-alt me-1"></i> Counter Bid
-                                                        </a>
-                                                        
-                                                        <form action="{{ route('tenant.hire.agent.auction.bid.reject') }}" method="POST" class="d-inline"
-                                                              onsubmit="return confirm('Are you sure you want to reject this bid?');">
-                                                            @csrf
-                                                            <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
-                                                            <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                                                            <button type="submit" class="btn btn-danger">
-                                                                <i class="fa fa-times me-1"></i> Reject Bid
-                                                            </button>
-                                                        </form>
-                                                    </div>
+                                                    @if ($isListingOwner && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected')
+                                                        @php
+                                                            // Traditional: show if not expired; Bidding Period: show when timer ends
+                                                            $showActionButtons = $canTakeAction && ($isBiddingPeriodListing || !$isExpired);
+                                                        @endphp
+                                                        @if ($showActionButtons)
+                                                        {{-- Traditional (not expired) OR Bidding Period (timer ended): show buttons --}}
+                                                        <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mb-3">
+                                                            <form action="{{ route('tenant.hire.agent.auction.bid.accept') }}" method="POST" class="d-inline"
+                                                                  onsubmit="return confirm('Are you sure you want to accept this bid? This will reject all other bids.');">
+                                                                @csrf
+                                                                <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
+                                                                <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                                                <button type="submit" class="btn btn-success text-white" style="padding: 8px 16px; font-size: 0.95rem;">
+                                                                    <i class="fa fa-check me-1"></i> Accept Bid
+                                                                </button>
+                                                            </form>
+                                                            
+                                                            <a href="{{ route('tenant.counter-terms', ['id' => data_get($bid, 'id')]) }}" 
+                                                               class="btn btn-primary text-white" style="padding: 8px 16px; font-size: 0.95rem;">
+                                                                <i class="fa fa-exchange-alt me-1"></i> Counter Bid
+                                                            </a>
+                                                            
+                                                            <form action="{{ route('tenant.hire.agent.auction.bid.reject') }}" method="POST" class="d-inline"
+                                                                  onsubmit="return confirm('Are you sure you want to reject this bid?');">
+                                                                @csrf
+                                                                <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
+                                                                <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                                                <button type="submit" class="btn btn-danger text-white" style="padding: 8px 16px; font-size: 0.95rem;">
+                                                                    <i class="fa fa-times me-1"></i> Reject Bid
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                        @elseif ($isBiddingPeriodListing && !$canTakeAction)
+                                                        {{-- Bidding Period: timer still active, actions locked --}}
+                                                        <div class="w-100 mb-3 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
+                                                            <i class="fa fa-clock me-1"></i> Actions unlock when the bidding period ends.
+                                                        </div>
+                                                        @endif
                                                     @elseif ($isListingOwner && $bidAccepted === 'accepted')
                                                     <div class="w-100 mb-3 p-2 text-center" style="background: #d4edda; border-radius: 6px; color: #155724;">
                                                         <i class="fa fa-check-circle me-1"></i> This bid has been accepted
