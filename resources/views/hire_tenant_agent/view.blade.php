@@ -2848,7 +2848,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                         aria-hidden="true">
                                         <div class="modal-dialog modal-lg">
                                             <div class="modal-content" style="border-radius: 10px; border: none; position: relative; overflow: visible;">
-                                                <button type="button" data-bs-dismiss="modal" aria-label="Close" style="position: absolute; right: -12px; top: -12px; z-index: 1055; background: #333; border: 2px solid #fff; color: #fff; font-size: 1rem; line-height: 1; font-weight: bold; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+                                                <button type="button" data-bs-dismiss="modal" aria-label="Close" style="position: absolute; right: 5px; top: -12px; z-index: 1055; background: #333; border: 2px solid #fff; color: #fff; font-size: 1rem; line-height: 1; font-weight: bold; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
                                                     &times;
                                                 </button>
                                                 <div class="modal-header text-white" style="background: #049399; border-bottom: none; padding: 15px 20px; border-radius: 10px 10px 0 0;">
