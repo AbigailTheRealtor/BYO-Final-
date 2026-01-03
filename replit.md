@@ -131,3 +131,21 @@ This includes:
   - Other agents on Bidding Period: Shows "Full terms visible only to bid creator"
 - **Key Variables**: `$isTraditionalListing`, `$isBiddingPeriodListing`, `$isBiddingTimerActive`, `$canTakeAction`, `$canSeeBidSummary`
 - **Files Modified**: resources/views/hire_tenant_agent/view.blade.php
+
+### Services Display Normalization Fix (January 2026)
+- **Root Cause**: Curly apostrophes (U+2018/U+2019) in stored service strings didn't match straight apostrophes in config
+- **Fix Applied**: Added `$normalizeStr` function using explicit UTF-8 byte sequences for curly quote replacement:
+  - `\xE2\x80\x98` (U+2018 left single quote) → `'`
+  - `\xE2\x80\x99` (U+2019 right single quote) → `'`
+  - `\xE2\x80\x9C` (U+201C left double quote) → `"`
+  - `\xE2\x80\x9D` (U+201D right double quote) → `"`
+- **Rendering**: Services display in canonical category order from config; original stored text preserved in display
+- **Unmapped Services**: Services not found in config appear in "Additional / Unmapped Services" section
+- **Files Modified**: resources/views/hire_tenant_agent/view.blade.php
+
+### Agent Bid Auto-Fill Fix (January 2026)
+- **Issue**: broker_fee_timing fields not auto-filled when agent creates/edits a bid
+- **Fix Applied**: Added broker_fee_timing fields to TenantAgentAuctionBid::mount() for both new bids and edit mode
+- **Fields Added**: broker_fee_timing_res, broker_fee_timing_days_res, broker_fee_timing_comm, broker_fee_timing_days_comm
+- **Behavior**: New bids inherit values from listing; existing bids load saved values
+- **Files Modified**: app/Http/Livewire/Tenant/TenantAgentAuctionBid.php
