@@ -519,9 +519,9 @@ class TenantAgentAuctionBid extends Component
         $this->reviews_links = [['text' => '']];
         $this->social_media = [['platform' => '', 'text' => '']];
 
-        // Auto-fill Agent Information from profile (Tab 6)
+        // Auto-fill Agent Information from profile (Tab 6) - only for NEW bids
         $user = Auth::user();
-        if ($user) {
+        if (!$this->isEditMode && $user) {
             $this->first_name = $user->first_name ?? '';
             $this->last_name = $user->last_name ?? '';
             $this->phone = $user->phone ?? '';
@@ -549,14 +549,29 @@ class TenantAgentAuctionBid extends Component
                 
                 $bidData = $existingBid->get;
                 
-                // Load agent info from bid data first, fallback to user profile
-                $this->first_name = $bidData->first_name ?? $this->first_name;
-                $this->last_name = $bidData->last_name ?? $this->last_name;
-                $this->phone = $bidData->phone ?? $this->phone;
-                $this->email = $bidData->email ?? $this->email;
-                $this->brokerage = $bidData->brokerage ?? $this->brokerage;
-                $this->license_no = $bidData->license_no ?? $this->license_no;
-                $this->nar_id = $bidData->nar_id ?? $this->nar_id;
+                // Load agent info from bid data with fallback to profile
+                // For edit mode, always prefer bid data over profile
+                $this->first_name = (isset($bidData->first_name) && trim($bidData->first_name) !== '') 
+                    ? $bidData->first_name 
+                    : ($user->first_name ?? '');
+                $this->last_name = (isset($bidData->last_name) && trim($bidData->last_name) !== '') 
+                    ? $bidData->last_name 
+                    : ($user->last_name ?? '');
+                $this->phone = (isset($bidData->phone) && trim($bidData->phone) !== '') 
+                    ? $bidData->phone 
+                    : ($user->phone ?? '');
+                $this->email = (isset($bidData->email) && trim($bidData->email) !== '') 
+                    ? $bidData->email 
+                    : ($user->email ?? '');
+                $this->brokerage = (isset($bidData->brokerage) && trim($bidData->brokerage) !== '') 
+                    ? $bidData->brokerage 
+                    : ($user->brokerage ?? '');
+                $this->license_no = (isset($bidData->license_no) && trim($bidData->license_no) !== '') 
+                    ? $bidData->license_no 
+                    : ($user->license_no ?? '');
+                $this->nar_id = (isset($bidData->nar_id) && trim($bidData->nar_id) !== '') 
+                    ? $bidData->nar_id 
+                    : ($user->nar_id ?? '');
                 
                 $this->bio = $bidData->bio ?? '';
                 $this->why_hire_you = $bidData->why_hire_you ?? '';
