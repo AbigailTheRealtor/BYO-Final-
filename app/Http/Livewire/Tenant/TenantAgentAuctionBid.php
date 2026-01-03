@@ -923,7 +923,7 @@ class TenantAgentAuctionBid extends Component
                     // Delete old business card if there was one
                     if ($this->isEditMode && $this->editBidId) {
                         $existingBid = TenantAgentAuctionBidData::find($this->editBidId);
-                        $oldPath = $existingBid ? $existingBid->getMeta('business_card') : null;
+                        $oldPath = $existingBid ? $existingBid->info('business_card') : null;
                         if ($oldPath && is_string($oldPath) && strpos($oldPath, 'auction/documents/') === 0) {
                             Storage::disk('public')->delete($oldPath);
                         }
@@ -937,7 +937,7 @@ class TenantAgentAuctionBid extends Component
             } elseif ($this->deleteExistingBusinessCard && $this->isEditMode && $this->editBidId) {
                 // User explicitly deleted the existing business card
                 $existingBid = TenantAgentAuctionBidData::find($this->editBidId);
-                $oldPath = $existingBid ? $existingBid->getMeta('business_card') : null;
+                $oldPath = $existingBid ? $existingBid->info('business_card') : null;
                 if ($oldPath && is_string($oldPath) && strpos($oldPath, 'auction/documents/') === 0) {
                     Storage::disk('public')->delete($oldPath);
                 }
@@ -1005,7 +1005,7 @@ class TenantAgentAuctionBid extends Component
                 
                 // Get the bid's original promo materials to verify ownership
                 $originalBid = TenantAgentAuctionBidData::find($this->editBidId);
-                $originalPromoRaw = $originalBid ? $originalBid->getMeta('promoMaterials') : null;
+                $originalPromoRaw = $originalBid ? $originalBid->info('promoMaterials') : null;
                 $ownedFiles = [];
                 
                 if ($originalPromoRaw) {
