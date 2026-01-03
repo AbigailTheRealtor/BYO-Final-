@@ -2858,11 +2858,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                         aria-hidden="true">
                                         <div class="modal-dialog modal-lg">
                                             <div class="modal-content" style="border-radius: 10px; border: none;">
-                                                <div class="modal-header text-white" style="background: #049399; border-bottom: none; padding: 20px;">
+                                                <div class="modal-header text-white" style="background: #049399; border-bottom: none; padding: 20px; position: relative;">
                                                     <h5 class="modal-title" id="limitedBidModalLabel{{ data_get($bid, 'id') }}" style="font-weight: 600;">
                                                         <i class="fa fa-handshake me-2"></i> Services & Broker Compensation Terms
                                                     </h5>
-                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    <button type="button" class="btn p-0" data-bs-dismiss="modal" aria-label="Close" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: #fff; font-size: 1.5rem; line-height: 1; opacity: 0.9;">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
                                                 </div>
                                                 <div class="modal-body" style="background: #fafafa; padding: 25px;">
 
@@ -3195,10 +3197,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                                                 </div>
                                                 <div class="modal-footer" style="background: #fafafa; border-top: 1px solid #e0e0e0; padding: 20px;">
-                                                    <div class="w-100 mb-3 p-3 text-center" style="background: #e8f4f5; border-radius: 6px; color: #049399;">
-                                                        <i class="fa fa-user-secret me-2"></i>
-                                                        <strong>Bidding Period:</strong> Agent identity remains anonymous until the listing owner accepts a bid.
-                                                    </div>
                                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="background: #6c757d; border: none; border-radius: 6px; padding: 8px 20px;">Close</button>
                                                 </div>
                                             </div>
