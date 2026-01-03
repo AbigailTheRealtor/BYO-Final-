@@ -1607,10 +1607,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     <div class="alert alert-info small mb-3 py-2">
                         <i class="fa fa-lock me-1"></i> <strong>Traditional Listing:</strong> You can only view your own bid. Other agents' bids remain private.
                     </div>
-                    @elseif ($isBiddingPeriodListing && $otherBidsExist)
-                    <div class="alert alert-secondary small mb-3 py-2">
-                        <i class="fa fa-users me-1"></i> <strong>Bidding Period Listing:</strong> Anonymous bid summaries from all agents are visible below.
-                    </div>
                     @endif
                 @endif
                 
@@ -2838,14 +2834,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                             Terms:</strong> You can see your full compensation terms
                                         and additional details in your bid management dashboard.
                                     </div>
-                                    @else
-                                    <!-- Public or other agents -->
-                                    <div class="alert alert-warning mt-3 p-3 text-center"
-                                        style="border-radius: 6px; background: #e8f4f5; color: #049399; border: none;">
-                                        <i class="fa fa-lock me-2"></i> <strong>Private
-                                            Information:</strong> Broker compensation terms and
-                                        additional details are only visible to the listing owner.
-                                    </div>
                                     @endif
                                     @endif
 
@@ -2858,12 +2846,12 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                         aria-hidden="true">
                                         <div class="modal-dialog modal-lg">
                                             <div class="modal-content" style="border-radius: 10px; border: none;">
-                                                <div class="modal-header text-white" style="background: #049399; border-bottom: none; padding: 20px; position: relative;">
+                                                <div class="modal-header text-white" style="background: #049399; border-bottom: none; padding: 15px 20px; position: relative;">
                                                     <h5 class="modal-title" id="limitedBidModalLabel{{ data_get($bid, 'id') }}" style="font-weight: 600;">
                                                         <i class="fa fa-handshake me-2"></i> Services & Broker Compensation Terms
                                                     </h5>
-                                                    <button type="button" class="btn p-0" data-bs-dismiss="modal" aria-label="Close" style="position: absolute; right: 10px; top: 10px; background: transparent; border: none; color: #fff; font-size: 1.5rem; line-height: 1; opacity: 0.9;">
-                                                        <span aria-hidden="true">&times;</span>
+                                                    <button type="button" class="btn p-0" data-bs-dismiss="modal" aria-label="Close" style="position: absolute; right: 15px; top: 12px; background: transparent; border: none; color: #fff; font-size: 1.75rem; line-height: 1; font-weight: 300;">
+                                                        &times;
                                                     </button>
                                                 </div>
                                                 <div class="modal-body" style="background: #fafafa; padding: 25px;">
