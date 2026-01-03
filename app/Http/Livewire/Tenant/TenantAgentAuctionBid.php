@@ -6,6 +6,7 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use App\Models\TenantAgentAuctionBid as TenantAgentAuctionBidData;
 use Illuminate\Support\Facades\DB;
@@ -109,6 +110,7 @@ class TenantAgentAuctionBid extends Component
     public $promo_materials = [];
     public $promo_materials_link;
     public array $promoMaterials = [];
+    public array $deletedFiles = []; // Track files to be deleted from storage on save
 
 
 
@@ -338,6 +340,16 @@ class TenantAgentAuctionBid extends Component
     public function removeMaterial(int $index): void
     {
         if (count($this->promoMaterials) > 1) {
+            // Queue existing files for deletion from storage
+            $files = $this->promoMaterials[$index]['files'] ?? [];
+            if (is_array($files)) {
+                foreach ($files as $file) {
+                    if (is_string($file) && !empty($file)) {
+                        $this->deletedFiles[] = $file;
+                    }
+                }
+            }
+            
             array_splice($this->promoMaterials, $index, 1);
             $this->promoMaterials = array_values($this->promoMaterials);
         }
@@ -346,6 +358,13 @@ class TenantAgentAuctionBid extends Component
     public function removeExistingFile(int $materialIndex, int $fileIndex): void
     {
         if (isset($this->promoMaterials[$materialIndex]['files'][$fileIndex])) {
+            $file = $this->promoMaterials[$materialIndex]['files'][$fileIndex];
+            
+            // Track existing file paths (strings) for deletion from storage on save
+            if (is_string($file) && !empty($file)) {
+                $this->deletedFiles[] = $file;
+            }
+            
             // Remove the file from the array
             array_splice($this->promoMaterials[$materialIndex]['files'], $fileIndex, 1);
             // Re-index the array
@@ -968,6 +987,54 @@ class TenantAgentAuctionBid extends Component
                 }
 
                 $bid->saveMeta('promoMaterials', json_encode($toPersist));
+            }
+
+            // Delete files that were marked for removal from storage
+            // Security: Only delete files that belong to this bid and are in the promo-materials directory
+            if (!empty($this->deletedFiles) && $this->isEditMode && $this->editBidId) {
+                $allowedPrefix = 'auction/promo-materials/';
+                
+                // Get the bid's original promo materials to verify ownership
+                $originalBid = TenantAgentAuctionBidData::find($this->editBidId);
+                $originalPromoRaw = $originalBid ? $originalBid->getMeta('promoMaterials') : null;
+                $ownedFiles = [];
+                
+                if ($originalPromoRaw) {
+                    $originalPromo = is_string($originalPromoRaw) ? json_decode($originalPromoRaw, true) : $originalPromoRaw;
+                    if (is_array($originalPromo)) {
+                        foreach ($originalPromo as $material) {
+                            $files = $material['files'] ?? [];
+                            if (is_array($files)) {
+                                foreach ($files as $file) {
+                                    if (is_string($file) && !empty($file)) {
+                                        $ownedFiles[] = $file;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                foreach ($this->deletedFiles as $filePath) {
+                    if (is_string($filePath) && !empty($filePath)) {
+                        // Validate: must be in allowed directory, no path traversal, AND owned by this bid
+                        $isInAllowedDir = strpos($filePath, $allowedPrefix) === 0;
+                        $hasNoTraversal = strpos($filePath, '..') === false;
+                        $isOwned = in_array($filePath, $ownedFiles, true);
+                        
+                        if ($isInAllowedDir && $hasNoTraversal && $isOwned) {
+                            Storage::disk('public')->delete($filePath);
+                        } else {
+                            Log::warning('Blocked unauthorized file deletion attempt', [
+                                'path' => $filePath, 
+                                'bid_id' => $this->editBidId,
+                                'reason' => !$isInAllowedDir ? 'wrong_directory' : (!$hasNoTraversal ? 'path_traversal' : 'not_owned')
+                            ]);
+                        }
+                    }
+                }
+                // Reset the deleted files array
+                $this->deletedFiles = [];
             }
 
             // Save agent information
