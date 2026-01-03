@@ -2862,16 +2862,16 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     <h5 class="modal-title" id="limitedBidModalLabel{{ data_get($bid, 'id') }}" style="font-weight: 600;">
                                                         <i class="fa fa-handshake me-2"></i> Services & Broker Compensation Terms
                                                     </h5>
-                                                    <button type="button" class="btn p-0" data-bs-dismiss="modal" aria-label="Close" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: #fff; font-size: 1.5rem; line-height: 1; opacity: 0.9;">
+                                                    <button type="button" class="btn p-0" data-bs-dismiss="modal" aria-label="Close" style="position: absolute; right: 10px; top: 10px; background: transparent; border: none; color: #fff; font-size: 1.5rem; line-height: 1; opacity: 0.9;">
                                                         <span aria-hidden="true">&times;</span>
                                                     </button>
                                                 </div>
                                                 <div class="modal-body" style="background: #fafafa; padding: 25px;">
 
-                                                    {{-- Anonymous Notice (Bidding Period Only) --}}
+                                                    {{-- Anonymous Notice --}}
                                                     <div class="alert mb-4" style="background: #e8f4f5; color: #049399; border: none; border-radius: 6px;">
                                                         <i class="fa fa-user-secret me-2"></i>
-                                                        <strong>Anonymous Bid (Bidding Period Listings Only):</strong> Agent identity is not displayed to other agents.
+                                                        <strong>Anonymous Bid:</strong> Agent identity is not displayed to other agents.
                                                     </div>
 
                                                     {{-- Section 1: Broker Compensation & Agency Agreement Terms --}}
