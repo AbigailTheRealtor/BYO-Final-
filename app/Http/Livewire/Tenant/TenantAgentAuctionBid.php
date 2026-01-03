@@ -506,6 +506,13 @@ class TenantAgentAuctionBid extends Component
         $this->brokerage_relationship = $auction->get->brokerage_relationship ?? '';
         $this->additional_details_broker = $auction->get->additional_details_broker ?? '';
 
+        // Auto-fill Broker Fee Timing fields from listing (Residential + Commercial)
+        $this->broker_fee_timing = $auction->get->broker_fee_timing ?? '';
+        $this->broker_fee_days_from_rent = $auction->get->broker_fee_days_from_rent ?? '';
+        $this->broker_fee_days_after_lease = $auction->get->broker_fee_days_after_lease ?? '';
+        $this->broker_fee_days_after_rent = $auction->get->broker_fee_days_after_rent ?? '';
+        $this->broker_fee_timing_other = $auction->get->broker_fee_timing_other ?? '';
+
         $this->auctionId = $auctionId;
         // Initialize arrays
         $this->website_link = [''];
@@ -614,6 +621,13 @@ class TenantAgentAuctionBid extends Component
                 $this->agency_agreement_custom = $bidData->agency_agreement_custom ?? '';
                 $this->brokerage_relationship = $bidData->brokerage_relationship ?? '';
                 $this->additional_details_broker = $bidData->additional_details_broker ?? '';
+                
+                // Load Broker Fee Timing fields from existing bid
+                $this->broker_fee_timing = $bidData->broker_fee_timing ?? '';
+                $this->broker_fee_days_from_rent = $bidData->broker_fee_days_from_rent ?? '';
+                $this->broker_fee_days_after_lease = $bidData->broker_fee_days_after_lease ?? '';
+                $this->broker_fee_days_after_rent = $bidData->broker_fee_days_after_rent ?? '';
+                $this->broker_fee_timing_other = $bidData->broker_fee_timing_other ?? '';
                 
                 $this->presentation_link = $bidData->presentation_link ?? '';
                 $this->business_card_link = $bidData->business_card_link ?? '';
