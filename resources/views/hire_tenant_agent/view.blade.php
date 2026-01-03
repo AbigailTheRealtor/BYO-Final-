@@ -1565,51 +1565,53 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
 
+        @php
+            // Create anonymous agent mapping based on bid submission order
+            $bidsByOrder = $auction->bids->sortBy('created_at')->values();
+            $agentNumberMap = [];
+            foreach ($bidsByOrder as $index => $orderedBid) {
+                $agentNumberMap[$orderedBid->id] = $index + 1;
+            }
+            // Find the last bidder's anonymous number
+            $lastBidderNumber = null;
+            if ($lowest_bidder) {
+                $lastBidderNumber = $agentNumberMap[$lowest_bidder->id] ?? null;
+            }
+            // Check if current user is the listing owner
+            $isListingOwner = ($auth_id == data_get($auction, 'user_id'));
+            // Check if current user is an agent
+            $isAgentViewer = $auth_id && in_array(auth()->user()->user_type ?? '', ['agent']);
+            // For Traditional listings, agents should not see other agents' bid info
+            $canSeeBidSummary = $isListingOwner || !$isAgentViewer || $isBiddingPeriodListing;
+        @endphp
+        
+        {{-- Last Bidder Info - Outside the card --}}
+        @if ($canSeeBidSummary)
+            @if ($lowest_bidder && $lastBidderNumber)
+            <p class="mb-3"><b>Agent {{ $lastBidderNumber }}</b> was the last bidder.</p>
+            @else
+            <p class="mb-3">No one has bid on this auction.</p>
+            @endif
+        @else
+            {{-- Traditional listing - agents cannot see bid summary --}}
+            <p class="text-muted mb-3"><i class="fa fa-lock me-1"></i> Bid information is private for traditional listings.</p>
+        @endif
+        
+        {{-- 🔹 Agent Visibility Info Messages --}}
+        @php
+            // $isAgentViewer already defined above
+            $otherBidsExist = $auction->bids->where('user_id', '!=', $auth_id)->count() > 0;
+        @endphp
+        @if ($isAgentViewer && !$isListingOwner)
+            @if ($isTraditionalListing && $otherBidsExist)
+            <div class="alert alert-info small mb-3 py-2">
+                <i class="fa fa-lock me-1"></i> <strong>Traditional Listing:</strong> You can only view your own bid. Other agents' bids remain private.
+            </div>
+            @endif
+        @endif
+
         <div class="card higestBider">
             <div class="card-body card-body-padding">
-                @php
-                    // Create anonymous agent mapping based on bid submission order
-                    $bidsByOrder = $auction->bids->sortBy('created_at')->values();
-                    $agentNumberMap = [];
-                    foreach ($bidsByOrder as $index => $orderedBid) {
-                        $agentNumberMap[$orderedBid->id] = $index + 1;
-                    }
-                    // Find the last bidder's anonymous number
-                    $lastBidderNumber = null;
-                    if ($lowest_bidder) {
-                        $lastBidderNumber = $agentNumberMap[$lowest_bidder->id] ?? null;
-                    }
-                    // Check if current user is the listing owner
-                    $isListingOwner = ($auth_id == data_get($auction, 'user_id'));
-                    // Check if current user is an agent
-                    $isAgentViewer = $auth_id && in_array(auth()->user()->user_type ?? '', ['agent']);
-                    // For Traditional listings, agents should not see other agents' bid info
-                    $canSeeBidSummary = $isListingOwner || !$isAgentViewer || $isBiddingPeriodListing;
-                @endphp
-                @if ($canSeeBidSummary)
-                    @if ($lowest_bidder && $lastBidderNumber)
-                    <p><b>Agent {{ $lastBidderNumber }}</b> was the last bidder.</p>
-                    @else
-                    <p>No one has bid on this auction.</p>
-                    @endif
-                @else
-                    {{-- Traditional listing - agents cannot see bid summary --}}
-                    <p class="text-muted"><i class="fa fa-lock me-1"></i> Bid information is private for traditional listings.</p>
-                @endif
-                
-                {{-- 🔹 Agent Visibility Info Messages --}}
-                @php
-                    // $isAgentViewer already defined above
-                    $otherBidsExist = $auction->bids->where('user_id', '!=', $auth_id)->count() > 0;
-                @endphp
-                @if ($isAgentViewer && !$isListingOwner)
-                    @if ($isTraditionalListing && $otherBidsExist)
-                    <div class="alert alert-info small mb-3 py-2">
-                        <i class="fa fa-lock me-1"></i> <strong>Traditional Listing:</strong> You can only view your own bid. Other agents' bids remain private.
-                    </div>
-                    @endif
-                @endif
-                
                 <div class="accordion" id="accordionExample">
                     <div class="accordion-item border-0">
 
@@ -2850,7 +2852,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     <h5 class="modal-title" id="limitedBidModalLabel{{ data_get($bid, 'id') }}" style="font-weight: 600;">
                                                         <i class="fa fa-handshake me-2"></i> Services & Broker Compensation Terms
                                                     </h5>
-                                                    <button type="button" class="btn p-0" data-bs-dismiss="modal" aria-label="Close" style="position: absolute; right: 15px; top: 12px; background: transparent; border: none; color: #fff; font-size: 1.75rem; line-height: 1; font-weight: 300;">
+                                                    <button type="button" class="btn p-0" data-bs-dismiss="modal" aria-label="Close" style="position: absolute; right: 8px; top: 5px; background: transparent; border: none; color: #fff; font-size: 1.75rem; line-height: 1; font-weight: 300;">
                                                         &times;
                                                     </button>
                                                 </div>
