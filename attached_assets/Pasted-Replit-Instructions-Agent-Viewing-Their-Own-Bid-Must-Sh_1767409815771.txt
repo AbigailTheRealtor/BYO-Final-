@@ -1,0 +1,139 @@
+Replit Instructions — Agent Viewing Their Own Bid Must Show Full Bid (WITH SAFEGUARDS)
+Scope (STRICT)
+
+✅ Apply this change ONLY to the UI/UX for an agent viewing their OWN bid (self-view).
+❌ Do NOT change listing creator views.
+❌ Do NOT change how other agents view competing bids.
+❌ Do NOT change any bid logic, permissions, ranking, scoring, database structure, or validations.
+
+0) SAFEGUARDS (MUST FOLLOW EXACTLY)
+DO NOT:
+
+Edit anything in /vendor/
+
+Add/remove/rename any database columns, migrations, models, controllers, routes
+
+Rename any existing field keys, input name="", Livewire property names, or bid data schema
+
+Change how bids are saved, validated, or submitted
+
+Change Accept / Counter / Reject logic
+
+Change anonymity rules or visibility rules for OTHER agents’ bids
+
+Change or refactor shared components used by Buyer/Seller/Landlord flows (Tenant only unless proven shared)
+
+Modify the listing creator’s “Private Compensation & Agency Agreement Terms” layout or structure
+
+Reorder tabs, rewrite tooltips, placeholders, or any existing text besides the single button label described below
+
+ONLY ALLOWED CHANGES:
+
+Update the agent self-view “View Full…” button:
+
+label change (exactly one label)
+
+the modal/page it opens for the agent’s own bid only
+
+Ensure the self-view full bid includes the missing tabs/sections (read-only display is fine)
+
+1) REQUIRED FUNCTIONALITY (SELF-VIEW ONLY)
+When an agent views their own bid
+
+The “View Full…” button must open the full bid view containing all tabs/sections:
+
+Agent Overview
+
+Broker Compensation & Agency Agreement Terms
+
+Additional Details
+
+Offered Services
+
+Agent Presentation & Marketing Materials
+
+Agent Credentials & Contact Information
+
+✅ This self-view must match what the listing creator sees for that same bid under:
+Private Compensation & Agency Agreement Terms (full bid content)
+
+Important clarification:
+
+This is not adding new fields.
+
+This is not changing what gets saved.
+
+It is only exposing the already-existing bid sections in the agent’s “view my bid” experience.
+
+2) BUTTON LABEL CHANGE (SELF-VIEW ONLY)
+
+Replace the button label:
+
+From: “View Full Services & Broker Compensation Terms”
+
+To: “View Full Bid”
+
+✅ Only for the agent’s own bid view.
+❌ Do NOT change this label where it appears for viewing other agents’ bids (anonymous bids) unless it is strictly scoped to self-view.
+
+3) KEEP OTHER AGENT VIEW RULES UNCHANGED
+Traditional listings
+
+Agents must NOT see other agents’ bid details.
+
+Bidding Period listings
+
+Agents can see summaries and full anonymous bid views only if that is already allowed.
+
+Do not change anonymity, access rules, or which parts are visible for other agents.
+
+4) IMPLEMENTATION REQUIREMENTS (TO PREVENT MISCHANGES)
+Step A — Identify the self-view context safely
+
+Only apply the full-bid view when:
+
+current_user_agent_id === bid.agent_id (or equivalent)
+
+Step B — Reuse the listing creator full-bid renderer
+
+To ensure the self-view matches the creator view exactly:
+
+reuse the same component/partial used for “Private Compensation & Agency Agreement Terms”
+
+OR render the same set of tabs in the self-view modal/page
+
+✅ Do not duplicate a second service list or second comp summary list.
+
+5) ACCEPTANCE TESTS (MUST PASS)
+Self-view test
+
+Agent places a bid
+
+Agent clicks “View Full Bid”
+✅ Sees all 6 sections/tabs listed above
+✅ Data matches what they submitted
+✅ No missing phone/brokerage/license fields if those are part of their bid snapshot
+
+Non-self-view regression test
+
+Agent views another agent’s bid (Bidding Period)
+✅ Same anonymity rules as before
+✅ No new identity leakage
+✅ No new access granted in Traditional listings
+
+Creator regression test
+
+Listing creator views a bid under Private Terms
+✅ No change in layout/behavior
+
+6) REQUIRED REPORT BACK (VERY IMPORTANT)
+
+After completing the change, provide:
+
+exact file paths edited
+
+before/after snippet for the button label change
+
+explanation of how self-view is detected (one sentence)
+
+confirmation: “No schema changes, no vendor edits, no logic changes

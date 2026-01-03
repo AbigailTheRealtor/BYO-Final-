@@ -149,3 +149,25 @@ This includes:
 - **Fields Added**: broker_fee_timing_res, broker_fee_timing_days_res, broker_fee_timing_comm, broker_fee_timing_days_comm
 - **Behavior**: New bids inherit values from listing; existing bids load saved values
 - **Files Modified**: app/Http/Livewire/Tenant/TenantAgentAuctionBid.php
+
+### Edit Bid Agent Info Preservation Fix (January 2026)
+- **Issue**: Phone Number, Brokerage, and Real Estate License # fields were being cleared when editing a bid
+- **Root Cause**: Profile seeding ran before edit mode detection, overwriting Livewire properties with empty profile values
+- **Fix Applied**: Gated profile seeding to new bids only (`!$this->isEditMode`); in edit mode, load agent info directly from bid data with fallback to profile
+- **Robust Check**: Uses `isset($bidData->field) && trim($bidData->field) !== ''` to ensure non-empty bid values are preserved
+- **Files Modified**: app/Http/Livewire/Tenant/TenantAgentAuctionBid.php
+
+### Agent Self-View Full Bid Feature (January 2026)
+- **Requirement**: When an agent views their OWN bid, they should see all 6 sections (matching what listing creator sees)
+- **Button Label Change**: "View Full Services & Broker Compensation Terms" → "View Full Bid" (for bid owner only)
+- **Sections Now Visible to Bid Owner**:
+  1. Agent Overview & Qualifications (About, Why Hire, What Sets Apart, Marketing Strategy, Links)
+  2. Broker Compensation & Agency Agreement Terms (already visible)
+  3. Additional Details (already visible)
+  4. Offered Services (already visible)
+  5. Agent Presentation & Marketing Materials (already visible)
+  6. Agent Credentials & Contact Information (First Name, Last Name, Phone, Email, Brokerage, License #, NAR ID)
+- **Self-View Detection**: Uses existing `$isBidOwner` variable: `data_get($bid, 'user_id') == $auth_id`
+- **Visibility Gate Change**: `@if ($isListingOwner)` → `@if ($isListingOwner || $isBidOwner)` for sections 1 and 6
+- **No Schema Changes**: Display-only UI changes, no database/logic modifications
+- **Files Modified**: resources/views/hire_tenant_agent/view.blade.php

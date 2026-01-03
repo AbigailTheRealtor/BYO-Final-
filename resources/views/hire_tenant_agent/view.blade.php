@@ -1789,7 +1789,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 {{-- Listing Owner or Bid Owner: Full access --}}
                                 <a href="#" data-bs-toggle="modal" data-bs-target="#privateDataModal{{ data_get($bid, 'id') }}"
                                    style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
+                                    @if ($isBidOwner)
+                                    View Full Bid
+                                    @else
                                     View Full Services & Broker Compensation Terms
+                                    @endif
                                 </a>
                                 @elseif ($isBiddingPeriodListing && $isAgentViewer)
                                 {{-- Bidding Period: Agent viewing another agent's bid - show summary note --}}
@@ -1861,8 +1865,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                 <div class="modal-body"
                                                     style="background: #fafafa; padding: 25px;">
 
-                                                    <!-- 1. Agent Overview & Qualifications - ONLY visible to listing owner -->
-                                                    @if ($isListingOwner)
+                                                    <!-- 1. Agent Overview & Qualifications - visible to listing owner or bid owner -->
+                                                    @if ($isListingOwner || $isBidOwner)
                                                     <div class="mb-5">
                                                         <h6 class="mb-3"
                                                             style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
@@ -2028,7 +2032,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                                                     </div>
                                                     @endif
-                                                    {{-- End of Agent Overview section (listing owner only) --}}
+                                                    {{-- End of Agent Overview section (listing owner or bid owner) --}}
 
                                                     <!-- 2. Broker Compensation & Agency Agreement Terms -->
                                                     @if (data_get($bid, 'get.commission_structure') ||
@@ -2658,8 +2662,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     </div>
                                                     @endif
 
-                                                    <!-- 5. Agent Credentials and Contact Information - ONLY visible to listing owner -->
-                                                    @if ($isListingOwner)
+                                                    <!-- 5. Agent Credentials and Contact Information - visible to listing owner or bid owner -->
+                                                    @if ($isListingOwner || $isBidOwner)
                                                     <div class="mb-4">
                                                         <h6 class="mb-3"
                                                             style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
@@ -2755,7 +2759,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         </div>
                                                     </div>
                                                     @endif
-                                                    {{-- End of Agent Credentials section (listing owner only) --}}
+                                                    {{-- End of Agent Credentials section (listing owner or bid owner) --}}
 
                                                 </div>
                                                 <div class="modal-footer"
