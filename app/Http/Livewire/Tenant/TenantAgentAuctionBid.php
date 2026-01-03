@@ -106,6 +106,8 @@ class TenantAgentAuctionBid extends Component
     public $video_upload;
     public $business_card_link;
     public $business_card;
+    public $existingBusinessCard = null; // Stores the path of previously uploaded business card
+    public $deleteExistingBusinessCard = false; // Flag to delete existing business card on save
     public $promo_material_type;
     public $promo_materials = [];
     public $promo_materials_link;
@@ -376,6 +378,12 @@ class TenantAgentAuctionBid extends Component
     {
         $this->resetErrorBag("promoMaterials.{$index}.files");
         $this->resetErrorBag("promoMaterials.{$index}.files.*");
+    }
+
+    public function removeExistingBusinessCard(): void
+    {
+        $this->deleteExistingBusinessCard = true;
+        $this->existingBusinessCard = null;
     }
 
 
@@ -686,6 +694,7 @@ class TenantAgentAuctionBid extends Component
                 
                 $this->presentation_link = $bidData->presentation_link ?? '';
                 $this->business_card_link = $bidData->business_card_link ?? '';
+                $this->existingBusinessCard = $bidData->business_card ?? null;
                 $this->promo_materials_link = $bidData->promo_materials_link ?? '';
                 
                 $this->total_marketing_fee = $bidData->total_marketing_fee ?? 0;
@@ -906,15 +915,33 @@ class TenantAgentAuctionBid extends Component
                 }
             }
 
-            // Handle business card upload
+            // Handle business card upload or deletion
             if ($this->business_card) {
+                // New upload - delete old file if exists and upload new one
                 $extension = $this->business_card->getClientOriginalExtension();
                 if (in_array($extension, $allowedPhotos)) {
+                    // Delete old business card if there was one
+                    if ($this->isEditMode && $this->editBidId) {
+                        $existingBid = TenantAgentAuctionBidData::find($this->editBidId);
+                        $oldPath = $existingBid ? $existingBid->getMeta('business_card') : null;
+                        if ($oldPath && is_string($oldPath) && strpos($oldPath, 'auction/documents/') === 0) {
+                            Storage::disk('public')->delete($oldPath);
+                        }
+                    }
+                    
                     $uuid = (string) Str::uuid();
                     $fileName = $uuid . '.' . $extension;
                     $path = $this->business_card->storeAs('auction/documents', $fileName, 'public');
                     $bid->saveMeta('business_card', $path);
                 }
+            } elseif ($this->deleteExistingBusinessCard && $this->isEditMode && $this->editBidId) {
+                // User explicitly deleted the existing business card
+                $existingBid = TenantAgentAuctionBidData::find($this->editBidId);
+                $oldPath = $existingBid ? $existingBid->getMeta('business_card') : null;
+                if ($oldPath && is_string($oldPath) && strpos($oldPath, 'auction/documents/') === 0) {
+                    Storage::disk('public')->delete($oldPath);
+                }
+                $bid->saveMeta('business_card', null);
             }
 
             // Handle promotional materials upload

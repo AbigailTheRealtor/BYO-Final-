@@ -101,6 +101,49 @@
                 Linq)</small>
         </div>
 
+        {{-- Display Existing Business Card --}}
+        @if (!empty($existingBusinessCard))
+            @php
+                $bcFileName = basename($existingBusinessCard);
+                $bcFileExt = strtolower(pathinfo($bcFileName, PATHINFO_EXTENSION));
+                $bcIsImage = in_array($bcFileExt, ['jpg', 'jpeg', 'png', 'webp', 'gif']);
+            @endphp
+            <div class="form-group mb-3">
+                <label class="fw-bold text-success">
+                    <i class="fas fa-check-circle me-1"></i> Uploaded Business Card:
+                </label>
+                <div class="mt-2">
+                    <div class="d-flex align-items-center justify-content-between border rounded p-2 bg-light">
+                        <div class="d-flex align-items-center">
+                            @if ($bcIsImage)
+                                <img src="{{ asset('storage/' . $existingBusinessCard) }}" 
+                                    alt="{{ $bcFileName }}" 
+                                    class="me-2" 
+                                    style="max-width: 80px; max-height: 80px; object-fit: cover; border-radius: 4px;">
+                            @else
+                                <i class="fas fa-file-{{ $bcFileExt === 'pdf' ? 'pdf text-danger' : 'alt text-secondary' }} fa-2x me-2"></i>
+                            @endif
+                            <div>
+                                <span class="text-truncate d-block" style="max-width: 200px;" title="{{ $bcFileName }}">
+                                    {{ Str::limit($bcFileName, 25) }}
+                                </span>
+                                <a href="{{ asset('storage/' . $existingBusinessCard) }}" target="_blank" class="small text-primary">
+                                    <i class="fas fa-external-link-alt"></i> View
+                                </a>
+                            </div>
+                        </div>
+                        <button type="button" 
+                            class="btn btn-outline-danger btn-sm" 
+                            wire:click="removeExistingBusinessCard"
+                            wire:loading.attr="disabled"
+                            title="Remove this file">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="form-group">
 
             <label class="fw-bold">Business Card (Upload):</label>
@@ -120,22 +163,16 @@
     <span id="business-card-error" class="text-danger" style="display: none;"></span>
     @if (
         $business_card &&
+            is_object($business_card) &&
+            method_exists($business_card, 'getMimeType') &&
             $business_card->getMimeType() &&
             strpos($business_card->getMimeType(), 'image/') === 0 &&
             $business_card->getSize() <= 10 * 1024 * 1024)
-        <!-- Validate that it's an image and less than 10MB -->
+        <!-- Preview of newly uploaded file -->
         <div class="col-md-6 col-6 pt-2 fw-bold" id="photo-preview" style="display: block; margin-left: 11px;">
-            Uploaded Photo:
+            New Upload Preview:
             <span class="removeBold">
-                <!-- Display the temporary uploaded photo -->
-                @if (is_string($business_card))
-                    <!-- If $photo is a string (existing file path) -->
-                    <img src="{{ asset('storage/auction/documents/' . $business_card) }}"
-                        style="width:80%;height:29vh;" />
-                @else
-                    <!-- If $photo is an UploadedFile object (newly uploaded file) -->
-                    <img src="{{ $business_card->temporaryUrl() }}" style="width:80%;height:29vh;" />
-                @endif
+                <img src="{{ $business_card->temporaryUrl() }}" style="width:80%;height:29vh;" />
             </span>
         </div>
     @endif
