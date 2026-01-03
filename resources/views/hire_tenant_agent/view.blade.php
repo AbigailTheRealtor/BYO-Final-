@@ -3546,16 +3546,63 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     </div>
                                     @endif
 
-                                    {{-- Main Bid Actions (keep this section as is) --}}
+                                    {{-- Main Bid Actions - Traditional vs Bidding Period --}}
                                     <div class="d-flex justify-content-between flex-wrap gap-2 mt-3">
                                         @if ($state === '0' && $isOwnerRow && !data_get($auction, 'is_sold'))
 
-                                        @if ($isExpired)
-                                        {{-- 🔹 Show expired message if auction expired --}}
-                                        <div class="alert alert-warning text-center mt-2 mb-0 p-2 ml-2" style="margin-left: 20px;">
-                                            <strong>Bidding/Counter Period Ended</strong>
+                                        @if ($isBiddingPeriodListing && $isBiddingTimerActive)
+                                        {{-- 🔹 Bidding Period: Timer still active - actions locked --}}
+                                        <div class="alert alert-info text-center mt-2 mb-0 p-2 w-100" style="margin-left: 20px;">
+                                            <i class="fa fa-clock me-1"></i> <strong>Actions unlock when the bidding period ends.</strong>
                                         </div>
-                                        @else
+                                        @elseif ($isTraditionalListing && $isExpired)
+                                        {{-- 🔹 Traditional: Listing expired --}}
+                                        <div class="alert alert-warning text-center mt-2 mb-0 p-2 ml-2" style="margin-left: 20px;">
+                                            <strong>Listing Expired</strong>
+                                        </div>
+                                        @elseif ($isBiddingPeriodListing && $isExpired)
+                                        {{-- 🔹 Bidding Period: Timer ended - show actions --}}
+                                        <div class="biding-btn">
+                                            <form
+                                                action="{{ route('tenant.hire.agent.auction.bid.accept') }}"
+                                                method="post">
+                                                @csrf
+                                                <input type="hidden" name="auction_id"
+                                                    value="{{ data_get($auction, 'id') }}">
+                                                <input type="hidden" name="bid_id"
+                                                    value="{{ data_get($bid, 'id') }}">
+                                                <button type="submit"
+                                                    class="btn-custom btn-accept">Accept</button>
+                                            </form>
+                                        </div>
+                                        <div class="biding-btn">
+                                            <form
+                                                action="{{ route('tenant.hire.agent.auction.bid.reject') }}"
+                                                method="post">
+                                                @csrf
+                                                <input type="hidden" name="auction_id"
+                                                    value="{{ data_get($auction, 'id') }}">
+                                                <input type="hidden" name="bid_id"
+                                                    value="{{ data_get($bid, 'id') }}">
+                                                <button type="submit"
+                                                    class="btn-custom btn-reject">Reject</button>
+                                            </form>
+                                        </div>
+                                        <div class="biding-btn">
+                                            <form
+                                                action="{{ route('tenant.hire.agent.auction.bid.counter') }}"
+                                                method="post">
+                                                @csrf
+                                                <input type="hidden" name="auction_id"
+                                                    value="{{ data_get($auction, 'id') }}">
+                                                <input type="hidden" name="bid_id"
+                                                    value="{{ data_get($bid, 'id') }}">
+                                                <button type="submit"
+                                                    class="btn-custom btn-counter">Counter</button>
+                                            </form>
+                                        </div>
+                                        @elseif ($isTraditionalListing)
+                                        {{-- 🔹 Traditional: Actions always available immediately --}}
                                         <div class="biding-btn">
                                             <form
                                                 action="{{ route('tenant.hire.agent.auction.bid.accept') }}"
