@@ -675,7 +675,6 @@ class TenantAgentAuctionEdit extends Component
 
     protected $rules = [
         'auction_type' => 'required',
-        'agent_bid_visibility' => 'required_if:auction_type,Traditional',
         'appliances' => 'array',
         'other_appliances' => 'required_if:appliances,Other',
 

@@ -206,13 +206,6 @@
                                     </span>
                                 </div>
                             @endif
-                            @if (@$auction->get->agent_bid_visibility != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
-                                 Agent Bid Visibility Preference:
-                                    <span class="removeBold"> {{ @$auction->get->agent_bid_visibility }}
-                                    </span>
-                                </div>
-                            @endif
                             @if (@$auction->get->meeting_Preference != null)
                                 <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
                                  Meeting Preference:

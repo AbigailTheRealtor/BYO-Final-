@@ -288,9 +288,6 @@
                                     </p>
                                 @endif
 
-                                @if ($auction->get->agent_bid_visibility != null || $auction->get->agent_bid_visibility === '')
-                                    <h5 style="color:rgb(52 162 185)">{{ $auction->get->agent_bid_visibility }}</h5>
-                                @endif
                             </div>
 
                             <div class="card-footer bg-light">
