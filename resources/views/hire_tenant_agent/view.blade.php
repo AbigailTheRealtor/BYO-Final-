@@ -1775,13 +1775,20 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     <p class="mb-0" style="font-size: 1rem; color: #555;">{{ $commissionFeeDisplay }}</p>
                                 </div>
                                 
-                                <!-- D) View Full Terms Link - visible to listing owner OR bid owner (agent) -->
+                                <!-- D) View Full Terms Link - visibility rules by listing type and user -->
                                 @if ($isListingOwner || $isBidOwner)
+                                {{-- Listing Owner or Bid Owner: Full access --}}
                                 <a href="#" data-bs-toggle="modal" data-bs-target="#privateDataModal{{ data_get($bid, 'id') }}"
                                    style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
                                     View Full Services & Broker Compensation Terms
                                 </a>
+                                @elseif ($isBiddingPeriodListing && $isAgentViewer)
+                                {{-- Bidding Period: Agent viewing another agent's bid - show summary note --}}
+                                <span style="color: #666; font-style: italic; font-size: 0.95rem;">
+                                    <i class="fa fa-eye-slash me-1"></i> Full terms visible only to bid creator
+                                </span>
                                 @else
+                                {{-- Default: Private message --}}
                                 <span style="color: #888; font-style: italic; font-size: 0.95rem;">
                                     <i class="fa fa-lock me-1"></i> Private — visible only to listing creator
                                 </span>
