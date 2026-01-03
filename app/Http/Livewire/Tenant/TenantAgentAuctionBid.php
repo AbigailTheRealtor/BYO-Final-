@@ -252,11 +252,8 @@ class TenantAgentAuctionBid extends Component
             'promoMaterials.*.other' => ['nullable', 'string'],
             'promoMaterials.*.text'  => ['nullable', 'string'],
             'promoMaterials.*.files' => ['nullable', 'array'],
-            'promoMaterials.*.files.*' => [
-                'file',
-                'max:51200', // 50MB each
-                'mimes:pdf,jpg,jpeg,png,webp,doc,docx,ppt,pptx'
-            ],
+            // Note: File validation is handled manually in submit() to allow
+            // existing file paths (strings) in edit mode while validating new uploads
             'year_licensed' => 'required|numeric|min:1900|max:' . date('Y'),
 
         ];
