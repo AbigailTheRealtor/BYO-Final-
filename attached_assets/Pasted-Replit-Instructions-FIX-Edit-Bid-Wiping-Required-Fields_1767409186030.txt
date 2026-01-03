@@ -1,0 +1,187 @@
+Replit Instructions — FIX “Edit Bid” Wiping Required Fields + Validation Error (Tenant Hire-Agent Bids)
+Applies to:
+
+Hire a Tenant’s Agent → Agent Bid View → Edit Bid (all bid types under Tenant)
+
+0) SAFEGUARDS (MUST FOLLOW EXACTLY)
+
+DO NOT:
+
+edit /vendor/
+
+change database/migrations/models
+
+rename any bid field keys or input name="" attributes
+
+remove any required validations
+
+change tab order, labels, tooltips, or UI layout
+
+change Accept/Counter/Reject logic
+
+ONLY DO:
+
+ensure Edit Bid loads the existing bid values into the form state
+
+ensure required fields (Phone, Brokerage, License #) persist and are saved
+
+ensure “Update/Save” uses the same validation rules as Create Bid, but with prefilled values
+
+1) PROBLEM (WHAT’S HAPPENING)
+
+When user clicks Edit Bid:
+
+Phone Number, Brokerage, Real Estate License # appear blank or get cleared
+
+User submits → validation fails → “The given data was invalid”
+
+These fields should NOT change unless user edits them
+
+2) EXPECTED BEHAVIOR (SOURCE OF TRUTH)
+
+When Edit Bid opens:
+
+Every input field that was originally saved on the bid must be pre-populated with the bid’s existing values.
+
+No required field should ever go blank unless user deletes it intentionally.
+
+Submitting without changes should succeed (no validation errors).
+
+3) IMPLEMENTATION — FIX EDIT MODE PREFILL + PRESERVE BID SNAPSHOT
+Step 3.1 Locate the Edit Bid entry point
+
+Find the method that runs when clicking Edit Bid, typically something like:
+
+editBid($bidId)
+
+openEditBidModal($bidId)
+
+loadBidForEditing($bidId)
+
+route/controller: /bids/{id}/edit
+
+Livewire event: wire:click="editBid(...)"
+
+✅ Confirm it receives the Bid ID.
+
+Step 3.2 Load bid values into the form state (critical fix)
+
+When edit opens, set the Livewire/component form state from the existing bid record.
+
+Required fields that MUST be loaded:
+
+First Name
+
+Last Name
+
+Phone Number ✅ (currently getting wiped)
+
+Email
+
+Brokerage ✅ (currently getting wiped)
+
+Real Estate License # ✅ (currently getting wiped)
+
+NRDS (optional field)
+
+Rule:
+
+Edit mode must use the bid’s saved values, not agent profile defaults.
+
+If a bid field is null (rare), you may fall back to agent profile — but do NOT overwrite non-null bid values.
+
+✅ Use “bid first, fallback second”:
+
+value = bid.value ?? agentProfile.value
+
+Step 3.3 Ensure bindings exist for those inputs
+
+Verify the Edit Bid view inputs are bound to the correct state variables, e.g.:
+
+wire:model="bid.first_name"
+
+wire:model="bid.phone"
+
+etc.
+
+If any of Phone/Brokerage/License are missing binding or bound to the wrong variable (e.g., agent.phone), fix it so it binds to the editable bid form state.
+
+🚫 Do NOT rename the input or key — only point it to the correct state.
+
+Step 3.4 Ensure “Update Bid” does not reset fields
+
+Find the save method for edit mode, e.g.:
+
+updateBid()
+
+saveBid()
+
+submitBid()
+
+Make sure it:
+
+validates
+
+writes the form state to the bid record
+
+Critical rule:
+
+Do NOT reinitialize the bid form state during update (common bug):
+
+Do not call reset() or re-run mount() logic that clears fields before saving.
+
+If there is a reset call, move it to after a successful save, or remove it from the edit save path.
+
+Step 3.5 Validation: allow existing values to pass
+
+The current error indicates required fields are being validated as empty.
+
+Do NOT remove validation rules.
+
+Instead ensure edit form is populated correctly so validation passes.
+
+Also ensure:
+
+Phone validation accepts formatted phone values like (343) 434-3434
+
+If current validation requires digits only, normalize phone on save (strip non-digits) OR adjust validation pattern to accept formatting.
+
+Do not change the UI display; just normalize before validation if needed.
+
+(Only do this if phone formatting is the reason validation fails.)
+
+4) ACCEPTANCE TESTS (MUST PASS)
+Test A — Open Edit Bid
+
+Create a bid with filled:
+
+phone, brokerage, license #
+
+Click Edit Bid
+✅ those fields show the existing values (not blank)
+
+Test B — Save without changes
+
+Click Submit/Update without editing anything
+✅ No validation error
+✅ Bid remains unchanged
+
+Test C — Save with edits
+
+Change phone or brokerage
+✅ Saves correctly
+✅ New value persists when reopening Edit Bid
+
+5) REQUIRED REPORT BACK
+
+After fixing:
+
+list file paths edited
+
+show before/after snippet for:
+
+edit initialization/prefill method
+
+save/update method (only if changed)
+
+confirm no schema changes and no renamed keys
