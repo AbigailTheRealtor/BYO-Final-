@@ -33,6 +33,7 @@ I prefer detailed explanations. Ask before making major changes.
 - **Agent Info Preservation**: Agent profile seeding is gated to new bids only; edit mode loads agent info from bid data with fallbacks.
 - **Agent Self-View**: Agents viewing their own bid see all 6 sections (Agent Overview & Qualifications, Broker Compensation & Agency Agreement Terms, Additional Details, Offered Services, Agent Presentation & Marketing Materials, Agent Credentials & Contact Information).
 - **Timer-Based Action Locking**: Accept/Counter/Reject buttons are locked until the bidding period timer ends for "Bidding Period" listings.
+- **Livewire Str::studly() Crash Fix**: All `updated($propertyName)` methods include an empty guard (`if (empty($propertyName)) { return; }`) to prevent crashes when Livewire passes blank property names. Applied to: TenantAgentAuction.php, TenantAgentAuctionEdit.php, TenantAgentAuctionBid.php, BuyerAgentAuctionBid.php, LandlordAgentAuctionBid.php.
 
 ### System Design Choices
 - **Modularity**: Laravel's modular structure with Livewire components for UI interactions.

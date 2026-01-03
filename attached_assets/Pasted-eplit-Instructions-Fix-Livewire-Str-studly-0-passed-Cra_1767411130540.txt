@@ -1,0 +1,96 @@
+eplit Instructions — Fix Livewire “Str::studly() 0 passed” Crash (Tenant Bid / Edit Bid) (WITH SAFEGUARDS)
+Scope (STRICT)
+
+✅ Tenant → Hire a Tenant’s Agent → Agent Bid pages (especially Edit Bid)
+❌ Do not change vendor files
+❌ Do not change database
+❌ Do not refactor other flows
+
+SAFEGUARDS
+
+DO NOT:
+
+edit /vendor/livewire/** or any vendor code
+
+change bid permissions/logic
+
+rename routes or components
+
+ONLY DO:
+
+find where a Livewire component/event name is being passed as blank
+
+add a safe default OR block the call if the name is blank
+
+Step 1 — Find the exact callsite (your code, not vendor)
+
+Use the stack trace and search your project for these patterns:
+
+@livewire(
+
+dynamic-component
+
+Livewire::mount
+
+emitTo(
+
+dispatch( / dispatchBrowserEvent(
+
+Str::studly( (in your app code, if used)
+
+Also check the Tenant bid route shown in the screenshot:
+/tenant/agent/auction/bid/9
+
+Locate the view/controller/component used for that page.
+
+Step 2 — Identify the blank variable
+
+Find the variable being used as the component name or target name, for example:
+
+$componentName
+
+$component
+
+$tabComponent
+
+$viewName
+
+$selectedTab
+
+$auction_type
+
+$type
+
+Confirm whether it becomes empty specifically in Edit Bid mode.
+
+✅ Add temporary logging to confirm:
+
+log the variable value right before it’s used
+
+Step 3 — Fix: never pass blank to Livewire
+
+If it’s a dynamic component name:
+
+add a default fallback component when blank, e.g. “tenant-agent-bid-view” (whatever is appropriate)
+
+OR stop rendering/mounting that component when value is blank and show a safe message instead
+
+Examples of safe rules (conceptual):
+
+If $componentName is empty → set it to a known default
+
+If $componentName is empty → do not call @livewire() and render nothing (but don’t crash)
+
+Important: This fix must be minimal and local to Tenant bid views.
+
+Step 4 — Retest Edit Bid
+
+After the crash is fixed:
+
+Open Edit Bid again
+
+Confirm no Livewire crash page
+
+Then re-test the “Error saving bid: invalid” issue
+
+Often the validation error is secondary — once the Livewire crash is removed, your real validation messages will appear clearly.

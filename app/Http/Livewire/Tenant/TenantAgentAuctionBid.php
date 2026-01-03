@@ -298,6 +298,11 @@ class TenantAgentAuctionBid extends Component
 
     public function updated($name, $value): void
     {
+        // Guard against empty property name to prevent Str::studly() crash
+        if (empty($name)) {
+            return;
+        }
+        
         // If a type is changed away from 'Other', clear its 'other' text.
         if (str_ends_with($name, '.type')) {
             [$root, $idx] = explode('.', str_replace('promoMaterials.', '', $name), 2);
