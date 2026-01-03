@@ -343,6 +343,16 @@ class TenantAgentAuctionBid extends Component
         }
     }
 
+    public function removeExistingFile(int $materialIndex, int $fileIndex): void
+    {
+        if (isset($this->promoMaterials[$materialIndex]['files'][$fileIndex])) {
+            // Remove the file from the array
+            array_splice($this->promoMaterials[$materialIndex]['files'], $fileIndex, 1);
+            // Re-index the array
+            $this->promoMaterials[$materialIndex]['files'] = array_values($this->promoMaterials[$materialIndex]['files']);
+        }
+    }
+
     public function clearFileError(int $index): void
     {
         $this->resetErrorBag("promoMaterials.{$index}.files");

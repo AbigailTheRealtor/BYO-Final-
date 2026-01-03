@@ -220,7 +220,56 @@
                 @php
                     $typeLabel = $promoMaterials[$idx]['type'] ?? '';
                     $uploadLabel = $typeLabel === 'Other' ? 'Marketing Material Type (Upload)' : $typeLabel . ' Upload';
+                    // Get existing files (strings) from this material entry
+                    $existingFiles = array_filter($promoMaterials[$idx]['files'] ?? [], 'is_string');
                 @endphp
+
+                {{-- Display Existing Uploaded Files --}}
+                @if (!empty($existingFiles))
+                    <div class="form-group mb-3">
+                        <label class="fw-bold text-success">
+                            <i class="fas fa-check-circle me-1"></i> Uploaded Files:
+                        </label>
+                        <div class="mt-2">
+                            @foreach ($promoMaterials[$idx]['files'] as $fileIdx => $file)
+                                @if (is_string($file) && !empty($file))
+                                    @php
+                                        $fileName = basename($file);
+                                        $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                                        $isImage = in_array($fileExt, ['jpg', 'jpeg', 'png', 'webp', 'gif']);
+                                    @endphp
+                                    <div class="d-flex align-items-center justify-content-between border rounded p-2 mb-2 bg-light">
+                                        <div class="d-flex align-items-center">
+                                            @if ($isImage)
+                                                <img src="{{ asset('storage/' . $file) }}" 
+                                                    alt="{{ $fileName }}" 
+                                                    class="me-2" 
+                                                    style="max-width: 50px; max-height: 50px; object-fit: cover; border-radius: 4px;">
+                                            @else
+                                                <i class="fas fa-file-{{ $fileExt === 'pdf' ? 'pdf text-danger' : 'alt text-secondary' }} fa-2x me-2"></i>
+                                            @endif
+                                            <div>
+                                                <span class="text-truncate d-block" style="max-width: 200px;" title="{{ $fileName }}">
+                                                    {{ Str::limit($fileName, 25) }}
+                                                </span>
+                                                <a href="{{ asset('storage/' . $file) }}" target="_blank" class="small text-primary">
+                                                    <i class="fas fa-external-link-alt"></i> View
+                                                </a>
+                                            </div>
+                                        </div>
+                                        <button type="button" 
+                                            class="btn btn-outline-danger btn-sm" 
+                                            wire:click="removeExistingFile({{ $idx }}, {{ $fileIdx }})"
+                                            wire:loading.attr="disabled"
+                                            title="Remove this file">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                @endif
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
 
                 <div class="form-group">
                     <label class="fw-bold">{{ $uploadLabel }}:</label>
