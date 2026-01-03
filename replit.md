@@ -107,3 +107,27 @@ This includes:
 - **Files Fixed**: TenantAgentAuction.php, TenantAgentAuctionEdit.php
 - **Additional Fix**: Added `wire:key` to broker_fee_timing select elements (Residential and Commercial) to help Livewire track them during DOM diffing
 - **Pattern**: Always check `if (empty($propertyName)) { return; }` before calling `validateOnly()`
+
+### Traditional vs Bidding Period Listing Behavior (January 2026)
+- **Listing Type Detection**: Uses `$auction->get->auction_type` to determine listing type
+  - `$isTraditionalListing`: True when auction_type is "traditional" or empty (default behavior)
+  - `$isBiddingPeriodListing`: True when auction_type is "bidding period"
+- **Timer Display Rules**:
+  - Traditional: Timer is hidden completely
+  - Bidding Period: Timer displays countdown, shows "Bidding Ended" when expired
+- **Accept/Counter/Reject Button Gating**:
+  - Traditional: Actions always available immediately (no timer restriction)
+  - Bidding Period: Actions locked with "Actions unlock when bidding period ends" message until timer expires
+  - After timer ends: Actions become available
+- **Agent Bid Visibility Rules**:
+  - Traditional: Agents can ONLY see their own bids; other agents' bids are completely hidden
+  - Bidding Period: Agents can see anonymous summaries of all bids (Agent 1, Agent 2, etc.)
+  - Listing Owner: Always sees all bids regardless of listing type
+- **Bid Summary Privacy**:
+  - Traditional: "Agent N was the last bidder" message hidden from agents (shows "Bid information is private")
+  - Bidding Period: Summary visible to all agents
+- **View Full Terms Link**:
+  - Listing Owner or Bid Owner: Full access to modal with all details
+  - Other agents on Bidding Period: Shows "Full terms visible only to bid creator"
+- **Key Variables**: `$isTraditionalListing`, `$isBiddingPeriodListing`, `$isBiddingTimerActive`, `$canTakeAction`, `$canSeeBidSummary`
+- **Files Modified**: resources/views/hire_tenant_agent/view.blade.php
