@@ -2847,14 +2847,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                         aria-labelledby="limitedBidModalLabel{{ data_get($bid, 'id') }}"
                                         aria-hidden="true">
                                         <div class="modal-dialog modal-lg">
-                                            <div class="modal-content" style="border-radius: 10px; border: none;">
-                                                <div class="modal-header text-white" style="background: #049399; border-bottom: none; padding: 15px 20px; position: relative;">
+                                            <div class="modal-content" style="border-radius: 10px; border: none; position: relative; overflow: visible;">
+                                                <button type="button" data-bs-dismiss="modal" aria-label="Close" style="position: absolute; right: -12px; top: -12px; z-index: 1055; background: #333; border: 2px solid #fff; color: #fff; font-size: 1rem; line-height: 1; font-weight: bold; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+                                                    &times;
+                                                </button>
+                                                <div class="modal-header text-white" style="background: #049399; border-bottom: none; padding: 15px 20px; border-radius: 10px 10px 0 0;">
                                                     <h5 class="modal-title" id="limitedBidModalLabel{{ data_get($bid, 'id') }}" style="font-weight: 600;">
                                                         <i class="fa fa-handshake me-2"></i> Services & Broker Compensation Terms
                                                     </h5>
-                                                    <button type="button" class="btn p-0" data-bs-dismiss="modal" aria-label="Close" style="position: absolute; right: 0; top: 0; background: transparent; border: none; color: #fff; font-size: 1.5rem; line-height: 1; font-weight: 300; padding: 5px 10px;">
-                                                        &times;
-                                                    </button>
                                                 </div>
                                                 <div class="modal-body" style="background: #fafafa; padding: 25px;">
 
