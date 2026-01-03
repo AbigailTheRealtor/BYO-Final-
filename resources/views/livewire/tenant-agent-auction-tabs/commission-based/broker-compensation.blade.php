@@ -178,7 +178,7 @@ $safeKey = function(...$parts) {
         </label>
 
         <div class="input-cover mt-2">
-            <select wire:model="broker_fee_timing" class="form-control has-icon" data-icon="fa-solid fa-clock">
+            <select wire:model="broker_fee_timing" wire:key="broker-fee-timing-select" class="form-control has-icon" data-icon="fa-solid fa-clock">
                 <option value="">Select</option>
                 <option value="Deducted from Rent Collected">Deducted from Rent Collected</option>
                 <option value="Paid Within Calendar Days After Executed Lease">Paid Within Calendar Days After Executed Lease</option>
@@ -228,7 +228,7 @@ $safeKey = function(...$parts) {
         </label>
 
         <div class="input-cover mt-2">
-            <select wire:model="broker_fee_timing" class="form-control has-icon" data-icon="fa-solid fa-clock">
+            <select wire:model="broker_fee_timing" wire:key="broker-fee-timing-commercial-select" class="form-control has-icon" data-icon="fa-solid fa-clock">
                 <option value="">Select</option>
                 <option value="full_execution">Full amount upon execution of lease, sales contract, or other transfer agreement</option>
                 <option value="half_execution_half_commencement">50% due upon execution, 50% due upon commencement of agreement</option>

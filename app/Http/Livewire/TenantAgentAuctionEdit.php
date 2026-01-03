@@ -1074,6 +1074,9 @@ class TenantAgentAuctionEdit extends Component
     }
     public function updated($propertyName)
     {
+        if (empty($propertyName)) {
+            return;
+        }
         $this->validateOnly($propertyName);
     }
 

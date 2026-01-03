@@ -1,0 +1,267 @@
+Replit Instructions — Hire a Tenant’s Agent ONLY: Fix Flat Fee + % Gross Lease Value Crash + Remove Any Other Crash Errors
+Scope (STRICT)
+
+✅ Apply changes ONLY to Hire a Tenant’s Agent listing flow (Residential + Commercial)
+❌ Do NOT modify Buyer/Seller/Landlord flows
+❌ Do NOT refactor shared UI unless the crash source is confirmed to be in a shared component used by Tenant only
+
+1) SAFEGUARDS (MUST FOLLOW EXACTLY)
+
+DO NOT:
+
+edit anything inside /vendor/ (including vendor/livewire/...)
+
+run composer updates, framework upgrades, or dependency changes
+
+delete or rename any database columns, migrations, models, controllers, or Livewire components
+
+rename request keys, field names, or input name="" attributes
+
+“clean up” formatting, re-indent the file, or rearrange markup
+
+change tooltips, placeholder text, option labels, or UI wording
+
+remove any existing Tenant fields other than the exact crash-causing code lines
+
+ONLY DO:
+
+fix crash-causing code in Tenant flow files by correcting invalid function calls / invalid array access / null property access
+
+make minimal, targeted changes with before/after confirmation
+
+Output requirement:
+After changes, provide:
+
+the exact file paths edited
+
+the exact before/after code for each change
+
+confirmation that no non-Tenant files were touched (unless unavoidable & proven shared by Tenant)
+
+2) FIX CRASH #1 — “Flat Fee + Percentage of the Gross Lease Value” triggers studly() with 0 args
+Repro steps (confirm first)
+
+Hire a Tenant’s Agent → Residential → Tab: Broker Compensation & Agency Agreement Terms
+Select Tenant’s Broker Lease Fee → Flat Fee + Percentage of the Gross Lease Value
+Observe crash: ArgumentCountError … Str::studly() … 0 passed
+
+Root cause
+
+Some Tenant tab/component calls:
+
+studly() with empty parentheses OR
+
+Str::studly() with empty parentheses
+
+Step 2A — Find the invalid call(s)
+
+In Replit Global Search, search EXACTLY for:
+
+studly()
+
+Str::studly()
+
+✅ We are ONLY targeting occurrences where the parentheses are empty.
+
+Step 2B — Fix rule (minimal and safe)
+
+For each occurrence found in Tenant flow code:
+
+If it’s used in wire:key, id, for, name, or any attribute:
+
+Replace the call with a static safe string (preferred):
+
+Example:
+
+From: wire:key="{{ studly() }}"
+
+To: wire:key="tenant_lease_fee_flat_plus_glv"
+
+If it was intended to format a variable:
+
+Pass the variable with a fallback (no null crash allowed):
+
+Example:
+
+From: {{ \Illuminate\Support\Str::studly() }}
+
+To: {{ \Illuminate\Support\Str::studly($value ?? 'tenant_lease_fee_flat_plus_glv') }}
+
+Do not change anything else in the block.
+
+Step 2C — Validate the fix
+
+Repeat the exact repro steps.
+✅ No error page
+✅ Follow-up fields render properly
+✅ Can proceed and save listing
+
+3) CRASH-AUDIT — Identify and Fix Any OTHER Tenant-Only Crash Errors (NO REFACTOR)
+Purpose
+
+Some dropdown selections reveal conditional UI blocks; those blocks may contain:
+
+empty helper calls (like the studly issue)
+
+null references
+
+invalid array indexes
+
+missing variables
+
+missing component props
+
+We will perform a controlled audit ONLY within Hire a Tenant’s Agent.
+
+3A) Add Tenant-only crash discovery method (NO code changes needed)
+
+Do a manual “toggle test” across Tenant listing creation:
+
+Residential Tenant listing creation — test triggers
+
+Go tab by tab and toggle each option one time for fields that reveal conditional follow-ups (especially Tab 7).
+
+Where crashes commonly hide:
+
+Broker Compensation dropdowns
+
+Any “Other” option that reveals a text field
+
+Residential vs Commercial toggles
+
+Lease-option toggles
+
+Any conditional section wrapped in @if, @isset, @switch
+
+When a crash occurs:
+
+copy the exact error message + stack trace top line
+
+identify which selection triggered it
+
+fix only that error (see 3B rules)
+
+3B) Allowed Fix Patterns (Only these)
+
+When a crash is found, only apply the smallest valid fix:
+
+Pattern 1 — Empty helper call
+
+Fix same as studly: provide argument or replace with static string.
+
+Pattern 2 — “Trying to access array offset on value of type null”
+
+Wrap access with data_get() or null-coalescing:
+
+From: $arr['key']
+
+To: data_get($arr, 'key', null) or ($arr['key'] ?? null)
+
+Pattern 3 — “Attempt to read property on null”
+
+Use nullsafe or fallback:
+
+From: $obj->prop
+
+To: $obj?->prop or optional($obj)->prop
+
+Pattern 4 — Undefined variable in Blade
+
+Use ?? fallback:
+
+From: {{ $variable }}
+
+To: {{ $variable ?? '' }}
+
+Pattern 5 — Livewire property missing / typo
+
+If Livewire expects a public property:
+
+Add the missing property ONLY in the Tenant Livewire component class (no renames), with safe default:
+
+public $propertyName = null;
+
+🚫 Do NOT restructure the component.
+🚫 Do NOT rename any existing properties.
+
+3C) Targeted “Tenant-only global searches” to prevent repeats (safe)
+
+Run global search (Tenant scope files) for these known crash patterns and fix ONLY if they are clearly unsafe:
+
+Search for (exact):
+
+studly()
+
+camel()
+
+snake()
+
+kebab()
+
+slug()
+
+headline()
+
+Also scan for:
+
+-> usage inside conditional sections that may be null
+
+array indexing like ['something'] when the variable might be null
+
+✅ Only change code when it is clearly crashable (null/undefined).
+❌ Do not “improve” code that is already safe.
+
+4) FINAL TEST CHECKLIST — Tenant Only (Required)
+Residential
+
+Create listing successfully
+
+Tab 7: toggle every compensation option:
+
+Flat Fee
+
+% of Monthly Rent
+
+% of Gross Lease Value
+
+Flat Fee + % of Gross Lease Value ✅ (must no longer crash)
+
+Other
+
+Confirm no Livewire error pages
+
+Commercial (if same tab exists)
+
+Repeat same toggle test for commercial compensation options
+
+Confirm no crashes
+
+Regression
+
+Confirm no missing fields
+
+Confirm no formatting changes
+
+Confirm no other flows touched
+
+5) REQUIRED DELIVERY BACK
+
+After fixes, provide:
+
+List of crash errors found (message + what triggered it)
+
+File paths edited
+
+Before/after snippets for each change
+
+Confirmation:
+
+“No vendor edits”
+
+“No database/migrations/models changed”
+
+“Only Tenant flow was modified”
+
+Optional (but very useful): Add one safe guardrail for future
+
+If any helper formatting is used for IDs/keys, standardize to static strings (not dynamic helper calls) ONLY in Tenant tab conditional sections. This prevents future “selection reveals block → crash” errors.

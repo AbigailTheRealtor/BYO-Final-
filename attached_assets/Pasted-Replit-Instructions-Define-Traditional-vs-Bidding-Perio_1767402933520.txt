@@ -1,0 +1,242 @@
+Replit Instructions — Define Traditional vs Bidding Period Listing Functionality (Hire a Tenant’s Agent)
+Applies to:
+
+Hire a Tenant’s Agent → Listing Display + Agent Bid Display + Listing Creator Actions
+(Residential + Commercial)
+
+0) SAFEGUARDS (MUST FOLLOW)
+
+DO NOT:
+
+delete/rename any database columns, migrations, models, routes, or controllers
+
+rename any field keys, request names, or Livewire properties
+
+change tooltips, placeholder text, or existing form layout
+
+modify Buyer/Seller/Landlord flows in this task
+
+refactor shared components unless the changes are isolated and confirmed to be tenant-only
+
+ONLY DO:
+
+implement/adjust UI behavior and conditional rendering for:
+
+timer display
+
+bid visibility rules
+
+action button availability (Accept/Counter/Reject)
+
+agent-accessible “View Full Services & Broker Compensation Terms” behavior
+
+1) DEFINITIONS — Listing Type Rules
+A) Traditional Listing
+Expected behavior:
+
+No timer is shown anywhere on the listing.
+
+Agent bids are private to other agents:
+
+Agents cannot see other agents’ services or compensation summaries.
+
+Agents can only view their own bid details.
+
+Only the listing creator can see full bid details for every agent:
+
+Full bid details display under Private Compensation and Agency Agreement Terms (or your existing private terms section).
+
+Listing creator can take action anytime:
+
+Accept / Counter / Reject buttons are available immediately after bids are received (no time restriction).
+
+B) Bidding Period Listing (Timer Active)
+Expected behavior:
+
+The listing must show a countdown timer using the user’s input:
+
+“Bidding Period” duration = the number of days entered at creation (and should show on listing).
+
+Listing display should show remaining time in Days / Hours / Minutes / Seconds (like your screenshot).
+
+The listing creator CANNOT accept/counter/reject until the timer ends:
+
+Accept / Counter / Reject buttons must be disabled or hidden until the timer reaches 0.
+
+When timer ends, Accept/Counter/Reject becomes active.
+
+Agents CAN see other agents’ bid summaries (anonymous, no identity):
+
+Agents can see:
+
+Offered Services: X Services
+
+Broker Compensation Summary
+
+Tenant’s Broker Commission Structure
+
+Tenant’s Broker Commission Fee
+
+Agents can click:
+
+“View Full Services & Broker Compensation Terms”
+
+This shows the full list of services and the full Broker Compensation & Agency Agreement Terms that other agents entered
+
+Still anonymous (Agent 1, Agent 2, etc. — no name/brokerage/contact)
+
+The listing creator can always see full bid details (same as Traditional), but cannot act until timer ends.
+
+2) IMPLEMENTATION REQUIREMENTS (WHAT TO BUILD / ADJUST)
+2.1 Timer display logic (Listing View)
+For Tenant listings ONLY:
+
+If listing_type (or your field name) = Traditional:
+
+Do not render the timer UI block at all.
+
+If listing_type = Bidding Period:
+
+Render timer UI block.
+
+The duration must come from the user’s input field: bidding_period_days (or your existing key).
+
+Countdown must be based on:
+
+listing_created_at + bidding_period_days
+
+Display remaining time in four blocks:
+
+Days / Hrs / Mins / Secs (match current UI)
+
+✅ Do not hardcode 4 days; use the listing’s saved value.
+
+2.2 Listing creator action gating (Accept/Counter/Reject)
+In the “Actual Bids Display” where the listing creator sees bids:
+
+If Traditional:
+
+Accept / Counter / Reject buttons are always enabled.
+
+If Bidding Period:
+
+Accept / Counter / Reject buttons must be disabled/hidden until the timer ends.
+
+“Timer ended” condition:
+
+now() >= listing_created_at + bidding_period_days
+
+UI behavior (pick one—keep existing style)
+
+Either:
+
+Hide the buttons completely until timer ends, OR
+
+Show them disabled with tooltip text:
+
+“Actions unlock when the bidding period ends.”
+
+✅ Whichever is easier, but MUST prevent action until end.
+
+2.3 Agent visibility rules (Traditional vs Bidding Period)
+Traditional — Agent view
+
+Agents must NOT see other agents’ bid terms.
+
+Hide:
+
+Offered Services summary for other agents
+
+Broker Compensation Summary for other agents
+
+“View Full Services & Broker Compensation Terms” for other agents
+
+Agents can only view:
+
+their own submitted bid details
+
+Bidding Period — Agent view
+
+Agents CAN see other agents’ bids anonymously:
+Show the following for each competing bid:
+
+Offered Services: X Services
+
+Broker Compensation Summary
+
+Tenant’s Broker Commission Structure
+
+Tenant’s Broker Commission Fee
+
+Button/link: “View Full Services & Broker Compensation Terms”
+
+When clicked:
+
+Show full list of services + full Broker Compensation & Agency Agreement Terms for that bid
+
+Keep anonymous labels:
+
+“Agent 1”, “Agent 2” etc.
+
+Do not show identifying info.
+
+✅ Ensure anonymity remains intact.
+
+2.4 Listing creator private view (both listing types)
+
+The listing creator should ALWAYS be able to see the full bid details:
+
+Full services checklist
+
+Full broker compensation & agency agreement terms
+
+Under the existing section:
+
+Private Compensation and Agency Agreement Terms (keep your existing UI)
+
+✅ Do not change the private terms formatting—only ensure it is visible to the listing creator.
+
+3) ACCEPTANCE TESTS (MUST COMPLETE)
+Traditional Tenant Listing
+
+Create listing as Traditional
+
+Confirm: no timer appears
+
+Place bids from 2+ agent accounts
+
+Confirm (Agent view): agents cannot see other agents’ summaries or “view full terms”
+
+Confirm (Listing creator view): full private bid details visible
+
+Confirm: listing creator can Accept/Counter/Reject immediately
+
+Bidding Period Tenant Listing
+
+Create listing with Bidding Period = 4 days (or any number)
+
+Confirm: countdown appears and matches duration
+
+Place bids from 2+ agent accounts
+
+Confirm (Agent view): agents can see other agents’ summary + “View Full Services & Broker Compensation Terms”
+
+Confirm: clicking view full shows full services + comp terms anonymously
+
+Confirm (Listing creator view): Accept/Counter/Reject NOT available until timer ends
+
+Simulate end time (temporarily set listing created_at in DB or shorten timer in dev) and confirm buttons unlock
+
+4) IMPORTANT NOTE (SO REPLIT DOESN’T MISINTERPRET)
+
+This task is NOT about changing bid data structure. It is only about:
+
+who can see what
+
+when actions are allowed
+
+timer rendering
+
+unlock logic
+
+No schema changes.

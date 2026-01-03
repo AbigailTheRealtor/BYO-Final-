@@ -99,3 +99,11 @@ This includes:
 - **Storage Link**: Ensured `php artisan storage:link` is run to connect public/storage to storage/app/public
 - **Validation Rules Already Correct**: Components have proper validation for `promoMaterials.*.files` (array) and `promoMaterials.*.files.*` (file with mimes/max)
 - **Blade Error Display Already Correct**: Both `@error('promoMaterials.$idx.files')` and `@error('promoMaterials.$idx.files.*')` present
+
+### Livewire Studly() Crash Fix (January 2026)
+- **Root Cause**: Livewire DOM morphing briefly removes select elements during re-render, creating empty binding entries in update payloads with NULL property names
+- **Error**: `Too few arguments to function Str::studly()` when selecting broker_fee_timing options
+- **Fix Applied**: Added defensive guards in `updated($propertyName)` methods to return early if property name is empty
+- **Files Fixed**: TenantAgentAuction.php, TenantAgentAuctionEdit.php
+- **Additional Fix**: Added `wire:key` to broker_fee_timing select elements (Residential and Commercial) to help Livewire track them during DOM diffing
+- **Pattern**: Always check `if (empty($propertyName)) { return; }` before calling `validateOnly()`
