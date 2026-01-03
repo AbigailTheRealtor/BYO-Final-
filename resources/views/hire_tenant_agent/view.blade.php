@@ -2866,10 +2866,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                 </div>
                                                 <div class="modal-body" style="background: #fafafa; padding: 25px;">
 
-                                                    {{-- Anonymous Notice --}}
+                                                    {{-- Anonymous Notice (Bidding Period Only) --}}
                                                     <div class="alert mb-4" style="background: #e8f4f5; color: #049399; border: none; border-radius: 6px;">
                                                         <i class="fa fa-user-secret me-2"></i>
-                                                        <strong>Anonymous Bid:</strong> Agent identity is hidden during the bidding period.
+                                                        <strong>Anonymous Bid (Bidding Period Listings Only):</strong> Agent identity is not displayed to other agents.
                                                     </div>
 
                                                     {{-- Section 1: Broker Compensation & Agency Agreement Terms --}}

@@ -1,0 +1,103 @@
+Replit Instructions — Tenant Bids Modal: Fix Close Button + Add Bidding Period Anonymity Note (WITH SAFEGUARDS)
+Applies to (STRICT)
+
+Hire a Tenant’s Agent ONLY
+
+Residential + Commercial
+
+Agent view of other agents’ bids
+
+The modal/header titled “Services & Broker Compensation Terms”
+
+❌ Do NOT change anything for Traditional listings (Traditional is correct and out of scope)
+❌ Do NOT change listing creator views
+❌ Do NOT change bid visibility logic, saving, validation, or database
+
+0) SAFEGUARDS (MUST FOLLOW EXACTLY)
+DO NOT:
+
+Edit anything in /vendor/
+
+Change database schema, migrations, models, controllers, routes
+
+Rename any Livewire component names, events, IDs, field keys, or input names
+
+Change who can see bids / when / anonymity logic
+
+Change Traditional listing behavior in any way
+
+Refactor shared components used by Buyer/Seller/Landlord flows
+
+ONLY ALLOWED CHANGES:
+
+Replace the confusing blank blue close area with a standard “X” close button (UI-only)
+
+Add/replace the anonymity notice text ONLY for Bidding Period listing type (conditional display only)
+
+1) FIX THE CLOSE BUTTON UI (REQUIRED)
+Problem
+
+In the modal header, there is a blank blue rectangular area on the top-right that closes the modal, but it has no icon/text and looks broken.
+
+Required Change
+
+Remove the blank blue rectangular close area entirely
+
+Add a standard “X” close button in the top-right corner of the modal header
+
+Requirements
+
+The X must be clearly visible (use an “X” icon or “×” character)
+
+Clicking X must call the existing modal close handler (reuse the same close function/event currently used by the blank area)
+
+Do NOT change modal open/close logic—only replace the UI control
+
+2) ADD/UPDATE ANONYMITY NOTICE (BIDDING PERIOD ONLY)
+IMPORTANT
+
+This notice must appear ONLY when listing type is Bidding Period.
+Do NOT show this notice on Traditional listings.
+
+Display this exact text (copy exactly):
+
+“Anonymous Bid (Bidding Period Listings Only): Agent identity is not displayed to other agents.”
+
+Rules
+
+Do not mention “during the bidding period”
+
+Do not add any additional lines
+
+Do not reference listing creators
+
+Text-only change; do not change permissions/logic
+
+3) ACCEPTANCE TESTS (MUST PASS)
+Test A — Close Button
+
+Open the “Services & Broker Compensation Terms” modal
+✅ Blank blue close area is gone
+✅ A clear “X” is visible top-right
+✅ Clicking X closes the modal
+
+Test B — Notice Behavior
+
+Open modal on a Bidding Period listing
+✅ Notice displays with the exact text above
+
+Open modal on a Traditional listing
+✅ Notice does NOT display
+✅ Traditional behavior is unchanged
+
+4) REQUIRED REPORT BACK
+
+After implementing, reply with:
+
+File paths edited
+
+Confirmation Traditional listings were not touched
+
+Confirmation no schema changes and no vendor edits
+
+Screenshot showing the new X button + the notice on a Bidding Period listing
