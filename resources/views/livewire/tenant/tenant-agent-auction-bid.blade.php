@@ -199,6 +199,30 @@
                         {{ session('error') }}
                     </div>
                 @endif
+                
+                {{-- DEBUG: Display detailed validation errors --}}
+                @if (session()->has('validation_errors'))
+                    <div class="alert alert-warning">
+                        <strong>Validation Errors (Debug):</strong>
+                        <ul class="mb-0 mt-2">
+                            @foreach (session('validation_errors') as $field => $messages)
+                                <li><strong>{{ $field }}:</strong> {{ implode(', ', $messages) }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+                
+                {{-- Display Livewire validation errors --}}
+                @if ($errors->any())
+                    <div class="alert alert-danger">
+                        <strong>Please fix the following errors:</strong>
+                        <ul class="mb-0 mt-2">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
                 <form wire:submit.prevent="submit">
                     <!-- Tab Navigation -->
                     @if ($service_type === 'full_service')

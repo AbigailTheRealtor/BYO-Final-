@@ -1,0 +1,166 @@
+Replit Instructions — FIX Edit Bid “The given data was invalid” (Tenant Hire-Agent Bids, Residential + Commercial) (WITH SAFEGUARDS)
+Applies to:
+
+Hire a Tenant’s Agent → Edit Bid (Residential + Commercial)
+
+0) SAFEGUARDS (MUST FOLLOW EXACTLY)
+DO NOT:
+
+edit /vendor/
+
+change database schema, migrations, models, or column names
+
+remove required rules globally
+
+rename form field keys, input name="", or Livewire property names
+
+change any bid permissions, visibility rules, timer logic, or accept/counter/reject logic
+
+modify Buyer/Seller/Landlord flows
+
+ONLY ALLOWED:
+
+add temporary debug output/logging for validation errors
+
+fix Edit Bid form state hydration (prefill)
+
+fix Edit Bid update path to validate and save correctly
+
+1) STEP 1 (MANDATORY): SHOW THE REAL VALIDATION ERRORS
+
+Right now the UI only shows a generic message. We must surface the specific failing fields.
+
+Required implementation (Tenant Edit Bid only)
+
+In the Edit Bid save/update method (ex: updateBid() / saveEditedBid()):
+
+A) Log the exact validation errors
+
+Log the validation errors array to Laravel logs
+
+Include bid id and listing id in the log entry
+
+B) Display field-level errors in the UI (temporary)
+
+Under the red banner, render the validation error list:
+
+show each field and its error message
+
+✅ This is temporary for debugging, but required to diagnose.
+
+2) STEP 2: VERIFY Edit Bid is using the correct record + not blank state
+Requirement
+
+Edit Bid must load an existing bid by ID and update that same bid.
+
+Fix:
+
+When Edit Bid opens, store:
+
+editingBidId = $bid->id
+
+On save, query using that ID:
+
+$bid = Bid::findOrFail($this->editingBidId)
+
+Do NOT call the “create bid” path during edit.
+
+✅ Confirm Edit Bid is not accidentally calling create() or clearing state.
+
+3) STEP 3: Hydrate ALL required fields on Edit load (no empty required inputs)
+
+When entering Edit Bid mode, load every required field from the existing bid into Livewire state.
+
+Must include (at minimum)
+
+first_name
+
+last_name
+
+phone_number
+
+email
+
+brokerage
+
+real_estate_license_number
+
+any required compensation fields used on Tenant bids
+
+✅ Use bid snapshot as source of truth:
+
+form[field] = bid[field]
+
+If your code currently loads from agent profile, change it to:
+
+bid value first, then optional fallback: bid[field] ?? agentProfile[field]
+
+🚫 Do not clear fields on edit open.
+
+4) STEP 4: Fix validation mismatch between Create vs Edit
+
+Common cause: edit form doesn’t send some fields that the create validator expects.
+
+Requirement
+
+Edit validation rules must match what the edit form actually contains OR ensure all required fields exist in state via hydration.
+
+Do NOT remove requirements, but do ensure:
+
+required fields are present and populated before validate() runs
+
+5) STEP 5: Normalize common failing formats (ONLY if errors indicate it)
+
+After Step 1, if the errors show:
+
+Phone number fails regex
+
+If you see phone failing because of formatting like (343) 434-3434:
+
+normalize phone before validate/save:
+
+strip ( ) - spaces
+
+validate normalized phone
+
+store normalized phone (or store both if you already do)
+
+Numeric/percentage fields fail
+
+If you see failures like “must be numeric”:
+
+ensure inputs are not storing $ or % in the bound value
+
+normalize before validate/save
+
+✅ Do this ONLY for fields confirmed by Step 1 logs.
+
+6) REQUIRED ACCEPTANCE TESTS
+Test A (no-change save)
+
+Open Edit Bid
+
+Click Save without changing anything
+✅ must save successfully
+
+Test B (change one field)
+
+Change brokerage or phone and save
+✅ saves and persists
+
+Test C (Residential + Commercial)
+
+Repeat Test A + B on BOTH listing types
+✅ must work for both
+
+7) REQUIRED REPORT BACK (so we can lock it in)
+
+After running Step 1, report:
+
+the validation errors output (field names + messages)
+
+the exact file path + method name used for update
+
+which fix was applied (hydration, record id, normalization)
+
+Why I’m forcing Step 1
