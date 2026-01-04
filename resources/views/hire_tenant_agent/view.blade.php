@@ -3414,6 +3414,27 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     @php 
                                                     $allMeta = $counterBid->getAllMeta();
                                                     
+                                                    // === COMPARISON HELPER: Check if counter value differs from original ===
+                                                    // Access original bid data via the 'get' accessor (object from meta table)
+                                                    $isChanged = function($counterVal, $origKey) use ($bid) {
+                                                        $origVal = data_get($bid, 'get.' . $origKey, null);
+                                                        // Normalize both values for comparison
+                                                        $normalizeVal = function($v) {
+                                                            if (is_null($v) || $v === '') return '';
+                                                            if (is_array($v) || is_object($v)) {
+                                                                return json_encode($v);
+                                                            }
+                                                            $v = trim((string) $v);
+                                                            // Strip currency symbols and whitespace for numeric comparison
+                                                            return preg_replace('/[\s$,%]/', '', strtolower($v));
+                                                        };
+                                                        return $normalizeVal($counterVal) !== $normalizeVal($origVal);
+                                                    };
+                                                    
+                                                    // CSS classes for changed fields
+                                                    $changedStyle = 'background-color: #fff3cd; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #ffc107;';
+                                                    $changedBadge = '<span class="badge bg-warning text-dark ms-2" style="font-size: 0.7rem; vertical-align: middle;">Changed</span>';
+                                                    
                                                     // Helper functions for counter bid display formatting
                                                     $counterFmtMoney = function($val) {
                                                         if (empty($val)) return '';
@@ -3531,16 +3552,20 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Tenant's Broker Compensation</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 @if (!empty($allMeta['commission_structure']))
-                                                                <li class="mb-1"><span class="fw-semibold">Tenant's Broker Commission Structure:</span> {{ $allMeta['commission_structure'] }}</li>
+                                                                @php $structChanged = $isChanged($allMeta['commission_structure'], 'commission_structure'); @endphp
+                                                                <li class="mb-1" @if($structChanged) style="{{ $changedStyle }}" @endif><span class="fw-semibold">Tenant's Broker Commission Structure:</span> {{ $allMeta['commission_structure'] }}@if($structChanged){!! $changedBadge !!}@endif</li>
                                                                 @endif
                                                                 @if (!empty($allMeta['lease_fee_type']))
-                                                                <li class="mb-1"><span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $counterCommissionFeeDisplay }}</li>
+                                                                @php $feeChanged = $isChanged($allMeta['lease_fee_type'], 'lease_fee_type'); @endphp
+                                                                <li class="mb-1" @if($feeChanged) style="{{ $changedStyle }}" @endif><span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $counterCommissionFeeDisplay }}@if($feeChanged){!! $changedBadge !!}@endif</li>
                                                                 @endif
                                                                 @if (!empty($allMeta['payment_timing']))
-                                                                <li class="mb-1"><span class="fw-semibold">Payment Timing for Broker Fees:</span> {{ $allMeta['payment_timing'] }}</li>
+                                                                @php $timingChanged = $isChanged($allMeta['payment_timing'], 'payment_timing'); @endphp
+                                                                <li class="mb-1" @if($timingChanged) style="{{ $changedStyle }}" @endif><span class="fw-semibold">Payment Timing for Broker Fees:</span> {{ $allMeta['payment_timing'] }}@if($timingChanged){!! $changedBadge !!}@endif</li>
                                                                 @endif
                                                                 @if (!empty($allMeta['days_to_pay']))
-                                                                <li class="mb-1"><span class="fw-semibold">Calendar Days To Pay:</span> {{ $allMeta['days_to_pay'] }}</li>
+                                                                @php $daysChanged = $isChanged($allMeta['days_to_pay'], 'days_to_pay'); @endphp
+                                                                <li class="mb-1" @if($daysChanged) style="{{ $changedStyle }}" @endif><span class="fw-semibold">Calendar Days To Pay:</span> {{ $allMeta['days_to_pay'] }}@if($daysChanged){!! $changedBadge !!}@endif</li>
                                                                 @endif
                                                             </ul>
                                                         </div>
@@ -3551,9 +3576,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         <div class="mb-4">
                                                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">B) Purchase Fee Details</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
-                                                                <li class="mb-1"><span class="fw-semibold">Interested in Purchasing a Property:</span> {{ $allMeta['interested_purchase_fee_type'] }}</li>
+                                                                @php $purchaseIntChanged = $isChanged($allMeta['interested_purchase_fee_type'], 'interested_purchase_fee_type'); @endphp
+                                                                <li class="mb-1" @if($purchaseIntChanged) style="{{ $changedStyle }}" @endif><span class="fw-semibold">Interested in Purchasing a Property:</span> {{ $allMeta['interested_purchase_fee_type'] }}@if($purchaseIntChanged){!! $changedBadge !!}@endif</li>
                                                                 @if ($allMeta['interested_purchase_fee_type'] === 'Yes' && $counterPurchaseFeeDisplay !== '—')
-                                                                <li class="mb-1"><span class="fw-semibold">Purchase Fee:</span> {{ $counterPurchaseFeeDisplay }}</li>
+                                                                @php $purchaseFeeChanged = $isChanged($allMeta['purchase_fee_type'] ?? '', 'purchase_fee_type'); @endphp
+                                                                <li class="mb-1" @if($purchaseFeeChanged) style="{{ $changedStyle }}" @endif><span class="fw-semibold">Purchase Fee:</span> {{ $counterPurchaseFeeDisplay }}@if($purchaseFeeChanged){!! $changedBadge !!}@endif</li>
                                                                 @endif
                                                             </ul>
                                                         </div>
@@ -3564,13 +3591,16 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         <div class="mb-4">
                                                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">C) Lease-Option Details</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
-                                                                <li class="mb-1"><span class="fw-semibold">Interested in a Lease-Option Agreement:</span> {{ $allMeta['interested_lease_option_agreement'] }}</li>
+                                                                @php $leaseOptIntChanged = $isChanged($allMeta['interested_lease_option_agreement'], 'interested_lease_option_agreement'); @endphp
+                                                                <li class="mb-1" @if($leaseOptIntChanged) style="{{ $changedStyle }}" @endif><span class="fw-semibold">Interested in a Lease-Option Agreement:</span> {{ $allMeta['interested_lease_option_agreement'] }}@if($leaseOptIntChanged){!! $changedBadge !!}@endif</li>
                                                                 @if ($allMeta['interested_lease_option_agreement'] === 'Yes')
                                                                     @if ($counterLeaseOptionCreatedDisplay !== '—')
-                                                                    <li class="mb-1"><span class="fw-semibold">Compensation (When Option Is Created):</span> {{ $counterLeaseOptionCreatedDisplay }}</li>
+                                                                    @php $leaseCreatedChanged = $isChanged($allMeta['lease_value'] ?? '', 'lease_value'); @endphp
+                                                                    <li class="mb-1" @if($leaseCreatedChanged) style="{{ $changedStyle }}" @endif><span class="fw-semibold">Compensation (When Option Is Created):</span> {{ $counterLeaseOptionCreatedDisplay }}@if($leaseCreatedChanged){!! $changedBadge !!}@endif</li>
                                                                     @endif
                                                                     @if ($counterLeaseOptionExercisedDisplay !== '—')
-                                                                    <li class="mb-1"><span class="fw-semibold">Compensation (If Purchase Option Exercised):</span> {{ $counterLeaseOptionExercisedDisplay }}</li>
+                                                                    @php $leaseExercisedChanged = $isChanged($allMeta['purchase_value'] ?? '', 'purchase_value'); @endphp
+                                                                    <li class="mb-1" @if($leaseExercisedChanged) style="{{ $changedStyle }}" @endif><span class="fw-semibold">Compensation (If Purchase Option Exercised):</span> {{ $counterLeaseOptionExercisedDisplay }}@if($leaseExercisedChanged){!! $changedBadge !!}@endif</li>
                                                                     @endif
                                                                 @endif
                                                             </ul>
@@ -3583,27 +3613,34 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">D) Legal Terms</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 @if (!empty($allMeta['protection_period']))
-                                                                <li class="mb-1"><span class="fw-semibold">Protection Period Timeframe:</span> {{ $allMeta['protection_period'] }} days</li>
+                                                                @php $protectionChanged = $isChanged($allMeta['protection_period'], 'protection_period'); @endphp
+                                                                <li class="mb-1" @if($protectionChanged) style="{{ $changedStyle }}" @endif><span class="fw-semibold">Protection Period Timeframe:</span> {{ $allMeta['protection_period'] }} days@if($protectionChanged){!! $changedBadge !!}@endif</li>
                                                                 @endif
                                                                 @if (!empty($allMeta['early_termination_fee_option']))
-                                                                <li class="mb-1"><span class="fw-semibold">Early Termination Fee:</span> {{ $allMeta['early_termination_fee_option'] }}</li>
+                                                                @php $termOptChanged = $isChanged($allMeta['early_termination_fee_option'], 'early_termination_fee_option'); @endphp
+                                                                <li class="mb-1" @if($termOptChanged) style="{{ $changedStyle }}" @endif><span class="fw-semibold">Early Termination Fee:</span> {{ $allMeta['early_termination_fee_option'] }}@if($termOptChanged){!! $changedBadge !!}@endif</li>
                                                                     @if ($counterTerminationFeeDisplay !== '—')
-                                                                    <li class="mb-1"><span class="fw-semibold">Termination Fee Amount:</span> {{ $counterTerminationFeeDisplay }}</li>
+                                                                    @php $termAmtChanged = $isChanged($allMeta['early_termination_fee_amount'] ?? '', 'early_termination_fee_amount'); @endphp
+                                                                    <li class="mb-1" @if($termAmtChanged) style="{{ $changedStyle }}" @endif><span class="fw-semibold">Termination Fee Amount:</span> {{ $counterTerminationFeeDisplay }}@if($termAmtChanged){!! $changedBadge !!}@endif</li>
                                                                     @endif
                                                                 @endif
                                                                 @if (!empty($allMeta['retainer_fee_option']))
-                                                                <li class="mb-1"><span class="fw-semibold">Retainer Fee:</span> {{ $allMeta['retainer_fee_option'] }}</li>
+                                                                @php $retainerOptChanged = $isChanged($allMeta['retainer_fee_option'], 'retainer_fee_option'); @endphp
+                                                                <li class="mb-1" @if($retainerOptChanged) style="{{ $changedStyle }}" @endif><span class="fw-semibold">Retainer Fee:</span> {{ $allMeta['retainer_fee_option'] }}@if($retainerOptChanged){!! $changedBadge !!}@endif</li>
                                                                     @if ($allMeta['retainer_fee_option'] === 'Yes')
                                                                         @if (!empty($allMeta['retainer_fee_amount']))
-                                                                        <li class="mb-1"><span class="fw-semibold">Retainer Fee Amount:</span> {{ $counterFmtMoney($allMeta['retainer_fee_amount']) }}</li>
+                                                                        @php $retainerAmtChanged = $isChanged($allMeta['retainer_fee_amount'], 'retainer_fee_amount'); @endphp
+                                                                        <li class="mb-1" @if($retainerAmtChanged) style="{{ $changedStyle }}" @endif><span class="fw-semibold">Retainer Fee Amount:</span> {{ $counterFmtMoney($allMeta['retainer_fee_amount']) }}@if($retainerAmtChanged){!! $changedBadge !!}@endif</li>
                                                                         @endif
                                                                         @if (!empty($allMeta['retainer_fee_application']))
-                                                                        <li class="mb-1"><span class="fw-semibold">Retainer Fee Application:</span> 
+                                                                        @php $retainerAppChanged = $isChanged($allMeta['retainer_fee_application'], 'retainer_fee_application'); @endphp
+                                                                        <li class="mb-1" @if($retainerAppChanged) style="{{ $changedStyle }}" @endif><span class="fw-semibold">Retainer Fee Application:</span> 
                                                                             @if ($allMeta['retainer_fee_application'] === 'applied')
                                                                             Applied toward final compensation
                                                                             @else
                                                                             Charged in addition to final compensation
                                                                             @endif
+                                                                            @if($retainerAppChanged){!! $changedBadge !!}@endif
                                                                         </li>
                                                                         @endif
                                                                     @endif
@@ -3614,8 +3651,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                     $metaTimeframeCustom = $allMeta['agency_agreement_custom'] ?? '';
                                                                     $isMetaOther = is_string($metaTimeframe) && strtolower(trim($metaTimeframe)) === 'other';
                                                                     $metaTimeframeDisplay = $isMetaOther ? ($metaTimeframeCustom ?: 'Other') : ($metaTimeframe ?: '');
+                                                                    $timeframeChanged = $isChanged($allMeta['agency_agreement_timeframe'], 'agency_agreement_timeframe');
                                                                 @endphp
-                                                                <li class="mb-1"><span class="fw-semibold">Tenant Agency Agreement Timeframe:</span> {{ $metaTimeframeDisplay }}</li>
+                                                                <li class="mb-1" @if($timeframeChanged) style="{{ $changedStyle }}" @endif><span class="fw-semibold">Tenant Agency Agreement Timeframe:</span> {{ $metaTimeframeDisplay }}@if($timeframeChanged){!! $changedBadge !!}@endif</li>
                                                                 @endif
                                                             </ul>
                                                         </div>
@@ -3626,7 +3664,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         <div class="mb-4">
                                                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">E) Brokerage Relationship</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
-                                                                <li class="mb-1"><span class="fw-semibold">Acceptable Brokerage Relationship:</span> {{ $allMeta['brokerage_relationship'] }}</li>
+                                                                @php $brokerageChanged = $isChanged($allMeta['brokerage_relationship'], 'brokerage_relationship'); @endphp
+                                                                <li class="mb-1" @if($brokerageChanged) style="{{ $changedStyle }}" @endif><span class="fw-semibold">Acceptable Brokerage Relationship:</span> {{ $allMeta['brokerage_relationship'] }}@if($brokerageChanged){!! $changedBadge !!}@endif</li>
                                                             </ul>
                                                         </div>
                                                         @endif
@@ -3637,10 +3676,12 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">F) Additional Terms / Additional Details</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 @if (!empty($allMeta['additional_details_broker']))
-                                                                <li class="mb-1"><span class="fw-semibold">Additional Terms:</span> {{ $allMeta['additional_details_broker'] }}</li>
+                                                                @php $addTermsChanged = $isChanged($allMeta['additional_details_broker'], 'additional_details_broker'); @endphp
+                                                                <li class="mb-1" @if($addTermsChanged) style="{{ $changedStyle }}" @endif><span class="fw-semibold">Additional Terms:</span> {{ $allMeta['additional_details_broker'] }}@if($addTermsChanged){!! $changedBadge !!}@endif</li>
                                                                 @endif
                                                                 @if (!empty($allMeta['additional_details']))
-                                                                <li class="mb-1"><span class="fw-semibold">Additional Details:</span> {{ $allMeta['additional_details'] }}</li>
+                                                                @php $addDetailsChanged = $isChanged($allMeta['additional_details'], 'additional_details'); @endphp
+                                                                <li class="mb-1" @if($addDetailsChanged) style="{{ $changedStyle }}" @endif><span class="fw-semibold">Additional Details:</span> {{ $allMeta['additional_details'] }}@if($addDetailsChanged){!! $changedBadge !!}@endif</li>
                                                                 @endif
                                                             </ul>
                                                         </div>
