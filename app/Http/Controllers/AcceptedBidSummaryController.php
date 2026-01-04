@@ -68,6 +68,10 @@ class AcceptedBidSummaryController extends Controller
         $request->validate([
             'signature_name' => 'required|string|min:2|max:255',
             'timezone' => 'nullable|string|max:100',
+            'checkbox_confirmed' => 'required|accepted',
+        ], [
+            'checkbox_confirmed.required' => 'You must confirm you reviewed the Accepted Bid Summary before signing.',
+            'checkbox_confirmed.accepted' => 'You must confirm you reviewed the Accepted Bid Summary before signing.',
         ]);
 
         $summary = AcceptedBidSummary::findOrFail($id);
@@ -84,8 +88,8 @@ class AcceptedBidSummaryController extends Controller
                 ->with('info', 'You have already signed this document.');
         }
 
-        $ipAddress = $request->ip();
-        $timezone = $request->input('timezone') ?: 'UTC';
+        $ipAddress = $this->getClientIp($request);
+        $timezone = $this->sanitizeTimezone($request->input('timezone'));
         $userAgent = $request->userAgent();
 
         try {
@@ -206,5 +210,38 @@ class AcceptedBidSummaryController extends Controller
         }
 
         return redirect()->route('accepted-bid-summary.view', $summary->id);
+    }
+
+    protected function getClientIp(Request $request): ?string
+    {
+        $forwardedFor = $request->header('X-Forwarded-For');
+        if ($forwardedFor) {
+            $ips = array_map('trim', explode(',', $forwardedFor));
+            $clientIp = $ips[0] ?? null;
+            if ($clientIp && filter_var($clientIp, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                return $clientIp;
+            }
+        }
+
+        $realIp = $request->header('X-Real-IP');
+        if ($realIp && filter_var($realIp, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            return $realIp;
+        }
+
+        return $request->ip();
+    }
+
+    protected function sanitizeTimezone(?string $timezone): string
+    {
+        if (empty($timezone)) {
+            return 'Unknown';
+        }
+
+        $validTimezones = timezone_identifiers_list();
+        if (in_array($timezone, $validTimezones)) {
+            return $timezone;
+        }
+
+        return 'Unknown';
     }
 }

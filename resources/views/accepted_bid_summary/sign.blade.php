@@ -73,18 +73,22 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label">IP Address</label>
-                                    <input type="text" class="form-control" value="{{ request()->ip() }}" disabled>
+                                    <label class="form-label">IP Address (Captured at Signing)</label>
+                                    @php
+                                        $clientIp = request()->ip();
+                                        $isPrivateIp = preg_match('/^(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|127\.)/', $clientIp);
+                                    @endphp
+                                    <input type="text" class="form-control" value="{{ $isPrivateIp ? 'Will be captured at signing' : $clientIp }}" disabled>
                                 </div>
 
                                 <div class="form-check mb-4">
-                                    <input class="form-check-input" type="checkbox" id="agree_terms" required>
+                                    <input class="form-check-input" type="checkbox" id="agree_terms" name="checkbox_confirmed" value="1" required>
                                     <label class="form-check-label" for="agree_terms">
                                         <small>I confirm that I have reviewed the Accepted Bid Summary and acknowledge its contents.</small>
                                     </label>
                                 </div>
 
-                                <button type="submit" class="btn btn-primary btn-lg w-100" style="background-color: #0d6efd; border-color: #0d6efd; color: #ffffff;">
+                                <button type="submit" class="btn btn-primary btn-lg w-100" id="submitBtn" style="background-color: #0d6efd; border-color: #0d6efd; color: #ffffff;" disabled>
                                     {{ $userRole === 'tenant' ? 'Tenant' : 'Agent' }}: E-Sign Acknowledgement
                                 </button>
                             </form>
@@ -110,6 +114,16 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    var checkbox = document.getElementById('agree_terms');
+    var submitBtn = document.getElementById('submitBtn');
+    
+    function toggleSubmitButton() {
+        submitBtn.disabled = !checkbox.checked;
+    }
+    
+    checkbox.addEventListener('change', toggleSubmitButton);
+    toggleSubmitButton();
+    
     try {
         var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
         document.getElementById('timezone').value = tz || 'UTC';
@@ -130,11 +144,12 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('localTimestamp').value = localTimeStr + ' (' + abbr + ')';
     } catch (e) {
         document.getElementById('timezone').value = 'UTC';
-        document.getElementById('timezoneDisplay').value = 'UTC (Could not detect)';
+        document.getElementById('timezoneDisplay').value = 'Unknown (Could not detect)';
         document.getElementById('localTimestamp').value = new Date().toISOString();
     }
     
     function getTimezoneAbbr(tz) {
+        if (!tz) return 'Unknown';
         var abbrs = {
             'America/New_York': 'ET',
             'America/Chicago': 'CT',
