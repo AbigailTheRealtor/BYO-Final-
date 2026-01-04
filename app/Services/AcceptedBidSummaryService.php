@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\Log;
 
 class AcceptedBidSummaryService
 {
+    public function getRenderedHtml(AcceptedBidSummary $summary): string
+    {
+        return $summary->summary_html ?? '';
+    }
+
     protected $residentialServiceCategories = [
         'Tenant Criteria Marketing & Promotion' => [
             "Create a branded flyer summarizing the Tenant's rental criteria",
