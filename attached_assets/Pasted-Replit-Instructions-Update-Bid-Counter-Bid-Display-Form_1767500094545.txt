@@ -1,0 +1,223 @@
+Replit Instructions — Update Bid/Counter Bid Display Formatting (Tenant Listings Only)
+
+Hire a Tenant Agent • Residential + Commercial
+
+Scope (STRICT)
+
+Apply ONLY to:
+
+Hire a Tenant Agent listings (Residential + Commercial)
+
+The listing page bid display (including Counter Bids)
+
+The “Broker Compensation & Agency Agreement Terms” + “Offered Services” display sections shown on the listing
+
+Do NOT apply to Buyer/Seller/Landlord.
+
+Goal
+
+When a bid or counter bid is displayed on the listing, the “Broker Compensation & Agency Agreement Terms” section must render in the human-readable, combined format like:
+
+✅ Tenant's Broker Commission Fee: $8,000 + 2% of Gross Lease Value
+
+instead of the current output like:
+
+❌ Tenant’s Broker Lease Fee: Flat Fee
+❌ Flat Fee Amount: $769.00
+
+This change is display-only. Do not change how values are stored.
+
+Required Output Format (Display Spec)
+A) Section Headers (Must Match)
+
+Display these headers exactly (when applicable):
+
+Broker Compensation & Agency Agreement Terms
+
+Tenant’s Broker Compensation:
+
+Purchase Fee Details:
+
+Lease-Option Details:
+
+Legal Terms:
+
+Brokerage Relationship:
+
+Additional Terms:
+
+(Show a section only if it has at least one visible field.)
+
+B) Required Label Mapping + Combined Fee Lines
+1) Tenant Broker Commission Structure (Must render as a sentence)
+
+Render:
+
+Tenant’s Broker Commission Structure: {selected_structure_label}
+Examples:
+
+“Requested From Landlord in the Offer”
+
+“Paid by Tenant”
+
+Whatever the selected option label is
+
+2) Tenant Broker Commission Fee (Must combine into a single line when multiple parts exist)
+
+Instead of displaying “flat fee / percent + flat fee” as separate rows, create a single summary line:
+
+Display label:
+
+Tenant's Broker Commission Fee: {fee_summary}
+
+Fee summary rules:
+
+If Flat Fee only → $X
+
+If Percent only → Y% of {basis} (example: “2% of Gross Lease Value”)
+
+If Flat Fee + Percent → $X + Y% of {basis}
+
+If tiers exist (rare) → display them in a readable combined string (keep existing order)
+
+Examples:
+
+$8,000 + 2% of Gross Lease Value
+
+3% of Total Purchase Price
+
+$3,233
+
+✅ IMPORTANT: The “basis” must be the plain-English basis label (ex: “Gross Lease Value”, “Total Purchase Price”, “Net Aggregate Rent”), NOT internal enum text.
+
+C) Payment Timing Display (Use your preferred label)
+
+Display:
+
+Payment Timing for Broker Fees: {value}
+
+Calendar Days to Pay: {number}
+
+Do NOT show “Payment: Flat Fee / Percentage Portion / Flat Fee Portion” style rows.
+
+D) Purchase Fee Details (Show as a clean block)
+
+If user selected “Interested in Purchasing a Property: Yes”, show:
+
+Interested in Purchasing a Property: Yes
+
+Purchase Fee: {fee_summary}
+
+Where fee_summary uses the same combination rules:
+
+$3,233 + 3% of Total Purchase Price
+
+Do NOT show:
+
+“Tenant’s Broker Purchase Fee: Percentage of the Total Purchase Price + Flat Fee”
+
+“Percentage Portion / Flat Fee Portion”
+
+E) Lease-Option Details (Two separate lines, readable)
+
+If Yes:
+
+Interested in a Lease-Option Agreement: Yes
+
+Compensation Type (When Option Is Created): {value}
+
+Compensation Type (If Purchase Option is Exercised): {value}
+
+(These should show actual values like 3% or $8,000—not “purchase option compensation: 60%” unless that is truly what the user entered.)
+
+F) Legal Terms (Keep plain English)
+
+Display:
+
+Protection Period Timeframe: 90 Days
+
+Early Termination Fee: Yes
+
+Termination Fee Amount: $2,323
+
+Retainer Fee: Yes
+
+Retainer Fee Amount: $900
+
+(If applicable) Retainer Fee Application: {value}
+
+G) Brokerage Relationship (Plain English)
+
+Display:
+
+Acceptable Brokerage Relationship: Transaction Broker Representation
+
+H) Additional Terms
+
+Display:
+
+Additional Terms: {text}
+
+Do NOT show:
+
+Additional Terms: on one line and then the value on another line unless it’s long text. Prefer single line.
+
+Implementation Guidance (Display-only, No Storage Changes)
+1) Create a Tenant Bid Display Formatter (Recommended)
+
+Create a dedicated formatter function/component for Tenant listings, e.g.:
+
+formatTenantBrokerCompTermsForDisplay(termsJson)
+
+renderTenantCompTerms(termsJson)
+
+This formatter must:
+
+Read existing stored values (JSON/enums)
+
+Output label:value lines in the new format
+
+Build combined fee summaries for:
+
+Lease fee
+
+Purchase fee
+
+Lease-option fee (if structured similarly)
+
+2) Remove Old “Payment:” Format From Tenant Listing Bid Display
+
+In the listing bid display component, replace the old mapping (flat fee rows, percentage portion rows) with the formatter output for Tenant-only.
+
+STRICT SAFEGUARDS (MUST FOLLOW)
+DO NOT:
+
+❌ Change how broker compensation terms are stored
+
+❌ Rename/delete DB fields or JSON keys
+
+❌ Modify Tenant form inputs, tooltips, placeholders
+
+❌ Apply these changes to Buyer/Seller/Landlord
+
+❌ Change any calculation logic—display formatting only
+
+ONLY:
+
+✅ Add a Tenant-only display formatter
+
+✅ Update listing bid/counter bid display to use the formatter
+
+✅ Ensure values render with correct human labels
+
+Acceptance Criteria (QA)
+
+✅ Counter bid displays exactly like your desired format (combined fee lines)
+
+✅ No “Percentage Portion / Flat Fee Portion” rows appear
+
+✅ Labels match your exact titles (Tenant’s Broker Commission Fee, Purchase Fee, etc.)
+
+✅ Works for both Residential and Commercial Tenant flows
+
+✅ No effect on other listing types
