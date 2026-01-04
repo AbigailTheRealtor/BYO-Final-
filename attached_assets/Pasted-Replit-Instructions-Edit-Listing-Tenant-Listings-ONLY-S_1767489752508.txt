@@ -1,0 +1,138 @@
+Replit Instructions — Edit Listing (Tenant Listings ONLY)
+Scope Limitation (CRITICAL)
+
+This task applies ONLY to:
+
+Hire a Tenant Agent listings
+
+Residential + Commercial Tenant listings
+
+No other listing types are included in this task.
+
+Goal
+
+Allow a Tenant (or Agent acting on behalf of a Tenant) to edit an existing Tenant listing after creation, without breaking:
+
+Agent bids
+
+Broker Compensation & Agency Agreement Terms
+
+Services requested
+
+Visibility logic
+
+Existing listing data
+
+Required Behavior
+1. Edit Access (Tenant Listings Only)
+
+Add an “Edit Listing” option for:
+
+Tenant listings owned by the logged-in user
+
+Clicking Edit Listing must:
+
+Open the existing Hire a Tenant Agent form
+
+Load the listing in edit mode
+
+Preserve the original Listing ID
+
+2. Pre-Fill Logic (Must Be Exact)
+
+When editing a Tenant listing:
+
+ALL saved fields must pre-populate, including:
+
+Listing Details
+
+Property Preferences
+
+Leasing Terms
+
+Pre-Screening Questions
+
+Services Requested
+
+Broker Compensation & Agency Agreement Terms
+
+Visibility selections
+
+Uploaded files
+
+“Other – Specify” custom inputs
+
+Conditional logic must re-trigger correctly:
+
+If a value was previously selected, its dependent fields must appear
+
+Nothing should be hidden or cleared on load
+
+3. Save Behavior (Update Only)
+
+Submitting edits must:
+
+Update the existing Tenant listing
+
+Use the existing Listing ID
+
+NOT create a new listing
+
+NOT reset untouched fields
+
+Conceptual logic:
+
+IF tenant_listing_id exists:
+  UPDATE tenant_listing
+ELSE:
+  CREATE tenant_listing
+
+4. Preserve System Integrity
+
+The following must remain untouched unless the Tenant explicitly edits them:
+
+Listing ID
+
+Original creation date
+
+Agent bids & bid history
+
+Accepted / Countered bid states
+
+Broker Compensation structure
+
+Services selections
+
+Audit logs
+
+STRICT SAFEGUARDS (NON-NEGOTIABLE)
+DO NOT:
+
+❌ Apply this logic to Buyer, Seller, or Landlord listings
+❌ Modify shared components used by other roles
+❌ Rename or delete database fields
+❌ Reset Broker Compensation or Agency Agreement data
+❌ Change tooltips, labels, placeholders, or UI copy
+❌ Modify visibility rules or agent bid logic
+
+ONLY:
+
+✅ Add edit capability to Tenant listing routes
+✅ Load saved Tenant listing data into the existing Tenant form
+✅ Save changes using non-destructive update logic
+
+Why This Is the Right Strategy (Important)
+
+Tenant listings are:
+
+The most finalized
+
+The most tested
+
+The one you’ve been actively debugging
+
+This creates a clean, proven pattern you can later clone
+
+If anything goes wrong, blast radius is contained
+
+This is exactly how mature platforms roll out changes.

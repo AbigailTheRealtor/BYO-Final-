@@ -1391,6 +1391,22 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         <span class="badge bg-secondary" style="font-size: 0.9rem;">Listing ID: {{ @$auction->listing_id }}</span>
     </div>
     @endif
+
+    @php
+        $auth_id = auth()->id();
+        $isOwnerOfListing = ($auth_id && $auth_id == data_get($auction, 'user_id'));
+        $listingUserType = strtolower(trim($auction->get->user_type ?? 'tenant'));
+        $isTenantListing = in_array($listingUserType, ['tenant', '']);
+        $hasAcceptedBid = $auction->bids->where('accepted', 'accepted')->count() > 0;
+    @endphp
+    @if($isOwnerOfListing && $isTenantListing && !$hasAcceptedBid)
+    <div class="mb-3">
+        <a href="{{ route('hire.agent.auction.edit', ['auctionId' => $auction->id, 'user_type' => 'tenant']) }}" 
+           class="btn btn-outline-primary btn-sm">
+            <i class="fa fa-edit me-1"></i> Edit Listing
+        </a>
+    </div>
+    @endif
     <hr>
 
     @inject('carbon', 'Carbon\Carbon')
