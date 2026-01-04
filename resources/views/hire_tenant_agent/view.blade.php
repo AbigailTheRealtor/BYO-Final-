@@ -2789,8 +2789,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         @endphp
                                                         @if ($showActionButtons)
                                                         {{-- Traditional (not expired) OR Bidding Period (timer ended): show buttons --}}
-                                                        <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mb-3">
-                                                            <form action="{{ route('tenant.hire.agent.auction.bid.accept') }}" method="POST" class="d-inline"
+                                                        <div class="d-flex gap-3 justify-content-center align-items-center w-100 mb-3" style="flex-wrap: nowrap;">
+                                                            <form action="{{ route('tenant.hire.agent.auction.bid.accept') }}" method="POST" style="margin: 0;"
                                                                   onsubmit="return confirm('Are you sure you want to accept this bid? This will reject all other bids.');">
                                                                 @csrf
                                                                 <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
@@ -2805,7 +2805,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 <i class="fa fa-exchange-alt me-1"></i> Counter Bid
                                                             </a>
                                                             
-                                                            <form action="{{ route('tenant.hire.agent.auction.bid.reject') }}" method="POST" class="d-inline"
+                                                            <form action="{{ route('tenant.hire.agent.auction.bid.reject') }}" method="POST" style="margin: 0;"
                                                                   onsubmit="return confirm('Are you sure you want to reject this bid?');">
                                                                 @csrf
                                                                 <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
