@@ -645,11 +645,13 @@ class AcceptedBidSummaryService
             return $value;
         }
 
-        if (!is_numeric($value)) {
-            return (string) $value;
+        $cleanValue = str_replace(',', '', (string) $value);
+
+        if (!is_numeric($cleanValue)) {
+            return '$' . (string) $value;
         }
 
-        $numVal = floatval($value);
+        $numVal = floatval($cleanValue);
         $hasDecimals = ($numVal != floor($numVal));
 
         if ($hasDecimals) {
