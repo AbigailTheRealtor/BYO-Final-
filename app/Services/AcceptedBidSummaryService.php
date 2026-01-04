@@ -291,15 +291,20 @@ class AcceptedBidSummaryService
             'broker_fee_days' => data_get($bidData, 'broker_fee_days'),
             'purchase_fee_type' => data_get($bidData, 'purchase_fee_type'),
             'purchase_fee_amount' => data_get($bidData, 'purchase_fee_amount'),
+            'purchase_fee_other' => data_get($bidData, 'purchase_fee_other'),
             'lease_option_fee_type' => data_get($bidData, 'lease_option_fee_type'),
             'lease_option_fee_amount' => data_get($bidData, 'lease_option_fee_amount'),
+            'lease_fee_other' => data_get($bidData, 'lease_fee_other'),
             'protection_period' => data_get($bidData, 'protection_period'),
+            'protection_period_other' => data_get($bidData, 'protection_period_other'),
             'early_termination_fee' => data_get($bidData, 'early_termination_fee'),
             'early_termination_fee_amount' => data_get($bidData, 'early_termination_fee_amount'),
             'retainer_fee' => data_get($bidData, 'retainer_fee'),
             'retainer_fee_amount' => data_get($bidData, 'retainer_fee_amount'),
             'agency_agreement_timeframe' => data_get($bidData, 'agency_agreement_timeframe'),
+            'agency_agreement_custom' => data_get($bidData, 'agency_agreement_custom'),
             'brokerage_relationship' => data_get($bidData, 'brokerage_relationship'),
+            'brokerage_relationship_other' => data_get($bidData, 'brokerage_relationship_other'),
             'additional_terms' => data_get($bidData, 'additional_terms'),
             'additional_details' => data_get($bidData, 'additional_details'),
             'agent_name' => data_get($bidData, 'name'),
@@ -323,15 +328,20 @@ class AcceptedBidSummaryService
             'broker_fee_days' => data_get($counterData, 'broker_fee_days'),
             'purchase_fee_type' => data_get($counterData, 'purchase_fee_type'),
             'purchase_fee_amount' => data_get($counterData, 'purchase_fee_amount'),
+            'purchase_fee_other' => data_get($counterData, 'purchase_fee_other'),
             'lease_option_fee_type' => data_get($counterData, 'lease_option_fee_type'),
             'lease_option_fee_amount' => data_get($counterData, 'lease_option_fee_amount'),
+            'lease_fee_other' => data_get($counterData, 'lease_fee_other'),
             'protection_period' => data_get($counterData, 'protection_period'),
+            'protection_period_other' => data_get($counterData, 'protection_period_other'),
             'early_termination_fee' => data_get($counterData, 'early_termination_fee'),
             'early_termination_fee_amount' => data_get($counterData, 'early_termination_fee_amount'),
             'retainer_fee' => data_get($counterData, 'retainer_fee'),
             'retainer_fee_amount' => data_get($counterData, 'retainer_fee_amount'),
             'agency_agreement_timeframe' => data_get($counterData, 'agency_agreement_timeframe'),
+            'agency_agreement_custom' => data_get($counterData, 'agency_agreement_custom'),
             'brokerage_relationship' => data_get($counterData, 'brokerage_relationship'),
+            'brokerage_relationship_other' => data_get($counterData, 'brokerage_relationship_other'),
             'additional_terms' => data_get($counterData, 'additional_terms'),
             'additional_details' => data_get($counterData, 'additional_details'),
             'agent_name' => null,
@@ -537,12 +547,14 @@ class AcceptedBidSummaryService
         foreach ($fields as $key => $label) {
             $value = $data[$key] ?? null;
             if (!empty($value) && $value !== 'N/A') {
-                $hasContent = true;
                 $displayValue = $this->formatCompensationValue($key, $value, $data);
-                $html .= '<tr>';
-                $html .= '<td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; width: 40%;">' . e($label) . '</td>';
-                $html .= '<td style="padding: 8px; border-bottom: 1px solid #eee;">' . e($displayValue) . '</td>';
-                $html .= '</tr>';
+                if (!empty($displayValue)) {
+                    $hasContent = true;
+                    $html .= '<tr>';
+                    $html .= '<td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; width: 40%;">' . e($label) . '</td>';
+                    $html .= '<td style="padding: 8px; border-bottom: 1px solid #eee;">' . e($displayValue) . '</td>';
+                    $html .= '</tr>';
+                }
             }
         }
 
@@ -559,6 +571,12 @@ class AcceptedBidSummaryService
     {
         if (is_array($value)) {
             return implode(', ', $value);
+        }
+
+        $value = $this->resolveOtherValue($key, $value, $data);
+        
+        if ($value === null || $value === '') {
+            return '';
         }
 
         if (is_string($value) && (strpos($value, '$') !== false || strpos($value, '%') !== false)) {
@@ -599,6 +617,37 @@ class AcceptedBidSummaryService
         }
 
         return (string) $value;
+    }
+
+    protected function resolveOtherValue(string $key, $value, array $data)
+    {
+        if (!is_string($value)) {
+            return $value;
+        }
+
+        $valueStr = strtolower(trim($value));
+        if ($valueStr !== 'other') {
+            return $value;
+        }
+
+        $otherFieldMappings = [
+            'agency_agreement_timeframe' => 'agency_agreement_custom',
+            'protection_period' => 'protection_period_other',
+            'brokerage_relationship' => 'brokerage_relationship_other',
+            'purchase_fee_type' => 'purchase_fee_other',
+            'lease_option_fee_type' => 'lease_fee_other',
+            'broker_fee_type' => 'broker_fee_other',
+            'broker_fee_timing' => 'broker_fee_timing_other',
+        ];
+
+        $otherKey = $otherFieldMappings[$key] ?? ($key . '_other');
+        $customValue = $data[$otherKey] ?? null;
+
+        if (!empty($customValue) && $customValue !== 'N/A') {
+            return $customValue;
+        }
+
+        return null;
     }
 
     protected function formatFeeAmount(string $key, $value, array $data): string

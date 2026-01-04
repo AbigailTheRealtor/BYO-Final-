@@ -1,0 +1,108 @@
+REPLIT INSTRUCTIONS — Replace “Other” With User-Entered Value
+
+Hire a Tenant Agent → Accepted Bid Summary (Residential & Commercial)
+
+🚨 SAFEGUARDS (MANDATORY — DO NOT VIOLATE)
+
+DO NOT:
+
+change database column names, models, migrations, or schemas
+
+rename any existing fields (e.g., tenant_agency_timeframe)
+
+change any user input logic, validations, or form behavior
+
+change bid acceptance logic or summary generation timing
+
+change wording, section titles, or order in the summary
+
+YOU MAY ONLY:
+
+adjust display logic in the Accepted Bid Summary
+
+conditionally replace the label “Other” with the corresponding user-entered text
+
+🎯 PROBLEM
+
+In the Accepted Bid Summary, when a user selects “Other” for a field that includes a custom input (example: Tenant Agency Agreement Timeframe), the summary incorrectly displays:
+
+Other
+
+Instead of displaying the custom value the user typed.
+
+This makes the document incomplete and unclear.
+
+✅ REQUIRED BEHAVIOR
+
+If a field value equals “Other”:
+
+The summary must display the associated custom input value
+
+The word “Other” must never appear in the Accepted Bid Summary
+
+If no custom input exists:
+
+Do not display the row at all (preferred), or
+
+Display the field as blank (fallback)
+
+🧩 SPECIFIC EXAMPLE (FROM SCREENSHOT)
+❌ Current (Incorrect)
+Tenant Agency Agreement Timeframe: Other
+
+✅ Correct (Example)
+Tenant Agency Agreement Timeframe: 9 Months
+
+
+or
+
+Tenant Agency Agreement Timeframe: Until Lease is Signed
+
+
+(whatever the user actually typed)
+
+🔧 IMPLEMENTATION LOGIC (DISPLAY ONLY)
+
+For each summary field that supports “Other” + custom input:
+
+Check the stored selected value
+
+If value === "Other":
+
+Retrieve the related custom input field
+
+Display that value instead
+
+If value !== "Other":
+
+Display the selected value normally
+
+If custom input is empty or null:
+
+Do NOT display the field (or leave blank)
+
+🧠 FIELDS THIS APPLIES TO (MINIMUM)
+
+Apply this logic consistently anywhere “Other” is available, including but not limited to:
+
+Tenant Agency Agreement Timeframe
+
+Protection Period (if “Other” allowed)
+
+Brokerage Relationship (if applicable)
+
+Any Services → “Other – Specify”
+
+Any Additional Terms fields tied to an “Other” selection
+
+(Do not hardcode field names — use the existing mapping logic.)
+
+✅ ACCEPTANCE CHECKS
+
+“Other” never appears anywhere in the Accepted Bid Summary
+
+The exact user-entered text is shown instead
+
+No database or form behavior changes
+
+No visual layout changes
