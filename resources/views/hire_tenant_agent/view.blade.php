@@ -2795,13 +2795,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 @csrf
                                                                 <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                 <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                                                                <button type="submit" class="btn btn-success text-white" style="padding: 8px 16px; font-size: 0.95rem;">
+                                                                <button type="submit" class="btn btn-success" style="padding: 8px 16px; font-size: 0.95rem; background-color: #28a745 !important; border-color: #28a745 !important; color: #fff !important;">
                                                                     <i class="fa fa-check me-1"></i> Accept Bid
                                                                 </button>
                                                             </form>
                                                             
                                                             <a href="{{ route('tenant.counter-terms', ['id' => data_get($bid, 'id')]) }}" 
-                                                               class="btn btn-primary text-white" style="padding: 8px 16px; font-size: 0.95rem;">
+                                                               class="btn btn-primary" style="padding: 8px 16px; font-size: 0.95rem; background-color: #0d6efd !important; border-color: #0d6efd !important; color: #fff !important;">
                                                                 <i class="fa fa-exchange-alt me-1"></i> Counter Bid
                                                             </a>
                                                             
@@ -2810,7 +2810,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 @csrf
                                                                 <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                 <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                                                                <button type="submit" class="btn btn-danger text-white" style="padding: 8px 16px; font-size: 0.95rem;">
+                                                                <button type="submit" class="btn btn-danger" style="padding: 8px 16px; font-size: 0.95rem; background-color: #dc3545 !important; border-color: #dc3545 !important; color: #fff !important;">
                                                                     <i class="fa fa-times me-1"></i> Reject Bid
                                                                 </button>
                                                             </form>
