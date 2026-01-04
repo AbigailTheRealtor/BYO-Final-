@@ -84,7 +84,7 @@
                                     </label>
                                 </div>
 
-                                <button type="submit" class="btn btn-primary btn-lg w-100">
+                                <button type="submit" class="btn btn-primary btn-lg w-100" style="background-color: #0d6efd; border-color: #0d6efd; color: #ffffff;">
                                     {{ $userRole === 'tenant' ? 'Tenant' : 'Agent' }}: E-Sign Acknowledgement
                                 </button>
                             </form>
