@@ -3230,13 +3230,21 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     <!-- Counter Bids -->
 
                                     @php
-                                    $counterBids = \App\Models\TenantCounterBidding::with(
-                                    'meta',
-                                    'user',
-                                    )
-                                    ->where('tenant_agent_auction_bid_id', data_get($bid, 'id'))
-                                    ->orderBy('created_at', 'desc')
-                                    ->get();
+                                    // Load counter bids from both sources:
+                                    // 1. TenantCounterBidding (legacy/agent counters)
+                                    $legacyCounterBids = \App\Models\TenantCounterBidding::with('meta', 'user')
+                                        ->where('tenant_agent_auction_bid_id', data_get($bid, 'id'))
+                                        ->get();
+                                    
+                                    // 2. TenantCounterTerm (tenant counter offers) - bid ID stored in tenant_agent_auction_id field
+                                    $tenantCounterTerms = \App\Models\TenantCounterTerm::with('meta', 'user')
+                                        ->where('tenant_agent_auction_id', data_get($bid, 'id'))
+                                        ->get();
+                                    
+                                    // Merge and sort by created_at descending
+                                    $counterBids = $legacyCounterBids->concat($tenantCounterTerms)
+                                        ->sortByDesc('created_at')
+                                        ->values();
                                     @endphp
 
                                     @php
