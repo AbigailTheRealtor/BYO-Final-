@@ -181,9 +181,9 @@
                                                     <td><a
                                                             href="{{ route('tenant.agent.view.auction.view', @$auction->id) }}">{{ @$auction->title }}</a>
                                                     </td>
-                                                    <td>{{ $auction->get->counties[0] }}</td>
+                                                    <td>{{ $auction->get->counties[0] ?? '' }}</td>
 
-                                                    <td> {{ $auction->get->cities[0] }}</td>
+                                                    <td>{{ $auction->get->cities[0] ?? '' }}</td>
                                                     <td>{{ @$auction->get->state }}</td>
                                                     <td>{{ Carbon\Carbon::parse(@$auction->created_at)->format('M d, Y') }}
                                                     </td>
