@@ -1,0 +1,188 @@
+REPLIT INSTRUCTIONS — Fix Accepted Bid Summary + Notifications (Hire a Tenant)
+
+Applies ONLY to:
+BidYourAgent → Hire a Tenant listings (Residential + Commercial)
+Acceptance events: Tenant accepts Agent bid OR Agent accepts Tenant counter
+
+🚨 SAFEGUARDS (MANDATORY — ADDITION ONLY)
+
+DO NOT:
+
+delete/rename database columns, models, or migrations
+
+change the bid/counter/accept logic itself (keep current acceptance flow)
+
+change UI layout broadly or move sections across tabs
+
+remove any existing functionality
+
+refactor unrelated code
+
+YOU MAY ONLY:
+
+add missing post-acceptance hooks/events
+
+add a document summary generation call after acceptance is finalized
+
+add a notification mechanism (DB notification, email, or in-app alert)
+
+add a visible “View Summary / E-Sign / Download” entry point in the accepted bid UI
+
+1) IDENTIFY WHERE ACCEPTANCE HAPPENS (REQUIRED)
+
+Find the single source of truth where bid status changes to Accepted.
+This may be in:
+
+a controller action (e.g., acceptBid())
+
+a service (e.g., BidService->accept())
+
+a Livewire action / component method
+
+an API route handler
+
+✅ Once found, do NOT duplicate logic across multiple places.
+All post-acceptance actions must be triggered from this same acceptance point.
+
+2) ADD A POST-ACCEPTANCE HOOK (CRITICAL)
+
+Immediately AFTER the bid status is successfully updated to Accepted (and DB transaction committed if applicable), run:
+
+Required post-acceptance actions
+
+A) Generate Accepted Bid Summary snapshot
+
+Generate Accepted Bid Summary using the final accepted bid as the source of truth
+
+Store snapshot in:
+
+accepted_bid_summaries table (preferred) OR
+
+stored fields on accepted bid record (if already implemented)
+
+B) Create “summary ready” state
+
+Save a flag/field like:
+
+accepted_summary_generated_at
+
+OR has_accepted_summary = true
+
+C) Create notifications
+
+Notify the other party immediately:
+
+If Tenant accepted → notify Agent
+
+If Agent accepted → notify Tenant
+
+3) REQUIRED NOTIFICATION BEHAVIOR
+Minimum requirement (in-app)
+
+Create an in-app notification record containing:
+
+Listing ID
+
+Bid ID
+
+Message: “Bid Accepted — Accepted Bid Summary Ready”
+
+Link: “View Accepted Bid Summary”
+
+Optional enhancements:
+
+email notification (if email system exists)
+
+SMS (not required)
+
+✅ Notification must be visible to the other party the next time they view:
+
+Dashboard
+
+Messages/Notifications
+
+Listing / Bid view
+
+4) UI REQUIREMENTS AFTER ACCEPTANCE (TENANT + AGENT)
+On the Tenant side (after they accept OR when they revisit accepted bid)
+
+Show a clear panel on the accepted bid including:
+
+Status: Accepted
+
+Button: View Accepted Bid Summary
+
+Button: E-Sign Acknowledgement
+
+Button: Download PDF (if available)
+
+On the Agent side (as soon as accepted)
+
+In their view of that bid/listing:
+
+Status: Accepted
+
+Button: View Accepted Bid Summary
+
+Button: E-Sign Acknowledgement
+
+Button: Download PDF (if available)
+
+✅ If summary generation failed, show:
+
+“Summary pending — click to retry generation” (admin/dev only is fine)
+But acceptance must remain accepted.
+
+5) EDGE CASE: WHO ACCEPTS FIRST?
+
+Your system must behave correctly in BOTH cases:
+
+Case A: Tenant accepts Agent bid
+
+status becomes Accepted
+
+summary generates immediately
+
+Agent is notified immediately
+
+both can view summary immediately
+
+Case B: Agent accepts Tenant counter
+
+status becomes Accepted
+
+summary generates immediately
+
+Tenant is notified immediately
+
+both can view summary immediately
+
+✅ No matter who clicks Accept, the summary is generated at acceptance.
+
+6) LOGGING + FAILSAFE (DO NOT BREAK ACCEPTANCE)
+
+If summary generation fails:
+
+keep bid status as Accepted
+
+log the error
+
+show the user a fallback message:
+
+“Accepted. Summary is being generated. Please refresh or contact support.”
+
+allow retry (button or automatic retry)
+
+7) ACCEPTANCE CHECKLIST (MUST PASS)
+
+Tenant accepts bid → summary appears instantly + “View Summary” is visible
+
+Agent receives a notification and can see the accepted summary
+
+Agent accepts tenant counter → tenant gets notified + summary visible
+
+Summary is accessible later from the accepted bid record
+
+No confusion about where the summary is located
+
+No other listing types are affected

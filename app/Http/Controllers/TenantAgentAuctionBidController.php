@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AcceptedBidSummary;
 use App\Models\TenantAgentAuction;
 use App\Models\TenantAgentAuctionBid;
 use App\Models\TenantCounterBidding;
+use App\Models\User;
 use App\Models\UserAgent;
+use App\Notifications\BidAcceptedNotification;
 use App\Services\AcceptedBidSummaryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -162,12 +165,29 @@ class TenantAgentAuctionBidController extends Controller
             
             DB::commit();
             
+            $summaryId = null;
             try {
                 $summaryService = new AcceptedBidSummaryService();
-                $summaryService->generateSummary($pab, null);
+                $summary = $summaryService->generateSummary($pab, null);
+                if ($summary) {
+                    $summaryId = $summary->id;
+                }
             } catch (\Exception $e) {
                 Log::error('Failed to generate accepted bid summary after bid acceptance', [
                     'bid_id' => $pab->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+            
+            try {
+                $agent = User::find($pab->user_id);
+                if ($agent) {
+                    $agent->notify(new BidAcceptedNotification($pab, $pa, $summaryId, 'tenant_agent'));
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send bid accepted notification', [
+                    'bid_id' => $pab->id,
+                    'agent_id' => $pab->user_id,
                     'error' => $e->getMessage()
                 ]);
             }
@@ -282,11 +302,29 @@ class TenantAgentAuctionBidController extends Controller
             
             DB::commit();
             
+            $summaryId = null;
             try {
                 $summaryService = new AcceptedBidSummaryService();
-                $summaryService->generateSummary($originalBid, $counterBid);
+                $summary = $summaryService->generateSummary($originalBid, $counterBid);
+                if ($summary) {
+                    $summaryId = $summary->id;
+                }
             } catch (\Exception $e) {
                 Log::error('Failed to generate accepted bid summary after counter bid acceptance', [
+                    'bid_id' => $originalBid->id,
+                    'counter_id' => $counterBid->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+            
+            try {
+                $notifyUserId = $isListingOwner ? $originalBid->user_id : $pa->user_id;
+                $userToNotify = User::find($notifyUserId);
+                if ($userToNotify) {
+                    $userToNotify->notify(new BidAcceptedNotification($originalBid, $pa, $summaryId, 'tenant_agent'));
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send counter bid accepted notification', [
                     'bid_id' => $originalBid->id,
                     'counter_id' => $counterBid->id,
                     'error' => $e->getMessage()
