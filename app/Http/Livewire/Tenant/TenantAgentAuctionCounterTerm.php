@@ -236,7 +236,14 @@ class TenantAgentAuctionCounterTerm extends Component
     {
         $this->pab   = $pab;
         $this->bidId = $bidId;
-        $this->property_type = $pab->get->property_type;
+        
+        // Get property_type from the auction (listing) that this bid belongs to
+        $auction = $pab->auction ?? null;
+        if ($auction && $auction->get) {
+            $this->property_type = $auction->get->property_type ?? '';
+        } else {
+            $this->property_type = $pab->get->property_type ?? '';
+        }
 
         // EDIT MODE: Try load existing counter term by auction id
         $existing = TenantCounterTerm::with('meta')
