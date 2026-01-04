@@ -350,14 +350,25 @@ class TenantAgentAuctionCounterTerm extends Component
         }
 
         // Arrays (JSON) — services, other_services
+        // Handle both string (from meta table) and array (from model accessor) values
         if (isset($m['services'])) {
-            $decoded = json_decode($m['services'], true);
-            $this->services = is_array($decoded) ? $decoded : [];
+            $services = $m['services'];
+            if (is_string($services)) {
+                $decoded = json_decode($services, true);
+                $this->services = is_array($decoded) ? $decoded : [];
+            } elseif (is_array($services)) {
+                $this->services = $services;
+            }
         }
 
         if (isset($m['other_services'])) {
-            $decoded = json_decode($m['other_services'], true);
-            $this->other_services = is_array($decoded) ? array_values($decoded) : [];
+            $otherServices = $m['other_services'];
+            if (is_string($otherServices)) {
+                $decoded = json_decode($otherServices, true);
+                $this->other_services = is_array($decoded) ? array_values($decoded) : [];
+            } elseif (is_array($otherServices)) {
+                $this->other_services = array_values($otherServices);
+            }
         }
 
         // Booleans or flags that may be stored as strings

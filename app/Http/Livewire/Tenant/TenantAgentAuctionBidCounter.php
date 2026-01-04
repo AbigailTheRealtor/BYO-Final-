@@ -347,10 +347,11 @@ class TenantAgentAuctionBidCounter extends Component
         
         $sourceData = null;
         
-        // COUNTER BID PREFILL RULE: Agent counters with Tenant's latest terms
-        // First try to load the Tenant's latest counter terms (TenantCounterTerm)
+        // COUNTER BID PREFILL RULE: Agent counters with Tenant's latest terms for THIS bid thread
+        // TenantCounterTerm stores bid ID in tenant_agent_auction_id field
+        // First try to load the Tenant's latest counter terms for this specific bid
         $tenantCounter = \App\Models\TenantCounterTerm::with('meta')
-            ->where('tenant_agent_auction_id', $pab->tenant_agent_auction_id ?? $pab->id)
+            ->where('tenant_agent_auction_id', $bidId)
             ->orderBy('created_at', 'desc')
             ->first();
         
@@ -368,7 +369,7 @@ class TenantAgentAuctionBidCounter extends Component
             }
         }
         
-        // Final fallback: Use original bid terms
+        // Final fallback: Use original bid terms (Agent's own bid if no other source)
         if (!$sourceData) {
             $originalBid = \App\Models\TenantAgentAuctionBid::find($bidId);
             if ($originalBid) {
