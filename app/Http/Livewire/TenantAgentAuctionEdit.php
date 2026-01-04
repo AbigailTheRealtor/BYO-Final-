@@ -1986,8 +1986,8 @@ class TenantAgentAuctionEdit extends Component
         $this->number_of_unit = $auction->info('number_of_unit');
 
         // Location Information
-        $this->cities = json_decode($auction->info('cities'), true);
-        $this->counties = json_decode($auction->info('counties'), true);
+        $this->cities = json_decode($auction->info('cities'), true) ?? [];
+        $this->counties = json_decode($auction->info('counties'), true) ?? [];
         $this->state = $auction->info('state');
 
         // Property Details

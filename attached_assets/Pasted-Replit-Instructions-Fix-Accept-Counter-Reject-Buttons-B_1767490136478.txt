@@ -1,0 +1,172 @@
+Replit Instructions — Fix Accept / Counter / Reject Buttons (Bid Review Modal)
+Issue Summary
+
+In the Bid Review modal (where a user can Accept / Counter / Reject a bid):
+
+Accept button text is only visible on hover (looks “blank” until hovered).
+
+Counter button is a different size and style than the others.
+
+Reject button is not red (should be red background).
+
+Buttons should appear as a consistent button group: same height, same padding, same font sizing, same border radius.
+
+Scope (Do Not Expand)
+
+Apply changes ONLY to the UI where a user views a bid and chooses:
+
+Accept Bid
+
+Counter Bid
+
+Reject Bid
+
+Do NOT change listing creation, bid submission, counter bid forms, tooltips, or any database logic.
+
+STRICT SAFEGUARDS (MUST FOLLOW)
+DO NOT:
+
+❌ Rename or remove any existing components used elsewhere
+
+❌ Change any routes, API calls, or database columns
+
+❌ Modify business logic (accept/counter/reject behavior)
+
+❌ Change button labels/copy
+
+❌ Change layout outside this modal/button row
+
+ONLY:
+
+✅ Update button styling classes/CSS in this bid-action area
+
+✅ Use a shared style for all three buttons
+
+✅ Fix disabled/hover CSS so text is always visible
+
+Required Design Outcome
+Button Group Layout
+
+Buttons appear in a single row (desktop), evenly spaced, aligned.
+
+All three buttons must be the same size:
+
+same height
+
+same padding
+
+same font size
+
+same border radius
+
+“Close” button can remain separate (below) as it is now.
+
+Colors (Exact Intent)
+
+Accept Bid: white background, green border + green text (or green background if you prefer, but consistent)
+
+Counter Bid: same style family as the others and same size; if you want it blue, that’s fine—but it must match sizing/padding/border radius
+
+Reject Bid: red background with white text (not teal)
+
+Fix #1 — Accept Text Only Visible on Hover
+
+This almost always happens because one of these is true:
+
+The button is effectively in a “disabled” style state (opacity lowered / text color changed)
+
+The text color is the same as the background until :hover changes it
+
+There’s a CSS rule like .btn:hover { color: white; } but normal state is accidentally transparent/light
+
+Required Fix
+
+Ensure default state (not hover) explicitly sets:
+
+color
+
+background-color
+
+opacity: 1
+
+If the button is disabled, make sure it still shows its label (disabled should reduce opacity slightly but never hide the text).
+
+Acceptance check: Without hovering, “Accept Bid” text is clearly visible.
+
+Fix #2 — Make All Three Buttons the Same Size
+
+Right now Counter looks like a larger “tile” button while the others are normal buttons.
+
+Required Fix
+
+Use a single shared class (or shared component style) for all three:
+
+same min-width
+
+same height
+
+same padding
+
+same font-size
+
+same border-radius
+
+Place them inside a flex container with consistent spacing.
+
+Acceptance check: If you screenshot it, the 3 buttons look like a matched set.
+
+Fix #3 — Reject Button Must Be Red Background
+Required Fix
+
+Set Reject button styling to:
+
+background-color: red (your chosen red)
+
+border-color: same red
+
+color: white
+
+Ensure hover state stays red (can darken slightly), but never becomes teal/green.
+
+Acceptance check: Reject is clearly red even before hover.
+
+Implementation Notes (Tell Replit / Dev Exactly Where to Look)
+
+Find the component/template that renders the bid action buttons (Accept/Counter/Reject) in the bid view modal.
+
+Identify what’s currently styling them:
+
+inline styles?
+
+Tailwind classes?
+
+Bootstrap classes?
+
+a shared .btn CSS class?
+
+Remove the “special” styling on Counter (the reason it is oversized), and apply the shared button style instead.
+
+Fix Accept’s base state so text is visible without hover.
+
+Apply Reject red background styles.
+
+QA Checklist (Must Pass)
+
+Accept text visible without hover
+
+Counter is same height/width style as the others
+
+Reject is red background with readable text
+
+Hover effects do not change layout or make text disappear
+
+Buttons still trigger the exact same accept/counter/reject actions as before
+
+Optional (But Strongly Recommended)
+
+Add a small rule: if Accept is disabled (example: can’t accept because already rejected), use:
+
+opacity: 0.5
+
+cursor: not-allowed
+…but keep the text visible.
