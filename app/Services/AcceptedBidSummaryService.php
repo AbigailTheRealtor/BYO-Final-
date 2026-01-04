@@ -226,6 +226,59 @@ class AcceptedBidSummaryService
         }
     }
 
+    public function regenerateSummary(AcceptedBidSummary $summary): ?AcceptedBidSummary
+    {
+        try {
+            $bid = TenantAgentAuctionBid::find($summary->accepted_bid_id);
+            if (!$bid) {
+                Log::warning('Cannot regenerate summary - bid not found', ['summary_id' => $summary->id]);
+                return null;
+            }
+
+            $listing = $bid->auction;
+            if (!$listing) {
+                Log::warning('Cannot regenerate summary - listing not found', ['summary_id' => $summary->id]);
+                return null;
+            }
+
+            $tenant = $listing->user;
+            $agent = $bid->user;
+
+            $acceptedCounter = $summary->accepted_counter_id 
+                ? TenantCounterBidding::find($summary->accepted_counter_id) 
+                : null;
+
+            $sourceData = $acceptedCounter ? $this->getCounterData($acceptedCounter) : $this->getBidData($bid);
+
+            $html = $this->buildSummaryHtml($listing, $bid, $tenant, $agent, $sourceData, $acceptedCounter);
+
+            $summary->summary_html = $html;
+            $summary->save();
+
+            return $summary;
+        } catch (\Exception $e) {
+            Log::error('Failed to regenerate accepted bid summary', [
+                'summary_id' => $summary->id,
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    public function regenerateAllSummaries(): int
+    {
+        $count = 0;
+        $summaries = AcceptedBidSummary::all();
+        
+        foreach ($summaries as $summary) {
+            if ($this->regenerateSummary($summary)) {
+                $count++;
+            }
+        }
+        
+        return $count;
+    }
+
     protected function getBidData(TenantAgentAuctionBid $bid): array
     {
         $bidData = $bid->get;
