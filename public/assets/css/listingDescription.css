@@ -28,14 +28,16 @@
   .listingDescription .description, .listingDescription .location,.listingDescription .review {
     margin-bottom: 2rem;
   }
-  .listingDescription .right button, .listingDescription .rightCol button{
+  .listingDescription .right button, .listingDescription .rightCol button:not(.btn-success):not(.btn-danger):not(.btn-primary):not(.btn-secondary){
       border-radius: 5px;
       color: #fff;
       padding: 6px 28px;
       width: 140px;
       margin-bottom: 4px;
   }
-  .listingDescription .right button, .listingDescription .rightCol button:not(.btn-success){
+  /* Apply teal background only to non-Bootstrap buttons (preserve btn-success, btn-danger, btn-primary, btn-secondary styling) */
+  .listingDescription .right button:not(.btn-success):not(.btn-danger):not(.btn-primary):not(.btn-secondary), 
+  .listingDescription .rightCol button:not(.btn-success):not(.btn-danger):not(.btn-primary):not(.btn-secondary){
     background: #049399;
   }
   .listingDescription .rightCol button {
