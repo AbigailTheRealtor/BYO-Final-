@@ -2796,7 +2796,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     @if ($isListingOwner && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected')
                                                         @php
                                                             // Traditional: show if not expired; Bidding Period: show when timer ends
-                                                            $showActionButtons = $canTakeAction && ($isBiddingPeriodListing || !$isExpired);
+                                                            $showActionButtons = ($isTraditionalListing && !$isExpired) || ($isBiddingPeriodListing && $isExpired);
                                                         @endphp
                                                         @if ($showActionButtons)
                                                         {{-- Traditional (not expired) OR Bidding Period (timer ended): show buttons --}}
@@ -2830,6 +2830,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         {{-- Bidding Period: timer still active, actions locked --}}
                                                         <div class="w-100 mb-3 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
                                                             <i class="fa fa-clock me-1"></i> Actions unlock when the bidding period ends.
+                                                        </div>
+                                                        @elseif ($isTraditionalListing && $isExpired)
+                                                        {{-- Traditional listing has expired --}}
+                                                        <div class="w-100 mb-3 p-2 text-center" style="background: #ffc107; border-radius: 6px; color: #856404;">
+                                                            <i class="fa fa-clock me-1"></i> Listing has expired - no further actions available. You can extend the expiration date by editing the listing.
                                                         </div>
                                                         @endif
                                                     @elseif ($isListingOwner && $bidAccepted === 'accepted')
