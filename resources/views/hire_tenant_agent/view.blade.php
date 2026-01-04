@@ -1803,7 +1803,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                         'services' => data_get($auction, 'get.services'),
                                         'other_services' => data_get($auction, 'get.other_services'),
                                     ];
-                                    $baselineLabel = 'Your Original Listing';
+                                    $baselineLabel = 'Your Original Terms';
                                 }
                             } else {
                                 // Agent viewing their own bid - baseline is their own bid (100% match)
