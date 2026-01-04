@@ -16,6 +16,7 @@ use App\Models\BuyerAgentAuction;
 use App\Models\BuyerAgentAuctionBid;
 use App\Models\TenantCounterTerm;
 use App\Models\TenantAgentAuction;
+use App\Models\TenantAgentAuctionBid;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
@@ -23,11 +24,9 @@ class TenantCounteredTermsController extends Controller
 {
     public function add(Request $request, $id)
     {
-       
-        $pab = TenantAgentAuction::whereId($id)->first();
+        $pab = TenantAgentAuctionBid::whereId($id)->first();
         $bid_id = $id;
         $parent_counter_id = $request->counter_bid_id ? $request->counter_bid_id : null;
-
 
         return view('tenant_counter_terms.add', compact('bid_id', 'pab', 'parent_counter_id'));
     }
@@ -35,7 +34,7 @@ class TenantCounteredTermsController extends Controller
     
   public function edit(Request $request, $id)
     {
-        $pab = TenantAgentAuction::findOrFail($id);
+        $pab = TenantAgentAuctionBid::findOrFail($id);
         $bid_id = $id;
         $parent_counter_id = $request->counter_bid_id ?: null;
 

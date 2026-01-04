@@ -3034,7 +3034,7 @@ class TenantAgentAuctionEdit extends Component
 
 
             DB::commit();
-            session()->flash('success', 'Auction updated successfully!');
+            session()->flash('success', 'Listing updated successfully!');
             // return redirect()->route('tenant.hire.agent.auction.edit', [
             //     'auctionId' => $this->auctionId,
             //     'user_type' => $this->user_type,
