@@ -3311,7 +3311,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                 );
                                                 $bidState = in_array(
                                                 $rawBidState,
-                                                [null, 0, '0'],
+                                                [null, 0, '0', 'no', 'pending'],
                                                 true,
                                                 )
                                                 ? '0'
