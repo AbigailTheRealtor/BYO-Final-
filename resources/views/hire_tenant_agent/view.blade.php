@@ -1755,6 +1755,159 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             if (data_get($bid, 'get.early_termination_fee_option') === 'Yes') {
                                 $terminationFeeDisplay = $fmtMoney(data_get($bid, 'get.early_termination_fee_amount')) ?? '—';
                             }
+                            
+                            // === MATCH SCORE CALCULATION (for bid card and modal) ===
+                            // Get current bid data
+                            $currentBidData = (array) data_get($bid, 'get', []);
+                            
+                            // Determine baseline based on viewer
+                            $baselineData = [];
+                            $baselineLabel = '';
+                            
+                            // Get the listing owner's user ID for filtering
+                            $listingOwnerUserId = $auction->user_id;
+                            
+                            // Get the latest counter from tenant (listing owner) ONLY
+                            $latestTenantCounter = $bid->counterTerms()
+                                ->where('user_id', $listingOwnerUserId)
+                                ->orderBy('created_at', 'desc')
+                                ->first();
+                            
+                            if ($isListingOwner) {
+                                // Tenant viewing Agent's bid - baseline is Tenant's latest counter or original listing
+                                if ($latestTenantCounter) {
+                                    $baselineData = $latestTenantCounter->getAllMeta();
+                                    $baselineLabel = 'Your Latest Counter';
+                                } else {
+                                    // Use original listing Broker Compensation fields
+                                    $baselineData = [
+                                        'commission_structure' => data_get($auction, 'get.commission_structure'),
+                                        'lease_fee_type' => data_get($auction, 'get.lease_fee_type'),
+                                        'payment_timing' => data_get($auction, 'get.broker_fee_timing'),
+                                        'days_to_pay' => data_get($auction, 'get.broker_fee_days_from_rent') ?? data_get($auction, 'get.broker_fee_days_after_lease'),
+                                        'interested_purchase_fee_type' => data_get($auction, 'get.interested_purchase_fee_type'),
+                                        'purchase_fee_type' => data_get($auction, 'get.purchase_fee_type'),
+                                        'interested_lease_option_agreement' => data_get($auction, 'get.interested_lease_option_agreement'),
+                                        'lease_type' => data_get($auction, 'get.lease_type'),
+                                        'lease_value' => data_get($auction, 'get.lease_value'),
+                                        'purchase_type' => data_get($auction, 'get.purchase_type'),
+                                        'purchase_value' => data_get($auction, 'get.purchase_value'),
+                                        'protection_period' => data_get($auction, 'get.protection_period'),
+                                        'early_termination_fee_option' => data_get($auction, 'get.early_termination_fee_option'),
+                                        'early_termination_fee_amount' => data_get($auction, 'get.early_termination_fee_amount'),
+                                        'retainer_fee_option' => data_get($auction, 'get.retainer_fee_option'),
+                                        'retainer_fee_amount' => data_get($auction, 'get.retainer_fee_amount'),
+                                        'retainer_fee_application' => data_get($auction, 'get.retainer_fee_application'),
+                                        'agency_agreement_timeframe' => data_get($auction, 'get.agency_agreement_timeframe'),
+                                        'brokerage_relationship' => data_get($auction, 'get.brokerage_relationship'),
+                                        'services' => data_get($auction, 'get.services'),
+                                    ];
+                                    $baselineLabel = 'Your Original Listing';
+                                }
+                            } else {
+                                // Agent viewing their own bid - baseline is their own bid (100% match)
+                                $baselineData = $currentBidData;
+                                $baselineLabel = 'Your Bid';
+                            }
+                            
+                            // Broker Compensation fields to compare
+                            $brokerFields = [
+                                'commission_structure', 'lease_fee_type', 'payment_timing', 'days_to_pay',
+                                'interested_purchase_fee_type', 'purchase_fee_type', 'interested_lease_option_agreement',
+                                'lease_type', 'lease_value', 'purchase_type', 'purchase_value', 'protection_period',
+                                'early_termination_fee_option', 'early_termination_fee_amount', 'retainer_fee_option',
+                                'retainer_fee_amount', 'retainer_fee_application', 'agency_agreement_timeframe', 'brokerage_relationship',
+                            ];
+                            
+                            // Normalize function for comparison
+                            $normalizeForMatch = function($v) {
+                                if (is_null($v) || $v === '') return '';
+                                if (is_array($v) || is_object($v)) return json_encode($v);
+                                $v = trim((string) $v);
+                                return preg_replace('/[\s$,%]/', '', strtolower($v));
+                            };
+                            
+                            // Calculate Broker Compensation Match
+                            $brokerMatched = 0;
+                            $brokerTotal = 0;
+                            $brokerMismatches = [];
+                            
+                            foreach ($brokerFields as $field) {
+                                $currentVal = $currentBidData[$field] ?? null;
+                                $baselineVal = $baselineData[$field] ?? null;
+                                if (!empty($currentVal) || !empty($baselineVal)) {
+                                    $brokerTotal++;
+                                    if ($normalizeForMatch($currentVal) === $normalizeForMatch($baselineVal)) {
+                                        $brokerMatched++;
+                                    } else {
+                                        $brokerMismatches[$field] = true;
+                                    }
+                                }
+                            }
+                            
+                            $brokerScore = $brokerTotal > 0 ? round(($brokerMatched / $brokerTotal) * 100) : 100;
+                            
+                            // === OFFERED SERVICES COMPARISON ===
+                            $currentServices = $currentBidData['services'] ?? [];
+                            if (is_string($currentServices)) {
+                                $currentServices = json_decode($currentServices, true) ?? [];
+                            }
+                            $currentServices = is_array($currentServices) ? array_values(array_filter($currentServices)) : [];
+                            
+                            $baselineServices = $baselineData['services'] ?? [];
+                            if (is_string($baselineServices)) {
+                                $baselineServices = json_decode($baselineServices, true) ?? [];
+                            }
+                            $baselineServices = is_array($baselineServices) ? array_values(array_filter($baselineServices)) : [];
+                            
+                            $normalizeService = function($s) {
+                                $s = preg_replace('/[\x{2018}\x{2019}]/u', "'", $s);
+                                $s = preg_replace('/[\x{201C}\x{201D}]/u', '"', $s);
+                                return strtolower(trim($s));
+                            };
+                            
+                            $currentNorm = array_map($normalizeService, $currentServices);
+                            $baselineNorm = array_map($normalizeService, $baselineServices);
+                            
+                            $allServices = array_unique(array_merge($currentNorm, $baselineNorm));
+                            $servicesTotal = count($allServices);
+                            $servicesMatched = 0;
+                            $serviceMismatches = [];
+                            
+                            foreach ($allServices as $svc) {
+                                $inCurrent = in_array($svc, $currentNorm);
+                                $inBaseline = in_array($svc, $baselineNorm);
+                                if ($inCurrent === $inBaseline) {
+                                    $servicesMatched++;
+                                } else {
+                                    $serviceMismatches[$svc] = true;
+                                }
+                            }
+                            
+                            $servicesScore = $servicesTotal > 0 ? round(($servicesMatched / $servicesTotal) * 100) : 100;
+                            
+                            // === TOTAL MATCH SCORE ===
+                            $hasBroker = $brokerTotal > 0;
+                            $hasServices = $servicesTotal > 0;
+                            
+                            if ($hasBroker && $hasServices) {
+                                $totalScore = round(($brokerScore + $servicesScore) / 2);
+                            } elseif ($hasBroker) {
+                                $totalScore = $brokerScore;
+                            } elseif ($hasServices) {
+                                $totalScore = $servicesScore;
+                            } else {
+                                $totalScore = 100;
+                            }
+                            
+                            // Score color based on percentage
+                            $getScoreColor = function($score) {
+                                if ($score >= 80) return '#28a745';
+                                if ($score >= 50) return '#ffc107';
+                                return '#dc3545';
+                            };
+                            
+                            $totalScoreColor = $getScoreColor($totalScore);
                         @endphp
                         
                         <!-- Bid Card - Collapsible Accordion Design -->
@@ -1783,6 +1936,39 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     <span style="font-weight: 600;">Offered Services:</span> {{ $totalServicesCount }} Services
                                 </p>
                                 <hr style="margin: 15px 0; border-color: #e0e0e0;">
+                                
+                                <!-- B2) Match Score Summary (Compact Display on Bid Card) -->
+                                @if ($isListingOwner)
+                                <div class="match-score-summary mb-3 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6;">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span style="font-weight: 600; color: #1a3a5c; font-size: 1rem;">
+                                            <i class="fa fa-chart-pie me-2"></i>Match Score
+                                        </span>
+                                        <span class="badge" style="background: {{ $totalScoreColor }}; font-size: 1rem; padding: 6px 12px;">
+                                            {{ $totalScore }}%
+                                        </span>
+                                    </div>
+                                    <div class="row g-2 small">
+                                        <div class="col-6">
+                                            <div class="d-flex justify-content-between">
+                                                <span class="text-muted">Broker Compensation:</span>
+                                                <span style="color: {{ $getScoreColor($brokerScore) }}; font-weight: 600;">{{ $brokerScore }}%</span>
+                                            </div>
+                                            <div class="text-muted" style="font-size: 0.8rem;">{{ $brokerMatched }}/{{ $brokerTotal }} matched</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="d-flex justify-content-between">
+                                                <span class="text-muted">Offered Services:</span>
+                                                <span style="color: {{ $getScoreColor($servicesScore) }}; font-weight: 600;">{{ $servicesScore }}%</span>
+                                            </div>
+                                            <div class="text-muted" style="font-size: 0.8rem;">{{ $servicesMatched }}/{{ $servicesTotal }} matched</div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 small text-muted">
+                                        <i class="fa fa-info-circle me-1"></i>Compared to: {{ $baselineLabel }}
+                                    </div>
+                                </div>
+                                @endif
                                 
                                 <!-- C) Broker Compensation Summary Section -->
                                 <h6 style="font-weight: 600; color: #1a3a5c; font-size: 1.15rem; margin-bottom: 12px;">Broker Compensation Summary:</h6>
@@ -1890,195 +2076,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                 <div class="modal-body"
                                                     style="background: #fafafa; padding: 25px;">
 
-                                                    {{-- ========== MATCH SCORE CALCULATION ========== --}}
-                                                    @php
-                                                    // === MATCH SCORE SYSTEM ===
-                                                    // Compares ONLY: Broker Compensation & Agency Terms + Offered Services
-                                                    // Baseline: Other party's most recent submission
-                                                    
-                                                    // Get current bid data
-                                                    $currentBidData = (array) data_get($bid, 'get', []);
-                                                    
-                                                    // Determine baseline based on viewer
-                                                    // Tenant viewing Agent Bid: baseline = Tenant's latest counter OR original listing
-                                                    // Agent viewing: baseline = Agent's most recent bid/counter
-                                                    $baselineData = [];
-                                                    $baselineLabel = '';
-                                                    
-                                                    // Get the listing owner's user ID for filtering
-                                                    $listingOwnerUserId = $auction->user_id;
-                                                    
-                                                    // Get the latest counter from tenant (listing owner) ONLY - filter by listing owner's user_id
-                                                    $latestTenantCounter = $bid->counterTerms()
-                                                        ->where('user_id', $listingOwnerUserId)
-                                                        ->orderBy('created_at', 'desc')
-                                                        ->first();
-                                                    
-                                                    if ($isListingOwner) {
-                                                        // Tenant viewing Agent's bid - baseline is Tenant's latest counter or original listing
-                                                        if ($latestTenantCounter) {
-                                                            $baselineData = $latestTenantCounter->getAllMeta();
-                                                            $baselineLabel = 'Your Latest Counter';
-                                                        } else {
-                                                            // Use original listing Broker Compensation fields
-                                                            $baselineData = [
-                                                                'commission_structure' => data_get($auction, 'get.commission_structure'),
-                                                                'lease_fee_type' => data_get($auction, 'get.lease_fee_type'),
-                                                                'lease_fee_flat' => data_get($auction, 'get.lease_fee_flat'),
-                                                                'lease_fee_percentage' => data_get($auction, 'get.lease_fee_percentage'),
-                                                                'lease_fee_percentage_monthly_rent' => data_get($auction, 'get.lease_fee_percentage_monthly_rent'),
-                                                                'lease_fee_percentage_monthly_number' => data_get($auction, 'get.lease_fee_percentage_monthly_number'),
-                                                                'lease_fee_flat_combo' => data_get($auction, 'get.lease_fee_flat_combo'),
-                                                                'lease_fee_percentage_combo' => data_get($auction, 'get.lease_fee_percentage_combo'),
-                                                                'lease_fee_percentage_net' => data_get($auction, 'get.lease_fee_percentage_net'),
-                                                                'lease_fee_flat_combo_net' => data_get($auction, 'get.lease_fee_flat_combo_net'),
-                                                                'lease_fee_percentage_combo_net' => data_get($auction, 'get.lease_fee_percentage_combo_net'),
-                                                                'payment_timing' => data_get($auction, 'get.broker_fee_timing'),
-                                                                'days_to_pay' => data_get($auction, 'get.broker_fee_days_from_rent') ?? data_get($auction, 'get.broker_fee_days_after_lease'),
-                                                                'interested_purchase_fee_type' => data_get($auction, 'get.interested_purchase_fee_type'),
-                                                                'purchase_fee_type' => data_get($auction, 'get.purchase_fee_type'),
-                                                                'purchase_fee_flat' => data_get($auction, 'get.purchase_fee_flat'),
-                                                                'purchase_fee_percentage' => data_get($auction, 'get.purchase_fee_percentage'),
-                                                                'interested_lease_option_agreement' => data_get($auction, 'get.interested_lease_option_agreement'),
-                                                                'lease_type' => data_get($auction, 'get.lease_type'),
-                                                                'lease_value' => data_get($auction, 'get.lease_value'),
-                                                                'purchase_type' => data_get($auction, 'get.purchase_type'),
-                                                                'purchase_value' => data_get($auction, 'get.purchase_value'),
-                                                                'protection_period' => data_get($auction, 'get.protection_period'),
-                                                                'early_termination_fee_option' => data_get($auction, 'get.early_termination_fee_option'),
-                                                                'early_termination_fee_amount' => data_get($auction, 'get.early_termination_fee_amount'),
-                                                                'retainer_fee_option' => data_get($auction, 'get.retainer_fee_option'),
-                                                                'retainer_fee_amount' => data_get($auction, 'get.retainer_fee_amount'),
-                                                                'retainer_fee_application' => data_get($auction, 'get.retainer_fee_application'),
-                                                                'agency_agreement_timeframe' => data_get($auction, 'get.agency_agreement_timeframe'),
-                                                                'brokerage_relationship' => data_get($auction, 'get.brokerage_relationship'),
-                                                                'services' => data_get($auction, 'get.services'),
-                                                            ];
-                                                            $baselineLabel = 'Your Original Listing';
-                                                        }
-                                                    } else {
-                                                        // Agent viewing their own bid - baseline is their own bid (100% match to self)
-                                                        $baselineData = $currentBidData;
-                                                        $baselineLabel = 'Your Bid';
-                                                    }
-                                                    
-                                                    // === BROKER COMPENSATION FIELDS TO COMPARE (excluding additional_details) ===
-                                                    $brokerFields = [
-                                                        'commission_structure',
-                                                        'lease_fee_type',
-                                                        'payment_timing',
-                                                        'days_to_pay',
-                                                        'interested_purchase_fee_type',
-                                                        'purchase_fee_type',
-                                                        'interested_lease_option_agreement',
-                                                        'lease_type',
-                                                        'lease_value',
-                                                        'purchase_type',
-                                                        'purchase_value',
-                                                        'protection_period',
-                                                        'early_termination_fee_option',
-                                                        'early_termination_fee_amount',
-                                                        'retainer_fee_option',
-                                                        'retainer_fee_amount',
-                                                        'retainer_fee_application',
-                                                        'agency_agreement_timeframe',
-                                                        'brokerage_relationship',
-                                                    ];
-                                                    
-                                                    // Normalize function for comparison
-                                                    $normalizeForMatch = function($v) {
-                                                        if (is_null($v) || $v === '') return '';
-                                                        if (is_array($v) || is_object($v)) return json_encode($v);
-                                                        $v = trim((string) $v);
-                                                        return preg_replace('/[\s$,%]/', '', strtolower($v));
-                                                    };
-                                                    
-                                                    // Calculate Broker Compensation Match
-                                                    $brokerMatched = 0;
-                                                    $brokerTotal = 0;
-                                                    $brokerMismatches = [];
-                                                    
-                                                    foreach ($brokerFields as $field) {
-                                                        $currentVal = $currentBidData[$field] ?? null;
-                                                        $baselineVal = $baselineData[$field] ?? null;
-                                                        
-                                                        // Only count if at least one has a value
-                                                        if (!empty($currentVal) || !empty($baselineVal)) {
-                                                            $brokerTotal++;
-                                                            if ($normalizeForMatch($currentVal) === $normalizeForMatch($baselineVal)) {
-                                                                $brokerMatched++;
-                                                            } else {
-                                                                $brokerMismatches[$field] = true;
-                                                            }
-                                                        }
-                                                    }
-                                                    
-                                                    $brokerScore = $brokerTotal > 0 ? round(($brokerMatched / $brokerTotal) * 100) : 100;
-                                                    
-                                                    // === OFFERED SERVICES COMPARISON ===
-                                                    $currentServices = $currentBidData['services'] ?? [];
-                                                    if (is_string($currentServices)) {
-                                                        $currentServices = json_decode($currentServices, true) ?? [];
-                                                    }
-                                                    $currentServices = is_array($currentServices) ? array_values(array_filter($currentServices)) : [];
-                                                    
-                                                    $baselineServices = $baselineData['services'] ?? [];
-                                                    if (is_string($baselineServices)) {
-                                                        $baselineServices = json_decode($baselineServices, true) ?? [];
-                                                    }
-                                                    $baselineServices = is_array($baselineServices) ? array_values(array_filter($baselineServices)) : [];
-                                                    
-                                                    // Normalize service strings for comparison
-                                                    $normalizeService = function($s) {
-                                                        $s = preg_replace('/[\x{2018}\x{2019}]/u', "'", $s);
-                                                        $s = preg_replace('/[\x{201C}\x{201D}]/u', '"', $s);
-                                                        return strtolower(trim($s));
-                                                    };
-                                                    
-                                                    $currentNorm = array_map($normalizeService, $currentServices);
-                                                    $baselineNorm = array_map($normalizeService, $baselineServices);
-                                                    
-                                                    // Union of all services for comparison
-                                                    $allServices = array_unique(array_merge($currentNorm, $baselineNorm));
-                                                    $servicesTotal = count($allServices);
-                                                    $servicesMatched = 0;
-                                                    $serviceMismatches = [];
-                                                    
-                                                    foreach ($allServices as $svc) {
-                                                        $inCurrent = in_array($svc, $currentNorm);
-                                                        $inBaseline = in_array($svc, $baselineNorm);
-                                                        if ($inCurrent === $inBaseline) {
-                                                            $servicesMatched++;
-                                                        } else {
-                                                            $serviceMismatches[$svc] = true;
-                                                        }
-                                                    }
-                                                    
-                                                    $servicesScore = $servicesTotal > 0 ? round(($servicesMatched / $servicesTotal) * 100) : 100;
-                                                    
-                                                    // === TOTAL MATCH SCORE ===
-                                                    $hasBroker = $brokerTotal > 0;
-                                                    $hasServices = $servicesTotal > 0;
-                                                    
-                                                    if ($hasBroker && $hasServices) {
-                                                        $totalScore = round(($brokerScore + $servicesScore) / 2);
-                                                    } elseif ($hasBroker) {
-                                                        $totalScore = $brokerScore;
-                                                    } elseif ($hasServices) {
-                                                        $totalScore = $servicesScore;
-                                                    } else {
-                                                        $totalScore = 100;
-                                                    }
-                                                    
-                                                    // Score color based on percentage
-                                                    $getScoreColor = function($score) {
-                                                        if ($score >= 80) return '#28a745';
-                                                        if ($score >= 50) return '#ffc107';
-                                                        return '#dc3545';
-                                                    };
-                                                    @endphp
-                                                    
-                                                    {{-- ========== MATCH SCORE PANEL ========== --}}
+                                                    {{-- ========== MATCH SCORE PANEL (uses pre-calculated values) ========== --}}
                                                     <div class="match-score-panel mb-4 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; border: 1px solid #dee2e6;">
                                                         <div class="d-flex justify-content-between align-items-center mb-3">
                                                             <h6 class="mb-0" style="color: #1a3a5c; font-weight: 600;">
