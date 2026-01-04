@@ -1890,6 +1890,234 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                 <div class="modal-body"
                                                     style="background: #fafafa; padding: 25px;">
 
+                                                    {{-- ========== MATCH SCORE CALCULATION ========== --}}
+                                                    @php
+                                                    // === MATCH SCORE SYSTEM ===
+                                                    // Compares ONLY: Broker Compensation & Agency Terms + Offered Services
+                                                    // Baseline: Other party's most recent submission
+                                                    
+                                                    // Get current bid data
+                                                    $currentBidData = (array) data_get($bid, 'get', []);
+                                                    
+                                                    // Determine baseline based on viewer
+                                                    // Tenant viewing Agent Bid: baseline = Tenant's latest counter OR original listing
+                                                    // Agent viewing: baseline = Agent's most recent bid/counter
+                                                    $baselineData = [];
+                                                    $baselineLabel = '';
+                                                    
+                                                    // Get the listing owner's user ID for filtering
+                                                    $listingOwnerUserId = $auction->user_id;
+                                                    
+                                                    // Get the latest counter from tenant (listing owner) ONLY - filter by listing owner's user_id
+                                                    $latestTenantCounter = $bid->counterTerms()
+                                                        ->where('user_id', $listingOwnerUserId)
+                                                        ->orderBy('created_at', 'desc')
+                                                        ->first();
+                                                    
+                                                    if ($isListingOwner) {
+                                                        // Tenant viewing Agent's bid - baseline is Tenant's latest counter or original listing
+                                                        if ($latestTenantCounter) {
+                                                            $baselineData = $latestTenantCounter->getAllMeta();
+                                                            $baselineLabel = 'Your Latest Counter';
+                                                        } else {
+                                                            // Use original listing Broker Compensation fields
+                                                            $baselineData = [
+                                                                'commission_structure' => data_get($auction, 'get.commission_structure'),
+                                                                'lease_fee_type' => data_get($auction, 'get.lease_fee_type'),
+                                                                'lease_fee_flat' => data_get($auction, 'get.lease_fee_flat'),
+                                                                'lease_fee_percentage' => data_get($auction, 'get.lease_fee_percentage'),
+                                                                'lease_fee_percentage_monthly_rent' => data_get($auction, 'get.lease_fee_percentage_monthly_rent'),
+                                                                'lease_fee_percentage_monthly_number' => data_get($auction, 'get.lease_fee_percentage_monthly_number'),
+                                                                'lease_fee_flat_combo' => data_get($auction, 'get.lease_fee_flat_combo'),
+                                                                'lease_fee_percentage_combo' => data_get($auction, 'get.lease_fee_percentage_combo'),
+                                                                'lease_fee_percentage_net' => data_get($auction, 'get.lease_fee_percentage_net'),
+                                                                'lease_fee_flat_combo_net' => data_get($auction, 'get.lease_fee_flat_combo_net'),
+                                                                'lease_fee_percentage_combo_net' => data_get($auction, 'get.lease_fee_percentage_combo_net'),
+                                                                'payment_timing' => data_get($auction, 'get.broker_fee_timing'),
+                                                                'days_to_pay' => data_get($auction, 'get.broker_fee_days_from_rent') ?? data_get($auction, 'get.broker_fee_days_after_lease'),
+                                                                'interested_purchase_fee_type' => data_get($auction, 'get.interested_purchase_fee_type'),
+                                                                'purchase_fee_type' => data_get($auction, 'get.purchase_fee_type'),
+                                                                'purchase_fee_flat' => data_get($auction, 'get.purchase_fee_flat'),
+                                                                'purchase_fee_percentage' => data_get($auction, 'get.purchase_fee_percentage'),
+                                                                'interested_lease_option_agreement' => data_get($auction, 'get.interested_lease_option_agreement'),
+                                                                'lease_type' => data_get($auction, 'get.lease_type'),
+                                                                'lease_value' => data_get($auction, 'get.lease_value'),
+                                                                'purchase_type' => data_get($auction, 'get.purchase_type'),
+                                                                'purchase_value' => data_get($auction, 'get.purchase_value'),
+                                                                'protection_period' => data_get($auction, 'get.protection_period'),
+                                                                'early_termination_fee_option' => data_get($auction, 'get.early_termination_fee_option'),
+                                                                'early_termination_fee_amount' => data_get($auction, 'get.early_termination_fee_amount'),
+                                                                'retainer_fee_option' => data_get($auction, 'get.retainer_fee_option'),
+                                                                'retainer_fee_amount' => data_get($auction, 'get.retainer_fee_amount'),
+                                                                'retainer_fee_application' => data_get($auction, 'get.retainer_fee_application'),
+                                                                'agency_agreement_timeframe' => data_get($auction, 'get.agency_agreement_timeframe'),
+                                                                'brokerage_relationship' => data_get($auction, 'get.brokerage_relationship'),
+                                                                'services' => data_get($auction, 'get.services'),
+                                                            ];
+                                                            $baselineLabel = 'Your Original Listing';
+                                                        }
+                                                    } else {
+                                                        // Agent viewing their own bid - baseline is their own bid (100% match to self)
+                                                        $baselineData = $currentBidData;
+                                                        $baselineLabel = 'Your Bid';
+                                                    }
+                                                    
+                                                    // === BROKER COMPENSATION FIELDS TO COMPARE (excluding additional_details) ===
+                                                    $brokerFields = [
+                                                        'commission_structure',
+                                                        'lease_fee_type',
+                                                        'payment_timing',
+                                                        'days_to_pay',
+                                                        'interested_purchase_fee_type',
+                                                        'purchase_fee_type',
+                                                        'interested_lease_option_agreement',
+                                                        'lease_type',
+                                                        'lease_value',
+                                                        'purchase_type',
+                                                        'purchase_value',
+                                                        'protection_period',
+                                                        'early_termination_fee_option',
+                                                        'early_termination_fee_amount',
+                                                        'retainer_fee_option',
+                                                        'retainer_fee_amount',
+                                                        'retainer_fee_application',
+                                                        'agency_agreement_timeframe',
+                                                        'brokerage_relationship',
+                                                    ];
+                                                    
+                                                    // Normalize function for comparison
+                                                    $normalizeForMatch = function($v) {
+                                                        if (is_null($v) || $v === '') return '';
+                                                        if (is_array($v) || is_object($v)) return json_encode($v);
+                                                        $v = trim((string) $v);
+                                                        return preg_replace('/[\s$,%]/', '', strtolower($v));
+                                                    };
+                                                    
+                                                    // Calculate Broker Compensation Match
+                                                    $brokerMatched = 0;
+                                                    $brokerTotal = 0;
+                                                    $brokerMismatches = [];
+                                                    
+                                                    foreach ($brokerFields as $field) {
+                                                        $currentVal = $currentBidData[$field] ?? null;
+                                                        $baselineVal = $baselineData[$field] ?? null;
+                                                        
+                                                        // Only count if at least one has a value
+                                                        if (!empty($currentVal) || !empty($baselineVal)) {
+                                                            $brokerTotal++;
+                                                            if ($normalizeForMatch($currentVal) === $normalizeForMatch($baselineVal)) {
+                                                                $brokerMatched++;
+                                                            } else {
+                                                                $brokerMismatches[$field] = true;
+                                                            }
+                                                        }
+                                                    }
+                                                    
+                                                    $brokerScore = $brokerTotal > 0 ? round(($brokerMatched / $brokerTotal) * 100) : 100;
+                                                    
+                                                    // === OFFERED SERVICES COMPARISON ===
+                                                    $currentServices = $currentBidData['services'] ?? [];
+                                                    if (is_string($currentServices)) {
+                                                        $currentServices = json_decode($currentServices, true) ?? [];
+                                                    }
+                                                    $currentServices = is_array($currentServices) ? array_values(array_filter($currentServices)) : [];
+                                                    
+                                                    $baselineServices = $baselineData['services'] ?? [];
+                                                    if (is_string($baselineServices)) {
+                                                        $baselineServices = json_decode($baselineServices, true) ?? [];
+                                                    }
+                                                    $baselineServices = is_array($baselineServices) ? array_values(array_filter($baselineServices)) : [];
+                                                    
+                                                    // Normalize service strings for comparison
+                                                    $normalizeService = function($s) {
+                                                        $s = preg_replace('/[\x{2018}\x{2019}]/u', "'", $s);
+                                                        $s = preg_replace('/[\x{201C}\x{201D}]/u', '"', $s);
+                                                        return strtolower(trim($s));
+                                                    };
+                                                    
+                                                    $currentNorm = array_map($normalizeService, $currentServices);
+                                                    $baselineNorm = array_map($normalizeService, $baselineServices);
+                                                    
+                                                    // Union of all services for comparison
+                                                    $allServices = array_unique(array_merge($currentNorm, $baselineNorm));
+                                                    $servicesTotal = count($allServices);
+                                                    $servicesMatched = 0;
+                                                    $serviceMismatches = [];
+                                                    
+                                                    foreach ($allServices as $svc) {
+                                                        $inCurrent = in_array($svc, $currentNorm);
+                                                        $inBaseline = in_array($svc, $baselineNorm);
+                                                        if ($inCurrent === $inBaseline) {
+                                                            $servicesMatched++;
+                                                        } else {
+                                                            $serviceMismatches[$svc] = true;
+                                                        }
+                                                    }
+                                                    
+                                                    $servicesScore = $servicesTotal > 0 ? round(($servicesMatched / $servicesTotal) * 100) : 100;
+                                                    
+                                                    // === TOTAL MATCH SCORE ===
+                                                    $hasBroker = $brokerTotal > 0;
+                                                    $hasServices = $servicesTotal > 0;
+                                                    
+                                                    if ($hasBroker && $hasServices) {
+                                                        $totalScore = round(($brokerScore + $servicesScore) / 2);
+                                                    } elseif ($hasBroker) {
+                                                        $totalScore = $brokerScore;
+                                                    } elseif ($hasServices) {
+                                                        $totalScore = $servicesScore;
+                                                    } else {
+                                                        $totalScore = 100;
+                                                    }
+                                                    
+                                                    // Score color based on percentage
+                                                    $getScoreColor = function($score) {
+                                                        if ($score >= 80) return '#28a745';
+                                                        if ($score >= 50) return '#ffc107';
+                                                        return '#dc3545';
+                                                    };
+                                                    @endphp
+                                                    
+                                                    {{-- ========== MATCH SCORE PANEL ========== --}}
+                                                    <div class="match-score-panel mb-4 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; border: 1px solid #dee2e6;">
+                                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                                            <h6 class="mb-0" style="color: #1a3a5c; font-weight: 600;">
+                                                                <i class="fa fa-chart-pie me-2"></i>Match Score
+                                                            </h6>
+                                                            <span class="badge" style="background: {{ $getScoreColor($totalScore) }}; font-size: 1.1rem; padding: 8px 16px;">
+                                                                {{ $totalScore }}% Match
+                                                            </span>
+                                                        </div>
+                                                        <p class="small text-muted mb-3">
+                                                            Comparing to: <strong>{{ $baselineLabel }}</strong>
+                                                        </p>
+                                                        <div class="row g-3">
+                                                            <div class="col-md-6">
+                                                                <div class="p-2 bg-white rounded" style="border-left: 4px solid {{ $getScoreColor($brokerScore) }};">
+                                                                    <div class="d-flex justify-content-between align-items-center">
+                                                                        <span class="small fw-semibold">Broker Compensation</span>
+                                                                        <span class="badge" style="background: {{ $getScoreColor($brokerScore) }};">{{ $brokerScore }}%</span>
+                                                                    </div>
+                                                                    <div class="small text-muted mt-1">
+                                                                        {{ $brokerMatched }}/{{ $brokerTotal }} fields match
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <div class="p-2 bg-white rounded" style="border-left: 4px solid {{ $getScoreColor($servicesScore) }};">
+                                                                    <div class="d-flex justify-content-between align-items-center">
+                                                                        <span class="small fw-semibold">Offered Services</span>
+                                                                        <span class="badge" style="background: {{ $getScoreColor($servicesScore) }};">{{ $servicesScore }}%</span>
+                                                                    </div>
+                                                                    <div class="small text-muted mt-1">
+                                                                        {{ $servicesMatched }}/{{ $servicesTotal }} services match
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {{-- ========== END MATCH SCORE PANEL ========== --}}
+
                                                     <!-- 1. Agent Overview & Qualifications - visible to listing owner or bid owner -->
                                                     @if ($isListingOwner || $isBidOwner)
                                                     <div class="mb-5">
@@ -2075,22 +2303,28 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             <i class="fa fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
                                                         </h6>
 
+                                                        @php
+                                                        // Mismatch highlighting style for Match Score
+                                                        $mismatchStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545;';
+                                                        $mismatchBadge = '<span class="badge bg-danger ms-2" style="font-size: 0.7rem; vertical-align: middle;">Mismatch</span>';
+                                                        @endphp
+                                                        
                                                         <!-- A) Tenant's Broker Compensation -->
                                                         @if (data_get($bid, 'get.commission_structure') || data_get($bid, 'get.lease_fee_type') || data_get($bid, 'get.payment_timing') || data_get($bid, 'get.days_to_pay'))
                                                         <div class="mb-4">
                                                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Tenant's Broker Compensation</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 @if (data_get($bid, 'get.commission_structure'))
-                                                                <li class="mb-1"><span class="fw-semibold">Tenant's Broker Commission Structure:</span> {{ data_get($bid, 'get.commission_structure') }}</li>
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['commission_structure']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Structure:</span> {{ data_get($bid, 'get.commission_structure') }}{!! isset($brokerMismatches['commission_structure']) ? $mismatchBadge : '' !!}</li>
                                                                 @endif
                                                                 @if (data_get($bid, 'get.lease_fee_type'))
-                                                                <li class="mb-1"><span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $commissionFeeDisplay }}</li>
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['lease_fee_type']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $commissionFeeDisplay }}{!! isset($brokerMismatches['lease_fee_type']) ? $mismatchBadge : '' !!}</li>
                                                                 @endif
                                                                 @if (data_get($bid, 'get.payment_timing'))
-                                                                <li class="mb-1"><span class="fw-semibold">Payment Timing for Broker Fees:</span> {{ data_get($bid, 'get.payment_timing') }}</li>
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['payment_timing']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Payment Timing for Broker Fees:</span> {{ data_get($bid, 'get.payment_timing') }}{!! isset($brokerMismatches['payment_timing']) ? $mismatchBadge : '' !!}</li>
                                                                 @endif
                                                                 @if (data_get($bid, 'get.days_to_pay'))
-                                                                <li class="mb-1"><span class="fw-semibold">Calendar Days To Pay:</span> {{ data_get($bid, 'get.days_to_pay') }}</li>
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['days_to_pay']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Calendar Days To Pay:</span> {{ data_get($bid, 'get.days_to_pay') }}{!! isset($brokerMismatches['days_to_pay']) ? $mismatchBadge : '' !!}</li>
                                                                 @endif
                                                             </ul>
                                                         </div>
@@ -2101,9 +2335,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         <div class="mb-4">
                                                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">B) Purchase Fee Details</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
-                                                                <li class="mb-1"><span class="fw-semibold">Interested in Purchasing a Property:</span> {{ data_get($bid, 'get.interested_purchase_fee_type') }}</li>
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['interested_purchase_fee_type']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Interested in Purchasing a Property:</span> {{ data_get($bid, 'get.interested_purchase_fee_type') }}{!! isset($brokerMismatches['interested_purchase_fee_type']) ? $mismatchBadge : '' !!}</li>
                                                                 @if (data_get($bid, 'get.interested_purchase_fee_type') === 'Yes' && $purchaseFeeDisplay !== '—')
-                                                                <li class="mb-1"><span class="fw-semibold">Purchase Fee:</span> {{ $purchaseFeeDisplay }}</li>
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['purchase_fee_type']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Purchase Fee:</span> {{ $purchaseFeeDisplay }}{!! isset($brokerMismatches['purchase_fee_type']) ? $mismatchBadge : '' !!}</li>
                                                                 @endif
                                                             </ul>
                                                         </div>
@@ -2114,13 +2348,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         <div class="mb-4">
                                                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">C) Lease-Option Details</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
-                                                                <li class="mb-1"><span class="fw-semibold">Interested in a Lease-Option Agreement:</span> {{ data_get($bid, 'get.interested_lease_option_agreement') }}</li>
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['interested_lease_option_agreement']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Interested in a Lease-Option Agreement:</span> {{ data_get($bid, 'get.interested_lease_option_agreement') }}{!! isset($brokerMismatches['interested_lease_option_agreement']) ? $mismatchBadge : '' !!}</li>
                                                                 @if (data_get($bid, 'get.interested_lease_option_agreement') === 'Yes')
                                                                     @if ($leaseOptionCreatedDisplay !== '—')
-                                                                    <li class="mb-1"><span class="fw-semibold">Compensation (When Option Is Created):</span> {{ $leaseOptionCreatedDisplay }}</li>
+                                                                    <li class="mb-1" style="{{ isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Compensation (When Option Is Created):</span> {{ $leaseOptionCreatedDisplay }}{!! isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value']) ? $mismatchBadge : '' !!}</li>
                                                                     @endif
                                                                     @if ($leaseOptionExercisedDisplay !== '—')
-                                                                    <li class="mb-1"><span class="fw-semibold">Compensation (If Purchase Option Exercised):</span> {{ $leaseOptionExercisedDisplay }}</li>
+                                                                    <li class="mb-1" style="{{ isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Compensation (If Purchase Option Exercised):</span> {{ $leaseOptionExercisedDisplay }}{!! isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value']) ? $mismatchBadge : '' !!}</li>
                                                                     @endif
                                                                 @endif
                                                             </ul>
@@ -2133,27 +2367,28 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">D) Legal Terms</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 @if (data_get($bid, 'get.protection_period'))
-                                                                <li class="mb-1"><span class="fw-semibold">Protection Period Timeframe:</span> {{ data_get($bid, 'get.protection_period') }} days</li>
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['protection_period']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Protection Period Timeframe:</span> {{ data_get($bid, 'get.protection_period') }} days{!! isset($brokerMismatches['protection_period']) ? $mismatchBadge : '' !!}</li>
                                                                 @endif
                                                                 @if (data_get($bid, 'get.early_termination_fee_option'))
-                                                                <li class="mb-1"><span class="fw-semibold">Early Termination Fee:</span> {{ data_get($bid, 'get.early_termination_fee_option') }}</li>
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['early_termination_fee_option']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Early Termination Fee:</span> {{ data_get($bid, 'get.early_termination_fee_option') }}{!! isset($brokerMismatches['early_termination_fee_option']) ? $mismatchBadge : '' !!}</li>
                                                                     @if ($terminationFeeDisplay !== '—')
-                                                                    <li class="mb-1"><span class="fw-semibold">Termination Fee Amount:</span> {{ $terminationFeeDisplay }}</li>
+                                                                    <li class="mb-1" style="{{ isset($brokerMismatches['early_termination_fee_amount']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Termination Fee Amount:</span> {{ $terminationFeeDisplay }}{!! isset($brokerMismatches['early_termination_fee_amount']) ? $mismatchBadge : '' !!}</li>
                                                                     @endif
                                                                 @endif
                                                                 @if (data_get($bid, 'get.retainer_fee_option'))
-                                                                <li class="mb-1"><span class="fw-semibold">Retainer Fee:</span> {{ data_get($bid, 'get.retainer_fee_option') }}</li>
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['retainer_fee_option']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Retainer Fee:</span> {{ data_get($bid, 'get.retainer_fee_option') }}{!! isset($brokerMismatches['retainer_fee_option']) ? $mismatchBadge : '' !!}</li>
                                                                     @if (data_get($bid, 'get.retainer_fee_option') === 'Yes')
                                                                         @if (data_get($bid, 'get.retainer_fee_amount'))
-                                                                        <li class="mb-1"><span class="fw-semibold">Retainer Fee Amount:</span> ${{ number_format((float)data_get($bid, 'get.retainer_fee_amount'), 2) }}</li>
+                                                                        <li class="mb-1" style="{{ isset($brokerMismatches['retainer_fee_amount']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Retainer Fee Amount:</span> ${{ number_format((float)data_get($bid, 'get.retainer_fee_amount'), 2) }}{!! isset($brokerMismatches['retainer_fee_amount']) ? $mismatchBadge : '' !!}</li>
                                                                         @endif
                                                                         @if (data_get($bid, 'get.retainer_fee_application'))
-                                                                        <li class="mb-1"><span class="fw-semibold">Retainer Fee Application:</span> 
+                                                                        <li class="mb-1" style="{{ isset($brokerMismatches['retainer_fee_application']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Retainer Fee Application:</span> 
                                                                             @if (data_get($bid, 'get.retainer_fee_application') === 'applied')
                                                                             Applied toward final compensation
                                                                             @else
                                                                             Charged in addition to final compensation
                                                                             @endif
+                                                                            {!! isset($brokerMismatches['retainer_fee_application']) ? $mismatchBadge : '' !!}
                                                                         </li>
                                                                         @endif
                                                                     @endif
@@ -2165,7 +2400,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                     $isOtherTimeframe = is_string($agencyTimeframe) && strtolower(trim($agencyTimeframe)) === 'other';
                                                                     $agencyTimeframeDisplay = $isOtherTimeframe ? ($agencyTimeframeCustom ?: 'Other') : ($agencyTimeframe ?: '');
                                                                 @endphp
-                                                                <li class="mb-1"><span class="fw-semibold">Tenant Agency Agreement Timeframe:</span> {{ $agencyTimeframeDisplay }}</li>
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['agency_agreement_timeframe']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Tenant Agency Agreement Timeframe:</span> {{ $agencyTimeframeDisplay }}{!! isset($brokerMismatches['agency_agreement_timeframe']) ? $mismatchBadge : '' !!}</li>
                                                                 @endif
                                                             </ul>
                                                         </div>
@@ -2176,7 +2411,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         <div class="mb-4">
                                                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">E) Brokerage Relationship</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
-                                                                <li class="mb-1"><span class="fw-semibold">Acceptable Brokerage Relationship:</span> {{ data_get($bid, 'get.brokerage_relationship') }}</li>
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['brokerage_relationship']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Acceptable Brokerage Relationship:</span> {{ data_get($bid, 'get.brokerage_relationship') }}{!! isset($brokerMismatches['brokerage_relationship']) ? $mismatchBadge : '' !!}</li>
                                                             </ul>
                                                         </div>
                                                         @endif
@@ -2363,6 +2598,18 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     $hasAnyBidServices = !empty($bidAllServices) || !empty($bidOtherServices);
                                                     @endphp
                                                     
+                                                    @php
+                                                    // Service mismatch highlighting - check if service is NOT in baseline
+                                                    $svcMismatchStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545;';
+                                                    $svcMismatchBadge = '<span class="badge bg-danger ms-2" style="font-size: 0.65rem; vertical-align: middle;">Not in Baseline</span>';
+                                                    
+                                                    // Check if a service exists in baseline (normalized comparison)
+                                                    $checkServiceInBaseline = function($service) use ($baselineNorm, $normalizeService) {
+                                                        $normService = $normalizeService($service);
+                                                        return in_array($normService, $baselineNorm);
+                                                    };
+                                                    @endphp
+                                                    
                                                     <div class="mb-5">
                                                         <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
                                                             <i class="fa fa-clipboard-list me-2"></i>Offered Services
@@ -2380,7 +2627,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                     <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">{{ $bidCategoryName }}</div>
                                                                     <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
                                                                         @foreach ($bidMatchedServices as $bidService)
-                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $bidService }}</li>
+                                                                            @php $svcInBaseline = $checkServiceInBaseline($bidService); @endphp
+                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px; {{ !$svcInBaseline ? $svcMismatchStyle : '' }}">{{ $bidService }}{!! !$svcInBaseline ? $svcMismatchBadge : '' !!}</li>
                                                                         @endforeach
                                                                     </ul>
                                                                 </div>
@@ -2392,7 +2640,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Additional Services</div>
                                                                 <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
                                                                     @foreach ($bidOtherServices as $bidOtherService)
-                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $bidOtherService }}</li>
+                                                                        @php $svcInBaseline = $checkServiceInBaseline($bidOtherService); @endphp
+                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; {{ !$svcInBaseline ? $svcMismatchStyle : '' }}">{{ $bidOtherService }}{!! !$svcInBaseline ? $svcMismatchBadge : '' !!}</li>
                                                                     @endforeach
                                                                 </ul>
                                                             </div>
