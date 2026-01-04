@@ -67,6 +67,7 @@ class AcceptedBidSummaryController extends Controller
     {
         $request->validate([
             'signature_name' => 'required|string|min:2|max:255',
+            'timezone' => 'nullable|string|max:100',
         ]);
 
         $summary = AcceptedBidSummary::findOrFail($id);
@@ -84,9 +85,11 @@ class AcceptedBidSummaryController extends Controller
         }
 
         $ipAddress = $request->ip();
+        $timezone = $request->input('timezone') ?: 'UTC';
+        $userAgent = $request->userAgent();
 
         try {
-            $this->summaryService->updateSignature($summary, $userRole, $request->signature_name, $ipAddress);
+            $this->summaryService->updateSignature($summary, $userRole, $request->signature_name, $ipAddress, $timezone, $userAgent);
 
             if ($summary->isFullySigned()) {
                 $this->generatePdf($summary);

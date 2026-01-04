@@ -13,7 +13,80 @@ class AcceptedBidSummaryService
 {
     public function getRenderedHtml(AcceptedBidSummary $summary): string
     {
-        return $summary->summary_html ?? '';
+        $html = $summary->summary_html ?? '';
+        
+        if ($summary->isTenantSigned()) {
+            $tenantSignedDisplay = $this->formatSignatureTimestamp($summary->tenant_signed_at, $summary->tenant_timezone);
+            $html = str_replace('{{tenant_signature_name}}', e($summary->tenant_signature_name), $html);
+            $html = str_replace('{{tenant_signed_at}}', $tenantSignedDisplay, $html);
+            $html = str_replace('{{tenant_ip_address}}', $summary->tenant_ip_address ?: 'Unavailable', $html);
+        }
+        
+        if ($summary->isAgentSigned()) {
+            $agentSignedDisplay = $this->formatSignatureTimestamp($summary->agent_signed_at, $summary->agent_timezone);
+            $html = str_replace('{{agent_signature_name}}', e($summary->agent_signature_name), $html);
+            $html = str_replace('{{agent_signed_at}}', $agentSignedDisplay, $html);
+            $html = str_replace('{{agent_ip_address}}', $summary->agent_ip_address ?: 'Unavailable', $html);
+        }
+        
+        return $html;
+    }
+
+    public function updateSignature(AcceptedBidSummary $summary, string $role, string $signatureName, ?string $ipAddress, ?string $timezone = null, ?string $userAgent = null): AcceptedBidSummary
+    {
+        $now = now();
+        
+        if ($role === 'tenant') {
+            $summary->tenant_signature_name = $signatureName;
+            $summary->tenant_signed_at = $now;
+            $summary->tenant_ip_address = $ipAddress ?: null;
+            $summary->tenant_timezone = $timezone ?: 'UTC';
+            $summary->tenant_user_agent = $userAgent;
+        } else {
+            $summary->agent_signature_name = $signatureName;
+            $summary->agent_signed_at = $now;
+            $summary->agent_ip_address = $ipAddress ?: null;
+            $summary->agent_timezone = $timezone ?: 'UTC';
+            $summary->agent_user_agent = $userAgent;
+        }
+        
+        $summary->save();
+        
+        return $summary;
+    }
+
+    protected function formatSignatureTimestamp($datetime, ?string $timezone): string
+    {
+        if (!$datetime) {
+            return 'Pending';
+        }
+        
+        try {
+            $tz = $timezone ?: 'UTC';
+            $dt = $datetime instanceof \Carbon\Carbon ? $datetime : \Carbon\Carbon::parse($datetime);
+            $localTime = $dt->setTimezone($tz);
+            
+            $tzAbbr = $this->getTimezoneAbbreviation($tz);
+            
+            return $localTime->format('M j, Y g:i A') . ' (' . $tzAbbr . ')';
+        } catch (\Exception $e) {
+            return $datetime->format('M j, Y g:i A') . ' (UTC)';
+        }
+    }
+
+    protected function getTimezoneAbbreviation(string $timezone): string
+    {
+        $abbreviations = [
+            'America/New_York' => 'ET',
+            'America/Chicago' => 'CT',
+            'America/Denver' => 'MT',
+            'America/Los_Angeles' => 'PT',
+            'America/Phoenix' => 'MST',
+            'America/Anchorage' => 'AKT',
+            'Pacific/Honolulu' => 'HST',
+        ];
+        
+        return $abbreviations[$timezone] ?? $timezone;
     }
 
     protected $residentialServiceCategories = [

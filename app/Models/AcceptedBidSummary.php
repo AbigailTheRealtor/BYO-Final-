@@ -20,9 +20,13 @@ class AcceptedBidSummary extends Model
         'tenant_signature_name',
         'tenant_signed_at',
         'tenant_ip_address',
+        'tenant_timezone',
+        'tenant_user_agent',
         'agent_signature_name',
         'agent_signed_at',
         'agent_ip_address',
+        'agent_timezone',
+        'agent_user_agent',
     ];
 
     protected $casts = [

@@ -1,0 +1,203 @@
+REPLIT INSTRUCTIONS — Fix Time Zone + IP Address (Hire a Tenant Accepted Bid Summary)
+
+Applies ONLY to:
+BidYourAgent → Hire a Tenant listings (Residential + Commercial)
+Accepted Bid Summary + E-Sign Acknowledgement
+
+🚨 SAFEGUARDS (MANDATORY — ADDITION / DISPLAY FIX ONLY)
+
+DO NOT:
+
+delete/rename database columns, migrations, models, or routes
+
+change bid acceptance logic (status changes, counters, etc.)
+
+change the wording/content of the Accepted Bid Summary (except timestamp + IP fields formatting)
+
+change UI layout beyond adding minimal hidden fields or headers needed to capture timezone
+
+block signing if IP or timezone cannot be captured
+
+YOU MAY ONLY:
+
+fix how timezone is determined and stored for signatures
+
+fix how signer IP is captured (per signer, per device)
+
+update the summary display to show the correct timezone and correct signer IP
+
+add null-safe fallbacks for missing IP/timezone
+
+1) PROBLEM STATEMENT (WHAT TO FIX)
+
+Currently:
+
+the Bid Summary shows the wrong timezone
+
+the Bid Summary shows the wrong IP address
+
+Expected:
+
+Timestamp timezone must reflect the signer’s device timezone (computer/phone settings)
+
+IP must reflect the signer’s actual request IP at the moment they sign
+
+Tenant and Agent may be in different timezones → show each signer’s time in their timezone
+
+Do not require IP for signing to succeed
+
+2) REQUIRED SIGNATURE METADATA (STORE PER SIGNER)
+
+For each signature (Tenant + Agent), store:
+
+Tenant signature fields
+
+tenant_signature_name
+
+tenant_signed_at_utc (store as UTC in DB)
+
+tenant_timezone (IANA timezone string preferred, e.g., America/New_York)
+
+tenant_signed_at_local_display (optional, can be derived)
+
+tenant_ip_address (captured from request)
+
+tenant_user_agent (optional but recommended)
+
+Agent signature fields
+
+agent_signature_name
+
+agent_signed_at_utc (UTC)
+
+agent_timezone (IANA string)
+
+agent_ip_address
+
+agent_user_agent (optional)
+
+✅ Important: Store the canonical time as UTC.
+Timezone is stored separately to display the local time correctly.
+
+3) TIMEZONE LOGIC (MUST USE DEVICE TIMEZONE)
+Frontend capture (required)
+
+When the user clicks E-Sign Acknowledgement, capture the signer’s timezone from their device:
+
+Use JS: Intl.DateTimeFormat().resolvedOptions().timeZone
+
+Send it with the signing request (hidden input or request payload)
+
+If timezone cannot be detected:
+
+fallback to a reasonable default (e.g., account/profile timezone if you have it)
+
+otherwise fallback to server timezone but label it clearly
+
+✅ Timezone must be stored per signature: Tenant can be different than Agent.
+
+4) TIMESTAMP DISPLAY RULES (BID SUMMARY)
+Store
+
+Save signature time as signed_at_utc (UTC)
+
+Display on summary
+
+Show:
+
+Local time using signer’s captured timezone
+
+Include timezone abbreviation or IANA string
+
+Example display:
+
+Jan 4, 2026 3:42 PM (America/New_York)
+OR
+
+2026-01-04 15:42 (ET)
+
+✅ Tenant signature displays in Tenant timezone
+✅ Agent signature displays in Agent timezone
+
+Do NOT display server timezone unless it’s the only fallback and is labeled.
+
+5) IP ADDRESS LOGIC (MUST CAPTURE PER SIGNER REQUEST)
+
+Capture the signer’s IP at the moment they sign, from the signing HTTP request.
+
+Requirements
+
+Use request IP (not the server IP)
+
+If behind a proxy/load balancer, use your framework’s trusted proxy settings so request()->ip() resolves correctly
+
+Store IP per signer:
+
+tenant_ip_address
+
+agent_ip_address
+
+Do not hard-fail
+
+If IP is unavailable:
+
+store as null or “Unavailable”
+
+do not block signing
+
+✅ Note: VPNs/mobile carriers may still show non-local IP. That’s acceptable.
+
+6) UPDATE THE ACCEPTED BID SUMMARY TEMPLATE OUTPUT
+
+Update ONLY the signature metadata portion of the Bid Summary to show:
+
+Tenant:
+
+Name
+
+Date Signed (localized using tenant_timezone)
+
+IP Address (tenant_ip_address OR “Unavailable”)
+
+Agent:
+
+Name
+
+Date Signed (localized using agent_timezone)
+
+IP Address (agent_ip_address OR “Unavailable”)
+
+Do not change other summary sections.
+
+7) ACCEPTANCE EVENT TIMEZONE (OPTIONAL BUT RECOMMENDED)
+
+The “Date Bid Accepted” field should also:
+
+be stored in UTC
+
+display based on the viewing user’s timezone (Tenant sees in Tenant timezone; Agent sees in Agent timezone)
+
+If that’s too complex right now, show it in UTC with label:
+
+“Date Bid Accepted (UTC): …”
+
+But the signatures MUST be correct.
+
+8) TEST CASES (MUST PASS)
+
+Tenant signs in Florida (ET) → Tenant signature displays ET time correctly
+
+Agent signs in California (PT) → Agent signature displays PT time correctly
+
+Summary shows two different local times if timezones differ
+
+IP shown for Tenant differs from Agent if they’re on different networks
+
+Signing still works even if IP capture fails
+
+No changes to acceptance logic or other listing types
+
+9) FINAL NOTE FOR REPLIT
+
+IP address is audit-supporting metadata and must not be treated as a legal requirement.
+Timezone must reflect device settings and be captured per signature event.

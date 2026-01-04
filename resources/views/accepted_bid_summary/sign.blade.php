@@ -35,8 +35,9 @@
                                 </small>
                             </div>
 
-                            <form action="{{ route('accepted-bid-summary.sign', $summary->id) }}" method="POST">
+                            <form action="{{ route('accepted-bid-summary.sign', $summary->id) }}" method="POST" id="signForm">
                                 @csrf
+                                <input type="hidden" name="timezone" id="timezone" value="UTC">
                                 
                                 <div class="mb-3">
                                     <label for="signature_name" class="form-label">
@@ -63,7 +64,12 @@
 
                                 <div class="mb-3">
                                     <label class="form-label">Timestamp</label>
-                                    <input type="text" class="form-control" value="{{ now()->format('M j, Y g:i A T') }}" disabled>
+                                    <input type="text" class="form-control" id="localTimestamp" value="Loading..." disabled>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Your Timezone</label>
+                                    <input type="text" class="form-control" id="timezoneDisplay" value="Detecting..." disabled>
                                 </div>
 
                                 <div class="mb-3">
@@ -101,4 +107,45 @@
         font-size: 1.2em;
     }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        document.getElementById('timezone').value = tz || 'UTC';
+        
+        var abbr = getTimezoneAbbr(tz);
+        document.getElementById('timezoneDisplay').value = abbr + ' (' + tz + ')';
+        
+        var now = new Date();
+        var options = { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric', 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: true
+        };
+        var localTimeStr = now.toLocaleString('en-US', options);
+        document.getElementById('localTimestamp').value = localTimeStr + ' (' + abbr + ')';
+    } catch (e) {
+        document.getElementById('timezone').value = 'UTC';
+        document.getElementById('timezoneDisplay').value = 'UTC (Could not detect)';
+        document.getElementById('localTimestamp').value = new Date().toISOString();
+    }
+    
+    function getTimezoneAbbr(tz) {
+        var abbrs = {
+            'America/New_York': 'ET',
+            'America/Chicago': 'CT',
+            'America/Denver': 'MT',
+            'America/Los_Angeles': 'PT',
+            'America/Phoenix': 'MST',
+            'America/Anchorage': 'AKT',
+            'Pacific/Honolulu': 'HST'
+        };
+        return abbrs[tz] || tz.split('/').pop().replace(/_/g, ' ');
+    }
+});
+</script>
 @endsection
