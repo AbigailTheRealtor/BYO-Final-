@@ -90,9 +90,7 @@
     
     .summary-content {
         width: 100%;
-        max-width: 950px;
-        margin: 0 auto;
-        padding: 40px 50px;
+        padding: 30px 40px;
         background: #ffffff;
         font-family: Arial, sans-serif;
         line-height: 1.7;
