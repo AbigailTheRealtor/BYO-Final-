@@ -3416,11 +3416,15 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     // Helper functions for counter bid display formatting
                                                     $counterFmtMoney = function($val) {
                                                         if (empty($val)) return '';
-                                                        return '$' . number_format((float) str_replace(',', '', $val), 2);
+                                                        // Strip non-numeric chars (except . and -) before casting
+                                                        $cleaned = preg_replace('/[^0-9.\-]/', '', $val);
+                                                        return '$' . number_format((float) $cleaned, 2);
                                                     };
                                                     $counterFmtPercent = function($val) {
                                                         if (empty($val)) return '';
-                                                        return rtrim(rtrim(number_format((float) str_replace(',', '', $val), 2), '0'), '.') . '%';
+                                                        // Strip non-numeric chars (except . and -) before casting
+                                                        $cleaned = preg_replace('/[^0-9.\-]/', '', $val);
+                                                        return rtrim(rtrim(number_format((float) $cleaned, 2), '0'), '.') . '%';
                                                     };
                                                     
                                                     // Build combined commission fee display
