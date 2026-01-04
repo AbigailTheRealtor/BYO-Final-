@@ -1801,6 +1801,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                         'agency_agreement_timeframe' => data_get($auction, 'get.agency_agreement_timeframe'),
                                         'brokerage_relationship' => data_get($auction, 'get.brokerage_relationship'),
                                         'services' => data_get($auction, 'get.services'),
+                                        'other_services' => data_get($auction, 'get.other_services'),
                                     ];
                                     $baselineLabel = 'Your Original Listing';
                                 }
@@ -1847,18 +1848,40 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             
                             $brokerScore = $brokerTotal > 0 ? round(($brokerMatched / $brokerTotal) * 100) : 100;
                             
-                            // === OFFERED SERVICES COMPARISON ===
+                            // === OFFERED SERVICES COMPARISON (includes other_services) ===
+                            // Parse main services
                             $currentServices = $currentBidData['services'] ?? [];
                             if (is_string($currentServices)) {
                                 $currentServices = json_decode($currentServices, true) ?? [];
                             }
                             $currentServices = is_array($currentServices) ? array_values(array_filter($currentServices)) : [];
                             
+                            // Parse other_services (additional custom services) for current bid
+                            $currentOtherServices = $currentBidData['other_services'] ?? [];
+                            if (is_string($currentOtherServices)) {
+                                $currentOtherServices = json_decode($currentOtherServices, true) ?? [];
+                            }
+                            $currentOtherServices = is_array($currentOtherServices) ? array_values(array_filter($currentOtherServices, fn($s) => is_string($s) && !empty(trim($s)))) : [];
+                            
+                            // Combine main services + other_services for current bid
+                            $currentServices = array_merge($currentServices, $currentOtherServices);
+                            
+                            // Parse baseline services
                             $baselineServices = $baselineData['services'] ?? [];
                             if (is_string($baselineServices)) {
                                 $baselineServices = json_decode($baselineServices, true) ?? [];
                             }
                             $baselineServices = is_array($baselineServices) ? array_values(array_filter($baselineServices)) : [];
+                            
+                            // Parse other_services for baseline
+                            $baselineOtherServices = $baselineData['other_services'] ?? [];
+                            if (is_string($baselineOtherServices)) {
+                                $baselineOtherServices = json_decode($baselineOtherServices, true) ?? [];
+                            }
+                            $baselineOtherServices = is_array($baselineOtherServices) ? array_values(array_filter($baselineOtherServices, fn($s) => is_string($s) && !empty(trim($s)))) : [];
+                            
+                            // Combine main services + other_services for baseline
+                            $baselineServices = array_merge($baselineServices, $baselineOtherServices);
                             
                             $normalizeService = function($s) {
                                 $s = preg_replace('/[\x{2018}\x{2019}]/u', "'", $s);
@@ -2597,13 +2620,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     @endphp
                                                     
                                                     @php
-                                                    // Service mismatch highlighting - check if service is NOT in baseline
-                                                    $svcAddedStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545;';
-                                                    $svcAddedBadge = '<span class="badge bg-danger ms-2" style="font-size: 0.65rem; vertical-align: middle;">Added (Not in Your Requirements)</span>';
+                                                    // Service ADDED by agent (green - bonus services they offer)
+                                                    $svcAddedStyle = 'background-color: #d4edda; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #28a745;';
+                                                    $svcAddedBadge = '<span class="badge bg-success ms-2" style="font-size: 0.65rem; vertical-align: middle;">Extra Service Offered</span>';
                                                     
-                                                    // Missing service style (was in baseline, but agent didn't include)
-                                                    $svcMissingStyle = 'background-color: #fff3cd; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #ffc107; text-decoration: line-through; color: #856404;';
-                                                    $svcMissingBadge = '<span class="badge bg-warning text-dark ms-2" style="font-size: 0.65rem; vertical-align: middle;">Not Offered by Agent</span>';
+                                                    // Missing service style (was in baseline, but agent didn't include - RED)
+                                                    $svcMissingStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545; text-decoration: line-through; color: #721c24;';
+                                                    $svcMissingBadge = '<span class="badge bg-danger ms-2" style="font-size: 0.65rem; vertical-align: middle;">Not Offered by Agent</span>';
                                                     
                                                     // Check if a service exists in baseline (normalized comparison)
                                                     $checkServiceInBaseline = function($service) use ($baselineNorm, $normalizeService) {
@@ -2665,9 +2688,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             
                                                             {{-- Show services that were in baseline but agent didn't include --}}
                                                             @if ($isListingOwner && !empty($missingServices))
-                                                            <div class="mt-4 p-3" style="background-color: #fff8e1; border-radius: 8px; border: 1px solid #ffcc80;">
-                                                                <div class="fw-bold mb-2" style="color: #e65100; font-size: 0.95rem;">
-                                                                    <i class="fa fa-exclamation-triangle me-2"></i>Services You Requested But Agent Didn't Include ({{ count($missingServices) }})
+                                                            <div class="mt-4 p-3" style="background-color: #ffe6e6; border-radius: 8px; border: 1px solid #dc3545;">
+                                                                <div class="fw-bold mb-2" style="color: #721c24; font-size: 0.95rem;">
+                                                                    <i class="fa fa-times-circle me-2"></i>Services You Requested But Agent Didn't Include ({{ count($missingServices) }})
                                                                 </div>
                                                                 <ul class="mb-0" style="padding-left: 1.2rem;">
                                                                     @foreach ($missingServices as $missingSvc)
