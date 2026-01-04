@@ -3857,15 +3857,14 @@
                 return true;
             }
 
+            // Update save button state - REMOVED: Was blocking submit when hidden tabs failed validation
+            // Livewire server-side validation now handles this
             function updateSaveButton() {
-                const allValid = validateAllTabsStrictly();
-                if (allValid) {
-                    saveButton.classList.remove('disabled');
-                    saveButton.removeAttribute('disabled');
-                } else {
-                    saveButton.classList.add('disabled');
-                    saveButton.setAttribute('disabled', 'disabled');
-                }
+                // No-op: Allow form submission to reach Livewire for proper server-side validation
+                // Always ensure the button is enabled
+                saveButton.classList.remove('disabled');
+                saveButton.removeAttribute('disabled');
+                return;
             }
 
             function setupGlobalListeners() {
