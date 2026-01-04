@@ -3520,7 +3520,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     !empty($allMeta['brokerage_relationship']) ||
                                                     !empty($allMeta['additional_details_broker']) ||
                                                     !empty($allMeta['additional_details']))
-                                                    <div class="mb-4">
+                                                    <div class="mb-5">
                                                         <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
                                                             <i class="fa fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
                                                         </h6>
@@ -3802,77 +3802,74 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     }
                                                     @endphp
 
-                                                    @if (!empty($services))
-                                                    <div style="margin-top: 20px;">
-                                                        <label style="font-size: 18px; font-weight: bold; display: block; margin-bottom: 10px;">
-                                                            Services:
-                                                        </label>
+                                                    @php
+                                                    // Add emoji prefixes to category names (matching original bid format)
+                                                    $categoryEmojis = [
+                                                        'Tenant Criteria Marketing & Promotion' => '📢',
+                                                        'Property Search, Alerts & Matching' => '🔍',
+                                                        'Property Showings & Virtual Tours' => '🏡',
+                                                        'Tenant Application Support' => '📝',
+                                                        'Lease Preparation & Execution' => '📃',
+                                                        'Lease Preparation, LOI & Execution' => '📃',
+                                                        'Move-In Support & Coordination' => '🚚',
+                                                        'Leasing Strategy & Guidance' => '📊',
+                                                    ];
+                                                    
+                                                    $other_services = is_string($allMeta['other_services'] ?? '')
+                                                        ? json_decode($allMeta['other_services'], true) ?? []
+                                                        : ($allMeta['other_services'] ?? []);
+                                                    $other_services = array_filter($other_services ?? [], fn($s) => is_string($s) && !empty(trim($s)));
+                                                    
+                                                    $hasAnyCounterServices = !empty($services) || !empty($other_services) || !empty($unmappedServices);
+                                                    @endphp
+
+                                                    @if ($hasAnyCounterServices)
+                                                    <div class="mb-5">
+                                                        <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                            <i class="fa fa-clipboard-list me-2"></i>Offered Services
+                                                        </h6>
+                                                        
                                                         @foreach ($servicesConfig as $category => $catServices)
                                                             @php
-                                                            // Check if any service in this category is selected (using normalized comparison)
                                                             $selectedInCat = array_filter($catServices, fn($s) => isset($selectedNormalized[$normalizeStr($s)]));
+                                                            $categoryEmoji = $categoryEmojis[$category] ?? '';
                                                             @endphp
                                                             @if (count($selectedInCat) > 0)
-                                                            <div style="margin-bottom: 15px;">
-                                                                <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #049399;">
-                                                                    {{ $category }}
-                                                                </div>
-                                                                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                                            <div class="mb-3">
+                                                                <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">{{ $categoryEmoji }} {{ $category }}</div>
+                                                                <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
                                                                     @foreach ($catServices as $service)
                                                                         @php $serviceNorm = $normalizeStr($service); @endphp
                                                                         @if (isset($selectedNormalized[$serviceNorm]))
-                                                                        <span style="background: #f1f5f9; color: #111; padding: 6px 12px; border-radius: 8px; font-size: 12px; border: 1px solid #ddd;">
-                                                                            {{ $selectedNormalized[$serviceNorm] }}
-                                                                        </span>
+                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $selectedNormalized[$serviceNorm] }}</li>
                                                                         @endif
                                                                     @endforeach
-                                                                </div>
+                                                                </ul>
                                                             </div>
                                                             @endif
                                                         @endforeach
+
                                                         @if (!empty($unmappedServices))
-                                                        <div style="margin-bottom: 15px;">
-                                                            <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #6b7280;">
-                                                                Additional / Unmapped Services
-                                                            </div>
-                                                            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                                        <div class="mb-3">
+                                                            <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Unmapped Services</div>
+                                                            <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
                                                                 @foreach ($unmappedServices as $service)
-                                                                    <span style="background: #f1f5f9; color: #111; padding: 6px 12px; border-radius: 8px; font-size: 12px; border: 1px solid #ddd;">
-                                                                        {{ $service }}
-                                                                    </span>
+                                                                <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $service }}</li>
                                                                 @endforeach
-                                                            </div>
+                                                            </ul>
                                                         </div>
                                                         @endif
-                                                    </div>
-                                                    @endif
 
-                                                    @php
-                                                    $other_services = is_string(
-                                                    $allMeta['other_services'],
-                                                    )
-                                                    ? json_decode(
-                                                    $allMeta['other_services'],
-                                                    true,
-                                                    )
-                                                    : $allMeta['other_services'];
-                                                    @endphp
-
-                                                    @if (!empty($other_services))
-                                                    <div style="margin-top: 20px;">
-                                                        <label
-                                                            style="font-size: 18px; font-weight: bold; display: block; margin-bottom: 10px;">
-                                                            Other Services:
-                                                        </label>
-                                                        <div
-                                                            style="display: flex; flex-wrap: wrap; gap: 10px;">
-                                                            @foreach ($other_services as $other_service)
-                                                            <span
-                                                                style="background: #f1f5f9; color: #111; padding: 6px 12px; border-radius: 8px; font-size: 12px; border: 1px solid #ddd;">
-                                                                {{ $other_service }}
-                                                            </span>
-                                                            @endforeach
+                                                        @if (!empty($other_services))
+                                                        <div class="mb-3">
+                                                            <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Additional Services</div>
+                                                            <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
+                                                                @foreach ($other_services as $otherService)
+                                                                <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $otherService }}</li>
+                                                                @endforeach
+                                                            </ul>
                                                         </div>
+                                                        @endif
                                                     </div>
                                                     @endif
 
