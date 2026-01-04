@@ -6,9 +6,11 @@ use App\Models\TenantAgentAuction;
 use App\Models\TenantAgentAuctionBid;
 use App\Models\TenantCounterBidding;
 use App\Models\UserAgent;
+use App\Services\AcceptedBidSummaryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class TenantAgentAuctionBidController extends Controller
@@ -159,6 +161,17 @@ class TenantAgentAuctionBidController extends Controller
             $ua->save();
             
             DB::commit();
+            
+            try {
+                $summaryService = new AcceptedBidSummaryService();
+                $summaryService->generateSummary($pab, null);
+            } catch (\Exception $e) {
+                Log::error('Failed to generate accepted bid summary after bid acceptance', [
+                    'bid_id' => $pab->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+            
             return redirect()->back()->with('success', 'Bid Accepted successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -268,6 +281,18 @@ class TenantAgentAuctionBidController extends Controller
             $ua->save();
             
             DB::commit();
+            
+            try {
+                $summaryService = new AcceptedBidSummaryService();
+                $summaryService->generateSummary($originalBid, $counterBid);
+            } catch (\Exception $e) {
+                Log::error('Failed to generate accepted bid summary after counter bid acceptance', [
+                    'bid_id' => $originalBid->id,
+                    'counter_id' => $counterBid->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+            
             return redirect()->back()->with('success', 'Counter Bid Accepted successfully!');
         } catch (\Exception $e) {
             DB::rollBack();

@@ -1,0 +1,232 @@
+Update the listing cards for Hire a Tenant listings (Residential + Commercial) to display:
+
+🟦 Residential Tenant Listing Card (Example)
+
+Tenant • Residential
+🏠 Single-Family Home
+🛏 3 Beds | 🛁 2 Baths | 📐 1,000 Sq Ft
+📍 Pinellas County
+👤 Tenant’s Agent Required
+💼 Commission Structure: Included in Offer
+💼 Tenant’s Broker Commission Fee: Flat Fee – $6,000
+
+🟧 Commercial Tenant Listing Card (Example)
+
+Tenant • Commercial
+🏢 Office
+📐 3,000 Sq Ft
+📍 Hillsborough County
+👤 Tenant’s Agent Required
+💼 Commission Structure: Included in Offer
+💼 Tenant’s Broker Commission Fee: 3% of Gross Rent
+
+1) REMOVE BID-VISIBILITY TEXT FROM CARDS
+
+On listing cards ONLY, remove/hide these lines entirely:
+
+“Agent bids will be visible to other Agents”
+
+“Agent bids will remain private”
+
+These may remain inside the listing details page if they exist there.
+
+✅ Acceptance Check: Listing card should never show any bid visibility language.
+
+2) CAPITALIZATION (CARD LABELS)
+
+Change the label on the card from:
+
+tenant → Tenant
+
+Card header must display:
+
+Tenant • Residential OR Tenant • Commercial
+
+3) DISPLAY PROPERTY TYPE + PROPERTY STYLE (REQUIRED)
+
+The listing card must show:
+
+Property Type (Residential or Commercial for Hire a Tenant)
+
+Property Style (the selected subtype such as Single-Family, Condo, Office, Retail, Warehouse, etc.)
+
+Residential
+
+Show:
+
+🏠 {{property_style}}
+Example: 🏠 Single-Family Home
+
+Commercial
+
+Show:
+
+🏢 {{property_style}}
+Example: 🏢 Office
+
+✅ Important: If the user selected “Other” for property style, show the typed “Other” value instead (see Section 4).
+
+4) “OTHER” MUST DISPLAY THE USER’S TYPED VALUE (NOT THE WORD “OTHER”)
+
+Whenever ANY field on the card is derived from a selection that includes “Other,” the card must display the custom text the user typed, not the literal word “Other.”
+
+Implement this as a reusable helper:
+
+Display rule:
+
+If selected_value === "Other" and other_text exists → display other_text
+
+Else display selected_value
+
+Applies at minimum to these card fields:
+
+Bedrooms
+
+Bathrooms
+
+Property Style
+
+Any other card-visible dropdown that supports “Other”
+
+✅ Example:
+
+Bedrooms = Other + 11 → show 11 Beds
+
+Bathrooms = Other + 7 → show 7 Baths
+
+5) BED/BATH DISPLAY LOGIC (RESIDENTIAL ONLY)
+Residential cards:
+
+Show bed/bath row:
+🛏 {{beds}} Beds | 🛁 {{baths}} Baths | 📐 {{sqft}} Sq Ft
+
+Beds and Baths must resolve correctly using “Other” logic above.
+
+Sq Ft should come from the appropriate residential sqft field (whatever is currently used on your cards).
+
+Commercial cards:
+
+DO NOT show bed or bath icons at all.
+
+Only show:
+📐 {{min_net_leasable_sqft_needed}} Sq Ft
+
+✅ Important fix:
+For Commercial listings, the Sq Ft value must be sourced from:
+
+Minimum Net Leasable Sqft Needed
+Right now it is blank — fix the mapping.
+
+6) REMOVE PROPERTY CONDITION FROM CARD
+
+Remove the “Property Condition” line/field from listing cards (Residential + Commercial).
+It should not display anywhere on the card.
+
+7) ADD COUNTY TO CARD (REQUIRED)
+
+Add County line on both Residential + Commercial cards:
+
+📍 {{county}} County
+
+Rules:
+
+Use the listing’s county field.
+
+If the county already includes the word “County,” do not duplicate it.
+
+Example: if stored as “Pinellas County” → display 📍 Pinellas County
+
+if stored as “Pinellas” → display 📍 Pinellas County
+
+8) ADD COMMISSION STRUCTURE + COMMISSION FEE (REQUIRED)
+
+Add these two lines to BOTH Residential + Commercial cards:
+
+💼 Commission Structure: {{commission_structure}}
+
+💼 Tenant’s Broker Commission Fee: {{commission_fee_display}}
+
+Commission Structure
+
+Use the accepted display label already used in your UI (examples):
+
+Included in Offer
+
+Requested From Landlord in the Offer
+
+Paid by Tenant
+(whatever your actual options are — do not rename them here unless the UI already uses the desired label)
+
+Tenant’s Broker Commission Fee formatting
+
+Display must reflect whatever the user/agent entered, such as:
+
+Flat Fee – $6,000
+
+3% of Gross Rent
+
+$8,000 + 2% of Gross Lease Value
+
+Rules:
+
+Use the stored values from the listing/broker comp fields shown on the card today.
+
+If fee is blank, do not show the fee line at all (but still show commission structure if available).
+
+9) “TENANT’S AGENT REQUIRED” LINE
+
+Add/keep this line on both card types:
+👤 Tenant’s Agent Required
+
+(Do not alter logic beyond ensuring it displays for Hire a Tenant listings.)
+
+10) EXACT CARD ORDER (FINAL)
+Residential Card Order
+
+Tenant • Residential
+
+🏠 {{property_style_display}}
+
+🛏 {{beds}} Beds | 🛁 {{baths}} Baths | 📐 {{sqft}} Sq Ft
+
+📍 {{county_display}}
+
+👤 Tenant’s Agent Required
+
+💼 Commission Structure: {{commission_structure}}
+
+💼 Tenant’s Broker Commission Fee: {{commission_fee_display}}
+
+Commercial Card Order
+
+Tenant • Commercial
+
+🏢 {{property_style_display}}
+
+📐 {{min_net_leasable_sqft_needed}} Sq Ft
+
+📍 {{county_display}}
+
+👤 Tenant’s Agent Required
+
+💼 Commission Structure: {{commission_structure}}
+
+💼 Tenant’s Broker Commission Fee: {{commission_fee_display}}
+
+✅ ACCEPTANCE TESTS (MUST PASS)
+
+A Residential listing with normal beds/baths/sqft shows the full residential row with icons.
+
+A Commercial listing never shows bed/bath icons.
+
+Commercial Sq Ft displays correctly from Minimum Net Leasable Sqft Needed (not blank).
+
+If user selects “Other” anywhere used on the card, the card shows the typed value.
+
+County always displays and does not duplicate the word “County.”
+
+Property Condition does not appear.
+
+Bid visibility messages do not appear on cards.
+
+Commission Structure + Tenant’s Broker Commission Fee display on both card types.
