@@ -206,7 +206,7 @@
                         $commissionFeeDisplay = '';
                         $leaseFeeType = @$auction->get->lease_fee_type ?? '';
                         if ($leaseFeeType === 'Flat Fee' && !empty(@$auction->get->lease_fee_flat)) {
-                            $commissionFeeDisplay = 'Flat Fee – ' . $fmtMoney(@$auction->get->lease_fee_flat);
+                            $commissionFeeDisplay = $fmtMoney(@$auction->get->lease_fee_flat);
                         } elseif ($leaseFeeType === 'Percentage of the Gross Lease Value' && !empty(@$auction->get->lease_fee_percentage)) {
                             $commissionFeeDisplay = $fmtPercent(@$auction->get->lease_fee_percentage) . ' of Gross Rent';
                         } elseif ($leaseFeeType === 'Percentage of Monthly Rent' && !empty(@$auction->get->lease_fee_percentage_monthly_rent)) {
@@ -314,11 +314,11 @@
                                     <p class="mb-1">👤 Tenant's Agent Required</p>
 
                                     @if (!empty($commissionStructure))
-                                        <p class="mb-1">💼 Commission Structure: {{ $commissionStructure }}</p>
+                                        <p class="mb-1">💼 <b>Commission Structure:</b> {{ $commissionStructure }}</p>
                                     @endif
 
                                     @if (!empty($commissionFeeDisplay))
-                                        <p class="mb-1">💼 Tenant's Broker Commission Fee: {{ $commissionFeeDisplay }}</p>
+                                        <p class="mb-1">💼 <b>Tenant's Broker Commission Fee:</b> {{ $commissionFeeDisplay }}</p>
                                     @endif
                                 </div>
 

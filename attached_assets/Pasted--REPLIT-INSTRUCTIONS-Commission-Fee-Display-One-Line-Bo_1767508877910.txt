@@ -1,0 +1,109 @@
+🔧 REPLIT INSTRUCTIONS — Commission Fee Display (One-Line, Bold Label)
+
+Applies to:
+BidYourAgent → Hire a Tenant listing cards (Residential + Commercial)
+
+🚨 SAFEGUARDS (MANDATORY)
+
+DO NOT:
+
+change database values or field names
+
+change commission calculation logic
+
+change listing creation inputs
+
+add or remove commission types
+
+alter any other card content outside the commission lines
+
+introduce hyphens or dashes near currency values
+
+YOU MAY ONLY:
+
+update the display formatting of commission-related lines on listing cards
+
+🎯 OBJECTIVE
+
+Standardize the Tenant’s Broker Commission Fee display so that it:
+
+Appears on a single line
+
+Uses a bolded label
+
+Uses a colon (:) between label and value
+
+Displays only the amount or formula
+
+Never visually resembles a negative number
+
+✅ REQUIRED DISPLAY FORMAT (MANDATORY)
+Commission Structure (separate line — unchanged logic)
+💼 **Commission Structure:** Included in Offer
+
+Tenant’s Broker Commission Fee (ONE LINE ONLY)
+💼 **Tenant’s Broker Commission Fee:** $4,334
+
+
+or, if percentage-based:
+
+💼 **Tenant’s Broker Commission Fee:** 3% of Gross Rent
+
+
+or, if combined:
+
+💼 **Tenant’s Broker Commission Fee:** $8,000 + 2% of Gross Lease Value
+
+🚫 PROHIBITED FORMATTING
+
+Do NOT display:
+
+“Flat Fee”
+
+hyphens or dashes (-, –, —) near currency
+
+parentheses around the amount
+
+multi-line commission fee formatting
+
+Examples that must NOT appear:
+
+Flat Fee - $4,334
+
+Flat Fee ($4,334)
+
+$-4,334
+
+label on one line, amount on another
+
+🔍 IMPLEMENTATION RULES
+
+Bold only the label text:
+Tenant’s Broker Commission Fee
+
+Keep the value (amount or formula) normal font weight
+
+Use a single colon between label and value
+
+Preserve the stored value exactly as entered (do not recalculate)
+
+✅ ACCEPTANCE CHECKS
+
+Commission Fee always appears on one line
+
+Label is bold; value is not
+
+No dash or minus symbol appears near $
+
+Works consistently for:
+
+Residential cards
+
+Commercial cards
+
+No backend logic or stored data is modified
+
+🧠 FINAL NOTE FOR REPLIT
+
+This is a display-only UX improvement to improve clarity and avoid financial misinterpretation.
+Do not refactor or touch any underlying business logic.
