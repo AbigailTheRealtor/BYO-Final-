@@ -2598,14 +2598,32 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     
                                                     @php
                                                     // Service mismatch highlighting - check if service is NOT in baseline
-                                                    $svcMismatchStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545;';
-                                                    $svcMismatchBadge = '<span class="badge bg-danger ms-2" style="font-size: 0.65rem; vertical-align: middle;">Not in Baseline</span>';
+                                                    $svcAddedStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545;';
+                                                    $svcAddedBadge = '<span class="badge bg-danger ms-2" style="font-size: 0.65rem; vertical-align: middle;">Added (Not in Your Requirements)</span>';
+                                                    
+                                                    // Missing service style (was in baseline, but agent didn't include)
+                                                    $svcMissingStyle = 'background-color: #fff3cd; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #ffc107; text-decoration: line-through; color: #856404;';
+                                                    $svcMissingBadge = '<span class="badge bg-warning text-dark ms-2" style="font-size: 0.65rem; vertical-align: middle;">Not Offered by Agent</span>';
                                                     
                                                     // Check if a service exists in baseline (normalized comparison)
                                                     $checkServiceInBaseline = function($service) use ($baselineNorm, $normalizeService) {
                                                         $normService = $normalizeService($service);
                                                         return in_array($normService, $baselineNorm);
                                                     };
+                                                    
+                                                    // Check if a service exists in current bid (normalized comparison)
+                                                    $checkServiceInBid = function($service) use ($currentNorm, $normalizeService) {
+                                                        $normService = $normalizeService($service);
+                                                        return in_array($normService, $currentNorm);
+                                                    };
+                                                    
+                                                    // Get services in baseline but NOT in current bid (missing services)
+                                                    $missingServices = [];
+                                                    foreach ($baselineServices as $baselineSvc) {
+                                                        if (!$checkServiceInBid($baselineSvc)) {
+                                                            $missingServices[] = $baselineSvc;
+                                                        }
+                                                    }
                                                     @endphp
                                                     
                                                     <div class="mb-5">
@@ -2626,7 +2644,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                     <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
                                                                         @foreach ($bidMatchedServices as $bidService)
                                                                             @php $svcInBaseline = $checkServiceInBaseline($bidService); @endphp
-                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px; {{ !$svcInBaseline ? $svcMismatchStyle : '' }}">{{ $bidService }}{!! !$svcInBaseline ? $svcMismatchBadge : '' !!}</li>
+                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px; {{ !$svcInBaseline ? $svcAddedStyle : '' }}">{{ $bidService }}{!! !$svcInBaseline ? $svcAddedBadge : '' !!}</li>
                                                                         @endforeach
                                                                     </ul>
                                                                 </div>
@@ -2639,7 +2657,21 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
                                                                     @foreach ($bidOtherServices as $bidOtherService)
                                                                         @php $svcInBaseline = $checkServiceInBaseline($bidOtherService); @endphp
-                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; {{ !$svcInBaseline ? $svcMismatchStyle : '' }}">{{ $bidOtherService }}{!! !$svcInBaseline ? $svcMismatchBadge : '' !!}</li>
+                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; {{ !$svcInBaseline ? $svcAddedStyle : '' }}">{{ $bidOtherService }}{!! !$svcInBaseline ? $svcAddedBadge : '' !!}</li>
+                                                                    @endforeach
+                                                                </ul>
+                                                            </div>
+                                                            @endif
+                                                            
+                                                            {{-- Show services that were in baseline but agent didn't include --}}
+                                                            @if ($isListingOwner && !empty($missingServices))
+                                                            <div class="mt-4 p-3" style="background-color: #fff8e1; border-radius: 8px; border: 1px solid #ffcc80;">
+                                                                <div class="fw-bold mb-2" style="color: #e65100; font-size: 0.95rem;">
+                                                                    <i class="fa fa-exclamation-triangle me-2"></i>Services You Requested But Agent Didn't Include ({{ count($missingServices) }})
+                                                                </div>
+                                                                <ul class="mb-0" style="padding-left: 1.2rem;">
+                                                                    @foreach ($missingServices as $missingSvc)
+                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; {{ $svcMissingStyle }}">{{ $missingSvc }}{!! $svcMissingBadge !!}</li>
                                                                     @endforeach
                                                                 </ul>
                                                             </div>
