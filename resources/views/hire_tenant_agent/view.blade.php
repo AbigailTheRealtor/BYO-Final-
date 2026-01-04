@@ -3320,14 +3320,15 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                 ? '0'
                                                 : (string) $rawBidState;
 
+                                                // Check status field (tenant_counter_terms uses 'status' column)
                                                 $rawCounterState = data_get(
                                                 $counterBid,
-                                                'accepted',
-                                                '0',
+                                                'status',
+                                                data_get($counterBid, 'accepted', '0'),
                                                 );
                                                 $counterState = in_array(
                                                 $rawCounterState,
-                                                [null, 0, '0', 'pending'],
+                                                [null, 0, '0', 'no', 'pending'],
                                                 true,
                                                 )
                                                 ? '0'
