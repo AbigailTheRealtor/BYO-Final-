@@ -1906,7 +1906,7 @@
 
                                 <button type="button" class="btn btn-primary wizard-step-next">Next</button>
 
-                                <button type="submit" class="btn btn-success wizard-step-finish disabled"
+                                <button type="submit" class="btn btn-success wizard-step-finish"
                                     id="save-button">
                                     Submit
                                 </button>
@@ -3339,11 +3339,11 @@
                     });
                 });
 
-                // Enable/disable save button
-                const saveButton = document.querySelector('.wizard-step-finish');
-                if (saveButton) {
-                    saveButton.disabled = !allValid;
-                }
+                // No longer disable button - let Livewire handle server-side validation
+                // const saveButton = document.querySelector('.wizard-step-finish');
+                // if (saveButton) {
+                //     saveButton.disabled = !allValid;
+                // }
 
                 return allValid;
             }
@@ -3500,11 +3500,11 @@
                     }
                 }
 
-                // Update save button state after validation (your existing code)
-                const saveButton = document.querySelector('.wizard-step-finish');
-                if (saveButton) {
-                    saveButton.disabled = !isValid;
-                }
+                // No longer disable button - let Livewire handle server-side validation
+                // const saveButton = document.querySelector('.wizard-step-finish');
+                // if (saveButton) {
+                //     saveButton.disabled = !isValid;
+                // }
             });
 
             // Handle back button click (new implementation that works with your code)
@@ -3553,11 +3553,11 @@
                     });
                 });
 
-                // Enable/disable save button
-                const saveButton = document.querySelector('.wizard-step-finish');
-                if (saveButton) {
-                    saveButton.disabled = !allValid;
-                }
+                // No longer disable button - let Livewire handle server-side validation
+                // const saveButton = document.querySelector('.wizard-step-finish');
+                // if (saveButton) {
+                //     saveButton.disabled = !allValid;
+                // }
 
                 return allValid;
             }
@@ -3688,11 +3688,11 @@
                     }
                 }
 
-                // Update save button state after validation (your existing code)
-                const saveButton = document.querySelector('.wizard-step-finish');
-                if (saveButton) {
-                    saveButton.disabled = !isValid;
-                }
+                // No longer disable button - let Livewire handle server-side validation
+                // const saveButton = document.querySelector('.wizard-step-finish');
+                // if (saveButton) {
+                //     saveButton.disabled = !isValid;
+                // }
             });
 
             // Handle back button click (new implementation that works with your code)

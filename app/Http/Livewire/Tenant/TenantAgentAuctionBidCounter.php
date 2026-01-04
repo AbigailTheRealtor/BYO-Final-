@@ -343,26 +343,32 @@ class TenantAgentAuctionBidCounter extends Component
         $this->pab   = $pab;
         $this->bidId = $bidId;
         $this->parent_counter_id = $parent_counter_id;
-        $this->property_type = $pab->get->property_type;
+        $this->property_type = $pab->get->property_type ?? '';
         
         $sourceData = null;
         
-        if ($parent_counter_id) {
-            $latestCounter = TenantCounterBidding::find($parent_counter_id);
-            if ($latestCounter) {
-                $sourceData = $latestCounter->get;
-            }
+        // COUNTER BID PREFILL RULE: Agent counters with Tenant's latest terms
+        // First try to load the Tenant's latest counter terms (TenantCounterTerm)
+        $tenantCounter = \App\Models\TenantCounterTerm::with('meta')
+            ->where('tenant_agent_auction_id', $pab->tenant_agent_auction_id ?? $pab->id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+        
+        if ($tenantCounter && $tenantCounter->meta) {
+            // Use Tenant's latest counter terms
+            $metaMap = $tenantCounter->meta->pluck('meta_value', 'meta_key')->toArray();
+            $sourceData = (object) $metaMap;
         }
         
+        // If no Tenant counter exists, fall back to the Tenant listing's original terms
         if (!$sourceData) {
-            $latestCounter = TenantCounterBidding::where('tenant_agent_auction_bid_id', $bidId)
-                ->orderBy('created_at', 'desc')
-                ->first();
-            if ($latestCounter) {
-                $sourceData = $latestCounter->get;
+            $auction = $pab->auction ?? \App\Models\HireTenantAgentAuction::find($pab->tenant_agent_auction_id);
+            if ($auction && $auction->get) {
+                $sourceData = $auction->get;
             }
         }
         
+        // Final fallback: Use original bid terms
         if (!$sourceData) {
             $originalBid = \App\Models\TenantAgentAuctionBid::find($bidId);
             if ($originalBid) {

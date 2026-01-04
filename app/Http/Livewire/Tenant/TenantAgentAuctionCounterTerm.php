@@ -245,15 +245,39 @@ class TenantAgentAuctionCounterTerm extends Component
             $this->property_type = $pab->get->property_type ?? '';
         }
 
-        // EDIT MODE: Try load existing counter term by auction id
-        $existing = TenantCounterTerm::with('meta')
+        // Check for existing Tenant counter to determine if this is EDIT mode
+        $existingTenantCounter = TenantCounterTerm::with('meta')
             ->where('tenant_agent_auction_id', $this->pab->id)
+            ->where('user_id', Auth::id())
+            ->latest()
             ->first();
 
-        if ($existing) {
-            $this->counterTermId = $existing->id;
-            $this->hydrateFromMetaMap($existing->meta->pluck('meta_value', 'meta_key')->toArray());
+        if ($existingTenantCounter) {
+            // EDIT MODE: Tenant is editing their own counter - load their existing terms
+            $this->counterTermId = $existingTenantCounter->id;
+            $this->hydrateFromMetaMap($existingTenantCounter->meta->pluck('meta_value', 'meta_key')->toArray());
+        } else {
+            // NEW COUNTER: Prefill with the Agent's bid terms (other party's latest offer)
+            $this->prefillFromAgentBid($pab);
         }
+    }
+    
+    /**
+     * Prefill form with Agent's bid terms when Tenant creates a new counter.
+     * The Tenant edits the Agent's offer and sends back their version.
+     */
+    private function prefillFromAgentBid($bid): void
+    {
+        $bidData = $bid->get ?? null;
+        if (!$bidData) {
+            return;
+        }
+        
+        // Map Agent bid meta keys to this component's properties
+        $m = (array) $bidData;
+        
+        // Hydrate using the same logic as editing existing counter terms
+        $this->hydrateFromMetaMap($m);
     }
 
 
