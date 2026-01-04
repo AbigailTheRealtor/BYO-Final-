@@ -3459,7 +3459,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 style="font-size: 13px; font-weight: 600;">Flat
                                                                 Fee Amount:</span>
                                                             @if (!empty($allMeta['lease_fee_flat_type']) && $allMeta['lease_fee_flat_type'] === '$')
-                                                            ${{ number_format($allMeta['lease_fee_flat'], 2) }}
+                                                            ${{ number_format((float) str_replace(',', '', $allMeta['lease_fee_flat']), 2) }}
                                                             @else
                                                             {{ $allMeta['lease_fee_flat'] }}%
                                                             @endif
@@ -3493,7 +3493,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             <span
                                                                 style="font-size: 13px; font-weight: 600;">Flat
                                                                 Fee Portion:</span>
-                                                            ${{ number_format($allMeta['lease_fee_flat_combo'], 2) }}
+                                                            ${{ number_format((float) str_replace(',', '', $allMeta['lease_fee_flat_combo']), 2) }}
                                                         </div>
                                                         @endif
                                                         @if (!empty($allMeta['lease_fee_percentage_combo']))
@@ -3526,7 +3526,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             <span
                                                                 style="font-size: 13px; font-weight: 600;">Flat
                                                                 Fee Portion:</span>
-                                                            ${{ number_format($allMeta['lease_fee_flat_combo_net'], 2) }}
+                                                            ${{ number_format((float) str_replace(',', '', $allMeta['lease_fee_flat_combo_net']), 2) }}
                                                         </div>
                                                         @endif
                                                         @if (!empty($allMeta['lease_fee_percentage_combo_net']))
@@ -3580,7 +3580,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 style="font-size: 13px; font-weight: 600;">Flat
                                                                 Fee Amount:</span>
                                                             @if (!empty($allMeta['purchase_fee_flat_type']) && $allMeta['purchase_fee_flat_type'] === '$')
-                                                            ${{ number_format($allMeta['purchase_fee_flat'], 2) }}
+                                                            ${{ number_format((float) str_replace(',', '', $allMeta['purchase_fee_flat']), 2) }}
                                                             @else
                                                             {{ $allMeta['purchase_fee_flat'] }}%
                                                             @endif
@@ -3616,7 +3616,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             <span
                                                                 style="font-size: 13px; font-weight: 600;">Flat
                                                                 Fee Portion:</span>
-                                                            ${{ number_format($allMeta['purchase_fee_flat_combo'], 2) }}
+                                                            ${{ number_format((float) str_replace(',', '', $allMeta['purchase_fee_flat_combo']), 2) }}
                                                         </div>
                                                         @endif
                                                         @endif
@@ -3654,7 +3654,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             @if (!empty($allMeta['lease_type']) && $allMeta['lease_type'] === 'percent')
                                                             {{ $allMeta['lease_value'] }}%
                                                             @else
-                                                            ${{ number_format($allMeta['lease_value'], 2) }}
+                                                            ${{ number_format((float) str_replace(',', '', $allMeta['lease_value']), 2) }}
                                                             @endif
                                                         </div>
                                                         @endif
@@ -3669,7 +3669,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             @if (!empty($allMeta['purchase_type']) && $allMeta['purchase_type'] === 'percent')
                                                             {{ $allMeta['purchase_value'] }}%
                                                             @else
-                                                            ${{ number_format($allMeta['purchase_value'], 2) }}
+                                                            ${{ number_format((float) str_replace(',', '', $allMeta['purchase_value']), 2) }}
                                                             @endif
                                                         </div>
                                                         @endif
@@ -3701,7 +3701,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             style="font-size: 12px;"><span
                                                                 style="font-size: 13px; font-weight: 600;">Termination
                                                                 Fee Amount:</span>
-                                                            ${{ number_format($allMeta['early_termination_fee_amount'], 2) }}
+                                                            ${{ number_format((float) str_replace(',', '', $allMeta['early_termination_fee_amount']), 2) }}
                                                         </div>
                                                         @endif
 
@@ -3722,7 +3722,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             <span
                                                                 style="font-size: 13px; font-weight: 600;">Retainer
                                                                 Fee Amount:</span>
-                                                            ${{ number_format($allMeta['retainer_fee_amount'], 2) }}
+                                                            ${{ number_format((float) str_replace(',', '', $allMeta['retainer_fee_amount']), 2) }}
                                                         </div>
                                                         @endif
 

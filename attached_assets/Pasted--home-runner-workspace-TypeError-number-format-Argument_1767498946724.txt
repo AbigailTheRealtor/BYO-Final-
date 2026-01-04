@@ -1,0 +1,81 @@
+
+/home/runner/workspace/
+TypeError
+number_format(): Argument #1 ($num) must be of type float, string given (View: /home/runner/workspace/resources/views/hire_tenant_agent/view.blade.php)
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/tenant/hire/agent/auction/view/9
+
+        63
+        resources/views/hire_tenant_agent/view.blade.php
+        :3619
+        62
+        :3619
+        2
+        public/index.php
+        :51
+        1
+        :21
+
+::number_format
+resources/views/hire_tenant_agent/view.blade.php:3619
+
+                                                        @if (!empty($allMeta['purchase_fee_percentage_combo']))
+
+                                                        <div class="mb-1"
+
+                                                            style="font-size: 12px;">
+
+                                                            <span
+
+                                                                style="font-size: 13px; font-weight: 600;">Percentage
+
+                                                                Portion:</span>
+
+                                                            {{ $allMeta['purchase_fee_percentage_combo'] }}%
+
+                                                        </div>
+
+                                                        @endif
+
+                                                        @if (!empty($allMeta['purchase_fee_flat_combo']))
+
+                                                        <div class="mb-1"
+
+                                                            style="font-size: 12px;">
+
+                                                            <span
+
+                                                                style="font-size: 13px; font-weight: 600;">Flat
+
+                                                                Fee Portion:</span>
+
+                                                            ${{ number_format($allMeta['purchase_fee_flat_combo'], 2) }}
+
+                                                        </div>
+
+                                                        @endif
+
+                                                        @endif
+
+ 
+
+                                                        @if (!empty($allMeta['purchase_fee_other']) && $allMeta['purchase_fee_type'] === 'other')
+
+                                                        <div class="mb-1"
+
+                                                            style="font-size: 12px;">
+
+                                                            <span
+
+                                                                style="font-size: 13px; font-weight: 600;">Other
+
+                                                                Purchase Fee:</span>
+
+                                                            {{ $allMeta['purchase_fee_other'] }}
+
+                                                        </div>
+
+                                                        @endif
+
+                                                        @endif
+
+ 
