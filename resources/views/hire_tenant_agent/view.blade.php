@@ -3296,18 +3296,12 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                 class="accordion-body p-3 border border-top-0 rounded-bottom counter-font">
                                                 @foreach ($counterBids as $counterBid)
                                                 @php
-                                                // Roles
-                                                $isOwner =
-                                                data_get($auction, 'user_id') ==
-                                                $auth_id;
-                                                $isAgent =
-                                                data_get($bid, 'user_id') == $auth_id;
-                                                $isCounterFromOwner =
-                                                $counterBid->user_id ==
-                                                data_get($auction, 'user_id');
-                                                $isCounterFromAgent =
-                                                $counterBid->user_id ==
-                                                data_get($bid, 'user_id');
+                                                // Roles - use Auth::id() directly to ensure correct scope
+                                                $currentUserId = Auth::id();
+                                                $isOwner = data_get($auction, 'user_id') == $currentUserId;
+                                                $isAgent = data_get($bid, 'user_id') == $currentUserId;
+                                                $isCounterFromOwner = $counterBid->user_id == data_get($auction, 'user_id');
+                                                $isCounterFromAgent = $counterBid->user_id == data_get($bid, 'user_id');
 
                                                 // States
                                                 $rawBidState = data_get(
