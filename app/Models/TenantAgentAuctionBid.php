@@ -26,6 +26,11 @@ class TenantAgentAuctionBid extends Model
         return $this->hasMany(TenantAgentAuctionBidMeta::class);
     }
 
+    public function counterTerms()
+    {
+        return $this->hasMany(TenantCounterBidding::class, 'tenant_agent_auction_bid_id');
+    }
+
     public function saveMeta($key, $val)
     {
         return $this->meta()->updateOrCreate(["meta_key" => $key], ["meta_value" => $val]);
