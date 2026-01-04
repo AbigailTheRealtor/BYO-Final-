@@ -118,14 +118,29 @@
 
                 <div class="buyerOfferSearchMenu d-flex justify-content-between flex-wrap text-center">
                     <div class="left d-flex align-items-center mb-3 flex-wrap">
+                        {{-- <div class="form-check form-control-lg form-switch">
+                        <input class="form-check-input" type="checkbox" id="buyNow" checked>
+                        <label class="form-check-label" for="buyNow">Buy Now</label>
+                    </div>
+                    <div class="form-check form-control-lg form-switch">
+                        <input class="form-check-input" type="checkbox" id="hasBid" checked>
+                        <label class="form-check-label" for="hasBid">Has Bids</label>
+                    </div>
+                    <div class="form-check form-control-lg form-switch p-0">
+                        <i class="fa fa-heart"></i>
+                        <label class="form-check-label" for="flexSwitchCheckChecked">Favorites</label>
+                    </div> --}}
                     </div>
                     <div class="right d-flex align-items-center mb-3 flex-wrap">
+                        <!-- Select Box  -->
                         <select name="sort" class="sortby" onchange="javascript:$('.search-form').submit();">
                             <option value="">Most Relevant</option>
                             <option value="1" {{ request()->sort == 1 ? 'selected' : '' }}>Title: (Z-a)</option>
                             <option value="2" {{ request()->sort == 2 ? 'selected' : '' }}>Title: (A-z)</option>
                             <option value="3" {{ request()->sort == 3 ? 'selected' : '' }}>Date: (New)</option>
                             <option value="4" {{ request()->sort == 4 ? 'selected' : '' }}>Date: (Old)</option>
+                            {{-- <option value="5" {{request()->sort == 5 ? "selected":""}}>Price: (Highest)</option>
+                            <option value="6" {{request()->sort == 6 ? "selected":""}}>Price: (Lowest)</option> --}}
                         </select>
                     </div>
                 </div>
@@ -135,126 +150,6 @@
 
                 @inject('carbon', 'Carbon\Carbon')
                 @forelse ($pAuctions as $auction)
-                    @php
-                        $resolveOther = function($selectedValue, $otherText) {
-                            if (strtolower(trim($selectedValue ?? '')) === 'other' && !empty($otherText)) {
-                                return $otherText;
-                            }
-                            return $selectedValue;
-                        };
-
-                        $isResidential = (@$auction->get->property_type === 'Residential Property');
-                        $isCommercial = (@$auction->get->property_type === 'Commercial Property');
-                        $propertyTypeLabel = $isResidential ? 'Residential' : ($isCommercial ? 'Commercial' : 'Unknown');
-
-                        $propertyItems = @$auction->get->property_items;
-                        $propertyStyleDisplay = '';
-                        if (is_array($propertyItems) && count($propertyItems) > 0) {
-                            $firstItem = $propertyItems[0] ?? '';
-                            if (strtolower(trim($firstItem)) === 'other' && !empty(@$auction->get->other_property_items)) {
-                                $propertyStyleDisplay = $auction->get->other_property_items;
-                            } else {
-                                $propertyStyleDisplay = $firstItem;
-                            }
-                        } elseif (is_string($propertyItems) && !empty($propertyItems)) {
-                            $decoded = json_decode($propertyItems, true);
-                            if (is_array($decoded) && count($decoded) > 0) {
-                                $firstItem = $decoded[0] ?? '';
-                                if (strtolower(trim($firstItem)) === 'other' && !empty(@$auction->get->other_property_items)) {
-                                    $propertyStyleDisplay = $auction->get->other_property_items;
-                                } else {
-                                    $propertyStyleDisplay = $firstItem;
-                                }
-                            } else {
-                                $propertyStyleDisplay = $propertyItems;
-                            }
-                        }
-
-                        $bedsDisplay = $resolveOther(@$auction->get->bedrooms, @$auction->get->other_bedrooms);
-                        $bathsDisplay = $resolveOther(@$auction->get->bathrooms, @$auction->get->other_bathrooms);
-
-                        $sqftDisplay = '';
-                        if ($isResidential) {
-                            $sqftDisplay = @$auction->get->minimum_heated_square ?? '';
-                        } elseif ($isCommercial) {
-                            $sqftDisplay = @$auction->get->minimum_leaseable ?? '';
-                        }
-
-                        $counties = @$auction->get->counties ?? [];
-                        $countyDisplay = '';
-                        if (is_array($counties) && count($counties) > 0) {
-                            $countyDisplay = $counties[0];
-                        } elseif (is_string($counties) && !empty($counties)) {
-                            $countyDisplay = $counties;
-                        }
-                        if (!empty($countyDisplay) && stripos($countyDisplay, 'County') === false) {
-                            $countyDisplay .= ' County';
-                        }
-
-                        $commissionStructure = @$auction->get->commission_structure ?? '';
-
-                        $fmtMoney = fn($v) => is_numeric(str_replace(',', '', $v)) ? '$' . number_format((float)str_replace(',', '', $v), 0, '.', ',') : $v;
-                        $fmtPercent = fn($v) => is_numeric($v) ? rtrim(rtrim(number_format((float)$v, 2), '0'), '.') . '%' : $v;
-
-                        $commissionFeeDisplay = '';
-                        $leaseFeeType = @$auction->get->lease_fee_type ?? '';
-                        if ($leaseFeeType === 'Flat Fee' && !empty(@$auction->get->lease_fee_flat)) {
-                            $commissionFeeDisplay = 'Flat Fee – ' . $fmtMoney(@$auction->get->lease_fee_flat);
-                        } elseif ($leaseFeeType === 'Percentage of the Gross Lease Value' && !empty(@$auction->get->lease_fee_percentage)) {
-                            $commissionFeeDisplay = $fmtPercent(@$auction->get->lease_fee_percentage) . ' of Gross Rent';
-                        } elseif ($leaseFeeType === 'Percentage of Monthly Rent' && !empty(@$auction->get->lease_fee_percentage_monthly_rent)) {
-                            $commissionFeeDisplay = $fmtPercent(@$auction->get->lease_fee_percentage_monthly_rent) . ' of Monthly Rent';
-                        } elseif ($leaseFeeType === 'Flat Fee + Percentage of the Gross Lease Value') {
-                            $parts = [];
-                            if (!empty(@$auction->get->lease_fee_flat_combo)) {
-                                $parts[] = $fmtMoney(@$auction->get->lease_fee_flat_combo);
-                            }
-                            if (!empty(@$auction->get->lease_fee_percentage_combo)) {
-                                $parts[] = $fmtPercent(@$auction->get->lease_fee_percentage_combo) . ' of Gross Lease Value';
-                            }
-                            $commissionFeeDisplay = implode(' + ', $parts);
-                        } elseif ($leaseFeeType === 'Percentage of the Net Aggregate Rent' && !empty(@$auction->get->lease_fee_percentage_net)) {
-                            $commissionFeeDisplay = $fmtPercent(@$auction->get->lease_fee_percentage_net) . ' of Net Aggregate Rent';
-                        } elseif ($leaseFeeType === 'Flat Fee + Percentage of Net Aggregate Rent') {
-                            $parts = [];
-                            if (!empty(@$auction->get->lease_fee_flat_combo_net)) {
-                                $parts[] = $fmtMoney(@$auction->get->lease_fee_flat_combo_net);
-                            }
-                            if (!empty(@$auction->get->lease_fee_percentage_combo_net)) {
-                                $parts[] = $fmtPercent(@$auction->get->lease_fee_percentage_combo_net) . ' of Net Aggregate Rent';
-                            }
-                            $commissionFeeDisplay = implode(' + ', $parts);
-                        } elseif (strtolower($leaseFeeType) === 'other' && !empty(@$auction->get->lease_fee_other)) {
-                            $commissionFeeDisplay = @$auction->get->lease_fee_other;
-                        }
-
-                        $rawDays = trim((string) ($auction->get->auction_time ?? ''));
-                        $lengthDays = 0;
-                        $remainingSeconds = 0;
-                        $pretty = null;
-
-                        if ($rawDays !== '') {
-                            preg_match('/\d+/', $rawDays, $m);
-                            $lengthDays = isset($m[0]) ? (int) $m[0] : 0;
-
-                            $now = \Carbon\Carbon::now();
-                            $end = \Carbon\Carbon::parse($auction->created_at)->addDays($lengthDays);
-                            $remainingSeconds = $now->diffInSeconds($end, false);
-
-                            $pretty = function (int $sec) {
-                                if ($sec <= 0) {
-                                    return 'Expired';
-                                }
-                                $d = intdiv($sec, 86400);
-                                $sec %= 86400;
-                                $h = intdiv($sec, 3600);
-                                $sec %= 3600;
-                                $i = intdiv($sec, 60);
-                                $s = $sec % 60;
-                                return sprintf('%dd %02d:%02d:%02d', $d, $h, $i, $s);
-                            };
-                        }
-                    @endphp
                     <div class="col-sm-6 col-md-12 col-lg-4 mb-3">
                         <div class="card" style="overflow: hidden;">
                             <div class="card-body pb-2 pt-2">
@@ -263,62 +158,95 @@
                                             href="{{ route('tenant.agent.auction.view', @$auction->id) }}">{{ @$auction->title }}</a>
                                     </h5>
                                 </div>
+                                {{-- <div class="'qr-code" style="width: 50px; height:50px; position: absolute; top:0; right:0;">
+                                    {{ qr_code(route('tenant.agent.auction.view', @$auction->id), 150) }}
+                                </div> --}}
 
                                 <div class="houseDetails mb-1">
-                                    <p class="mb-1 fw-bold text-muted small">Tenant &bull; {{ $propertyTypeLabel }}</p>
+                                    <span>
+                                        <span class="d-inline-flex justify-content-center align-items-center gap-1"><img
+                                                src="{{ asset('assets/fontawesome/svgs/thin/bed-front.svg') }}"
+                                                alt="bed icon" width="15"><b>
+                                                {{ @$auction->get->bedrooms }}</b></span>
+                                        <span class="d-inline-flex justify-content-center align-items-center gap-1"><img
+                                                src="{{ asset('assets/fontawesome/svgs/thin/bath.svg') }}" alt="bed icon"
+                                                width="15"><b>
+                                                {{ @$auction->get->bathrooms }}</b></span>
+                                        <span class="d-inline-flex justify-content-center align-items-center gap-1"><img
+                                                src="{{ asset('assets/fontawesome/svgs/thin/ruler-triangle.svg') }}"
+                                                alt="bed icon" width="15"><b>
+                                                {{ isset($auction->get->minimum_heated_square) ? $auction->get->minimum_heated_square : '' }}
+                                            </b>Sq Ft</span>
+                                        <span class="d-inline-flex justify-content-center align-items-center gap-1">
+                                            <img src="{{ asset('assets/fontawesome/svgs/thin/house.svg') }}"
+                                                alt="condition icon" width="15">
 
-                                    @if (!empty($propertyStyleDisplay))
-                                        <p class="mb-1">
-                                            @if ($isResidential)
-                                                🏠
-                                            @else
-                                                🏢
-                                            @endif
-                                            {{ $propertyStyleDisplay }}
-                                        </p>
-                                    @endif
+                                            <b>
+                                                @if (!empty($auction->get->condition_prop_buyer))
+                                                    @foreach ($auction->get->condition_prop_buyer as $condition)
+                                                        {{ $condition }}@if (!$loop->last)
+                                                            ,
+                                                        @endif
+                                                    @endforeach
+                                                @endif
+                                            </b>
+                                        </span>
+                                        <span class="d-inline-flex justify-content-center align-items-center gap-1">
+                                            <img src="{{ asset('assets/fontawesome/svgs/thin/user.svg') }}" alt="user icon"
+                                                width="15">
+                                            <b>{{ $auction->get->user_type ?? '' }}</b>
+                                        </span>
 
-                                    @if ($isResidential)
-                                        <p class="mb-1">
-                                            <span class="d-inline-flex align-items-center gap-1">
-                                                🛏 <b>{{ $bedsDisplay ?: '-' }}</b> Beds
-                                            </span>
-                                            |
-                                            <span class="d-inline-flex align-items-center gap-1">
-                                                🛁 <b>{{ $bathsDisplay ?: '-' }}</b> Baths
-                                            </span>
-                                            |
-                                            <span class="d-inline-flex align-items-center gap-1">
-                                                📐 <b>{{ $sqftDisplay ?: '-' }}</b> Sq Ft
-                                            </span>
-                                        </p>
-                                    @elseif ($isCommercial)
-                                        <p class="mb-1">
-                                            <span class="d-inline-flex align-items-center gap-1">
-                                                📐 <b>{{ $sqftDisplay ?: '-' }}</b> Sq Ft
-                                            </span>
-                                        </p>
-                                    @endif
+                                    </span><br>
 
-                                    @if (!empty($countyDisplay))
-                                        <p class="mb-1">📍 {{ $countyDisplay }}</p>
-                                    @endif
-
-                                    <p class="mb-1">👤 Tenant's Agent Required</p>
-
-                                    @if (!empty($commissionStructure))
-                                        <p class="mb-1">💼 Commission Structure: {{ $commissionStructure }}</p>
-                                    @endif
-
-                                    @if (!empty($commissionFeeDisplay))
-                                        <p class="mb-1">💼 Tenant's Broker Commission Fee: {{ $commissionFeeDisplay }}</p>
-                                    @endif
+                                    Tenant’s Agent required
                                 </div>
+
+
+                                @php
+
+
+                                    $rawDays = trim((string) ($auction->get->auction_time ?? ''));
+
+                                    $lengthDays = 0;
+                                    $remainingSeconds = 0;
+                                    $pretty = null;
+
+                                    if ($rawDays !== '') {
+
+
+                                    preg_match('/\d+/', $rawDays, $m);
+                                        $lengthDays = isset($m[0]) ? (int) $m[0] : 0;
+
+                                        $now = \Carbon\Carbon::now();
+                                        $end = \Carbon\Carbon::parse($auction->created_at)->addDays($lengthDays);
+
+                                        $remainingSeconds = $now->diffInSeconds($end, false);
+
+                                        $pretty = function (int $sec) {
+                                            if ($sec <= 0) {
+                                                return 'Expired';
+                                            }
+                                            $d = intdiv($sec, 86400);
+                                            $sec %= 86400;
+                                            $h = intdiv($sec, 3600);
+                                            $sec %= 3600;
+                                            $i = intdiv($sec, 60);
+                                            $s = $sec % 60;
+                                            return sprintf('%dd %02d:%02d:%02d', $d, $h, $i, $s);
+                                        };
+                                    }
+                                @endphp
+
+
+
+
 
                                 @if ($rawDays !== '')
                                     <p class="m-0">
-                                        <b class="badge bg-info timer-{{ $auction->id }}"
+                                        <b class="badge bg-info timer-{{ $auction->id }}" {{-- only add data-seconds if there IS a limit and it’s in the future --}}
                                             @if ($lengthDays > 0 && $remainingSeconds > 0) data-seconds="{{ $remainingSeconds }}" @endif>
+                                            {{-- initial server-side text --}}
                                             @if ($lengthDays <= 0)
                                                 No Time Limit
                                             @else
@@ -333,6 +261,16 @@
                             <div class="card-footer bg-light">
                                 <div class="row">
                                     <div class="col-6 left">
+                                        <!-- Barcode  -->
+                                        {{-- <svg data-bs-container="body" tabindex="0" data-bs-toggle="popover"
+                                            data-bs-trigger="hover focus" data-bs-placement="top"
+                                            data-bs-content="Scan Qr Code" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z">
+                                            </path>
+                                        </svg> --}}
+                                        <!-- Message  -->
                                         <svg data-bs-container="body" tabindex="0" data-bs-toggle="popover"
                                             data-bs-trigger="hover focus" data-bs-placement="top"
                                             data-bs-content="Send Message" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -341,6 +279,7 @@
                                                 d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z">
                                             </path>
                                         </svg>
+                                        <!-- Favourite  -->
                                         <svg data-bs-container="body" tabindex="0" data-bs-toggle="popover"
                                             data-bs-trigger="hover focus" data-bs-placement="top"
                                             data-bs-content="Add Favorites" xmlns="http://www.w3.org/2000/svg"
@@ -371,7 +310,9 @@
     @endsection
 
     @push('scripts')
+        {{-- jQuery (required by timer.jquery). Skip if your app already loads it. --}}
         <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
         <script src="https://cdnjs.cloudflare.com/ajax/libs/timer.jquery/0.9.0/timer.jquery.min.js" crossorigin="anonymous"
             referrerpolicy="no-referrer"></script>
     <script>
@@ -390,7 +331,7 @@
         if (d > 0) parts.push(d + (d === 1 ? " day" : " days"));
         if (h > 0) parts.push(h + (h === 1 ? " hour" : " hours"));
         if (m > 0) parts.push(m + (m === 1 ? " minute" : " minutes"));
-        if (s > 0 && d === 0) parts.push(s + (s === 1 ? " second" : " seconds"));
+        if (s > 0 && d === 0) parts.push(s + (s === 1 ? " second" : " seconds")); // show seconds only if <1d
 
         return  parts.join(", ");
     }
