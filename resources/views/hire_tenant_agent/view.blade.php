@@ -2069,6 +2069,28 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     <span class="text-muted small">
                                         <i class="fa fa-lock me-1"></i> Bid {{ $bidAccepted }} — edit/withdraw unavailable
                                     </span>
+                                    @if($bidAccepted === 'accepted')
+                                    @php
+                                        $bidOwnerSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->first();
+                                    @endphp
+                                    @if($bidOwnerSummary)
+                                    <div class="d-flex gap-2 flex-wrap mt-2">
+                                        <a href="{{ route('accepted-bid-summary.view', $bidOwnerSummary->id) }}" class="btn btn-outline-primary btn-sm">
+                                            <i class="fa fa-file-alt me-1"></i> View Accepted Bid Summary
+                                        </a>
+                                        @if(!$bidOwnerSummary->isAgentSigned())
+                                        <a href="{{ route('accepted-bid-summary.sign-form', $bidOwnerSummary->id) }}" class="btn btn-primary btn-sm">
+                                            <i class="fa fa-signature me-1"></i> Agent: E-Sign Acknowledgement
+                                        </a>
+                                        @endif
+                                        @if($bidOwnerSummary->isFullySigned())
+                                        <a href="{{ route('accepted-bid-summary.download-pdf', $bidOwnerSummary->id) }}" class="btn btn-success btn-sm">
+                                            <i class="fa fa-download me-1"></i> Download Signed PDF
+                                        </a>
+                                        @endif
+                                    </div>
+                                    @endif
+                                    @endif
                                 </div>
                                 @endif
                                 
@@ -3146,6 +3168,26 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     <div class="w-100 mb-3 p-2 text-center" style="background: #d4edda; border-radius: 6px; color: #155724;">
                                                         <i class="fa fa-check-circle me-1"></i> This bid has been accepted
                                                     </div>
+                                                    @php
+                                                        $acceptedBidSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->first();
+                                                    @endphp
+                                                    @if($acceptedBidSummary)
+                                                    <div class="d-flex gap-2 flex-wrap justify-content-center mt-2 mb-3">
+                                                        <a href="{{ route('accepted-bid-summary.view', $acceptedBidSummary->id) }}" class="btn btn-outline-primary btn-sm">
+                                                            <i class="fa fa-file-alt me-1"></i> View Accepted Bid Summary
+                                                        </a>
+                                                        @if(!$acceptedBidSummary->isTenantSigned())
+                                                        <a href="{{ route('accepted-bid-summary.sign-form', $acceptedBidSummary->id) }}" class="btn btn-primary btn-sm">
+                                                            <i class="fa fa-signature me-1"></i> Tenant: E-Sign Acknowledgement
+                                                        </a>
+                                                        @endif
+                                                        @if($acceptedBidSummary->isFullySigned())
+                                                        <a href="{{ route('accepted-bid-summary.download-pdf', $acceptedBidSummary->id) }}" class="btn btn-success btn-sm">
+                                                            <i class="fa fa-download me-1"></i> Download Signed PDF
+                                                        </a>
+                                                        @endif
+                                                    </div>
+                                                    @endif
                                                     @elseif ($isListingOwner && $bidAccepted === 'rejected')
                                                     <div class="w-100 mb-3 p-2 text-center" style="background: #f8d7da; border-radius: 6px; color: #721c24;">
                                                         <i class="fa fa-times-circle me-1"></i> This bid has been rejected
@@ -4468,6 +4510,26 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                             class="alert alert-success mt-2 w-100 mb-0 py-1 small">
                                             ✅ {{ trim($ownerFirst . ' ' . $ownerLast) }} accepted
                                             the bid.
+                                        </div>
+                                        @endif
+                                        @php
+                                            $agentAcceptedBidSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->first();
+                                        @endphp
+                                        @if($agentAcceptedBidSummary && (Auth::id() == $ownerId || data_get($bid, 'user_id') == Auth::id()))
+                                        <div class="d-flex gap-1 flex-wrap mt-2">
+                                            <a href="{{ route('accepted-bid-summary.view', $agentAcceptedBidSummary->id) }}" class="btn btn-outline-primary btn-sm py-1 px-2">
+                                                <i class="fa fa-file-alt me-1"></i> View Summary
+                                            </a>
+                                            @if(data_get($bid, 'user_id') == Auth::id() && !$agentAcceptedBidSummary->isAgentSigned())
+                                            <a href="{{ route('accepted-bid-summary.sign-form', $agentAcceptedBidSummary->id) }}" class="btn btn-primary btn-sm py-1 px-2">
+                                                <i class="fa fa-signature me-1"></i> E-Sign
+                                            </a>
+                                            @endif
+                                            @if($agentAcceptedBidSummary->isFullySigned())
+                                            <a href="{{ route('accepted-bid-summary.download-pdf', $agentAcceptedBidSummary->id) }}" class="btn btn-success btn-sm py-1 px-2">
+                                                <i class="fa fa-download me-1"></i> PDF
+                                            </a>
+                                            @endif
                                         </div>
                                         @endif
                                         @elseif ($state === 'rejected')
