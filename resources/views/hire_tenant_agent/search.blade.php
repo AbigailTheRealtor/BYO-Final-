@@ -143,9 +143,10 @@
                             return $selectedValue;
                         };
 
-                        $isResidential = (@$auction->get->property_type === 'Residential Property');
-                        $isCommercial = (@$auction->get->property_type === 'Commercial Property');
-                        $propertyTypeLabel = $isResidential ? 'Residential' : ($isCommercial ? 'Commercial' : 'Unknown');
+                        $propTypeRaw = strtolower(trim(@$auction->get->property_type ?? ''));
+                        $isResidential = (strpos($propTypeRaw, 'residential') !== false);
+                        $isCommercial = (strpos($propTypeRaw, 'commercial') !== false);
+                        $propertyTypeLabel = $isResidential ? 'Residential' : ($isCommercial ? 'Commercial' : (@$auction->get->property_type ?: 'Unknown'));
 
                         $propertyItems = @$auction->get->property_items;
                         $propertyStyleDisplay = '';
@@ -193,7 +194,13 @@
 
                         $commissionStructure = @$auction->get->commission_structure ?? '';
 
-                        $fmtMoney = fn($v) => is_numeric(str_replace(',', '', $v)) ? '$' . number_format((float)str_replace(',', '', $v), 0, '.', ',') : $v;
+                        $fmtMoney = function($v) {
+                            $clean = str_replace(',', '', $v);
+                            if (!is_numeric($clean)) return $v;
+                            $num = (float)$clean;
+                            $decimals = (fmod($num, 1) != 0) ? 2 : 0;
+                            return '$' . number_format($num, $decimals, '.', ',');
+                        };
                         $fmtPercent = fn($v) => is_numeric($v) ? rtrim(rtrim(number_format((float)$v, 2), '0'), '.') . '%' : $v;
 
                         $commissionFeeDisplay = '';
