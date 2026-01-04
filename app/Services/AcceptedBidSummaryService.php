@@ -485,7 +485,7 @@ class AcceptedBidSummaryService
             $value = $data[$key] ?? null;
             if (!empty($value) && $value !== 'N/A') {
                 $hasContent = true;
-                $displayValue = is_array($value) ? implode(', ', $value) : $value;
+                $displayValue = $this->formatCompensationValue($key, $value, $data);
                 $html .= '<tr>';
                 $html .= '<td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; width: 40%;">' . e($label) . '</td>';
                 $html .= '<td style="padding: 8px; border-bottom: 1px solid #eee;">' . e($displayValue) . '</td>';
@@ -500,6 +500,110 @@ class AcceptedBidSummaryService
         }
 
         return $html;
+    }
+
+    protected function formatCompensationValue(string $key, $value, array $data): string
+    {
+        if (is_array($value)) {
+            return implode(', ', $value);
+        }
+
+        if (is_string($value) && (strpos($value, '$') !== false || strpos($value, '%') !== false)) {
+            return $value;
+        }
+
+        $currencyFields = [
+            'early_termination_fee_amount',
+            'retainer_fee_amount',
+        ];
+
+        $daysFields = [
+            'broker_fee_days',
+            'protection_period',
+        ];
+
+        $percentFields = [];
+
+        $feeAmountFields = [
+            'broker_fee_amount',
+            'purchase_fee_amount',
+            'lease_option_fee_amount',
+        ];
+
+        if (in_array($key, $currencyFields)) {
+            return $this->formatAsCurrency($value);
+        }
+
+        if (in_array($key, $daysFields)) {
+            if (is_numeric($value)) {
+                return $value . ' days';
+            }
+            return $value;
+        }
+
+        if (in_array($key, $feeAmountFields)) {
+            return $this->formatFeeAmount($key, $value, $data);
+        }
+
+        return (string) $value;
+    }
+
+    protected function formatFeeAmount(string $key, $value, array $data): string
+    {
+        if (is_string($value) && (strpos($value, '$') !== false || strpos($value, '%') !== false)) {
+            return $value;
+        }
+
+        $typeKey = str_replace('_amount', '_type', $key);
+        $type = $data[$typeKey] ?? '';
+
+        $typeStr = strtolower((string) $type);
+
+        if (strpos($typeStr, 'percent') !== false || strpos($typeStr, '%') !== false) {
+            if (is_numeric($value)) {
+                return $value . '%';
+            }
+            return $value . '%';
+        }
+
+        if (strpos($typeStr, 'flat') !== false || strpos($typeStr, 'dollar') !== false || strpos($typeStr, '$') !== false) {
+            return $this->formatAsCurrency($value);
+        }
+
+        if (strpos($typeStr, '+') !== false || strpos($typeStr, 'plus') !== false || strpos($typeStr, 'combined') !== false) {
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            $numVal = floatval($value);
+            if ($numVal > 100) {
+                return $this->formatAsCurrency($value);
+            } elseif ($numVal <= 100 && $numVal > 0) {
+                return $value . '%';
+            }
+        }
+
+        return (string) $value;
+    }
+
+    protected function formatAsCurrency($value): string
+    {
+        if (is_string($value) && strpos($value, '$') !== false) {
+            return $value;
+        }
+
+        if (!is_numeric($value)) {
+            return (string) $value;
+        }
+
+        $numVal = floatval($value);
+        $hasDecimals = ($numVal != floor($numVal));
+
+        if ($hasDecimals) {
+            return '$' . number_format($numVal, 2);
+        }
+
+        return '$' . number_format($numVal, 0);
     }
 
     protected function buildAdditionalDetailsHtml(array $sourceData, $listingData): string
