@@ -160,6 +160,16 @@ class TenantAgentAuctionCounterTerm extends Component
      * LIVEWIRE UPDATED METHODS (Triggers Reset)
      * ------------------------------------------------------ */
 
+    /**
+     * Generic updated hook - guard against empty property names to prevent Str::studly() crash
+     */
+    public function updated($propertyName)
+    {
+        if (empty($propertyName)) {
+            return;
+        }
+    }
+
     public function updatedLeaseFeeType($value)
     {
         $this->resetLeaseFeeFields();
