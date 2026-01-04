@@ -3271,11 +3271,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     @if ($showCounterBids && $counterBids->count() > 0)
                                     <div class="counter-bids-section mt-4">
                                         <!-- Counter Bids Accordion Header -->
-                                        <div class="accordion" type="button"
-                                            data-bs-toggle="collapse"
-                                            data-bs-target="#counterBids{{ data_get($bid, 'id') }}"
-                                            aria-expanded="false"
-                                            aria-controls="counterBids{{ data_get($bid, 'id') }}">
+                                        <div class="counter-bids-toggle" 
+                                            style="cursor: pointer;"
+                                            onclick="event.stopPropagation(); var target = document.getElementById('counterBids{{ data_get($bid, 'id') }}'); var arrow = this.querySelector('.counter-arrow'); if(target.style.display === 'none' || target.style.display === '') { target.style.display = 'block'; arrow.style.transform = 'rotate(180deg)'; } else { target.style.display = 'none'; arrow.style.transform = 'rotate(0deg)'; }">
                                             <div
                                                 class="d-flex justify-content-between align-items-center flex-wrap p-2 border rounded">
                                                 <h5 class="mb-0" style="color: #2c3e50;">Counter
@@ -3284,14 +3282,15 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     <span
                                                         class="badge bg-secondary me-2">{{ $counterBids->count() }}
                                                         counter offers</span>
-                                                    <span class="accordion-arrow">↓</span>
+                                                    <span class="counter-arrow" style="transition: transform 0.3s;">↓</span>
                                                 </div>
                                             </div>
                                         </div>
 
                                         <!-- Counter Bids Accordion Content -->
                                         <div id="counterBids{{ data_get($bid, 'id') }}"
-                                            class="accordion-collapse collapse"
+                                            class="counter-bids-content"
+                                            style="display: none;"
                                             aria-labelledby="counterBidsHeading{{ data_get($bid, 'id') }}">
                                             <div
                                                 class="accordion-body p-3 border border-top-0 rounded-bottom counter-font">
