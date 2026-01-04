@@ -64,12 +64,12 @@
                 </div>
             </div>
 
-            <div class="card">
+            <div class="card summary-document-card">
                 <div class="card-header">
                     <h5 class="mb-0">Summary Document</h5>
                 </div>
-                <div class="card-body p-0">
-                    <div class="summary-content" style="background: #fff; padding: 20px;">
+                <div class="card-body summary-document-body">
+                    <div class="summary-content">
                         {!! $html !!}
                     </div>
                 </div>
@@ -79,20 +79,139 @@
 </div>
 
 <style>
-    .summary-content {
-        font-family: Arial, sans-serif;
-        line-height: 1.6;
+    .summary-document-card {
+        border: 1px solid #dee2e6;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
+    
+    .summary-document-body {
+        padding: 0;
+    }
+    
+    .summary-content {
+        width: 100%;
+        max-width: 950px;
+        margin: 0 auto;
+        padding: 40px 50px;
+        background: #ffffff;
+        font-family: Arial, sans-serif;
+        line-height: 1.7;
+        color: #333;
+    }
+    
     .summary-content h1 {
         color: #2c3e50;
         border-bottom: 2px solid #3498db;
-        padding-bottom: 10px;
+        padding-bottom: 12px;
+        margin-top: 0;
+        margin-bottom: 20px;
+        font-size: 1.75rem;
     }
+    
     .summary-content h2 {
         color: #2c3e50;
-        margin-top: 30px;
+        margin-top: 28px;
+        margin-bottom: 16px;
         border-bottom: 1px solid #bdc3c7;
-        padding-bottom: 5px;
+        padding-bottom: 8px;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+    
+    .summary-content h4 {
+        color: #007bff;
+        margin-bottom: 8px;
+        font-size: 1rem;
+    }
+    
+    .summary-content h6 {
+        color: #17a2b8;
+        font-size: 0.95rem;
+        margin-top: 16px;
+        margin-bottom: 10px;
+    }
+    
+    .summary-content p {
+        margin-bottom: 8px;
+    }
+    
+    .summary-content ul {
+        margin: 0 0 16px 0;
+        padding-left: 28px;
+        list-style-type: disc;
+    }
+    
+    .summary-content ul li {
+        margin-bottom: 6px;
+        line-height: 1.6;
+        list-style-type: disc;
+    }
+    
+    .summary-content table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 16px;
+    }
+    
+    .summary-content table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #eee;
+        vertical-align: top;
+    }
+    
+    .summary-content table td:first-child {
+        font-weight: 600;
+        width: 40%;
+        color: #555;
+    }
+    
+    .summary-content .service-category {
+        margin-bottom: 20px;
+    }
+    
+    .summary-content .alert {
+        padding: 16px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+    }
+
+    @media print {
+        .container {
+            max-width: 100% !important;
+            padding: 0 !important;
+        }
+        
+        .d-flex.justify-content-between.align-items-center.mb-4,
+        .card.mb-4:first-of-type,
+        .btn {
+            display: none !important;
+        }
+        
+        .summary-document-card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+        
+        .summary-content {
+            max-width: 100%;
+            padding: 20px;
+        }
+        
+        .summary-content h2 {
+            page-break-after: avoid;
+        }
+        
+        .summary-content ul {
+            page-break-inside: avoid;
+        }
+        
+        .summary-content .service-category {
+            page-break-inside: avoid;
+        }
+        
+        .summary-content table {
+            page-break-inside: avoid;
+        }
     }
 </style>
 @endsection
