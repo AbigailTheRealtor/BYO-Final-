@@ -53,6 +53,7 @@ use App\Http\Controllers\Admin\AgentServiceController;
 use App\Http\Controllers\Admin\PropertyTypeController;
 use App\Http\Controllers\PropertyAuctionBidController;
 use App\Http\Controllers\SellerAgentAuctionController;
+use App\Http\Controllers\AcceptedBidSummaryController;
 use App\Http\Controllers\TenantAgentAuctionController;
 use App\Http\Controllers\Admin\SellerServiceController;
 use App\Http\Controllers\Admin\WaterViewTypeController;
@@ -137,6 +138,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications/fetch', [NotificationController::class, 'fetch'])->name('notifications.fetch');
     Route::post('/notifications/mark-read', [NotificationController::class, 'markRead'])->name('notifications.markRead');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.markAllRead');
+    
+    Route::get('/accepted-bid-summary/{id}', [AcceptedBidSummaryController::class, 'view'])->name('accepted-bid-summary.view');
+    Route::get('/accepted-bid-summary/{id}/sign', [AcceptedBidSummaryController::class, 'showSignForm'])->name('accepted-bid-summary.sign-form');
+    Route::post('/accepted-bid-summary/{id}/sign', [AcceptedBidSummaryController::class, 'sign'])->name('accepted-bid-summary.sign');
+    Route::get('/accepted-bid-summary/{id}/download-pdf', [AcceptedBidSummaryController::class, 'downloadPdf'])->name('accepted-bid-summary.download-pdf');
+    Route::get('/bid/{bidId}/summary', [AcceptedBidSummaryController::class, 'getByBid'])->name('accepted-bid-summary.by-bid');
 });
 
 
