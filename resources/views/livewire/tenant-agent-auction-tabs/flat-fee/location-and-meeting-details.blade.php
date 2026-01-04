@@ -3,7 +3,7 @@
 <div class="form-group mb-3">
     <label class="fw-bold mb-2">City:</label>
     <div class="input-cover position-relative">
-        <input type="text" wire:model="newCity" wire:keydown.enter.prevent="selectCitySuggestion()"
+        <input type="text" wire:model.debounce.300ms="newCity" wire:keydown.enter.prevent="selectCitySuggestion()"
             wire:keydown.arrow-up.prevent="decrementHighlight('City')"
             wire:keydown.arrow-down.prevent="incrementHighlight('City')"
             class="form-control has-icon @error('newCity') is-invalid @enderror" data-icon="fas fa-city"
@@ -50,7 +50,7 @@
 <div class="form-group mb-3">
     <label class="fw-bold mb-2"> County:</label>
     <div class="input-cover position-relative">
-        <input type="text" wire:model="newCounty" wire:keydown.enter.prevent="selectCountySuggestion()"
+        <input type="text" wire:model.debounce.300ms="newCounty" wire:keydown.enter.prevent="selectCountySuggestion()"
             wire:keydown.arrow-up.prevent="decrementHighlight('County')"
             wire:keydown.arrow-down.prevent="incrementHighlight('County')"
             class="form-control has-icon @error('newCounty') is-invalid @enderror" data-icon="fa-solid fa-map"
