@@ -281,7 +281,7 @@
                                             @else
                                                 🏢
                                             @endif
-                                            {{ $propertyStyleDisplay }}
+                                            <b>{{ $propertyStyleDisplay }}</b>
                                         </p>
                                     @endif
 
