@@ -209,27 +209,27 @@
             </select>
         </div>
 
-        <div class="mt-3">
+        <div class="mt-3" wire:key="broker-fee-timing-residential-{{ $broker_fee_timing }}">
             @if ($broker_fee_timing === 'Deducted from Rent Collected')
-                <div class="input-group">
+                <div class="input-group" wire:key="broker-fee-days-from-rent">
                     <span class="input-group-text">#</span>
                     <input type="number" wire:model.lazy="broker_fee_days_from_rent" class="form-control"
                         placeholder="Enter number of calendar days (e.g., 5)">
                 </div>
             @elseif ($broker_fee_timing === 'Paid Within Calendar Days After Executed Lease')
-                <div class="input-group">
+                <div class="input-group" wire:key="broker-fee-days-after-lease">
                     <span class="input-group-text">#</span>
                     <input type="number" wire:model.lazy="broker_fee_days_after_lease" class="form-control"
                         placeholder="Enter number of calendar days (e.g., 5)">
                 </div>
             @elseif ($broker_fee_timing === 'Paid Within Calendar Days of Tenant Rent Payment')
-                <div class="input-group">
+                <div class="input-group" wire:key="broker-fee-days-after-rent">
                     <span class="input-group-text">#</span>
                     <input type="number" wire:model.lazy="broker_fee_days_after_rent" class="form-control"
                         placeholder="Enter number of calendar days (e.g., 5)">
                 </div>
             @elseif ($broker_fee_timing === 'other')
-                <div class="input-group">
+                <div class="input-group" wire:key="broker-fee-timing-other-residential">
                     <input type="text" wire:model.lazy="broker_fee_timing_other" class="form-control"
                         placeholder="Describe payment arrangement (e.g., Broker to be paid 50% of commission upon lease execution and 50% upon tenant move-in)">
                 </div>
@@ -259,9 +259,9 @@
             </select>
         </div>
 
-        <div class="mt-3">
+        <div class="mt-3" wire:key="broker-fee-timing-commercial-{{ $broker_fee_timing }}">
             @if ($broker_fee_timing === 'other')
-                <div class="input-group">
+                <div class="input-group" wire:key="broker-fee-timing-other-commercial">
                     <input type="text" wire:model.lazy="broker_fee_timing_other" class="form-control"
                         placeholder="Describe payment arrangement (e.g., Broker to be paid 25% upon lease execution, 25% upon tenant move-in, and 50% upon first month's rent payment)">
                 </div>
