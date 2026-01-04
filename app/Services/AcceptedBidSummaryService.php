@@ -414,12 +414,12 @@ class AcceptedBidSummaryService
         $additionalDetailsHtml = $this->buildAdditionalDetailsHtml($sourceData, $listingData);
         $html = str_replace('{{additional_details_block}}', $additionalDetailsHtml, $html);
 
-        $html = str_replace('{{tenant_signature_name}}', '', $html);
-        $html = str_replace('{{tenant_signed_at}}', '', $html);
-        $html = str_replace('{{tenant_ip_address}}', '', $html);
-        $html = str_replace('{{agent_signature_name}}', '', $html);
-        $html = str_replace('{{agent_signed_at}}', '', $html);
-        $html = str_replace('{{agent_ip_address}}', '', $html);
+        $html = str_replace('{{tenant_signature_name}}', '—', $html);
+        $html = str_replace('{{tenant_signed_at}}', 'Pending', $html);
+        $html = str_replace('{{tenant_ip_address}}', '—', $html);
+        $html = str_replace('{{agent_signature_name}}', '—', $html);
+        $html = str_replace('{{agent_signed_at}}', 'Pending', $html);
+        $html = str_replace('{{agent_ip_address}}', '—', $html);
 
         return $html;
     }

@@ -36,8 +36,16 @@
                                 <p class="text-success mb-1">
                                     <i class="fas fa-check-circle"></i> Signed by: {{ $summary->tenant_signature_name }}
                                 </p>
-                                <small class="text-muted">
-                                    {{ $summary->tenant_signed_at->format('M j, Y g:i A') }}
+                                <small class="text-muted d-block">
+                                    @php
+                                        $tenantTz = $summary->tenant_timezone ?: 'UTC';
+                                        $tenantTime = $summary->tenant_signed_at->copy()->setTimezone($tenantTz);
+                                        $tzAbbr = (new \DateTime('now', new \DateTimeZone($tenantTz)))->format('T');
+                                    @endphp
+                                    {{ $tenantTime->format('M j, Y g:i A') }} ({{ $tzAbbr }})
+                                </small>
+                                <small class="text-muted d-block">
+                                    IP: {{ $summary->tenant_ip_address ?: '—' }}
                                 </small>
                             @else
                                 <p class="text-warning mb-0">
@@ -51,8 +59,16 @@
                                 <p class="text-success mb-1">
                                     <i class="fas fa-check-circle"></i> Signed by: {{ $summary->agent_signature_name }}
                                 </p>
-                                <small class="text-muted">
-                                    {{ $summary->agent_signed_at->format('M j, Y g:i A') }}
+                                <small class="text-muted d-block">
+                                    @php
+                                        $agentTz = $summary->agent_timezone ?: 'UTC';
+                                        $agentTime = $summary->agent_signed_at->copy()->setTimezone($agentTz);
+                                        $agentTzAbbr = (new \DateTime('now', new \DateTimeZone($agentTz)))->format('T');
+                                    @endphp
+                                    {{ $agentTime->format('M j, Y g:i A') }} ({{ $agentTzAbbr }})
+                                </small>
+                                <small class="text-muted d-block">
+                                    IP: {{ $summary->agent_ip_address ?: '—' }}
                                 </small>
                             @else
                                 <p class="text-warning mb-0">

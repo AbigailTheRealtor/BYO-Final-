@@ -38,6 +38,7 @@
                             <form action="{{ route('accepted-bid-summary.sign', $summary->id) }}" method="POST" id="signForm">
                                 @csrf
                                 <input type="hidden" name="timezone" id="timezone" value="UTC">
+                                <input type="hidden" name="client_signed_at" id="clientSignedAt" value="">
                                 
                                 <div class="mb-3">
                                     <label for="signature_name" class="form-label">
@@ -123,6 +124,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     checkbox.addEventListener('change', toggleSubmitButton);
     toggleSubmitButton();
+    
+    document.getElementById('clientSignedAt').value = new Date().toISOString();
+    
+    document.getElementById('signForm').addEventListener('submit', function() {
+        document.getElementById('clientSignedAt').value = new Date().toISOString();
+    });
     
     try {
         var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
