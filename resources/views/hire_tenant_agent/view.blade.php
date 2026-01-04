@@ -3516,113 +3516,132 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     !empty($allMeta['early_termination_fee_option']) ||
                                                     !empty($allMeta['retainer_fee_option']) ||
                                                     !empty($allMeta['agency_agreement_timeframe']) ||
-                                                    !empty($allMeta['brokerage_relationship']))
+                                                    !empty($allMeta['brokerage_relationship']) ||
+                                                    !empty($allMeta['additional_details_broker']) ||
+                                                    !empty($allMeta['additional_details']))
                                                     <div class="mb-4">
-                                                        <h6 class="mb-3" style="font-weight: 600; border-bottom: 1px solid #ddd; padding-bottom: 8px;">
-                                                            Broker Compensation & Agency Agreement Terms
+                                                        <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                            <i class="fa fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
                                                         </h6>
 
                                                         <!-- A) Tenant's Broker Compensation -->
                                                         @if (!empty($allMeta['commission_structure']) || !empty($allMeta['lease_fee_type']) || !empty($allMeta['payment_timing']) || !empty($allMeta['days_to_pay']))
-                                                        <div class="mb-3">
-                                                            <div style="font-size: 13px; font-weight: 600; color: #049399; margin-bottom: 4px;">Tenant's Broker Compensation:</div>
-                                                            @if (!empty($allMeta['commission_structure']))
-                                                            <div class="mb-1" style="font-size: 12px;"><span style="font-weight: 600;">Tenant's Broker Commission Structure:</span> {{ $allMeta['commission_structure'] }}</div>
-                                                            @endif
-                                                            @if (!empty($allMeta['lease_fee_type']))
-                                                            <div class="mb-1" style="font-size: 12px;"><span style="font-weight: 600;">Tenant's Broker Commission Fee:</span> {{ $counterCommissionFeeDisplay }}</div>
-                                                            @endif
-                                                            @if (!empty($allMeta['payment_timing']))
-                                                            <div class="mb-1" style="font-size: 12px;"><span style="font-weight: 600;">Payment Timing for Broker Fees:</span> {{ $allMeta['payment_timing'] }}</div>
-                                                            @endif
-                                                            @if (!empty($allMeta['days_to_pay']))
-                                                            <div class="mb-1" style="font-size: 12px;"><span style="font-weight: 600;">Calendar Days to Pay:</span> {{ $allMeta['days_to_pay'] }}</div>
-                                                            @endif
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Tenant's Broker Compensation</h6>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                @if (!empty($allMeta['commission_structure']))
+                                                                <li class="mb-1"><span class="fw-semibold">Tenant's Broker Commission Structure:</span> {{ $allMeta['commission_structure'] }}</li>
+                                                                @endif
+                                                                @if (!empty($allMeta['lease_fee_type']))
+                                                                <li class="mb-1"><span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $counterCommissionFeeDisplay }}</li>
+                                                                @endif
+                                                                @if (!empty($allMeta['payment_timing']))
+                                                                <li class="mb-1"><span class="fw-semibold">Payment Timing for Broker Fees:</span> {{ $allMeta['payment_timing'] }}</li>
+                                                                @endif
+                                                                @if (!empty($allMeta['days_to_pay']))
+                                                                <li class="mb-1"><span class="fw-semibold">Calendar Days To Pay:</span> {{ $allMeta['days_to_pay'] }}</li>
+                                                                @endif
+                                                            </ul>
                                                         </div>
                                                         @endif
 
                                                         <!-- B) Purchase Fee Details -->
                                                         @if (!empty($allMeta['interested_purchase_fee_type']))
-                                                        <div class="mb-3">
-                                                            <div style="font-size: 13px; font-weight: 600; color: #049399; margin-bottom: 4px;">Purchase Fee Details:</div>
-                                                            <div class="mb-1" style="font-size: 12px;"><span style="font-weight: 600;">Interested in Purchasing a Property:</span> {{ $allMeta['interested_purchase_fee_type'] }}</div>
-                                                            @if ($allMeta['interested_purchase_fee_type'] === 'Yes' && $counterPurchaseFeeDisplay !== '—')
-                                                            <div class="mb-1" style="font-size: 12px;"><span style="font-weight: 600;">Purchase Fee:</span> {{ $counterPurchaseFeeDisplay }}</div>
-                                                            @endif
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">B) Purchase Fee Details</h6>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                <li class="mb-1"><span class="fw-semibold">Interested in Purchasing a Property:</span> {{ $allMeta['interested_purchase_fee_type'] }}</li>
+                                                                @if ($allMeta['interested_purchase_fee_type'] === 'Yes' && $counterPurchaseFeeDisplay !== '—')
+                                                                <li class="mb-1"><span class="fw-semibold">Purchase Fee:</span> {{ $counterPurchaseFeeDisplay }}</li>
+                                                                @endif
+                                                            </ul>
                                                         </div>
                                                         @endif
 
                                                         <!-- C) Lease-Option Details -->
                                                         @if (!empty($allMeta['interested_lease_option_agreement']))
-                                                        <div class="mb-3">
-                                                            <div style="font-size: 13px; font-weight: 600; color: #049399; margin-bottom: 4px;">Lease-Option Details:</div>
-                                                            <div class="mb-1" style="font-size: 12px;"><span style="font-weight: 600;">Interested in a Lease-Option Agreement:</span> {{ $allMeta['interested_lease_option_agreement'] }}</div>
-                                                            @if ($allMeta['interested_lease_option_agreement'] === 'Yes')
-                                                                @if ($counterLeaseOptionCreatedDisplay !== '—')
-                                                                <div class="mb-1" style="font-size: 12px;"><span style="font-weight: 600;">Compensation Type (When Option Is Created):</span> {{ $counterLeaseOptionCreatedDisplay }}</div>
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">C) Lease-Option Details</h6>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                <li class="mb-1"><span class="fw-semibold">Interested in a Lease-Option Agreement:</span> {{ $allMeta['interested_lease_option_agreement'] }}</li>
+                                                                @if ($allMeta['interested_lease_option_agreement'] === 'Yes')
+                                                                    @if ($counterLeaseOptionCreatedDisplay !== '—')
+                                                                    <li class="mb-1"><span class="fw-semibold">Compensation (When Option Is Created):</span> {{ $counterLeaseOptionCreatedDisplay }}</li>
+                                                                    @endif
+                                                                    @if ($counterLeaseOptionExercisedDisplay !== '—')
+                                                                    <li class="mb-1"><span class="fw-semibold">Compensation (If Purchase Option Exercised):</span> {{ $counterLeaseOptionExercisedDisplay }}</li>
+                                                                    @endif
                                                                 @endif
-                                                                @if ($counterLeaseOptionExercisedDisplay !== '—')
-                                                                <div class="mb-1" style="font-size: 12px;"><span style="font-weight: 600;">Compensation Type (If Purchase Option is Exercised):</span> {{ $counterLeaseOptionExercisedDisplay }}</div>
-                                                                @endif
-                                                            @endif
+                                                            </ul>
                                                         </div>
                                                         @endif
 
                                                         <!-- D) Legal Terms -->
                                                         @if (!empty($allMeta['protection_period']) || !empty($allMeta['early_termination_fee_option']) || !empty($allMeta['retainer_fee_option']) || !empty($allMeta['agency_agreement_timeframe']))
-                                                        <div class="mb-3">
-                                                            <div style="font-size: 13px; font-weight: 600; color: #049399; margin-bottom: 4px;">Legal Terms:</div>
-                                                            @if (!empty($allMeta['protection_period']))
-                                                            <div class="mb-1" style="font-size: 12px;"><span style="font-weight: 600;">Protection Period Timeframe:</span> {{ $allMeta['protection_period'] }} Days</div>
-                                                            @endif
-                                                            @if (!empty($allMeta['early_termination_fee_option']))
-                                                            <div class="mb-1" style="font-size: 12px;"><span style="font-weight: 600;">Early Termination Fee:</span> {{ $allMeta['early_termination_fee_option'] }}</div>
-                                                                @if ($counterTerminationFeeDisplay !== '—')
-                                                                <div class="mb-1" style="font-size: 12px;"><span style="font-weight: 600;">Termination Fee Amount:</span> {{ $counterTerminationFeeDisplay }}</div>
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">D) Legal Terms</h6>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                @if (!empty($allMeta['protection_period']))
+                                                                <li class="mb-1"><span class="fw-semibold">Protection Period Timeframe:</span> {{ $allMeta['protection_period'] }} days</li>
                                                                 @endif
-                                                            @endif
-                                                            @if (!empty($allMeta['retainer_fee_option']))
-                                                            <div class="mb-1" style="font-size: 12px;"><span style="font-weight: 600;">Retainer Fee:</span> {{ $allMeta['retainer_fee_option'] }}</div>
-                                                                @if ($allMeta['retainer_fee_option'] === 'Yes')
-                                                                    @if (!empty($allMeta['retainer_fee_amount']))
-                                                                    <div class="mb-1" style="font-size: 12px;"><span style="font-weight: 600;">Retainer Fee Amount:</span> {{ $counterFmtMoney($allMeta['retainer_fee_amount']) }}</div>
+                                                                @if (!empty($allMeta['early_termination_fee_option']))
+                                                                <li class="mb-1"><span class="fw-semibold">Early Termination Fee:</span> {{ $allMeta['early_termination_fee_option'] }}</li>
+                                                                    @if ($counterTerminationFeeDisplay !== '—')
+                                                                    <li class="mb-1"><span class="fw-semibold">Termination Fee Amount:</span> {{ $counterTerminationFeeDisplay }}</li>
                                                                     @endif
-                                                                    @if (!empty($allMeta['retainer_fee_application']))
-                                                                    <div class="mb-1" style="font-size: 12px;"><span style="font-weight: 600;">Retainer Fee Application:</span> 
-                                                                        @if ($allMeta['retainer_fee_application'] === 'applied')
-                                                                        Applied toward final compensation
-                                                                        @else
-                                                                        Charged in addition to final compensation
+                                                                @endif
+                                                                @if (!empty($allMeta['retainer_fee_option']))
+                                                                <li class="mb-1"><span class="fw-semibold">Retainer Fee:</span> {{ $allMeta['retainer_fee_option'] }}</li>
+                                                                    @if ($allMeta['retainer_fee_option'] === 'Yes')
+                                                                        @if (!empty($allMeta['retainer_fee_amount']))
+                                                                        <li class="mb-1"><span class="fw-semibold">Retainer Fee Amount:</span> {{ $counterFmtMoney($allMeta['retainer_fee_amount']) }}</li>
                                                                         @endif
-                                                                    </div>
+                                                                        @if (!empty($allMeta['retainer_fee_application']))
+                                                                        <li class="mb-1"><span class="fw-semibold">Retainer Fee Application:</span> 
+                                                                            @if ($allMeta['retainer_fee_application'] === 'applied')
+                                                                            Applied toward final compensation
+                                                                            @else
+                                                                            Charged in addition to final compensation
+                                                                            @endif
+                                                                        </li>
+                                                                        @endif
                                                                     @endif
                                                                 @endif
-                                                            @endif
-                                                            @if (!empty($allMeta['agency_agreement_timeframe']))
-                                                            @php
-                                                                $metaTimeframe = $allMeta['agency_agreement_timeframe'] ?? '';
-                                                                $metaTimeframeCustom = $allMeta['agency_agreement_custom'] ?? '';
-                                                                $isMetaOther = is_string($metaTimeframe) && strtolower(trim($metaTimeframe)) === 'other';
-                                                                $metaTimeframeDisplay = $isMetaOther ? ($metaTimeframeCustom ?: 'Other') : ($metaTimeframe ?: '');
-                                                            @endphp
-                                                            <div class="mb-1" style="font-size: 12px;"><span style="font-weight: 600;">Tenant Agency Agreement Timeframe:</span> {{ $metaTimeframeDisplay }}</div>
-                                                            @endif
+                                                                @if (!empty($allMeta['agency_agreement_timeframe']))
+                                                                @php
+                                                                    $metaTimeframe = $allMeta['agency_agreement_timeframe'] ?? '';
+                                                                    $metaTimeframeCustom = $allMeta['agency_agreement_custom'] ?? '';
+                                                                    $isMetaOther = is_string($metaTimeframe) && strtolower(trim($metaTimeframe)) === 'other';
+                                                                    $metaTimeframeDisplay = $isMetaOther ? ($metaTimeframeCustom ?: 'Other') : ($metaTimeframe ?: '');
+                                                                @endphp
+                                                                <li class="mb-1"><span class="fw-semibold">Tenant Agency Agreement Timeframe:</span> {{ $metaTimeframeDisplay }}</li>
+                                                                @endif
+                                                            </ul>
                                                         </div>
                                                         @endif
 
                                                         <!-- E) Brokerage Relationship -->
                                                         @if (!empty($allMeta['brokerage_relationship']))
-                                                        <div class="mb-3">
-                                                            <div style="font-size: 13px; font-weight: 600; color: #049399; margin-bottom: 4px;">Brokerage Relationship:</div>
-                                                            <div class="mb-1" style="font-size: 12px;"><span style="font-weight: 600;">Acceptable Brokerage Relationship:</span> {{ $allMeta['brokerage_relationship'] }}</div>
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">E) Brokerage Relationship</h6>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                <li class="mb-1"><span class="fw-semibold">Acceptable Brokerage Relationship:</span> {{ $allMeta['brokerage_relationship'] }}</li>
+                                                            </ul>
                                                         </div>
                                                         @endif
 
-                                                        <!-- F) Additional Terms -->
-                                                        @if (!empty($allMeta['additional_details_broker']))
-                                                        <div class="mb-3">
-                                                            <div style="font-size: 13px; font-weight: 600; color: #049399; margin-bottom: 4px;">Additional Terms:</div>
-                                                            <div style="font-size: 12px;">{{ $allMeta['additional_details_broker'] }}</div>
+                                                        <!-- F) Additional Terms / Additional Details -->
+                                                        @if (!empty($allMeta['additional_details_broker']) || !empty($allMeta['additional_details']))
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">F) Additional Terms / Additional Details</h6>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                @if (!empty($allMeta['additional_details_broker']))
+                                                                <li class="mb-1"><span class="fw-semibold">Additional Terms:</span> {{ $allMeta['additional_details_broker'] }}</li>
+                                                                @endif
+                                                                @if (!empty($allMeta['additional_details']))
+                                                                <li class="mb-1"><span class="fw-semibold">Additional Details:</span> {{ $allMeta['additional_details'] }}</li>
+                                                                @endif
+                                                            </ul>
                                                         </div>
                                                         @endif
                                                     </div>
