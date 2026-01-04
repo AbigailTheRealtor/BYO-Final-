@@ -21,7 +21,7 @@ I prefer detailed explanations. Ask before making major changes.
 - **Database**: PostgreSQL with Laravel migrations.
 - **Frontend Tooling**: Node.js v20 for asset compilation via Laravel Mix.
 - **Unique Listing IDs**: `HasListingId` trait generates unique, prefixed IDs (e.g., `TAA-XXXXXXXX`).
-- **Location Data**: Integrated U.S. Census-based `us_states`, `us_counties`, and `us_cities` databases.
+- **Location Data**: Integrated U.S. Census-based `us_states`, `us_counties`, and `us_cities` databases. City-to-county mappings corrected using authoritative Census Bureau place data (national_place2020.txt) via `FixCityCountyMappings` seeder.
 - **Dynamic Form Handling**: Livewire components manage dynamic fields, conditional rendering, financing options, and property preferences.
 - **Form Enhancements**: Standardized input fields, required indicators, phone auto-formatting, and dynamic visibility for "Other" text inputs.
 - **Fee Display**: Fees display in a combined format (e.g., "$2,323 + 3% of Gross Lease Value") as display-only formatting without storage or schema changes.
