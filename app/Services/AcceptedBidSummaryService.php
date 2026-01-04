@@ -13,107 +13,107 @@ class AcceptedBidSummaryService
 {
     protected $residentialServiceCategories = [
         'Tenant Criteria Marketing & Promotion' => [
-            'Create a branded flyer summarizing the Tenant's rental criteria',
-            'Post the Tenant's rental criteria on Craigslist under the "Real Estate Wanted" section',
-            'Share the Tenant's rental criteria on Nextdoor in Neighborhood or Community Groups',
-            'Promote the Tenant's rental criteria on Facebook in Rental or Housing Groups',
-            'Share the Tenant's rental criteria on Instagram using posts, stories, or reels',
-            'Promote the Tenant's rental criteria on LinkedIn in Real Estate or Housing Groups',
-            'Upload a TikTok video summarizing the Tenant's rental criteria',
-            'Upload a YouTube video summarizing the Tenant's rental criteria',
-            'Launch a mass email campaign promoting the Tenant's rental criteria',
-            'Distribute branded postcards or flyers in the Tenant's preferred neighborhoods',
-            'Launch hyperlocal digital ads targeting the Tenant's preferred rental areas'
+            "Create a branded flyer summarizing the Tenant's rental criteria",
+            "Post the Tenant's rental criteria on Craigslist under the \"Real Estate Wanted\" section",
+            "Share the Tenant's rental criteria on Nextdoor in Neighborhood or Community Groups",
+            "Promote the Tenant's rental criteria on Facebook in Rental or Housing Groups",
+            "Share the Tenant's rental criteria on Instagram using posts, stories, or reels",
+            "Promote the Tenant's rental criteria on LinkedIn in Real Estate or Housing Groups",
+            "Upload a TikTok video summarizing the Tenant's rental criteria",
+            "Upload a YouTube video summarizing the Tenant's rental criteria",
+            "Launch a mass email campaign promoting the Tenant's rental criteria",
+            "Distribute branded postcards or flyers in the Tenant's preferred neighborhoods",
+            "Launch hyperlocal digital ads targeting the Tenant's preferred rental areas"
         ],
         'Property Search, Alerts & Matching' => [
-            'Send email alerts with new listings from the MLS that match the Tenant's rental criteria',
-            'Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant's rental criteria',
-            'Communicate with the Landlord's Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions',
-            'Evaluate properties with the Tenant and provide insights on pricing, lease terms, and overall fit'
+            "Send email alerts with new listings from the MLS that match the Tenant's rental criteria",
+            "Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant's rental criteria",
+            "Communicate with the Landlord's Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions",
+            "Evaluate properties with the Tenant and provide insights on pricing, lease terms, and overall fit"
         ],
         'Property Showings & Virtual Tours' => [
-            'Schedule and attend property showings with the Tenant',
-            'Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs',
-            'Preview properties on behalf of the Tenant upon request',
-            'Provide factual observations on property layout and condition'
+            "Schedule and attend property showings with the Tenant",
+            "Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs",
+            "Preview properties on behalf of the Tenant upon request",
+            "Provide factual observations on property layout and condition"
         ],
         'Tenant Application Support' => [
-            'Provide the Tenant with application instructions or links to an online rental application platform',
-            'Gather and organize required supporting documents (e.g., identification, income verification, reference letters)',
-            'Submit complete and organized application packages to the Landlord's Agent, Landlord, or Property Manager for review',
-            'Answer questions about the application process, screening timelines, and required documentation'
+            "Provide the Tenant with application instructions or links to an online rental application platform",
+            "Gather and organize required supporting documents (e.g., identification, income verification, reference letters)",
+            "Submit complete and organized application packages to the Landlord's Agent, Landlord, or Property Manager for review",
+            "Answer questions about the application process, screening timelines, and required documentation"
         ],
         'Lease Preparation & Execution' => [
-            'Review lease offers and assist the Tenant in preparing questions or requested changes',
-            'Coordinate lease negotiation with the Landlord's Agent, Landlord, or Property Manager',
-            'Assist with completing required lease disclosures and reviewing key lease terms',
-            'Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties',
+            "Review lease offers and assist the Tenant in preparing questions or requested changes",
+            "Coordinate lease negotiation with the Landlord's Agent, Landlord, or Property Manager",
+            "Assist with completing required lease disclosures and reviewing key lease terms",
+            "Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties",
         ],
         'Move-In Support & Coordination' => [
-            'Coordinate move-in date and key handoff logistics with the Landlord's Agent, Landlord or Property Manager',
-            'Confirm completion of any agreed-upon pre-move-in cleaning or repairs',
-            'Provide a utility setup checklist and local provider resources',
-            'Share a move-in checklist for documentation and property condition review',
-            'Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods'
+            "Coordinate move-in date and key handoff logistics with the Landlord's Agent, Landlord or Property Manager",
+            "Confirm completion of any agreed-upon pre-move-in cleaning or repairs",
+            "Provide a utility setup checklist and local provider resources",
+            "Share a move-in checklist for documentation and property condition review",
+            "Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods"
         ],
         'Leasing Strategy & Guidance' => [
-            'Provide a Rental Market Analysis (RMA) with pricing insights based on comparable rentals, neighborhood trends, and current market conditions',
-            'Advise on lease types and structures (e.g., month-to-month, annual, furnished, lease-option)',
-            'Provide general guidance on Tenant rights and Landlord responsibilities under state law',
-            'Provide general guidance on lease clauses, payment terms, and renewal options',
+            "Provide a Rental Market Analysis (RMA) with pricing insights based on comparable rentals, neighborhood trends, and current market conditions",
+            "Advise on lease types and structures (e.g., month-to-month, annual, furnished, lease-option)",
+            "Provide general guidance on Tenant rights and Landlord responsibilities under state law",
+            "Provide general guidance on lease clauses, payment terms, and renewal options",
         ],
     ];
 
     protected $commercialServiceCategories = [
         'Tenant Criteria Marketing & Promotion' => [
-            'Create a branded flyer summarizing the Tenant's leasing criteria',
-            'Post the Tenant's leasing criteria on Craigslist under the "Office/Commercial" or "Retail" section',
-            'Promote the Tenant's leasing criteria on Facebook in Commercial Leasing or Business Groups',
-            'Share the Tenant's leasing criteria on Instagram using posts, stories, or reels',
-            'Promote the Tenant's leasing criteria on LinkedIn in Professional, Real Estate, or Commercial Investment Groups',
-            'Upload a TikTok video summarizing the Tenant's leasing criteria',
-            'Upload a YouTube video summarizing the Tenant's leasing criteria',
-            'Launch a mass email campaign promoting the Tenant's leasing criteria',
-            'Distribute branded postcards or flyers in the Tenant's preferred neighborhoods',
-            'Launch hyperlocal digital ads targeting the Tenant's preferred leasing areas'
+            "Create a branded flyer summarizing the Tenant's leasing criteria",
+            "Post the Tenant's leasing criteria on Craigslist under the \"Office/Commercial\" or \"Retail\" section",
+            "Promote the Tenant's leasing criteria on Facebook in Commercial Leasing or Business Groups",
+            "Share the Tenant's leasing criteria on Instagram using posts, stories, or reels",
+            "Promote the Tenant's leasing criteria on LinkedIn in Professional, Real Estate, or Commercial Investment Groups",
+            "Upload a TikTok video summarizing the Tenant's leasing criteria",
+            "Upload a YouTube video summarizing the Tenant's leasing criteria",
+            "Launch a mass email campaign promoting the Tenant's leasing criteria",
+            "Distribute branded postcards or flyers in the Tenant's preferred neighborhoods",
+            "Launch hyperlocal digital ads targeting the Tenant's preferred leasing areas"
         ],
         'Property Search, Alerts & Matching' => [
-            'Send listing alerts from commercial platforms (e.g., LoopNet, Crexi, CoStar, or local MLS) that match the Tenant's leasing criteria',
-            'Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant's rental criteria',
-            'Communicate with the Landlord's Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions',
-            'Evaluate properties for layout efficiency, building specs, logistics, zoning fit, and operational alignment'
+            "Send listing alerts from commercial platforms (e.g., LoopNet, Crexi, CoStar, or local MLS) that match the Tenant's leasing criteria",
+            "Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant's rental criteria",
+            "Communicate with the Landlord's Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions",
+            "Evaluate properties for layout efficiency, building specs, logistics, zoning fit, and operational alignment"
         ],
         'Property Showings & Virtual Tours' => [
-            'Schedule and attend property tours with the Tenant',
-            'Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs',
-            'Preview properties on behalf of the Tenant upon request',
-            'Provide factual notes on layout, access, parking, visibility, and other operational considerations'
+            "Schedule and attend property tours with the Tenant",
+            "Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs",
+            "Preview properties on behalf of the Tenant upon request",
+            "Provide factual notes on layout, access, parking, visibility, and other operational considerations"
         ],
         'Tenant Application Support' => [
-            'Provide the Tenant with application instructions or links to online platforms',
-            'Gather and organize required supporting documents (e.g., business licenses, financials, references)',
-            'Submit complete and organized application packages to the Landlord's Agent, Landlord, or Property Manager'
+            "Provide the Tenant with application instructions or links to online platforms",
+            "Gather and organize required supporting documents (e.g., business licenses, financials, references)",
+            "Submit complete and organized application packages to the Landlord's Agent, Landlord, or Property Manager"
         ],
         'Lease Preparation, LOI & Execution' => [
-            'Draft or assist with preparing a Letter of Intent (LOI) summarizing the Tenant's business needs and proposed terms',
-            'Assist with negotiating rent, CAM, lease term, TI allowance, exclusivity clauses, renewal options, and other provisions (as permitted under the agency agreement)',
-            'Coordinate with the Landlord's Agent, Landlord or Property Manager to finalize lease terms',
-            'Review lease drafts and coordinate revisions through appropriate channels',
-            'Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties',
-            'Track required deposits, rent commencement, and key lease dates to ensure move-in readiness'
+            "Draft or assist with preparing a Letter of Intent (LOI) summarizing the Tenant's business needs and proposed terms",
+            "Assist with negotiating rent, CAM, lease term, TI allowance, exclusivity clauses, renewal options, and other provisions (as permitted under the agency agreement)",
+            "Coordinate with the Landlord's Agent, Landlord or Property Manager to finalize lease terms",
+            "Review lease drafts and coordinate revisions through appropriate channels",
+            "Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties",
+            "Track required deposits, rent commencement, and key lease dates to ensure move-in readiness"
         ],
         'Move-In Support & Coordination' => [
-            'Coordinate move-in date and key handoff logistics with the Landlord, Landlord's Agent, or Property Manager',
-            'Confirm completion of any agreed-upon pre-move-in repairs, cleaning, or buildout',
-            'Provide a utility setup checklist and local provider resources',
-            'Share a move-in checklist for documentation and property condition review',
-            'Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods'
+            "Coordinate move-in date and key handoff logistics with the Landlord, Landlord's Agent, or Property Manager",
+            "Confirm completion of any agreed-upon pre-move-in repairs, cleaning, or buildout",
+            "Provide a utility setup checklist and local provider resources",
+            "Share a move-in checklist for documentation and property condition review",
+            "Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods"
         ],
         'Leasing Strategy & Guidance' => [
-            'Provide a Comparative Lease Market Analysis (CLMA) with pricing insights, comps, and vacancy trends',
-            'Advise on lease types and structures (e.g., NNN, Modified Gross, Full Service) with general explanations of differences',
-            'Provide general guidance on Tenant rights and Landlord responsibilities under commercial leasing law',
-            'Provide general guidance on lease clauses, escalation terms, and space usage considerations',
+            "Provide a Comparative Lease Market Analysis (CLMA) with pricing insights, comps, and vacancy trends",
+            "Advise on lease types and structures (e.g., NNN, Modified Gross, Full Service) with general explanations of differences",
+            "Provide general guidance on Tenant rights and Landlord responsibilities under commercial leasing law",
+            "Provide general guidance on lease clauses, escalation terms, and space usage considerations",
         ],
     ];
 
@@ -333,7 +333,7 @@ class AcceptedBidSummaryService
             : $this->residentialServiceCategories;
 
         $normalizeStr = function($str) {
-            return str_replace([''', ''', '"', '"'], ["'", "'", '"', '"'], $str);
+            return str_replace(["\u{2019}", "\u{2018}", "\u{201C}", "\u{201D}"], ["'", "'", '"', '"'], $str);
         };
 
         $normalizedServices = array_map($normalizeStr, $services);
@@ -384,8 +384,8 @@ class AcceptedBidSummaryService
         $html = '<table style="width: 100%; border-collapse: collapse;">';
 
         $fields = [
-            'broker_fee_type' => 'Tenant\'s Broker Commission Structure',
-            'broker_fee_amount' => 'Tenant\'s Broker Commission Fee',
+            'broker_fee_type' => "Tenant's Broker Commission Structure",
+            'broker_fee_amount' => "Tenant's Broker Commission Fee",
             'broker_fee_timing' => 'Payment Timing for Broker Fees',
             'broker_fee_days' => 'Calendar Days to Pay',
             'purchase_fee_type' => 'Purchase Fee Type',
@@ -448,219 +448,83 @@ class AcceptedBidSummaryService
     protected function getHtmlTemplate(): string
     {
         return <<<'HTML'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Accepted Bid Summary</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        h1 {
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
-        }
-        h2 {
-            color: #2c3e50;
-            margin-top: 30px;
-            border-bottom: 1px solid #bdc3c7;
-            padding-bottom: 5px;
-        }
-        .section {
-            margin-bottom: 25px;
-        }
-        .party-info {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-        }
-        .party-info h3 {
-            margin-top: 0;
-            color: #2c3e50;
-        }
-        .info-row {
-            margin-bottom: 5px;
-        }
-        .info-label {
-            font-weight: bold;
-            display: inline-block;
-            min-width: 180px;
-        }
-        .notice {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 20px;
-        }
-        .disclosure {
-            background: #e7f3ff;
-            border: 1px solid #007bff;
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 20px;
-        }
-        .signature-section {
-            margin-top: 30px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 5px;
-        }
-        .signature-block {
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px dashed #ccc;
-        }
-        .signature-block:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-        }
-    </style>
-</head>
-<body>
-    <h1>Accepted Bid Summary</h1>
-    <p>This document summarizes the Services, Broker Compensation & Agency Agreement Terms, and related details for the bid accepted on the BidYourAgent platform. It is intended for transparency and recordkeeping and may be attached to the Agent's and Client's state-approved brokerage forms and agreements.</p>
+<div class="accepted-bid-summary" style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
+    <div style="text-align: center; margin-bottom: 30px;">
+        <h1 style="color: #333; margin-bottom: 10px;">Accepted Bid Summary</h1>
+        <p style="color: #666;">Listing ID: {{listing_id}}</p>
+        <p style="color: #666;">Accepted Date: {{accepted_date}}</p>
+    </div>
 
-    <div class="section">
-        <h2>1. Parties</h2>
-        
-        <div class="party-info">
-            <h3>Client (Tenant):</h3>
-            <div class="info-row"><span class="info-label">First & Last Name:</span> {{tenant_name}}</div>
-            <div class="info-row"><span class="info-label">Email:</span> {{tenant_email}}</div>
-            <div class="info-row"><span class="info-label">Phone:</span> {{tenant_phone}}</div>
-        </div>
-
-        <div class="party-info">
-            <h3>Agent:</h3>
-            <div class="info-row"><span class="info-label">First & Last Name:</span> {{agent_name}}</div>
-            <div class="info-row"><span class="info-label">Email:</span> {{agent_email}}</div>
-            <div class="info-row"><span class="info-label">Phone:</span> {{agent_phone}}</div>
-            <div class="info-row"><span class="info-label">Brokerage:</span> {{agent_brokerage_name}}</div>
-            <div class="info-row"><span class="info-label">Real Estate License #:</span> {{agent_license_number}}</div>
-            <div class="info-row"><span class="info-label">NAR Member ID:</span> {{agent_nar_id}}</div>
+    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+        <h2 style="color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px;">1. Parties</h2>
+        <div style="display: flex; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 250px; margin-bottom: 15px;">
+                <h4 style="color: #007bff;">Tenant</h4>
+                <p><strong>Name:</strong> {{tenant_name}}</p>
+                <p><strong>Email:</strong> {{tenant_email}}</p>
+                <p><strong>Phone:</strong> {{tenant_phone}}</p>
+            </div>
+            <div style="flex: 1; min-width: 250px; margin-bottom: 15px;">
+                <h4 style="color: #007bff;">Agent</h4>
+                <p><strong>Name:</strong> {{agent_name}}</p>
+                <p><strong>Email:</strong> {{agent_email}}</p>
+                <p><strong>Phone:</strong> {{agent_phone}}</p>
+                <p><strong>Brokerage:</strong> {{agent_brokerage_name}}</p>
+                <p><strong>License #:</strong> {{agent_license_number}}</p>
+                <p><strong>NAR/MLS ID:</strong> {{agent_nar_id}}</p>
+            </div>
         </div>
     </div>
 
-    <div class="section">
-        <h2>2. Listing / Criteria Details</h2>
-        <div class="info-row"><span class="info-label">Listing ID:</span> {{listing_id}}</div>
-        <div class="info-row"><span class="info-label">Target Areas:</span> {{target_areas}}</div>
-        <div class="info-row"><span class="info-label">Property Type Sought:</span> {{property_type}}</div>
-        <div class="info-row"><span class="info-label">Date Bid Accepted:</span> {{accepted_date}}</div>
+    <div style="background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px;">
+        <h2 style="color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px;">2. Listing/Criteria Details</h2>
+        <p><strong>Property Type:</strong> {{property_type}}</p>
+        <p><strong>Target Areas:</strong> {{target_areas}}</p>
     </div>
 
-    <div class="section">
-        <h2>3. Services Selected for This Bid</h2>
+    <div style="background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px;">
+        <h2 style="color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px;">3. Services</h2>
         {{services_grouped_by_category}}
     </div>
 
-    <div class="section">
-        <h2>4. Broker Compensation & Agency Agreement Terms</h2>
+    <div style="background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px;">
+        <h2 style="color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px;">4. Broker Compensation & Agency Agreement Terms</h2>
         {{broker_compensation_and_agency_terms_block}}
     </div>
 
-    <div class="section">
-        <h2>5. Additional Details</h2>
+    <div style="background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px;">
+        <h2 style="color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px;">5. Additional Details</h2>
         {{additional_details_block}}
     </div>
 
-    <div class="section notice">
-        <h2>6. Important Notice</h2>
-        <p>This Accepted Bid Summary is provided for convenience and transparency. It is not a substitute for state-approved brokerage agreements, representation agreements, leases, or purchase contracts.</p>
-        <p>The Client and Agent are responsible for incorporating these terms into their official agreements in accordance with state law and brokerage policy.</p>
+    <div style="background: #fff3cd; padding: 20px; border: 1px solid #ffc107; border-radius: 8px; margin-bottom: 20px;">
+        <h2 style="color: #856404; border-bottom: 2px solid #ffc107; padding-bottom: 10px;">6. Important Notice</h2>
+        <p style="color: #856404;">This Accepted Bid Summary is a record of the terms agreed upon through the Bid Your Offer platform. It does not constitute a legally binding contract. Both parties are encouraged to formalize their agreement through appropriate legal documentation and consult with legal professionals as needed.</p>
     </div>
 
-    <div class="section disclosure">
-        <h2>7. Platform Referral & Recordkeeping Disclosure</h2>
-        <p>This Accepted Bid Summary documents the service terms and broker compensation accepted through the BidYourAgent platform for this transaction.</p>
-        <p>The parties acknowledge that BidYourAgent facilitated this transaction and may be entitled to a referral fee or platform facilitation fee from the Agent or Brokerage pursuant to a separate referral, participation, or platform agreement. This document is provided for transparency and recordkeeping only and does not create, modify, or replace any referral, commission, or brokerage agreement.</p>
+    <div style="background: #e7f3ff; padding: 20px; border: 1px solid #007bff; border-radius: 8px; margin-bottom: 20px;">
+        <h2 style="color: #0056b3; border-bottom: 2px solid #007bff; padding-bottom: 10px;">7. Platform Referral Disclosure</h2>
+        <p style="color: #0056b3;">This transaction was facilitated through the Bid Your Offer platform. A platform referral fee may apply as outlined in the platform's terms of service.</p>
     </div>
 
-    <div class="section signature-section">
-        <h2>8. Signature Acknowledgement</h2>
-        <p>By signing below, the parties acknowledge receipt and review of this Accepted Bid Summary.</p>
-
-        <div class="signature-block">
-            <h4>Tenant Signature:</h4>
-            <div class="info-row"><span class="info-label">Name:</span> {{tenant_signature_name}}</div>
-            <div class="info-row"><span class="info-label">Date Signed:</span> {{tenant_signed_at}}</div>
-            <div class="info-row"><span class="info-label">IP Address:</span> {{tenant_ip_address}}</div>
-        </div>
-
-        <div class="signature-block">
-            <h4>Agent Signature:</h4>
-            <div class="info-row"><span class="info-label">Name:</span> {{agent_signature_name}}</div>
-            <div class="info-row"><span class="info-label">Date Signed:</span> {{agent_signed_at}}</div>
-            <div class="info-row"><span class="info-label">IP Address:</span> {{agent_ip_address}}</div>
+    <div style="background: #f8f9fa; padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px;">
+        <h2 style="color: #333; border-bottom: 2px solid #28a745; padding-bottom: 10px;">8. Signature Acknowledgement</h2>
+        <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+            <div style="flex: 1; min-width: 250px; padding: 15px; border: 1px solid #ddd; border-radius: 5px;">
+                <h4 style="color: #28a745;">Tenant Acknowledgement</h4>
+                <p><strong>Signature:</strong> {{tenant_signature_name}}</p>
+                <p><strong>Date/Time:</strong> {{tenant_signed_at}}</p>
+                <p><strong>IP Address:</strong> {{tenant_ip_address}}</p>
+            </div>
+            <div style="flex: 1; min-width: 250px; padding: 15px; border: 1px solid #ddd; border-radius: 5px;">
+                <h4 style="color: #28a745;">Agent Acknowledgement</h4>
+                <p><strong>Signature:</strong> {{agent_signature_name}}</p>
+                <p><strong>Date/Time:</strong> {{agent_signed_at}}</p>
+                <p><strong>IP Address:</strong> {{agent_ip_address}}</p>
+            </div>
         </div>
     </div>
-</body>
-</html>
+</div>
 HTML;
-    }
-
-    public function updateSignature(AcceptedBidSummary $summary, string $role, string $signatureName, string $ipAddress): AcceptedBidSummary
-    {
-        $timestamp = now();
-
-        if ($role === 'tenant') {
-            $summary->tenant_signature_name = $signatureName;
-            $summary->tenant_signed_at = $timestamp;
-            $summary->tenant_ip_address = $ipAddress;
-        } elseif ($role === 'agent') {
-            $summary->agent_signature_name = $signatureName;
-            $summary->agent_signed_at = $timestamp;
-            $summary->agent_ip_address = $ipAddress;
-        }
-
-        $summary->save();
-
-        $html = $summary->summary_html;
-        
-        if ($role === 'tenant') {
-            $html = str_replace('{{tenant_signature_name}}', e($signatureName), $html);
-            $html = str_replace('{{tenant_signed_at}}', e($timestamp->format('Y-m-d H:i:s T')), $html);
-            $html = str_replace('{{tenant_ip_address}}', e($ipAddress), $html);
-        } elseif ($role === 'agent') {
-            $html = str_replace('{{agent_signature_name}}', e($signatureName), $html);
-            $html = str_replace('{{agent_signed_at}}', e($timestamp->format('Y-m-d H:i:s T')), $html);
-            $html = str_replace('{{agent_ip_address}}', e($ipAddress), $html);
-        }
-
-        $summary->summary_html = $html;
-        $summary->save();
-
-        return $summary;
-    }
-
-    public function getRenderedHtml(AcceptedBidSummary $summary): string
-    {
-        $html = $summary->summary_html;
-
-        if ($summary->isTenantSigned()) {
-            $html = str_replace('{{tenant_signature_name}}', e($summary->tenant_signature_name), $html);
-            $html = str_replace('{{tenant_signed_at}}', e($summary->tenant_signed_at->format('Y-m-d H:i:s T')), $html);
-            $html = str_replace('{{tenant_ip_address}}', e($summary->tenant_ip_address), $html);
-        }
-
-        if ($summary->isAgentSigned()) {
-            $html = str_replace('{{agent_signature_name}}', e($summary->agent_signature_name), $html);
-            $html = str_replace('{{agent_signed_at}}', e($summary->agent_signed_at->format('Y-m-d H:i:s T')), $html);
-            $html = str_replace('{{agent_ip_address}}', e($summary->agent_ip_address), $html);
-        }
-
-        $html = preg_replace('/\{\{[^}]+\}\}/', '', $html);
-
-        return $html;
     }
 }
