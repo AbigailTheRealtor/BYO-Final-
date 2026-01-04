@@ -3343,6 +3343,21 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                 $showCounterActions = true;
                                                 }
                                                 }
+                                                
+                                                // DEBUG: Show counter action logic
+                                                $debugInfo = [
+                                                    'currentUserId' => $currentUserId,
+                                                    'auctionUserId' => data_get($auction, 'user_id'),
+                                                    'bidUserId' => data_get($bid, 'user_id'),
+                                                    'counterBidUserId' => $counterBid->user_id,
+                                                    'isOwner' => $isOwner,
+                                                    'isAgent' => $isAgent,
+                                                    'isCounterFromOwner' => $isCounterFromOwner,
+                                                    'isCounterFromAgent' => $isCounterFromAgent,
+                                                    'bidState' => $bidState,
+                                                    'counterState' => $counterState,
+                                                    'showCounterActions' => $showCounterActions,
+                                                ];
 
                                                 // Names
                                                 $ownerFirst = data_get(
@@ -3392,6 +3407,23 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                                                 <div
                                                     class="counter-bid-card mb-3 p-3 border rounded mt-2">
+                                                    
+                                                    <!-- DEBUG: Remove after testing -->
+                                                    <div class="alert alert-info small mb-2" style="font-size: 11px;">
+                                                        <strong>DEBUG:</strong> 
+                                                        currUser={{ $currentUserId }}, 
+                                                        auctionUser={{ data_get($auction, 'user_id') }}, 
+                                                        bidUser={{ data_get($bid, 'user_id') }}, 
+                                                        counterUser={{ $counterBid->user_id }}, 
+                                                        isOwner={{ $isOwner ? 'Y' : 'N' }}, 
+                                                        isAgent={{ $isAgent ? 'Y' : 'N' }}, 
+                                                        fromOwner={{ $isCounterFromOwner ? 'Y' : 'N' }}, 
+                                                        fromAgent={{ $isCounterFromAgent ? 'Y' : 'N' }}, 
+                                                        bidState={{ $bidState }}, 
+                                                        counterState={{ $counterState }}, 
+                                                        showActions={{ $showCounterActions ? 'Y' : 'N' }}
+                                                    </div>
+                                                    
                                                     <div
                                                         class="d-flex justify-content-between align-items-center flex-wrap mb-2">
                                                         <h6 class="mb-0">
