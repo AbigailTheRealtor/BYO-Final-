@@ -1,0 +1,193 @@
+Replit Instructions — Tenant Listings Only: Edit Reliability + Lock Fields + Lock Bid Viewing + Fix Draft vs Listing
+Scope (STRICT)
+
+Apply changes ONLY to Tenant listings (Residential + Commercial) under:
+
+Hire a Tenant Agent
+
+Do NOT change Buyer/Seller/Landlord flows.
+
+A) FIX — “Save Draft” Should NOT Publish a Listing
+Issue
+
+When a user clicks Save Draft, the system is currently treating it like a published listing and showing it in the main listings area.
+
+Required Behavior
+
+Save Draft creates/updates a record in Draft status.
+
+Drafts must NOT appear in:
+
+the public listings feed
+
+the user’s active listings list (unless there is a separate “Drafts” tab/section)
+
+any area where agents can view/bid on listings
+
+Drafts should appear ONLY in a dedicated section:
+
+“Drafts” tab, or
+
+Drafts filter, or
+
+Dashboard widget “Draft Listings”
+
+Data Rules (Must be consistent)
+
+Add/confirm a single source of truth field, for example:
+
+status = draft | active | closed | archived
+or
+
+is_draft = true/false
+
+Save Draft should always:
+
+set status = draft (or is_draft=true)
+
+set published_at = null (if you track publish time)
+
+prevent the listing from entering any “bidding/visible” state
+
+Filtering Rules (Critical)
+
+Wherever listings are queried for display (dashboard listings, browse pages, agent bidding views):
+
+Only show listings where:
+
+status = active (or is_draft=false)
+
+Drafts must be excluded by default.
+
+Acceptance Criteria
+
+✅ Save Draft does not show in Active Listings
+
+✅ Agents cannot see or bid on Drafts
+
+✅ Drafts are accessible in a Draft area only (or by editing continuation link)
+
+B) EDIT LISTING — Submit Button Must Always Work (Tenant Only)
+Issue
+
+In Tenant listing edit mode, the Submit/Save button is intermittently not clickable.
+
+Required Behavior
+
+In edit mode, Save must be clickable every time when:
+
+the form is valid
+
+the form is not currently submitting
+
+Required Fix
+
+Button disabled state must be deterministic:
+
+Disabled ONLY if isSubmitting === true OR formInvalid === true
+
+Do NOT depend on inconsistent “dirty” flags from prefilled data.
+
+After prefill loads, trigger validation once so button state is correct.
+
+Check there’s no overlay/z-index element blocking clicks.
+
+Acceptance Criteria
+
+✅ Save works reliably every time in Tenant edit mode
+
+✅ Only disabled during submit or invalid state
+
+C) EDIT RULES — User Can Edit Everything Except:
+
+Lock these fields in Tenant listing edit mode (read-only/disabled):
+
+Listing Type: Traditional vs Bidding Period
+
+Bidding Period Timer Settings: duration / end time / timer configuration
+
+Backend Protection (Required)
+
+Even if UI is bypassed, update endpoint must ignore any attempted changes to:
+
+listing_type
+
+bidding_period_end
+
+timer configuration fields
+
+Acceptance Criteria
+
+✅ Listing type cannot change after creation
+
+✅ Timer cannot change after creation
+
+✅ All other Tenant fields editable
+
+D) BIDDING PERIOD — Disable “View Bid” Until Timer Ends (Tenant Only)
+Issue
+
+During bidding, user can click View Bid, but actions are locked and it shows:
+
+“Actions unlock when the bidding period ends.”
+
+Required Behavior
+
+If bidding is still active:
+
+Disable View Bid button entirely
+
+Do not allow opening the bid modal at all
+
+Logic (Deterministic)
+
+Define:
+
+isBiddingActive = listing.type === "BiddingPeriod" && now < biddingEndsAt
+
+If isBiddingActive:
+
+disable View Bid
+
+show helper text/tooltip:
+
+“Bids can be viewed when the bidding period ends.”
+
+If NOT active:
+
+enable View Bid normally
+
+Optional Backend Guard (Recommended)
+
+Bid details endpoint should refuse returning full bid details while bidding is active.
+
+Acceptance Criteria
+
+✅ View Bid disabled during bidding
+
+✅ View Bid enabled after bidding ends
+
+✅ No early bid-view access
+
+STRICT SAFEGUARDS (MUST FOLLOW)
+DO NOT:
+
+❌ Apply any changes to Buyer/Seller/Landlord listing flows
+
+❌ Rename/delete database columns, models, migrations
+
+❌ Change UI text, tooltips, placeholders except adding “Draft” handling or small helper notes
+
+❌ Modify bidding rules beyond locking View Bid until timer ends
+
+❌ Break existing listing creation flow
+
+ONLY:
+
+✅ Add correct draft status handling + filtering
+
+✅ Fix Tenant edit submit button reliability
+
+✅ Lock listing type + timer fields on Tenant edits (UI + backend)
+
+✅ Disable View Bid until timer ends (Tenant only)

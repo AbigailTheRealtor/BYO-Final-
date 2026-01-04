@@ -1801,10 +1801,21 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 <!-- D) View Full Terms Link - visibility rules by listing type and user -->
                                 @if ($isListingOwner || $isBidOwner)
                                 {{-- Listing Owner or Bid Owner: Full access --}}
+                                @if ($isBiddingPeriodListing && $isBiddingTimerActive && $isListingOwner && !$isBidOwner)
+                                {{-- Bidding Period active: Disable View Bid for listing owner --}}
+                                <span style="color: #999; font-size: 1rem; font-weight: 500; cursor: not-allowed;" 
+                                      title="Bids can be viewed when the bidding period ends.">
+                                    <i class="fa fa-lock me-1"></i> View Full Bid
+                                </span>
+                                <div class="text-muted small mt-1">
+                                    <i class="fa fa-clock me-1"></i> Bids can be viewed when the bidding period ends.
+                                </div>
+                                @else
                                 <a href="#" data-bs-toggle="modal" data-bs-target="#privateDataModal{{ data_get($bid, 'id') }}"
                                    style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
                                     View Full Bid
                                 </a>
+                                @endif
                                 @elseif ($isBiddingPeriodListing && $isAgentViewer && !$isBidOwner)
                                 {{-- Bidding Period: Agent viewing another agent's bid - show limited view button --}}
                                 <a href="#" data-bs-toggle="modal" data-bs-target="#limitedBidModal{{ data_get($bid, 'id') }}"

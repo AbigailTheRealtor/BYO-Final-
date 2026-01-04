@@ -2520,12 +2520,15 @@ class TenantAgentAuctionEdit extends Component
             $auction->saveMeta('service_type', $this->service_type);
             $auction->saveMeta('user_type', $this->user_type);
             $auction->saveMeta('listing_status', $this->listing_status);
-            $auction->saveMeta('auction_type', $this->auction_type);
+            // LOCKED: auction_type cannot be changed after listing creation
+            // $auction->saveMeta('auction_type', $this->auction_type);
             $auction->saveMeta('working_with_agent', $this->working_with_agent);
             $auction->saveMeta('listing_date', $this->listing_date);
             $auction->saveMeta('desired_agent_hire_date', $this->desired_agent_hire_date);
-            $auction->saveMeta('expiration_date', $this->expiration_date);
-            $auction->saveMeta('auction_time', $this->auction_time);
+            // LOCKED: expiration_date cannot be changed after listing creation  
+            // $auction->saveMeta('expiration_date', $this->expiration_date);
+            // LOCKED: auction_time (timer settings) cannot be changed after listing creation
+            // $auction->saveMeta('auction_time', $this->auction_time);
             $auction->saveMeta('agent_bid_visibility', $this->agent_bid_visibility);
             $auction->saveMeta('meeting_Preference', $this->meeting_Preference);
             $auction->saveMeta('number_of_unit', $this->number_of_unit);

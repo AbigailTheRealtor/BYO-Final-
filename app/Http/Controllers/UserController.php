@@ -56,7 +56,7 @@ class UserController extends Controller
             $page_data['pAuctions'] = LandlordAgentAuction::where('is_sold', false)->where('is_approved', 1)->paginate(12);
             return view('author_inc.landlord_agent_auctions', $page_data);
         } else if ($user->user_type == 'tenant') {
-            $page_data['pAuctions'] = TenantAgentAuction::where('is_sold', false)->where('is_approved', 1)->paginate(12);
+            $page_data['pAuctions'] = TenantAgentAuction::where('is_sold', false)->where('is_approved', 1)->where('is_draft', false)->paginate(12);
             return view('author_inc.tenant_agent_auctions', $page_data);
         } else {
             abort(404);
