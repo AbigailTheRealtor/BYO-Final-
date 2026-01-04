@@ -482,9 +482,9 @@ class AcceptedBidSummaryService
             if (!empty($selectedInCategory)) {
                 $html .= '<div class="service-category mb-3">';
                 $html .= '<h6 style="font-weight: bold; margin-bottom: 8px;">' . e($categoryName) . '</h6>';
-                $html .= '<ul style="margin: 0; padding-left: 20px;">';
+                $html .= '<ul style="margin: 0; padding-left: 25px; list-style-type: disc;">';
                 foreach ($selectedInCategory as $service) {
-                    $html .= '<li>' . e($service) . '</li>';
+                    $html .= '<li style="margin-bottom: 4px; list-style-type: disc;">' . e($service) . '</li>';
                 }
                 $html .= '</ul></div>';
             }
@@ -493,16 +493,16 @@ class AcceptedBidSummaryService
         if (!empty($otherServices)) {
             $html .= '<div class="service-category mb-3">';
             $html .= '<h6 style="font-weight: bold; margin-bottom: 8px;">Additional Services</h6>';
-            $html .= '<ul style="margin: 0; padding-left: 20px;">';
+            $html .= '<ul style="margin: 0; padding-left: 25px; list-style-type: disc;">';
             
             if (is_array($otherServices)) {
                 foreach ($otherServices as $service) {
                     if (!empty($service)) {
-                        $html .= '<li>' . e($service) . '</li>';
+                        $html .= '<li style="margin-bottom: 4px; list-style-type: disc;">' . e($service) . '</li>';
                     }
                 }
             } else {
-                $html .= '<li>' . e($otherServices) . '</li>';
+                $html .= '<li style="margin-bottom: 4px; list-style-type: disc;">' . e($otherServices) . '</li>';
             }
             $html .= '</ul></div>';
         }
