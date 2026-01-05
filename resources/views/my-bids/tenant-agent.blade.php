@@ -35,7 +35,7 @@
                         </div>
                         <div class="col-12 col-md-3 col-lg-3 text-end">
                             @if($bidStatus === 'Accepted' && $acceptedSummary)
-                                <a href="{{ route('accepted-bid-summary.view', $acceptedSummary->id) }}" class="btn btn-sm btn-success" onclick="event.stopPropagation();">
+                                <a href="{{ route('accepted-bid-summary.view', $acceptedSummary->id) }}" class="btn btn-sm btn-success" onclick="event.stopPropagation(); window.location.href=this.href; return false;">
                                     View Summary
                                 </a>
                             @endif
