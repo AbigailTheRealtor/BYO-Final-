@@ -127,7 +127,7 @@
                             </label>
                         </div>
 
-                        <button type="submit" class="btn btn-primary btn-lg w-100" id="submitBtn" disabled>
+                        <button type="submit" class="btn btn-primary btn-lg w-100 esign-btn" id="submitBtn" disabled>
                             {{ $userRole === 'tenant' ? 'Tenant' : 'Agent' }}: E-Sign Acknowledgement
                         </button>
                     </form>
@@ -271,15 +271,39 @@
             page-break-inside: avoid;
         }
     }
+    
+    .esign-btn {
+        background-color: #0d6efd !important;
+        border-color: #0d6efd !important;
+        color: #fff !important;
+    }
+    
+    .esign-btn:disabled {
+        background-color: #6c757d !important;
+        border-color: #6c757d !important;
+        opacity: 0.65;
+    }
+    
+    .esign-btn:not(:disabled):hover {
+        background-color: #0b5ed7 !important;
+        border-color: #0a58ca !important;
+    }
 </style>
 
 <script>
-if (window.location.hash === '' || window.location.hash === '#') {
-    window.scrollTo(0, 0);
-    if ('scrollRestoration' in history) {
-        history.scrollRestoration = 'manual';
-    }
+if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
 }
+window.addEventListener('load', function() {
+    if (!window.location.hash || window.location.hash === '#') {
+        setTimeout(function() { window.scrollTo(0, 0); }, 0);
+    }
+});
+window.addEventListener('pageshow', function(event) {
+    if (!window.location.hash || window.location.hash === '#') {
+        setTimeout(function() { window.scrollTo(0, 0); }, 0);
+    }
+});
 </script>
 
 @if(!$summary->isFullySigned())
