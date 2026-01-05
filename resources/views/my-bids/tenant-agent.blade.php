@@ -22,30 +22,53 @@
                         default => 'bg-secondary',
                     };
                     $acceptedSummary = $bid->acceptedBidSummary;
+                    $isPending = ($bidStatus === 'Pending');
+                    $auctionType = $bid->auction->get->auction_type ?? 'Traditional';
+                    $isBiddingPeriod = ($auctionType === 'Bidding Period');
+                    $biddingEndTime = $bid->auction->get->bidding_end_time ?? null;
                 @endphp
+                @if($isPending)
+                {{-- Pending bids: collapsible cards --}}
                 <div class="card p-3 mb-3" data-bs-toggle="collapse" data-bs-target="#collapse{{$loop->iteration}}" aria-expanded="true"
                     aria-controls="collapse{{$loop->iteration}}">
-                    <div class="row myBidsDetails">
-                        <div class="col-12 col-md-6 col-lg-6">
+                @else
+                {{-- Accepted/Countered/Rejected: static cards (no collapse) --}}
+                <div class="card p-3 mb-3">
+                @endif
+                    <div class="row myBidsDetails align-items-center">
+                        <div class="col-12 col-md-4 col-lg-4">
                             <div class="fw-bold">{{ $bid->auction->get->address ?? 'Listing' }}</div>
                             <small class="text-muted">Listing ID: {{ $bid->auction->listing_id ?? 'TAA-'.$bid->auction->id }}</small>
                         </div>
-                        <div class="col-12 col-md-3 col-lg-3 text-center">
-                            @if($bidStatus === 'Countered')
-                                <a href="{{ route('tenant.agent.auction.view', $bid->auction->id) }}" class="badge {{ $statusClass }} p-2 text-decoration-none" onclick="event.stopPropagation(); window.location.href=this.href; return false;">
-                                    {{ $bidStatus }}
-                                </a>
-                            @else
-                                <span class="badge {{ $statusClass }} p-2">{{ $bidStatus }}</span>
-                            @endif
+                        <div class="col-12 col-md-2 col-lg-2 text-center">
+                            <span class="badge {{ $statusClass }} p-2">{{ $bidStatus }}</span>
                         </div>
-                        <div class="col-12 col-md-3 col-lg-3 text-end">
+                        <div class="col-12 col-md-6 col-lg-6 text-end">
                             @if($bidStatus === 'Accepted' && $acceptedSummary)
-                                <a href="{{ route('accepted-bid-summary.view', $acceptedSummary->id) }}" class="btn btn-sm btn-success" onclick="event.stopPropagation(); window.location.href=this.href; return false;">
+                                <a href="{{ route('accepted-bid-summary.view', $acceptedSummary->id) }}" class="btn btn-sm btn-success">
                                     View Summary
                                 </a>
+                            @elseif($bidStatus === 'Countered')
+                                <a href="{{ route('tenant.agent.auction.view', $bid->auction->id) }}" class="btn btn-sm btn-warning text-dark">
+                                    View Counter
+                                </a>
+                            @elseif($bidStatus === 'Rejected')
+                                <a href="{{ route('tenant.agent.auction.view', $bid->auction->id) }}" class="btn btn-sm btn-outline-secondary">
+                                    View Listing
+                                </a>
+                            @elseif($bidStatus === 'Pending')
+                                @if($isBiddingPeriod && $biddingEndTime)
+                                    <span class="me-3 text-muted small">
+                                        <i class="fas fa-clock me-1"></i>Timer Ends: 
+                                        <span class="countdown-timer fw-bold" data-end="{{ $biddingEndTime }}">--:--:--</span>
+                                    </span>
+                                @endif
+                                <a href="{{ route('tenant.agent.auction.view', $bid->auction->id) }}" class="btn btn-sm btn-primary">
+                                    Visit Listing
+                                </a>
                             @endif
                         </div>
+                    </div>
                      @if(!empty($bid->get->offering_price))
                         <div class="fw-bold mt-2">
                             {{$bid->get->offering_price}}
@@ -68,7 +91,8 @@
                         </div> --}}
                     </div>
                 </div>
-                <!-- SubSection  -->
+                <!-- SubSection (only for Pending bids) -->
+                @if($isPending)
                 <div id="collapse{{$loop->iteration}}" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
                     <div class="accordion-body p-0">
                         <div class="row">
@@ -226,6 +250,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
                 <!-- End  -->
             @endforeach
             <!-- End  -->
