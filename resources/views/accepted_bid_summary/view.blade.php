@@ -17,7 +17,7 @@
                             Download Signed PDF
                         </a>
                     @else
-                        <button class="btn btn-outline-secondary" disabled title="Available after both parties sign">
+                        <button class="btn btn-outline-secondary" onclick="showPdfNotReadyMessage()" type="button">
                             Download PDF
                         </button>
                     @endif
@@ -280,6 +280,14 @@
         }
     }
 </style>
+
+@if(!$summary->isFullySigned())
+<script>
+function showPdfNotReadyMessage() {
+    alert('PDF will be available once both parties have signed.');
+}
+</script>
+@endif
 
 @if($canSign)
 <script>

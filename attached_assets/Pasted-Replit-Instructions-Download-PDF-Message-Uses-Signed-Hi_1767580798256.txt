@@ -1,0 +1,131 @@
+Replit Instructions — Download PDF Message Uses “Signed” (Hire a Tenant Accepted Bid Summary)
+
+Applies ONLY to:
+BidYourAgent → Hire a Tenant’s Agent → Accepted Bid Summary (combined Summary + E-Sign page) (Residential + Commercial)
+
+🚨 SAFEGUARDS (MUST FOLLOW)
+
+DO NOT:
+
+rename or delete any database fields/tables related to signatures/acknowledgements
+
+change bid acceptance logic, counter logic, or signing logic
+
+change PDF generation logic other than gating access
+
+allow any partially signed PDF downloads
+
+modify Buyer/Seller/Landlord flows
+
+change page layout/styling beyond the message text + click handling for the Download button
+
+YOU MAY ONLY:
+
+update the Download PDF click behavior to show a message when not fully signed
+
+update user-facing wording from “completed” to “signed”
+
+keep backend statuses as-is (no schema refactor required)
+
+✅ GOAL
+
+When a user clicks Download PDF before both parties have signed, show this exact message:
+
+Exact message to display:
+
+PDF will be available once both parties have signed.
+
+After both parties have signed, allow the PDF download normally.
+
+1) REQUIRED LOGIC (DOWNLOAD GATING)
+Condition
+
+If either signature is missing:
+
+Tenant signature not present OR
+
+Agent signature not present
+
+Behavior
+
+Do NOT download a PDF
+
+Do NOT navigate away
+
+Show a popup/toast/modal message:
+
+“PDF will be available once both parties have signed.”
+
+✅ The Download button may remain visible, but must be blocked until fully signed.
+
+2) ENABLE DOWNLOAD ONLY AFTER BOTH SIGNATURES
+Condition
+
+Tenant signed = true (or has tenant_signed_at)
+AND
+
+Agent signed = true (or has agent_signed_at)
+AND
+
+Final PDF exists (or generate it if your system generates on completion)
+
+Behavior
+
+Allow Download PDF
+
+Download must be the final PDF that includes both signatures
+
+3) WHERE TO IMPLEMENT
+A) In the Accepted Bid Summary page “Download PDF” action
+
+Find the handler for:
+
+Download PDF button click
+
+Route/controller like downloadAcceptedBidPdf(summaryId) / accepted_bid_summary.download
+
+Add the gating check before the download response is returned.
+
+If using server-side button link:
+
+Intercept click in UI when not fully signed (recommended, best UX)
+
+Or return an error/flash message response from backend and stay on page
+
+If using JS/AJAX:
+
+If not fully signed → show toast/modal with message
+
+If fully signed → proceed with download
+
+4) MESSAGE TEXT UPDATE (REPLACE “COMPLETED”)
+
+Replace any existing user-facing copy that says:
+
+“completed their acknowledgements”
+
+“completed signatures”
+
+“completed”
+
+With:
+
+✅ “signed”
+
+Specifically for the Download PDF gating message, it must be exactly:
+
+PDF will be available once both parties have signed.
+
+5) ACCEPTANCE CHECKS (MUST PASS)
+
+Tenant clicks Download PDF before signing → message appears, no download
+
+Tenant signs but Agent hasn’t → message appears, no download
+
+Agent signs but Tenant hasn’t → message appears, no download
+
+After both sign → Download PDF works and file includes both signatures
+
+No changes to DB schema or signature status logic
+
+Only Hire a Tenant Accepted Bid Summary is affected
