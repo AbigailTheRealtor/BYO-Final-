@@ -13,14 +13,35 @@
         <div class="accordion" id="accordionExample">
             <!-- Section 2 -->
             @foreach ($bids as $bid)
+                @php
+                    $bidStatus = $bid->bid_status;
+                    $statusClass = match($bidStatus) {
+                        'Accepted' => 'bg-success',
+                        'Countered' => 'bg-warning text-dark',
+                        'Rejected' => 'bg-danger',
+                        default => 'bg-secondary',
+                    };
+                    $acceptedSummary = $bid->acceptedBidSummary;
+                @endphp
                 <div class="card p-3 mb-3" data-bs-toggle="collapse" data-bs-target="#collapse{{$loop->iteration}}" aria-expanded="true"
                     aria-controls="collapse{{$loop->iteration}}">
                     <div class="row myBidsDetails">
-                        <div class="col-12 col-md-8 col-lg-8">
-                            <div class="fw-bold">{{ $bid->auction->get->address }}</div>
+                        <div class="col-12 col-md-6 col-lg-6">
+                            <div class="fw-bold">{{ $bid->auction->get->address ?? 'Listing' }}</div>
+                            <small class="text-muted">Listing ID: {{ $bid->auction->listing_id ?? 'TAA-'.$bid->auction->id }}</small>
+                        </div>
+                        <div class="col-12 col-md-3 col-lg-3 text-center">
+                            <span class="badge {{ $statusClass }} p-2">{{ $bidStatus }}</span>
+                        </div>
+                        <div class="col-12 col-md-3 col-lg-3 text-end">
+                            @if($bidStatus === 'Accepted' && $acceptedSummary)
+                                <a href="{{ route('accepted-bid-summary.view', $acceptedSummary->id) }}" class="btn btn-sm btn-success" onclick="event.stopPropagation();">
+                                    View Summary
+                                </a>
+                            @endif
                         </div>
                      @if(!empty($bid->get->offering_price))
-                        <div class="fw-bold">
+                        <div class="fw-bold mt-2">
                             {{$bid->get->offering_price}}
                             <span class="text-sm-end opacity-5 badge bg-secondary">Current price</span>
                         </div>

@@ -31,6 +31,30 @@ class TenantAgentAuctionBid extends Model
         return $this->hasMany(TenantCounterBidding::class, 'tenant_agent_auction_bid_id');
     }
 
+    public function acceptedBidSummary()
+    {
+        return $this->hasOne(AcceptedBidSummary::class, 'accepted_bid_id');
+    }
+
+    public function getBidStatusAttribute(): string
+    {
+        if ($this->acceptedBidSummary()->exists()) {
+            return 'Accepted';
+        }
+        
+        $latestCounter = $this->counterTerms()->latest()->first();
+        if ($latestCounter) {
+            return 'Countered';
+        }
+        
+        $isRejected = $this->info('is_rejected');
+        if ($isRejected === '1' || $isRejected === 1 || $isRejected === true) {
+            return 'Rejected';
+        }
+        
+        return 'Pending';
+    }
+
     public function saveMeta($key, $val)
     {
         return $this->meta()->updateOrCreate(["meta_key" => $key], ["meta_value" => $val]);

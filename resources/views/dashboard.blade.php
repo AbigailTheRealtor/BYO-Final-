@@ -107,9 +107,47 @@
                                 </div>
                                 <!-- End  -->
                                 <div class="fw-bold">Recent Notices</div>
-                                <div class="opacity-50 mt-4 fw-bold">No notifications found.</div>
-                                <div class="notification">
-
+                                <div class="notification mt-3">
+                                    @if($notifications->isEmpty())
+                                        <div class="opacity-50 mt-2 fw-bold">No notifications found.</div>
+                                    @else
+                                        @foreach($notifications as $notification)
+                                            @php
+                                                $data = $notification->data;
+                                                $type = $data['type'] ?? 'general';
+                                                $message = $data['message'] ?? 'You have a notification';
+                                                $summaryLink = $data['summary_link'] ?? null;
+                                                $listingId = $data['listing_id'] ?? $data['auction_id'] ?? null;
+                                            @endphp
+                                            <div class="alert alert-info d-flex justify-content-between align-items-center mb-2" role="alert">
+                                                <div>
+                                                    @if($type === 'bid_accepted')
+                                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                                    @elseif($type === 'bid_countered')
+                                                        <i class="fas fa-exchange-alt text-warning me-2"></i>
+                                                    @elseif($type === 'bid_rejected')
+                                                        <i class="fas fa-times-circle text-danger me-2"></i>
+                                                    @else
+                                                        <i class="fas fa-bell me-2"></i>
+                                                    @endif
+                                                    <span>{{ $message }}</span>
+                                                    @if($listingId)
+                                                        <small class="text-muted ms-2">(Listing: {{ $listingId }})</small>
+                                                    @endif
+                                                </div>
+                                                <div>
+                                                    @if($summaryLink)
+                                                        <a href="{{ $summaryLink }}" class="btn btn-sm btn-primary">View Summary</a>
+                                                    @endif
+                                                    <form action="{{ route('notifications.markRead') }}" method="POST" class="d-inline">
+                                                        @csrf
+                                                        <input type="hidden" name="id" value="{{ $notification->id }}">
+                                                        <button type="submit" class="btn btn-sm btn-outline-secondary">Dismiss</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    @endif
                                 </div>
                             </div>
                         </div>

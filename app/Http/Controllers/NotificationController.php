@@ -46,10 +46,14 @@ class NotificationController extends Controller
 
         if ($notification) {
             $notification->markAsRead();
-            $notification->delete();   // DELETE after marking as read
+            $notification->delete();
         }
 
-        return response()->json(['status' => 'success']);
+        if ($request->wantsJson()) {
+            return response()->json(['status' => 'success']);
+        }
+        
+        return redirect()->back()->with('success', 'Notification dismissed.');
     }
 
 

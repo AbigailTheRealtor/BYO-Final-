@@ -28,7 +28,20 @@ class DashboardController extends Controller
 {
     public function dashboard()
     {
+        $user = Auth::user();
         $page_data['title'] = 'Dashboard';
+        
+        $page_data['notifications'] = $user->unreadNotifications()
+            ->whereIn('type', [
+                'App\Notifications\BidAcceptedNotification',
+                'App\Notifications\CounterBidAcceptedNotification',
+                'App\Notifications\BidCounteredNotification',
+                'App\Notifications\BidRejectedNotification',
+            ])
+            ->orderBy('created_at', 'desc')
+            ->take(10)
+            ->get();
+        
         return view('dashboard', $page_data);
     }
 
