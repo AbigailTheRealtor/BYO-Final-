@@ -8,14 +8,18 @@
                 <h2>Accepted Bid Summary</h2>
                 <div>
                     @if($canSign)
-                        <a href="{{ route('accepted-bid-summary.sign-form', $summary->id) }}" class="btn btn-primary">
-                            {{ $userRole === 'tenant' ? 'Tenant' : 'Agent' }}: E-Sign Acknowledgement
+                        <a href="#esign-section" class="btn btn-primary">
+                            Sign Now
                         </a>
                     @endif
                     @if($summary->isFullySigned())
                         <a href="{{ route('accepted-bid-summary.download-pdf', $summary->id) }}" class="btn btn-success">
                             Download Signed PDF
                         </a>
+                    @else
+                        <button class="btn btn-outline-secondary" disabled title="Available after both parties sign">
+                            Download PDF
+                        </button>
                     @endif
                     <button onclick="window.history.back()" class="btn btn-secondary">Back</button>
                 </div>
@@ -90,6 +94,54 @@
                     </div>
                 </div>
             </div>
+
+            @if($canSign)
+            <div class="card mt-4" id="esign-section">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{{ $userRole === 'tenant' ? 'Tenant' : 'Agent' }}: E-Sign Acknowledgement</h5>
+                </div>
+                <div class="card-body">
+                    @if(session('error'))
+                        <div class="alert alert-danger">{{ session('error') }}</div>
+                    @endif
+
+                    <form action="{{ route('accepted-bid-summary.sign', $summary->id) }}" method="POST" id="signForm">
+                        @csrf
+                        <input type="hidden" name="timezone" id="timezone" value="UTC">
+                        <input type="hidden" name="client_signed_at" id="clientSignedAt" value="">
+
+                        <div class="mb-3">
+                            <label for="signature_name" class="form-label">
+                                Type Your Full Legal Name <span class="text-danger">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                class="form-control @error('signature_name') is-invalid @enderror" 
+                                id="signature_name" 
+                                name="signature_name" 
+                                placeholder="Enter your full legal name"
+                                value="{{ old('signature_name') }}"
+                                required
+                            >
+                            @error('signature_name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="agree_terms" name="checkbox_confirmed" value="1" required>
+                            <label class="form-check-label" for="agree_terms">
+                                <strong>Important:</strong> By signing below, you acknowledge receipt and review of this Accepted Bid Summary. This is an acknowledgement only, not a contract execution. I confirm that I have reviewed the Accepted Bid Summary and acknowledge its contents.
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg w-100" id="submitBtn" disabled>
+                            {{ $userRole === 'tenant' ? 'Tenant' : 'Agent' }}: E-Sign Acknowledgement
+                        </button>
+                    </form>
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 </div>
@@ -228,4 +280,35 @@
         }
     }
 </style>
+
+@if($canSign)
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var checkbox = document.getElementById('agree_terms');
+    var submitBtn = document.getElementById('submitBtn');
+    
+    if (checkbox && submitBtn) {
+        function toggleSubmitButton() {
+            submitBtn.disabled = !checkbox.checked;
+        }
+        
+        checkbox.addEventListener('change', toggleSubmitButton);
+        toggleSubmitButton();
+        
+        document.getElementById('clientSignedAt').value = new Date().toISOString();
+        
+        document.getElementById('signForm').addEventListener('submit', function() {
+            document.getElementById('clientSignedAt').value = new Date().toISOString();
+        });
+        
+        try {
+            var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            document.getElementById('timezone').value = tz || 'UTC';
+        } catch (e) {
+            document.getElementById('timezone').value = 'UTC';
+        }
+    }
+});
+</script>
+@endif
 @endsection
