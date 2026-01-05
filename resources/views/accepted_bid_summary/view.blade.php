@@ -37,47 +37,39 @@
                         <div class="col-md-6">
                             <h6>Tenant Acknowledgement</h6>
                             @if($summary->isTenantSigned())
-                                <p class="text-success mb-1">
-                                    <i class="fas fa-check-circle"></i> Signed by: {{ $summary->tenant_signature_name }}
+                                <p class="mb-1">
+                                    <strong>Signature:</strong> {{ $summary->tenant_signature_name }}
                                 </p>
-                                <small class="text-muted d-block">
+                                <p class="text-muted mb-0">
                                     @php
                                         $tenantTz = $summary->tenant_timezone ?: 'UTC';
                                         $tenantTime = $summary->tenant_signed_at->copy()->setTimezone($tenantTz);
                                         $tzAbbr = (new \DateTime('now', new \DateTimeZone($tenantTz)))->format('T');
                                     @endphp
-                                    {{ $tenantTime->format('M j, Y g:i A') }} ({{ $tzAbbr }})
-                                </small>
-                                <small class="text-muted d-block">
-                                    IP: {{ $summary->tenant_ip_address ?: '—' }}
-                                </small>
-                            @else
-                                <p class="text-warning mb-0">
-                                    <i class="fas fa-clock"></i> Pending
+                                    <strong>Date/Time:</strong> {{ $tenantTime->format('M j, Y') }} at {{ $tenantTime->format('g:i A') }} {{ $tzAbbr }}
                                 </p>
+                            @else
+                                <p class="mb-1"><strong>Signature:</strong> —</p>
+                                <p class="text-muted mb-0"><strong>Date/Time:</strong> Pending</p>
                             @endif
                         </div>
                         <div class="col-md-6">
                             <h6>Agent Acknowledgement</h6>
                             @if($summary->isAgentSigned())
-                                <p class="text-success mb-1">
-                                    <i class="fas fa-check-circle"></i> Signed by: {{ $summary->agent_signature_name }}
+                                <p class="mb-1">
+                                    <strong>Signature:</strong> {{ $summary->agent_signature_name }}
                                 </p>
-                                <small class="text-muted d-block">
+                                <p class="text-muted mb-0">
                                     @php
                                         $agentTz = $summary->agent_timezone ?: 'UTC';
                                         $agentTime = $summary->agent_signed_at->copy()->setTimezone($agentTz);
                                         $agentTzAbbr = (new \DateTime('now', new \DateTimeZone($agentTz)))->format('T');
                                     @endphp
-                                    {{ $agentTime->format('M j, Y g:i A') }} ({{ $agentTzAbbr }})
-                                </small>
-                                <small class="text-muted d-block">
-                                    IP: {{ $summary->agent_ip_address ?: '—' }}
-                                </small>
-                            @else
-                                <p class="text-warning mb-0">
-                                    <i class="fas fa-clock"></i> Pending
+                                    <strong>Date/Time:</strong> {{ $agentTime->format('M j, Y') }} at {{ $agentTime->format('g:i A') }} {{ $agentTzAbbr }}
                                 </p>
+                            @else
+                                <p class="mb-1"><strong>Signature:</strong> —</p>
+                                <p class="text-muted mb-0"><strong>Date/Time:</strong> Pending</p>
                             @endif
                         </div>
                     </div>
