@@ -31,7 +31,13 @@
                             <small class="text-muted">Listing ID: {{ $bid->auction->listing_id ?? 'TAA-'.$bid->auction->id }}</small>
                         </div>
                         <div class="col-12 col-md-3 col-lg-3 text-center">
-                            <span class="badge {{ $statusClass }} p-2">{{ $bidStatus }}</span>
+                            @if($bidStatus === 'Countered')
+                                <a href="{{ route('tenant.agent.auction.view', $bid->auction->id) }}" class="badge {{ $statusClass }} p-2 text-decoration-none" onclick="event.stopPropagation(); window.location.href=this.href; return false;">
+                                    {{ $bidStatus }}
+                                </a>
+                            @else
+                                <span class="badge {{ $statusClass }} p-2">{{ $bidStatus }}</span>
+                            @endif
                         </div>
                         <div class="col-12 col-md-3 col-lg-3 text-end">
                             @if($bidStatus === 'Accepted' && $acceptedSummary)
