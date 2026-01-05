@@ -403,7 +403,9 @@ class AcceptedBidSummaryService
         $html = str_replace('{{listing_id}}', e($listing->listing_id ?? 'TAA-' . $listing->id), $html);
         $html = str_replace('{{target_areas}}', e($targetAreas), $html);
         $html = str_replace('{{property_type}}', e($propertyType), $html);
-        $html = str_replace('{{accepted_date}}', e($bid->accepted_date ?? now()->format('Y-m-d H:i:s')), $html);
+        
+        $acceptedDateFormatted = $this->formatAcceptedDate($bid->accepted_date);
+        $html = str_replace('{{accepted_date}}', e($acceptedDateFormatted), $html);
 
         $servicesHtml = $this->buildServicesHtml($sourceData['services'], $sourceData['other_services'], $propertyType);
         $html = str_replace('{{services_grouped_by_category}}', $servicesHtml, $html);
@@ -708,6 +710,25 @@ class AcceptedBidSummaryService
         }
 
         return '$' . number_format($numVal, 0);
+    }
+
+    protected function formatAcceptedDate($acceptedDate): string
+    {
+        if (empty($acceptedDate)) {
+            return now()->setTimezone('America/New_York')->format('F j, Y \a\t g:i A') . ' ET';
+        }
+
+        try {
+            $date = $acceptedDate instanceof \Carbon\Carbon 
+                ? $acceptedDate 
+                : \Carbon\Carbon::parse($acceptedDate);
+            
+            $easternDate = $date->copy()->setTimezone('America/New_York');
+            
+            return $easternDate->format('F j, Y') . ' at ' . $easternDate->format('g:i A') . ' ET';
+        } catch (\Exception $e) {
+            return (string) $acceptedDate;
+        }
     }
 
     protected function buildAdditionalDetailsHtml(array $sourceData, $listingData): string
