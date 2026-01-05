@@ -63,7 +63,7 @@
                                         <span class="countdown-timer fw-bold" data-end="{{ $biddingEndTime }}">--:--:--</span>
                                     </span>
                                 @endif
-                                <a href="{{ route('tenant.agent.auction.view', $bid->auction->id) }}" class="btn btn-sm btn-primary">
+                                <a href="{{ route('tenant.agent.auction.view', $bid->auction->id) }}" class="btn btn-sm btn-primary" onclick="event.stopPropagation(); window.location.href=this.href; return false;">
                                     Visit Listing
                                 </a>
                             @endif
@@ -75,21 +75,6 @@
                             <span class="text-sm-end opacity-5 badge bg-secondary">Current price</span>
                         </div>
                     @endif
-
-                        {{-- <div class="col text-center fw-bold">
-                            <div class="fw-bold">
-                                <span class="d-inline-flex hasCountdown">
-                                    <span>25d </span>
-                                    <span>06</span>
-                                    <span>:</span>
-                                    <span>22</span>
-                                    <span>:</span>
-                                    <span>45</span>
-                                </span>
-                            </div>
-                            <div class="text-sm-center opacity-50">Time left</div>
-                        </div> --}}
-                    </div>
                 </div>
                 <!-- SubSection (only for Pending bids) -->
                 @if($isPending)
