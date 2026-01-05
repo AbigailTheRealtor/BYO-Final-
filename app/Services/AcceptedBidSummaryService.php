@@ -15,6 +15,8 @@ class AcceptedBidSummaryService
     {
         $html = $summary->summary_html ?? '';
         
+        $html = $this->fixAcceptedDateFormat($html, $summary);
+        
         if ($summary->isTenantSigned()) {
             $tenantSignedDisplay = $this->formatSignatureTimestamp($summary->tenant_signed_at, $summary->tenant_timezone);
             $html = str_replace('{{tenant_signature_name}}', e($summary->tenant_signature_name), $html);
@@ -27,6 +29,25 @@ class AcceptedBidSummaryService
             $html = str_replace('{{agent_signature_name}}', e($summary->agent_signature_name), $html);
             $html = str_replace('{{agent_signed_at}}', $agentSignedDisplay, $html);
             $html = str_replace('{{agent_ip_address}}', $summary->agent_ip_address ?: 'Unavailable', $html);
+        }
+        
+        return $html;
+    }
+    
+    protected function fixAcceptedDateFormat(string $html, AcceptedBidSummary $summary): string
+    {
+        $pattern = '/Accepted Date:\s*(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})/';
+        
+        if (preg_match($pattern, $html, $matches)) {
+            try {
+                $oldDate = $matches[1];
+                $date = \Carbon\Carbon::parse($oldDate);
+                $easternDate = $date->copy()->setTimezone('America/New_York');
+                $formattedDate = $easternDate->format('F j, Y') . ' at ' . $easternDate->format('g:i A') . ' ET';
+                
+                $html = preg_replace($pattern, 'Accepted Date: ' . $formattedDate, $html);
+            } catch (\Exception $e) {
+            }
         }
         
         return $html;
