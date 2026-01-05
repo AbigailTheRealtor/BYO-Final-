@@ -22,6 +22,8 @@ class AcceptedBidSummaryService
             $html = str_replace('{{tenant_signature_name}}', e($summary->tenant_signature_name), $html);
             $html = str_replace('{{tenant_signed_at}}', $tenantSignedDisplay, $html);
             $html = str_replace('{{tenant_ip_address}}', $summary->tenant_ip_address ?: 'Unavailable', $html);
+            
+            $html = $this->updateTenantSignatureInHtml($html, $summary, $tenantSignedDisplay);
         }
         
         if ($summary->isAgentSigned()) {
@@ -29,7 +31,55 @@ class AcceptedBidSummaryService
             $html = str_replace('{{agent_signature_name}}', e($summary->agent_signature_name), $html);
             $html = str_replace('{{agent_signed_at}}', $agentSignedDisplay, $html);
             $html = str_replace('{{agent_ip_address}}', $summary->agent_ip_address ?: 'Unavailable', $html);
+            
+            $html = $this->updateAgentSignatureInHtml($html, $summary, $agentSignedDisplay);
         }
+        
+        return $html;
+    }
+    
+    protected function updateTenantSignatureInHtml(string $html, AcceptedBidSummary $summary, string $signedDisplay): string
+    {
+        $html = preg_replace(
+            '/(<h4[^>]*>Tenant Acknowledgement<\/h4>[\s\S]*?<strong>Signature:<\/strong>)\s*—/',
+            '$1 ' . e($summary->tenant_signature_name),
+            $html
+        );
+        
+        $html = preg_replace(
+            '/(<h4[^>]*>Tenant Acknowledgement<\/h4>[\s\S]*?<strong>Date\/Time:<\/strong>)\s*Pending/',
+            '$1 ' . $signedDisplay,
+            $html
+        );
+        
+        $html = preg_replace(
+            '/(<h4[^>]*>Tenant Acknowledgement<\/h4>[\s\S]*?<strong>IP Address:<\/strong>)\s*—/',
+            '$1 ' . e($summary->tenant_ip_address ?: 'Recorded'),
+            $html
+        );
+        
+        return $html;
+    }
+    
+    protected function updateAgentSignatureInHtml(string $html, AcceptedBidSummary $summary, string $signedDisplay): string
+    {
+        $html = preg_replace(
+            '/(<h4[^>]*>Agent Acknowledgement<\/h4>[\s\S]*?<strong>Signature:<\/strong>)\s*—/',
+            '$1 ' . e($summary->agent_signature_name),
+            $html
+        );
+        
+        $html = preg_replace(
+            '/(<h4[^>]*>Agent Acknowledgement<\/h4>[\s\S]*?<strong>Date\/Time:<\/strong>)\s*Pending/',
+            '$1 ' . $signedDisplay,
+            $html
+        );
+        
+        $html = preg_replace(
+            '/(<h4[^>]*>Agent Acknowledgement<\/h4>[\s\S]*?<strong>IP Address:<\/strong>)\s*—/',
+            '$1 ' . e($summary->agent_ip_address ?: 'Recorded'),
+            $html
+        );
         
         return $html;
     }
