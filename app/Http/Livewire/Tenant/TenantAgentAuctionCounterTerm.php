@@ -4,8 +4,12 @@ namespace App\Http\Livewire\Tenant;
 
 use Livewire\Component;
 use App\Models\TenantCounterTerm;
+use App\Models\TenantAgentAuction;
+use App\Models\User;
+use App\Notifications\CounterBidSubmittedNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class TenantAgentAuctionCounterTerm extends Component
 {
@@ -417,10 +421,30 @@ class TenantAgentAuctionCounterTerm extends Component
             $this->saveAllMetaData($counterTerm);
 
             DB::commit();
-            // session()->flash('success', 'Counter terms has been submitted successfully!');
+            
+            // Send notification to the agent whose bid is being countered
+            try {
+                $agentId = $this->pab->user_id;
+                $auction = TenantAgentAuction::find($this->pab->tenant_agent_auction_id);
+                if ($agentId && $auction) {
+                    $agent = User::find($agentId);
+                    if ($agent) {
+                        $agent->notify(new CounterBidSubmittedNotification(
+                            $this->pab,
+                            $auction,
+                            Auth::user(),
+                            $agentId
+                        ));
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send counter terms notification', [
+                    'bid_id' => $this->bidId,
+                    'error' => $e->getMessage()
+                ]);
+            }
 
             session()->flash('success', $this->counterTermId ? 'Counter terms updated!' : 'Counter terms submitted!');
-            // ✅ Redirect to homepage
             return redirect()->route('tenant.agent.auctions.list');
             // Optional: reset form or redirect
             // $this->resetForm();

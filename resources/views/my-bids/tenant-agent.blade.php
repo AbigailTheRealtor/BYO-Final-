@@ -44,7 +44,7 @@
                                     View Summary
                                 </a>
                             @elseif($bidStatus === 'Countered')
-                                <a href="{{ route('tenant.agent.auction.view', $bid->auction->id) }}" class="btn btn-sm btn-warning text-dark">
+                                <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', $bid->id) }}" class="btn btn-sm btn-warning text-dark">
                                     View Counter
                                 </a>
                             @elseif($bidStatus === 'Rejected')

@@ -514,6 +514,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('hire/agent/auction/bid/counter', [TenantAgentAuctionBidController::class, 'counter_bid'])->name('hire.agent.auction.bid.counter');
         Route::post('hire/agent/auction/counter/bid/accept', [TenantAgentAuctionBidController::class, 'accept_counter_bid'])->name('hire.agent.auction.counter.bid.accept');
         Route::post('hire/agent/auction/counter/bid/reject', [TenantAgentAuctionBidController::class, 'reject_counter_bid'])->name('hire.agent.auction.counter.bid.reject');
+        Route::get('hire/agent/auction/bid/{bid_id}/view-counter', [TenantAgentAuctionBidController::class, 'view_counter_terms'])->name('hire.agent.auction.bid.view-counter');
         Route::any('/counter-terms/{id}', [TenantCounteredTermsController::class, 'add'])->name('counter-terms');
 
         Route::get('/counter-terms/{id}/edit', [TenantCounteredTermsController::class, 'edit'])

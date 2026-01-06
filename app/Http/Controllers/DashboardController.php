@@ -37,9 +37,11 @@ class DashboardController extends Controller
                 'App\Notifications\CounterBidAcceptedNotification',
                 'App\Notifications\BidCounteredNotification',
                 'App\Notifications\BidRejectedNotification',
+                'App\Notifications\BidSubmittedNotification',
+                'App\Notifications\CounterBidSubmittedNotification',
             ])
             ->orderBy('created_at', 'desc')
-            ->take(10)
+            ->take(20)
             ->get();
         
         return view('dashboard', $page_data);

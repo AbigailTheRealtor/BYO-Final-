@@ -123,10 +123,12 @@
                                                 <div>
                                                     @if($type === 'bid_accepted')
                                                         <i class="fas fa-check-circle text-success me-2"></i>
-                                                    @elseif($type === 'bid_countered')
+                                                    @elseif($type === 'bid_countered' || $type === 'counter_bid_submitted')
                                                         <i class="fas fa-exchange-alt text-warning me-2"></i>
                                                     @elseif($type === 'bid_rejected')
                                                         <i class="fas fa-times-circle text-danger me-2"></i>
+                                                    @elseif($type === 'bid_submitted')
+                                                        <i class="fas fa-gavel text-primary me-2"></i>
                                                     @else
                                                         <i class="fas fa-bell me-2"></i>
                                                     @endif
@@ -134,6 +136,7 @@
                                                     @if($listingId)
                                                         <small class="text-muted ms-2">(Listing: {{ $listingId }})</small>
                                                     @endif
+                                                    <small class="text-muted ms-2">{{ $notification->created_at->diffForHumans() }}</small>
                                                 </div>
                                                 <div>
                                                     @if($summaryLink)
