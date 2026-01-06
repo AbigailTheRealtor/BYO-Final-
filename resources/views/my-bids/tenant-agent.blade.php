@@ -19,10 +19,11 @@
                         'Accepted' => 'bg-success',
                         'Countered' => 'bg-warning text-dark',
                         'Rejected' => 'bg-danger',
+                        'Active' => 'bg-primary',
                         default => 'bg-secondary',
                     };
                     $acceptedSummary = $bid->acceptedBidSummary;
-                    $isPending = ($bidStatus === 'Pending');
+                    $isActive = ($bidStatus === 'Active');
                     $auctionType = $bid->auction->get->auction_type ?? 'Traditional';
                     $isBiddingPeriod = ($auctionType === 'Bidding Period');
                     $biddingEndTime = $bid->auction->get->bidding_end_time ?? null;
@@ -50,7 +51,7 @@
                                 <a href="{{ route('tenant.agent.auction.view', $bid->auction->id) }}" class="btn btn-sm btn-outline-secondary">
                                     View Listing
                                 </a>
-                            @elseif($bidStatus === 'Pending')
+                            @elseif($bidStatus === 'Active')
                                 @if($isBiddingPeriod && $biddingEndTime)
                                     <span class="me-3 text-muted small">
                                         <i class="fas fa-clock me-1"></i>Timer Ends: 

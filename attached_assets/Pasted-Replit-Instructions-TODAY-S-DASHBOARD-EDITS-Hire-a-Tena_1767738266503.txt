@@ -1,0 +1,305 @@
+Replit Instructions — TODAY’S DASHBOARD EDITS (Hire a Tenant’s Agent)
+Applies to
+
+Hire a Tenant’s Agent (Residential + Commercial)
+
+Dashboards involved:
+
+Tenant/User dashboard (example login): tenant@exp.com
+
+Agent dashboard (example login): testagent2@bidyouroffer.com
+
+Goal (what we’re fixing today)
+
+Recent Notices must show persistent, clickable notifications (Tenant + Agent).
+
+Tenant dashboard must show each Agent bid individually (not just the listing), and allow Accept / Counter / Reject from dashboard per-bid.
+
+Agent dashboard must allow the Agent to open Counter Terms directly from dashboard (not forced to go to listing).
+
+All bid actions must be bid-specific (scoped by bid_id), not tied to the listing as a whole.
+
+Both Tenant + Agent dashboards must link to the Accepted Bid Summary when a bid is accepted.
+
+SAFEGUARDS (MUST FOLLOW — VERY IMPORTANT)
+DO NOT
+
+Merge Tenant and Agent dashboards or change user roles/auth logic
+
+Rename/delete existing database columns, migrations, models, or routes
+
+Change listing creation flows, UI styling, icons, tooltips, placeholder text
+
+Remove/replace listing-page Accept/Counter/Reject functionality (keep it working)
+
+Modify Buyer/Seller/Landlord dashboards or flows in this task
+
+DO
+
+Add new tables/columns only if needed (non-destructive)
+
+Scope all logic/actions by bid_id
+
+Make notifications persist (store in DB) until read/dismissed
+
+Ensure dashboard actions behave the same as listing page actions
+
+1) Create Persistent “Recent Notices” (Tenant + Agent)
+1.1 Data layer (notifications must persist)
+
+Implement a persistent notification system (DB-backed).
+
+If you already have a notifications table/model: use it.
+If not: add a new table (addition-only migration), e.g. user_notifications.
+
+Recommended fields (add only if missing):
+
+id
+
+user_id (who receives the notice)
+
+role_context (tenant/agent/admin) or infer by user role
+
+listing_id
+
+bid_id (critical)
+
+type (enum/string):
+
+bid_received (Tenant)
+
+bid_countered (Tenant + Agent)
+
+bid_accepted (Tenant + Agent)
+
+bid_rejected (Tenant + Agent)
+
+message (display text)
+
+link_url OR link_route_name + params (preferred)
+
+is_read boolean default false
+
+timestamps
+
+1.2 When to create notifications (events)
+
+Create notifications at these moments:
+
+Tenant receives:
+
+When any Agent submits a bid on Tenant’s listing → bid_received
+
+When an Agent counters Tenant → bid_countered
+
+When Tenant accepts a bid (create a Tenant notice too if helpful) → bid_accepted
+
+When Tenant rejects a bid → bid_rejected
+
+Agent receives:
+
+When Tenant counters Agent → bid_countered
+
+When Tenant accepts Agent bid → bid_accepted
+
+When Tenant rejects Agent bid → bid_rejected
+
+Admin receives (records)
+
+When a bid is accepted → Admin gets notice with link to Accepted Bid Summary
+
+IMPORTANT: notifications must be created using bid_id so they link to the correct bid.
+
+1.3 Dashboard UI placement (both dashboards)
+
+On the main Dashboard Home screen where it currently shows:
+
+Recent Notices
+“No notifications found.”
+
+Replace with:
+
+List of most recent unread notices (and optionally read ones below)
+
+Each notice row shows:
+
+short message
+
+Listing ID
+
+timestamp
+
+clickable link
+
+“Mark as read” / “Dismiss” button
+
+2) Tenant Dashboard: Show each Agent bid individually + per-bid actions
+Problem
+
+Tenant currently sees only the listing row, even if multiple Agents bid.
+
+Required behavior
+
+Under Tenant dashboard section for Hire a Tenant’s Agent:
+
+For each Tenant listing, show a nested list/table of bids (one row per bid_id).
+
+Each bid row must display:
+
+Agent label:
+
+Agent # if anonymized
+
+or Agent name if not anonymized
+
+Bid Status (see Status rules below)
+
+Buttons (must act on THAT bid_id):
+
+View Bid (opens full bid details)
+
+Counter
+
+Accept
+
+Reject
+
+If status == Countered → show View Counter Terms
+
+If status == Accepted → show View Summary (Accepted Bid Summary link)
+
+Bid action rules (Tenant dashboard)
+
+Accept/Counter/Reject must update only the selected bid_id
+
+Other bids on same listing remain unchanged until acted on
+
+This fixes the “actions tied to listing” problem.
+
+3) Agent Dashboard: Direct access to Counter Terms (no hunting on listing)
+Current behavior
+
+Agent clicks View Counter and it routes them to the listing page to find the counter terms.
+
+Required behavior
+
+From Agent dashboard “My Bids” list:
+
+If a bid status is Countered, the View Counter button must open counter terms directly via:
+
+a dashboard modal/panel, OR
+
+a dedicated “Bid Details / Counter Terms” page
+without requiring the Agent to open the listing page.
+
+The Counter Terms view must show:
+
+Counter terms content
+
+Action buttons:
+
+Accept Counter
+
+Counter Back
+
+Reject
+All actions must be bid_id scoped.
+
+Keep the listing-based counter flow too (don’t remove it). This is an added shortcut.
+
+4) Bid Status logic (Active vs Pending vs Countered etc.)
+
+We decided today:
+
+Timed listings
+
+Active = bid submitted, timer still running, no counter/accept/reject yet
+
+Bid is editable by Agent until timer ends
+
+Traditional (non-timed)
+
+Pending = bid submitted, awaiting Tenant action
+
+Bid may be editable until counter/accept/reject (depending on your existing rules)
+
+Shared statuses (both listing types)
+
+Countered = a counter was issued (never label this as “Inactive”)
+
+Accepted
+
+Rejected
+
+Fix required: If your code currently sets bids to Inactive when countering, replace that with Countered and ensure both sides can see/respond.
+
+5) “My Bids” section must reflect status + allow drill-down (Tenant + Agent)
+Agent “My Bids”
+
+Each bid row must show:
+
+Listing ID
+
+Status badge (Active/Pending/Countered/Accepted/Rejected)
+
+Buttons:
+
+Visit Listing (keep if you already have it)
+
+View Bid
+
+View Counter (if Countered → opens counter terms directly)
+
+View Summary (if Accepted → goes to Accepted Bid Summary)
+
+Tenant “My Bids” (or Hire Tenant Agent Actions area)
+
+Instead of only listing rows, show:
+
+Listing row → expands to show each bid row (per above)
+
+Bid rows contain Accept/Counter/Reject buttons
+
+6) When bid is accepted — required dashboard outcomes (today’s scope)
+
+When Tenant clicks Accept on a specific bid:
+
+Tenant is taken to Accepted Bid Summary (existing)
+
+Agent gets a persistent Recent Notice:
+
+“Your bid was accepted — View Accepted Bid Summary”
+
+Tenant gets a persistent notice (optional but recommended):
+
+“You accepted Agent X — View Accepted Bid Summary”
+
+Admin gets persistent notice for recordkeeping
+
+Also:
+
+Agent “My Bids” row for that bid must flip to Accepted and show View Summary
+
+7) Testing checklist (must pass)
+
+Test with:
+
+Tenant: tenant@exp.com
+
+Agent: testagent2@bidyouroffer.com
+
+Confirm:
+
+Recent Notices populates and persists after refresh
+
+Tenant dashboard shows multiple bid rows for one listing
+
+Tenant can Accept/Counter/Reject from dashboard per bid_id
+
+Agent sees status updates without hunting
+
+Agent can open Counter Terms directly from dashboard
+
+Accepted bid shows “View Summary” in Agent dashboard and in notices
+
+No Buyer/Seller/Landlord flows changed

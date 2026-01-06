@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use App\Models\TenantAgentAuctionBid as TenantAgentAuctionBidData;
+use App\Models\User;
+use App\Notifications\BidSubmittedNotification;
 use Illuminate\Support\Facades\DB;
 
 class TenantAgentAuctionBid extends Component
@@ -1057,6 +1059,22 @@ class TenantAgentAuctionBid extends Component
             $bid->saveMeta('nar_id', $this->nar_id);
 
             DB::commit();
+            
+            // Send notification to listing owner for new bids only
+            if (!$this->isEditMode) {
+                try {
+                    $listingOwner = User::find($auction->user_id);
+                    if ($listingOwner) {
+                        $listingOwner->notify(new BidSubmittedNotification($bid, $auction));
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Failed to send bid submitted notification', [
+                        'bid_id' => $bid->id,
+                        'auction_id' => $auction->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
             
             $message = $this->isEditMode ? 'Your bid has been updated successfully!' : 'Your bid has been submitted successfully!';
             session()->flash('success', $message);

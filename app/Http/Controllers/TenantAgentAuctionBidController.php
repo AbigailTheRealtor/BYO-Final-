@@ -9,6 +9,8 @@ use App\Models\TenantCounterBidding;
 use App\Models\User;
 use App\Models\UserAgent;
 use App\Notifications\BidAcceptedNotification;
+use App\Notifications\BidRejectedNotification;
+use App\Notifications\CounterBidSubmittedNotification;
 use App\Services\AcceptedBidSummaryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -227,6 +229,20 @@ class TenantAgentAuctionBidController extends Controller
         $pab->accepted_date = date('Y-m-d H:i:s');
 
         if ($pab->save()) {
+            // Send notification to agent that their bid was rejected
+            try {
+                $agent = User::find($pab->user_id);
+                if ($agent) {
+                    $agent->notify(new BidRejectedNotification($pab, $pa));
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send bid rejected notification', [
+                    'bid_id' => $pab->id,
+                    'agent_id' => $pab->user_id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+            
             return redirect()->back()->with('success', 'Bid Rejected successfully!');
         } else {
             return redirect()->back()->with('error', 'Some problem in bid rejection!');

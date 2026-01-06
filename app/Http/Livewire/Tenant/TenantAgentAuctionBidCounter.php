@@ -4,8 +4,12 @@ namespace App\Http\Livewire\Tenant;
 
 use Livewire\Component;
 use App\Models\TenantCounterBidding;
+use App\Models\TenantAgentAuctionBid as TenantAgentAuctionBidModel;
+use App\Models\User;
+use App\Notifications\CounterBidSubmittedNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class TenantAgentAuctionBidCounter extends Component
 {
@@ -484,9 +488,30 @@ class TenantAgentAuctionBidCounter extends Component
             $this->saveAllMetaData($counterBid);
 
             DB::commit();
+            
+            // Send notification to the listing owner (Tenant)
+            try {
+                $originalBid = TenantAgentAuctionBidModel::find($this->bidId);
+                if ($originalBid) {
+                    $listingOwner = User::find($this->pab->user_id);
+                    if ($listingOwner) {
+                        $listingOwner->notify(new CounterBidSubmittedNotification(
+                            $originalBid,
+                            $this->pab,
+                            Auth::user(),
+                            $this->pab->user_id
+                        ));
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send counter bid notification', [
+                    'bid_id' => $this->bidId,
+                    'error' => $e->getMessage()
+                ]);
+            }
+            
             session()->flash('success', 'Counter bid has been submitted successfully!');
 
-            // ✅ Redirect to homepage
             return redirect()->route('tenant.agent.auction.view', $this->pab->id);
             // Optional: reset form or redirect
             // $this->resetForm();

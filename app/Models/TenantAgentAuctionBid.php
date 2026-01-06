@@ -52,7 +52,7 @@ class TenantAgentAuctionBid extends Model
             return 'Rejected';
         }
         
-        return 'Pending';
+        return 'Active';
     }
 
     public function saveMeta($key, $val)
