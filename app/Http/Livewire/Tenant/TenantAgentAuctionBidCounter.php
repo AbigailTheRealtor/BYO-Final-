@@ -348,47 +348,41 @@ class TenantAgentAuctionBidCounter extends Component
         $this->bidId = $bidId;
         $this->parent_counter_id = $parent_counter_id;
         
-        // Default property_type from the original bid
-        $this->property_type = $pab->get->property_type ?? '';
-        
         $sourceData = null;
+        
+        // First, get the auction to load property_type from the original listing
+        $auction = $pab->auction ?? \App\Models\TenantAgentAuction::find($pab->tenant_agent_auction_id);
+        
+        // Default property_type from the listing (not from the agent bid)
+        if ($auction && $auction->get) {
+            $this->property_type = $auction->get->property_type ?? '';
+            $this->service_type = $auction->get->service_type ?? '';
+        } else {
+            $this->property_type = $pab->get->property_type ?? '';
+        }
         
         // COUNTER BID PREFILL RULE: Agent counters with Tenant's latest terms for THIS bid thread
         // TenantCounterTerm stores bid ID in tenant_agent_auction_id field
         // First try to load the Tenant's latest counter terms for this specific bid
-        $tenantCounter = \App\Models\TenantCounterTerm::with('meta')
-            ->where('tenant_agent_auction_id', $bidId)
+        $tenantCounter = \App\Models\TenantCounterTerm::where('tenant_agent_auction_id', $bidId)
             ->orderBy('created_at', 'desc')
             ->first();
         
-        if ($tenantCounter && $tenantCounter->meta) {
-            // Use Tenant's latest counter terms - properly decode JSON fields
-            $metaMap = [];
-            foreach ($tenantCounter->meta as $meta) {
-                $value = $meta->meta_value;
-                // Try to decode JSON values
-                if (is_string($value) && !empty($value)) {
-                    $decoded = json_decode($value, true);
-                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                        $value = $decoded;
-                    }
-                }
-                $metaMap[$meta->meta_key] = $value;
-            }
-            $sourceData = (object) $metaMap;
+        if ($tenantCounter && $tenantCounter->get) {
+            // Use Tenant's latest counter terms via the get accessor (properly decodes JSON)
+            $sourceData = $tenantCounter->get;
             
             // Override property_type and service_type from tenant counter if available
-            if (!empty($metaMap['property_type'])) {
-                $this->property_type = $metaMap['property_type'];
+            if (!empty($sourceData->property_type)) {
+                $this->property_type = $sourceData->property_type;
             }
-            if (!empty($metaMap['service_type'])) {
-                $this->service_type = $metaMap['service_type'];
+            if (!empty($sourceData->service_type)) {
+                $this->service_type = $sourceData->service_type;
             }
         }
         
         // If no Tenant counter exists, fall back to the Tenant listing's original terms
         if (!$sourceData) {
-            $auction = $pab->auction ?? \App\Models\TenantAgentAuction::find($pab->tenant_agent_auction_id);
             if ($auction && $auction->get) {
                 $sourceData = $auction->get;
                 // Load property_type and service_type from auction
