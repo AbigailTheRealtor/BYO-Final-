@@ -404,18 +404,43 @@ class TenantAgentAuctionBidController extends Controller
             abort(404, 'Bid not found');
         }
         
-        if ($auction->user_id !== Auth::id()) {
-            return redirect()->back()->with('error', 'Only the listing owner can counter bids.');
+        $userId = Auth::id();
+        $isListingOwner = ($auction->user_id === $userId);
+        $isBidOwner = ($bid->user_id === $userId);
+        
+        if (!$isListingOwner && !$isBidOwner) {
+            return redirect()->back()->with('error', 'You are not authorized to counter this bid.');
         }
         
-        $latestCounter = TenantCounterBidding::where('tenant_agent_auction_bid_id', $bid_id)
+        // Get the latest counter from either party
+        $latestAgentCounter = TenantCounterBidding::where('tenant_agent_auction_bid_id', $bid_id)
             ->orderBy('created_at', 'desc')
             ->first();
         
-        return view('hire_tenant_agent.counter_bid', [
+        $latestTenantCounter = \App\Models\TenantCounterTerm::where('tenant_agent_auction_id', $bid_id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+        
+        // Determine counterparty role for view logic
+        $counterpartyRole = $isBidOwner ? 'agent' : 'tenant';
+        
+        // Get the parent counter ID for chaining (if any)
+        $parentCounterId = null;
+        if ($latestTenantCounter) {
+            $parentCounterId = $latestTenantCounter->id;
+        } elseif ($latestAgentCounter) {
+            $parentCounterId = $latestAgentCounter->id;
+        }
+        
+        return view('hire_tenant_agent.counter-bid', [
+            'pab' => $bid,
+            'bid_id' => $bid_id,
+            'parent_counter_id' => $parentCounterId,
             'auction' => $auction,
-            'bid' => $bid,
-            'latestCounter' => $latestCounter,
+            'latestTenantCounter' => $latestTenantCounter,
+            'counterpartyRole' => $counterpartyRole,
+            'isListingOwner' => $isListingOwner,
+            'isBidOwner' => $isBidOwner,
         ]);
     }
 
