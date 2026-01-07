@@ -13,6 +13,17 @@ use Illuminate\Support\Facades\Log;
 
 class TenantAgentAuctionBidCounter extends Component
 {
+    /**
+     * Override syncInput to prevent Str::studly() crash when Livewire passes NULL/empty property names.
+     * This is a known Livewire issue that can occur during form submissions.
+     */
+    public function syncInput($name, $value, $rehash = true)
+    {
+        if (empty($name)) {
+            return;
+        }
+        parent::syncInput($name, $value, $rehash);
+    }
 
     public $pab;
     public $bidId;
