@@ -138,6 +138,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications/fetch', [NotificationController::class, 'fetch'])->name('notifications.fetch');
     Route::post('/notifications/mark-read', [NotificationController::class, 'markRead'])->name('notifications.markRead');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.markAllRead');
+    Route::get('/notifications/{notification}/go', [NotificationController::class, 'go'])->name('notifications.go');
+    Route::post('/notifications/{notification}/dismiss', [NotificationController::class, 'dismiss'])->name('notifications.dismiss');
     
     Route::get('/accepted-bid-summary/{id}', [AcceptedBidSummaryController::class, 'view'])->name('accepted-bid-summary.view');
     Route::get('/accepted-bid-summary/{id}/sign', [AcceptedBidSummaryController::class, 'showSignForm'])->name('accepted-bid-summary.sign-form');
