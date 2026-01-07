@@ -225,6 +225,7 @@ Route::post('/hire/agent/auction/end/{id}', [LandlordAgentAuctionController::cla
 Route::get('/search/hire/landlord/agent/auctions', [LandlordAgentAuctionController::class, 'search'])->name('landlord.agent.auctions.search');
 
 Route::get('tenant/hire/agent/auction/view/{id}', [TenantAgentAuctionController::class, 'view'])->name('tenant.agent.auction.view');
+Route::get('tenant/agent-bids/{bidId}', [TenantAgentAuctionController::class, 'viewBidPreview'])->name('tenant.agent.bid.preview')->middleware('auth');
 Route::get('/search/hire/tenant/agent/auctions', [TenantAgentAuctionController::class, 'search'])->name('tenant.agent.auctions.search');
 
 Route::get('/tenant/criteria/auction/view/{id}', [TenantCriteriaAuctionController::class, 'view'])->name('tenant.criteria.auction.view');

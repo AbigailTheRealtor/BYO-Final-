@@ -218,8 +218,8 @@
                 @endif
             </div>
             <div class="card-footer d-flex justify-content-end gap-2" style="background: #f8f9fa;">
-                <a href="{{ route('tenant.agent.auction.view', $agentBid->auction->id) }}" class="btn btn-sm" style="background: #fff; border: 1px solid #049399; color: #049399;">
-                    <i class="fas fa-eye me-1"></i>View Details
+                <a href="{{ route('tenant.agent.bid.preview', $agentBid->id) }}" class="btn btn-sm" style="background: #fff; border: 1px solid #049399; color: #049399;">
+                    <i class="fas fa-eye me-1"></i>View Bid
                 </a>
                 @if($bidStatus === 'Active')
                     <form action="{{ route('tenant.hire.agent.auction.bid.accept') }}" method="POST" class="d-inline">

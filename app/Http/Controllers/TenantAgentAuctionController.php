@@ -380,4 +380,35 @@ class TenantAgentAuctionController extends Controller
         $auction->update();
         return redirect()->back()->with('success', 'Auction Approved Successfully!');
     }
+
+    /**
+     * Full Agent Bid Preview - Dedicated page for viewing complete agent bid package
+     * Accessible from Tenant Dashboard Agent Bids section
+     */
+    public function viewBidPreview($bidId)
+    {
+        $bid = \App\Models\TenantAgentAuctionBid::with(['user', 'meta', 'auction.user'])->find($bidId);
+        
+        if (!$bid) {
+            abort(404, 'Bid not found');
+        }
+        
+        $auction = $bid->auction;
+        
+        if (!$auction) {
+            abort(404, 'Listing not found');
+        }
+        
+        // Authorization: Only the listing owner can view this bid preview
+        if (Auth::id() !== $auction->user_id) {
+            abort(403, 'Unauthorized access');
+        }
+        
+        $page_data['title'] = 'Agent Bid Preview';
+        $page_data['bid'] = $bid;
+        $page_data['auction'] = $auction;
+        $page_data['listingId'] = $auction->listing_id ?? 'TAA-' . $auction->id;
+        
+        return view('tenant_agent.bid_preview', $page_data);
+    }
 }
