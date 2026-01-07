@@ -341,6 +341,13 @@
                         @endif
                     </div>
 
+                    @if($isBiddingPeriodListing)
+                    <div class="alert alert-info mt-4 mb-2" style="background: #e3f2fd; border: 1px solid #90caf9;">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Public Bid Notice:</strong> Once submitted, your Broker Compensation & Agency Agreement Terms, Offered Services, and Match Score may be visible to other participating agents in anonymized form during the bidding period.
+                    </div>
+                    @endif
+                    
                     <!-- Navigation Buttons -->
                     <div class="d-flex justify-content-between form-group mt-4">
                         <div>

@@ -20,6 +20,7 @@ class TenantAgentAuctionBid extends Component
     public $auctionId;
     public $editBidId = null;
     public $isEditMode = false;
+    public $isBiddingPeriodListing = false;
     public $service_type; // 'full_service' or 'limited_service'
     public $user_type;
     public $property_type;
@@ -492,6 +493,8 @@ class TenantAgentAuctionBid extends Component
             session()->flash('error', 'Auction not found.');
             return redirect()->route('home');
         }
+        
+        $this->isBiddingPeriodListing = $auction->isBiddingPeriodType();
         
         $endDate = strtotime($auction->end_date . ' ' . ($auction->end_time ?? '23:59:59'));
         $isExpired = time() > $endDate;

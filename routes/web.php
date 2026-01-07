@@ -566,6 +566,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('tenant/agent/auction/bid/{auctionId}', TenantAgentAuctionBid::class)->name('tenant.agent.auction.bid');
             Route::get('buyer/agent/auction/bid/{auctionId}', BuyerAgentAuctionBid::class)->name('buyer.agent.auction.bid');
             Route::get('landlord/agent/auction/bid/{auctionId}', LandlordAgentAuctionBid::class)->name('landlord.agent.auction.bid');
+            
+            Route::get('tenant/agent/auction/{auctionId}/competing-bids', [\App\Http\Controllers\CompetingBidsController::class, 'viewCompetingBids'])->name('tenant.agent.auction.competing-bids');
+            Route::get('tenant/agent/auction/{auctionId}/competing-bids/data', [\App\Http\Controllers\CompetingBidsController::class, 'getCompetingBidsData'])->name('tenant.agent.auction.competing-bids.data');
 
             // Route::post('/tenant/agent/auction/bid/store', [TenantAgentAuctionBidController::class, 'save_bid'])->name('tenant.agent.auction.bid.save');
 

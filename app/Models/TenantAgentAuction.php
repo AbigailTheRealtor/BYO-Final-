@@ -32,6 +32,21 @@ class TenantAgentAuction extends Model
         return 'Active';
     }
 
+    public function isBiddingPeriodType(): bool
+    {
+        return in_array($this->auction_type, ['Auction (Timer)', 'Bidding Period']);
+    }
+
+    public function isBiddingPeriodActive(): bool
+    {
+        return $this->isBiddingPeriodType() && !$this->auction_ended && $this->is_approved && !$this->is_sold;
+    }
+
+    public function bidData()
+    {
+        return $this->hasMany(TenantAgentAuctionBid::class, 'tenant_agent_auction_id');
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
