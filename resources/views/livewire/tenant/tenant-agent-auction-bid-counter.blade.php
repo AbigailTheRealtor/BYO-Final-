@@ -255,7 +255,9 @@ document.addEventListener('DOMContentLoaded', function () {
   initializeTooltips();
   window.addIconsToInputs();
   initPhoneFormatter();
-  updateSaveButton();
+  // Delay initial validation to ensure Livewire has hydrated values
+  setTimeout(() => updateSaveButton(), 100);
+  setTimeout(() => updateSaveButton(), 500);
 });
 
 // Re-run UI initializers after Livewire updates DOM
@@ -263,7 +265,8 @@ document.addEventListener('livewire:load', function () {
   initializeTooltips();
   window.addIconsToInputs();
   initPhoneFormatter();
-  updateSaveButton();
+  // Delay to ensure DOM is fully updated
+  setTimeout(() => updateSaveButton(), 100);
 });
 if (typeof Livewire !== 'undefined') {
   Livewire.hook('message.processed', () => {
@@ -272,7 +275,7 @@ if (typeof Livewire !== 'undefined') {
       window.addIconsToInputs();
       initPhoneFormatter();
       updateSaveButton();
-    }, 10);
+    }, 50);
   });
 }
 
