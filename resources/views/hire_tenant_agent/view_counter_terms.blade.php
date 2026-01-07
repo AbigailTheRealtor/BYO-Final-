@@ -109,7 +109,7 @@
                         <a href="{{ route('tenant.agent.auction.view', $auction->id) }}" class="btn btn-outline-primary">
                             <i class="fas fa-eye me-2"></i>View Listing
                         </a>
-                        <a href="{{ route('agent.tenant.counter-bid', ['pab' => $auction->id, 'bidId' => $bid->id]) }}" class="btn btn-warning">
+                        <a href="{{ route('tenant.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => $bid->id]) }}" class="btn btn-warning">
                             <i class="fas fa-reply me-2"></i>Counter Back
                         </a>
                         <form action="{{ route('tenant.hire.agent.auction.counter.bid.accept') }}" method="POST" class="d-inline">
