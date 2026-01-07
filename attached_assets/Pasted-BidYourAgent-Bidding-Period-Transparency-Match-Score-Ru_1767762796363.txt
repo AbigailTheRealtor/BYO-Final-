@@ -1,0 +1,220 @@
+BidYourAgent — Bidding Period Transparency & Match Score Rules
+FINAL · COPY/PASTE · REPLIT SAFE · DO NOT PARTIALLY IMPLEMENT
+________________________________________
+🔹 SECTION 1 — Listing Type Rules (Foundation)
+1.1 Traditional Listings
+•	Agent bids are private
+•	No agent-to-agent visibility
+•	No competing bid access under any circumstance
+________________________________________
+1.2 Bidding Period / Timed Listings
+•	Agent bids are transparent by default in anonymized form
+•	No opt-out toggle exists
+•	Transparency applies only while the bidding window is active
+•	When the bidding period ends → all agent-to-agent visibility is removed
+________________________________________
+🔹 SECTION 2 — Participation Unlock Rule (“Submit to View”)
+2.1 Participating Agent Definition
+An agent becomes a participating agent only after they submit a valid bid.
+•	Draft bids do not qualify
+•	Valid bid = existing platform validation rules pass
+________________________________________
+2.2 Visibility Unlock
+•	Competing agent bids are hidden until an agent submits their own bid
+•	Visibility unlocks immediately after submission
+Rule:
+Agents must submit a bid to view competing bids.
+________________________________________
+2.3 Visibility Duration
+An agent may view competing bids only while:
+•	bidding window is active AND
+•	their own bid status remains Submitted
+If an agent withdraws or their bid expires:
+•	competing bid visibility is revoked immediately
+________________________________________
+🔹 SECTION 3 — Agent Anonymity (Non-Negotiable)
+3.1 Display Labels
+Agents must be displayed as:
+•	Agent 1
+•	Agent 2
+•	Agent 3
+Rules:
+•	mapping is random per listing
+•	mapping resets per listing
+•	mapping is never reused
+•	mapping is never exposed via UI, API, logs, or metadata
+________________________________________
+3.2 Identity Prohibition
+Agents must never see:
+•	name
+•	brokerage
+•	license number
+•	photo
+•	profile link
+•	location
+•	contact info
+•	any identifying metadata
+________________________________________
+🔹 SECTION 4 — EXACT Visibility Scope (HARD LIMIT)
+4.1 What Agents MAY See (Only These 3 Items)
+Participating agents may view read-only snapshots of competing bids containing ONLY:
+✅ 1. Broker Compensation & Agency Agreement Terms
+•	compensation structure
+•	fee amounts
+•	retainer / termination / protection period selections
+•	agency relationship selections
+✅ 2. Offered Services
+•	service categories
+•	selected services only
+✅ 3. Match Score
+•	overall match score %
+•	broker compensation % + fields matched
+•	services % + services matched
+•	footer label: “Compared to Your Bid”
+________________________________________
+4.2 What Agents MUST NOT See (Ever)
+❌ bid notes or comments
+❌ drafts or in-progress edits
+❌ counteroffers or negotiations
+❌ score logic, weights, or formulas
+❌ rankings or “best bid” indicators
+❌ timestamps or submission times
+❌ edit/version history
+❌ any field outside the three allowed sections
+If it is not Broker Compensation & Agency Agreement Terms, Offered Services, or Match Score — it must NOT be shown.
+________________________________________
+🔹 SECTION 5 — Editing During Bidding Period (Fair Awareness)
+5.1 Draft Privacy
+•	Agents may edit their own bid during bidding window (if allowed)
+•	All edits occur in private draft mode
+•	Other agents do not see draft changes
+________________________________________
+5.2 Re-Submission Visibility
+When an agent clicks Re-Submit Bid:
+•	the public snapshot updates immediately
+•	other participating agents see updated versions of only:
+o	Broker Compensation & Agency Agreement Terms
+o	Offered Services
+o	Match Score
+________________________________________
+5.3 “Updated” Indicator (Required)
+•	Show an “Updated” badge on that agent’s bid card
+•	Optional text:
+“Agent 2 updated their bid”
+Safeguards:
+•	no timestamps
+•	no version numbers
+•	no details about what changed
+________________________________________
+🔹 SECTION 6 — Timestamp Rules
+6.1 Agent-to-Agent View
+Competing agents must NOT see:
+•	submission date
+•	submission time
+•	edit time
+Only an “Updated” or “Recently Updated” indicator is allowed.
+________________________________________
+6.2 Who May See Exact Times
+Exact timestamps may be visible only to:
+•	the submitting agent (their own bid)
+•	the listing owner
+•	platform admins (audit logs)
+________________________________________
+🔹 SECTION 7 — Match Score Rules (CRITICAL)
+7.1 Match Score Purpose
+Match Score reflects alignment between:
+Other Agent’s submitted bid
+compared to
+Your latest submitted bid
+Footer label must read:
+Compared to Your Bid
+________________________________________
+7.2 What Changes the Match Score
+Match Score must update only when submitted changes occur to:
+•	Broker Compensation & Agency Agreement Terms
+•	Offered Services
+If neither changes, score must not change.
+________________________________________
+7.3 When Scores Are Calculated
+Match Score recalculates ONLY on:
+•	Submit Bid
+•	Re-Submit Bid
+•	Send Counter (private)
+Match Score must NOT recalculate on:
+•	page load
+•	viewing bids
+•	draft edits before re-submission
+________________________________________
+7.4 Match Score Snapshot Storage (Required)
+On each submit/re-submit, store:
+•	overall_percent
+•	broker_comp_percent
+•	broker_comp_matched_count
+•	broker_comp_total_count
+•	services_percent
+•	services_matched_count
+•	services_total_count
+•	compared_to_label = "Compared to Your Bid"
+•	scored_at
+Never recalculate historical scores retroactively.
+________________________________________
+7.5 Match Score Display (Must Match UI)
+Match Score Card:
+•	Header: Match Score
+•	Right badge: overall_percent%
+Row 1:
+•	Broker Compensation: broker_comp_percent%
+•	X/Y fields matched
+Row 2:
+•	Services: services_percent%
+•	X/Y services matched
+Footer:
+•	Compared to Your Bid
+________________________________________
+🔹 SECTION 8 — Counter-Bid Privacy
+•	Counteroffers are private
+•	Only listing owner + that agent can see counters
+•	Other agents continue to see last submitted snapshot only
+•	Scope remains limited to:
+o	Broker Compensation & Agency Agreement Terms
+o	Offered Services
+o	Match Score
+________________________________________
+🔹 SECTION 9 — Required Disclosure Copy (UI)
+Listing Creation (Bidding Period)
+Bidding Period Transparency Notice
+During the active bidding period, participating agents may view anonymized competing bids limited to Broker Compensation & Agency Agreement Terms, Offered Services, and Match Scores only. Agent identities and all other bid information remain confidential.
+Require acknowledgment checkbox.
+________________________________________
+Agent Bid Submission
+Public Bid Notice
+Once submitted, your Broker Compensation & Agency Agreement Terms, Offered Services, and Match Score may be visible to other participating agents in anonymized form during the bidding period. 
+________________________________________
+🔹 SECTION 10 — Developer Safeguards (Replit)
+DO NOT:
+•	rename or delete existing DB fields
+•	modify Traditional listing behavior
+•	expose timestamps to competing agents
+•	expose identity in any payload
+•	expose any data beyond the three allowed sections
+MAY:
+•	add participation checks
+•	add visibility conditionals
+•	add “Updated” badge
+•	add score snapshot fields
+•	add additive migrations only
+________________________________________
+✅ FINAL CONFIRMATION
+✔ Traditional = private
+✔ Bidding Period = transparent by default
+✔ Submit-to-unlock visibility
+✔ Agents see ONLY:
+•	Broker Compensation & Agency Agreement Terms
+•	Offered Services
+•	Match Score
+✔ Match Score updates when submitted terms/services change
+✔ No timestamps
+✔ No counters
+✔ No identity leaks
+✔ No rankings
+
