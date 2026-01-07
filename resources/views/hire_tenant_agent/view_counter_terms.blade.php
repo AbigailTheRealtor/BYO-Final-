@@ -7,7 +7,7 @@
             <nav aria-label="breadcrumb" class="mb-4">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="{{ route('my.bids', 'tenant-agent') }}">My Bids</a></li>
+                    <li class="breadcrumb-item"><a href="{{ route('myBids', 'tenant-agent') }}">My Bids</a></li>
                     <li class="breadcrumb-item active">Counter Terms</li>
                 </ol>
             </nav>
