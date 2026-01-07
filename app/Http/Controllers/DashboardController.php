@@ -237,8 +237,8 @@ class DashboardController extends Controller
             return view('my-bids.tenant-agent', $page_data);
         } else if ($type == 'agent-bids') {
             $userAuctions = \App\Models\TenantAgentAuction::where('user_id', $user->id)->pluck('id');
-            $page_data['pendingAgentBids'] = TenantAgentAuctionBid::whereIn('auction_id', $userAuctions)
-                ->whereIn('bid_status', ['Active', 'Countered'])
+            $page_data['pendingAgentBids'] = TenantAgentAuctionBid::whereIn('tenant_agent_auction_id', $userAuctions)
+                ->whereIn('status', ['Active', 'Countered'])
                 ->with(['user', 'auction'])
                 ->orderBy('created_at', 'desc')
                 ->get();
