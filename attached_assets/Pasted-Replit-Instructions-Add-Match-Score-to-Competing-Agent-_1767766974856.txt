@@ -1,0 +1,168 @@
+Replit Instructions — Add Match Score to Competing Agent “View Bid” (Limited View) + Display Cards (Bidding Period)
+PROBLEM (Current)
+
+In Bidding Period listings:
+
+Match Score is visible only when viewing your own full bid
+
+Competing agent cards may show broker/services summary but no Match Score
+
+Competing agent “View Bid” (limited competing view) shows:
+
+Offered Services
+
+Broker Compensation Terms
+…but does not show Match Score
+
+GOAL (Required)
+
+For Bidding Period / Timed listings, once an agent has submitted a valid bid:
+
+Match Score must display in ALL of these locations:
+
+A) Agent’s own bid display card (no click required)
+B) Competing agents’ bid display cards (no click required)
+C) Agent’s own View Bid full view (already exists)
+D) Competing agents’ View Bid limited view (the anonymized preview that shows Offered Services + Broker Comp Terms)
+
+SAFEGUARDS (MUST FOLLOW)
+DO NOT:
+
+rename/delete any DB columns, field keys, migrations, or models
+
+change bid submission, timer, accept/counter/reject logic
+
+expose competitor identity (name, email, brokerage, license, phone, profile)
+
+show timestamps or “last bidder”
+
+show counter terms to other agents
+
+show scoring formulas/weights or itemized per-field/per-service match lists beyond counts
+
+show any data outside the allowed competing-bid scope:
+
+Broker Terms (summary/terms only)
+
+Offered Services (summary)
+
+Match Score (module)
+
+MUST:
+
+enforce submit-to-unlock for competing bids
+
+reuse the same Match Score component everywhere (single source of truth)
+
+use snapshot-based score data to avoid drift
+
+REQUIRED MATCH SCORE DISPLAY FORMAT (Must Match Existing Module)
+
+Wherever shown, Match Score must display:
+
+Overall Match badge: overall_percent%
+
+Broker Terms: broker_terms_percent% + (X/Y fields matched)
+
+Services: services_percent% + (X/Y services matched)
+
+Footer label: Compared to Your Bid
+
+Replace any “Compared to Your Original Bid” with Compared to Your Bid.
+
+SECTION 1 — Competing Bid Display Cards (Required)
+
+On anonymized competing bid cards (Agent 1 / Agent 2 / etc.):
+
+Must show on card (no click)
+
+Match Score module (full format above)
+
+Offered Services summary (count or grouped summary)
+
+Broker Compensation / Broker Terms summary (allowed fields only)
+
+“View Bid” link (opens limited view)
+
+✅ Match Score must be visible directly on the card without clicking View Bid.
+
+SECTION 2 — Competing Agent “View Bid” Limited View (Required)
+
+When agent clicks View Bid on a competing agent card:
+
+Must display (in this limited competing-bid view)
+
+Match Score module (full format above) — display near the top
+
+Offered Services (same as current limited view)
+
+Broker Compensation Terms / Broker Terms (same as current limited view)
+
+This view remains anonymized and must not include identity or any other private data.
+
+SECTION 3 — Own Bid Card + Own View Bid (Required)
+Own bid display card must show Match Score (no click)
+
+Even for the agent’s own card (on listing page / bidding period screen), Match Score must render on the card.
+
+Own “View Bid” full view keeps Match Score
+
+No change except ensure:
+
+same format
+
+same footer label (“Compared to Your Bid”)
+
+SECTION 4 — Data / Payload Requirements (Critical)
+
+All four views (own card, competing cards, own view, competing view) must have access to:
+
+overall_percent
+
+broker_terms_percent
+
+broker_terms_matched_count
+
+broker_terms_total_count
+
+services_percent
+
+services_matched_count
+
+services_total_count
+
+compared_to_label = "Compared to Your Bid"
+
+Baseline Rule
+
+“Compared to Your Bid” means:
+
+other bid’s latest submitted version
+vs
+
+viewing agent’s latest submitted version
+Draft edits don’t count until re-submitted.
+
+SECTION 5 — QA Acceptance Criteria (Simple Tests)
+
+After I submit on a bidding period listing, my bid card shows Match Score without clicking
+
+After I submit, competing agent cards show Match Score without clicking
+
+Clicking competing “View Bid” shows:
+
+Match Score module
+
+Offered Services
+
+Broker Compensation Terms
+
+No competitor identity is shown anywhere
+
+No timestamps or “last bidder” messaging
+
+Traditional listings remain private and unchanged
+
+KEY LINE TO PREVENT MISIMPLEMENTATION (Put at top of dev task)
+
+Match Score must render on BOTH the competing bid display card AND the competing “View Bid” limited preview, not just inside the user’s own bid view.

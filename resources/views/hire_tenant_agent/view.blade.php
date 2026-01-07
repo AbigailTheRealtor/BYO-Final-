@@ -1859,12 +1859,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     $baselineData = $latestTenantCounter->getAllMeta();
                                     $baselineLabel = 'Your Latest Counter';
                                 } else {
-                                    // Use original listing Broker Compensation fields
+                                    // Use original listing Broker Compensation fields (includes all fee amount fields)
                                     $baselineData = [
                                         'commission_structure' => data_get($auction, 'get.commission_structure'),
                                         'lease_fee_type' => data_get($auction, 'get.lease_fee_type'),
                                         'payment_timing' => data_get($auction, 'get.broker_fee_timing'),
+                                        'broker_fee_timing' => data_get($auction, 'get.broker_fee_timing'),
                                         'days_to_pay' => data_get($auction, 'get.broker_fee_days_from_rent') ?? data_get($auction, 'get.broker_fee_days_after_lease'),
+                                        'broker_fee_days_from_rent' => data_get($auction, 'get.broker_fee_days_from_rent'),
                                         'interested_purchase_fee_type' => data_get($auction, 'get.interested_purchase_fee_type'),
                                         'purchase_fee_type' => data_get($auction, 'get.purchase_fee_type'),
                                         'interested_lease_option_agreement' => data_get($auction, 'get.interested_lease_option_agreement'),
@@ -1882,6 +1884,26 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                         'brokerage_relationship' => data_get($auction, 'get.brokerage_relationship'),
                                         'services' => data_get($auction, 'get.services'),
                                         'other_services' => data_get($auction, 'get.other_services'),
+                                        // Fee amount fields - CRITICAL for numeric value comparison
+                                        'lease_fee_flat' => data_get($auction, 'get.lease_fee_flat'),
+                                        'lease_fee_percentage' => data_get($auction, 'get.lease_fee_percentage'),
+                                        'lease_fee_percentage_monthly_rent' => data_get($auction, 'get.lease_fee_percentage_monthly_rent'),
+                                        'lease_fee_percentage_monthly_number' => data_get($auction, 'get.lease_fee_percentage_monthly_number'),
+                                        'lease_fee_flat_combo' => data_get($auction, 'get.lease_fee_flat_combo'),
+                                        'lease_fee_percentage_combo' => data_get($auction, 'get.lease_fee_percentage_combo'),
+                                        'lease_fee_percentage_net' => data_get($auction, 'get.lease_fee_percentage_net'),
+                                        'lease_fee_flat_combo_net' => data_get($auction, 'get.lease_fee_flat_combo_net'),
+                                        'lease_fee_percentage_combo_net' => data_get($auction, 'get.lease_fee_percentage_combo_net'),
+                                        'lease_fee_other' => data_get($auction, 'get.lease_fee_other'),
+                                        'purchase_fee_flat' => data_get($auction, 'get.purchase_fee_flat'),
+                                        'purchase_fee_percentage' => data_get($auction, 'get.purchase_fee_percentage'),
+                                        'purchase_fee_flat_combo' => data_get($auction, 'get.purchase_fee_flat_combo'),
+                                        'purchase_fee_percentage_combo' => data_get($auction, 'get.purchase_fee_percentage_combo'),
+                                        'purchase_fee_other' => data_get($auction, 'get.purchase_fee_other'),
+                                        'flat_fee_amount' => data_get($auction, 'get.flat_fee_amount'),
+                                        'percent_gross_lease' => data_get($auction, 'get.percent_gross_lease'),
+                                        'purchase_flat_fee_amount' => data_get($auction, 'get.purchase_flat_fee_amount'),
+                                        'purchase_percent_value' => data_get($auction, 'get.purchase_percent_value'),
                                     ];
                                     $baselineLabel = 'Your Original Terms';
                                 }
