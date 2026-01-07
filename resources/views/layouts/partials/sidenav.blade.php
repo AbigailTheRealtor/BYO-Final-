@@ -37,7 +37,7 @@
                     @php
                         $pending_agent_bids_count = \App\Models\TenantAgentAuctionBid::whereHas('auction', function($q) {
                             $q->where('user_id', auth()->id());
-                        })->whereIn('bid_status', ['Active', 'Countered'])->count();
+                        })->whereIn('status', ['Active', 'Countered'])->count();
                     @endphp
                     @if ($pending_agent_bids_count)
                         <span class="badge bg-danger ms-2">{{ $pending_agent_bids_count }}</span>
