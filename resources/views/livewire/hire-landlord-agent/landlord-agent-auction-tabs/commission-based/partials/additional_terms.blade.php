@@ -1,4 +1,3 @@
-</div>
 <!-- Additional Terms -->
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">

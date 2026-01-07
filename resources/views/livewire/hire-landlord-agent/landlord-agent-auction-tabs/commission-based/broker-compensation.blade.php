@@ -1223,8 +1223,7 @@ this agreement ends.">
             </div>
         </div>
     @endif
-</div></div>
-<!-- Additional Terms -->
+</div><!-- Additional Terms -->
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
         Additional Terms:
