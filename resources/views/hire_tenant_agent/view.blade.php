@@ -1624,7 +1624,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 <i class="fa fa-lock me-1"></i> <strong>Traditional Listing:</strong> You can only view your own bid. Other agents' bids remain private.
             </div>
             @elseif ($isBiddingPeriodListing && !$isExpired && $userHasBid && $otherBidsExist)
-            <a href="{{ route('tenant.agent.auction.competing-bids', $auction->id) }}" class="btn btn-outline-info w-100 mb-3">
+            <a href="{{ route('agent.tenant.agent.auction.competing-bids', $auction->id) }}" class="btn btn-outline-info w-100 mb-3">
                 <i class="fa fa-users me-2"></i>View Competing Bids
             </a>
             <div class="alert alert-info small mb-3 py-2">
