@@ -1376,6 +1376,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             <span class="removeBold">
                 {{ $auction->get->protection_period ?? '' }}</span>
         </div>
+        @endif
 
         @if (@$auction->get->early_termination_fee_option != null)
         <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
