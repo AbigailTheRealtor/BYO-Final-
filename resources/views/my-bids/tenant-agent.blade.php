@@ -14,6 +14,10 @@
             <!-- Section 2 -->
             @foreach ($bids as $bid)
                 @php
+                    $auction = $bid->auction;
+                    if (!$auction || !$auction->id) {
+                        continue;
+                    }
                     $bidStatus = $bid->bid_status;
                     $statusClass = match($bidStatus) {
                         'Accepted' => 'bg-success',
@@ -24,16 +28,16 @@
                     };
                     $acceptedSummary = $bid->acceptedBidSummary;
                     $isActive = ($bidStatus === 'Active');
-                    $auctionType = $bid->auction->get->auction_type ?? 'Traditional';
+                    $auctionType = $auction->get->auction_type ?? 'Traditional';
                     $isBiddingPeriod = ($auctionType === 'Bidding Period');
-                    $biddingEndTime = $bid->auction->get->bidding_end_time ?? null;
+                    $biddingEndTime = $auction->get->bidding_end_time ?? null;
                 @endphp
                 {{-- All bids: static cards (no collapse) --}}
                 <div class="card p-3 mb-3">
                     <div class="row myBidsDetails align-items-center">
                         <div class="col-12 col-md-4 col-lg-4">
-                            <div class="fw-bold">{{ $bid->auction->get->address ?? 'Listing' }}</div>
-                            <small class="text-muted">Listing ID: {{ $bid->auction->listing_id ?? 'TAA-'.$bid->auction->id }}</small>
+                            <div class="fw-bold">{{ $auction->get->address ?? 'Listing' }}</div>
+                            <small class="text-muted">Listing ID: {{ $auction->listing_id ?? 'TAA-'.$auction->id }}</small>
                         </div>
                         <div class="col-12 col-md-2 col-lg-2 text-center">
                             <span class="badge {{ $statusClass }} p-2">{{ $bidStatus }}</span>
@@ -48,7 +52,7 @@
                                     View Counter
                                 </a>
                             @elseif($bidStatus === 'Rejected')
-                                <a href="{{ route('tenant.agent.auction.view', $bid->auction->id) }}" class="btn btn-sm btn-outline-secondary">
+                                <a href="{{ route('tenant.agent.auction.view', $auction->id) }}" class="btn btn-sm btn-outline-secondary">
                                     View Listing
                                 </a>
                             @elseif($bidStatus === 'Active')
@@ -58,7 +62,7 @@
                                         <span class="countdown-timer fw-bold" data-end="{{ $biddingEndTime }}">--:--:--</span>
                                     </span>
                                 @endif
-                                <a href="{{ route('tenant.agent.auction.view', $bid->auction->id) }}" class="btn btn-sm btn-primary">
+                                <a href="{{ route('tenant.agent.auction.view', $auction->id) }}" class="btn btn-sm btn-primary">
                                     Visit Listing
                                 </a>
                             @endif
