@@ -9,7 +9,7 @@
         </span>
     </label>
     <div class="input-cover mt-2">
-        <select wire:model="retainer_fee_option" class="form-control has-icon"
+        <select wire:model.lazy="retainer_fee_option" class="form-control has-icon"
             data-icon="fa-solid fa-file-invoice-dollar">
             <option value="">Select</option>
             <option value="yes">Yes</option>
@@ -21,7 +21,7 @@
         <div class="mt-3">
             <div class="input-group">
                 <span class="input-group-text">$</span>
-                <input type="number" wire:model="retainer_fee_amount" class="form-control"
+                <input type="number" wire:model.lazy="retainer_fee_amount" class="form-control"
                     placeholder="Enter retainer fee amount (e.g., 500)">
             </div>
             @error('retainer_fee_amount')
@@ -39,7 +39,7 @@
                 </label>
                 <div class="input-cover mt-2">
 
-                    <select wire:model="retainer_fee_application" class="form-control has-icon"
+                    <select wire:model.lazy="retainer_fee_application" class="form-control has-icon"
                         data-icon="fa-solid fa-ruler">
                         <option value="">Select application method</option>
                         <option value="applied">Applied toward final compensation</option>

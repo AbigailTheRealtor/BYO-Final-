@@ -954,6 +954,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             <h4>Broker Compensation: </h4>
         </div>
 
+
         @if (@$auction->get->purchase_fee_type != null)
         <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
             Landlord's Broker Lease Fee:
@@ -1041,87 +1042,49 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </ul>
         @endif
 
-        <!-- Interested in Lease-Option Agreement -->
-   @if (@$auction->get->interested_lease_option_agreement != null)
-    <div class="col-md-12 col-12 pt-2 fw-bold">
-        <i class="fa-regular fa-check-square"></i>
-        Interested in Offering a Lease-Option Agreement:
-        <span class="removeBold">{{ $auction->get->interested_lease_option_agreement ?? '' }}</span>
-    </div>
-@endif
-
-@if (@$auction->get->interested_lease_option_agreement === 'Yes')
-    <ul>
-        @if (@$auction->get->lease_value != null)
-            <li style="font-size: 16px;">
-                Lease-Option Compensation:
-                @if($auction->get->lease_type === 'percent')
-                    {{ $auction->get->lease_value }}%
-                @else
-                    ${{ $auction->get->lease_value }}
-                @endif
-            </li>
-        @endif
-
-        @if (@$auction->get->purchase_value != null)
-            <li style="font-size: 16px;">
-                Purchase Compensation:
-                @if($auction->get->purchase_type === 'percent')
-                    {{ $auction->get->purchase_value }}%
-                @else
-                    ${{ $auction->get->purchase_value }}
-                @endif
-            </li>
-        @endif
-    </ul>
-@endif
-
-        <!-- Interested in Selling -->
-        @if (@$auction->get->interested_in_selling != null)
+        <!-- Tenant's Broker Commission Fee -->
+        @if (@$auction->get->tenant_broker_commission_structure != null)
         <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
-            Interested in Selling:
+            Tenant's Broker Commission Fee:
             <span class="removeBold">
-                {{ $auction->get->interested_in_selling ?? '' }}</span>
+                {{ $auction->get->tenant_broker_commission_structure ?? '' }}</span>
         </div>
         @endif
 
-        @if (@$auction->get->interested_in_selling === 'Yes')
-        @if (@$auction->get->interested_in_selling_type != null)
-        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
-            Landlord's Broker Purchase Fee:
-            <span class="removeBold">
-                {{ $auction->get->interested_in_selling_type ?? '' }}</span>
-        </div>
-        @endif
-
-        @if (@$auction->get->interested_in_selling_type === 'Percentage of the Total Purchase Price' && @$auction->get->landlord_broker_purchase_price != null)
+        @if (@$auction->get->tenant_broker_commission_structure != 'no_compensation')
+        @if (@$auction->get->tenant_broker_fee_structure != null)
         <ul>
-            <li style="font-size: 16px;">{{ $auction->get->landlord_broker_purchase_price }}%</li>
+            <li style="font-size: 16px;">Fee Structure: {{ $auction->get->tenant_broker_fee_structure }}</li>
         </ul>
         @endif
 
-        @if (@$auction->get->interested_in_selling_type === 'Percentage of the Total Purchase Price + Flat Fee')
-        @if (@$auction->get->landlord_broker_percentage_price != null)
+        @if (@$auction->get->tenant_broker_percentage != null)
         <ul>
-            <li style="font-size: 16px;">Percentage: {{ $auction->get->landlord_broker_percentage_price }}%</li>
-        </ul>
-        @endif
-        @if (@$auction->get->landlord_broker_dollar_price != null)
-        <ul>
-            <li style="font-size: 16px;">Flat Fee: ${{ $auction->get->landlord_broker_dollar_price }}</li>
-        </ul>
-        @endif
-        @endif
-
-        @if (@$auction->get->interested_in_selling_type === 'Flat Fee' && @$auction->get->landlord_broker_flate_fee != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->landlord_broker_flate_fee }}{{ $auction->get->lease_fee_flat_type === '%' ? '%' : '$' }}</li>
+            <li style="font-size: 16px;">{{ $auction->get->tenant_broker_percentage }}%</li>
         </ul>
         @endif
 
-        @if (@$auction->get->interested_in_selling_type === 'Other' && @$auction->get->landlord_broker_other != null)
+        @if (@$auction->get->tenant_broker_gross_lease != null)
         <ul>
-            <li style="font-size: 16px;">{{ $auction->get->landlord_broker_other }}</li>
+            <li style="font-size: 16px;">{{ $auction->get->tenant_broker_gross_lease }}%</li>
+        </ul>
+        @endif
+
+        @if (@$auction->get->tenant_broker_first_month_rent != null)
+        <ul>
+            <li style="font-size: 16px;">{{ $auction->get->tenant_broker_first_month_rent }}%</li>
+        </ul>
+        @endif
+
+        @if (@$auction->get->tenant_broker_flat_fee != null)
+        <ul>
+            <li style="font-size: 16px;">${{ $auction->get->tenant_broker_flat_fee }}</li>
+        </ul>
+        @endif
+
+        @if (@$auction->get->tenant_broker_other != null)
+        <ul>
+            <li style="font-size: 16px;">{{ $auction->get->tenant_broker_other }}</li>
         </ul>
         @endif
         @endif
@@ -1281,91 +1244,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
 
-        <!-- Tenant's Broker Commission Fee -->
-        @if (@$auction->get->tenant_broker_commission_structure != null)
-        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
-            Tenant's Broker Commission Fee:
-            <span class="removeBold">
-                {{ $auction->get->tenant_broker_commission_structure ?? '' }}</span>
-        </div>
-        @endif
-
-        @if (@$auction->get->tenant_broker_commission_structure != 'no_compensation')
-        @if (@$auction->get->tenant_broker_fee_structure != null)
-        <ul>
-            <li style="font-size: 16px;">Fee Structure: {{ $auction->get->tenant_broker_fee_structure }}</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->tenant_broker_percentage != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->tenant_broker_percentage }}%</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->tenant_broker_gross_lease != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->tenant_broker_gross_lease }}%</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->tenant_broker_first_month_rent != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->tenant_broker_first_month_rent }}%</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->tenant_broker_flat_fee != null)
-        <ul>
-            <li style="font-size: 16px;">${{ $auction->get->tenant_broker_flat_fee }}</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->tenant_broker_other != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->tenant_broker_other }}</li>
-        </ul>
-        @endif
-        @endif
-
-        @if (@$auction->get->protection_period != null)
-        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
-            Protection Period Timeframe (Days):
-            <span class="removeBold">
-                {{ $auction->get->protection_period ?? '' }}</span>
-        </div>
-        @endif
-        @if (@$auction->get->early_termination_fee_option != null)
-        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
-            Early Termination Fee:
-            <span class="removeBold">
-
-
-
-
-                {{ $auction->get->early_termination_fee_option == 'yes' ? 'Yes' : 'No' }}</span>
-        </div>
-        @endif
-        @if (@$auction->get->early_termination_fee_amount != null)
-        <ul>
-            <li style="font-size: 16px;">${{ str_replace(',', '', $auction->get->early_termination_fee_amount ?? '') }}
-            </li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->agency_agreement_timeframe != null)
-        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
-            Landlord Agency Agreement Timeframe:
-            <span class="removeBold">
-                {{ $auction->get->agency_agreement_timeframe ?? '' }}</span>
-        </div>
-        @endif
-        @if (@$auction->get->agency_agreement_custom != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->agency_agreement_custom }}</li>
-        </ul>
-        @endif
-
         <!-- Interested in Property Management -->
         @if (@$auction->get->interested_in_property_management != null)
         <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
@@ -1405,6 +1283,129 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             <li style="font-size: 16px;">{{ $auction->get->interested_in_property_management_fee_other }}</li>
         </ul>
         @endif
+        @endif
+
+        <!-- Interested in Lease-Option Agreement -->
+   @if (@$auction->get->interested_lease_option_agreement != null)
+    <div class="col-md-12 col-12 pt-2 fw-bold">
+        <i class="fa-regular fa-check-square"></i>
+        Interested in Offering a Lease-Option Agreement:
+        <span class="removeBold">{{ $auction->get->interested_lease_option_agreement ?? '' }}</span>
+    </div>
+@endif
+
+@if (@$auction->get->interested_lease_option_agreement === 'Yes')
+    <ul>
+        @if (@$auction->get->lease_value != null)
+            <li style="font-size: 16px;">
+                Lease-Option Compensation:
+                @if($auction->get->lease_type === 'percent')
+                    {{ $auction->get->lease_value }}%
+                @else
+                    ${{ $auction->get->lease_value }}
+                @endif
+            </li>
+        @endif
+
+        @if (@$auction->get->purchase_value != null)
+            <li style="font-size: 16px;">
+                Purchase Compensation:
+                @if($auction->get->purchase_type === 'percent')
+                    {{ $auction->get->purchase_value }}%
+                @else
+                    ${{ $auction->get->purchase_value }}
+                @endif
+            </li>
+        @endif
+    </ul>
+@endif
+
+        <!-- Interested in Selling -->
+        @if (@$auction->get->interested_in_selling != null)
+        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+            Interested in Selling:
+            <span class="removeBold">
+                {{ $auction->get->interested_in_selling ?? '' }}</span>
+        </div>
+        @endif
+
+        @if (@$auction->get->interested_in_selling === 'Yes')
+        @if (@$auction->get->interested_in_selling_type != null)
+        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+            Landlord's Broker Purchase Fee:
+            <span class="removeBold">
+                {{ $auction->get->interested_in_selling_type ?? '' }}</span>
+        </div>
+        @endif
+
+        @if (@$auction->get->interested_in_selling_type === 'Percentage of the Total Purchase Price' && @$auction->get->landlord_broker_purchase_price != null)
+        <ul>
+            <li style="font-size: 16px;">{{ $auction->get->landlord_broker_purchase_price }}%</li>
+        </ul>
+        @endif
+
+        @if (@$auction->get->interested_in_selling_type === 'Percentage of the Total Purchase Price + Flat Fee')
+        @if (@$auction->get->landlord_broker_percentage_price != null)
+        <ul>
+            <li style="font-size: 16px;">Percentage: {{ $auction->get->landlord_broker_percentage_price }}%</li>
+        </ul>
+        @endif
+        @if (@$auction->get->landlord_broker_dollar_price != null)
+        <ul>
+            <li style="font-size: 16px;">Flat Fee: ${{ $auction->get->landlord_broker_dollar_price }}</li>
+        </ul>
+        @endif
+        @endif
+
+        @if (@$auction->get->interested_in_selling_type === 'Flat Fee' && @$auction->get->landlord_broker_flate_fee != null)
+        <ul>
+            <li style="font-size: 16px;">{{ $auction->get->landlord_broker_flate_fee }}{{ $auction->get->lease_fee_flat_type === '%' ? '%' : '$' }}</li>
+        </ul>
+        @endif
+
+        @if (@$auction->get->interested_in_selling_type === 'Other' && @$auction->get->landlord_broker_other != null)
+        <ul>
+            <li style="font-size: 16px;">{{ $auction->get->landlord_broker_other }}</li>
+        </ul>
+        @endif
+        @endif
+
+        @if (@$auction->get->protection_period != null)
+        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+            Protection Period Timeframe (Days):
+            <span class="removeBold">
+                {{ $auction->get->protection_period ?? '' }}</span>
+        </div>
+
+        @if (@$auction->get->early_termination_fee_option != null)
+        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+            Early Termination Fee:
+            <span class="removeBold">
+
+
+
+
+                {{ $auction->get->early_termination_fee_option == 'yes' ? 'Yes' : 'No' }}</span>
+        </div>
+        @endif
+        @if (@$auction->get->early_termination_fee_amount != null)
+        <ul>
+            <li style="font-size: 16px;">${{ str_replace(',', '', $auction->get->early_termination_fee_amount ?? '') }}
+            </li>
+        </ul>
+        @endif
+
+        @if (@$auction->get->agency_agreement_timeframe != null)
+        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+            Landlord Agency Agreement Timeframe:
+            <span class="removeBold">
+                {{ $auction->get->agency_agreement_timeframe ?? '' }}</span>
+        </div>
+        @endif
+        @if (@$auction->get->agency_agreement_custom != null)
+        <ul>
+            <li style="font-size: 16px;">{{ $auction->get->agency_agreement_custom }}</li>
+        </ul>
         @endif
 
         @if (@$auction->get->brokerage_relationship != null)

@@ -1,9 +1,11 @@
+@if ($property_type === 'Residential Property')
+
     <!-- Tenant's Broker Commission Structure -->
     <div class="form-group mb-4">
         <label class="fw-bold d-flex align-items-center">
-            Tenant's Broker Commission Fee:
+            Tenant's Broker Commission Structure:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select how the Tenant’s Broker will be compensated. Options include: the Landlord’s Broker paying a portion of their commission, the Landlord paying the Tenant’s Broker directly, or offering no compensation.">
+            title="Select how the Tenant's Broker will be compensated. Options include: the Landlord's Broker compensating the Tenant's Broker from the Landlord's Broker Commission, the Landlord paying the Tenant's Broker separately, or offering no compensation to the Tenant's Broker.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -12,28 +14,25 @@
             <select wire:model.lazy="tenant_broker_commission_structure" class="form-control has-icon"
                 data-icon="fa-solid fa-handshake">
                 <option value="">Select</option>
-                <option value="he Landlord's Broker will compensate the Tenant's Broker from the
-                    commission received">The Landlord's Broker will compensate the Tenant's Broker from the
-                    commission received</option>
-                <option value="The Landlord will pay the Tenant's Broker separately">The Landlord will pay the Tenant's Broker separately</option>
-                <option value="No compensation will be offered to the Tenant's Broker">No compensation will be offered to the Tenant's Broker</option>
+                <option value="Landlord's Broker to Compensate Tenant's Broker from Landlord's Broker Commission">Landlord's Broker to Compensate Tenant's Broker from Landlord's Broker Commission</option>
+                <option value="Landlord to Pay Tenant's Broker Separately">Landlord to Pay Tenant's Broker Separately</option>
+                <option value="No Compensation Offered to the Tenant's Broker">No Compensation Offered to the Tenant's Broker</option>
             </select>
         </div>
 
         <div class="mt-3">
 
             @if (
-                $tenant_broker_commission_structure === "The Landlord will pay the Tenant's Broker separately" ||
-                    $tenant_broker_commission_structure === "he Landlord's Broker will compensate the Tenant's Broker from the
-                    commission received")
+                $tenant_broker_commission_structure === "Landlord to Pay Tenant's Broker Separately" ||
+                    $tenant_broker_commission_structure === "Landlord's Broker to Compensate Tenant's Broker from Landlord's Broker Commission")
                 <div class="mb-3">
 
-                    <label class="form-label">Tenant's Broker Commission Fee Structure:
+                    <label class="form-label">Tenant's Broker Commission Fee:
 
-                          <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                         title="Choose how the Tenant’s Broker will be compensated if a lease is secured. Options include: a percentage of the rent due each rental period, a percentage of the gross lease value, a percentage of the first month’s rent, a flat fee, or “Other” to define a custom payment structure. Then, enter the appropriate amount based on your selection.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
+                        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                            title="Choose how the Tenant’s Broker will be compensated if a lease is secured. Options include: a percentage of the rent due each rental period, a percentage of the gross lease value, a percentage of the first month’s rent, a flat fee, or “Other” to define a custom payment structure. Then, enter the appropriate amount based on your selection.">
+                            <i class="fa-solid fa-circle-info"></i>
+                        </span>
                     </label>
                     <div class="input-cover mt-2">
                         <select wire:model.lazy="tenant_broker_fee_structure" class="form-control has-icon"
@@ -72,7 +71,8 @@
                 @elseif ($tenant_broker_fee_structure === 'Percentage of the First Month’s Rent')
                     <div class="mb-3">
                         <div class="input-group">
-                            <input type="number" wire:model.lazy="tenant_broker_first_month_rent" class="form-control"
+                            <input type="number" wire:model.lazy="tenant_broker_first_month_rent"
+                                class="form-control"
                                 placeholder="Enter percentage of the first month’s rent (e.g., 50)">
                             <span class="input-group-text">%</span>
                         </div>
@@ -84,10 +84,10 @@
                             <span class="input-group-text">$</span>
                             <input type="text" wire:model.lazy="tenant_broker_flat_fee" class="form-control"
                                 placeholder="Enter flat fee amount (e.g., 1000)"
-                                 data-error-id="tenant_broker_flat_fee_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                                data-error-id="tenant_broker_flat_fee_error" oninput="validateInput(this)"
+                                onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                         </div>
-                         <span class="error mt-2" id="tenant_broker_flat_fee_error"></span>
+                        <span class="error mt-2" id="tenant_broker_flat_fee_error"></span>
 
                     </div>
                 @elseif ($tenant_broker_fee_structure === 'Other')
@@ -105,6 +105,3 @@
     </div>
 
 @endif
-
-{{-- @if ($property_type === 'Residential Property')
-    <div class="form-group mb-4">

@@ -1,3 +1,4 @@
+
 @if ($property_type === 'Commercial Property')
     <!-- Expansion Commission for Lease Amendment (Commercial only) -->
     <div class="form-group mb-4">
@@ -22,5 +23,3 @@
         </div>
     </div>
 @endif
-
-@if ($property_type === 'Residential Property')

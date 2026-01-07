@@ -19,8 +19,6 @@
         </div>
     @endif
 
-
-
     {{-- @if ($property_type === 'Commercial Property')
         <label class="fw-bold d-flex align-items-center">
             Early Termination Fee:
@@ -31,7 +29,7 @@ this agreement ends.">
             </span>
         </label>
         <div class="input-cover mt-2">
-            <select wire:model="early_termination_fee_option" class="form-control has-icon"
+            <select wire:model.lazy="early_termination_fee_option" class="form-control has-icon"
                 data-icon="fa-solid fa-exclamation-triangle">
                 <option value="">Select</option>
                 <option value="yes">Yes</option>
@@ -46,11 +44,11 @@ this agreement ends.">
                 <span class="input-group-text">$</span>
                 <input type="text" wire:model.lazy="early_termination_fee_amount" class="form-control"
                     placeholder="Enter early termination fee amount (e.g., 1000)"
-                     data-error-id="early_termination_fee_amount_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                    data-error-id="early_termination_fee_amount_error" oninput="validateInput(this)"
+                    onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             </div>
             @error('early_termination_fee_amount')
-            <span class="text-danger small">{{ $message }}</span>
+                <span class="text-danger small">{{ $message }}</span>
             @enderror
             <span class="error mt-2" id="early_termination_fee_amount_error"></span>
         </div>

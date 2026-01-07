@@ -1,3 +1,4 @@
+
 @if ($property_type === 'Residential Property')
 
     <!-- Payment Timing for Broker Fees -->
@@ -14,8 +15,10 @@
             <select wire:model.lazy="broker_fee_timing" class="form-control has-icon" data-icon="fa-solid fa-clock">
                 <option value="">Select</option>
                 <option value="Deducted from Rent Collected">Deducted from Rent Collected</option>
-                <option value="Paid Within Calendar Days After Executed Lease">Paid Within Calendar Days After Executed Lease</option>
-                <option value="Paid Within Calendar Days of Tenant Rent Payment">Paid Within Calendar Days of Tenant Rent Payment</option>
+                <option value="Paid Within Calendar Days After Executed Lease">Paid Within Calendar Days After Executed
+                    Lease</option>
+                <option value="Paid Within Calendar Days of Tenant Rent Payment">Paid Within Calendar Days of Tenant
+                    Rent Payment</option>
                 <option value="other">Other</option>
             </select>
         </div>
@@ -54,7 +57,6 @@
 
     </div>
 
-
 @endif
 
 @if ($property_type === 'Commercial Property')
@@ -73,8 +75,10 @@
                 <option value="">Select</option>
                 <option value="full_execution">Full amount upon execution of lease, sales contract, or other transfer
                     agreement</option>
-                <option value="50% due upon execution, 50% due upon commencement of agreement"> 50% due upon execution, 50% due upon commencement of agreement</option>
-                <option value="50% due upon execution, 50% due upon occupancy of premises"> 50% due upon execution, 50% due upon occupancy of premises</option>
+                <option value="50% due upon execution, 50% due upon commencement of agreement"> 50% due upon execution,
+                    50% due upon commencement of agreement</option>
+                <option value="50% due upon execution, 50% due upon occupancy of premises"> 50% due upon execution, 50%
+                    due upon occupancy of premises</option>
                 <option value="Other">Other</option>
             </select>
         </div>
@@ -130,5 +134,3 @@
 
     </div>
 @endif
-
-<!--. Lease Renewal/Extension Fee -->

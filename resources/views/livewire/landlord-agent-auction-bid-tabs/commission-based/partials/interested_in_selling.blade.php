@@ -33,7 +33,8 @@
                 data-icon="fa-solid fa-file-invoice-dollar">
                 <option value="">Select</option>
                 <option value="Percentage of the Total Purchase Price">Percentage of the Total Purchase Price</option>
-                <option value="Percentage of the Total Purchase Price + Flat Fee">Percentage of the Total Purchase Price + Flat
+                <option value="Percentage of the Total Purchase Price + Flat Fee">Percentage of the Total Purchase
+                    Price + Flat
                     Fee</option>
                 <option value="Flat Fee">Flat Fee</option>
                 <option value="Other">Other</option>
@@ -51,8 +52,8 @@
                 <div class="row g-2">
                     <div class="col-md-6">
                         <div class="input-group">
-                            <input type="number" wire:model.lazy="landlord_broker_percentage_price" class="form-control"
-                                placeholder="Enter percentage of purchase price  (e.g., 2)">
+                            <input type="number" wire:model.lazy="landlord_broker_percentage_price"
+                                class="form-control" placeholder="Enter percentage of purchase price  (e.g., 2)">
                             <span class="input-group-text">%</span>
                         </div>
                     </div>
@@ -63,24 +64,23 @@
                             <span class="input-group-text"> $</span>
                             <input type="text" wire:model.lazy="landlord_broker_dollar_price" class="form-control"
                                 placeholder="Enter flat fee amount (e.g., 2000) "
-                                 data-error-id="landlord_broker_dollar_price_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                                data-error-id="landlord_broker_dollar_price_error" oninput="validateInput(this)"
+                                onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                         </div>
-                         <span class="error mt-2" id="landlord_broker_dollar_price_error"></span>
+                        <span class="error mt-2" id="landlord_broker_dollar_price_error"></span>
                     </div>
                 </div>
             @elseif($interested_in_selling_type === 'Flat Fee')
                 <div class="input-group">
 
+                    <span class="input-group-text">$</span>
+                    <input type="text" wire:model.lazy="landlord_broker_flate_fee" class="form-control"
+                        placeholder="Enter flat fee amount (e.g., 5000)"
+                        data-error-id="landlord_broker_flate_fee_error" oninput="validateInput(this)"
+                        onblur="reformatNumber(this)" onpaste="handlePaste(event)">
 
-                         <span class="input-group-text">$</span>
-                        <input type="text" wire:model.lazy="landlord_broker_flate_fee" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 5000)"
-                             data-error-id="landlord_broker_flate_fee_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-
-                <!--
-                    <input type="text" wire:model="landlord_broker_flate_fee" class="form-control"
+                    <!--
+                    <input type="text" wire:model.lazy="landlord_broker_flate_fee" class="form-control"
                         placeholder="Enter flat fee amount (e.g., 5000)"
                          data-error-id="landlord_broker_flate_fee_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"> --}}
@@ -103,7 +103,7 @@
                 <span class="input-group-text">
                     {{ $lease_fee_flat_type === '%' ? '%' : '$' }}
                 </span> -->
-                 <span class="error mt-2" id="landlord_broker_flate_fee_error"></span>
+                    <span class="error mt-2" id="landlord_broker_flate_fee_error"></span>
 
                 </div>
             @elseif($interested_in_selling_type === 'Other')
@@ -120,5 +120,3 @@
     </div>
 
 @endif
-
-@if ($property_type === 'Residential Property')

@@ -1,70 +1,70 @@
 
-<!-- Early Termination Fee -->
-<div class="form-group">
-    <label class="fw-bold d-flex align-items-center">
-<!-- Additional Terms -->
+<!-- Acceptable Brokerage Relationship -->
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        Additional Terms:
+        Acceptable Brokerage Relationship:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Include any additional or custom compensation terms, conditions, or agreements not covered above.">
+            title="Select the type of legal relationship the Landlord wishes to establish with the Broker. This determines the level of representation the Broker will provide. Real estate laws vary by state, and Brokers may offer different types of agency relationships. Both the Broker and Landlord must comply with all applicable local, state, and federal laws.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <textarea wire:model.lazy="additional_details_broker" class="form-control mt-2" rows="3"
-        placeholder="Enter any additional terms"></textarea>
-</div>
 
-        Interested in Property Management:
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select “Yes” if you would like the Agent/Broker to provide ongoing property management services in addition to leasing. Property management typically includes tasks such as rent collection, maintenance coordination, Tenant communications, lease enforcement, and renewals.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-    </label>
     <div class="input-cover mt-2">
-        <select wire:model.lazy="interested_in_property_management" class="form-control has-icon"
-            data-icon="fa-solid fa-ruler">
+        <select wire:model.lazy="brokerage_relationship" class="form-control has-icon"
+            data-icon="fa-solid fa-handshake">
             <option value="">Select</option>
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
+            <option value="Transaction Broker Representation">Transaction Broker Representation</option>
+            <option value="Single Agent Representation">Single Agent Representation</option>
+            <option value="Dual Agency Representation">Dual Agency Representation</option>
+            <option value="No Brokerage Relationship">No Brokerage Relationship</option>
         </select>
     </div>
 
-    @if ($interested_in_property_management === 'yes')
+    @if ($brokerage_relationship)
+        <div class="mt-3 p-3 bg-light rounded">
 
-        <div class="mt-3">
+            @if ($brokerage_relationship === 'Transaction Broker Representation')
+                <h6 class="fw-bold">• Transaction Broker Representation:</h6>
+                <ul class="mb-2 ps-3">
+                    <li>Default in Florida unless otherwise specified.</li>
+                    <li>The Broker provides limited representation to both parties without full fiduciary duties.</li>
+                    <li>Must act honestly, fairly, and with skill, care, and diligence.</li>
+                    <li>Not permitted in Texas, Alaska, Vermont, Kansas, or Colorado.</li>
+                </ul>
+            @elseif ($brokerage_relationship === 'Single Agent Representation')
+                <h6 class="fw-bold">• Single Agent Representation:</h6>
+                <ul class="mb-2 ps-3">
+                    <li>The Broker acts as a fiduciary, providing the highest level of loyalty, confidentiality,
+                        obedience, and full disclosure.</li>
+                    <li>The Broker must always act in the Landlord’s best interest.</li>
+                    <li>Requires written consent from both the Landlord and the Tenant.</li>
+                    <li>Requires a Single Agent Notice signed by the Landlord.</li>
+                </ul>
+            @elseif ($brokerage_relationship === 'Dual Agency Representation')
+                <h6 class="fw-bold">• Dual Agency Representation:</h6>
+                <ul class="mb-2 ps-3">
+                    <li>The Broker represents both the Landlord and the Tenant in the same transaction.</li>
+                    <li>Must remain neutral and may not disclose confidential information from either party.</li>
+                    <li>Requires written consent from both the Landlord and the Tenant.</li>
+                    <li>Not permitted in Alaska, Colorado, Florida, Kansas, Maryland, Oklahoma, Texas, Vermont, and
+                        Wyoming.</li>
+                </ul>
+            @elseif ($brokerage_relationship === 'No Brokerage Relationship')
+                <h6 class="fw-bold">• No Brokerage Relationship:</h6>
+                <ul class="mb-2 ps-3">
+                    <li>The Broker does not represent the Landlord and has no fiduciary duties.</li>
+                    <li>Still required to act honestly and disclose all known facts that materially affect the
+                        property’s value.</li>
+                    <li>The Landlord is responsible for their own due diligence and negotiations.</li>
+                </ul>
+            @endif
 
-            <label class="form-label">Property Management Fee:
-
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Choose how the Broker will be compensated for ongoing property management services. Options include: a percentage of the gross lease value, a percentage of the rent due each rental period, a flat fee, or “Other” to define a custom management fee structure. Then, enter the appropriate amount or terms based on your selection.">
-            <i class="fa-solid fa-circle-info"></i>
-           </span>
-
-            </label>
-            <div class="input-cover mt-2">
-                <select wire:model.lazy="interested_in_property_management_fee" class="form-control has-icon"
-                    data-icon="fa-solid fa-file-invoice-dollar">
-                    <option value="">Select</option>
-                    <option value="Percentage of the Gross Lease Value">Percentage of the Gross Lease Value</option>
-                    <option value="Percentage of the Rent Due Each Rental Period">Percentage of the Rent Due Each
-                        Rental Period</option>
-                    <option value="Flat Fee">Flat Fee</option>
-
-                    <option value="Other">Other</option>
-                </select>
-
+            <div class="alert alert-warning mt-3 p-2 small">
+                <strong>⚠️ Legal Notice:</strong> Certain brokerage relationships are not permitted in all states. If
+                your selection is not allowed, the Broker will establish a permitted legal alternative. Real estate laws
+                change frequently. Both the Broker and Landlord are responsible for complying with all current local,
+                state, and federal laws.
             </div>
         </div>
-
-        @if ($interested_in_property_management_fee === 'Percentage of the Gross Lease Value')
-            <div class="mt-3">
-                <div class="input-group">
-                    <input type="number" wire:model.lazy="interested_in_property_management_fee_gross_lease"
-                        class="form-control" placeholder="Enter percentage of the gross lease value (e.g., 10)">
-                    <span class="input-group-text">%</span>
-                </div>
-
-            </div>
-        @elseif ($interested_in_property_management_fee === 'Percentage of the Rent Due Each Rental Period')
+    @endif
+</div>

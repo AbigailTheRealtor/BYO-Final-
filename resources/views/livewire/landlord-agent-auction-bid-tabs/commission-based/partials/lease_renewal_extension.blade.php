@@ -1,3 +1,4 @@
+
 <!--. Lease Renewal/Extension Fee -->
 @if ($property_type === 'Residential Property')
 
@@ -15,7 +16,8 @@
                 data-icon="fa-solid fa-file-invoice-dollar">
                 <option value="">Select</option>
                 @if ($property_type === 'Residential Property')
-                    <option value="Percentage of the Rent Due Each Rental Period">Percentage of the Rent Due Each Rental Period</option>
+                    <option value="Percentage of the Rent Due Each Rental Period">Percentage of the Rent Due Each
+                        Rental Period</option>
                 @endif
                 <option value="Percentage of the Gross Lease Value">Percentage of the Gross Lease Value</option>
                 @if ($property_type === 'Residential Property')
@@ -62,11 +64,10 @@
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model.lazy="renewal_fee_flat_free" class="form-control"
                             placeholder="Enter flat fee amount (e.g., 2000)"
-                             data-error-id="renewal_fee_percentage_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
-                            >
+                            data-error-id="renewal_fee_percentage_error" oninput="validateInput(this)"
+                            onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
-                     <span class="error mt-2" id="renewal_fee_percentage_error"></span>
+                    <span class="error mt-2" id="renewal_fee_percentage_error"></span>
                 </div>
             @elseif ($renewal_fee_type === 'other')
                 <div class="mb-3">
@@ -177,11 +178,10 @@
                     <div class="input-group">
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model.lazy="renewal_fee_flat_free" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 5000)"
-                             data-error-id="flat_fee_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                            placeholder="Enter flat fee amount (e.g., 5000)" data-error-id="flat_fee_error"
+                            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
-                     <span class="error mt-2" id="flat_fee_error"></span>
+                    <span class="error mt-2" id="flat_fee_error"></span>
                     <label class="fw-bold mt-2">Sales Tax:</label>
                     <div class="input-cover mt-2">
 
@@ -205,5 +205,3 @@
 
     </div>
 @endif
-
-@if ($property_type === 'Commercial Property')

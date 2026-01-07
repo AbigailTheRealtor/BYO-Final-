@@ -715,7 +715,7 @@
             @enderror
         </div>
     </div>
-@endif<!-- Early Termination Fee -->
+@endif<!-- Interested in Property Management -->
 <div class="form-group">
     <label class="fw-bold d-flex align-items-center">
         Interested in Property Management:

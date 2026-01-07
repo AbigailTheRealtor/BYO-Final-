@@ -1,3 +1,5 @@
+
+{{-- @if ($property_type === 'Residential Property')
     <div class="form-group mb-4">
         <label class="fw-bold d-flex align-items-center">
             Expansion Commission for Lease Amendment:
@@ -9,7 +11,7 @@
         </label>
 
         <div class="input-cover mt-2">
-            <select wire:model="expansion_commission_type" class="form-control has-icon"
+            <select wire:model.lazy="expansion_commission_type" class="form-control has-icon"
                 data-icon="fa-solid fa-percent">
                 <option value="">Select</option>
                 <option value="percentage_gross_lease">Percentage of Gross Lease Value</option>
@@ -25,7 +27,7 @@
                     <label class="form-label">Percentage of Gross Lease Value</label>
                     <div class="input-group">
                         <span class="input-group-text">%</span>
-                        <input type="number" wire:model="expansion_gross_percentage" class="form-control"
+                        <input type="number" wire:model.lazy="expansion_gross_percentage" class="form-control"
                             placeholder="Enter percentage (e.g., 5)">
                     </div>
                 </div>
@@ -34,7 +36,7 @@
                     <label class="form-label">Percentage of First Month’s Rent</label>
                     <div class="input-group">
                         <span class="input-group-text">%</span>
-                        <input type="number" wire:model="expansion_first_month_percentage" class="form-control"
+                        <input type="number" wire:model.lazy="expansion_first_month_percentage" class="form-control"
                             placeholder="Enter percentage (e.g., 50)">
                     </div>
                 </div>
@@ -43,7 +45,7 @@
                     <label class="form-label">Flat Fee Amount</label>
                     <div class="input-group">
                         <span class="input-group-text">$</span>
-                        <input type="number" wire:model="expansion_flat_fee" class="form-control"
+                        <input type="number" wire:model.lazy="expansion_flat_fee" class="form-control"
                             placeholder="Enter flat fee amount (e.g., 1,000)">
                     </div>
                 </div>
@@ -52,7 +54,7 @@
                     <label class="form-label">Custom Commission Arrangement</label>
                     <div class="input-group">
                         <span class="input-group-text">%</span>
-                        <input type="text" wire:model="expansion_custom_commission" class="form-control"
+                        <input type="text" wire:model.lazy="expansion_custom_commission" class="form-control"
                             placeholder="Enter other Tenant’s Broker commission arrangement (e.g., $500 bonus plus 2% of gross lease value)">
 
                     </div>
@@ -61,6 +63,3 @@
         </div>
     </div>
 @endif --}}
-
-@endif
-<div class="form-group mb-2">

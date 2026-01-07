@@ -1,3 +1,4 @@
+
 <div class="form-group mb-2">
     <label class="fw-bold d-flex align-items-center">
         Interested in Offering a Lease-Option Agreement:
@@ -29,11 +30,12 @@
         </h5>
 
         <div class="form-group mt-2">
-            {{-- <label class="fw-bold d-block mb-1">Compensation Amount:</label> --}}
+            <label class="fw-bold d-block mb-1">Compensation Amount</label>
 
             <div class="input-group">
                 <!-- Select for type -->
-                <select wire:model.lazy="lease_type" wire:change="setType('lease', $event.target.value)" class="form-select" style="max-width: 100px;">
+                <select wire:model.lazy="lease_type" wire:change="setType('lease', $event.target.value)"
+                    class="form-select" style="max-width: 100px;">
                     <option value="percent">%</option>
                     <option value="flat">$</option>
                 </select>
@@ -43,17 +45,15 @@
                     placeholder="{{ $lease_type === 'percent'
                         ? 'Enter percentage of option consideration (e.g., 5)'
                         : 'Enter flat fee amount (e.g., 1500)' }}"
-                         data-error-id="lease_value_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
-                        >
+                    data-error-id="lease_value_error" oninput="validateInput(this)" onblur="reformatNumber(this)"
+                    onpaste="handlePaste(event)">
 
                 <!-- Suffix -->
                 <span class="input-group-text">
                     {{ $lease_type === 'percent' ? '%' : '$' }}
                 </span>
             </div>
-             <span class="error mt-2" id="lease_value_error"></span>
-
+            <span class="error mt-2" id="lease_value_error"></span>
 
         </div>
     </div>
@@ -69,11 +69,12 @@
         </h5>
 
         <div class="form-group mt-2">
-            {{-- <label class="fw-bold d-block mb-1">Compensation Amount:</label> --}}
+            <label class="fw-bold d-block mb-1">Compensation Amount</label>
 
             <div class="input-group">
                 <!-- Select for type -->
-                <select wire:model.lazy="purchase_type"   wire:change="setType('purchase', $event.target.value)" class="form-select" style="max-width: 100px;">
+                <select wire:model.lazy="purchase_type" wire:change="setType('purchase', $event.target.value)"
+                    class="form-select" style="max-width: 100px;">
                     <option value="percent">%</option>
                     <option value="flat">$</option>
                 </select>
@@ -83,22 +84,20 @@
                     placeholder="{{ $purchase_type === 'percent'
                         ? 'Enter percentage of the total purchase price (e.g., 6)'
                         : 'Enter flat fee amount (e.g., 5000)' }}"
-                         data-error-id="purchase_value_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                    data-error-id="purchase_value_error" oninput="validateInput(this)" onblur="reformatNumber(this)"
+                    onpaste="handlePaste(event)">
 
                 <!-- Suffix -->
                 <span class="input-group-text">
                     {{ $purchase_type === 'percent' ? '%' : '$' }}
                 </span>
             </div>
- <span class="error mt-2" id="purchase_value_error"></span>
+            <span class="error mt-2" id="purchase_value_error"></span>
         </div>
 
     </div>
+
+    <div class="alert alert-warning mt-3 p-2 small">
+        <strong>Note:</strong> Select $ or % to switch between entering a dollar amount or a percentage.
+    </div>
 @endif
-
-
-
-
-
-
