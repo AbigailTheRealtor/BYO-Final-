@@ -53,6 +53,9 @@
                                     <li class="nav-item" role="presentation">
                                         <a href="{{route('myBids', 'tenant-agent')}}" class="nav-link {{ ($type=='tenant-agent')?"active":"" }}">Hiring Tenant's Agent</a>
                                     </li>
+                                    <li class="nav-item" role="presentation">
+                                        <a href="{{route('myBids', 'agent-bids')}}" class="nav-link {{ ($type=='agent-bids')?"active":"" }}" style="background-color: {{ ($type=='agent-bids') ? '#049399' : 'transparent' }}; color: {{ ($type=='agent-bids') ? '#fff' : '#049399' }}; border-color: #049399;">Agent Bids</a>
+                                    </li>
                                     @endif
                                 </ul>
                             </div>
