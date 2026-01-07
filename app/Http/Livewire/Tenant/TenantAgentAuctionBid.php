@@ -178,6 +178,7 @@ class TenantAgentAuctionBid extends Component
             'lease_fee_flat_combo',
             'lease_fee_percentage_combo',
             'lease_fee_percentage_net',
+            'lease_fee_flat_combo_net',
             'lease_fee_percentage_combo_net',
             'lease_fee_other',
         ]);
@@ -298,6 +299,16 @@ class TenantAgentAuctionBid extends Component
     }
 
 
+
+    public function syncInput($name, $value, $rehash = true)
+    {
+        // Guard against empty/null property name to prevent Str::studly() crash
+        if (empty($name) || $name === null) {
+            return;
+        }
+        
+        return parent::syncInput($name, $value, $rehash);
+    }
 
     public function updated($name, $value): void
     {
