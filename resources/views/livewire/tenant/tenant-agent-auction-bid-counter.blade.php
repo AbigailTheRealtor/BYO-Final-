@@ -107,9 +107,11 @@
               <!-- Proper submit button -->
               <button type="submit"
                       id="save-button"
-                      class="btn btn-success wizard-step-finish disabled"
-                      wire:loading.attr="disabled">
-                Submit
+                      class="btn btn-success wizard-step-finish"
+                      wire:loading.attr="disabled"
+                      wire:loading.class="disabled">
+                <span wire:loading.remove>Submit</span>
+                <span wire:loading>Submitting...</span>
               </button>
             </div>
           </div>
