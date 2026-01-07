@@ -1671,10 +1671,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             
                             // 🔹 Agent Bid Visibility Logic:
                             // - Traditional: Agents can ONLY see their own bids (not other agents' bids)
-                            // - Bidding Period: Agents can see anonymous summaries of all bids
+                            // - Bidding Period: Agents can see anonymous summaries of all bids ONLY if they have submitted a bid first (submit-to-view rule)
                             // - Listing Owner: Always sees all bids
                             $isAgent = $auth_id && in_array(auth()->user()->user_type ?? '', ['agent']);
-                            $canViewBid = $isListingOwner || $isBidOwner || ($isBiddingPeriodListing && $isAgent);
+                            $canViewBid = $isListingOwner || $isBidOwner || ($isBiddingPeriodListing && $isAgent && $userHasBid);
                             // Skip rendering this bid if agent cannot view it
                             if (!$canViewBid && $isAgent) {
                                 continue;
