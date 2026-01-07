@@ -3419,6 +3419,40 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         </div>
                                                     </div>
 
+                                                    {{-- Mismatch Highlighting Styles --}}
+                                                    @php
+                                                        $mismatchStyle = 'background-color: #ffe6e6; padding: 2px 8px; border-radius: 4px; border-left: 3px solid #dc3545;';
+                                                        $matchStyle = 'background-color: #e6ffe6; padding: 2px 8px; border-radius: 4px; border-left: 3px solid #28a745;';
+                                                        
+                                                        // Defensive guard: ensure $brokerMismatches is defined
+                                                        $brokerMismatches = $brokerMismatches ?? [];
+                                                        
+                                                        $isMismatch = function($field) use ($brokerMismatches) {
+                                                            return isset($brokerMismatches[$field]);
+                                                        };
+                                                        
+                                                        $checkLeaseFeeFieldMismatch = function() use ($brokerMismatches) {
+                                                            $feeFields = ['lease_fee_type', 'lease_fee_flat', 'lease_fee_percentage', 
+                                                                'lease_fee_percentage_monthly_rent', 'lease_fee_percentage_monthly_number',
+                                                                'lease_fee_flat_combo', 'lease_fee_percentage_combo', 'lease_fee_percentage_net',
+                                                                'lease_fee_flat_combo_net', 'lease_fee_percentage_combo_net', 'lease_fee_other'];
+                                                            foreach ($feeFields as $f) {
+                                                                if (isset($brokerMismatches[$f])) return true;
+                                                            }
+                                                            return false;
+                                                        };
+                                                        
+                                                        $checkPurchaseFeeFieldMismatch = function() use ($brokerMismatches) {
+                                                            $feeFields = ['purchase_fee_type', 'purchase_fee_flat', 'purchase_fee_percentage',
+                                                                'purchase_fee_flat_combo', 'purchase_fee_percentage_combo', 'purchase_fee_other',
+                                                                'purchase_flat_fee_amount', 'purchase_percent_value'];
+                                                            foreach ($feeFields as $f) {
+                                                                if (isset($brokerMismatches[$f])) return true;
+                                                            }
+                                                            return false;
+                                                        };
+                                                    @endphp
+
                                                     {{-- Section 1: Broker Compensation & Agency Agreement Terms --}}
                                                     @if (data_get($bid, 'get.commission_structure') ||
                                                     data_get($bid, 'get.lease_fee_type') ||
@@ -3440,16 +3474,40 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Tenant's Broker Compensation</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 @if (data_get($bid, 'get.commission_structure'))
-                                                                <li class="mb-1"><span class="fw-semibold">Tenant's Broker Commission Structure:</span> {{ data_get($bid, 'get.commission_structure') }}</li>
+                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
+                                                                    <span class="fw-semibold">Tenant's Broker Commission Structure:</span>
+                                                                    <span style="{{ $isMismatch('commission_structure') ? $mismatchStyle : '' }}">
+                                                                        {{ data_get($bid, 'get.commission_structure') }}
+                                                                        @if($isMismatch('commission_structure')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
+                                                                    </span>
+                                                                </li>
                                                                 @endif
                                                                 @if (data_get($bid, 'get.lease_fee_type'))
-                                                                <li class="mb-1"><span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $commissionFeeDisplay }}</li>
+                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
+                                                                    <span class="fw-semibold">Tenant's Broker Commission Fee:</span>
+                                                                    <span style="{{ $checkLeaseFeeFieldMismatch() ? $mismatchStyle : '' }}">
+                                                                        {{ $commissionFeeDisplay }}
+                                                                        @if($checkLeaseFeeFieldMismatch()) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
+                                                                    </span>
+                                                                </li>
                                                                 @endif
                                                                 @if (data_get($bid, 'get.payment_timing'))
-                                                                <li class="mb-1"><span class="fw-semibold">Payment Timing for Broker Fees:</span> {{ data_get($bid, 'get.payment_timing') }}</li>
+                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
+                                                                    <span class="fw-semibold">Payment Timing for Broker Fees:</span>
+                                                                    <span style="{{ $isMismatch('payment_timing') ? $mismatchStyle : '' }}">
+                                                                        {{ data_get($bid, 'get.payment_timing') }}
+                                                                        @if($isMismatch('payment_timing')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
+                                                                    </span>
+                                                                </li>
                                                                 @endif
                                                                 @if (data_get($bid, 'get.days_to_pay'))
-                                                                <li class="mb-1"><span class="fw-semibold">Calendar Days To Pay:</span> {{ data_get($bid, 'get.days_to_pay') }}</li>
+                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
+                                                                    <span class="fw-semibold">Calendar Days To Pay:</span>
+                                                                    <span style="{{ $isMismatch('days_to_pay') ? $mismatchStyle : '' }}">
+                                                                        {{ data_get($bid, 'get.days_to_pay') }}
+                                                                        @if($isMismatch('days_to_pay')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
+                                                                    </span>
+                                                                </li>
                                                                 @endif
                                                             </ul>
                                                         </div>
@@ -3460,9 +3518,21 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         <div class="mb-4">
                                                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">B) Purchase Fee Details</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
-                                                                <li class="mb-1"><span class="fw-semibold">Interested in Purchasing a Property:</span> {{ data_get($bid, 'get.interested_purchase_fee_type') }}</li>
+                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
+                                                                    <span class="fw-semibold">Interested in Purchasing a Property:</span>
+                                                                    <span style="{{ $isMismatch('interested_purchase_fee_type') ? $mismatchStyle : '' }}">
+                                                                        {{ data_get($bid, 'get.interested_purchase_fee_type') }}
+                                                                        @if($isMismatch('interested_purchase_fee_type')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
+                                                                    </span>
+                                                                </li>
                                                                 @if (data_get($bid, 'get.interested_purchase_fee_type') === 'Yes' && $purchaseFeeDisplay !== '—')
-                                                                <li class="mb-1"><span class="fw-semibold">Purchase Fee:</span> {{ $purchaseFeeDisplay }}</li>
+                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
+                                                                    <span class="fw-semibold">Purchase Fee:</span>
+                                                                    <span style="{{ $checkPurchaseFeeFieldMismatch() ? $mismatchStyle : '' }}">
+                                                                        {{ $purchaseFeeDisplay }}
+                                                                        @if($checkPurchaseFeeFieldMismatch()) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
+                                                                    </span>
+                                                                </li>
                                                                 @endif
                                                             </ul>
                                                         </div>
@@ -3473,13 +3543,31 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         <div class="mb-4">
                                                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">C) Lease-Option Details</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
-                                                                <li class="mb-1"><span class="fw-semibold">Interested in a Lease-Option Agreement:</span> {{ data_get($bid, 'get.interested_lease_option_agreement') }}</li>
+                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
+                                                                    <span class="fw-semibold">Interested in a Lease-Option Agreement:</span>
+                                                                    <span style="{{ $isMismatch('interested_lease_option_agreement') ? $mismatchStyle : '' }}">
+                                                                        {{ data_get($bid, 'get.interested_lease_option_agreement') }}
+                                                                        @if($isMismatch('interested_lease_option_agreement')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
+                                                                    </span>
+                                                                </li>
                                                                 @if (data_get($bid, 'get.interested_lease_option_agreement') === 'Yes')
                                                                     @if ($leaseOptionCreatedDisplay !== '—')
-                                                                    <li class="mb-1"><span class="fw-semibold">Compensation (When Option Is Created):</span> {{ $leaseOptionCreatedDisplay }}</li>
+                                                                    <li class="mb-1 d-flex justify-content-between align-items-start">
+                                                                        <span class="fw-semibold">Compensation (When Option Is Created):</span>
+                                                                        <span style="{{ $isMismatch('lease_value') ? $mismatchStyle : '' }}">
+                                                                            {{ $leaseOptionCreatedDisplay }}
+                                                                            @if($isMismatch('lease_value')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
+                                                                        </span>
+                                                                    </li>
                                                                     @endif
                                                                     @if ($leaseOptionExercisedDisplay !== '—')
-                                                                    <li class="mb-1"><span class="fw-semibold">Compensation (If Purchase Option Exercised):</span> {{ $leaseOptionExercisedDisplay }}</li>
+                                                                    <li class="mb-1 d-flex justify-content-between align-items-start">
+                                                                        <span class="fw-semibold">Compensation (If Purchase Option Exercised):</span>
+                                                                        <span style="{{ $isMismatch('purchase_value') ? $mismatchStyle : '' }}">
+                                                                            {{ $leaseOptionExercisedDisplay }}
+                                                                            @if($isMismatch('purchase_value')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
+                                                                        </span>
+                                                                    </li>
                                                                     @endif
                                                                 @endif
                                                             </ul>
@@ -3492,27 +3580,61 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">D) Legal Terms</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 @if (data_get($bid, 'get.protection_period'))
-                                                                <li class="mb-1"><span class="fw-semibold">Protection Period Timeframe:</span> {{ data_get($bid, 'get.protection_period') }} days</li>
+                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
+                                                                    <span class="fw-semibold">Protection Period Timeframe:</span>
+                                                                    <span style="{{ $isMismatch('protection_period') ? $mismatchStyle : '' }}">
+                                                                        {{ data_get($bid, 'get.protection_period') }} days
+                                                                        @if($isMismatch('protection_period')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
+                                                                    </span>
+                                                                </li>
                                                                 @endif
                                                                 @if (data_get($bid, 'get.early_termination_fee_option'))
-                                                                <li class="mb-1"><span class="fw-semibold">Early Termination Fee:</span> {{ data_get($bid, 'get.early_termination_fee_option') }}</li>
+                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
+                                                                    <span class="fw-semibold">Early Termination Fee:</span>
+                                                                    <span style="{{ $isMismatch('early_termination_fee_option') ? $mismatchStyle : '' }}">
+                                                                        {{ data_get($bid, 'get.early_termination_fee_option') }}
+                                                                        @if($isMismatch('early_termination_fee_option')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
+                                                                    </span>
+                                                                </li>
                                                                     @if ($terminationFeeDisplay !== '—')
-                                                                    <li class="mb-1"><span class="fw-semibold">Termination Fee Amount:</span> {{ $terminationFeeDisplay }}</li>
+                                                                    <li class="mb-1 d-flex justify-content-between align-items-start">
+                                                                        <span class="fw-semibold">Termination Fee Amount:</span>
+                                                                        <span style="{{ $isMismatch('early_termination_fee_amount') ? $mismatchStyle : '' }}">
+                                                                            {{ $terminationFeeDisplay }}
+                                                                            @if($isMismatch('early_termination_fee_amount')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
+                                                                        </span>
+                                                                    </li>
                                                                     @endif
                                                                 @endif
                                                                 @if (data_get($bid, 'get.retainer_fee_option'))
-                                                                <li class="mb-1"><span class="fw-semibold">Retainer Fee:</span> {{ data_get($bid, 'get.retainer_fee_option') }}</li>
+                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
+                                                                    <span class="fw-semibold">Retainer Fee:</span>
+                                                                    <span style="{{ $isMismatch('retainer_fee_option') ? $mismatchStyle : '' }}">
+                                                                        {{ data_get($bid, 'get.retainer_fee_option') }}
+                                                                        @if($isMismatch('retainer_fee_option')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
+                                                                    </span>
+                                                                </li>
                                                                     @if (data_get($bid, 'get.retainer_fee_option') === 'Yes')
                                                                         @if (data_get($bid, 'get.retainer_fee_amount'))
-                                                                        <li class="mb-1"><span class="fw-semibold">Retainer Fee Amount:</span> ${{ number_format((float)data_get($bid, 'get.retainer_fee_amount'), 2) }}</li>
+                                                                        <li class="mb-1 d-flex justify-content-between align-items-start">
+                                                                            <span class="fw-semibold">Retainer Fee Amount:</span>
+                                                                            <span style="{{ $isMismatch('retainer_fee_amount') ? $mismatchStyle : '' }}">
+                                                                                ${{ number_format((float)data_get($bid, 'get.retainer_fee_amount'), 2) }}
+                                                                                @if($isMismatch('retainer_fee_amount')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
+                                                                            </span>
+                                                                        </li>
                                                                         @endif
                                                                         @if (data_get($bid, 'get.retainer_fee_application'))
-                                                                        <li class="mb-1"><span class="fw-semibold">Retainer Fee Application:</span> 
-                                                                            @if (data_get($bid, 'get.retainer_fee_application') === 'applied')
-                                                                            Applied toward final compensation
-                                                                            @else
-                                                                            Charged in addition to final compensation
-                                                                            @endif
+                                                                        <li class="mb-1 d-flex justify-content-between align-items-start">
+                                                                            <span class="fw-semibold">Retainer Fee Application:</span>
+                                                                            <span style="{{ $isMismatch('retainer_fee_application') ? $mismatchStyle : '' }}">
+                                                                                @if (data_get($bid, 'get.retainer_fee_application') === 'applied')
+                                                                                Applied toward final compensation
+                                                                                @else
+                                                                                Charged in addition to final compensation
+                                                                                @endif
+                                                                                @if($isMismatch('retainer_fee_application')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
+                                                                            </span>
                                                                         </li>
                                                                         @endif
                                                                     @endif
@@ -3524,7 +3646,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                     $limitedIsOtherTimeframe = is_string($limitedAgencyTimeframe) && strtolower(trim($limitedAgencyTimeframe)) === 'other';
                                                                     $limitedAgencyTimeframeDisplay = $limitedIsOtherTimeframe ? ($limitedAgencyTimeframeCustom ?: 'Other') : ($limitedAgencyTimeframe ?: '');
                                                                 @endphp
-                                                                <li class="mb-1"><span class="fw-semibold">Tenant Agency Agreement Timeframe:</span> {{ $limitedAgencyTimeframeDisplay }}</li>
+                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
+                                                                    <span class="fw-semibold">Tenant Agency Agreement Timeframe:</span>
+                                                                    <span style="{{ $isMismatch('agency_agreement_timeframe') ? $mismatchStyle : '' }}">
+                                                                        {{ $limitedAgencyTimeframeDisplay }}
+                                                                        @if($isMismatch('agency_agreement_timeframe')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
+                                                                    </span>
+                                                                </li>
                                                                 @endif
                                                             </ul>
                                                         </div>
@@ -3535,7 +3663,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         <div class="mb-4">
                                                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">E) Brokerage Relationship</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
-                                                                <li class="mb-1"><span class="fw-semibold">Acceptable Brokerage Relationship:</span> {{ data_get($bid, 'get.brokerage_relationship') }}</li>
+                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
+                                                                    <span class="fw-semibold">Acceptable Brokerage Relationship:</span>
+                                                                    <span style="{{ $isMismatch('brokerage_relationship') ? $mismatchStyle : '' }}">
+                                                                        {{ data_get($bid, 'get.brokerage_relationship') }}
+                                                                        @if($isMismatch('brokerage_relationship')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
+                                                                    </span>
+                                                                </li>
                                                             </ul>
                                                         </div>
                                                         @endif
@@ -3701,10 +3835,52 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     $hasLtdServices = !empty($ltdAllServices) || !empty($ltdOtherServices);
                                                     @endphp
                                                     
+                                                    @php
+                                                        // Service status indicators - compare bid services to baseline services
+                                                        // Defensive guard: ensure $baselineData is defined
+                                                        $baselineData = $baselineData ?? [];
+                                                        $baselineServicesList = is_array($baselineData['services'] ?? null) ? $baselineData['services'] : [];
+                                                        $baselineOtherList = is_array($baselineData['other_services'] ?? null) ? $baselineData['other_services'] : [];
+                                                        
+                                                        // Flatten baseline services
+                                                        $flatBaselineServices = [];
+                                                        array_walk_recursive($baselineServicesList, function($svc) use (&$flatBaselineServices) {
+                                                            if (is_string($svc) && !empty(trim($svc)) && $svc !== 'Other') {
+                                                                $flatBaselineServices[] = trim($svc);
+                                                            }
+                                                        });
+                                                        $flatBaselineServices = array_merge($flatBaselineServices, array_filter($baselineOtherList, fn($s) => is_string($s) && !empty(trim($s))));
+                                                        $flatBaselineServices = array_unique($flatBaselineServices);
+                                                        
+                                                        // Bid services (already computed as $ltdAllServices + $ltdOtherServices)
+                                                        $allBidServices = array_merge($ltdAllServices, $ltdOtherServices);
+                                                        
+                                                        // Service status checks
+                                                        $isServiceMatched = function($svc) use ($flatBaselineServices) {
+                                                            return in_array($svc, $flatBaselineServices);
+                                                        };
+                                                        $isServiceExtra = function($svc) use ($flatBaselineServices) {
+                                                            return !in_array($svc, $flatBaselineServices);
+                                                        };
+                                                        
+                                                        // Find missing services (in baseline but not in bid)
+                                                        $missingServices = array_diff($flatBaselineServices, $allBidServices);
+                                                    @endphp
+
                                                     <div class="mb-4">
                                                         <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
                                                             <i class="fa fa-clipboard-list me-2"></i>Offered Services
+                                                            @if(count($missingServices) > 0)
+                                                            <span class="badge bg-danger ms-2" style="font-size: 0.7rem;">{{ count($missingServices) }} Missing</span>
+                                                            @endif
                                                         </h6>
+                                                        
+                                                        {{-- Legend --}}
+                                                        <div class="mb-3 small">
+                                                            <span style="color: #28a745;"><i class="fa fa-check-circle me-1"></i>Matched</span>
+                                                            <span class="ms-3" style="color: #17a2b8;"><i class="fa fa-plus-circle me-1"></i>Extra (not in baseline)</span>
+                                                            <span class="ms-3" style="color: #dc3545;"><i class="fa fa-times-circle me-1"></i>Missing (in baseline but not offered)</span>
+                                                        </div>
                                                         
                                                         @if ($hasLtdServices)
                                                             @foreach ($limitedCategories as $catName => $catServices)
@@ -3716,9 +3892,17 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 @if (!empty($matchedSvcs))
                                                                 <div class="mb-3">
                                                                     <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">{{ $catName }}</div>
-                                                                    <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
+                                                                    <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem; list-style: none;">
                                                                         @foreach ($matchedSvcs as $svc)
-                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $svc }}</li>
+                                                                            @if($isServiceMatched($svc))
+                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px; color: #28a745;">
+                                                                                <i class="fa fa-check-circle me-1"></i>{{ $svc }}
+                                                                            </li>
+                                                                            @else
+                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px; color: #17a2b8;">
+                                                                                <i class="fa fa-plus-circle me-1"></i>{{ $svc }} <small>(extra)</small>
+                                                                            </li>
+                                                                            @endif
                                                                         @endforeach
                                                                     </ul>
                                                                 </div>
@@ -3728,9 +3912,33 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             @if (!empty($ltdOtherServices))
                                                             <div class="mb-3">
                                                                 <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Additional Services</div>
-                                                                <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
+                                                                <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem; list-style: none;">
                                                                     @foreach ($ltdOtherServices as $otherSvc)
-                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $otherSvc }}</li>
+                                                                        @if($isServiceMatched($otherSvc))
+                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; color: #28a745;">
+                                                                            <i class="fa fa-check-circle me-1"></i>{{ $otherSvc }}
+                                                                        </li>
+                                                                        @else
+                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; color: #17a2b8;">
+                                                                            <i class="fa fa-plus-circle me-1"></i>{{ $otherSvc }} <small>(extra)</small>
+                                                                        </li>
+                                                                        @endif
+                                                                    @endforeach
+                                                                </ul>
+                                                            </div>
+                                                            @endif
+                                                            
+                                                            {{-- Missing Services Section --}}
+                                                            @if (!empty($missingServices))
+                                                            <div class="mb-3 mt-3 p-3" style="background-color: #fff5f5; border-radius: 6px; border: 1px solid #f5c6cb;">
+                                                                <div class="fw-bold" style="color: #dc3545; font-size: 0.95rem;">
+                                                                    <i class="fa fa-exclamation-triangle me-1"></i>Missing Services (Not Offered)
+                                                                </div>
+                                                                <ul class="services mb-0" style="margin-top: 0.5rem; padding-left: 1.2rem; list-style: none;">
+                                                                    @foreach ($missingServices as $missingSvc)
+                                                                    <li style="font-size: 0.9rem; margin-bottom: 4px; color: #dc3545;">
+                                                                        <i class="fa fa-times-circle me-1"></i>{{ $missingSvc }}
+                                                                    </li>
                                                                     @endforeach
                                                                 </ul>
                                                             </div>
