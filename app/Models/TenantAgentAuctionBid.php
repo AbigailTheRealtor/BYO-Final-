@@ -31,6 +31,11 @@ class TenantAgentAuctionBid extends Model
         return $this->hasMany(TenantCounterBidding::class, 'tenant_agent_auction_bid_id');
     }
 
+    public function counterBids()
+    {
+        return $this->hasMany(TenantCounterBidding::class, 'tenant_agent_auction_bid_id');
+    }
+
     public function acceptedBidSummary()
     {
         return $this->hasOne(AcceptedBidSummary::class, 'accepted_bid_id');
