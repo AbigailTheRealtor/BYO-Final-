@@ -7,14 +7,25 @@
             <nav aria-label="breadcrumb" class="mb-4">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
+                    @if($viewerRole === 'agent')
                     <li class="breadcrumb-item"><a href="{{ route('myBids', 'tenant-agent') }}">My Bids</a></li>
+                    @else
+                    <li class="breadcrumb-item"><a href="{{ route('tenant.agent.auction.view', $auction->id) }}">Listing</a></li>
+                    @endif
                     <li class="breadcrumb-item active">Counter Terms</li>
                 </ol>
             </nav>
             
             <div class="card mb-4" style="border: 2px solid #049399; border-radius: 8px;">
                 <div class="card-header" style="background: linear-gradient(135deg, #049399 0%, #037a7f 100%); color: white;">
-                    <h4 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Counter Terms For Your Bid</h4>
+                    <h4 class="mb-0">
+                        <i class="fas fa-exchange-alt me-2"></i>
+                        @if($viewerRole === 'agent')
+                        Tenant's Counter Terms For Your Bid
+                        @else
+                        Agent's Counter Terms
+                        @endif
+                    </h4>
                 </div>
                 <div class="card-body">
                     <div class="row mb-4">
@@ -25,7 +36,7 @@
                             <p><strong>Listing Owner:</strong> {{ $auction->user->name ?? 'N/A' }}</p>
                         </div>
                         <div class="col-md-6">
-                            <h6 style="color: #049399; font-weight: 600;">Your Bid Status</h6>
+                            <h6 style="color: #049399; font-weight: 600;">Bid Information</h6>
                             @php
                                 $bidStatus = $bid->bid_status ?? 'Active';
                                 $statusColors = [
@@ -40,13 +51,30 @@
                                     {{ $bidStatus }}
                                 </span>
                             </p>
+                            <p><strong>Agent:</strong> {{ $bid->user->name ?? 'N/A' }}</p>
                             <p><strong>Submitted:</strong> {{ $bid->created_at->format('M d, Y h:i A') }}</p>
                         </div>
                     </div>
                     
-                    @if($tenantCounter)
                     @php
-                        $counterData = $tenantCounter->getAllMeta();
+                        // Determine which counter to show based on viewer role
+                        $activeCounter = null;
+                        $counterPartyName = '';
+                        
+                        if ($viewerRole === 'agent') {
+                            // Agent viewing - show tenant's counter
+                            $activeCounter = $tenantCounter;
+                            $counterPartyName = 'Tenant';
+                        } else {
+                            // Tenant viewing - show agent's counter
+                            $activeCounter = $agentCounter;
+                            $counterPartyName = 'Agent';
+                        }
+                    @endphp
+                    
+                    @if($activeCounter)
+                    @php
+                        $counterData = $activeCounter->getAllMeta();
                         
                         $fmtMoney = function($v) {
                             if (empty($v) || !is_numeric($v)) return null;
@@ -60,7 +88,40 @@
                             return implode(' + ', array_filter($parts)) ?: null;
                         };
                         
-                        $agentBidData = (array) $bid->get;
+                        // Baseline data for comparison
+                        if ($viewerRole === 'agent') {
+                            // Agent comparing tenant's counter to agent's original bid
+                            $baselineData = (array) $bid->get;
+                            $baselineLabel = 'Your Original Bid';
+                        } else {
+                            // Tenant comparing agent's counter to tenant's original listing terms
+                            $baselineData = [
+                                'commission_structure' => $auction->get->commission_structure ?? null,
+                                'lease_fee_type' => $auction->get->lease_fee_type ?? null,
+                                'lease_fee_flat' => $auction->get->lease_fee_flat ?? null,
+                                'lease_fee_percentage' => $auction->get->lease_fee_percentage ?? null,
+                                'payment_timing' => $auction->get->broker_fee_timing ?? null,
+                                'days_to_pay' => $auction->get->broker_fee_days_from_rent ?? $auction->get->broker_fee_days_after_lease ?? null,
+                                'interested_purchase_fee_type' => $auction->get->interested_purchase_fee_type ?? null,
+                                'purchase_fee_type' => $auction->get->purchase_fee_type ?? null,
+                                'interested_lease_option_agreement' => $auction->get->interested_lease_option_agreement ?? null,
+                                'lease_type' => $auction->get->lease_type ?? null,
+                                'lease_value' => $auction->get->lease_value ?? null,
+                                'purchase_type' => $auction->get->purchase_type ?? null,
+                                'purchase_value' => $auction->get->purchase_value ?? null,
+                                'protection_period' => $auction->get->protection_period ?? null,
+                                'early_termination_fee_option' => $auction->get->early_termination_fee_option ?? null,
+                                'early_termination_fee_amount' => $auction->get->early_termination_fee_amount ?? null,
+                                'retainer_fee_option' => $auction->get->retainer_fee_option ?? null,
+                                'retainer_fee_amount' => $auction->get->retainer_fee_amount ?? null,
+                                'retainer_fee_application' => $auction->get->retainer_fee_application ?? null,
+                                'agency_agreement_timeframe' => $auction->get->agency_agreement_timeframe ?? null,
+                                'brokerage_relationship' => $auction->get->brokerage_relationship ?? null,
+                                'services' => $auction->get->services ?? [],
+                                'other_services' => $auction->get->other_services ?? [],
+                            ];
+                            $baselineLabel = 'Your Original Listing Terms';
+                        }
                         
                         $normalizeForMatch = function($v) {
                             if (is_null($v) || $v === '') return '';
@@ -83,13 +144,13 @@
                         
                         foreach ($brokerFields as $field) {
                             $counterVal = $counterData[$field] ?? null;
-                            $bidVal = $agentBidData[$field] ?? null;
-                            if (!empty($counterVal) || !empty($bidVal)) {
+                            $baselineVal = $baselineData[$field] ?? null;
+                            if (!empty($counterVal) || !empty($baselineVal)) {
                                 $brokerTotal++;
-                                if ($normalizeForMatch($counterVal) === $normalizeForMatch($bidVal)) {
+                                if ($normalizeForMatch($counterVal) === $normalizeForMatch($baselineVal)) {
                                     $brokerMatched++;
                                 } else {
-                                    $brokerMismatches[$field] = ['counter' => $counterVal, 'bid' => $bidVal];
+                                    $brokerMismatches[$field] = ['counter' => $counterVal, 'baseline' => $baselineVal];
                                 }
                             }
                         }
@@ -109,18 +170,18 @@
                         $counterOtherServices = is_array($counterOtherServices) ? array_values(array_filter($counterOtherServices, fn($s) => is_string($s) && !empty(trim($s)))) : [];
                         $allCounterServices = array_merge($counterServices, $counterOtherServices);
                         
-                        $bidServices = $agentBidData['services'] ?? [];
-                        if (is_string($bidServices)) {
-                            $bidServices = json_decode($bidServices, true) ?? [];
+                        $baselineServices = $baselineData['services'] ?? [];
+                        if (is_string($baselineServices)) {
+                            $baselineServices = json_decode($baselineServices, true) ?? [];
                         }
-                        $bidServices = is_array($bidServices) ? array_values(array_filter($bidServices)) : [];
+                        $baselineServices = is_array($baselineServices) ? array_values(array_filter($baselineServices)) : [];
                         
-                        $bidOtherServices = $agentBidData['other_services'] ?? [];
-                        if (is_string($bidOtherServices)) {
-                            $bidOtherServices = json_decode($bidOtherServices, true) ?? [];
+                        $baselineOtherServices = $baselineData['other_services'] ?? [];
+                        if (is_string($baselineOtherServices)) {
+                            $baselineOtherServices = json_decode($baselineOtherServices, true) ?? [];
                         }
-                        $bidOtherServices = is_array($bidOtherServices) ? array_values(array_filter($bidOtherServices, fn($s) => is_string($s) && !empty(trim($s)))) : [];
-                        $allBidServices = array_merge($bidServices, $bidOtherServices);
+                        $baselineOtherServices = is_array($baselineOtherServices) ? array_values(array_filter($baselineOtherServices, fn($s) => is_string($s) && !empty(trim($s)))) : [];
+                        $allBaselineServices = array_merge($baselineServices, $baselineOtherServices);
                         
                         $normalizeService = function($s) {
                             $s = preg_replace('/[\x{2018}\x{2019}]/u', "'", $s);
@@ -129,9 +190,9 @@
                         };
                         
                         $counterNorm = array_map($normalizeService, $allCounterServices);
-                        $bidNorm = array_map($normalizeService, $allBidServices);
+                        $baselineNorm = array_map($normalizeService, $allBaselineServices);
                         
-                        $allServicesUnion = array_unique(array_merge($counterNorm, $bidNorm));
+                        $allServicesUnion = array_unique(array_merge($counterNorm, $baselineNorm));
                         $servicesTotal = count($allServicesUnion);
                         $servicesMatched = 0;
                         $servicesMissing = [];
@@ -139,13 +200,13 @@
                         
                         foreach ($allServicesUnion as $svc) {
                             $inCounter = in_array($svc, $counterNorm);
-                            $inBid = in_array($svc, $bidNorm);
-                            if ($inCounter && $inBid) {
+                            $inBaseline = in_array($svc, $baselineNorm);
+                            if ($inCounter && $inBaseline) {
                                 $servicesMatched++;
-                            } elseif ($inCounter && !$inBid) {
-                                $servicesMissing[] = $svc;
-                            } elseif (!$inCounter && $inBid) {
+                            } elseif ($inCounter && !$inBaseline) {
                                 $servicesAdded[] = $svc;
+                            } elseif (!$inCounter && $inBaseline) {
+                                $servicesMissing[] = $svc;
                             }
                         }
                         
@@ -175,9 +236,9 @@
                         $mismatchStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545;';
                         $mismatchBadge = '<span class="badge" style="background-color: #dc3545; color: white; font-size: 0.7rem; vertical-align: middle; margin-left: 8px;">Mismatch</span>';
                         $addedStyle = 'background-color: #e6ffe6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #28a745;';
-                        $addedBadge = '<span class="badge" style="background-color: #28a745; color: white; font-size: 0.7rem; vertical-align: middle; margin-left: 8px;">Added (Not in Your Bid)</span>';
+                        $addedBadge = '<span class="badge" style="background-color: #28a745; color: white; font-size: 0.7rem; vertical-align: middle; margin-left: 8px;">Added</span>';
                         $missingStyle = 'background-color: #fff3cd; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #ffc107;';
-                        $missingBadge = '<span class="badge" style="background-color: #ffc107; color: #000; font-size: 0.7rem; vertical-align: middle; margin-left: 8px;">Missing from Counter</span>';
+                        $missingBadge = '<span class="badge" style="background-color: #ffc107; color: #000; font-size: 0.7rem; vertical-align: middle; margin-left: 8px;">Not in Counter</span>';
                         
                         $residentialCategories = [
                             "📢 Tenant Criteria Marketing & Promotion" => [
@@ -238,9 +299,9 @@
                     <div class="border rounded p-4 mb-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 style="color: #049399; font-weight: 600; margin: 0;">
-                                <i class="fas fa-file-contract me-2"></i>Tenant's Counter Terms
+                                <i class="fas fa-file-contract me-2"></i>{{ $counterPartyName }}'s Counter Terms
                             </h5>
-                            <span class="text-muted small">Last updated: {{ $tenantCounter->updated_at->format('M d, Y h:i A') }}</span>
+                            <span class="text-muted small">Last updated: {{ $activeCounter->updated_at->format('M d, Y h:i A') }}</span>
                         </div>
                         
                         <div class="match-score-panel mb-4 p-3" style="background: white; border-radius: 10px; border: 1px solid #dee2e6;">
@@ -269,7 +330,7 @@
                                 </div>
                             </div>
                             <div class="mt-2 small text-muted">
-                                <i class="fas fa-info-circle me-1"></i>Compared to: Your Original Bid
+                                <i class="fas fa-info-circle me-1"></i>Compared to: {{ $baselineLabel }}
                             </div>
                         </div>
                         
@@ -280,11 +341,11 @@
                             
                             @if (!empty($counterData['commission_structure']) || !empty($counterData['lease_fee_type']) || !empty($counterData['payment_timing']))
                             <div class="mb-4">
-                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Tenant's Broker Compensation</h6>
+                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Broker Compensation</h6>
                                 <ul class="list-unstyled ps-3 mb-0">
                                     @if (!empty($counterData['commission_structure']))
                                     <li class="mb-2" style="{{ isset($brokerMismatches['commission_structure']) ? $mismatchStyle : '' }}">
-                                        <span class="fw-semibold">Tenant's Broker Commission Structure:</span> 
+                                        <span class="fw-semibold">Broker Commission Structure:</span> 
                                         {{ $counterData['commission_structure'] === 'Out-of-Pocket Payment' ? 'Tenant Pays Out-of-Pocket' : ($counterData['commission_structure'] === 'Included in Offer' ? 'Requested From Landlord in the Offer' : $counterData['commission_structure']) }}
                                         {!! isset($brokerMismatches['commission_structure']) ? $mismatchBadge : '' !!}
                                     </li>
@@ -314,13 +375,13 @@
                                         }
                                     @endphp
                                     <li class="mb-2" style="{{ isset($brokerMismatches['lease_fee_type']) ? $mismatchStyle : '' }}">
-                                        <span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $leaseFeeCombined }}
+                                        <span class="fw-semibold">Broker Commission Fee:</span> {{ $leaseFeeCombined }}
                                         {!! isset($brokerMismatches['lease_fee_type']) ? $mismatchBadge : '' !!}
                                     </li>
                                     @endif
                                     @if (!empty($counterData['payment_timing']))
                                     <li class="mb-2" style="{{ isset($brokerMismatches['payment_timing']) ? $mismatchStyle : '' }}">
-                                        <span class="fw-semibold">Payment Timing for Broker Fees:</span> {{ $counterData['payment_timing'] }}
+                                        <span class="fw-semibold">Payment Timing:</span> {{ $counterData['payment_timing'] }}
                                         {!! isset($brokerMismatches['payment_timing']) ? $mismatchBadge : '' !!}
                                     </li>
                                     @endif
@@ -435,7 +496,7 @@
                                         $agencyTimeframeDisplay = $isOtherTimeframe ? ($agencyTimeframeCustom ?: 'Other') : ($agencyTimeframe ?: '');
                                     @endphp
                                     <li class="mb-2" style="{{ isset($brokerMismatches['agency_agreement_timeframe']) ? $mismatchStyle : '' }}">
-                                        <span class="fw-semibold">Tenant Agency Agreement Timeframe:</span> {{ $agencyTimeframeDisplay }}
+                                        <span class="fw-semibold">Agency Agreement Timeframe:</span> {{ $agencyTimeframeDisplay }}
                                         {!! isset($brokerMismatches['agency_agreement_timeframe']) ? $mismatchBadge : '' !!}
                                     </li>
                                     @endif
@@ -467,8 +528,8 @@
                                     foreach ($allCounterServices as $service) {
                                         foreach ($categoryServices as $catService) {
                                             if ($normalizeService($service) === $normalizeService($catService)) {
-                                                $isInBid = in_array($normalizeService($service), $bidNorm);
-                                                $matchedServicesInCategory[] = ['service' => $service, 'inBid' => $isInBid];
+                                                $isInBaseline = in_array($normalizeService($service), $baselineNorm);
+                                                $matchedServicesInCategory[] = ['service' => $service, 'inBaseline' => $isInBaseline];
                                                 break;
                                             }
                                         }
@@ -479,9 +540,9 @@
                                     <strong>{{ $categoryName }}</strong>
                                     <ul class="list-unstyled ps-3 mt-2">
                                         @foreach ($matchedServicesInCategory as $serviceData)
-                                        <li class="mb-1" style="{{ !$serviceData['inBid'] ? $addedStyle : '' }}">
+                                        <li class="mb-1" style="{{ !$serviceData['inBaseline'] ? $addedStyle : '' }}">
                                             <i class="fas fa-check-circle me-2" style="color: #049399;"></i>{{ $serviceData['service'] }}
-                                            @if (!$serviceData['inBid'])
+                                            @if (!$serviceData['inBaseline'])
                                             {!! $addedBadge !!}
                                             @endif
                                         </li>
@@ -497,11 +558,11 @@
                                 <ul class="list-unstyled ps-3 mt-2">
                                     @foreach ($counterOtherServices as $otherService)
                                     @php
-                                        $isInBid = in_array($normalizeService($otherService), $bidNorm);
+                                        $isInBaseline = in_array($normalizeService($otherService), $baselineNorm);
                                     @endphp
-                                    <li class="mb-1" style="{{ !$isInBid ? $addedStyle : '' }}">
+                                    <li class="mb-1" style="{{ !$isInBaseline ? $addedStyle : '' }}">
                                         <i class="fas fa-check-circle me-2" style="color: #049399;"></i>{{ $otherService }}
-                                        @if (!$isInBid)
+                                        @if (!$isInBaseline)
                                         {!! $addedBadge !!}
                                         @endif
                                     </li>
@@ -512,12 +573,12 @@
                             
                             @if (!empty($servicesMissing))
                             <div class="mt-4 p-3" style="background-color: #fff3cd; border-radius: 8px; border: 1px solid #ffc107;">
-                                <strong style="color: #856404;"><i class="fas fa-exclamation-triangle me-2"></i>Services From Your Bid Not in Counter:</strong>
+                                <strong style="color: #856404;"><i class="fas fa-exclamation-triangle me-2"></i>Services Not Included in Counter:</strong>
                                 <ul class="list-unstyled ps-3 mt-2 mb-0">
-                                    @foreach ($allBidServices as $bidService)
-                                        @if (in_array($normalizeService($bidService), $servicesMissing))
+                                    @foreach ($allBaselineServices as $baselineService)
+                                        @if (in_array($normalizeService($baselineService), $servicesMissing))
                                         <li class="mb-1" style="{{ $missingStyle }}">
-                                            <i class="fas fa-times-circle me-2" style="color: #ffc107;"></i>{{ $bidService }}
+                                            <i class="fas fa-times-circle me-2" style="color: #ffc107;"></i>{{ $baselineService }}
                                         </li>
                                         @endif
                                     @endforeach
@@ -540,12 +601,14 @@
                         <a href="{{ route('tenant.agent.auction.view', $auction->id) }}" class="btn" style="background-color: #fff; border: 2px solid #049399; color: #049399; padding: 10px 20px; font-weight: 600;">
                             <i class="fas fa-eye me-2"></i>View Listing
                         </a>
+                        
+                        @if($viewerRole === 'agent')
                         <a href="{{ route('tenant.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => $bid->id]) }}" class="btn" style="background-color: #ffc107; border: 2px solid #ffc107; color: #000; padding: 10px 20px; font-weight: 600;">
                             <i class="fas fa-reply me-2"></i>Counter Back
                         </a>
                         <form action="{{ route('tenant.hire.agent.auction.counter.bid.accept') }}" method="POST" class="d-inline">
                             @csrf
-                            <input type="hidden" name="counter_bid_id" value="{{ $tenantCounter->id }}">
+                            <input type="hidden" name="counter_bid_id" value="{{ $activeCounter->id }}">
                             <input type="hidden" name="auction_id" value="{{ $auction->id }}">
                             <button type="submit" class="btn" style="background-color: #28a745; border: 2px solid #28a745; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Are you sure you want to accept these counter terms?')">
                                 <i class="fas fa-check me-2"></i>Accept Counter
@@ -553,17 +616,40 @@
                         </form>
                         <form action="{{ route('tenant.hire.agent.auction.counter.bid.reject') }}" method="POST" class="d-inline">
                             @csrf
-                            <input type="hidden" name="counter_bid_id" value="{{ $tenantCounter->id }}">
+                            <input type="hidden" name="counter_bid_id" value="{{ $activeCounter->id }}">
                             <input type="hidden" name="auction_id" value="{{ $auction->id }}">
                             <button type="submit" class="btn" style="background-color: #dc3545; border: 2px solid #dc3545; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Are you sure you want to reject these counter terms?')">
                                 <i class="fas fa-times me-2"></i>Reject Counter
                             </button>
                         </form>
+                        @else
+                        <a href="{{ route('tenant.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => $bid->id]) }}" class="btn" style="background-color: #ffc107; border: 2px solid #ffc107; color: #000; padding: 10px 20px; font-weight: 600;">
+                            <i class="fas fa-reply me-2"></i>Counter Back
+                        </a>
+                        <form action="{{ route('tenant.hire.agent.auction.bid.accept') }}" method="POST" class="d-inline">
+                            @csrf
+                            <input type="hidden" name="bid_id" value="{{ $bid->id }}">
+                            <button type="submit" class="btn" style="background-color: #28a745; border: 2px solid #28a745; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Are you sure you want to accept this counter offer from the agent?')">
+                                <i class="fas fa-check me-2"></i>Accept
+                            </button>
+                        </form>
+                        <form action="{{ route('tenant.hire.agent.auction.bid.reject') }}" method="POST" class="d-inline">
+                            @csrf
+                            <input type="hidden" name="bid_id" value="{{ $bid->id }}">
+                            <button type="submit" class="btn" style="background-color: #dc3545; border: 2px solid #dc3545; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Are you sure you want to reject this counter offer from the agent?')">
+                                <i class="fas fa-times me-2"></i>Reject
+                            </button>
+                        </form>
+                        @endif
                     </div>
                     @else
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle me-2"></i>
+                        @if($viewerRole === 'agent')
                         No counter terms have been submitted by the tenant yet. Your bid is still active and awaiting a response.
+                        @else
+                        No counter terms have been submitted by the agent yet.
+                        @endif
                     </div>
                     <a href="{{ route('tenant.agent.auction.view', $auction->id) }}" class="btn" style="background-color: #049399; color: white; padding: 10px 20px; font-weight: 600;">
                         <i class="fas fa-arrow-left me-2"></i>Back to Listing

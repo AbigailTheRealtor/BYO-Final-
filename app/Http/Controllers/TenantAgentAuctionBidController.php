@@ -421,39 +421,49 @@ class TenantAgentAuctionBidController extends Controller
 
     public function view_counter_terms($bid_id)
     {
-        $bid = TenantAgentAuctionBid::with(['meta', 'auction', 'auction.user'])->find($bid_id);
+        $bid = TenantAgentAuctionBid::with(['meta', 'auction', 'auction.user', 'user'])->find($bid_id);
         
         if (!$bid) {
             return redirect()->back()->with('error', 'Bid not found.');
         }
         
-        // Only the agent who made the bid can view counter terms for their bid
-        if ($bid->user_id !== Auth::id()) {
-            abort(403, 'You can only view counter terms for your own bids.');
-        }
-        
-        $auction = TenantAgentAuction::find($bid->tenant_agent_auction_id);
+        $auction = TenantAgentAuction::with(['user', 'meta'])->find($bid->tenant_agent_auction_id);
         if (!$auction) {
             return redirect()->back()->with('error', 'Auction not found.');
         }
         
-        // Get the latest counter terms from the Tenant
-        $counterTerms = TenantCounterBidding::with('meta')
+        $userId = Auth::id();
+        $isAgent = ($bid->user_id === $userId);
+        $isTenant = ($auction->user_id === $userId);
+        
+        // Only bid owner (agent) or listing owner (tenant) can view counter terms
+        if (!$isAgent && !$isTenant) {
+            abort(403, 'You do not have permission to view these counter terms.');
+        }
+        
+        // Get agent's counter to tenant (TenantCounterBidding)
+        $agentCounter = TenantCounterBidding::with('meta')
             ->where('tenant_agent_auction_bid_id', $bid_id)
             ->orderBy('created_at', 'desc')
             ->first();
         
-        // Also get any TenantCounterTerm (different model for tenant-initiated counters)
+        // Get tenant's counter to agent (TenantCounterTerm)
         $tenantCounter = \App\Models\TenantCounterTerm::with('meta')
             ->where('tenant_agent_auction_id', $bid_id)
             ->orderBy('created_at', 'desc')
             ->first();
         
+        // Determine viewer role
+        $viewerRole = $isAgent ? 'agent' : 'tenant';
+        
         return view('hire_tenant_agent.view_counter_terms', [
             'bid' => $bid,
             'auction' => $auction,
-            'counterTerms' => $counterTerms,
+            'agentCounter' => $agentCounter,
             'tenantCounter' => $tenantCounter,
+            'viewerRole' => $viewerRole,
+            'isAgent' => $isAgent,
+            'isTenant' => $isTenant,
         ]);
     }
 
