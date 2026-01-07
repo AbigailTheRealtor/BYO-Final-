@@ -237,14 +237,14 @@ $safeKey = function(...$parts) {
             </select>
         </div>
 
-        <div class="mt-3">
-            @if ($broker_fee_timing === 'other')
+        @if ($broker_fee_timing === 'other')
+            <div class="mt-3" wire:key="{{ $safeKey('broker-fee-timing-other-input', $broker_fee_timing) }}">
                 <div class="input-group">
                     <input type="text" wire:model.lazy="broker_fee_timing_other" class="form-control"
                         placeholder="Describe payment arrangement (e.g., Broker to be paid 25% upon lease execution, 25% upon tenant move-in, and 50% upon first month's rent payment)">
                 </div>
-            @endif
-        </div>
+            </div>
+        @endif
     </div>
 @endif
 
@@ -270,7 +270,7 @@ $safeKey = function(...$parts) {
 
 @if ($interested_purchase_fee_type === 'Yes')
     <!-- Tenant's Broker Purchase Fee -->
-    <div class="form-group mb-4">
+    <div class="form-group mb-4" wire:key="{{ $safeKey('purchase-fee-section', $interested_purchase_fee_type) }}">
         <label class="fw-bold ">
             Tenant's Broker Purchase Fee:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -358,7 +358,7 @@ $safeKey = function(...$parts) {
 </div>
 
 @if ($interested_lease_option_agreement === 'Yes')
-    <div id="tab1" class="tab-content mt-3">
+    <div id="tab1" class="tab-content mt-3" wire:key="{{ $safeKey('lease-option-section', $interested_lease_option_agreement) }}">
         <div class="form-group">
             <label class="fw-bold">
                 Compensation for Creating the Lease-Option Agreement:
@@ -463,7 +463,7 @@ $safeKey = function(...$parts) {
         </select>
     </div>
     @if ($early_termination_fee_option === 'Yes')
-        <div class="mt-3">
+        <div class="mt-3" wire:key="{{ $safeKey('early-termination-amount', $early_termination_fee_option) }}">
             <div class="input-group">
                 <span class="input-group-text">$</span>
                 <input type="text" wire:model.lazy="early_termination_fee_amount" class="form-control"
@@ -495,7 +495,7 @@ $safeKey = function(...$parts) {
     </div>
 
     @if ($retainer_fee_option === 'Yes')
-        <div class="mt-3">
+        <div class="mt-3" wire:key="{{ $safeKey('retainer-fee-details', $retainer_fee_option) }}">
 
             <div class="form-group mb-4">
                 <label class="fw-bold">
@@ -563,7 +563,7 @@ $safeKey = function(...$parts) {
     </div>
 
     @if ($agency_agreement_timeframe === 'Other')
-        <div class="mt-3">
+        <div class="mt-3" wire:key="{{ $safeKey('agency-agreement-custom', $agency_agreement_timeframe) }}">
             <input type="text" wire:model="agency_agreement_custom" class="form-control"
                 placeholder="Enter Tenant agency agreement timeframe (e.g., 8 Months)">
             @error('agency_agreement_custom')
