@@ -12,25 +12,31 @@
                 </ol>
             </nav>
             
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Counter Terms for Your Bid</h4>
+            <div class="card mb-4" style="border: 2px solid #049399; border-radius: 8px;">
+                <div class="card-header" style="background: linear-gradient(135deg, #049399 0%, #037a7f 100%); color: white;">
+                    <h4 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Counter Terms For Your Bid</h4>
                 </div>
                 <div class="card-body">
                     <div class="row mb-4">
                         <div class="col-md-6">
-                            <h6 class="text-muted">Listing Information</h6>
-                            <p><strong>Title:</strong> {{ $auction->title ?? 'N/A' }}</p>
+                            <h6 style="color: #049399; font-weight: 600;">Listing Information</h6>
+                            <p><strong>Title:</strong> {{ $auction->title ?? 'Hire a Tenant Agent Residential' }}</p>
                             <p><strong>Address:</strong> {{ $auction->get->address ?? 'N/A' }}</p>
                             <p><strong>Listing Owner:</strong> {{ $auction->user->name ?? 'N/A' }}</p>
                         </div>
                         <div class="col-md-6">
-                            <h6 class="text-muted">Your Bid Status</h6>
+                            <h6 style="color: #049399; font-weight: 600;">Your Bid Status</h6>
                             @php
                                 $bidStatus = $bid->bid_status ?? 'Active';
+                                $statusColors = [
+                                    'Countered' => 'background-color: #ffc107; color: #000;',
+                                    'Accepted' => 'background-color: #28a745; color: #fff;',
+                                    'Rejected' => 'background-color: #dc3545; color: #fff;',
+                                    'Active' => 'background-color: #007bff; color: #fff;',
+                                ];
                             @endphp
                             <p><strong>Status:</strong> 
-                                <span class="badge {{ $bidStatus === 'Countered' ? 'bg-warning text-dark' : ($bidStatus === 'Accepted' ? 'bg-success' : ($bidStatus === 'Rejected' ? 'bg-danger' : 'bg-primary')) }}">
+                                <span class="badge" style="{{ $statusColors[$bidStatus] ?? $statusColors['Active'] }} padding: 6px 12px; border-radius: 4px;">
                                     {{ $bidStatus }}
                                 </span>
                             </p>
@@ -39,84 +45,509 @@
                     </div>
                     
                     @if($tenantCounter)
-                    <div class="border rounded p-4 bg-light mb-4">
-                        <h5 class="text-primary mb-3"><i class="fas fa-file-contract me-2"></i>Tenant's Counter Terms</h5>
-                        <p class="text-muted small">Last updated: {{ $tenantCounter->updated_at->format('M d, Y h:i A') }}</p>
+                    @php
+                        $counterData = $tenantCounter->getAllMeta();
                         
-                        @php
-                            $counterData = $tenantCounter->meta ? $tenantCounter->meta->pluck('meta_value', 'meta_key')->toArray() : [];
-                        @endphp
+                        $fmtMoney = function($v) {
+                            if (empty($v) || !is_numeric($v)) return null;
+                            return '$' . number_format((float)$v, 2);
+                        };
+                        $fmtPercent = function($v) {
+                            if (empty($v) || !is_numeric($v)) return null;
+                            return rtrim(rtrim(number_format((float)$v, 2), '0'), '.') . '%';
+                        };
+                        $joinParts = function(array $parts) {
+                            return implode(' + ', array_filter($parts)) ?: null;
+                        };
                         
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6>Broker Compensation</h6>
-                                <ul class="list-unstyled">
-                                    @if(!empty($counterData['commission_structure']))
-                                        <li><strong>Commission Structure:</strong> {{ $counterData['commission_structure'] }}</li>
-                                    @endif
-                                    @if(!empty($counterData['lease_fee_type']))
-                                        <li><strong>Lease Fee Type:</strong> {{ $counterData['lease_fee_type'] }}</li>
-                                    @endif
-                                    @if(!empty($counterData['lease_fee_flat']))
-                                        <li><strong>Lease Fee Flat:</strong> ${{ number_format($counterData['lease_fee_flat'], 2) }}</li>
-                                    @endif
-                                    @if(!empty($counterData['lease_fee_percentage']))
-                                        <li><strong>Lease Fee Percentage:</strong> {{ $counterData['lease_fee_percentage'] }}%</li>
-                                    @endif
-                                </ul>
+                        $agentBidData = (array) $bid->getAllMeta();
+                        
+                        $normalizeForMatch = function($v) {
+                            if (is_null($v) || $v === '') return '';
+                            if (is_array($v) || is_object($v)) return json_encode($v);
+                            $v = trim((string) $v);
+                            return preg_replace('/[\s$,%]/', '', strtolower($v));
+                        };
+                        
+                        $brokerFields = [
+                            'commission_structure', 'lease_fee_type', 'payment_timing', 'days_to_pay',
+                            'interested_purchase_fee_type', 'purchase_fee_type', 'interested_lease_option_agreement',
+                            'lease_type', 'lease_value', 'purchase_type', 'purchase_value', 'protection_period',
+                            'early_termination_fee_option', 'early_termination_fee_amount', 'retainer_fee_option',
+                            'retainer_fee_amount', 'retainer_fee_application', 'agency_agreement_timeframe', 'brokerage_relationship',
+                        ];
+                        
+                        $brokerMatched = 0;
+                        $brokerTotal = 0;
+                        $brokerMismatches = [];
+                        
+                        foreach ($brokerFields as $field) {
+                            $counterVal = $counterData[$field] ?? null;
+                            $bidVal = $agentBidData[$field] ?? null;
+                            if (!empty($counterVal) || !empty($bidVal)) {
+                                $brokerTotal++;
+                                if ($normalizeForMatch($counterVal) === $normalizeForMatch($bidVal)) {
+                                    $brokerMatched++;
+                                } else {
+                                    $brokerMismatches[$field] = ['counter' => $counterVal, 'bid' => $bidVal];
+                                }
+                            }
+                        }
+                        
+                        $brokerScore = $brokerTotal > 0 ? round(($brokerMatched / $brokerTotal) * 100) : 100;
+                        
+                        $counterServices = $counterData['services'] ?? [];
+                        if (is_string($counterServices)) {
+                            $counterServices = json_decode($counterServices, true) ?? [];
+                        }
+                        $counterServices = is_array($counterServices) ? array_values(array_filter($counterServices)) : [];
+                        
+                        $counterOtherServices = $counterData['other_services'] ?? [];
+                        if (is_string($counterOtherServices)) {
+                            $counterOtherServices = json_decode($counterOtherServices, true) ?? [];
+                        }
+                        $counterOtherServices = is_array($counterOtherServices) ? array_values(array_filter($counterOtherServices, fn($s) => is_string($s) && !empty(trim($s)))) : [];
+                        $allCounterServices = array_merge($counterServices, $counterOtherServices);
+                        
+                        $bidServices = $agentBidData['services'] ?? [];
+                        if (is_string($bidServices)) {
+                            $bidServices = json_decode($bidServices, true) ?? [];
+                        }
+                        $bidServices = is_array($bidServices) ? array_values(array_filter($bidServices)) : [];
+                        
+                        $bidOtherServices = $agentBidData['other_services'] ?? [];
+                        if (is_string($bidOtherServices)) {
+                            $bidOtherServices = json_decode($bidOtherServices, true) ?? [];
+                        }
+                        $bidOtherServices = is_array($bidOtherServices) ? array_values(array_filter($bidOtherServices, fn($s) => is_string($s) && !empty(trim($s)))) : [];
+                        $allBidServices = array_merge($bidServices, $bidOtherServices);
+                        
+                        $normalizeService = function($s) {
+                            $s = preg_replace('/[\x{2018}\x{2019}]/u', "'", $s);
+                            $s = preg_replace('/[\x{201C}\x{201D}]/u', '"', $s);
+                            return strtolower(trim($s));
+                        };
+                        
+                        $counterNorm = array_map($normalizeService, $allCounterServices);
+                        $bidNorm = array_map($normalizeService, $allBidServices);
+                        
+                        $allServicesUnion = array_unique(array_merge($counterNorm, $bidNorm));
+                        $servicesTotal = count($allServicesUnion);
+                        $servicesMatched = 0;
+                        $servicesMissing = [];
+                        $servicesAdded = [];
+                        
+                        foreach ($allServicesUnion as $svc) {
+                            $inCounter = in_array($svc, $counterNorm);
+                            $inBid = in_array($svc, $bidNorm);
+                            if ($inCounter && $inBid) {
+                                $servicesMatched++;
+                            } elseif ($inCounter && !$inBid) {
+                                $servicesMissing[] = $svc;
+                            } elseif (!$inCounter && $inBid) {
+                                $servicesAdded[] = $svc;
+                            }
+                        }
+                        
+                        $servicesScore = $servicesTotal > 0 ? round(($servicesMatched / $servicesTotal) * 100) : 100;
+                        
+                        $hasBroker = $brokerTotal > 0;
+                        $hasServices = $servicesTotal > 0;
+                        
+                        if ($hasBroker && $hasServices) {
+                            $totalScore = round(($brokerScore + $servicesScore) / 2);
+                        } elseif ($hasBroker) {
+                            $totalScore = $brokerScore;
+                        } elseif ($hasServices) {
+                            $totalScore = $servicesScore;
+                        } else {
+                            $totalScore = 100;
+                        }
+                        
+                        $getScoreColor = function($score) {
+                            if ($score >= 80) return '#28a745';
+                            if ($score >= 50) return '#ffc107';
+                            return '#dc3545';
+                        };
+                        
+                        $totalScoreColor = $getScoreColor($totalScore);
+                        
+                        $mismatchStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545;';
+                        $mismatchBadge = '<span class="badge" style="background-color: #dc3545; color: white; font-size: 0.7rem; vertical-align: middle; margin-left: 8px;">Mismatch</span>';
+                        $addedStyle = 'background-color: #e6ffe6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #28a745;';
+                        $addedBadge = '<span class="badge" style="background-color: #28a745; color: white; font-size: 0.7rem; vertical-align: middle; margin-left: 8px;">Added (Not in Your Bid)</span>';
+                        $missingStyle = 'background-color: #fff3cd; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #ffc107;';
+                        $missingBadge = '<span class="badge" style="background-color: #ffc107; color: #000; font-size: 0.7rem; vertical-align: middle; margin-left: 8px;">Missing from Counter</span>';
+                        
+                        $residentialCategories = [
+                            '📢 Tenant Criteria Marketing & Promotion' => [
+                                'Create a branded flyer summarizing the Tenant's rental criteria',
+                                'Post the Tenant's rental criteria on Craigslist under the "Real Estate Wanted" section',
+                                'Share the Tenant's rental criteria on Nextdoor in Neighborhood or Community Groups',
+                                'Promote the Tenant's rental criteria on Facebook in Rental or Housing Groups',
+                                'Share the Tenant's rental criteria on Instagram using posts, stories, or reels',
+                                'Promote the Tenant's rental criteria on LinkedIn in Real Estate or Housing Groups',
+                                'Upload a TikTok video summarizing the Tenant's rental criteria',
+                                'Upload a YouTube video summarizing the Tenant's rental criteria',
+                                'Launch a mass email campaign promoting the Tenant's rental criteria',
+                                'Distribute branded postcards or flyers in the Tenant's preferred neighborhoods',
+                                'Launch hyperlocal digital ads targeting the Tenant's preferred rental areas',
+                            ],
+                            '🔍 Property Search, Alerts & Matching' => [
+                                'Send email alerts with new listings from the MLS that match the Tenant's rental criteria',
+                                'Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant's rental criteria',
+                                'Communicate with the Landlord's Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions',
+                                'Evaluate properties with the Tenant and provide insights on pricing, lease terms, and overall fit',
+                            ],
+                            '🏡 Property Showings & Virtual Tours' => [
+                                'Schedule and attend property showings with the Tenant',
+                                'Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs',
+                                'Preview properties on behalf of the Tenant upon request',
+                                'Provide factual observations on property layout and condition',
+                            ],
+                            '📝 Tenant Application Support' => [
+                                'Provide the Tenant with application instructions or links to an online rental application platform',
+                                'Gather and organize required supporting documents (e.g., identification, income verification, reference letters)',
+                                'Submit complete and organized application packages to the Landlord's Agent, Landlord, or Property Manager for review',
+                                'Answer questions about the application process, screening timelines, and required documentation',
+                            ],
+                            '📃 Lease Preparation & Execution' => [
+                                'Review lease offers and assist the Tenant in preparing questions or requested changes',
+                                'Coordinate lease negotiation with the Landlord's Agent, Landlord, or Property Manager',
+                                'Assist with completing required lease disclosures and reviewing key lease terms',
+                                'Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties',
+                            ],
+                            '🚚 Move-In Support & Coordination' => [
+                                'Coordinate move-in date and key handoff logistics with the Landlord's Agent, Landlord or Property Manager',
+                                'Confirm completion of any agreed-upon pre-move-in cleaning or repairs',
+                                'Provide a utility setup checklist and local provider resources',
+                                'Share a move-in checklist for documentation and property condition review',
+                                'Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods',
+                            ],
+                            '💡 Leasing Strategy & Guidance' => [
+                                'Provide a Rental Market Analysis (RMA) with pricing insights based on comparable rentals, neighborhood trends, and current market conditions',
+                                'Advise on lease types and structures (e.g., month-to-month, annual, furnished, lease-option)',
+                                'Provide general guidance on Tenant rights and Landlord responsibilities under state law',
+                                'Provide general guidance on lease clauses, payment terms, and renewal options',
+                            ],
+                        ];
+                        
+                        $categories = $residentialCategories;
+                    @endphp
+                    
+                    <div class="border rounded p-4 mb-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 style="color: #049399; font-weight: 600; margin: 0;">
+                                <i class="fas fa-file-contract me-2"></i>Tenant's Counter Terms
+                            </h5>
+                            <span class="text-muted small">Last updated: {{ $tenantCounter->updated_at->format('M d, Y h:i A') }}</span>
+                        </div>
+                        
+                        <div class="match-score-panel mb-4 p-3" style="background: white; border-radius: 10px; border: 1px solid #dee2e6;">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span style="font-weight: 600; color: #1a3a5c; font-size: 1.1rem;">
+                                    <i class="fas fa-chart-pie me-2"></i>Match Score
+                                </span>
+                                <span class="badge" style="background: {{ $totalScoreColor }}; font-size: 1.1rem; padding: 8px 16px; color: white;">
+                                    {{ $totalScore }}%
+                                </span>
                             </div>
-                            <div class="col-md-6">
-                                <h6>Agreement Terms</h6>
-                                <ul class="list-unstyled">
-                                    @if(!empty($counterData['protection_period']))
-                                        <li><strong>Protection Period:</strong> {{ $counterData['protection_period'] }} days</li>
-                                    @endif
-                                    @if(!empty($counterData['agency_agreement_timeframe']))
-                                        <li><strong>Agency Agreement:</strong> {{ $counterData['agency_agreement_timeframe'] }}</li>
-                                    @endif
-                                    @if(!empty($counterData['brokerage_relationship']))
-                                        <li><strong>Brokerage Relationship:</strong> {{ $counterData['brokerage_relationship'] }}</li>
-                                    @endif
-                                </ul>
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <div class="d-flex justify-content-between align-items-center p-2" style="background: #f8f9fa; border-radius: 6px;">
+                                        <span class="text-muted">Broker Compensation:</span>
+                                        <span style="color: {{ $getScoreColor($brokerScore) }}; font-weight: 600;">{{ $brokerScore }}%</span>
+                                    </div>
+                                    <div class="text-muted small mt-1 ps-2">{{ $brokerMatched }}/{{ $brokerTotal }} fields matched</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex justify-content-between align-items-center p-2" style="background: #f8f9fa; border-radius: 6px;">
+                                        <span class="text-muted">Services:</span>
+                                        <span style="color: {{ $getScoreColor($servicesScore) }}; font-weight: 600;">{{ $servicesScore }}%</span>
+                                    </div>
+                                    <div class="text-muted small mt-1 ps-2">{{ $servicesMatched }}/{{ $servicesTotal }} services matched</div>
+                                </div>
+                            </div>
+                            <div class="mt-2 small text-muted">
+                                <i class="fas fa-info-circle me-1"></i>Compared to: Your Original Bid
                             </div>
                         </div>
                         
-                        @if(!empty($counterData['services']))
-                            @php
-                                $services = is_string($counterData['services']) ? json_decode($counterData['services'], true) : $counterData['services'];
-                            @endphp
-                            @if(is_array($services) && count($services) > 0)
-                            <div class="mt-3">
-                                <h6>Requested Services</h6>
-                                <div class="d-flex flex-wrap gap-2">
-                                    @foreach($services as $service)
-                                        <span class="badge bg-secondary">{{ $service }}</span>
-                                    @endforeach
-                                </div>
+                        <div class="mb-4">
+                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                <i class="fas fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
+                            </h6>
+                            
+                            @if (!empty($counterData['commission_structure']) || !empty($counterData['lease_fee_type']) || !empty($counterData['payment_timing']))
+                            <div class="mb-4">
+                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Tenant's Broker Compensation</h6>
+                                <ul class="list-unstyled ps-3 mb-0">
+                                    @if (!empty($counterData['commission_structure']))
+                                    <li class="mb-2" style="{{ isset($brokerMismatches['commission_structure']) ? $mismatchStyle : '' }}">
+                                        <span class="fw-semibold">Tenant's Broker Commission Structure:</span> 
+                                        {{ $counterData['commission_structure'] === 'Out-of-Pocket Payment' ? 'Tenant Pays Out-of-Pocket' : ($counterData['commission_structure'] === 'Included in Offer' ? 'Requested From Landlord in the Offer' : $counterData['commission_structure']) }}
+                                        {!! isset($brokerMismatches['commission_structure']) ? $mismatchBadge : '' !!}
+                                    </li>
+                                    @endif
+                                    @if (!empty($counterData['lease_fee_type']))
+                                    @php
+                                        $leaseFeeType = $counterData['lease_fee_type'] ?? '';
+                                        $leaseFeeCombined = '—';
+                                        
+                                        if ($leaseFeeType === 'Flat Fee' && !empty($counterData['lease_fee_flat'])) {
+                                            $leaseFeeCombined = $fmtMoney($counterData['lease_fee_flat']);
+                                        } elseif ($leaseFeeType === 'Percentage of the Gross Lease Value' && !empty($counterData['lease_fee_percentage'])) {
+                                            $leaseFeeCombined = $fmtPercent($counterData['lease_fee_percentage']) . ' of Gross Lease Value';
+                                        } elseif ($leaseFeeType === 'Percentage of Monthly Rent' && !empty($counterData['lease_fee_percentage_monthly_rent'])) {
+                                            $display = $fmtPercent($counterData['lease_fee_percentage_monthly_rent']) . ' of Monthly Rent';
+                                            if (!empty($counterData['lease_fee_percentage_monthly_number'])) {
+                                                $display .= ' x ' . $counterData['lease_fee_percentage_monthly_number'] . ' Months';
+                                            }
+                                            $leaseFeeCombined = $display;
+                                        } elseif ($leaseFeeType === 'Flat Fee + Percentage of the Gross Lease Value') {
+                                            $leaseFeeCombined = $joinParts([
+                                                $fmtMoney($counterData['lease_fee_flat_combo'] ?? null),
+                                                !empty($counterData['lease_fee_percentage_combo']) ? ($fmtPercent($counterData['lease_fee_percentage_combo']) . ' of Gross Lease Value') : null,
+                                            ]) ?? '—';
+                                        } else {
+                                            $leaseFeeCombined = $leaseFeeType;
+                                        }
+                                    @endphp
+                                    <li class="mb-2" style="{{ isset($brokerMismatches['lease_fee_type']) ? $mismatchStyle : '' }}">
+                                        <span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $leaseFeeCombined }}
+                                        {!! isset($brokerMismatches['lease_fee_type']) ? $mismatchBadge : '' !!}
+                                    </li>
+                                    @endif
+                                    @if (!empty($counterData['payment_timing']))
+                                    <li class="mb-2" style="{{ isset($brokerMismatches['payment_timing']) ? $mismatchStyle : '' }}">
+                                        <span class="fw-semibold">Payment Timing for Broker Fees:</span> {{ $counterData['payment_timing'] }}
+                                        {!! isset($brokerMismatches['payment_timing']) ? $mismatchBadge : '' !!}
+                                    </li>
+                                    @endif
+                                    @if (!empty($counterData['days_to_pay']))
+                                    <li class="mb-2" style="{{ isset($brokerMismatches['days_to_pay']) ? $mismatchStyle : '' }}">
+                                        <span class="fw-semibold">Calendar Days To Pay:</span> {{ $counterData['days_to_pay'] }}
+                                        {!! isset($brokerMismatches['days_to_pay']) ? $mismatchBadge : '' !!}
+                                    </li>
+                                    @endif
+                                </ul>
                             </div>
                             @endif
-                        @endif
+                            
+                            @if (!empty($counterData['interested_purchase_fee_type']))
+                            <div class="mb-4">
+                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">B) Purchase Fee Details</h6>
+                                <ul class="list-unstyled ps-3 mb-0">
+                                    <li class="mb-2" style="{{ isset($brokerMismatches['interested_purchase_fee_type']) ? $mismatchStyle : '' }}">
+                                        <span class="fw-semibold">Interested in Purchasing a Property:</span> {{ $counterData['interested_purchase_fee_type'] }}
+                                        {!! isset($brokerMismatches['interested_purchase_fee_type']) ? $mismatchBadge : '' !!}
+                                    </li>
+                                    @if ($counterData['interested_purchase_fee_type'] === 'Yes' && !empty($counterData['purchase_fee_type']))
+                                    <li class="mb-2" style="{{ isset($brokerMismatches['purchase_fee_type']) ? $mismatchStyle : '' }}">
+                                        <span class="fw-semibold">Purchase Fee:</span> {{ $counterData['purchase_fee_type'] }}
+                                        {!! isset($brokerMismatches['purchase_fee_type']) ? $mismatchBadge : '' !!}
+                                    </li>
+                                    @endif
+                                </ul>
+                            </div>
+                            @endif
+                            
+                            @if (!empty($counterData['interested_lease_option_agreement']))
+                            <div class="mb-4">
+                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">C) Lease-Option Details</h6>
+                                <ul class="list-unstyled ps-3 mb-0">
+                                    <li class="mb-2" style="{{ isset($brokerMismatches['interested_lease_option_agreement']) ? $mismatchStyle : '' }}">
+                                        <span class="fw-semibold">Interested in a Lease-Option Agreement:</span> {{ $counterData['interested_lease_option_agreement'] }}
+                                        {!! isset($brokerMismatches['interested_lease_option_agreement']) ? $mismatchBadge : '' !!}
+                                    </li>
+                                    @if ($counterData['interested_lease_option_agreement'] === 'Yes')
+                                        @if (!empty($counterData['lease_value']))
+                                        <li class="mb-2" style="{{ isset($brokerMismatches['lease_value']) ? $mismatchStyle : '' }}">
+                                            <span class="fw-semibold">Compensation (When Option Is Created):</span> 
+                                            {{ ($counterData['lease_type'] ?? '') === 'percent' ? $fmtPercent($counterData['lease_value']) : $fmtMoney($counterData['lease_value']) }}
+                                            {!! isset($brokerMismatches['lease_value']) ? $mismatchBadge : '' !!}
+                                        </li>
+                                        @endif
+                                        @if (!empty($counterData['purchase_value']))
+                                        <li class="mb-2" style="{{ isset($brokerMismatches['purchase_value']) ? $mismatchStyle : '' }}">
+                                            <span class="fw-semibold">Compensation (If Purchase Option Exercised):</span> 
+                                            {{ ($counterData['purchase_type'] ?? '') === 'percent' ? $fmtPercent($counterData['purchase_value']) : $fmtMoney($counterData['purchase_value']) }}
+                                            {!! isset($brokerMismatches['purchase_value']) ? $mismatchBadge : '' !!}
+                                        </li>
+                                        @endif
+                                    @endif
+                                </ul>
+                            </div>
+                            @endif
+                            
+                            @if (!empty($counterData['protection_period']) || !empty($counterData['early_termination_fee_option']) || !empty($counterData['retainer_fee_option']) || !empty($counterData['agency_agreement_timeframe']))
+                            <div class="mb-4">
+                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">D) Legal Terms</h6>
+                                <ul class="list-unstyled ps-3 mb-0">
+                                    @if (!empty($counterData['protection_period']))
+                                    <li class="mb-2" style="{{ isset($brokerMismatches['protection_period']) ? $mismatchStyle : '' }}">
+                                        <span class="fw-semibold">Protection Period Timeframe:</span> {{ $counterData['protection_period'] }} days
+                                        {!! isset($brokerMismatches['protection_period']) ? $mismatchBadge : '' !!}
+                                    </li>
+                                    @endif
+                                    @if (!empty($counterData['early_termination_fee_option']))
+                                    <li class="mb-2" style="{{ isset($brokerMismatches['early_termination_fee_option']) ? $mismatchStyle : '' }}">
+                                        <span class="fw-semibold">Early Termination Fee:</span> {{ $counterData['early_termination_fee_option'] }}
+                                        {!! isset($brokerMismatches['early_termination_fee_option']) ? $mismatchBadge : '' !!}
+                                    </li>
+                                    @if ($counterData['early_termination_fee_option'] === 'Yes' && !empty($counterData['early_termination_fee_amount']))
+                                    <li class="mb-2" style="{{ isset($brokerMismatches['early_termination_fee_amount']) ? $mismatchStyle : '' }}">
+                                        <span class="fw-semibold">Termination Fee Amount:</span> {{ $fmtMoney($counterData['early_termination_fee_amount']) }}
+                                        {!! isset($brokerMismatches['early_termination_fee_amount']) ? $mismatchBadge : '' !!}
+                                    </li>
+                                    @endif
+                                    @endif
+                                    @if (!empty($counterData['retainer_fee_option']))
+                                    <li class="mb-2" style="{{ isset($brokerMismatches['retainer_fee_option']) ? $mismatchStyle : '' }}">
+                                        <span class="fw-semibold">Retainer Fee:</span> {{ $counterData['retainer_fee_option'] }}
+                                        {!! isset($brokerMismatches['retainer_fee_option']) ? $mismatchBadge : '' !!}
+                                    </li>
+                                    @if ($counterData['retainer_fee_option'] === 'Yes')
+                                        @if (!empty($counterData['retainer_fee_amount']))
+                                        <li class="mb-2" style="{{ isset($brokerMismatches['retainer_fee_amount']) ? $mismatchStyle : '' }}">
+                                            <span class="fw-semibold">Retainer Fee Amount:</span> {{ $fmtMoney($counterData['retainer_fee_amount']) }}
+                                            {!! isset($brokerMismatches['retainer_fee_amount']) ? $mismatchBadge : '' !!}
+                                        </li>
+                                        @endif
+                                        @if (!empty($counterData['retainer_fee_application']))
+                                        <li class="mb-2" style="{{ isset($brokerMismatches['retainer_fee_application']) ? $mismatchStyle : '' }}">
+                                            <span class="fw-semibold">Retainer Fee Application:</span> 
+                                            @if ($counterData['retainer_fee_application'] === 'applied')
+                                            Applied toward final compensation
+                                            @else
+                                            Charged in addition to final compensation
+                                            @endif
+                                            {!! isset($brokerMismatches['retainer_fee_application']) ? $mismatchBadge : '' !!}
+                                        </li>
+                                        @endif
+                                    @endif
+                                    @endif
+                                    @if (!empty($counterData['agency_agreement_timeframe']))
+                                    @php
+                                        $agencyTimeframe = $counterData['agency_agreement_timeframe'] ?? '';
+                                        $agencyTimeframeCustom = $counterData['agency_agreement_custom'] ?? '';
+                                        $isOtherTimeframe = is_string($agencyTimeframe) && strtolower(trim($agencyTimeframe)) === 'other';
+                                        $agencyTimeframeDisplay = $isOtherTimeframe ? ($agencyTimeframeCustom ?: 'Other') : ($agencyTimeframe ?: '');
+                                    @endphp
+                                    <li class="mb-2" style="{{ isset($brokerMismatches['agency_agreement_timeframe']) ? $mismatchStyle : '' }}">
+                                        <span class="fw-semibold">Tenant Agency Agreement Timeframe:</span> {{ $agencyTimeframeDisplay }}
+                                        {!! isset($brokerMismatches['agency_agreement_timeframe']) ? $mismatchBadge : '' !!}
+                                    </li>
+                                    @endif
+                                </ul>
+                            </div>
+                            @endif
+                            
+                            @if (!empty($counterData['brokerage_relationship']))
+                            <div class="mb-4">
+                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">E) Brokerage Relationship</h6>
+                                <ul class="list-unstyled ps-3 mb-0">
+                                    <li class="mb-2" style="{{ isset($brokerMismatches['brokerage_relationship']) ? $mismatchStyle : '' }}">
+                                        <span class="fw-semibold">Acceptable Brokerage Relationship:</span> {{ $counterData['brokerage_relationship'] }}
+                                        {!! isset($brokerMismatches['brokerage_relationship']) ? $mismatchBadge : '' !!}
+                                    </li>
+                                </ul>
+                            </div>
+                            @endif
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                <i class="fas fa-list-check me-2"></i>Requested Services
+                            </h6>
+                            
+                            @foreach ($categories as $categoryName => $categoryServices)
+                                @php
+                                    $matchedServicesInCategory = [];
+                                    foreach ($allCounterServices as $service) {
+                                        foreach ($categoryServices as $catService) {
+                                            if ($normalizeService($service) === $normalizeService($catService)) {
+                                                $isInBid = in_array($normalizeService($service), $bidNorm);
+                                                $matchedServicesInCategory[] = ['service' => $service, 'inBid' => $isInBid];
+                                                break;
+                                            }
+                                        }
+                                    }
+                                @endphp
+                                @if (!empty($matchedServicesInCategory))
+                                <div class="mt-3">
+                                    <strong>{{ $categoryName }}</strong>
+                                    <ul class="list-unstyled ps-3 mt-2">
+                                        @foreach ($matchedServicesInCategory as $serviceData)
+                                        <li class="mb-1" style="{{ !$serviceData['inBid'] ? $addedStyle : '' }}">
+                                            <i class="fas fa-check-circle me-2" style="color: #049399;"></i>{{ $serviceData['service'] }}
+                                            @if (!$serviceData['inBid'])
+                                            {!! $addedBadge !!}
+                                            @endif
+                                        </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                                @endif
+                            @endforeach
+                            
+                            @if (!empty($counterOtherServices))
+                            <div class="mt-3">
+                                <strong>✍️ Additional Services</strong>
+                                <ul class="list-unstyled ps-3 mt-2">
+                                    @foreach ($counterOtherServices as $otherService)
+                                    @php
+                                        $isInBid = in_array($normalizeService($otherService), $bidNorm);
+                                    @endphp
+                                    <li class="mb-1" style="{{ !$isInBid ? $addedStyle : '' }}">
+                                        <i class="fas fa-check-circle me-2" style="color: #049399;"></i>{{ $otherService }}
+                                        @if (!$isInBid)
+                                        {!! $addedBadge !!}
+                                        @endif
+                                    </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                            @endif
+                            
+                            @if (!empty($servicesMissing))
+                            <div class="mt-4 p-3" style="background-color: #fff3cd; border-radius: 8px; border: 1px solid #ffc107;">
+                                <strong style="color: #856404;"><i class="fas fa-exclamation-triangle me-2"></i>Services From Your Bid Not in Counter:</strong>
+                                <ul class="list-unstyled ps-3 mt-2 mb-0">
+                                    @foreach ($allBidServices as $bidService)
+                                        @if (in_array($normalizeService($bidService), $servicesMissing))
+                                        <li class="mb-1" style="{{ $missingStyle }}">
+                                            <i class="fas fa-times-circle me-2" style="color: #ffc107;"></i>{{ $bidService }}
+                                        </li>
+                                        @endif
+                                    @endforeach
+                                </ul>
+                            </div>
+                            @endif
+                        </div>
                         
                         @if(!empty($counterData['additional_details']))
-                        <div class="mt-3">
-                            <h6>Additional Details</h6>
-                            <p>{{ $counterData['additional_details'] }}</p>
+                        <div class="mb-4">
+                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">
+                                <i class="fas fa-info-circle me-2"></i>Additional Details
+                            </h6>
+                            <p class="mb-0 ps-3">{{ $counterData['additional_details'] }}</p>
                         </div>
                         @endif
                     </div>
                     
                     <div class="d-flex gap-2 flex-wrap">
-                        <a href="{{ route('tenant.agent.auction.view', $auction->id) }}" class="btn btn-outline-primary">
+                        <a href="{{ route('tenant.agent.auction.view', $auction->id) }}" class="btn" style="background-color: #fff; border: 2px solid #049399; color: #049399; padding: 10px 20px; font-weight: 600;">
                             <i class="fas fa-eye me-2"></i>View Listing
                         </a>
-                        <a href="{{ route('tenant.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => $bid->id]) }}" class="btn btn-warning">
+                        <a href="{{ route('tenant.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => $bid->id]) }}" class="btn" style="background-color: #ffc107; border: 2px solid #ffc107; color: #000; padding: 10px 20px; font-weight: 600;">
                             <i class="fas fa-reply me-2"></i>Counter Back
                         </a>
                         <form action="{{ route('tenant.hire.agent.auction.counter.bid.accept') }}" method="POST" class="d-inline">
                             @csrf
                             <input type="hidden" name="counter_bid_id" value="{{ $tenantCounter->id }}">
                             <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                            <button type="submit" class="btn btn-success" onclick="return confirm('Are you sure you want to accept these counter terms?')">
+                            <button type="submit" class="btn" style="background-color: #28a745; border: 2px solid #28a745; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Are you sure you want to accept these counter terms?')">
                                 <i class="fas fa-check me-2"></i>Accept Counter
                             </button>
                         </form>
@@ -124,7 +555,7 @@
                             @csrf
                             <input type="hidden" name="counter_bid_id" value="{{ $tenantCounter->id }}">
                             <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                            <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to reject these counter terms?')">
+                            <button type="submit" class="btn" style="background-color: #dc3545; border: 2px solid #dc3545; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Are you sure you want to reject these counter terms?')">
                                 <i class="fas fa-times me-2"></i>Reject Counter
                             </button>
                         </form>
@@ -134,7 +565,7 @@
                         <i class="fas fa-info-circle me-2"></i>
                         No counter terms have been submitted by the tenant yet. Your bid is still active and awaiting a response.
                     </div>
-                    <a href="{{ route('tenant.agent.auction.view', $auction->id) }}" class="btn btn-primary">
+                    <a href="{{ route('tenant.agent.auction.view', $auction->id) }}" class="btn" style="background-color: #049399; color: white; padding: 10px 20px; font-weight: 600;">
                         <i class="fas fa-arrow-left me-2"></i>Back to Listing
                     </a>
                     @endif
