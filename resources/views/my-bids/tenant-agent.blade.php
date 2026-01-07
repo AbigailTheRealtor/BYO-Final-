@@ -62,7 +62,7 @@
                                         <span class="countdown-timer fw-bold" data-end="{{ $biddingEndTime }}">--:--:--</span>
                                     </span>
                                 @endif
-                                <a href="{{ route('tenant.agent.auction.bid', $auction->id) }}?edit={{ $bid->id }}" class="btn btn-sm btn-primary me-2">
+                                <a href="{{ route('agent.tenant.agent.auction.bid', $auction->id) }}?edit={{ $bid->id }}" class="btn btn-sm btn-primary me-2">
                                     <i class="fas fa-edit me-1"></i>View/Edit Bid
                                 </a>
                                 <a href="{{ route('tenant.agent.auction.view', $auction->id) }}" class="btn btn-sm btn-outline-secondary">
