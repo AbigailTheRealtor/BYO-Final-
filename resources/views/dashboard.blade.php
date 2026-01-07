@@ -106,6 +106,96 @@
                                     </div>
                                 </div>
                                 <!-- End  -->
+                                
+                                @if(isset($pendingAgentBids) && $pendingAgentBids->count() > 0)
+                                <div class="mb-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div class="fw-bold"><i class="fas fa-users me-2"></i>Pending Agent Bids</div>
+                                        <a href="{{ route('tenant.agent.auctions.list') }}" class="btn btn-sm btn-outline-primary">View All Listings</a>
+                                    </div>
+                                    <div class="card">
+                                        <div class="card-body p-0">
+                                            <div class="table-responsive">
+                                                <table class="table table-hover mb-0">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>Agent</th>
+                                                            <th>Listing</th>
+                                                            <th>Status</th>
+                                                            <th>Submitted</th>
+                                                            <th class="text-end">Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach($pendingAgentBids as $agentBid)
+                                                            @php
+                                                                $agentName = $agentBid->user->name ?? 'Agent';
+                                                                $listingAddress = $agentBid->auction->get->address ?? 'N/A';
+                                                                $listingId = $agentBid->auction->listing_id ?? 'TAA-'.$agentBid->auction->id;
+                                                                $bidStatus = $agentBid->bid_status ?? 'Active';
+                                                                $statusClass = match($bidStatus) {
+                                                                    'Countered' => 'bg-warning text-dark',
+                                                                    'Active' => 'bg-primary',
+                                                                    default => 'bg-secondary',
+                                                                };
+                                                            @endphp
+                                                            <tr>
+                                                                <td>
+                                                                    <div class="fw-semibold">{{ $agentName }}</div>
+                                                                    <small class="text-muted">{{ $agentBid->user->email ?? '' }}</small>
+                                                                </td>
+                                                                <td>
+                                                                    <div>{{ Str::limit($listingAddress, 30) }}</div>
+                                                                    <small class="text-muted">{{ $listingId }}</small>
+                                                                </td>
+                                                                <td>
+                                                                    <span class="badge {{ $statusClass }}">{{ $bidStatus }}</span>
+                                                                </td>
+                                                                <td>
+                                                                    <small>{{ $agentBid->created_at->format('M d, Y') }}</small>
+                                                                </td>
+                                                                <td class="text-end">
+                                                                    <div class="btn-group btn-group-sm">
+                                                                        <a href="{{ route('tenant.agent.auction.view', $agentBid->auction->id) }}" class="btn btn-outline-primary" title="View Bid">
+                                                                            <i class="fas fa-eye"></i>
+                                                                        </a>
+                                                                        @if($bidStatus === 'Active')
+                                                                            <form action="{{ route('tenant.hire.agent.auction.bid.accept') }}" method="POST" class="d-inline">
+                                                                                @csrf
+                                                                                <input type="hidden" name="bid_id" value="{{ $agentBid->id }}">
+                                                                                <input type="hidden" name="auction_id" value="{{ $agentBid->auction->id }}">
+                                                                                <button type="submit" class="btn btn-success" title="Accept" onclick="return confirm('Accept this bid?')">
+                                                                                    <i class="fas fa-check"></i>
+                                                                                </button>
+                                                                            </form>
+                                                                            <a href="{{ route('tenant.counter-terms', $agentBid->id) }}" class="btn btn-warning" title="Counter">
+                                                                                <i class="fas fa-exchange-alt"></i>
+                                                                            </a>
+                                                                            <form action="{{ route('tenant.hire.agent.auction.bid.reject') }}" method="POST" class="d-inline">
+                                                                                @csrf
+                                                                                <input type="hidden" name="bid_id" value="{{ $agentBid->id }}">
+                                                                                <input type="hidden" name="auction_id" value="{{ $agentBid->auction->id }}">
+                                                                                <button type="submit" class="btn btn-danger" title="Reject" onclick="return confirm('Reject this bid?')">
+                                                                                    <i class="fas fa-times"></i>
+                                                                                </button>
+                                                                            </form>
+                                                                        @elseif($bidStatus === 'Countered')
+                                                                            <span class="btn btn-outline-warning" title="Awaiting agent response">
+                                                                                <i class="fas fa-clock"></i> Awaiting
+                                                                            </span>
+                                                                        @endif
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endif
+                                
                                 <div class="fw-bold">Recent Notices</div>
                                 <div class="notification mt-3">
                                     @if($notifications->isEmpty())

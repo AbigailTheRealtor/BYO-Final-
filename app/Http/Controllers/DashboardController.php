@@ -16,6 +16,7 @@ use App\Models\PropertyAuctionBid;
 use App\Models\PropertyType;
 use App\Models\SellerAgentAuctionBid;
 use App\Models\State;
+use App\Models\TenantAgentAuction;
 use App\Models\TenantAgentAuctionBid;
 use App\Models\TenantCriteriaAuctionBid;
 use App\Models\User;
@@ -42,6 +43,15 @@ class DashboardController extends Controller
             ])
             ->orderBy('created_at', 'desc')
             ->take(20)
+            ->get();
+        
+        $tenantAuctionIds = TenantAgentAuction::where('user_id', $user->id)->pluck('id');
+        
+        $page_data['pendingAgentBids'] = TenantAgentAuctionBid::with(['auction', 'auction.meta', 'user', 'meta'])
+            ->whereIn('tenant_agent_auction_id', $tenantAuctionIds)
+            ->whereIn('bid_status', ['Active', 'Countered'])
+            ->orderBy('created_at', 'desc')
+            ->take(10)
             ->get();
         
         return view('dashboard', $page_data);
