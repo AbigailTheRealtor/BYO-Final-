@@ -489,6 +489,18 @@ class LandlordAgentAuctionBid extends Component
         $this->social_media = array_values($this->social_media); // Re-index array after removal
     }
 
+    /**
+     * Override callUpdatedHook to guard against empty property names before Str::studly() is called.
+     * This prevents crashes when wire:model.lazy sends empty property names during select transitions.
+     */
+    protected function callUpdatedHook($name, $value = null)
+    {
+        if (blank($name)) {
+            return;
+        }
+        return parent::callUpdatedHook($name, $value);
+    }
+
     public function updated($name, $value): void
     {
         // Guard against empty property name to prevent Str::studly() crash

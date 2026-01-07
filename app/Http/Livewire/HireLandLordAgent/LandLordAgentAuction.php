@@ -519,6 +519,73 @@ class LandLordAgentAuction extends Component
     ];
 
     // Methods
+
+    /**
+     * Override callUpdatedHook to guard against empty property names before Str::studly() is called.
+     * This prevents crashes when wire:model.lazy sends empty property names during select transitions.
+     */
+    protected function callUpdatedHook($name, $value = null)
+    {
+        if (blank($name)) {
+            return;
+        }
+        return parent::callUpdatedHook($name, $value);
+    }
+
+    /**
+     * Generic updated hook - additional validation for property changes.
+     */
+    public function updated($propertyName, $value = null)
+    {
+        if (empty($propertyName)) {
+            return;
+        }
+    }
+
+    /**
+     * Reset dependent fields when lease_fee_type changes to prevent validation errors
+     * when switching between fee types (fixes Str::studly() crash).
+     */
+    public function updatedLeaseFeeType($value)
+    {
+        // Reset all dependent lease fee fields when fee type changes
+        $this->reset([
+            'lease_fee_flat',
+            'lease_fee_percentage',
+            'lease_fee_months',
+            'lease_fee_percentage_monthly_rent',
+            'lease_fee_flat_combo',
+            'lease_fee_percentage_combo',
+            'lease_fee_other',
+        ]);
+    }
+
+    /**
+     * Reset dependent fields when purchase_fee_type (Landlord's Broker Lease Fee) changes
+     * to prevent validation errors when switching between fee types.
+     */
+    public function updatedPurchaseFeeType($value)
+    {
+        // Reset all dependent fee fields when fee type changes
+        $this->reset([
+            'purchase_fee_flat',
+            'purchase_fee_rental_period',
+            'purchase_fee_percentage_combo',
+            'purchase_fee_flat_combo',
+            'purchase_fee_other',
+            'purchase_fee_net_aggregate',
+            'purchase_fee_gross_rent',
+            'purchase_fee_monthly_percentage',
+            'purchase_fee_months',
+            'purchase_fee_flat_commercial',
+            'purchase_fee_purchase_price',
+            'purchase_fee_other_commercial',
+            'sales_tax_option_gross',
+            'sales_tax_option_monthly',
+            'sales_tax_option_flat',
+        ]);
+    }
+
     public function setDownPaymentType($type)
     {
         $this->down_payment_type = $type;

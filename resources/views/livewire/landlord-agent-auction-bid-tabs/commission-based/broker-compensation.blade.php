@@ -108,7 +108,7 @@
                 <div class="input-group">
 
                     <input type="text" wire:model.lazy="purchase_fee_other" class="form-control"
-                        placeholder="Enter purchase fee structure (e.g., Tiered: 5% on the first $500,000, 3% on any amount above $500,000)">
+                        placeholder="Enter lease fee structure (e.g., 100% of First Month's Rent, or a Tiered Schedule for Multi-Year Leases)">
                 </div>
             @endif
         </div>
@@ -243,7 +243,7 @@
             @elseif ($purchase_fee_type === 'other')
                 <div class="input-group">
                     <input type="text" wire:model="purchase_fee_other_commercial" class="form-control"
-                        placeholder="Enter purchase fee structure (e.g., Tiered: 5% on the first $500,000, 3% on any amount above $500,000)">
+                        placeholder="Enter lease fee structure (e.g., 100% of First Month's Rent, or a Tiered Schedule for Multi-Year Leases)">
                     {{-- <span class="input-group-text">%</span> --}}
                 </div>
             @endif
@@ -254,7 +254,7 @@
     <label class="fw-bold d-flex align-items-center">
         Interested in Offering a Lease-Option Agreement:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select whether the Seller is open to a lease with option to purchase. If “Yes” is selected, you'll be prompted to enter compensation details.">
+            title="Select whether the Landlord is open to a lease with option to purchase. If “Yes” is selected, you'll be prompted to enter compensation details.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -272,7 +272,13 @@
 @if ($interested_lease_option_agreement === 'Yes')
     <!-- TAB 1 -->
     <div id="tab1" class="tab-content">
-
+        <h5 class="compensation_tab fw-bold mb-3" style="color: #049399;">
+            Compensation for Creating the Lease-Option Agreement:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true" data-bs-trigger="hover focus"
+                title="Specify how the Broker will be compensated at the time the lease-option agreement is created. This may include a flat fee or a percentage of the option consideration paid by the party granting the option. This compensation is typically paid upfront and is separate from any commission that may be owed if the purchase option is later exercised.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </h5>
 
         <div class="form-group mt-2">
             {{-- <label class="fw-bold d-block mb-1">Compensation Amount:</label> --}}
@@ -306,6 +312,13 @@
 
     <!-- TAB 2 -->
     <div id="tab2" class="tab-content">
+        <h5 class="compensation_tab fw-bold mb-3" style="color: #049399;">
+            Compensation if Purchase Option is Exercised:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true" data-bs-trigger="hover focus"
+                title="If the purchase option is exercised, the Broker may be entitled to additional compensation. Enter how the Broker will be compensated at that time, such as a flat fee or a percentage of the total purchase price. Any compensation already received under the lease-option agreement may be credited toward the final amount due, depending on the terms of the agreement.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </h5>
 
         <div class="form-group mt-2">
             {{-- <label class="fw-bold d-block mb-1">Compensation Amount:</label> --}}
@@ -1151,7 +1164,7 @@ this agreement ends.">
         </div>
     @endif
 </div> --}}
-<!-- 10.	Landlord  Agency Agreement Timeframe -->
+<!-- 10.        Landlord  Agency Agreement Timeframe -->
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
         Landlord Agency Agreement Timeframe:

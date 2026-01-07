@@ -1,0 +1,212 @@
+Replit Instructions
+Hire a Landlord’s Agent — Broker Compensation & Agency Agreement Terms
+APPLIES TO
+
+User profile: Tenant / User (example login: tenant@exp.com)
+
+Flow: Create Listing → Hire a Landlord’s Agent
+
+Tab: Broker Compensation & Agency Agreement Terms
+
+Residential & Commercial (with role-specific logic)
+
+🔒 SAFEGUARDS (MUST FOLLOW — VERY IMPORTANT)
+
+DO NOT:
+
+Delete or rename any existing database tables or columns
+
+Change field keys already used in Tenant Agent, Buyer Agent, or Seller Agent flows
+
+Modify Buyer, Seller, or Tenant Agent compensation logic
+
+Change listing creation flow order outside this tab
+
+Alter backend validation rules unless explicitly stated
+
+Remove any existing fields (only hide/show conditionally)
+
+DO:
+
+Reuse existing components where possible
+
+Scope all changes only to Hire a Landlord’s Agent
+
+Keep Residential vs Commercial logic intact
+
+Apply the same display edits to Agent Bids and Counter-Bids (read-only)
+
+1️⃣ BUG FIX — Switching Lease Fee Types Causes Error (Residential)
+Issue
+
+When switching between:
+
+“Percentage of Rent Due Each Rental Period”
+→ then back to
+
+“Percentage of the Gross Lease Value”
+
+the system throws a Laravel Str::studly() argument error.
+
+Required Fix
+
+Ensure all dependent inputs are reset safely when the lease fee type changes
+
+Do not pass null or empty values into Str::studly()
+
+Add a guard so fee-type switching clears:
+
+percentage value
+
+flat fee value
+
+helper labels
+
+validation state
+
+✅ This must allow users to freely change fee types without page errors.
+
+2️⃣ “Other” Option — Placeholder Text (Residential + Commercial)
+Field
+
+Landlord’s Broker Lease Fee
+
+Required Behavior
+
+If user selects Other:
+
+Show a text input
+
+Placeholder must read:
+
+“Enter lease fee structure (e.g., 100% of First Month’s Rent, or a Tiered Schedule for Multi-Year Leases)”
+
+Do NOT display the word “Other” in summaries
+
+Save the custom text value instead
+
+3️⃣ Commercial — Sales Tax Notice Won’t Dismiss
+Issue
+
+The sales tax tooltip/notice remains visible even after selection.
+
+Required Fix
+
+Once a Sales Tax option is selected:
+
+Hide the notice
+
+Do not persist tooltip state
+
+Ensure it reappears only if the user clears or changes the fee type
+
+4️⃣ Missing Section Headers — Lease-Option Compensation (Commercial)
+Issue
+
+The blue section labels are missing for:
+
+Compensation for Creating the Lease-Option Agreement
+
+Compensation if Purchase Option is Exercised
+
+Required Fix
+
+Restore the blue header text above both sections
+
+Ensure headers display consistently in:
+
+Listing creation
+
+Agent bid view
+
+Counter-bid view (read-only)
+
+5️⃣ Tooltip Text — Lease-Option Sections
+Tooltip: Compensation for Creating the Lease-Option Agreement
+
+Use exactly:
+
+“Specify how the Broker will be compensated at the time the lease-option agreement is created. This may include a flat fee or a percentage of the option consideration paid by the party granting the option. This compensation is typically paid upfront and is separate from any commission that may be owed if the purchase option is later exercised.”
+
+Tooltip: Compensation if Purchase Option is Exercised
+
+Use exactly:
+
+“If the purchase option is exercised, the Broker may be entitled to additional compensation. Enter how the Broker will be compensated at that time, such as a flat fee or a percentage of the total purchase price. Any compensation already received under the lease-option agreement may be credited toward the final amount due, depending on the terms of the agreement.”
+
+6️⃣ Legal Notice — Replace “Seller” with “Landlord”
+Current Issue
+
+Legal notice incorrectly references Seller.
+
+Required Change
+
+Replace Seller → Landlord
+
+Corrected Legal Notice (Final Text)
+
+⚠️ Legal Notice: Certain brokerage relationships are not permitted in all states. If your selection is not allowed, the Broker will establish a permitted legal alternative. Real estate laws change frequently. Both the Broker and Landlord are responsible for complying with all current local, state, and federal laws.
+
+7️⃣ Field Order — Broker Compensation Section (Landlord Agent)
+
+Reorder fields exactly as follows:
+
+Landlord’s Broker Lease Fee
+
+Tenant’s Broker Commission Structure (Residential only)
+
+Tenant’s Broker Commission Fee (Residential only)
+
+Payment Timing for Broker Fees
+
+Lease Renewal / Extension Fee
+
+Expansion Commission for Lease Amendment (Commercial only)
+
+Interested in Property Management
+
+Interested in Offering a Lease-Option Agreement
+
+Interested in Selling
+
+Landlord’s Broker Purchase Fee
+
+Protection Period Timeframe (Days)
+
+Early Termination (Residential only)
+
+Landlord Agency Agreement Timeframe
+
+Acceptable Brokerage Relationship
+
+Additional Terms
+
+8️⃣ Apply These Edits to Agent Bids & Counter-Bids (Read-Only)
+
+The same labels, tooltips, and formatting must appear when:
+
+Agents submit bids
+
+Tenants view bids
+
+Counter-bids are displayed
+
+These fields remain read-only in bid summaries
+
+✅ ACCEPTANCE CRITERIA
+
+This task is complete when:
+
+No errors occur when switching fee types
+
+“Other” behaves correctly with custom text
+
+Commercial notices dismiss properly
+
+Missing headers are restored
+
+Legal language references Landlord (not Seller)
+
+Field order matches exactly
+
+Agent bids display the same corrected structure
