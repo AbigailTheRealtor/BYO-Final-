@@ -19,6 +19,9 @@
                     <div class="row">
                         @include('layouts.partials.sidenav')
                         <div class="rightCol col-sm-12 col-md-9 col-lg-9">
+                            @if(auth()->check() && auth()->user()->user_type == 'tenant')
+                            <h1>Agent Bids</h1>
+                            @else
                             <h1>My Bids</h1>
                             <div class="p-2">
                                 <ul class="nav nav-tabs pb-2" id="myTab" role="tablist">
@@ -59,6 +62,7 @@
                                     @endif
                                 </ul>
                             </div>
+                            @endif
 
                             @yield('bids-content')
                         </div>

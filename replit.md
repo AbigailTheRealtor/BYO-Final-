@@ -43,6 +43,7 @@ I prefer detailed explanations. Ask before making major changes.
 - **View Counter Terms Page**: Agents can view counter terms directly from My Bids page or dashboard notifications via `/tenant/hire/agent/auction/bid/{bid_id}/view-counter`. Displays tenant's counter offer with broker compensation terms, requested services, and action buttons (Accept, Reject, Counter Back).
 - **My Bids Interface**: Static cards with color-coded status badges (Active=blue, Countered=warning, Accepted=green, Rejected=danger). Context-specific action buttons: View Summary (accepted), View Counter (countered), View Listing (rejected), Visit Listing (active).
 - **Tenant Dashboard Pending Bids**: Tenants see a dedicated "Pending Agent Bids" section on their dashboard showing all active/countered bids across their listings. Table includes Agent name, Listing, Status, Submitted date, and action buttons (Accept/Counter/Reject for active bids, "Awaiting" indicator for countered bids).
+- **Tenant Sidebar Agent Bids**: For tenant users, the sidebar displays "Agent Bids" instead of "My Bid" (since tenants don't make bids, only agents do). Links directly to the agent-bids view with a dynamic badge showing pending bid count. For non-tenants, the original "My Bid" tab with full tab navigation is preserved.
 
 ### System Design Choices
 - **Modularity**: Laravel's modular structure with Livewire components for UI interactions.
