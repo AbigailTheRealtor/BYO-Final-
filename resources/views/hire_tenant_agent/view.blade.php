@@ -1907,6 +1907,15 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     ];
                                     $baselineLabel = 'Your Original Terms';
                                 }
+                            } elseif ($isBiddingPeriodListing && $isAgentViewer && !$isBidOwner && $userHasBid) {
+                                // Agent viewing ANOTHER agent's bid in Bidding Period - compare to viewer's own bid
+                                $viewerBid = $auction->bids->where('user_id', $auth_id)->first();
+                                if ($viewerBid) {
+                                    $baselineData = (array) data_get($viewerBid, 'get', []);
+                                } else {
+                                    $baselineData = $currentBidData; // Fallback
+                                }
+                                $baselineLabel = 'Your Bid';
                             } else {
                                 // Agent viewing their own bid - baseline is their own bid (100% match)
                                 $baselineData = $currentBidData;
@@ -2068,7 +2077,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 <hr style="margin: 15px 0; border-color: #e0e0e0;">
                                 
                                 <!-- B2) Match Score Summary (Compact Display on Bid Card) -->
-                                @if ($isListingOwner)
+                                @php
+                                    // Show Match Score for: listing owner OR agents viewing any bid in Bidding Period listings
+                                    $showMatchScoreOnCard = $isListingOwner || ($isBiddingPeriodListing && $isAgentViewer && $userHasBid);
+                                @endphp
+                                @if ($showMatchScoreOnCard)
                                 <div class="match-score-summary mb-3 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6;">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <span style="font-weight: 600; color: #1a3a5c; font-size: 1rem;">
@@ -2084,14 +2097,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                 <span class="text-muted">Broker Compensation:</span>
                                                 <span style="color: {{ $getScoreColor($brokerScore) }}; font-weight: 600;">{{ $brokerScore }}%</span>
                                             </div>
-                                            <div class="text-muted" style="font-size: 0.8rem;">{{ $brokerMatched }}/{{ $brokerTotal }} matched</div>
+                                            <div class="text-muted" style="font-size: 0.8rem;">{{ $brokerMatched }}/{{ $brokerTotal }} fields</div>
                                         </div>
                                         <div class="col-6">
                                             <div class="d-flex justify-content-between">
                                                 <span class="text-muted">Offered Services:</span>
                                                 <span style="color: {{ $getScoreColor($servicesScore) }}; font-weight: 600;">{{ $servicesScore }}%</span>
                                             </div>
-                                            <div class="text-muted" style="font-size: 0.8rem;">{{ $servicesMatched }}/{{ $servicesTotal }} matched</div>
+                                            <div class="text-muted" style="font-size: 0.8rem;">{{ $servicesMatched }}/{{ $servicesTotal }} services</div>
                                         </div>
                                     </div>
                                     <div class="mt-2 small text-muted">
@@ -3348,6 +3361,45 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     <div class="alert mb-4" style="background: #e8f4f5; color: #049399; border: none; border-radius: 6px;">
                                                         <i class="fa fa-user-secret me-2"></i>
                                                         <strong>Anonymous Bid:</strong> Agent identity is not displayed to other agents.
+                                                    </div>
+
+                                                    {{-- Match Score Panel for Limited View (Agent-to-Agent Comparison) --}}
+                                                    <div class="match-score-panel mb-4 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; border: 1px solid #dee2e6;">
+                                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                                            <h6 class="mb-0" style="color: #1a3a5c; font-weight: 600;">
+                                                                <i class="fa fa-chart-pie me-2"></i>Match Score
+                                                            </h6>
+                                                            <span class="badge" style="background: {{ $getScoreColor($totalScore) }}; font-size: 1.1rem; padding: 8px 16px;">
+                                                                {{ $totalScore }}% Match
+                                                            </span>
+                                                        </div>
+                                                        <p class="small text-muted mb-3">
+                                                            Comparing to: <strong>{{ $baselineLabel }}</strong>
+                                                        </p>
+                                                        <div class="row g-3">
+                                                            <div class="col-md-6">
+                                                                <div class="p-2 bg-white rounded" style="border-left: 4px solid {{ $getScoreColor($brokerScore) }};">
+                                                                    <div class="d-flex justify-content-between align-items-center">
+                                                                        <span class="small fw-semibold">Broker Compensation</span>
+                                                                        <span class="badge" style="background: {{ $getScoreColor($brokerScore) }};">{{ $brokerScore }}%</span>
+                                                                    </div>
+                                                                    <div class="small text-muted mt-1">
+                                                                        {{ $brokerMatched }}/{{ $brokerTotal }} fields match
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <div class="p-2 bg-white rounded" style="border-left: 4px solid {{ $getScoreColor($servicesScore) }};">
+                                                                    <div class="d-flex justify-content-between align-items-center">
+                                                                        <span class="small fw-semibold">Offered Services</span>
+                                                                        <span class="badge" style="background: {{ $getScoreColor($servicesScore) }};">{{ $servicesScore }}%</span>
+                                                                    </div>
+                                                                    <div class="small text-muted mt-1">
+                                                                        {{ $servicesMatched }}/{{ $servicesTotal }} services match
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
 
                                                     {{-- Section 1: Broker Compensation & Agency Agreement Terms --}}
