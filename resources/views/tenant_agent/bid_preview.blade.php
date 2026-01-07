@@ -119,7 +119,7 @@
 @section('content')
 <div class="container py-4">
     <div class="mb-3">
-        <a href="{{ route('my-bid') }}" class="back-link">
+        <a href="{{ route('myBids') }}" class="back-link">
             <i class="fas fa-arrow-left me-2"></i>Back to Agent Bids
         </a>
     </div>
@@ -811,7 +811,7 @@
         </div>
 
         <div class="action-buttons d-flex flex-wrap justify-content-between align-items-center gap-2">
-            <a href="{{ route('my-bid') }}" class="btn btn-outline-secondary">
+            <a href="{{ route('myBids') }}" class="btn btn-outline-secondary">
                 <i class="fas fa-arrow-left me-1"></i>Back to Agent Bids
             </a>
             
