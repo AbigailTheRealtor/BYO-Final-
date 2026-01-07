@@ -62,6 +62,7 @@ class NotificationController extends Controller
                 
             case 'bid_submitted':
             case 'bid_received':
+            case 'bid_modified':
                 if ($auctionId) {
                     return route('tenant.agent.auction.view', $auctionId) . '?view=bids';
                 }

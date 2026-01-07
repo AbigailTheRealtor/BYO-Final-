@@ -1071,20 +1071,25 @@ class TenantAgentAuctionBid extends Component
 
             DB::commit();
             
-            // Send notification to listing owner for new bids only
-            if (!$this->isEditMode) {
-                try {
-                    $listingOwner = User::find($auction->user_id);
-                    if ($listingOwner) {
+            // Send notification to listing owner
+            try {
+                $listingOwner = User::find($auction->user_id);
+                if ($listingOwner) {
+                    if ($this->isEditMode) {
+                        // Notify tenant that agent modified their bid
+                        $listingOwner->notify(new \App\Notifications\BidModifiedNotification($bid, $auction));
+                    } else {
+                        // Notify tenant of new bid
                         $listingOwner->notify(new BidSubmittedNotification($bid, $auction));
                     }
-                } catch (\Exception $e) {
-                    Log::error('Failed to send bid submitted notification', [
-                        'bid_id' => $bid->id,
-                        'auction_id' => $auction->id,
-                        'error' => $e->getMessage()
-                    ]);
                 }
+            } catch (\Exception $e) {
+                Log::error('Failed to send bid notification', [
+                    'bid_id' => $bid->id,
+                    'auction_id' => $auction->id,
+                    'is_edit' => $this->isEditMode,
+                    'error' => $e->getMessage()
+                ]);
             }
             
             $message = $this->isEditMode ? 'Your bid has been updated successfully!' : 'Your bid has been submitted successfully!';
