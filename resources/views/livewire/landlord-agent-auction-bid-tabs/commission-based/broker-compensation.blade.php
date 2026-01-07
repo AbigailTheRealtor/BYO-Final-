@@ -10,7 +10,6 @@
 <!-- Info Alert -->
 
 @if ($property_type === 'Residential Property')
-
     <div class="form-group mb-4">
         <label class="fw-bold d-flex align-items-center">
             Landlord’s Broker Lease Fee:
@@ -248,8 +247,7 @@
                 </div>
             @endif
         </div>
-    </div>
-    <!-- Tenant's Broker Commission Structure -->
+    </div>    <!-- Tenant's Broker Commission Structure -->
     <div class="form-group mb-4">
         <label class="fw-bold d-flex align-items-center">
             Tenant's Broker Commission Fee:
@@ -358,72 +356,470 @@
 @endif
 
 {{-- @if ($property_type === 'Residential Property')
+    <div class="form-group mb-4">@if ($property_type === 'Residential Property')
+
+    <!-- Payment Timing for Broker Fees -->
     <div class="form-group mb-4">
         <label class="fw-bold d-flex align-items-center">
-            Expansion Commission for Lease Amendment:
-
+            Payment Timing for Broker Fees:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Specify the commission the Tenant’s Broker will receive if involved in the lease. Options include a percentage of the gross lease value, a percentage of the first month’s rent, a flat fee, or another custom arrangement. Note: The Tenant’s Broker may be a separate broker or the Landlord’s Broker providing services to both parties, depending on the brokerage relationship allowed by state law.">
+                title="Select when the Broker’s fee will be paid. Options include: deducting from rent collected, payment after lease execution, payment after the rent due date, or “Other” to define a custom arrangement.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
 
         <div class="input-cover mt-2">
-            <select wire:model="expansion_commission_type" class="form-control has-icon"
-                data-icon="fa-solid fa-percent">
+            <select wire:model.lazy="broker_fee_timing" class="form-control has-icon" data-icon="fa-solid fa-clock">
                 <option value="">Select</option>
-                <option value="percentage_gross_lease">Percentage of Gross Lease Value</option>
-                <option value="percentage_first_month">Percentage of First Month’s Rent</option>
-                <option value="flat_fee">Flat Fee</option>
+                <option value="Deducted from Rent Collected">Deducted from Rent Collected</option>
+                <option value="Paid Within Calendar Days After Executed Lease">Paid Within Calendar Days After Executed Lease</option>
+                <option value="Paid Within Calendar Days of Tenant Rent Payment">Paid Within Calendar Days of Tenant Rent Payment</option>
                 <option value="other">Other</option>
             </select>
         </div>
 
         <div class="mt-3">
-            @if ($expansion_commission_type === 'percentage_gross_lease')
-                <div class="mb-3">
-                    <label class="form-label">Percentage of Gross Lease Value</label>
-                    <div class="input-group">
-                        <span class="input-group-text">%</span>
-                        <input type="number" wire:model="expansion_gross_percentage" class="form-control"
-                            placeholder="Enter percentage (e.g., 5)">
+            @if ($broker_fee_timing === 'Deducted from Rent Collected')
+                {{-- <label class="form-label">Calendar Days to Pay Balance After the Rent Due Date</label> --}}
+                <div class="input-group">
+                    <span class="input-group-text">#</span>
+                    <input type="number" wire:model.lazy="broker_fee_days_from_rent" class="form-control"
+                        placeholder="Enter number of calendar days (e.g., 5)">
+                </div>
+            @elseif ($broker_fee_timing === 'Paid Within Calendar Days After Executed Lease')
+                {{-- <label class="form-label">Calendar Days to Pay After Executed Lease</label> --}}
+                <div class="input-group">
+                    <span class="input-group-text">#</span>
+
+                    <input type="number" wire:model.lazy="broker_fee_days_after_lease" class="form-control"
+                        placeholder="Enter number of calendar days (e.g., 5)">
+                </div>
+            @elseif ($broker_fee_timing === 'Paid Within Calendar Days of Tenant Rent Payment')
+                {{-- <label class="form-label">Calendar Days to Pay After Tenant Rent Payment</label> --}}
+                <div class="input-group">
+                    <span class="input-group-text">#</span>
+
+                    <input type="number" wire:model.lazy="broker_fee_days_after_rent" class="form-control"
+                        placeholder="Enter number of calendar days (e.g., 5)">
+                </div>
+            @elseif ($broker_fee_timing === 'other')
+                <div class="input-group">
+                    <input type="text" wire:model.lazy="broker_fee_timing_other" class="form-control"
+                        placeholder="Describe payment arrangement (e.g., Broker to be paid 50% of commission upon lease execution and 50% upon tenant move-in)">
+                </div>
+            @endif
+        </div>
+
+    </div>
+
+
+@endif
+
+@if ($property_type === 'Commercial Property')
+    <!-- Payment Timing for Broker Fees (Commercial) -->
+    <div class="form-group mb-4">
+        <label class="fw-bold d-flex align-items-center">
+            Payment Timing for Broker Fees:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select when the Broker’s fee will be paid. Options include: full payment upon execution of the lease, sales contract, or other transfer agreement; 50% upon execution with the remaining 50% due at commencement of the agreement; 50% upon execution with the remaining 50% due upon occupancy of the premises; or “Other” to define a custom arrangement.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+
+        <div class="input-cover mt-2">
+            <select wire:model.lazy="broker_fee_timing" class="form-control has-icon" data-icon="fa-solid fa-clock">
+                <option value="">Select</option>
+                <option value="full_execution">Full amount upon execution of lease, sales contract, or other transfer
+                    agreement</option>
+                <option value="50% due upon execution, 50% due upon commencement of agreement"> 50% due upon execution, 50% due upon commencement of agreement</option>
+                <option value="50% due upon execution, 50% due upon occupancy of premises"> 50% due upon execution, 50% due upon occupancy of premises</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+
+        <div class="mt-3">
+            @if ($broker_fee_timing === 'split_payment dumy')
+                <div class="mb-4">
+                    <label class="form-label">Remaining 50% due upon:</label>
+                    <div class="input-cover">
+
+                        <select wire:model.lazy="split_payment_due" class="form-control has-icon"
+                            data-icon="fa-solid fa-percent">
+                            <option value="">Select </option>
+                            <option
+                                value="Full amount upon execution of lease, sales contract, or other transfer agreement">
+                                Full amount upon execution of lease, sales contract, or other transfer agreement
+                            </option>
+                            <option value="50% due upon execution, 50% due upon commencement of agreement">50% due upon
+                                execution, 50% due upon commencement of agreement</option>
+                            <option value="50% due upon execution, 50% due uponoccupancy of premises">50% due upon
+                                execution, 50% due uponoccupancy of premises</option>
+                            <option value="Other">Other</option>
+                        </select>
+
                     </div>
                 </div>
-            @elseif ($expansion_commission_type === 'percentage_first_month')
+
+                @if ($split_payment_due === 'Other')
+                    <div class="input-group mb-3">
+                        <input type="text" wire:model.lazy="split_payment_due_other" class="form-control"
+                            placeholder="Describe payment arrangement (e.g., Broker to be paid 25% upon lease execution, 25% upon tenant move-in, and 50% upon first month’s rent)">
+                    </div>
+                @endif
+
                 <div class="mb-3">
-                    <label class="form-label">Percentage of First Month’s Rent</label>
+                    {{-- <label class="form-label">Calendar Days to Pay Second Installment After Due Event:</label> --}}
                     <div class="input-group">
-                        <span class="input-group-text">%</span>
-                        <input type="number" wire:model="expansion_first_month_percentage" class="form-control"
-                            placeholder="Enter percentage (e.g., 50)">
+                        <span class="input-group-text">#</span>
+                        <input type="number" wire:model.lazy="broker_fee_days_after_due_event" class="form-control"
+                            placeholder="Enter number of calendar days (e.g., 5)">
+                        @error('broker_fee_days_after_due_event')
+                            <span class="text-danger small">{{ $message }}</span>
+                        @enderror
                     </div>
                 </div>
-            @elseif ($expansion_commission_type === 'flat_fee')
+            @elseif ($broker_fee_timing === 'Other')
+                <div class="input-group">
+                    <input type="text" wire:model.lazy="broker_fee_timing_other" class="form-control"
+                        placeholder="Describe payment arrangement (e.g., Broker to be paid 25% upon lease execution, 25% upon tenant move-in, and 50% upon first month's rent payment)">
+                </div>
+            @endif
+        </div>
+
+    </div>
+@endif
+
+<!--. Lease Renewal/Extension Fee --><!--. Lease Renewal/Extension Fee -->
+@if ($property_type === 'Residential Property')
+
+    <div class="form-group mb-4">
+        <label class="fw-bold d-flex align-items-center">
+            Lease Renewal/Extension Fee:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select how the Broker will be compensated if the Tenant renews or extends the lease. Options include: a percentage of the rent due each rental period, a percentage of the gross lease value, a percentage of the first month’s rent, a flat fee, or “Other” to define a custom payment structure. Then, enter the appropriate amount based on your selection.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+
+        <div class="input-cover mt-2">
+            <select wire:model.lazy="renewal_fee_type" class="form-control has-icon"
+                data-icon="fa-solid fa-file-invoice-dollar">
+                <option value="">Select</option>
+                @if ($property_type === 'Residential Property')
+                    <option value="Percentage of the Rent Due Each Rental Period">Percentage of the Rent Due Each Rental Period</option>
+                @endif
+                <option value="Percentage of the Gross Lease Value">Percentage of the Gross Lease Value</option>
+                @if ($property_type === 'Residential Property')
+                    <option value="Percentage of the First Month's Rent">Percentage of the First Month's Rent</option>
+                    <option value="Flat Fee">Flat Fee</option>
+                @endif
+                <option value="other">Other</option>
+
+            </select>
+        </div>
+
+        <div class="mt-3">
+            @if ($renewal_fee_type === 'Percentage of the Rent Due Each Rental Period')
                 <div class="mb-3">
-                    <label class="form-label">Flat Fee Amount</label>
+                    {{-- <label class="form-label">Percentage of the Rent Due Each Rental Period</label> --}}
+                    <div class="input-group">
+                        <input type="number" wire:model.lazy="renewal_fee_percentage" class="form-control"
+                            placeholder="Enter percentage of the rent due each rental period (e.g., 10)">
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+            @elseif ($renewal_fee_type === 'Percentage of the Gross Lease Value')
+                <div class="mb-3">
+                    {{-- <label class="form-label">Percentage of the Gross Lease Value</label> --}}
+                    <div class="input-group">
+                        <input type="number" wire:model.lazy="renewal_fee_lease_value" class="form-control"
+                            placeholder="Enter percentage of the gross lease value (e.g., 10)">
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+            @elseif ($renewal_fee_type === "Percentage of the First Month's Rent")
+                <div class="mb-3">
+                    {{-- <label class="form-label">Percentage of the First Month's Rent</label> --}}
+                    <div class="input-group">
+                        <input type="number" wire:model.lazy="renewal_fee_first_month" class="form-control"
+                            placeholder="Enter percentage of first month's rent (e.g., 100)">
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+            @elseif ($renewal_fee_type === 'Flat Fee')
+                <div class="mb-3">
+                    {{-- <label class="form-label">Percentage of the First Month's Rent</label> --}}
                     <div class="input-group">
                         <span class="input-group-text">$</span>
-                        <input type="number" wire:model="expansion_flat_fee" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 1,000)">
+                        <input type="text" wire:model.lazy="renewal_fee_flat_free" class="form-control"
+                            placeholder="Enter flat fee amount (e.g., 2000)"
+                             data-error-id="renewal_fee_percentage_error"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
+                            >
                     </div>
+                     <span class="error mt-2" id="renewal_fee_percentage_error"></span>
                 </div>
-            @elseif ($expansion_commission_type === 'other')
+            @elseif ($renewal_fee_type === 'other')
                 <div class="mb-3">
-                    <label class="form-label">Custom Commission Arrangement</label>
                     <div class="input-group">
-                        <span class="input-group-text">%</span>
-                        <input type="text" wire:model="expansion_custom_commission" class="form-control"
-                            placeholder="Enter other Tenant’s Broker commission arrangement (e.g., $500 bonus plus 2% of gross lease value)">
-
+                        <input type="text" wire:model.lazy="renewal_fee_custom" class="form-control"
+                            placeholder="Enter commission structure (e.g., $500 flat fee plus 5% of the gross lease value)">
                     </div>
                 </div>
             @endif
         </div>
     </div>
-@endif --}}
-
 @endif
-<div class="form-group mb-2">
+
+<!--Commercial  Lease Renewal/Extension Fee  -->
+
+@if ($property_type === 'Commercial Property')
+    <div class="form-group mb-4">
+        <label class="fw-bold d-flex align-items-center">
+            Lease Renewal/Extension Fee:
+
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select how the Broker will be compensated if the Tenant renews or extends the lease. Options include: a percentage of the net aggregate rent, a percentage of the gross rent, a percentage of one month’s rent, a flat fee, or select “Other” to define a custom payment structure. Then, enter the appropriate amount based on your selection.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+
+        </label>
+        <div class="input-cover mt-2">
+            <select wire:model.lazy="renewal_fee_type" class="form-control has-icon"
+                data-icon="fa-solid fa-file-invoice-dollar">
+                <option value="">Select </option>
+                <option value="Percentage of the Net Aggregate Rent">Percentage of the Net Aggregate Rent</option>
+                <option value="Percentage of the Gross Rent">Percentage of the Gross Rent</option>
+                <option value="Percentage of Month’s Rent"> Percentage of Month’s Rent</option>
+                <option value="Flat Fee">Flat Fee</option>
+
+                <option value="other">Other</option>
+            </select>
+        </div>
+
+        <div class="mt-3">
+            @if ($renewal_fee_type === 'Percentage of the Net Aggregate Rent')
+                <div class="mb-3">
+                    {{-- <label class="form-label">Percentage of the Net Aggregate Rent</label> --}}
+                    <div class="input-group">
+                        <input type="number" wire:model.lazy="renewal_fee_percentage" class="form-control"
+                            placeholder="Enter percentage of the net aggregate rent (e.g., 5)">
+                        <span class="input-group-text">%</span>
+                    </div>
+
+                </div>
+            @elseif ($renewal_fee_type === 'Percentage of the Gross Rent')
+                <div class="mb-3">
+                    {{-- <label class="form-label">Percentage of the Gross Rent</label> --}}
+                    <div class="input-group">
+                        <input type="number" wire:model.lazy="renewal_fee_lease_value" class="form-control"
+                            placeholder="Enter percentage of the gross rent (e.g., 5)">
+                        <span class="input-group-text">%</span>
+                    </div>
+                    <label class="fw-bold mt-3">Sales Tax:</label>
+                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                        title="Select whether commission amounts include sales tax or exclude sales tax.">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </span>
+                    {{-- <label class="fw-bold mt-2">Sales Tax Selection</label> --}}
+                    <div class="input-cover mt-2">
+
+                        <select wire:model.lazy="renewal_fee_sales_tax_lease_value" class="form-control has-icon"
+                            data-icon="fa-solid fa-ruler">
+                            <option value="">Select</option>
+                            <option value="including">Including Sales Tax</option>
+                            <option value="excluding">Excluding Sales Tax</option>
+                        </select>
+                    </div>
+                </div>
+            @elseif ($renewal_fee_type === 'Percentage of Month’s Rent')
+                <div class="mb-3">
+                    {{-- <label class="form-label">Percentage of Month’s Rent</label> --}}
+                    <div class="input-group">
+                        <input type="number" wire:model.lazy="renewal_fee_first_month" class="form-control"
+                            placeholder="Enter percentage of month’s rent (e.g., 100)">
+                        <span class="input-group-text">%</span>
+                    </div>
+                    <label class="form-label mt-2">Number of Months:</label>
+                    <div class="input-group">
+                        <span class="input-group-text">#</span>
+
+                        <input type="number" wire:model.lazy="renewal_fee_no_of_months" class="form-control"
+                            placeholder="Enter number of months (e.g., 1)">
+                    </div>
+                    {{-- <label class="fw-bold mt-2">Sales Tax Selection</label> --}}
+                    <label class="fw-bold mt-3">Sales Tax:</label>
+                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                        title="Select whether commission amounts include sales tax or exclude sales tax.">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </span>
+                    <div class="input-cover mt-2">
+                        <select wire:model.lazy="renewal_fee_sales_tax_first_month" class="form-control has-icon"
+                            data-icon="fa-solid fa-ruler">
+                            <option value="">Select</option>
+                            <option value="including">Including Sales Tax</option>
+                            <option value="excluding">Excluding Sales Tax</option>
+                        </select>
+                    </div>
+                </div>
+            @elseif($renewal_fee_type === 'Flat Fee')
+                <div class="mb-3">
+                    {{-- <label class="form-label">Flat Fee Amount</label> --}}
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="text" wire:model.lazy="renewal_fee_flat_free" class="form-control"
+                            placeholder="Enter flat fee amount (e.g., 5000)"
+                             data-error-id="flat_fee_error"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                    </div>
+                     <span class="error mt-2" id="flat_fee_error"></span>
+                    <label class="fw-bold mt-2">Sales Tax:</label>
+                    <div class="input-cover mt-2">
+
+                        <select wire:model.lazy="renewal_fee_sales_tax_flat_fee" class="form-control has-icon"
+                            data-icon="fa-solid fa-ruler">
+                            <option value="">Select</option>
+                            <option value="including">Including Sales Tax</option>
+                            <option value="excluding">Excluding Sales Tax</option>
+                        </select>
+                    </div>
+                </div>
+            @elseif ($renewal_fee_type === 'other')
+                <div class="mb-3">
+                    <div class="input-group">
+                        <input type="text" wire:model.lazy="renewal_fee_custom" class="form-control"
+                            placeholder=" Describe commission fee (e.g., 50% of first month’s rent plus 3% of the net aggregate rent)">
+                    </div>
+                </div>
+            @endif
+        </div>
+
+    </div>
+@endif
+
+@if ($property_type === 'Commercial Property')@if ($property_type === 'Commercial Property')
+    <!-- Expansion Commission for Lease Amendment (Commercial only) -->
+    <div class="form-group mb-4">
+        <label class="fw-bold d-flex align-items-center">
+            Expansion Commission for Lease Amendment:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter the percentage of the original commission to be applied if the leased space expands under a lease amendment. This is typically calculated as a portion of the initial commission structure.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+
+        <div class="mt-2">
+            <div class="input-group">
+
+                <input type="number" wire:model.lazy="expansion_commission_percentage" class="form-control"
+                    placeholder="Enter percentage of original commission for expansion (e.g., 50)">
+                <span class="input-group-text">%</span>
+            </div>
+            @error('expansion_commission_percentage')
+                <span class="text-danger small">{{ $message }}</span>
+            @enderror
+        </div>
+    </div>
+@endif
+
+@if ($property_type === 'Residential Property')
+                    <span class="input-group-text">$</span>
+
+                    <input type="text" wire:model.lazy="interested_in_property_management_fee_flate_free"
+                        class="form-control" placeholder="Enter flat fee amount (e.g., 1000)"
+                         data-error-id="interested_in_property_management_fee_flate_free_error"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
+                >
+                </div>
+                <span class="error mt-2" id="interested_in_property_management_fee_flate_free_error"></span>
+
+            </div>
+        @elseif ($interested_in_property_management_fee === 'Other')
+            <div class="mt-3">
+                <div class="input-group">
+                    <input type="text" wire:model.lazy="interested_in_property_management_fee_other"
+                        class="form-control"
+                        placeholder="Enter property management fee (e.g., 4% of the gross lease value + $500)">
+                </div>
+
+            </div>
+        @endif
+
+    @endif
+
+    <div class="alert alert-warning mt-3 p-2 small">
+                <strong>⚖️ Note:</strong> Property management requires a separate property management agreement and is billed separately from leasing services. Fees are usually charged as a monthly flat fee or percentage of rent. Availability and terms may vary by Agent/Broker and are subject to brokerage policies and state law.
+            </div>
+</div>
+
+<!-- Acceptable Brokerage Relationship -->
+<div class="form-group mb-4">
+    <label class="fw-bold d-flex align-items-center">
+        Acceptable Brokerage Relationship:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select the type of legal relationship the Landlord wishes to establish with the Broker. This determines the level of representation the Broker will provide. Real estate laws vary by state, and Brokers may offer different types of agency relationships. Both the Broker and Landlord must comply with all applicable local, state, and federal laws.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+
+    <div class="input-cover mt-2">
+        <select wire:model.lazy="brokerage_relationship" class="form-control has-icon" data-icon="fa-solid fa-handshake">
+            <option value="">Select</option>
+            <option value="Transaction Broker Representation">Transaction Broker Representation</option>
+            <option value="Single Agent Representation">Single Agent Representation</option>
+            <option value="Dual Agency Representation">Dual Agency Representation</option>
+            <option value="No Brokerage Relationship">No Brokerage Relationship</option>
+        </select>
+    </div>
+
+    @if ($brokerage_relationship)
+        <div class="mt-3 p-3 bg-light rounded">
+
+            @if ($brokerage_relationship === 'Transaction Broker Representation')
+                <h6 class="fw-bold">• Transaction Broker Representation:</h6>
+                <ul class="mb-2 ps-3">
+                    <li>Default in Florida unless otherwise specified.</li>
+                    <li>The Broker provides limited representation to both parties without full fiduciary duties.</li>
+                    <li>Must act honestly, fairly, and with skill, care, and diligence.</li>
+                    <li>Not permitted in Texas, Alaska, Vermont, Kansas, or Colorado.</li>
+                </ul>
+            @elseif ($brokerage_relationship === 'Single Agent Representation')
+                <h6 class="fw-bold">• Single Agent Representation:</h6>
+                <ul class="mb-2 ps-3">
+                    <li>The Broker acts as a fiduciary, providing the highest level of loyalty, confidentiality,
+                        obedience, and full disclosure.</li>
+                    <li>The Broker must always act in the Landlord’s best interest.</li>
+                    <li>Requires written consent from both the Landlord and the Tenant.</li>
+                    <li>Requires a Single Agent Notice signed by the Landlord.</li>
+                </ul>
+            @elseif ($brokerage_relationship === 'Dual Agency Representation')
+                <h6 class="fw-bold">• Dual Agency Representation:</h6>
+                <ul class="mb-2 ps-3">
+                    <li>The Broker represents both the Landlord and the Tenant in the same transaction.</li>
+                    <li>Must remain neutral and may not disclose confidential information from either party.</li>
+                    <li>Requires written consent from both the Landlord and the Tenant.</li>
+                    <li>Not permitted in Alaska, Colorado, Florida, Kansas, Maryland, Oklahoma, Texas, Vermont, and
+                        Wyoming.</li>
+                </ul>
+            @elseif ($brokerage_relationship === 'No Brokerage Relationship')
+                <h6 class="fw-bold">• No Brokerage Relationship:</h6>
+                <ul class="mb-2 ps-3">
+                    <li>The Broker does not represent the Landlord and has no fiduciary duties.</li>
+                    <li>Still required to act honestly and disclose all known facts that materially affect the
+                        property’s value.</li>
+                    <li>The Landlord is responsible for their own due diligence and negotiations.</li>
+                </ul>
+            @endif
+
+            <div class="alert alert-warning mt-3 p-2 small">
+                <strong>⚠️ Legal Notice:</strong> Certain brokerage relationships are not permitted in all states. If
+                your selection is not allowed, the Broker will establish a permitted legal alternative. Real estate laws
+                change frequently. Both the Broker and Seller are responsible for complying with all current local,
+                state, and federal laws.
+            </div>
+        </div>
+    @endif
+</div><div class="form-group mb-2">
     <label class="fw-bold d-flex align-items-center">
         Interested in Offering a Lease-Option Agreement:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -651,373 +1047,6 @@
 @endif
 
 @if ($property_type === 'Residential Property')
-
-    <!-- Payment Timing for Broker Fees -->
-    <div class="form-group mb-4">
-        <label class="fw-bold d-flex align-items-center">
-            Payment Timing for Broker Fees:
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select when the Broker’s fee will be paid. Options include: deducting from rent collected, payment after lease execution, payment after the rent due date, or “Other” to define a custom arrangement.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-        </label>
-
-        <div class="input-cover mt-2">
-            <select wire:model.lazy="broker_fee_timing" class="form-control has-icon" data-icon="fa-solid fa-clock">
-                <option value="">Select</option>
-                <option value="Deducted from Rent Collected">Deducted from Rent Collected</option>
-                <option value="Paid Within Calendar Days After Executed Lease">Paid Within Calendar Days After Executed Lease</option>
-                <option value="Paid Within Calendar Days of Tenant Rent Payment">Paid Within Calendar Days of Tenant Rent Payment</option>
-                <option value="other">Other</option>
-            </select>
-        </div>
-
-        <div class="mt-3">
-            @if ($broker_fee_timing === 'Deducted from Rent Collected')
-                {{-- <label class="form-label">Calendar Days to Pay Balance After the Rent Due Date</label> --}}
-                <div class="input-group">
-                    <span class="input-group-text">#</span>
-                    <input type="number" wire:model.lazy="broker_fee_days_from_rent" class="form-control"
-                        placeholder="Enter number of calendar days (e.g., 5)">
-                </div>
-            @elseif ($broker_fee_timing === 'Paid Within Calendar Days After Executed Lease')
-                {{-- <label class="form-label">Calendar Days to Pay After Executed Lease</label> --}}
-                <div class="input-group">
-                    <span class="input-group-text">#</span>
-
-                    <input type="number" wire:model.lazy="broker_fee_days_after_lease" class="form-control"
-                        placeholder="Enter number of calendar days (e.g., 5)">
-                </div>
-            @elseif ($broker_fee_timing === 'Paid Within Calendar Days of Tenant Rent Payment')
-                {{-- <label class="form-label">Calendar Days to Pay After Tenant Rent Payment</label> --}}
-                <div class="input-group">
-                    <span class="input-group-text">#</span>
-
-                    <input type="number" wire:model.lazy="broker_fee_days_after_rent" class="form-control"
-                        placeholder="Enter number of calendar days (e.g., 5)">
-                </div>
-            @elseif ($broker_fee_timing === 'other')
-                <div class="input-group">
-                    <input type="text" wire:model.lazy="broker_fee_timing_other" class="form-control"
-                        placeholder="Describe payment arrangement (e.g., Broker to be paid 50% of commission upon lease execution and 50% upon tenant move-in)">
-                </div>
-            @endif
-        </div>
-
-    </div>
-
-
-@endif
-
-@if ($property_type === 'Commercial Property')
-    <!-- Payment Timing for Broker Fees (Commercial) -->
-    <div class="form-group mb-4">
-        <label class="fw-bold d-flex align-items-center">
-            Payment Timing for Broker Fees:
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select when the Broker’s fee will be paid. Options include: full payment upon execution of the lease, sales contract, or other transfer agreement; 50% upon execution with the remaining 50% due at commencement of the agreement; 50% upon execution with the remaining 50% due upon occupancy of the premises; or “Other” to define a custom arrangement.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-        </label>
-
-        <div class="input-cover mt-2">
-            <select wire:model.lazy="broker_fee_timing" class="form-control has-icon" data-icon="fa-solid fa-clock">
-                <option value="">Select</option>
-                <option value="full_execution">Full amount upon execution of lease, sales contract, or other transfer
-                    agreement</option>
-                <option value="50% due upon execution, 50% due upon commencement of agreement"> 50% due upon execution, 50% due upon commencement of agreement</option>
-                <option value="50% due upon execution, 50% due upon occupancy of premises"> 50% due upon execution, 50% due upon occupancy of premises</option>
-                <option value="Other">Other</option>
-            </select>
-        </div>
-
-        <div class="mt-3">
-            @if ($broker_fee_timing === 'split_payment dumy')
-                <div class="mb-4">
-                    <label class="form-label">Remaining 50% due upon:</label>
-                    <div class="input-cover">
-
-                        <select wire:model.lazy="split_payment_due" class="form-control has-icon"
-                            data-icon="fa-solid fa-percent">
-                            <option value="">Select </option>
-                            <option
-                                value="Full amount upon execution of lease, sales contract, or other transfer agreement">
-                                Full amount upon execution of lease, sales contract, or other transfer agreement
-                            </option>
-                            <option value="50% due upon execution, 50% due upon commencement of agreement">50% due upon
-                                execution, 50% due upon commencement of agreement</option>
-                            <option value="50% due upon execution, 50% due uponoccupancy of premises">50% due upon
-                                execution, 50% due uponoccupancy of premises</option>
-                            <option value="Other">Other</option>
-                        </select>
-
-                    </div>
-                </div>
-
-                @if ($split_payment_due === 'Other')
-                    <div class="input-group mb-3">
-                        <input type="text" wire:model.lazy="split_payment_due_other" class="form-control"
-                            placeholder="Describe payment arrangement (e.g., Broker to be paid 25% upon lease execution, 25% upon tenant move-in, and 50% upon first month’s rent)">
-                    </div>
-                @endif
-
-                <div class="mb-3">
-                    {{-- <label class="form-label">Calendar Days to Pay Second Installment After Due Event:</label> --}}
-                    <div class="input-group">
-                        <span class="input-group-text">#</span>
-                        <input type="number" wire:model.lazy="broker_fee_days_after_due_event" class="form-control"
-                            placeholder="Enter number of calendar days (e.g., 5)">
-                        @error('broker_fee_days_after_due_event')
-                            <span class="text-danger small">{{ $message }}</span>
-                        @enderror
-                    </div>
-                </div>
-            @elseif ($broker_fee_timing === 'Other')
-                <div class="input-group">
-                    <input type="text" wire:model.lazy="broker_fee_timing_other" class="form-control"
-                        placeholder="Describe payment arrangement (e.g., Broker to be paid 25% upon lease execution, 25% upon tenant move-in, and 50% upon first month's rent payment)">
-                </div>
-            @endif
-        </div>
-
-    </div>
-@endif
-
-<!--. Lease Renewal/Extension Fee -->
-@if ($property_type === 'Residential Property')
-
-    <div class="form-group mb-4">
-        <label class="fw-bold d-flex align-items-center">
-            Lease Renewal/Extension Fee:
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select how the Broker will be compensated if the Tenant renews or extends the lease. Options include: a percentage of the rent due each rental period, a percentage of the gross lease value, a percentage of the first month’s rent, a flat fee, or “Other” to define a custom payment structure. Then, enter the appropriate amount based on your selection.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-        </label>
-
-        <div class="input-cover mt-2">
-            <select wire:model.lazy="renewal_fee_type" class="form-control has-icon"
-                data-icon="fa-solid fa-file-invoice-dollar">
-                <option value="">Select</option>
-                @if ($property_type === 'Residential Property')
-                    <option value="Percentage of the Rent Due Each Rental Period">Percentage of the Rent Due Each Rental Period</option>
-                @endif
-                <option value="Percentage of the Gross Lease Value">Percentage of the Gross Lease Value</option>
-                @if ($property_type === 'Residential Property')
-                    <option value="Percentage of the First Month's Rent">Percentage of the First Month's Rent</option>
-                    <option value="Flat Fee">Flat Fee</option>
-                @endif
-                <option value="other">Other</option>
-
-            </select>
-        </div>
-
-        <div class="mt-3">
-            @if ($renewal_fee_type === 'Percentage of the Rent Due Each Rental Period')
-                <div class="mb-3">
-                    {{-- <label class="form-label">Percentage of the Rent Due Each Rental Period</label> --}}
-                    <div class="input-group">
-                        <input type="number" wire:model.lazy="renewal_fee_percentage" class="form-control"
-                            placeholder="Enter percentage of the rent due each rental period (e.g., 10)">
-                        <span class="input-group-text">%</span>
-                    </div>
-                </div>
-            @elseif ($renewal_fee_type === 'Percentage of the Gross Lease Value')
-                <div class="mb-3">
-                    {{-- <label class="form-label">Percentage of the Gross Lease Value</label> --}}
-                    <div class="input-group">
-                        <input type="number" wire:model.lazy="renewal_fee_lease_value" class="form-control"
-                            placeholder="Enter percentage of the gross lease value (e.g., 10)">
-                        <span class="input-group-text">%</span>
-                    </div>
-                </div>
-            @elseif ($renewal_fee_type === "Percentage of the First Month's Rent")
-                <div class="mb-3">
-                    {{-- <label class="form-label">Percentage of the First Month's Rent</label> --}}
-                    <div class="input-group">
-                        <input type="number" wire:model.lazy="renewal_fee_first_month" class="form-control"
-                            placeholder="Enter percentage of first month's rent (e.g., 100)">
-                        <span class="input-group-text">%</span>
-                    </div>
-                </div>
-            @elseif ($renewal_fee_type === 'Flat Fee')
-                <div class="mb-3">
-                    {{-- <label class="form-label">Percentage of the First Month's Rent</label> --}}
-                    <div class="input-group">
-                        <span class="input-group-text">$</span>
-                        <input type="text" wire:model.lazy="renewal_fee_flat_free" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 2000)"
-                             data-error-id="renewal_fee_percentage_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
-                            >
-                    </div>
-                     <span class="error mt-2" id="renewal_fee_percentage_error"></span>
-                </div>
-            @elseif ($renewal_fee_type === 'other')
-                <div class="mb-3">
-                    <div class="input-group">
-                        <input type="text" wire:model.lazy="renewal_fee_custom" class="form-control"
-                            placeholder="Enter commission structure (e.g., $500 flat fee plus 5% of the gross lease value)">
-                    </div>
-                </div>
-            @endif
-        </div>
-    </div>
-@endif
-
-<!--Commercial  Lease Renewal/Extension Fee  -->
-
-@if ($property_type === 'Commercial Property')
-    <div class="form-group mb-4">
-        <label class="fw-bold d-flex align-items-center">
-            Lease Renewal/Extension Fee:
-
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select how the Broker will be compensated if the Tenant renews or extends the lease. Options include: a percentage of the net aggregate rent, a percentage of the gross rent, a percentage of one month’s rent, a flat fee, or select “Other” to define a custom payment structure. Then, enter the appropriate amount based on your selection.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-
-        </label>
-        <div class="input-cover mt-2">
-            <select wire:model.lazy="renewal_fee_type" class="form-control has-icon"
-                data-icon="fa-solid fa-file-invoice-dollar">
-                <option value="">Select </option>
-                <option value="Percentage of the Net Aggregate Rent">Percentage of the Net Aggregate Rent</option>
-                <option value="Percentage of the Gross Rent">Percentage of the Gross Rent</option>
-                <option value="Percentage of Month’s Rent"> Percentage of Month’s Rent</option>
-                <option value="Flat Fee">Flat Fee</option>
-
-                <option value="other">Other</option>
-            </select>
-        </div>
-
-        <div class="mt-3">
-            @if ($renewal_fee_type === 'Percentage of the Net Aggregate Rent')
-                <div class="mb-3">
-                    {{-- <label class="form-label">Percentage of the Net Aggregate Rent</label> --}}
-                    <div class="input-group">
-                        <input type="number" wire:model.lazy="renewal_fee_percentage" class="form-control"
-                            placeholder="Enter percentage of the net aggregate rent (e.g., 5)">
-                        <span class="input-group-text">%</span>
-                    </div>
-
-                </div>
-            @elseif ($renewal_fee_type === 'Percentage of the Gross Rent')
-                <div class="mb-3">
-                    {{-- <label class="form-label">Percentage of the Gross Rent</label> --}}
-                    <div class="input-group">
-                        <input type="number" wire:model.lazy="renewal_fee_lease_value" class="form-control"
-                            placeholder="Enter percentage of the gross rent (e.g., 5)">
-                        <span class="input-group-text">%</span>
-                    </div>
-                    <label class="fw-bold mt-3">Sales Tax:</label>
-                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                        title="Select whether commission amounts include sales tax or exclude sales tax.">
-                        <i class="fa-solid fa-circle-info"></i>
-                    </span>
-                    {{-- <label class="fw-bold mt-2">Sales Tax Selection</label> --}}
-                    <div class="input-cover mt-2">
-
-                        <select wire:model.lazy="renewal_fee_sales_tax_lease_value" class="form-control has-icon"
-                            data-icon="fa-solid fa-ruler">
-                            <option value="">Select</option>
-                            <option value="including">Including Sales Tax</option>
-                            <option value="excluding">Excluding Sales Tax</option>
-                        </select>
-                    </div>
-                </div>
-            @elseif ($renewal_fee_type === 'Percentage of Month’s Rent')
-                <div class="mb-3">
-                    {{-- <label class="form-label">Percentage of Month’s Rent</label> --}}
-                    <div class="input-group">
-                        <input type="number" wire:model.lazy="renewal_fee_first_month" class="form-control"
-                            placeholder="Enter percentage of month’s rent (e.g., 100)">
-                        <span class="input-group-text">%</span>
-                    </div>
-                    <label class="form-label mt-2">Number of Months:</label>
-                    <div class="input-group">
-                        <span class="input-group-text">#</span>
-
-                        <input type="number" wire:model.lazy="renewal_fee_no_of_months" class="form-control"
-                            placeholder="Enter number of months (e.g., 1)">
-                    </div>
-                    {{-- <label class="fw-bold mt-2">Sales Tax Selection</label> --}}
-                    <label class="fw-bold mt-3">Sales Tax:</label>
-                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                        title="Select whether commission amounts include sales tax or exclude sales tax.">
-                        <i class="fa-solid fa-circle-info"></i>
-                    </span>
-                    <div class="input-cover mt-2">
-                        <select wire:model.lazy="renewal_fee_sales_tax_first_month" class="form-control has-icon"
-                            data-icon="fa-solid fa-ruler">
-                            <option value="">Select</option>
-                            <option value="including">Including Sales Tax</option>
-                            <option value="excluding">Excluding Sales Tax</option>
-                        </select>
-                    </div>
-                </div>
-            @elseif($renewal_fee_type === 'Flat Fee')
-                <div class="mb-3">
-                    {{-- <label class="form-label">Flat Fee Amount</label> --}}
-                    <div class="input-group">
-                        <span class="input-group-text">$</span>
-                        <input type="text" wire:model.lazy="renewal_fee_flat_free" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 5000)"
-                             data-error-id="flat_fee_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-                    </div>
-                     <span class="error mt-2" id="flat_fee_error"></span>
-                    <label class="fw-bold mt-2">Sales Tax:</label>
-                    <div class="input-cover mt-2">
-
-                        <select wire:model.lazy="renewal_fee_sales_tax_flat_fee" class="form-control has-icon"
-                            data-icon="fa-solid fa-ruler">
-                            <option value="">Select</option>
-                            <option value="including">Including Sales Tax</option>
-                            <option value="excluding">Excluding Sales Tax</option>
-                        </select>
-                    </div>
-                </div>
-            @elseif ($renewal_fee_type === 'other')
-                <div class="mb-3">
-                    <div class="input-group">
-                        <input type="text" wire:model.lazy="renewal_fee_custom" class="form-control"
-                            placeholder=" Describe commission fee (e.g., 50% of first month’s rent plus 3% of the net aggregate rent)">
-                    </div>
-                </div>
-            @endif
-        </div>
-
-    </div>
-@endif
-
-@if ($property_type === 'Commercial Property')
-    <!-- Expansion Commission for Lease Amendment (Commercial only) -->
-    <div class="form-group mb-4">
-        <label class="fw-bold d-flex align-items-center">
-            Expansion Commission for Lease Amendment:
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the percentage of the original commission to be applied if the leased space expands under a lease amendment. This is typically calculated as a portion of the initial commission structure.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-        </label>
-
-        <div class="mt-2">
-            <div class="input-group">
-
-                <input type="number" wire:model.lazy="expansion_commission_percentage" class="form-control"
-                    placeholder="Enter percentage of original commission for expansion (e.g., 50)">
-                <span class="input-group-text">%</span>
-            </div>
-            @error('expansion_commission_percentage')
-                <span class="text-danger small">{{ $message }}</span>
-            @enderror
-        </div>
-    </div>
-@endif
-
-@if ($property_type === 'Residential Property')
-
 @if ($property_type === 'Residential Property')
     <!-- Protection Period Timeframe -->
     <div class="form-group mb-4 mt-3">
@@ -1109,60 +1138,6 @@ this agreement ends.">
         </div>
     @endif
 </div>
-
-<!-- Retainer Fee -->
-{{-- <div class="form-group mb-4">
-    <label class="fw-bold d-flex align-items-center">
-        Retainer Fee:
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select whether you agree to pay a non-refundable retainer fee to initiate Broker services. The retainer is separate from any commission earned unless otherwise specified.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-    </label>
-    <div class="input-cover mt-2">
-        <select wire:model="retainer_fee_option" class="form-control has-icon"
-            data-icon="fa-solid fa-file-invoice-dollar">
-            <option value="">Select</option>
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
-        </select>
-    </div>
-
-    @if ($retainer_fee_option === 'yes')
-        <div class="mt-3">
-            <div class="input-group">
-                <span class="input-group-text">$</span>
-                <input type="number" wire:model="retainer_fee_amount" class="form-control"
-                    placeholder="Enter retainer fee amount (e.g., 500)">
-            </div>
-            @error('retainer_fee_amount')
-                <span class="text-danger small">{{ $message }}</span>
-            @enderror
-
-            <div class="mt-3">
-                <label class="fw-bold d-flex align-items-center">
-                    Retainer Fee Application:
-
-                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                        title="Select whether the retainer fee will be credited toward the final commission owed or charged in addition to it.">
-                        <i class="fa-solid fa-circle-info"></i>
-                    </span>
-                </label>
-                <div class="input-cover mt-2">
-
-                    <select wire:model="retainer_fee_application" class="form-control has-icon"
-                        data-icon="fa-solid fa-ruler">
-                        <option value="">Select application method</option>
-                        <option value="applied">Applied toward final compensation</option>
-                        <option value="additional">Charged in addition to final compensation</option>
-                    </select>
-                    @error('retainer_fee_application')
-                        <span class="text-danger small">{{ $message }}</span>
-                    @enderror
-                </div>
-            </div>
-        </div>
-    @endif
 </div> --}}
 <!-- 10.        Landlord  Agency Agreement Timeframe -->
 <div class="form-group mb-4">
@@ -1265,7 +1240,7 @@ this agreement ends.">
                 </div>
 
             </div>
-        @elseif ($interested_in_property_management_fee === 'Percentage of the Rent Due Each Rental Period')
+        @elseif ($interested_in_property_management_fee === 'Percentage of the Rent Due Each Rental Period')        @elseif ($interested_in_property_management_fee === 'Percentage of the Rent Due Each Rental Period')
             <div class="mt-3">
                 <div class="input-group">
                     <input type="number" wire:model.lazy="interested_in_property_management_fee_rental_periord"
@@ -1279,99 +1254,3 @@ this agreement ends.">
             <div class="mt-3">
                 <div class="input-group">
                     <span class="input-group-text">$</span>
-
-                    <input type="text" wire:model.lazy="interested_in_property_management_fee_flate_free"
-                        class="form-control" placeholder="Enter flat fee amount (e.g., 1000)"
-                         data-error-id="interested_in_property_management_fee_flate_free_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
-                >
-                </div>
-                <span class="error mt-2" id="interested_in_property_management_fee_flate_free_error"></span>
-
-            </div>
-        @elseif ($interested_in_property_management_fee === 'Other')
-            <div class="mt-3">
-                <div class="input-group">
-                    <input type="text" wire:model.lazy="interested_in_property_management_fee_other"
-                        class="form-control"
-                        placeholder="Enter property management fee (e.g., 4% of the gross lease value + $500)">
-                </div>
-
-            </div>
-        @endif
-
-    @endif
-
-    <div class="alert alert-warning mt-3 p-2 small">
-                <strong>⚖️ Note:</strong> Property management requires a separate property management agreement and is billed separately from leasing services. Fees are usually charged as a monthly flat fee or percentage of rent. Availability and terms may vary by Agent/Broker and are subject to brokerage policies and state law.
-            </div>
-</div>
-
-<!-- Acceptable Brokerage Relationship -->
-<div class="form-group mb-4">
-    <label class="fw-bold d-flex align-items-center">
-        Acceptable Brokerage Relationship:
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select the type of legal relationship the Landlord wishes to establish with the Broker. This determines the level of representation the Broker will provide. Real estate laws vary by state, and Brokers may offer different types of agency relationships. Both the Broker and Landlord must comply with all applicable local, state, and federal laws.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-    </label>
-
-    <div class="input-cover mt-2">
-        <select wire:model.lazy="brokerage_relationship" class="form-control has-icon" data-icon="fa-solid fa-handshake">
-            <option value="">Select</option>
-            <option value="Transaction Broker Representation">Transaction Broker Representation</option>
-            <option value="Single Agent Representation">Single Agent Representation</option>
-            <option value="Dual Agency Representation">Dual Agency Representation</option>
-            <option value="No Brokerage Relationship">No Brokerage Relationship</option>
-        </select>
-    </div>
-
-    @if ($brokerage_relationship)
-        <div class="mt-3 p-3 bg-light rounded">
-
-            @if ($brokerage_relationship === 'Transaction Broker Representation')
-                <h6 class="fw-bold">• Transaction Broker Representation:</h6>
-                <ul class="mb-2 ps-3">
-                    <li>Default in Florida unless otherwise specified.</li>
-                    <li>The Broker provides limited representation to both parties without full fiduciary duties.</li>
-                    <li>Must act honestly, fairly, and with skill, care, and diligence.</li>
-                    <li>Not permitted in Texas, Alaska, Vermont, Kansas, or Colorado.</li>
-                </ul>
-            @elseif ($brokerage_relationship === 'Single Agent Representation')
-                <h6 class="fw-bold">• Single Agent Representation:</h6>
-                <ul class="mb-2 ps-3">
-                    <li>The Broker acts as a fiduciary, providing the highest level of loyalty, confidentiality,
-                        obedience, and full disclosure.</li>
-                    <li>The Broker must always act in the Landlord’s best interest.</li>
-                    <li>Requires written consent from both the Landlord and the Tenant.</li>
-                    <li>Requires a Single Agent Notice signed by the Landlord.</li>
-                </ul>
-            @elseif ($brokerage_relationship === 'Dual Agency Representation')
-                <h6 class="fw-bold">• Dual Agency Representation:</h6>
-                <ul class="mb-2 ps-3">
-                    <li>The Broker represents both the Landlord and the Tenant in the same transaction.</li>
-                    <li>Must remain neutral and may not disclose confidential information from either party.</li>
-                    <li>Requires written consent from both the Landlord and the Tenant.</li>
-                    <li>Not permitted in Alaska, Colorado, Florida, Kansas, Maryland, Oklahoma, Texas, Vermont, and
-                        Wyoming.</li>
-                </ul>
-            @elseif ($brokerage_relationship === 'No Brokerage Relationship')
-                <h6 class="fw-bold">• No Brokerage Relationship:</h6>
-                <ul class="mb-2 ps-3">
-                    <li>The Broker does not represent the Landlord and has no fiduciary duties.</li>
-                    <li>Still required to act honestly and disclose all known facts that materially affect the
-                        property’s value.</li>
-                    <li>The Landlord is responsible for their own due diligence and negotiations.</li>
-                </ul>
-            @endif
-
-            <div class="alert alert-warning mt-3 p-2 small">
-                <strong>⚠️ Legal Notice:</strong> Certain brokerage relationships are not permitted in all states. If
-                your selection is not allowed, the Broker will establish a permitted legal alternative. Real estate laws
-                change frequently. Both the Broker and Seller are responsible for complying with all current local,
-                state, and federal laws.
-            </div>
-        </div>
-    @endif
-</div>
