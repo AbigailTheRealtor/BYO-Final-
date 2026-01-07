@@ -41,6 +41,7 @@ I prefer detailed explanations. Ask before making major changes.
 - **Notification System**: Comprehensive notifications for bid lifecycle events: `bid_received` (agent submits), `bid_countered` (either party counters), `bid_rejected` (tenant rejects). Dashboard displays up to 20 unread notifications with icons (gavel, exchange-alt, times-circle, check-circle).
 - **View Counter Terms Page**: Agents can view counter terms directly from My Bids page or dashboard notifications via `/tenant/hire/agent/auction/bid/{bid_id}/view-counter`. Displays tenant's counter offer with broker compensation terms, requested services, and action buttons (Accept, Reject, Counter Back).
 - **My Bids Interface**: Static cards with color-coded status badges (Active=blue, Countered=warning, Accepted=green, Rejected=danger). Context-specific action buttons: View Summary (accepted), View Counter (countered), View Listing (rejected), Visit Listing (active).
+- **Tenant Dashboard Pending Bids**: Tenants see a dedicated "Pending Agent Bids" section on their dashboard showing all active/countered bids across their listings. Table includes Agent name, Listing, Status, Submitted date, and action buttons (Accept/Counter/Reject for active bids, "Awaiting" indicator for countered bids).
 
 ### System Design Choices
 - **Modularity**: Laravel's modular structure with Livewire components for UI interactions.

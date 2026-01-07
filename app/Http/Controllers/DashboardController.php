@@ -47,12 +47,15 @@ class DashboardController extends Controller
         
         $tenantAuctionIds = TenantAgentAuction::where('user_id', $user->id)->pluck('id');
         
-        $page_data['pendingAgentBids'] = TenantAgentAuctionBid::with(['auction', 'auction.meta', 'user', 'meta'])
+        $page_data['pendingAgentBids'] = TenantAgentAuctionBid::with(['auction', 'user', 'meta', 'counterTerms', 'acceptedBidSummary'])
             ->whereIn('tenant_agent_auction_id', $tenantAuctionIds)
-            ->whereIn('bid_status', ['Active', 'Countered'])
             ->orderBy('created_at', 'desc')
-            ->take(10)
-            ->get();
+            ->take(20)
+            ->get()
+            ->filter(function($bid) {
+                return in_array($bid->bid_status, ['Active', 'Countered']);
+            })
+            ->take(10);
         
         return view('dashboard', $page_data);
     }
