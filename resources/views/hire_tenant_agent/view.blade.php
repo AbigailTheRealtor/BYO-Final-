@@ -1853,73 +1853,90 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 ->orderBy('created_at', 'desc')
                                 ->first();
                             
+                            // === CENTRALIZED TENANT BASELINE DATA ===
+                            // This is used when comparing against the tenant's terms (original or counter)
+                            $tenantBaselineData = [];
+                            $tenantBaselineLabelForTenant = ''; // Label when tenant views
+                            $tenantBaselineLabelForAgent = ''; // Label when agent views
+                            
+                            if ($latestTenantCounter) {
+                                // Tenant has countered - use their latest counter terms
+                                $tenantBaselineData = $latestTenantCounter->getAllMeta();
+                                $tenantBaselineLabelForTenant = 'Your Latest Counter';
+                                $tenantBaselineLabelForAgent = "Tenant's Counter Terms";
+                            } else {
+                                // Use original listing Broker Compensation fields (includes all fee amount fields)
+                                $tenantBaselineData = [
+                                    'commission_structure' => data_get($auction, 'get.commission_structure'),
+                                    'lease_fee_type' => data_get($auction, 'get.lease_fee_type'),
+                                    'payment_timing' => data_get($auction, 'get.broker_fee_timing'),
+                                    'broker_fee_timing' => data_get($auction, 'get.broker_fee_timing'),
+                                    'days_to_pay' => data_get($auction, 'get.broker_fee_days_from_rent') ?? data_get($auction, 'get.broker_fee_days_after_lease'),
+                                    'broker_fee_days_from_rent' => data_get($auction, 'get.broker_fee_days_from_rent'),
+                                    'interested_purchase_fee_type' => data_get($auction, 'get.interested_purchase_fee_type'),
+                                    'purchase_fee_type' => data_get($auction, 'get.purchase_fee_type'),
+                                    'interested_lease_option_agreement' => data_get($auction, 'get.interested_lease_option_agreement'),
+                                    'lease_type' => data_get($auction, 'get.lease_type'),
+                                    'lease_value' => data_get($auction, 'get.lease_value'),
+                                    'purchase_type' => data_get($auction, 'get.purchase_type'),
+                                    'purchase_value' => data_get($auction, 'get.purchase_value'),
+                                    'protection_period' => data_get($auction, 'get.protection_period'),
+                                    'early_termination_fee_option' => data_get($auction, 'get.early_termination_fee_option'),
+                                    'early_termination_fee_amount' => data_get($auction, 'get.early_termination_fee_amount'),
+                                    'retainer_fee_option' => data_get($auction, 'get.retainer_fee_option'),
+                                    'retainer_fee_amount' => data_get($auction, 'get.retainer_fee_amount'),
+                                    'retainer_fee_application' => data_get($auction, 'get.retainer_fee_application'),
+                                    'agency_agreement_timeframe' => data_get($auction, 'get.agency_agreement_timeframe'),
+                                    'brokerage_relationship' => data_get($auction, 'get.brokerage_relationship'),
+                                    'services' => data_get($auction, 'get.services'),
+                                    'other_services' => data_get($auction, 'get.other_services'),
+                                    // Fee amount fields - CRITICAL for numeric value comparison
+                                    'lease_fee_flat' => data_get($auction, 'get.lease_fee_flat'),
+                                    'lease_fee_percentage' => data_get($auction, 'get.lease_fee_percentage'),
+                                    'lease_fee_percentage_monthly_rent' => data_get($auction, 'get.lease_fee_percentage_monthly_rent'),
+                                    'lease_fee_percentage_monthly_number' => data_get($auction, 'get.lease_fee_percentage_monthly_number'),
+                                    'lease_fee_flat_combo' => data_get($auction, 'get.lease_fee_flat_combo'),
+                                    'lease_fee_percentage_combo' => data_get($auction, 'get.lease_fee_percentage_combo'),
+                                    'lease_fee_percentage_net' => data_get($auction, 'get.lease_fee_percentage_net'),
+                                    'lease_fee_flat_combo_net' => data_get($auction, 'get.lease_fee_flat_combo_net'),
+                                    'lease_fee_percentage_combo_net' => data_get($auction, 'get.lease_fee_percentage_combo_net'),
+                                    'lease_fee_other' => data_get($auction, 'get.lease_fee_other'),
+                                    'purchase_fee_flat' => data_get($auction, 'get.purchase_fee_flat'),
+                                    'purchase_fee_percentage' => data_get($auction, 'get.purchase_fee_percentage'),
+                                    'purchase_fee_flat_combo' => data_get($auction, 'get.purchase_fee_flat_combo'),
+                                    'purchase_fee_percentage_combo' => data_get($auction, 'get.purchase_fee_percentage_combo'),
+                                    'purchase_fee_other' => data_get($auction, 'get.purchase_fee_other'),
+                                    'flat_fee_amount' => data_get($auction, 'get.flat_fee_amount'),
+                                    'percent_gross_lease' => data_get($auction, 'get.percent_gross_lease'),
+                                    'purchase_flat_fee_amount' => data_get($auction, 'get.purchase_flat_fee_amount'),
+                                    'purchase_percent_value' => data_get($auction, 'get.purchase_percent_value'),
+                                ];
+                                $tenantBaselineLabelForTenant = 'Your Original Terms';
+                                $tenantBaselineLabelForAgent = "Tenant's Original Terms";
+                            }
+                            
+                            // === BASELINE SELECTION BASED ON VIEWER ROLE ===
                             if ($isListingOwner) {
-                                // Tenant viewing Agent's bid - baseline is Tenant's latest counter or original listing
-                                if ($latestTenantCounter) {
-                                    $baselineData = $latestTenantCounter->getAllMeta();
-                                    $baselineLabel = 'Your Latest Counter';
-                                } else {
-                                    // Use original listing Broker Compensation fields (includes all fee amount fields)
-                                    $baselineData = [
-                                        'commission_structure' => data_get($auction, 'get.commission_structure'),
-                                        'lease_fee_type' => data_get($auction, 'get.lease_fee_type'),
-                                        'payment_timing' => data_get($auction, 'get.broker_fee_timing'),
-                                        'broker_fee_timing' => data_get($auction, 'get.broker_fee_timing'),
-                                        'days_to_pay' => data_get($auction, 'get.broker_fee_days_from_rent') ?? data_get($auction, 'get.broker_fee_days_after_lease'),
-                                        'broker_fee_days_from_rent' => data_get($auction, 'get.broker_fee_days_from_rent'),
-                                        'interested_purchase_fee_type' => data_get($auction, 'get.interested_purchase_fee_type'),
-                                        'purchase_fee_type' => data_get($auction, 'get.purchase_fee_type'),
-                                        'interested_lease_option_agreement' => data_get($auction, 'get.interested_lease_option_agreement'),
-                                        'lease_type' => data_get($auction, 'get.lease_type'),
-                                        'lease_value' => data_get($auction, 'get.lease_value'),
-                                        'purchase_type' => data_get($auction, 'get.purchase_type'),
-                                        'purchase_value' => data_get($auction, 'get.purchase_value'),
-                                        'protection_period' => data_get($auction, 'get.protection_period'),
-                                        'early_termination_fee_option' => data_get($auction, 'get.early_termination_fee_option'),
-                                        'early_termination_fee_amount' => data_get($auction, 'get.early_termination_fee_amount'),
-                                        'retainer_fee_option' => data_get($auction, 'get.retainer_fee_option'),
-                                        'retainer_fee_amount' => data_get($auction, 'get.retainer_fee_amount'),
-                                        'retainer_fee_application' => data_get($auction, 'get.retainer_fee_application'),
-                                        'agency_agreement_timeframe' => data_get($auction, 'get.agency_agreement_timeframe'),
-                                        'brokerage_relationship' => data_get($auction, 'get.brokerage_relationship'),
-                                        'services' => data_get($auction, 'get.services'),
-                                        'other_services' => data_get($auction, 'get.other_services'),
-                                        // Fee amount fields - CRITICAL for numeric value comparison
-                                        'lease_fee_flat' => data_get($auction, 'get.lease_fee_flat'),
-                                        'lease_fee_percentage' => data_get($auction, 'get.lease_fee_percentage'),
-                                        'lease_fee_percentage_monthly_rent' => data_get($auction, 'get.lease_fee_percentage_monthly_rent'),
-                                        'lease_fee_percentage_monthly_number' => data_get($auction, 'get.lease_fee_percentage_monthly_number'),
-                                        'lease_fee_flat_combo' => data_get($auction, 'get.lease_fee_flat_combo'),
-                                        'lease_fee_percentage_combo' => data_get($auction, 'get.lease_fee_percentage_combo'),
-                                        'lease_fee_percentage_net' => data_get($auction, 'get.lease_fee_percentage_net'),
-                                        'lease_fee_flat_combo_net' => data_get($auction, 'get.lease_fee_flat_combo_net'),
-                                        'lease_fee_percentage_combo_net' => data_get($auction, 'get.lease_fee_percentage_combo_net'),
-                                        'lease_fee_other' => data_get($auction, 'get.lease_fee_other'),
-                                        'purchase_fee_flat' => data_get($auction, 'get.purchase_fee_flat'),
-                                        'purchase_fee_percentage' => data_get($auction, 'get.purchase_fee_percentage'),
-                                        'purchase_fee_flat_combo' => data_get($auction, 'get.purchase_fee_flat_combo'),
-                                        'purchase_fee_percentage_combo' => data_get($auction, 'get.purchase_fee_percentage_combo'),
-                                        'purchase_fee_other' => data_get($auction, 'get.purchase_fee_other'),
-                                        'flat_fee_amount' => data_get($auction, 'get.flat_fee_amount'),
-                                        'percent_gross_lease' => data_get($auction, 'get.percent_gross_lease'),
-                                        'purchase_flat_fee_amount' => data_get($auction, 'get.purchase_flat_fee_amount'),
-                                        'purchase_percent_value' => data_get($auction, 'get.purchase_percent_value'),
-                                    ];
-                                    $baselineLabel = 'Your Original Terms';
-                                }
-                            } elseif ($isBiddingPeriodListing && $isAgentViewer && !$isBidOwner && $userHasBid) {
+                                // Tenant viewing Agent's bid - compare to tenant's terms
+                                $baselineData = $tenantBaselineData;
+                                $baselineLabel = $tenantBaselineLabelForTenant;
+                            } elseif ($isBidOwner) {
+                                // Agent viewing their OWN bid - compare to tenant's terms (shows how well they match)
+                                $baselineData = $tenantBaselineData;
+                                $baselineLabel = $tenantBaselineLabelForAgent;
+                            } elseif ($isBiddingPeriodListing && $isAgentViewer && $userHasBid) {
                                 // Agent viewing ANOTHER agent's bid in Bidding Period - compare to viewer's own bid
                                 $viewerBid = $auction->bids->where('user_id', $auth_id)->first();
                                 if ($viewerBid) {
                                     $baselineData = (array) data_get($viewerBid, 'get', []);
                                 } else {
-                                    $baselineData = $currentBidData; // Fallback
+                                    $baselineData = $tenantBaselineData; // Fallback to tenant terms
                                 }
                                 $baselineLabel = 'Your Bid';
                             } else {
-                                // Agent viewing their own bid - baseline is their own bid (100% match)
-                                $baselineData = $currentBidData;
-                                $baselineLabel = 'Your Bid';
+                                // Fallback: compare to tenant's terms
+                                $baselineData = $tenantBaselineData;
+                                $baselineLabel = $tenantBaselineLabelForAgent;
                             }
                             
                             // Broker Compensation fields to compare
