@@ -38,9 +38,11 @@
   wire:model.defer="phone_number"
   class="form-control has-icon"
   data-icon="fa-solid fa-phone"
-  placeholder="Enter phone number"
+  placeholder="555-555-5555"
   inputmode="numeric"
   autocomplete="tel"
+  maxlength="12"
+  oninput="formatLandlordPhone(this)"
 />
   </div>
 </div>
@@ -217,3 +219,28 @@
         <strong> 🛡️ Privacy Notice: </strong> Your last name, email address, and phone number are only visible to the platform admin. Only your first name and any uploaded photo or video will appear on the public listing. This ensures Agents contact you through the platform and protects your personal information.
     </div>
 @endif
+
+<script>
+function formatLandlordPhone(input) {
+    let digits = input.value.replace(/\D/g, '');
+    if (digits.length > 10) {
+        digits = digits.substring(0, 10);
+    }
+    let formatted = '';
+    if (digits.length <= 3) {
+        formatted = digits;
+    } else if (digits.length <= 6) {
+        formatted = digits.substring(0, 3) + '-' + digits.substring(3);
+    } else {
+        formatted = digits.substring(0, 3) + '-' + digits.substring(3, 6) + '-' + digits.substring(6);
+    }
+    input.value = formatted;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const phoneInput = document.getElementById('phone_number');
+    if (phoneInput && phoneInput.value) {
+        formatLandlordPhone(phoneInput);
+    }
+});
+</script>

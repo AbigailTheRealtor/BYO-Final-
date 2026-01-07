@@ -1409,7 +1409,7 @@ class LandLordAgentAuction extends Component
             // Personal information
             $this->first_name = $auction->get->first_name;
             $this->last_name = $auction->get->last_name;
-            $this->phone_number = $auction->get->phone_number;
+            $this->phone_number = $this->formatPhoneForDisplay($auction->get->phone_number);
             $this->email = $auction->get->email;
             $this->video_link = $auction->get->video_link;
 
@@ -1922,7 +1922,8 @@ class LandLordAgentAuction extends Component
         // Contact Information
         $auction->saveMeta('first_name', $this->first_name);
         $auction->saveMeta('last_name', $this->last_name);
-        $auction->saveMeta('phone_number', $this->phone_number);
+        $phoneDigitsOnly = preg_replace('/\D/', '', $this->phone_number);
+        $auction->saveMeta('phone_number', $phoneDigitsOnly);
         $auction->saveMeta('email', $this->email);
         $auction->saveMeta('video_link', $this->video_link);
 
@@ -2029,5 +2030,17 @@ class LandLordAgentAuction extends Component
         } catch (\Exception $e) {
             session()->flash('error', 'Error deleting draft: ' . $e->getMessage());
         }
+    }
+
+    private function formatPhoneForDisplay($phone)
+    {
+        if (empty($phone)) {
+            return '';
+        }
+        $digits = preg_replace('/\D/', '', $phone);
+        if (strlen($digits) !== 10) {
+            return $phone;
+        }
+        return substr($digits, 0, 3) . '-' . substr($digits, 3, 3) . '-' . substr($digits, 6);
     }
 }
