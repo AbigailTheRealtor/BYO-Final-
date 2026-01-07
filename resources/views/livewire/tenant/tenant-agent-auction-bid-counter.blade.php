@@ -105,13 +105,14 @@
               <button type="button" class="btn btn-primary wizard-step-next">Next</button>
 
               <!-- Proper submit button -->
-              <button type="submit"
+              <button type="button"
                       id="save-button"
                       class="btn btn-success wizard-step-finish"
+                      wire:click="submit"
                       wire:loading.attr="disabled"
                       wire:loading.class="disabled">
-                <span wire:loading.remove>Submit</span>
-                <span wire:loading>Submitting...</span>
+                <span wire:loading.remove wire:target="submit">Submit</span>
+                <span wire:loading wire:target="submit">Submitting...</span>
               </button>
             </div>
           </div>
