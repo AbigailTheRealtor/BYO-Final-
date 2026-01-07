@@ -347,6 +347,8 @@ class TenantAgentAuctionBidCounter extends Component
         $this->pab   = $pab;
         $this->bidId = $bidId;
         $this->parent_counter_id = $parent_counter_id;
+        
+        // Default property_type from the original bid
         $this->property_type = $pab->get->property_type ?? '';
         
         $sourceData = null;
@@ -360,16 +362,38 @@ class TenantAgentAuctionBidCounter extends Component
             ->first();
         
         if ($tenantCounter && $tenantCounter->meta) {
-            // Use Tenant's latest counter terms
-            $metaMap = $tenantCounter->meta->pluck('meta_value', 'meta_key')->toArray();
+            // Use Tenant's latest counter terms - properly decode JSON fields
+            $metaMap = [];
+            foreach ($tenantCounter->meta as $meta) {
+                $value = $meta->meta_value;
+                // Try to decode JSON values
+                if (is_string($value) && !empty($value)) {
+                    $decoded = json_decode($value, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        $value = $decoded;
+                    }
+                }
+                $metaMap[$meta->meta_key] = $value;
+            }
             $sourceData = (object) $metaMap;
+            
+            // Override property_type and service_type from tenant counter if available
+            if (!empty($metaMap['property_type'])) {
+                $this->property_type = $metaMap['property_type'];
+            }
+            if (!empty($metaMap['service_type'])) {
+                $this->service_type = $metaMap['service_type'];
+            }
         }
         
         // If no Tenant counter exists, fall back to the Tenant listing's original terms
         if (!$sourceData) {
-            $auction = $pab->auction ?? \App\Models\HireTenantAgentAuction::find($pab->tenant_agent_auction_id);
+            $auction = $pab->auction ?? \App\Models\TenantAgentAuction::find($pab->tenant_agent_auction_id);
             if ($auction && $auction->get) {
                 $sourceData = $auction->get;
+                // Load property_type and service_type from auction
+                $this->property_type = $sourceData->property_type ?? $this->property_type;
+                $this->service_type = $sourceData->service_type ?? '';
             }
         }
         
@@ -435,6 +459,16 @@ class TenantAgentAuctionBidCounter extends Component
             $this->additional_terms = $sourceData->additional_terms ?? '';
             $this->additional_details = $sourceData->additional_details ?? '';
             $this->additional_details_broker = $sourceData->additional_details_broker ?? '';
+            
+            // Load service_type if available in sourceData
+            if (!empty($sourceData->service_type)) {
+                $this->service_type = $sourceData->service_type;
+            }
+            
+            // Load property_type if available (for fallback cases)
+            if (!empty($sourceData->property_type)) {
+                $this->property_type = $sourceData->property_type;
+            }
             
             $services = $sourceData->services ?? '';
             $this->services = is_string($services) ? json_decode($services, true) ?? [] : (array) $services;
