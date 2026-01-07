@@ -367,18 +367,17 @@
                                                 $data = $notification->data;
                                                 $type = $data['type'] ?? 'general';
                                                 $message = $data['message'] ?? 'You have a notification';
-                                                $summaryLink = $data['summary_link'] ?? null;
                                                 $listingId = $data['listing_id'] ?? $data['auction_id'] ?? null;
                                             @endphp
-                                            <div class="alert alert-info d-flex justify-content-between align-items-center mb-2" role="alert">
+                                            <div class="alert alert-info d-flex justify-content-between align-items-center mb-2" role="alert" id="notification-{{ $notification->id }}">
                                                 <div>
-                                                    @if($type === 'bid_accepted')
+                                                    @if($type === 'bid_accepted' || $type === 'counter_bid_accepted')
                                                         <i class="fas fa-check-circle text-success me-2"></i>
                                                     @elseif($type === 'bid_countered' || $type === 'counter_bid_submitted')
                                                         <i class="fas fa-exchange-alt text-warning me-2"></i>
                                                     @elseif($type === 'bid_rejected')
                                                         <i class="fas fa-times-circle text-danger me-2"></i>
-                                                    @elseif($type === 'bid_submitted')
+                                                    @elseif($type === 'bid_submitted' || $type === 'bid_received')
                                                         <i class="fas fa-gavel text-primary me-2"></i>
                                                     @else
                                                         <i class="fas fa-bell me-2"></i>
@@ -389,13 +388,10 @@
                                                     @endif
                                                     <small class="text-muted ms-2">{{ $notification->created_at->diffForHumans() }}</small>
                                                 </div>
-                                                <div>
-                                                    @if($summaryLink)
-                                                        <a href="{{ $summaryLink }}" class="btn btn-sm btn-primary">View Summary</a>
-                                                    @endif
-                                                    <form action="{{ route('notifications.markRead') }}" method="POST" class="d-inline">
+                                                <div class="d-flex gap-2">
+                                                    <a href="{{ route('notifications.go', $notification->id) }}" class="btn btn-sm btn-primary">View</a>
+                                                    <form action="{{ route('notifications.dismiss', $notification->id) }}" method="POST" class="d-inline" onsubmit="event.stopPropagation();">
                                                         @csrf
-                                                        <input type="hidden" name="id" value="{{ $notification->id }}">
                                                         <button type="submit" class="btn btn-sm btn-outline-secondary">Dismiss</button>
                                                     </form>
                                                 </div>

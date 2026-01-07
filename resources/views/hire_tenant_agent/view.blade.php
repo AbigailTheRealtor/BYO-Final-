@@ -1626,7 +1626,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             @endif
         @endif
 
-        <div class="card higestBider">
+        <div class="card higestBider" id="bids-section">
             <div class="card-body card-body-padding">
                 <div class="accordion" id="accordionExample">
                     <div class="accordion-item border-0">
@@ -3616,7 +3616,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                                     {{-- Counter Bidding Section - Only visible to listing owner and bidding agent --}}
                                     @if ($showCounterBids && $counterBids->count() > 0)
-                                    <div class="counter-bids-section mt-4">
+                                    <div class="counter-bids-section mt-4" id="counter-section-{{ $bid->id }}">
                                         <!-- Counter Bids Accordion Header -->
                                         <div class="counter-bids-toggle" 
                                             style="cursor: pointer;"
@@ -4826,4 +4826,39 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 </script>
 @endif
+
+{{-- Auto-scroll logic for notification view parameter --}}
+<script>
+    $(document).ready(function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const viewSection = urlParams.get('view');
+        const bidId = urlParams.get('bid_id');
+        
+        if (viewSection) {
+            setTimeout(function() {
+                let targetElement = null;
+                
+                if (viewSection === 'bids') {
+                    targetElement = document.getElementById('bids-section');
+                } else if (viewSection === 'counter' && bidId) {
+                    targetElement = document.getElementById('counter-section-' + bidId);
+                    if (targetElement) {
+                        const toggleEl = targetElement.querySelector('.counter-bids-toggle');
+                        if (toggleEl) {
+                            toggleEl.click();
+                        }
+                    }
+                }
+                
+                if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    targetElement.style.boxShadow = '0 0 10px 3px rgba(26, 74, 110, 0.3)';
+                    setTimeout(function() {
+                        targetElement.style.boxShadow = '';
+                    }, 2000);
+                }
+            }, 500);
+        }
+    });
+</script>
 @endpush
