@@ -60,7 +60,7 @@
                             return implode(' + ', array_filter($parts)) ?: null;
                         };
                         
-                        $agentBidData = (array) $bid->getAllMeta();
+                        $agentBidData = (array) $bid->get;
                         
                         $normalizeForMatch = function($v) {
                             if (is_null($v) || $v === '') return '';
