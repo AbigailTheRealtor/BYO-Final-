@@ -238,10 +238,12 @@ class DashboardController extends Controller
         } else if ($type == 'agent-bids') {
             $userAuctions = \App\Models\TenantAgentAuction::where('user_id', $user->id)->pluck('id');
             $page_data['pendingAgentBids'] = TenantAgentAuctionBid::whereIn('tenant_agent_auction_id', $userAuctions)
-                ->whereIn('status', ['Active', 'Countered'])
-                ->with(['user', 'auction'])
+                ->with(['user', 'auction', 'meta', 'counterTerms', 'acceptedBidSummary'])
                 ->orderBy('created_at', 'desc')
-                ->get();
+                ->get()
+                ->filter(function($bid) {
+                    return in_array($bid->bid_status, ['Active', 'Countered']);
+                });
             return view('my-bids.agent-bids', $page_data);
         } else {
             abort(404);
