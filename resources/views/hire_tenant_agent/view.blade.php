@@ -1837,10 +1837,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             }
                             
                             // === MATCH SCORE CALCULATION (for bid card and modal) ===
-                            // DEBUG: Check user identification
-                            // Remove after debugging
-                            $debugInfo = "auth_id=$auth_id | auction.user_id=" . data_get($auction, 'user_id') . " | isListingOwner=" . ($isListingOwner ? 'true' : 'false') . " | isAgentViewer=" . ($isAgentViewer ? 'true' : 'false') . " | isBidOwner=" . ($isBidOwner ? 'true' : 'false');
-                            
                             // Get current bid data
                             $currentBidData = (array) data_get($bid, 'get', []);
                             
@@ -2246,11 +2242,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     style="background: #fafafa; padding: 25px;">
 
                                                     {{-- ========== MATCH SCORE PANEL (uses pre-calculated values) ========== --}}
-                                                    {{-- DEBUG: Show user identification info (remove after debugging) --}}
-                                                    <div class="alert alert-warning mb-3 py-2 small">
-                                                        <strong>DEBUG:</strong> {{ $debugInfo }}
-                                                    </div>
-                                                    
                                                     <div class="match-score-panel mb-4 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; border: 1px solid #dee2e6;">
                                                         <div class="d-flex justify-content-between align-items-center mb-3">
                                                             <h6 class="mb-0" style="color: #1a3a5c; font-weight: 600;">
