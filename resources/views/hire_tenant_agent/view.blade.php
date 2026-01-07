@@ -1601,39 +1601,108 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             $canSeeBidSummary = $isListingOwner || !$isAgentViewer || $isBiddingPeriodListing;
         @endphp
         
-        {{-- Last Bidder Info - Outside the card --}}
-        @if ($canSeeBidSummary)
+        {{-- Last Bidder Info - Outside the card (Hidden for Bidding Period listings to avoid timing hints) --}}
+        @php
+            $otherBidsExist = $auction->bids->where('user_id', '!=', $auth_id)->count() > 0;
+        @endphp
+        @if ($canSeeBidSummary && !($isBiddingPeriodListing && $isAgentViewer && !$isListingOwner))
             @if ($lowest_bidder && $lastBidderNumber)
             <p class="mb-3"><b>Agent {{ $lastBidderNumber }}</b> was the last bidder.</p>
             @else
             <p class="mb-3">No one has bid on this auction.</p>
             @endif
-        @else
+        @elseif (!$canSeeBidSummary)
             {{-- Traditional listing - agents cannot see bid summary --}}
             <p class="text-muted mb-3"><i class="fa fa-lock me-1"></i> Bid information is private for traditional listings.</p>
         @endif
         
         {{-- 🔹 Agent Visibility Info Messages --}}
-        @php
-            // $isAgentViewer already defined above
-            $otherBidsExist = $auction->bids->where('user_id', '!=', $auth_id)->count() > 0;
-        @endphp
         @if ($isAgentViewer && !$isListingOwner)
             @if ($isTraditionalListing && $otherBidsExist)
             <div class="alert alert-info small mb-3 py-2">
                 <i class="fa fa-lock me-1"></i> <strong>Traditional Listing:</strong> You can only view your own bid. Other agents' bids remain private.
             </div>
-            @elseif ($isBiddingPeriodListing && !$isExpired && $userHasBid && $otherBidsExist)
-            <a href="{{ route('agent.tenant.agent.auction.competing-bids', $auction->id) }}" class="btn btn-outline-info w-100 mb-3">
-                <i class="fa fa-users me-2"></i>View Competing Bids
-            </a>
-            <div class="alert alert-info small mb-3 py-2">
-                <i class="fa fa-eye me-1"></i> <strong>Bidding Period:</strong> You can view anonymized competing bids (Broker Terms, Services, Match Scores only).
-            </div>
             @elseif ($isBiddingPeriodListing && !$isExpired && !$userHasBid)
             <div class="alert alert-warning small mb-3 py-2">
-                <i class="fa fa-info-circle me-1"></i> <strong>Submit to View:</strong> Submit your bid to view competing bids.
+                <i class="fa fa-info-circle me-1"></i> <strong>Bidding Period:</strong> Submit your bid to view anonymized competing bids (Broker Terms, Services, and Match Scores only).
             </div>
+            @elseif ($isBiddingPeriodListing && !$isExpired && $userHasBid && $otherBidsExist)
+            <div class="alert alert-info small mb-3 py-2">
+                <i class="fa fa-eye me-1"></i> <strong>Bidding Period:</strong> Anonymized competing bids are visible below (Broker Terms, Services, Match Scores only).
+            </div>
+            {{-- 🔹 INLINE COMPETING BIDS DISPLAY --}}
+            @php
+                $competingBidsService = app(\App\Services\CompetingBidsService::class);
+                $competingBids = $competingBidsService->getCompetingBids($auction->id, $auth_id);
+            @endphp
+            @if(count($competingBids) > 0)
+            <div class="mb-4">
+                <h6 class="fw-bold mb-3" style="color: #049399;"><i class="fa fa-users me-2"></i>Competing Bids ({{ count($competingBids) }})</h6>
+                @foreach($competingBids as $compBid)
+                <div class="card mb-3" style="border-radius: 10px; border: 1px solid #e0e0e0;">
+                    <div class="card-header d-flex justify-content-between align-items-center" style="background: #f8f9fa; border-bottom: 1px solid #e0e0e0; border-radius: 10px 10px 0 0; padding: 12px 16px;">
+                        <span class="fw-bold" style="font-family: 'Lufga', sans-serif;">{{ $compBid['anonymous_label'] }}</span>
+                        @php
+                            $overallScore = $compBid['match_score']['overall_percent'];
+                            $scoreColor = $overallScore >= 80 ? '#28a745' : ($overallScore >= 50 ? '#ffc107' : '#dc3545');
+                        @endphp
+                        <span class="badge" style="background: {{ $scoreColor }}; color: white; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem;">
+                            {{ $overallScore }}% Match
+                        </span>
+                    </div>
+                    <div class="card-body" style="padding: 16px;">
+                        <div class="row">
+                            {{-- Match Score Breakdown --}}
+                            <div class="col-12 mb-3">
+                                <div class="d-flex flex-wrap gap-3">
+                                    @php
+                                        $brokerScore = $compBid['match_score']['broker_comp_percent'];
+                                        $brokerColor = $brokerScore >= 80 ? '#28a745' : ($brokerScore >= 50 ? '#ffc107' : '#dc3545');
+                                        $servicesScore = $compBid['match_score']['services_percent'];
+                                        $servicesColor = $servicesScore >= 80 ? '#28a745' : ($servicesScore >= 50 ? '#ffc107' : '#dc3545');
+                                    @endphp
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge me-2" style="background: {{ $brokerColor }}; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">{{ $brokerScore }}%</span>
+                                        <span class="small text-muted">Broker Compensation ({{ $compBid['match_score']['broker_comp_matched'] }}/{{ $compBid['match_score']['broker_comp_total'] }} fields)</span>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge me-2" style="background: {{ $servicesColor }}; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">{{ $servicesScore }}%</span>
+                                        <span class="small text-muted">Offered Services ({{ $compBid['match_score']['services_matched'] }}/{{ $compBid['match_score']['services_total'] }} services)</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {{-- Offered Services Summary --}}
+                            <div class="col-md-6 mb-2">
+                                <div class="fw-semibold small" style="color: #049399;">Offered Services:</div>
+                                <div class="small">{{ count($compBid['offered_services']['standard']) + count($compBid['offered_services']['other']) }} Services</div>
+                            </div>
+                            {{-- Broker Compensation Summary --}}
+                            <div class="col-md-6 mb-2">
+                                <div class="fw-semibold small" style="color: #049399;">Broker Compensation Summary:</div>
+                                @if(count($compBid['broker_compensation']) > 0)
+                                    @php
+                                        $commStructure = $compBid['broker_compensation']['commission_structure'] ?? null;
+                                        $leaseFeeType = $compBid['broker_compensation']['lease_fee_type'] ?? null;
+                                    @endphp
+                                    @if($commStructure)
+                                    <div class="small">Structure: {{ $commStructure }}</div>
+                                    @endif
+                                    @if($leaseFeeType)
+                                    <div class="small">Fee Type: {{ $leaseFeeType }}</div>
+                                    @endif
+                                @else
+                                    <div class="small text-muted">Not specified</div>
+                                @endif
+                            </div>
+                        </div>
+                        <div class="text-end mt-2">
+                            <small class="text-muted fst-italic">Compared to Your Bid</small>
+                        </div>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+            @endif
             @endif
         @endif
 
