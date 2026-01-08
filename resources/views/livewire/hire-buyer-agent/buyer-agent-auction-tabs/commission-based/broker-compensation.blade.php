@@ -84,8 +84,8 @@
                     <div class="input-group">
                         <span class="input-group-text"> $</span>
                         <input type="text" wire:model="purchase_fee_flat_combo" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 3000)"
-                            >
+                            placeholder="Enter flat fee amount (e.g., 3,000)"
+                            oninput="validateMoneyInput(this)" onblur="formatMoneyOnBlur(this)" onpaste="handleMoneyPaste(event)">
                     </div>
                 </div>
             </div>
@@ -204,8 +204,9 @@
                     <div class="col-md-5">
                         <div class="input-group">
                             <span class="input-group-text">$</span>
-                            <input type="number" wire:model="lease_fee_flat_combo" class="form-control"
-                                placeholder="Enter flat fee amount (e.g., 1000)">
+                            <input type="text" wire:model="lease_fee_flat_combo" class="form-control"
+                                placeholder="Enter flat fee amount (e.g., 1,000)"
+                                oninput="validateMoneyInput(this)" onblur="formatMoneyOnBlur(this)" onpaste="handleMoneyPaste(event)">
                         </div>
                     </div>
                     <div class="col-md-1 text-center pt-2">+</div>
@@ -228,8 +229,9 @@
                     <div class="col-md-5">
                         <div class="input-group">
                             <span class="input-group-text">$</span>
-                            <input type="number" wire:model="lease_fee_flat_combo_net" class="form-control"
-                                placeholder="Enter flat fee amount (e.g., 1500)">
+                            <input type="text" wire:model="lease_fee_flat_combo_net" class="form-control"
+                                placeholder="Enter flat fee amount (e.g., 1,500)"
+                                oninput="validateMoneyInput(this)" onblur="formatMoneyOnBlur(this)" onpaste="handleMoneyPaste(event)">
                         </div>
                     </div>
                     <div class="col-md-1 text-center pt-2">+</div>
@@ -440,8 +442,9 @@
         <div class="mt-3">
             <div class="input-group">
                 <span class="input-group-text">$</span>
-                <input type="number" wire:model="early_termination_fee_amount" class="form-control"
-                    placeholder="Enter early termination fee amount (e.g., 1000)">
+                <input type="text" wire:model="early_termination_fee_amount" class="form-control"
+                    placeholder="Enter early termination fee amount (e.g., 1,000)"
+                    oninput="validateMoneyInput(this)" onblur="formatMoneyOnBlur(this)" onpaste="handleMoneyPaste(event)">
             </div>
             @error('early_termination_fee_amount')
                 <span class="text-danger small">{{ $message }}</span>
@@ -472,8 +475,9 @@
         <div class="mt-3">
             <div class="input-group">
                 <span class="input-group-text">$</span>
-                <input type="number" wire:model="retainer_fee_amount" class="form-control"
-                    placeholder="Enter retainer fee amount (e.g., 500)">
+                <input type="text" wire:model="retainer_fee_amount" class="form-control"
+                    placeholder="Enter retainer fee amount (e.g., 500)"
+                    oninput="validateMoneyInput(this)" onblur="formatMoneyOnBlur(this)" onpaste="handleMoneyPaste(event)">
             </div>
             @error('retainer_fee_amount')
                 <span class="text-danger small">{{ $message }}</span>
