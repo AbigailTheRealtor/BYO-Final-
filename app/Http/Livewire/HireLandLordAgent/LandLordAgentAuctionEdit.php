@@ -495,6 +495,18 @@ class LandLordAgentAuctionEdit extends Component
     // Methods
 
     /**
+     * Override syncInput to guard against empty property names before Str::studly() is called.
+     * This prevents crashes when wire:model.lazy sends empty property names during select transitions.
+     */
+    public function syncInput($name, $value, $rehash = true)
+    {
+        if (blank($name)) {
+            return;
+        }
+        return parent::syncInput($name, $value, $rehash);
+    }
+
+    /**
      * Override callUpdatedHook to guard against empty property names before Str::studly() is called.
      * This prevents crashes when wire:model.lazy sends empty property names during select transitions.
      */
