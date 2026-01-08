@@ -4,7 +4,7 @@ namespace App\Http\Livewire\HireSellerAgent;
 
 use Livewire\Component;
 use Livewire\WithFileUploads;
-use App\Models\BuyerAgentAuction as HireBuyerAgentAuction;
+use App\Models\SellerAgentAuction as SellerAgentAuctionModel;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -575,7 +575,7 @@ class SellerAgentAuction extends Component
         $this->addService();
 
         // Check for existing drafts
-        $this->hasDrafts = HireBuyerAgentAuction::where('user_id', Auth::id())
+        $this->hasDrafts = SellerAgentAuctionModel::where('user_id', Auth::id())
             ->where('is_draft', true)
             ->exists();
 
@@ -597,7 +597,7 @@ class SellerAgentAuction extends Component
     }
     public function getDrafts()
     {
-        return HireBuyerAgentAuction::where('user_id', Auth::id())
+        return SellerAgentAuctionModel::where('user_id', Auth::id())
             ->where('is_draft', true)
             ->latest()
             ->get();
@@ -1178,8 +1178,8 @@ class SellerAgentAuction extends Component
             $this->isDraft = true;
 
             $auction = $this->listingId
-                ? HireBuyerAgentAuction::find($this->listingId)
-                : new HireBuyerAgentAuction();
+                ? SellerAgentAuctionModel::find($this->listingId)
+                : new SellerAgentAuctionModel();
 
             $auction->user_id = Auth::id();
             $auction->title = $this->listing_title;
@@ -1198,7 +1198,7 @@ class SellerAgentAuction extends Component
 
     public function loadDraft($listingId)
     {
-        $auction = HireBuyerAgentAuction::where('id', $listingId)
+        $auction = SellerAgentAuctionModel::where('id', $listingId)
             ->where('user_id', Auth::id())
             ->first();
 
@@ -2082,8 +2082,8 @@ class SellerAgentAuction extends Component
             $this->isDraft = 0;
 
             $auction = $this->listingId
-                ? HireBuyerAgentAuction::find($this->listingId)
-                : new HireBuyerAgentAuction();
+                ? SellerAgentAuctionModel::find($this->listingId)
+                : new SellerAgentAuctionModel();
 
             $auction->user_id = Auth::id();
             $auction->title = $this->listing_title;
@@ -2096,8 +2096,8 @@ class SellerAgentAuction extends Component
 
             session()->flash('success', 'Listing submitted successfully!');
 
-            // Optionally redirect to a success page
-            // return redirect()->route('listings.success');
+            // Redirect to the Seller listing view page
+            return redirect()->route('seller.agent.auction.detail', ['id' => $auction->id]);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             // Log validation errors for debugging
@@ -2124,19 +2124,19 @@ class SellerAgentAuction extends Component
     {
         try {
             // Get all draft IDs first
-            $draftIds = HireBuyerAgentAuction::where('user_id', Auth::id())
+            $draftIds = SellerAgentAuctionModel::where('user_id', Auth::id())
                 ->where('is_draft', true)
                 ->pluck('id');
 
             // Delete all metadata associated with these drafts
             if ($draftIds->isNotEmpty()) {
-                DB::table('tenant_agent_auction_metas') // Replace with your actual meta table name
-                    ->whereIn('tenant_agent_auction_id', $draftIds)
+                DB::table('seller_agent_auction_metas')
+                    ->whereIn('seller_agent_auction_id', $draftIds)
                     ->delete();
             }
 
             // Now delete the drafts themselves
-            $deleted = HireBuyerAgentAuction::where('user_id', Auth::id())
+            $deleted = SellerAgentAuctionModel::where('user_id', Auth::id())
                 ->where('is_draft', true)
                 ->delete();
 
@@ -2151,17 +2151,17 @@ class SellerAgentAuction extends Component
     {
         try {
             // Delete metadata first
-            DB::table('tenant_agent_auction_metas')
-                ->where('tenant_agent_auction_id', $draftId)
+            DB::table('seller_agent_auction_metas')
+                ->where('seller_agent_auction_id', $draftId)
                 ->delete();
 
             // Delete the draft
-            HireBuyerAgentAuction::where('id', $draftId)
+            SellerAgentAuctionModel::where('id', $draftId)
                 ->where('user_id', Auth::id())
                 ->delete();
 
             // Check if there are any drafts left
-            $this->hasDrafts = HireBuyerAgentAuction::where('user_id', Auth::id())
+            $this->hasDrafts = SellerAgentAuctionModel::where('user_id', Auth::id())
                 ->where('is_draft', true)
                 ->exists();
 

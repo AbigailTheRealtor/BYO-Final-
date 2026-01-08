@@ -1,0 +1,195 @@
+Replit Instructions — Fix “Hire a Seller’s Agent” Listing Routing + Correct Tab Set
+Applies to
+
+User logged in (any profile type, e.g., tenant@exp.com) → creates a listing → selects Hire a Seller’s Agent.
+
+Current Issue
+
+After creating a Hire a Seller’s Agent listing, the website routes it into the Hire a Tenant’s Agent listing section/tab set, and the listing display tabs do not correspond to Seller tabs.
+
+Expected Behavior
+
+Hire a Seller’s Agent listings must:
+
+appear under Hire Seller’s Agent Auctions (or Seller section) on the dashboard/menu
+
+open using the Seller listing display view/component
+
+show the Seller tab set (Seller tabs must match Seller listing creation tabs), the same way Tenant creation ↔ Tenant display already aligns
+
+Seller listings must never open inside Tenant listing routes/views/components.
+
+✅ SAFEGUARDS (MUST FOLLOW — NO EXCEPTIONS)
+
+DO NOT:
+
+delete/rename database tables, models, migrations, or columns
+
+change any field keys/names used in forms (Tenant/Seller/Buyer/Landlord)
+
+modify tooltips, placeholder text, icons, styling, spacing, or tab order for Tenant flows
+
+refactor shared components broadly
+
+“merge” Seller into Tenant logic
+
+change bidding logic, timers, permissions, or Match Score logic
+
+alter existing working Tenant creation or Tenant listing display
+
+ONLY:
+
+fix route/controller/view mapping and conditional routing so Seller listings load the Seller module
+
+ensure tab set for Seller listing display matches Seller listing creation
+
+1) Confirm Listing Type Routing Flag (NO DB CHANGES)
+
+Goal: ensure Seller listings have a reliable discriminator that routing can use.
+
+Locate where listing type is stored (examples):
+
+agent_type
+
+listing_type
+
+service_type
+
+auction_type
+
+request_type
+
+role_type
+
+Confirm “Hire a Seller’s Agent” is saved as a distinct value (examples):
+
+seller
+
+hire_seller_agent
+
+seller_agent
+
+seller_listing
+
+✅ If it already exists, DO NOT change it.
+⚠️ If Seller listings are being saved as tenant or defaulting to tenant type, fix ONLY the assignment at creation time (controller/form submission) so Seller writes the correct type.
+
+2) Fix Post-Submit Redirect Destination (Primary Bug)
+
+Problem: after submission, your redirect is likely hardcoded to the Tenant path (example: /hire/agent/tenant/... or tenant dashboard tab).
+
+Action
+
+In the listing creation “submit/save” handler (controller or Livewire component):
+
+Replace any redirect that points to a Tenant page with a redirect that uses the listing’s saved type.
+
+Required behavior:
+
+If listing type = Seller → redirect to Seller listing details page (Seller module)
+
+If listing type = Tenant → redirect to Tenant module (unchanged)
+
+Same concept for Buyer/Landlord later, but DO NOT modify them in this task unless needed for shared function safety.
+
+Implementation rule:
+Use a centralized mapping function (switch/case) like:
+
+seller → route('seller.auctions.show', listing_id)
+
+tenant → route('tenant.auctions.show', listing_id)
+(or your equivalent route names/URLs)
+
+✅ Keep Tenant behavior exactly the same.
+
+3) Fix Dashboard/Menu “Hire Seller’s Agent Auctions” Links
+
+Problem: The sidebar link for Seller auctions may be pointing to Tenant auctions route, or both share the same route.
+
+Action
+
+In the sidebar/menu config:
+
+Ensure “Hire Seller’s Agent Auctions” links to the Seller auctions index page.
+
+Ensure the “View Listing” action inside Seller auctions list links to Seller show route.
+
+✅ Do not change icon, layout, labels, counts — ONLY update the href/route target.
+
+4) Fix “Open Listing” / “View Listing” Resolver (Where It Chooses Which Module to Render)
+
+Problem: There is likely a generic “auction/show” page that always mounts the Tenant component.
+
+Action
+
+Find the route/view that renders listing details (examples):
+
+AuctionController@show
+
+ListingController@show
+
+hire/agent/auction/{id}
+
+Livewire mount: HireTenantAuctionShow or similar
+
+Update it so:
+
+it loads the correct component/view based on listing type.
+
+Required logic (example):
+
+if listing.type == seller → load Seller listing component/view
+
+else if listing.type == tenant → load Tenant listing component/view
+
+✅ IMPORTANT: Do not alter Tenant component.
+✅ Simply add a Seller branch.
+
+5) Seller Listing Tabs Must Match Seller Creation Tabs (Creation ↔ Display Alignment)
+
+Goal: Mirror the Tenant pattern: Tenant creation tabs match Tenant listing display tabs.
+
+Action
+
+In the Seller listing display component:
+
+Confirm the tab labels + tab order correspond exactly to Seller listing creation.
+
+Examples (your Seller set):
+
+Listing Details
+
+Property Details
+
+Sale Terms
+
+Services
+
+Additional Details
+
+Broker Compensation & Agency Agreement Terms
+
+Seller Information
+
+✅ Only adjust Seller display tabs if they are wrong.
+🚫 Do not touch Tenant tabs.
+
+6) Verification Checklist (Must Pass Before Marking Done)
+
+Test as tenant@exp.com (or any user):
+
+Create listing → select Hire a Seller’s Agent → submit
+
+After submit, confirm:
+
+you land in Seller listing module (not tenant)
+
+you see Seller tab set (not tenant)
+
+From dashboard:
+
+Seller listing appears under Hire Seller’s Agent Auctions
+
+Clicking it opens Seller module
+
+Tenant listings remain unchanged and still route correctly
