@@ -15,7 +15,7 @@
         Buyer’s Broker Commission Structure:
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select how the Buyer’s Broker will be compensated—either directly by the Buyer (out-of-pocket) or as part of the offer to the Seller (included in the purchase offer). If the Seller declines to pay, the Buyer remains responsible for the commission.">
+            title="Select how the Buyer’s Broker will be compensated—either directly by the Buyer (out-of-pocket) or requested from the Seller as part of the offer. If the Seller does not agree to pay, the Buyer remains responsible for the commission under the brokerage agreement.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -23,8 +23,8 @@
         <select wire:model="commission_structure" class="form-control has-icon"
             data-icon="fa-solid fa-file-invoice-dollar">
             <option value="">Select</option>
-            <option value="Out-of-Pocket Payment">Out-of-Pocket Payment</option>
-            <option value="Included in Offer">Included in Offer</option>
+            <option value="Buyer Pays Out-of-Pocket">Buyer Pays Out-of-Pocket</option>
+            <option value="Requested From Seller in the Offer">Requested From Seller in the Offer</option>
         </select>
     </div>
     @error('commission_structure')
@@ -92,7 +92,7 @@
             </div>
         @elseif($purchase_fee_type === 'other')
             <input type="text" wire:model="purchase_fee_other" class="form-control mt-2"
-                placeholder="Enter other purchase fee amount (e.g., 1000 upfront + 2% at closing)">
+                placeholder="Enter purchase fee structure (e.g., 1,000 upfront + 2% at Closing)">
         @endif
     </div>
     @error('purchase_fee_*')
@@ -141,14 +141,15 @@
             <select wire:model="lease_fee_type" class="form-control has-icon"
                 data-icon="fa-solid fa-file-invoice-dollar">
                 <option value="">Select</option>
-                <option value="flat">Flat Fee</option>
-                <option value="Percentage of Monthly Rent">Percentage of Monthly Rent</option>
-                <option value="Percentage of the Gross Lease Value">Percentage of the Gross Lease Value</option>
-                <option value="Flat Fee + Percentage of the Gross Lease Value">Flat Fee + Percentage of the Gross Lease
-                    Value</option>
-
-                @if (in_array($property_type, ['Commercial', 'Business']))
-                    <option value="Percentage of the Net Aggregate Rent">Percentage of the Net Aggregate Rent </option>
+                @if ($property_type === 'Residential')
+                    <option value="flat">Flat Fee</option>
+                    <option value="Percentage of Monthly Rent">Percentage of Monthly Rent</option>
+                    <option value="Percentage of the Gross Lease Value">Percentage of the Gross Lease Value</option>
+                    <option value="Flat Fee + Percentage of the Gross Lease Value">Flat Fee + Percentage of the Gross Lease
+                        Value</option>
+                @else
+                    <option value="flat">Flat Fee</option>
+                    <option value="Percentage of the Net Aggregate Rent">Percentage of the Net Aggregate Rent</option>
                     <option value="Flat Fee + Percentage of the Net Aggregate Rent">Flat Fee + Percentage of the Net
                         Aggregate Rent</option>
                 @endif
@@ -340,14 +341,12 @@
         <h5 class="compensation_tab">
             Compensation for Creating the Lease-Option Agreement:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Specify how the Broker will be compensated at the time the lease-option agreement is created. This may include a flat fee or a percentage of the option consideration paid by the Tenant. This compensation is typically paid upfront and is separate from any commission owed if the purchase option is later exercised.">
+                title="Specify how the Broker will be compensated at the time the lease-option agreement is created. This may include a flat fee or a percentage of the option consideration paid by the party granting the option. This compensation is typically paid upfront and is separate from any commission that may be owed if the purchase option is later exercised.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </h5>
 
         <div class="form-group">
-            <label class="fw-bold d-block mb-1">Compensation Amount</label>
-
             <div class="input-group">
                 <!-- Select for type -->
                 <select wire:model="lease_type" wire:change="setType('lease', $event.target.value)"  class="form-select" style="max-width: 100px;">
@@ -359,7 +358,7 @@
                 <input type="number" step="any" wire:model.lazy="lease_value" class="form-control"
                     placeholder="{{ $lease_type === 'percent'
                         ? 'Enter percentage of option consideration (e.g., 5)'
-                        : 'Enter flat fee for lease-option arrangement (e.g., 1500)' }}">
+                        : 'Enter flat fee amount (e.g., 1,500)' }}">
 
                 <!-- Suffix -->
                 <span class="input-group-text">
@@ -375,14 +374,12 @@
         <h5 class="compensation_tab">
             Compensation if Purchase Option is Exercised:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="If the Tenant chooses to exercise the option and purchase the property, the Broker may be entitled to additional compensation. Enter how the Broker will be compensated at that time—such as a flat fee or a percentage of the total purchase price. Any compensation already received under the lease-option agreement may be credited against the final amount due, depending on the terms of the agreement.">
+                title="If the purchase option is exercised, the Broker may be entitled to additional compensation. Enter how the Broker will be compensated at that time, such as a flat fee or a percentage of the total purchase price. Any compensation already received under the lease-option agreement may be credited toward the final amount due, depending on the terms of the agreement.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </h5>
 
         <div class="form-group">
-            <label class="fw-bold d-block mb-1">Compensation Amount</label>
-
             <div class="input-group">
                 <!-- Select for type -->
                 <select wire:model="purchase_type"  wire:change="setType('purchase', $event.target.value)" class="form-select" style="max-width: 100px;">
@@ -394,7 +391,7 @@
                 <input type="number" step="any" wire:model.lazy="purchase_value" class="form-control"
                     placeholder="{{ $purchase_type === 'percent'
                         ? 'Enter percentage of the total purchase price (e.g., 6)'
-                        : 'Enter flat fee (e.g., 5000)' }}">
+                        : 'Enter flat fee amount (e.g., 5,000)' }}">
 
                 <!-- Suffix -->
                 <span class="input-group-text">
@@ -406,9 +403,6 @@
 
     </div>
 
-    <div class="alert alert-warning mt-3 p-2 small">
-        <strong> Note: </strong> Select $ or % to switch between entering a dollar amount or a percentage.
-    </div>
 @endif
 
 <!-- Protection Period Timeframe -->
@@ -585,7 +579,7 @@
                     <li>The Broker acts as a fiduciary, providing the highest level of loyalty, confidentiality,
                         obedience, and full disclosure.</li>
                     <li>Always acts in the Buyer’s best interest.</li>
-                    <li>Requires a Single Agent Notice signed by the Buyer.</li>
+                    <li>If required by state law, a Single Agent Notice will be provided by the Broker and signed by the Buyer.</li>
                 </ul>
             @elseif($brokerage_relationship === 'Dual Agency Representation')
                 <h6 class="fw-bold">• Dual Agency Representation:</h6>
@@ -608,7 +602,7 @@
             <div class="alert alert-warning mt-3 p-2 small">
                 <strong>⚠️ Legal Notice:</strong> Some brokerage relationships may not be permitted in every state. If
                 the selected relationship type is not legally recognized in your state, the Broker will establish a
-                permitted alternative. Real estate laws change frequently. The Broker and the Buyerare responsible for
+                permitted alternative. Real estate laws change frequently. The Broker and the Buyer are responsible for
                 ensuring compliance with all current local, state, and federal laws.
             </div>
         </div>
