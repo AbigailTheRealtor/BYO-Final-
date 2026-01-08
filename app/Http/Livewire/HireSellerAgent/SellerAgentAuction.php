@@ -219,6 +219,40 @@ class SellerAgentAuction extends Component
     public $agency_agreement_custom = '';
     public $brokerage_relationship = '';
 
+    // Seller-specific broker compensation
+    public $nominal = '';
+    public $interested_purchase_fee_type = '';
+    public $seller_leasing_fee_type = '';
+    public $seller_leasing_gross = '';
+    public $seller_leasing_gross_rental = '';
+    public $seller_leasing_gross_month_rent = '';
+    public $seller_leasing_gross_no_of_months = '';
+    public $seller_leasing_gross_flat = '';
+    public $seller_leasing_gross_other = '';
+    public $seller_leasing_each_rental = '';
+    public $seller_leasing_gross_percentage = '';
+    public $seller_leasing_gross_percentage_combo = '';
+    public $seller_leasing_gross_flat_combo = '';
+    public $seller_leasing_gross_flat_net_combo = '';
+    public $seller_leasing_gross_percentage_net_combo = '';
+    public $seller_leasing_gross_purchase_fee_flat_amount = '';
+    public $seller_leasing_gross_purchase_fee_other = '';
+    public $sales_tax_option_gross = '';
+    public $seller_leasing_gross_sales_tax_first_month = '';
+    public $seller_leasing_gross_sales_tax_flat_free_gross = '';
+    public $seller_leasing_gross_sales_tax_option_gross = '';
+    public $commission_structure_type = '';
+    public $commission_structure_type_fee_flat = '';
+    public $commission_structure_type_fee_percentage = '';
+    public $commission_structure_type_fee_other = '';
+    public $commission_structure_type_fee_flat_combo = '';
+    public $commission_structure_type_fee_percentage_combo = '';
+    public $interested_lease_option_agreement = '';
+    public $lease_type = '';
+    public $purchase_type = '';
+    public $retained_deposits = '';
+    public $additional_details_broker = '';
+
     // Personal information
     public $first_name = '';
     public $last_name = '';
@@ -658,6 +692,125 @@ class SellerAgentAuction extends Component
             $this->dispatchBrowserEvent('show-auction-time');
         } else {
             $this->dispatchBrowserEvent('hide-auction-time');
+        }
+    }
+
+    /**
+     * Clear prior inputs when switching property types
+     * This ensures Commercial-specific fields are cleared when switching to Residential and vice versa
+     */
+    public function updatedPropertyType($value)
+    {
+        // Clear all seller leasing fields when property type changes
+        $this->seller_leasing_fee_type = '';
+        $this->seller_leasing_gross = '';
+        $this->seller_leasing_gross_rental = '';
+        $this->seller_leasing_gross_month_rent = '';
+        $this->seller_leasing_gross_no_of_months = '';
+        $this->seller_leasing_gross_flat = '';
+        $this->seller_leasing_gross_other = '';
+        $this->seller_leasing_each_rental = '';
+        $this->seller_leasing_gross_percentage = '';
+        $this->seller_leasing_gross_percentage_combo = '';
+        $this->seller_leasing_gross_flat_combo = '';
+        $this->seller_leasing_gross_flat_net_combo = '';
+        $this->seller_leasing_gross_percentage_net_combo = '';
+        $this->seller_leasing_gross_purchase_fee_flat_amount = '';
+        $this->seller_leasing_gross_purchase_fee_other = '';
+        $this->sales_tax_option_gross = '';
+        $this->seller_leasing_gross_sales_tax_first_month = '';
+        $this->seller_leasing_gross_sales_tax_flat_free_gross = '';
+        $this->seller_leasing_gross_sales_tax_option_gross = '';
+        
+        // Clear nominal fee for non-applicable property types
+        if (!in_array($value, ['Income', 'Commercial', 'Business'])) {
+            $this->nominal = '';
+        }
+    }
+
+    /**
+     * Clear prior inputs when switching seller leasing fee type
+     */
+    public function updatedSellerLeasingFeeType($value)
+    {
+        // Clear all leasing fee input values when type changes
+        $this->seller_leasing_gross = '';
+        $this->seller_leasing_gross_rental = '';
+        $this->seller_leasing_gross_month_rent = '';
+        $this->seller_leasing_gross_no_of_months = '';
+        $this->seller_leasing_gross_flat = '';
+        $this->seller_leasing_gross_other = '';
+        $this->seller_leasing_each_rental = '';
+        $this->seller_leasing_gross_percentage = '';
+        $this->seller_leasing_gross_percentage_combo = '';
+        $this->seller_leasing_gross_flat_combo = '';
+        $this->seller_leasing_gross_flat_net_combo = '';
+        $this->seller_leasing_gross_percentage_net_combo = '';
+        $this->sales_tax_option_gross = '';
+        $this->seller_leasing_gross_sales_tax_first_month = '';
+        $this->seller_leasing_gross_sales_tax_flat_free_gross = '';
+        $this->seller_leasing_gross_sales_tax_option_gross = '';
+    }
+
+    /**
+     * Clear prior inputs when switching purchase fee type
+     */
+    public function updatedPurchaseFeeType($value)
+    {
+        // Clear all purchase fee values when type changes
+        $this->purchase_fee_percentage = '';
+        $this->purchase_fee_flat = '';
+        $this->purchase_fee_percentage_combo = '';
+        $this->purchase_fee_flat_combo = '';
+        $this->purchase_fee_other = '';
+    }
+
+    /**
+     * Clear prior inputs when switching commission structure type
+     */
+    public function updatedCommissionStructureType($value)
+    {
+        // Clear all commission structure fee values when type changes
+        $this->commission_structure_type_fee_flat = '';
+        $this->commission_structure_type_fee_percentage = '';
+        $this->commission_structure_type_fee_other = '';
+        $this->commission_structure_type_fee_flat_combo = '';
+        $this->commission_structure_type_fee_percentage_combo = '';
+    }
+
+    /**
+     * Clear commission structure type fields when main commission structure changes
+     */
+    public function updatedCommissionStructure($value)
+    {
+        // Clear sub-fields when switching commission structure
+        $this->commission_structure_type = '';
+        $this->commission_structure_type_fee_flat = '';
+        $this->commission_structure_type_fee_percentage = '';
+        $this->commission_structure_type_fee_other = '';
+        $this->commission_structure_type_fee_flat_combo = '';
+        $this->commission_structure_type_fee_percentage_combo = '';
+    }
+
+    /**
+     * Clear seller leasing fields when interested in leasing changes
+     */
+    public function updatedInterestedPurchaseFeeType($value)
+    {
+        if ($value !== 'Yes') {
+            // Clear all leasing fields when not interested in leasing
+            $this->seller_leasing_fee_type = '';
+            $this->seller_leasing_gross = '';
+            $this->seller_leasing_gross_rental = '';
+            $this->seller_leasing_gross_month_rent = '';
+            $this->seller_leasing_gross_no_of_months = '';
+            $this->seller_leasing_gross_flat = '';
+            $this->seller_leasing_gross_other = '';
+            $this->seller_leasing_each_rental = '';
+            $this->seller_leasing_gross_percentage = '';
+            $this->seller_leasing_gross_percentage_combo = '';
+            $this->seller_leasing_gross_flat_combo = '';
+            $this->sales_tax_option_gross = '';
         }
     }
 
@@ -1739,9 +1892,182 @@ class SellerAgentAuction extends Component
         }
     }
 
+    /**
+     * Sanitize and clear stale values before submission
+     * This clears hidden field values that are not applicable based on current selections
+     */
+    protected function sanitizeBeforeSubmit()
+    {
+        // Clear seller leasing fields if not interested in leasing
+        if ($this->interested_purchase_fee_type !== 'Yes') {
+            $this->seller_leasing_fee_type = '';
+            $this->seller_leasing_gross = '';
+            $this->seller_leasing_gross_rental = '';
+            $this->seller_leasing_gross_month_rent = '';
+            $this->seller_leasing_gross_no_of_months = '';
+            $this->seller_leasing_gross_flat = '';
+            $this->seller_leasing_gross_other = '';
+            $this->seller_leasing_each_rental = '';
+            $this->seller_leasing_gross_percentage = '';
+            $this->sales_tax_option_gross = '';
+        }
+
+        // Clear commission structure type fields if no compensation offered
+        if ($this->commission_structure === 'No Compensation Offered to the Buyer\'s Broker') {
+            $this->commission_structure_type = '';
+            $this->commission_structure_type_fee_flat = '';
+            $this->commission_structure_type_fee_percentage = '';
+            $this->commission_structure_type_fee_other = '';
+        }
+
+        // Clear nominal fee for non-applicable property types
+        if (!in_array($this->property_type, ['Income', 'Commercial', 'Business'])) {
+            $this->nominal = '';
+        }
+
+        // Clear Commercial-specific fields for Residential/Income/Vacant Land
+        if (in_array($this->property_type, ['Residential', 'Income', 'Vacant Land'])) {
+            $this->seller_leasing_gross_no_of_months = '';
+            $this->seller_leasing_gross_sales_tax_first_month = '';
+            $this->seller_leasing_gross_sales_tax_flat_free_gross = '';
+            $this->seller_leasing_gross_sales_tax_option_gross = '';
+            $this->seller_leasing_gross_flat_net_combo = '';
+            $this->seller_leasing_gross_percentage_net_combo = '';
+        }
+
+        // Clear fee fields based on selected type
+        if ($this->seller_leasing_fee_type !== 'Flat Fee') {
+            $this->seller_leasing_gross_flat = '';
+        }
+        if ($this->seller_leasing_fee_type !== 'other') {
+            $this->seller_leasing_gross_other = '';
+        }
+        if ($this->seller_leasing_fee_type !== 'Percentage of the Gross Lease Value') {
+            $this->seller_leasing_gross = '';
+        }
+
+        // Clear commission structure type fields based on selected type
+        if ($this->commission_structure_type !== 'Flat Fee') {
+            $this->commission_structure_type_fee_flat = '';
+        }
+        if ($this->commission_structure_type !== 'Percentage of the Total Purchase Price') {
+            $this->commission_structure_type_fee_percentage = '';
+        }
+        if ($this->commission_structure_type !== 'other') {
+            $this->commission_structure_type_fee_other = '';
+        }
+
+        // Clear purchase fee fields based on selected type (using actual option values: flat, percentage, combo, other)
+        if ($this->purchase_fee_type !== 'flat' && $this->purchase_fee_type !== 'combo') {
+            $this->purchase_fee_flat = '';
+        }
+        if ($this->purchase_fee_type !== 'percentage' && $this->purchase_fee_type !== 'combo') {
+            $this->purchase_fee_percentage = '';
+        }
+        if ($this->purchase_fee_type !== 'combo') {
+            $this->purchase_fee_percentage_combo = '';
+            $this->purchase_fee_flat_combo = '';
+        }
+        if ($this->purchase_fee_type !== 'other') {
+            $this->purchase_fee_other = '';
+        }
+    }
+
+    /**
+     * Get conditional validation rules based on current selections
+     */
+    protected function getConditionalRules()
+    {
+        $rules = [
+            'listing_title' => 'required|string|max:255',
+            'property_type' => 'required|string',
+            'state' => 'required|string',
+        ];
+
+        // Seller leasing fields - only validate if interested in leasing
+        if ($this->interested_purchase_fee_type === 'Yes') {
+            $rules['seller_leasing_fee_type'] = 'required|string';
+            
+            // Validate specific fields based on leasing fee type
+            if ($this->seller_leasing_fee_type === 'Flat Fee') {
+                $rules['seller_leasing_gross_flat'] = 'required|numeric|min:0';
+            } elseif ($this->seller_leasing_fee_type === 'Percentage of the Gross Lease Value') {
+                $rules['seller_leasing_gross'] = 'required|numeric|min:0|max:100';
+            } elseif ($this->seller_leasing_fee_type === 'other') {
+                $rules['seller_leasing_gross_other'] = 'required|string';
+            }
+        }
+
+        // Commission structure validation
+        if (in_array($this->commission_structure, [
+            'Seller\'s Broker to Compensate Buyer\'s Broker from Seller\'s Broker Commission',
+            'Seller to Pay Buyer\'s Broker Separately'
+        ])) {
+            $rules['commission_structure_type'] = 'required|string';
+            
+            if ($this->commission_structure_type === 'Flat Fee') {
+                $rules['commission_structure_type_fee_flat'] = 'required|string';
+            } elseif ($this->commission_structure_type === 'Percentage of the Total Purchase Price') {
+                $rules['commission_structure_type_fee_percentage'] = 'required|numeric|min:0|max:100';
+            } elseif ($this->commission_structure_type === 'other') {
+                $rules['commission_structure_type_fee_other'] = 'required|string';
+            }
+        }
+
+        // Purchase fee validation (using actual option values: flat, percentage, combo, other)
+        if (!empty($this->purchase_fee_type)) {
+            if ($this->purchase_fee_type === 'flat') {
+                $rules['purchase_fee_flat'] = 'required|string';
+            } elseif ($this->purchase_fee_type === 'percentage') {
+                $rules['purchase_fee_percentage'] = 'required|numeric|min:0|max:100';
+            } elseif ($this->purchase_fee_type === 'combo') {
+                $rules['purchase_fee_percentage_combo'] = 'required|numeric|min:0|max:100';
+                $rules['purchase_fee_flat_combo'] = 'required|string';
+            } elseif ($this->purchase_fee_type === 'other') {
+                $rules['purchase_fee_other'] = 'required|string';
+            }
+        }
+
+        return $rules;
+    }
+
+    /**
+     * Get custom validation messages
+     */
+    protected function getValidationMessages()
+    {
+        return [
+            'listing_title.required' => 'Listing Title is required',
+            'property_type.required' => 'Property Type is required',
+            'state.required' => 'State is required',
+            'seller_leasing_fee_type.required' => 'Seller\'s Broker Leasing Fee type is required when offering leasing',
+            'seller_leasing_gross_flat.required' => 'Flat Fee amount is required',
+            'seller_leasing_gross.required' => 'Percentage of Gross Lease Value is required',
+            'seller_leasing_gross_other.required' => 'Custom leasing fee structure is required',
+            'commission_structure_type.required' => 'Buyer\'s Broker Commission Fee type is required',
+            'commission_structure_type_fee_flat.required' => 'Commission flat fee amount is required',
+            'commission_structure_type_fee_percentage.required' => 'Commission percentage is required',
+            'commission_structure_type_fee_other.required' => 'Custom commission structure is required',
+            'purchase_fee_flat.required' => 'Seller\'s Broker Purchase Fee (flat fee) is required',
+            'purchase_fee_percentage.required' => 'Seller\'s Broker Purchase Fee (percentage) is required',
+            'purchase_fee_percentage_combo.required' => 'Seller\'s Broker Purchase Fee (percentage) is required',
+            'purchase_fee_flat_combo.required' => 'Seller\'s Broker Purchase Fee (flat fee) is required',
+            'purchase_fee_other.required' => 'Custom purchase fee structure is required',
+        ];
+    }
+
     public function store()
     {
         try {
+            // Sanitize stale values before validation
+            $this->sanitizeBeforeSubmit();
+
+            // Validate with conditional rules
+            $validatedData = $this->validate(
+                $this->getConditionalRules(),
+                $this->getValidationMessages()
+            );
+
             $this->isDraft = 0;
 
             $auction = $this->listingId
@@ -1762,7 +2088,23 @@ class SellerAgentAuction extends Component
             // Optionally redirect to a success page
             // return redirect()->route('listings.success');
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Log validation errors for debugging
+            Log::error('Seller Agent Auction validation failed', [
+                'errors' => $e->errors(),
+                'user_id' => Auth::id()
+            ]);
+            
+            // Show specific error message to user
+            $errorMessages = collect($e->errors())->flatten()->take(3)->implode(' | ');
+            session()->flash('error', 'Missing/invalid: ' . $errorMessages);
+            
+            throw $e; // Re-throw to show field-level errors
         } catch (\Exception $e) {
+            Log::error('Seller Agent Auction save error', [
+                'message' => $e->getMessage(),
+                'user_id' => Auth::id()
+            ]);
             session()->flash('error', 'Error saving listing: ' . $e->getMessage());
         }
     }

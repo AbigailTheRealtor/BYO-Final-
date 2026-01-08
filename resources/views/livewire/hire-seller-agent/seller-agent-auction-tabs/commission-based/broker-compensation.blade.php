@@ -125,7 +125,7 @@
 
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        Buyer's Broker Commission Structure:
+        Buyer's Broker Commission Fee:
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select how the Buyer's Broker will be compensated — either from the Seller's Broker commission, directly by the Seller, or not at all.">
@@ -153,7 +153,7 @@
     <!-- Tenant's Broker Purchase Fee -->
     <div class="form-group mb-4">
         <label class="fw-bold d-flex align-items-center">
-            Buyer's Broker Commission Structure:
+            Buyer's Broker Commission Fee:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Enter the amount offered to the Buyer's Broker. This can be a percentage of the purchase price, a flat fee, or select “Other” to define a custom compensation amount.">
                 <i class="fa-solid fa-circle-info"></i>
@@ -270,7 +270,6 @@
                         Period</option>
                     <option value="Percentage of the Gross Lease Value">Percentage of the Gross Lease Value</option>
                     <option value="Percentage of the First Month's Rent">Percentage of the First Month's Rent</option>
-                    <option value="Percentage of Each Rental Period">Percentage of Each Rental Period</option>
                     <option value="Flat Fee">Flat Fee</option>
                     <option value="other">Other</option>
                     {{-- <option value="Flat Fee + Percentage of the Gross Lease Value">Flat Fee + Percentage of the Gross Lease Value</option> --}}
