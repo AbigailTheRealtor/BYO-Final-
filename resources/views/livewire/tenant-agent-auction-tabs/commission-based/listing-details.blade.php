@@ -500,7 +500,7 @@
 
         </label>
        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Choose Bidding Period to allow Agents to submit bids until the countdown timer ends, with each bid showing the Agent's Offered Services and Broker Compensation & Agency Agreement Terms. Choose Traditional to hire an Agent at any time, with the option to hide or display the Agent's Offered Services and Broker Compensation & Agency Agreement Terms.">
+            title="If you select Bidding Period, Agents may submit bids until the countdown ends. During the bidding period, you cannot view full bid details or hire an Agent. Once the bidding period ends, you may review all submitted bids and select an Agent. Participating Agents can view other Agents' Services, Broker Compensation &amp; Agency Agreement Terms, and Match Scores. If you select Traditional, you may hire an Agent at any time. Bids are private—only you and the Agent who submitted a bid can view that bid's Services, Broker Compensation &amp; Agency Agreement Terms, and Match Score.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
 
@@ -528,7 +528,7 @@
         </label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Agents can submit bids until the countdown ends. Each bid will display the Agent's Offered Services and Broker Compensation &amp; Agency Agreement Terms. Once the timer expires, you may select the Agent who best meets your needs—you are not required to choose the highest or lowest bid.">
+            title="Select how long Agents have to submit bids on this listing. Once the bidding period ends, you may review all submitted bids and hire an Agent.">
             <i class="fa-solid fa-circle-info"></i> </span>
         <div class="input-cover">
             <select wire:model="auction_time" id="auction_time" class="form-control has-icon"
