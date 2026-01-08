@@ -505,6 +505,30 @@ class BuyerAgentAuctionEdit extends Component
         $this->reset(['assignment_fee_amount']);
     }
 
+    public function updatedPurchaseFeeType()
+    {
+        $this->reset([
+            'purchase_fee_flat',
+            'purchase_fee_percentage',
+            'purchase_fee_percentage_combo',
+            'purchase_fee_flat_combo',
+            'purchase_fee_other'
+        ]);
+    }
+
+    public function updatedLeaseFeeType()
+    {
+        $this->reset([
+            'lease_fee_flat',
+            'lease_fee_percentage',
+            'lease_fee_months',
+            'lease_fee_percentage_monthly_rent',
+            'lease_fee_flat_combo',
+            'lease_fee_percentage_combo',
+            'lease_fee_other'
+        ]);
+    }
+
 
     public function startNew()
     {

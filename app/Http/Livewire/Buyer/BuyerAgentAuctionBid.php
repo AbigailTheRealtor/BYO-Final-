@@ -260,7 +260,33 @@ public $additional_details_broker = '';
             array_splice($this->reviews_links, $index, 1); // Removes the selected entry
         }
     }
-    // Add this method to your component class
+
+    public function updatedPurchaseFeeType()
+    {
+        $this->reset([
+            'purchase_fee_flat',
+            'purchase_fee_percentage',
+            'purchase_fee_percentage_combo',
+            'purchase_fee_flat_combo',
+            'purchase_fee_other'
+        ]);
+    }
+
+    public function updatedLeaseFeeType()
+    {
+        $this->reset([
+            'lease_fee_flat',
+            'lease_fee_percentage',
+            'lease_fee_percentage_monthly_rent',
+            'lease_fee_percentage_monthly_number',
+            'lease_fee_flat_combo',
+            'lease_fee_percentage_combo',
+            'lease_fee_percentage_net',
+            'lease_fee_flat_combo_net',
+            'lease_fee_percentage_combo_net',
+            'lease_fee_other'
+        ]);
+    }
 
     public function mount($auctionId = null)
     {
