@@ -511,7 +511,7 @@
 
             @if ($brokerage_relationship === 'Transaction Broker Representation')
                 <h6 class="fw-bold">• Transaction Broker Representation:</h6>
-                <ul class="mb-2 ps-3">
+                <ul class="mb-2 ps-3" style="list-style-type: disc;">
                     <li>Default in Florida unless otherwise specified.</li>
                     <li>The Broker provides limited representation to both parties without full fiduciary duties.</li>
                     <li>Must act honestly, fairly, and with skill, care, and diligence.</li>
@@ -519,7 +519,7 @@
                 </ul>
             @elseif($brokerage_relationship === 'Single Agent Representation')
                 <h6 class="fw-bold">• Single Agent Representation:</h6>
-                <ul class="mb-2 ps-3">
+                <ul class="mb-2 ps-3" style="list-style-type: disc;">
                     <li>The Broker acts as a fiduciary, providing the highest level of loyalty, confidentiality,
                         obedience, and full disclosure.</li>
                     <li>Always acts in the Buyer’s best interest.</li>
@@ -528,7 +528,7 @@
                 </ul>
             @elseif($brokerage_relationship === 'Dual Agency Representation')
                 <h6 class="fw-bold">• Dual Agency Representation:</h6>
-                <ul class="mb-2 ps-3">
+                <ul class="mb-2 ps-3" style="list-style-type: disc;">
                     <li>The Broker represents both Buyer and Seller in the same transaction.</li>
                     <li>Must remain neutral and may not disclose confidential information from either party.</li>
                     <li>Requires written consent from both Buyer and Seller.</li>
@@ -537,7 +537,7 @@
                 </ul>
             @elseif($brokerage_relationship === 'No Brokerage Relationship')
                 <h6 class="fw-bold">• No Brokerage Relationship:</h6>
-                <ul class="mb-2 ps-3">
+                <ul class="mb-2 ps-3" style="list-style-type: disc;">
                     <li>The Broker does not represent the Buyer and has no fiduciary duties.</li>
                     <li>Must still act honestly and disclose all known material facts about the property.</li>
                     <li>The Buyer is responsible for their own due diligence and negotiations.</li>
