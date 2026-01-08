@@ -125,7 +125,7 @@
 
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        Buyer's Broker Commission Fee:
+        Buyer's Broker Commission Structure:
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select how the Buyer's Broker will be compensated — either from the Seller's Broker commission, directly by the Seller, or not at all.">
@@ -277,7 +277,7 @@
                     <option value="Percentage of Net Aggregate Rent">Percentage of Net Aggregate Rent
                     <option value="Percentage of Gross Rent">Percentage of Gross Rent </option>
                     </option>
-                    <option value="Percentage of the First Month's Rent">Percentage of the First Month's Rent</option>
+                    <option value="Percentage of Month's Rent">Percentage of Month's Rent</option>
 
                     <option value="Flat Fee">Flat Fee
                     </option>
@@ -359,6 +359,40 @@
                     <span class="input-group-text">%</span>
                 </div>
             </div>
+        @elseif($seller_leasing_fee_type === 'Percentage of Month\'s Rent')
+            {{-- Commercial/Business Month's Rent option --}}
+            <div class="mt-3">
+                <div class="input-group">
+                    <input type="number" wire:model="seller_leasing_gross_month_rent" class="form-control"
+                        placeholder="Enter percentage of month's rent (e.g., 100)">
+                    <span class="input-group-text">%</span>
+                </div>
+            </div>
+            @if (in_array($property_type, ['Commercial', 'Business']))
+                <div class="mb-3">
+                    <label class="fw-bold mt-2">Sales Tax:</label>
+                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                        title="Select whether commission amounts include sales tax or exclude sales tax.">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </span>
+                    <div class="input-cover mt-2">
+                        <select wire:model="seller_leasing_gross_sales_tax_first_month" class="form-control has-icon"
+                            data-icon="fa-solid fa-ruler">
+                            <option value="">Select</option>
+                            <option value="including">Including Sales Tax</option>
+                            <option value="excluding">Excluding Sales Tax</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="input-group mt-2">
+                    <label class="form-label">Number of Months:</label>
+                    <div class="input-group">
+                        <span class="input-group-text">#</span>
+                        <input type="number" wire:model="seller_leasing_gross_no_of_months" class="form-control"
+                            placeholder="Enter number of months (e.g., 1)">
+                    </div>
+                </div>
+            @endif
         @elseif($seller_leasing_fee_type === 'Flat Fee + Percentage of the Gross Lease Value')
             <div class="row g-2 mb-3">
                 <div class="col-md-5">
