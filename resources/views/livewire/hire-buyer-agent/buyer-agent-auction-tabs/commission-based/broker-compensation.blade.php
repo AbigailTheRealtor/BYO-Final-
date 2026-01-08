@@ -59,7 +59,7 @@
                 <input type="text" wire:model.lazy="purchase_fee_flat" class="form-control"
                     placeholder="Enter flat fee amount (e.g., 5,000)"
                     data-error-id="purchase_fee_flat_error"
-                    x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
+                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                 <span class="error mt-2" id="purchase_fee_flat_error"></span>
             </div>
         @elseif($purchase_fee_type === 'Percentage of the Total Purchase Price')
@@ -84,7 +84,7 @@
                         <span class="input-group-text"> $</span>
                         <input type="text" wire:model.lazy="purchase_fee_flat_combo" class="form-control"
                             placeholder="Enter flat fee amount (e.g., 3,000)"
-                            x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
+                            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
                 </div>
             </div>
@@ -163,7 +163,7 @@
                     <input type="text" wire:model.lazy="lease_fee_flat" class="form-control"
                         placeholder="Enter flat fee amount (e.g., 2,500)"
                         data-error-id="lease_fee_flat_error"
-                        x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
+                        oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     <span class="error mt-2" id="lease_fee_flat_error"></span>
                 </div>
             @elseif($lease_fee_type === 'Percentage of the Gross Lease Value')
@@ -205,7 +205,7 @@
                             <span class="input-group-text">$</span>
                             <input type="text" wire:model.lazy="lease_fee_flat_combo" class="form-control"
                                 placeholder="Enter flat fee amount (e.g., 1,000)"
-                                x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
+                                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                         </div>
                     </div>
                     <div class="col-md-1 text-center pt-2">+</div>
@@ -230,7 +230,7 @@
                             <span class="input-group-text">$</span>
                             <input type="text" wire:model.lazy="lease_fee_flat_combo_net" class="form-control"
                                 placeholder="Enter flat fee amount (e.g., 1,500)"
-                                x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
+                                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                         </div>
                     </div>
                     <div class="col-md-1 text-center pt-2">+</div>
@@ -355,7 +355,7 @@
                     placeholder="{{ $lease_type === 'percent'
                         ? 'Enter percentage of option consideration (e.g., 5)'
                         : 'Enter flat fee amount (e.g., 1,500)' }}"
-                    x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
+                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
 
                 <!-- Suffix -->
                 <span class="input-group-text">
@@ -389,7 +389,7 @@
                     placeholder="{{ $purchase_type === 'percent'
                         ? 'Enter percentage of the total purchase price (e.g., 6)'
                         : 'Enter flat fee amount (e.g., 5,000)' }}"
-                    x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
+                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
 
                 <!-- Suffix -->
                 <span class="input-group-text">
@@ -445,7 +445,7 @@
                 <span class="input-group-text">$</span>
                 <input type="text" wire:model.lazy="early_termination_fee_amount" class="form-control"
                     placeholder="Enter early termination fee amount (e.g., 1,000)"
-                    x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
+                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             </div>
             @error('early_termination_fee_amount')
                 <span class="text-danger small">{{ $message }}</span>
@@ -478,7 +478,7 @@
                 <span class="input-group-text">$</span>
                 <input type="text" wire:model.lazy="retainer_fee_amount" class="form-control"
                     placeholder="Enter retainer fee amount (e.g., 500)"
-                    x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
+                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             </div>
             @error('retainer_fee_amount')
                 <span class="text-danger small">{{ $message }}</span>
