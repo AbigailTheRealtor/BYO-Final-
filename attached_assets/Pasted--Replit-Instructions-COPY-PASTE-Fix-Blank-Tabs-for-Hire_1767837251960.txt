@@ -1,0 +1,144 @@
+# Replit Instructions (COPY/PASTE) — Fix Blank Tabs for “Hire a Seller’s Agent” (Tenant Profile) when Property Type = Income
+Issue:
+When a user is logged in under a Tenant profile (example: tenant@exp.com) and creates a **Hire a Seller’s Agent** listing, if they select **Income** property type, these tabs render BLANK (no content):
+• Services
+• Additional Details
+• Broker Compensation & Agency Agreement Terms
+
+You mentioned this happened before (Buyer + Income) and was likely a spacing / tab rendering issue. This fix must be non-destructive and must restore tab content for Income.
+
+========================================
+SAFEGUARDS (MUST FOLLOW — NON-DESTRUCTIVE)
+========================================
+DO NOT:
+- delete/rename database columns, migrations, models, routes, or controllers
+- rename tab IDs, field keys, wire:model names, or request payload keys unless explicitly required to match existing IDs
+- remove any tab sections or conditional logic for other property types
+- change labels/tooltips/placeholder text as part of this fix
+
+MUST:
+- fix the UI so the tab content renders for Income exactly like it does for Residential
+- ensure the fix applies across Create/Edit and does NOT break existing property types
+
+========================================
+ROOT CAUSE (MOST LIKELY)
+========================================
+One of these is happening when Property Type = Income:
+A) The tab-pane HTML exists but is hidden due to the tab “active/show” classes not being applied after the form re-renders.
+B) The tab-pane HTML is being conditionally excluded due to a property-type mismatch (ex: code checks “income” but value is “Income Property”).
+C) The content is present but visually pushed out of view due to a container height/min-height/margin/padding issue (spacing bug).
+D) Duplicate IDs (same tab-pane IDs) are being rendered in the DOM, causing Bootstrap/JS tab targeting to fail (clicks activate but show nothing).
+
+========================================
+STEP 1 — CONFIRM WHETHER CONTENT EXISTS (DEVTOOLS CHECK)
+========================================
+Reproduce:
+1) Login as tenant@exp.com
+2) Create Hire a Seller’s Agent listing
+3) Select Property Type = Income
+4) Click the blank tabs
+
+In Chrome DevTools:
+- Inspect the DOM for the tab content containers (usually `.tab-content` and `.tab-pane`)
+- Confirm whether the “Services”, “Additional Details”, and “Broker Compensation…” panes exist in the DOM.
+
+If panes exist:
+✅ This is a tab activation / CSS display issue (A/C/D).
+
+If panes do NOT exist:
+✅ This is a conditional rendering issue (B).
+
+========================================
+STEP 2 — FIX CONDITIONAL RENDERING (IF TAB PANES ARE NOT IN DOM)
+========================================
+1) Find the file/component that renders the Hire a Seller’s Agent tabs and their content.
+2) Locate conditionals like:
+   - if (propertyType === "Residential") render section
+   - else if (propertyType === "Commercial") render section
+3) Ensure “Income” is INCLUDED in the same branch as Residential/Income (if that’s the intended behavior).
+
+IMPORTANT:
+- Normalize comparisons by using the SAME canonical propertyType values everywhere.
+Example fix:
+- If database/UI stores "Income" but code checks "Income Property" → it will skip.
+- Add a normalization helper:
+  - normalizedType = propertyType.toLowerCase().trim()
+  - treat "income" and "income property" the same
+
+Expected:
+- Income must render the same tab panes as Residential (unless intentionally different).
+
+========================================
+STEP 3 — FIX TAB ACTIVATION AFTER RE-RENDER (MOST COMMON WHEN USING LIVEWIRE/ALPINE)
+========================================
+If the panes exist but are blank:
+This usually means the tab plugin loses its active/show state after the property type dropdown triggers a re-render.
+
+Fix:
+1) Ensure the tab buttons/links correctly target unique pane IDs:
+   - nav link `href="#services-tab"` or `data-bs-target="#services-tab"`
+   - pane `<div id="services-tab" class="tab-pane">`
+2) When Income is selected (and the component rerenders), force a safe default active tab:
+   - Make sure ONE tab link has `active`
+   - Make sure ONE tab pane has `active show`
+
+Example requirement (Bootstrap-style):
+- Active link: `class="nav-link active"`
+- Active pane: `class="tab-pane fade show active"`
+
+3) Add a “re-init tabs” hook after property type changes:
+- If Livewire: use a Livewire event emitted after update, then in JS:
+  - reinitialize Bootstrap tabs, or
+  - manually add `active show` to the selected pane
+
+MANDATORY:
+- Do not rely on “previous active tab state” if it breaks on rerender.
+- If no tab is active, the user sees a blank panel.
+
+========================================
+STEP 4 — FIX SPACING / HEIGHT COLLAPSE (IF CONTENT EXISTS BUT IS NOT VISIBLE)
+========================================
+If DOM shows the content is present but not visible:
+1) Inspect the `.tab-content` container computed styles:
+   - check for `height: 0`, `overflow: hidden`, or negative margins
+2) Compare Residential vs Income computed styles to find what changes when Income is selected.
+3) Apply a safe CSS fix ONLY for this listing form container:
+   - Ensure `.tab-content` has:
+     - `min-height: 200px;` (or a reasonable min height)
+     - `overflow: visible;`
+   - Ensure the parent wrappers do NOT collapse:
+     - remove accidental `position:absolute` or `display:flex` misconfiguration that collapses height
+4) If spacing issue is caused by an extra wrapper div when Income is selected:
+   - remove the extra wrapper or ensure it has `display:block` and normal flow.
+
+IMPORTANT:
+- Fix must be scoped to this form container (avoid changing global CSS sitewide).
+
+========================================
+STEP 5 — ELIMINATE DUPLICATE TAB IDS (COMMON CAUSE OF “BLANK”)
+========================================
+If the component renders two versions of panes (ex: one for Residential and one for Income) but both share the same IDs:
+Bootstrap will target the first match and the second appears blank.
+
+Fix:
+- Ensure tab pane IDs are rendered ONLY ONCE.
+- If you must render per property type, append a suffix:
+  - `services-pane-income` vs `services-pane-residential`
+BUT preferred:
+- Render the panes once and change the inside content conditionally.
+
+========================================
+ACCEPTANCE TESTS (MUST PASS)
+========================================
+1) Tenant@exp.com → Hire a Seller’s Agent → Property Type = Income
+   - Services tab shows content
+   - Additional Details tab shows content
+   - Broker Compensation & Agency Agreement Terms tab shows content
+2) Switching Residential ↔ Income does NOT blank the tabs
+3) No console errors on tab click
+4) The fix does NOT break other property types (Residential, Commercial, Vacant Land)
+5) Works on:
+   - Create Listing
+   - Edit Listing (if applicable)
+
+END OF INSTRUCTIONS
