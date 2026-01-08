@@ -148,8 +148,8 @@
 
 </div>
 @if (
-    $commission_structure == 'Seller's Broker to Compensate Buyer's Broker from Seller's Broker Commission' ||
-        $commission_structure == 'Seller to Pay Buyer's Broker Separately')
+    $commission_structure == 'Seller\'s Broker to Compensate Buyer\'s Broker from Seller\'s Broker Commission' ||
+        $commission_structure == 'Seller to Pay Buyer\'s Broker Separately')
     <!-- Tenant's Broker Purchase Fee -->
     <div class="form-group mb-4">
         <label class="fw-bold d-flex align-items-center">
@@ -320,7 +320,7 @@
                     <span class="input-group-text">%</span>
                 </div>
             </div>
-        @elseif($seller_leasing_fee_type === 'Percentage of the First Month's Rent')
+        @elseif($seller_leasing_fee_type === 'Percentage of the First Month\'s Rent')
             <div class="mt-3">
                 <div class="input-group">
                     <input type="number" wire:model="seller_leasing_gross_month_rent" class="form-control"
