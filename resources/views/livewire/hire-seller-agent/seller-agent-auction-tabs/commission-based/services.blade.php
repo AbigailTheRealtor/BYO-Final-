@@ -310,6 +310,7 @@
                     </label>
                 </div>
             @endforeach
+        </div>
 
         {{-- <div class="alert alert-warning mt-3 p-2 small">
             <strong>Note:</strong> All services, including showings, lockbox access, signage, and marketing, are
