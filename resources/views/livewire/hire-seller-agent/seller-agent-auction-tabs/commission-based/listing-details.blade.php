@@ -532,7 +532,7 @@
         <span class="error mt-2" id="auction_type_error"></span>
     </div>
 
-    <!-- Auction Length (Only for Auction) -->
+    <!-- Auction Length (Only for Bidding Period) -->
     <div class="form-group mt-3" @if ($auction_type !== 'Bidding Period') style="display: none;" @endif>
         <label class="fw-bold">Bidding Period Length: <span class="text-danger">*</span>
 
@@ -543,7 +543,7 @@
             <i class="fa-solid fa-circle-info"></i> </span>
         <div class="input-cover">
             <select wire:model="auction_time" id="auction_time1" class="form-control has-icon"
-                data-icon="fa-regular fa-clock" @if ($auction_type === 'Auction')  @endif required>
+                data-icon="fa-regular fa-clock" @if ($auction_type === 'Bidding Period') required @endif>
                 <option value="">Select</option>
                 @foreach ($auction_lengths_seller as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>

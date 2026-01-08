@@ -35,7 +35,7 @@
     <label class="fw-bold">Phone Number:<span class="text-danger">*</span></label>
     <div class="input-cover">
         <input type="text" wire:model="phone_number" class="form-control has-icon" data-icon="fa-solid fa-phone"
-            placeholder="(XXX) XXX-XXXX" id="phone_number_input" oninput="formatPhoneNumber(this)" required>
+            placeholder="555-555-5555" id="phone_number_input" oninput="formatPhoneNumber(this)" required>
     </div>
 </div>
 

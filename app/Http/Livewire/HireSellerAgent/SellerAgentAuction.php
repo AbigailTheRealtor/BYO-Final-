@@ -1898,6 +1898,11 @@ class SellerAgentAuction extends Component
      */
     protected function sanitizeBeforeSubmit()
     {
+        // Clear bidding period fields if not using Bidding Period listing type
+        if ($this->auction_type !== 'Bidding Period') {
+            $this->auction_time = '';
+        }
+
         // Clear seller leasing fields if not interested in leasing
         if ($this->interested_purchase_fee_type !== 'Yes') {
             $this->seller_leasing_fee_type = '';
@@ -1984,6 +1989,11 @@ class SellerAgentAuction extends Component
             'state' => 'required|string',
         ];
 
+        // Bidding Period fields - only validate if listing type is Bidding Period
+        if ($this->auction_type === 'Bidding Period') {
+            $rules['auction_time'] = 'required|string';
+        }
+
         // Seller leasing fields - only validate if interested in leasing
         if ($this->interested_purchase_fee_type === 'Yes') {
             $rules['seller_leasing_fee_type'] = 'required|string';
@@ -2040,6 +2050,7 @@ class SellerAgentAuction extends Component
             'listing_title.required' => 'Listing Title is required',
             'property_type.required' => 'Property Type is required',
             'state.required' => 'State is required',
+            'auction_time.required' => 'Bidding Period Length is required for Bidding Period listings',
             'seller_leasing_fee_type.required' => 'Seller\'s Broker Leasing Fee type is required when offering leasing',
             'seller_leasing_gross_flat.required' => 'Flat Fee amount is required',
             'seller_leasing_gross.required' => 'Percentage of Gross Lease Value is required',
