@@ -23,8 +23,8 @@
         <select wire:model="commission_structure" class="form-control has-icon"
             data-icon="fa-solid fa-file-invoice-dollar">
             <option value="">Select</option>
-            <option value="Out-of-Pocket Payment">Out-of-Pocket Payment</option>
-            <option value="Included in Offer">Included in Offer</option>
+            <option value="Buyer Pays Out-of-Pocket">Buyer Pays Out-of-Pocket</option>
+            <option value="Requested From Seller in the Offer">Requested From Seller in the Offer</option>
         </select>
     </div>
     @error('commission_structure')
@@ -57,10 +57,9 @@
             <div class="input-group">
                 <span class="input-group-text">$</span>
                 <input type="text" wire:model="purchase_fee_flat" class="form-control"
-                    placeholder="Enter flat fee amount (e.g., 5000)"
-                     data-error-id="purchase_fee_flat_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
-                    >
+                    placeholder="Enter flat fee amount (e.g., 5,000)"
+                    data-error-id="purchase_fee_flat_error"
+                    oninput="validateMoneyInput(this)" onblur="formatMoneyOnBlur(this)" onpaste="handleMoneyPaste(event)">
                             <span class="error mt-2" id="purchase_fee_flat_error"></span>
 
             </div>
@@ -161,15 +160,11 @@
             @if ($lease_fee_type === 'flat')
                 <div class="input-group">
                     <span class="input-group-text">$</span>
-                    <input type="number" wire:model="lease_fee_flat" class="form-control"
-                        placeholder="Enter flat fee amount (e.g., 5000)"
-                        
-                         data-error-id="lease_fee_flat_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
-                        
-                        >
-                                <span class="error mt-2" id="lease_fee_flat_error"></span>
-
+                    <input type="text" wire:model="lease_fee_flat" class="form-control"
+                        placeholder="Enter flat fee amount (e.g., 2,500)"
+                        data-error-id="lease_fee_flat_error"
+                        oninput="validateMoneyInput(this)" onblur="formatMoneyOnBlur(this)" onpaste="handleMoneyPaste(event)">
+                    <span class="error mt-2" id="lease_fee_flat_error"></span>
                 </div>
             @elseif($lease_fee_type === 'Percentage of the Gross Lease Value')
                 <div class="row g-2">
@@ -528,7 +523,8 @@
                     <li>The Broker acts as a fiduciary, providing the highest level of loyalty, confidentiality,
                         obedience, and full disclosure.</li>
                     <li>Always acts in the Buyer’s best interest.</li>
-                    <li>Requires a Single Agent Notice signed by the Buyer.</li>
+                    <li>If required by state law, a Single Agent Notice will be provided by the Broker and signed by the Buyer.</li>
+                    <li>Requires written consent from both Buyer and Seller.</li>
                 </ul>
             @elseif($brokerage_relationship === 'Dual Agency Representation')
                 <h6 class="fw-bold">• Dual Agency Representation:</h6>
@@ -549,10 +545,7 @@
             @endif
 
             <div class="alert alert-warning mt-3 p-2 small">
-                <strong>⚠️ Legal Notice:</strong> Some brokerage relationships may not be permitted in every state. If
-                the selected relationship type is not legally recognized in your state, the Broker will establish a
-                permitted alternative. Real estate laws change frequently. The Broker and the Buyerare responsible for
-                ensuring compliance with all current local, state, and federal laws.
+                <strong>⚠️ Legal Notice:</strong> Certain brokerage relationships are not permitted in all states. If your selection is not allowed, the Broker will establish a permitted legal alternative. Real estate laws change frequently. Both the Broker and Buyer are responsible for complying with all current local, state, and federal laws.
             </div>
         </div>
     @endif

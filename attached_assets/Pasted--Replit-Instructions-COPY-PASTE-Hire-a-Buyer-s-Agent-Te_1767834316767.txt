@@ -1,0 +1,159 @@
+# Replit Instructions (COPY/PASTE) — Hire a Buyer’s Agent (Tenant Profile) Fixes
+Applies when a user logged in under a Tenant profile (example: tenant@exp.com) creates a **Hire a Buyer’s Agent** listing.
+These same edits MUST also apply everywhere the Buyer’s Broker Compensation & Agency Terms are used:
+- Listing Create/Edit UI
+- Listing View (read-only)
+- Agent Bids (create/edit + view)
+- Counter Offers (Buyer ↔ Agent) + view
+
+========================================
+SAFEGUARDS (MUST FOLLOW — NON-DESTRUCTIVE)
+========================================
+DO NOT:
+- delete/rename database columns, migrations, models, or existing saved keys
+- change field names/IDs/bindings (keep the same `name`, `key`, `wire:model`, etc.)
+- change overall UI layout, styling, icons, tooltips, or placeholder text unless explicitly instructed below
+- break/modify other listing types (Tenant/Seller/Landlord) unless they share the exact same reusable component AND changes are safely scoped to Buyer flow
+
+MUST:
+- implement changes as “presentation + input handling” only (no schema changes)
+- create a SINGLE SOURCE OF TRUTH so the Buyer flow does not drift between Create vs Bids vs Counters vs View
+
+========================================
+TASK 1 — FIX “Buyer’s Broker Lease Fee” FLAT FEE INPUT DELETING NUMBERS
+========================================
+Issue:
+- In Buyer’s Broker Lease Fee, when user selects Flat Fee, typed values are being cleared/deleted.
+- Comma formatting is not consistently supported (example: "2,500" causes deletion or fails).
+
+Expected:
+- Flat Fee input must NOT delete/clear user-entered numbers.
+- Input must accept comma-formatted numbers (e.g., "2,500", "25,000", "2500.00").
+- System should SAVE a clean numeric value (recommended: digits + optional decimals, no commas).
+- System should DISPLAY formatted with commas.
+
+Implementation (MUST DO):
+1) Find the Buyer’s Broker Lease Fee → Flat Fee input handler.
+2) Remove any logic that does:
+   - Number(value) or parseFloat(value) on a string containing commas WITHOUT cleaning commas first
+   - if NaN then set value to "" (this is what causes “auto delete”)
+3) Ensure the input is treated as TEXT, not a numeric-only browser input that strips commas:
+   - Use `type="text"` (or your framework equivalent) and sanitize/validate manually.
+
+4) Add these shared helper functions (put in a shared util or the Buyer comp terms component):
+
+   A) cleanMoneyInput(raw)
+   - Removes all characters except digits and a single decimal point.
+   - Removes commas safely.
+   - Limits to a reasonable length (optional).
+   Example behavior:
+   - "2,500" -> "2500"
+   - "$2,500.50" -> "2500.50"
+
+   B) formatMoneyDisplay(clean)
+   - Adds commas for thousands in display ONLY.
+   - Example:
+   - "2500" -> "2,500"
+   - "2500.50" -> "2,500.50"
+
+5) Input behavior:
+   - OnChange (typing): DO NOT clear the field if parsing fails mid-typing.
+     Keep a DISPLAY string in state (what user sees).
+   - OnBlur OR OnSubmit: normalize:
+     - `stored = cleanMoneyInput(display)`
+     - validate `stored` is numeric if required
+     - save `stored` under the SAME existing key used today
+
+6) OnLoad (edit/view/bids/counters):
+   - If stored value is "2500" or "2500.50", display as formatted:
+     - `display = formatMoneyDisplay(stored)`
+   - If old records contain commas or symbols, run clean→format before displaying.
+
+IMPORTANT:
+- Do NOT change the saved key/field name for Buyer’s Broker Lease Fee.
+- Do NOT change any other fee calculation logic—only fix input parsing + persistence.
+
+========================================
+TASK 2 — ACCEPTABLE BROKERAGE RELATIONSHIP UPDATES (TEXT + BULLETS + LEGAL NOTICE)
+========================================
+Location:
+Hire a Buyer’s Agent → Broker Compensation & Agency Agreement Terms → "Acceptable Brokerage Relationship"
+
+A) Add line under “Single Agent Representation”
+Add this EXACT sentence as a bullet/line item under Single Agent Representation:
+- "Requires written consent from both Buyer and Seller"
+
+B) Restore bullet points under each relationship type
+Bullets must display correctly (do NOT collapse into one paragraph) under:
+- Transaction Broker Representation
+- Single Agent Representation
+- Dual Agency Representation
+- No Brokerage Relationship
+
+Implementation requirement:
+- Render bullets as a real list (preferred): <ul><li>...</li></ul>
+  OR preserve line breaks + "•" prefixes in your UI renderer.
+- Ensure bullets appear the same in Create, View, Bids, Counters, and “View Bid/Counter Terms”.
+
+C) Replace Legal Notice text (EXACT REPLACEMENT)
+Replace existing paragraph:
+"⚠️ Legal Notice: Some brokerage relationships may not be permitted in every state. If the selected relationship type is not legally recognized in your state, the Broker will establish a permitted alternative. Real estate laws change frequently. The Broker and the Buyer are responsible for ensuring compliance with all current local, state, and federal laws."
+
+WITH THIS EXACT TEXT:
+"⚠️ Legal Notice: Certain brokerage relationships are not permitted in all states. If your selection is not allowed, the Broker will establish a permitted legal alternative. Real estate laws change frequently. Both the Broker and Buyer are responsible for complying with all current local, state, and federal laws."
+
+========================================
+TASK 3 — MAKE THESE CHANGES APPLY TO AGENT BIDS + COUNTER OFFERS (BUYERS AND AGENTS)
+========================================
+THIS IS REQUIRED. Do not implement only on Listing Creation.
+
+Single Source of Truth requirement:
+1) Create (or update) ONE reusable component/module that contains:
+   - Buyer’s Broker Lease Fee input + comma-safe behavior (Task 1)
+   - Acceptable Brokerage Relationship block with bullets + added sentence + updated Legal Notice (Task 2)
+
+Examples of acceptable patterns:
+- BuyerCompTermsFields component
+- BuyerBrokerCompTermsSection partial
+- Shared renderer + shared input component
+
+2) Replace duplicated/hard-coded Buyer comp term blocks in ALL of these places with the shared module:
+   - Buyer listing creation/edit screen
+   - Agent bid create/edit screen for Buyer listings
+   - Buyer counter offer screen
+   - Agent counter offer screen
+   - View Bid / View Counter Terms screens
+   - Listing view (read-only) display of these terms
+
+3) Confirm the same formatting and input persistence works in each context:
+   - Create listing: values persist after Save Draft / Next / Submit
+   - Agent bid: values persist after Save/Submit
+   - Counter: values persist and do not wipe on edits
+   - View screens: bullets render correctly and money displays with commas
+
+========================================
+QA / ACCEPTANCE TESTS (MUST PASS BEFORE MERGE)
+========================================
+On a Hire a Buyer’s Agent listing created by a Tenant-profile user:
+
+1) Buyer’s Broker Lease Fee (Flat Fee):
+- Type "2500" → does NOT delete, saves, reloads
+- Type "2,500" → does NOT delete, saves, reloads
+- Type "2500.50" → saves, reloads, displays as "2,500.50"
+- No screen clears the value on blur or submit
+
+2) Acceptable Brokerage Relationship:
+- Bullets show under Transaction Broker / Single Agent / Dual Agency / No Brokerage
+- Single Agent contains: "Requires written consent from both Buyer and Seller"
+- Legal Notice matches the NEW text exactly
+
+3) Applies Everywhere:
+- Listing Create/Edit: PASS
+- Listing View (read-only): PASS
+- Agent Bid Create/Edit: PASS
+- Agent View Bid: PASS
+- Buyer Counter Offer: PASS
+- Agent Counter Offer: PASS
+- View Counter Terms: PASS
+
+END OF INSTRUCTIONS
