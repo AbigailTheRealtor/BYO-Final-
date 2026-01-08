@@ -37,9 +37,9 @@
 <!-- Tenant's Broker Purchase Fee -->
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        Seller’s Broker Purchase Fee:
+        Seller's Broker Purchase Fee:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Choose how the Seller’s Broker will be compensated. Options include a percentage of the total purchase price, a flat fee, a combination of both, or select “Other” to define a custom structure. Then enter the amount based on your selection.">
+            title="Choose how the Seller's Broker will be compensated. Options include a percentage of the total purchase price, a flat fee, a combination of both, or select “Other” to define a custom structure. Then enter the amount based on your selection.">
             <i class="fa-solid fa-circle-info"></i>
 
         </span>
@@ -111,7 +111,7 @@
         <label class="fw-bold">Nominal Consideration Fee:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="If the property is transferred for nominal value (e.g., a gift or very low sale price), enter the flat fee the Seller’s Broker will be paid instead of a percentage-based commission.">
+            title="If the property is transferred for nominal value (e.g., a gift or very low sale price), enter the flat fee the Seller's Broker will be paid instead of a percentage-based commission.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
 
@@ -125,10 +125,10 @@
 
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        Buyer’s Broker Commission Fee:
+        Buyer's Broker Commission Structure:
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select how the Buyer’s Broker will be compensated — either from the Seller’s Broker commission, directly by the Seller, or not at all.">
+            title="Select how the Buyer's Broker will be compensated — either from the Seller's Broker commission, directly by the Seller, or not at all.">
             <i class="fa-solid fa-circle-info"></i>
 
         </span>
@@ -137,10 +137,10 @@
         <select wire:model="commission_structure" class="form-control has-icon"
             data-icon="fa-solid fa-file-invoice-dollar">
             <option value="">Select</option>
-            <option value="Seller’s Broker to Compensate Buyer’s Broker from Seller’s Commission">Seller’s Broker to
-                Compensate Buyer’s Broker from Seller’s Commission</option>
-            <option value="Seller to Pay Buyer’s Broker Separately">Seller to Pay Buyer’s Broker Separately</option>
-            <option value="No Compensation Offered to the Buyer’s Broker">No Compensation Offered to the Buyer’s Broker
+            <option value="Seller's Broker to Compensate Buyer's Broker from Seller's Broker Commission">Seller's Broker to
+                Compensate Buyer's Broker from Seller's Broker Commission</option>
+            <option value="Seller to Pay Buyer's Broker Separately">Seller to Pay Buyer's Broker Separately</option>
+            <option value="No Compensation Offered to the Buyer's Broker">No Compensation Offered to the Buyer's Broker
             </option>
             {{-- <option value="Negotiable">Negotiable</option> --}}
         </select>
@@ -148,14 +148,14 @@
 
 </div>
 @if (
-    $commission_structure == 'Seller’s Broker to Compensate Buyer’s Broker from Seller’s Commission' ||
-        $commission_structure == 'Seller to Pay Buyer’s Broker Separately')
+    $commission_structure == 'Seller's Broker to Compensate Buyer's Broker from Seller's Broker Commission' ||
+        $commission_structure == 'Seller to Pay Buyer's Broker Separately')
     <!-- Tenant's Broker Purchase Fee -->
     <div class="form-group mb-4">
         <label class="fw-bold d-flex align-items-center">
-            Buyer’s Broker Commission Fee:
+            Buyer's Broker Commission Structure:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the amount offered to the Buyer’s Broker. This can be a percentage of the purchase price, a flat fee, or select “Other” to define a custom compensation amount.">
+                title="Enter the amount offered to the Buyer's Broker. This can be a percentage of the purchase price, a flat fee, or select “Other” to define a custom compensation amount.">
                 <i class="fa-solid fa-circle-info"></i>
 
             </span>
@@ -166,7 +166,7 @@
                 <option value="">Select</option>
                 <option value="Percentage of the Total Purchase Price">Percentage of the Total Purchase Price</option>
                 <option value="Flat Fee">Flat Fee</option>
-                {{-- <option value="No Compensation Offered to the Buyer’s Broker">No Compensation Offered to the Buyer’s
+                {{-- <option value="No Compensation Offered to the Buyer's Broker">No Compensation Offered to the Buyer's
                     Broker</option> --}}
                 {{-- <option value="Percentage of the Total Purchase Price + Flat Fee">Percentage of the Total Purchase Price + Flat Fee</option> --}}
                 <option value="other">Other</option>
@@ -212,7 +212,7 @@
                 </div>
             @elseif($commission_structure_type === 'other')
                 <input type="text" wire:model="commission_structure_type_fee_other" class="form-control mt-2"
-                    placeholder="Enter compensation for the Buyer’s Broker Commission Fee (e.g., 3% if the sale price is under $500,000, 2% if over $500,000)">
+                    placeholder="Enter compensation for the Buyer's Broker Commission Fee (e.g., 3% if the sale price is under $500,000, 2% if over $500,000)">
             @endif
         </div>
 
@@ -224,7 +224,7 @@
     <label class="fw-bold d-flex align-items-center">
         Interested in Offering a Lease Agreement:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select whether the Seller is open to leasing the property. If “Yes” is selected, you’ll be prompted to enter compensation details.">
+            title="Select whether the Seller is open to leasing the property. If “Yes” is selected, you'll be prompted to enter compensation details.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -244,16 +244,16 @@
     <!-- Tenant's Broker Purchase Fee -->
     <div class="form-group mb-4">
         <label class="fw-bold d-flex align-items-center">
-            Seller’s Broker Leasing Fee:
+            Seller's Broker Leasing Fee:
             @if (in_array($property_type, ['Residential', 'Income']))
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Choose how the Seller’s Broker will be compensated if the property is leased. Options include a percentage of the rent due each rental period, a percentage of the gross lease value, a percentage of the first month’s rent, a flat fee, or “Other” to define a custom payment structure. Then enter the appropriate amount based on your selection.">
+                    title="Choose how the Seller's Broker will be compensated if the property is leased. Options include a percentage of the rent due each rental period, a percentage of the gross lease value, a percentage of the first month's rent, a flat fee, or “Other” to define a custom payment structure. Then enter the appropriate amount based on your selection.">
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
             @endif
             @if (in_array($property_type, ['Commercial', 'Business']))
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Choose how the Seller’s Broker will be compensated if the property is leased. Options include a percentage of the net aggregate rent, a percentage of the gross rent, a percentage of one month’s rent, a flat fee, or select “Other” to define a custom payment structure. Then enter the appropriate amount based on your selection.">
+                    title="Choose how the Seller's Broker will be compensated if the property is leased. Options include a percentage of the net aggregate rent, a percentage of the gross rent, a percentage of one month's rent, a flat fee, or select “Other” to define a custom payment structure. Then enter the appropriate amount based on your selection.">
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
             @endif
@@ -269,14 +269,16 @@
                         Rental
                         Period</option>
                     <option value="Percentage of the Gross Lease Value">Percentage of the Gross Lease Value</option>
-                    <option value="Percentage of the First Month’s Rent">Percentage of the First Month’s Rent</option>
+                    <option value="Percentage of the First Month's Rent">Percentage of the First Month's Rent</option>
                     <option value="Percentage of Each Rental Period">Percentage of Each Rental Period</option>
+                    <option value="Flat Fee">Flat Fee</option>
+                    <option value="other">Other</option>
                     {{-- <option value="Flat Fee + Percentage of the Gross Lease Value">Flat Fee + Percentage of the Gross Lease Value</option> --}}
                 @elseif (in_array($property_type, ['Commercial', 'Business']))
                     <option value="Percentage of Net Aggregate Rent">Percentage of Net Aggregate Rent
                     <option value="Percentage of Gross Rent">Percentage of Gross Rent </option>
                     </option>
-                    <option value="Percentage of the First Month’s Rent">Percentage of the First Month’s Rent</option>
+                    <option value="Percentage of the First Month's Rent">Percentage of the First Month's Rent</option>
 
                     <option value="Flat Fee">Flat Fee
                     </option>
@@ -318,37 +320,39 @@
                     <span class="input-group-text">%</span>
                 </div>
             </div>
-        @elseif($seller_leasing_fee_type === 'Percentage of the First Month’s Rent')
+        @elseif($seller_leasing_fee_type === 'Percentage of the First Month's Rent')
             <div class="mt-3">
                 <div class="input-group">
                     <input type="number" wire:model="seller_leasing_gross_month_rent" class="form-control"
-                        placeholder="Enter percentage of the first month’s rent (e.g., 100)">
+                        placeholder="Enter percentage of month's rent (e.g., 100)">
                     <span class="input-group-text">%</span>
                 </div>
             </div>
-            <div class="mb-3">
-                <label class="fw-bold mt-2">Sales Tax:</label>
-                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Select whether commission amounts include sales tax or exclude sales tax.">
-                    <i class="fa-solid fa-circle-info"></i>
-                </span>
-                <div class="input-cover mt-2">
-                    <select wire:model="seller_leasing_gross_sales_tax_first_month" class="form-control has-icon"
-                        data-icon="fa-solid fa-ruler">
-                        <option value="">Select</option>
-                        <option value="including">Including Sales Tax</option>
-                        <option value="excluding">Excluding Sales Tax</option>
-                    </select>
+            @if (in_array($property_type, ['Commercial', 'Business']))
+                <div class="mb-3">
+                    <label class="fw-bold mt-2">Sales Tax:</label>
+                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                        title="Select whether commission amounts include sales tax or exclude sales tax.">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </span>
+                    <div class="input-cover mt-2">
+                        <select wire:model="seller_leasing_gross_sales_tax_first_month" class="form-control has-icon"
+                            data-icon="fa-solid fa-ruler">
+                            <option value="">Select</option>
+                            <option value="including">Including Sales Tax</option>
+                            <option value="excluding">Excluding Sales Tax</option>
+                        </select>
+                    </div>
                 </div>
-            </div>
-            <div class="input-group mt-2">
-                <label class="form-label">Number of Months:</label>
-                <div class="input-group">
-                    <span class="input-group-text">#</span>
-                    <input type="number" wire:model="seller_leasing_gross_no_of_months" class="form-control"
-                        placeholder="Enter number of months (e.g., 1)">
+                <div class="input-group mt-2">
+                    <label class="form-label">Number of Months:</label>
+                    <div class="input-group">
+                        <span class="input-group-text">#</span>
+                        <input type="number" wire:model="seller_leasing_gross_no_of_months" class="form-control"
+                            placeholder="Enter number of months (e.g., 1)">
+                    </div>
                 </div>
-            </div>
+            @endif
         @elseif($seller_leasing_fee_type === 'Percentage of Each Rental Period')
             <div class="mt-3">
                 <div class="input-group"> <input type="number" wire:model="seller_leasing_each_rental"
@@ -393,6 +397,13 @@
                 </div>
             </div>
         @elseif ($seller_leasing_fee_type === 'Percentage of Gross Rent')
+            <div class="mt-3">
+                <div class="input-group">
+                    <input type="number" wire:model="seller_leasing_gross_percentage" class="form-control"
+                        placeholder="Enter the percentage of the gross rent (e.g., 6)">
+                    <span class="input-group-text">%</span>
+                </div>
+            </div>
             <div class="mb-3">
                 <label class="fw-bold mt-2">Sales Tax:</label>
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -408,46 +419,35 @@
                     </select>
                 </div>
             </div>
-            <div class="mb-3">
-                <label class="form-label">Percentage of Month’s Rent:</label>
-                <div class="input-group">
-                    <input type="number" wire:model="seller_leasing_gross_ross_percentage_rent" class="form-control"
-                        placeholder=" Enter percentage of month’s rent (e.g., 100)">
-                    <span class="input-group-text">%</span>
-                </div>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Number of Months:</label>
-                <div class="input-group">
-                    <span class="input-group-text">#</span>
-                    <input type="number" wire:model="seller_leasing_gross_percentage_no_of_months"
-                        class="form-control" placeholder="Enter number of months (e.g., 1)">
-                </div>
-            </div>
         @elseif ($seller_leasing_fee_type === 'Flat Fee')
-            <div class="mb-3">
-                <label class="fw-bold mt-2">Sales Tax:</label>
-                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Select whether commission amounts include sales tax or exclude sales tax.">
-                    <i class="fa-solid fa-circle-info"></i>
-                </span>
-                <div class="input-cover mt-2">
-                    <select wire:model="seller_leasing_gross_sales_tax_flat_free_gross" class="form-control has-icon"
-                        data-icon="fa-solid fa-ruler">
-                        <option value="">Select</option>
-                        <option value="including">Including Sales Tax</option>
-                        <option value="excluding">Excluding Sales Tax</option>
-                    </select>
+            @if (in_array($property_type, ['Commercial', 'Business']))
+                <div class="mb-3">
+                    <label class="fw-bold mt-2">Sales Tax:</label>
+                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                        title="Select whether commission amounts include sales tax or exclude sales tax.">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </span>
+                    <div class="input-cover mt-2">
+                        <select wire:model="seller_leasing_gross_sales_tax_flat_free_gross" class="form-control has-icon"
+                            data-icon="fa-solid fa-ruler">
+                            <option value="">Select</option>
+                            <option value="including">Including Sales Tax</option>
+                            <option value="excluding">Excluding Sales Tax</option>
+                        </select>
+                    </div>
                 </div>
-            </div>
-            <div class="input-group">
+            @endif
+            <div class="input-group mt-3">
                 <span class="input-group-text"> $</span>
-                <input type="number" wire:model="seller_leasing_gross_purchase_fee_flat_amount" class="form-control"
-                    placeholder="Enter flat fee amount (e.g., 4000)">
+                <input type="text" wire:model="seller_leasing_gross_purchase_fee_flat_amount" class="form-control"
+                    placeholder="Enter flat fee amount (e.g., 5000)"
+                    data-error-id="seller_leasing_gross_purchase_fee_flat_amount_error"
+                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             </div>
+            <span class="error mt-2" id="seller_leasing_gross_purchase_fee_flat_amount_error"></span>
         @elseif($seller_leasing_fee_type === 'other')
             <input type="text" wire:model="seller_leasing_gross_purchase_fee_other" class="form-control mt-2"
-                placeholder="Enter other lease fee amount (e.g., $500 upfront + $2,000 at lease signing)">
+                placeholder="Enter lease fee structure (e.g., 100% of First Month's Rent, or a Tiered Schedule for Multi-Year Leases)">
         @elseif($seller_leasing_fee_type === 'Percentage of Net Aggregate Rent')
             <div class="mt-3">
 
@@ -486,7 +486,7 @@
         <h5 class="compensation_tab">
             Compensation for Creating the Lease-Option Agreement:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Specify how the Broker will be compensated at the time the lease-option agreement is created. This may include a flat fee or a percentage of the option consideration paid by the Tenant. This compensation is typically paid upfront and is separate from any commission owed if the purchase option is later exercised.">
+                title="Specify how the Broker will be compensated at the time the lease-option agreement is created. This may include a flat fee or a percentage of the option consideration paid by the party granting the option. This compensation is typically paid upfront and is separate from any commission that may be owed if the purchase option is later exercised.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </h5>
@@ -511,10 +511,10 @@
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
                         >
 
-                <!-- Suffix -->
-                <span class="input-group-text">
-                    {{ $lease_type === 'percent' ? '%' : '$' }}
-                </span>
+                <!-- Suffix - only show % when percent type is selected -->
+                @if ($lease_type === 'percent')
+                <span class="input-group-text">%</span>
+                @endif
             </div>
                         <span class="error mt-2" id="lease_value_error"></span>
 
@@ -526,7 +526,7 @@
         <h5 class="compensation_tab">
             Compensation if Purchase Option is Exercised:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="If the Tenant chooses to exercise the option and purchase the property, the Broker may be entitled to additional compensation. Enter how the Broker will be compensated at that time—such as a flat fee or a percentage of the total purchase price. Any compensation already received under the lease-option agreement may be credited against the final amount due, depending on the terms of the agreement.">
+                title="If the purchase option is exercised, the Broker may be entitled to additional compensation. Enter how the Broker will be compensated at that time, such as a flat fee or a percentage of the total purchase price. Any compensation already received under the lease-option agreement may be credited toward the final amount due, depending on the terms of the agreement.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </h5>
@@ -545,15 +545,15 @@
                 <input type="text" step="any" wire:model.lazy="purchase_value" class="form-control"
                     placeholder="{{ $purchase_type === 'percent'
                         ? 'Enter percentage of the total purchase price (e.g., 6)'
-                        : 'Enter flat fee amount (e.g., 1500)' }}"
+                        : 'Enter flat fee amount (e.g., 5000)' }}"
                          data-error-id="purchase_value_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
                 >
 
-                <!-- Suffix -->
-                <span class="input-group-text">
-                    {{ $purchase_type === 'percent' ? '%' : '$' }}
-                </span>
+                <!-- Suffix - only show % when percent type is selected -->
+                @if ($purchase_type === 'percent')
+                <span class="input-group-text">%</span>
+                @endif
             </div>
                         <span class="error mt-2" id="purchase_value_error"></span>
 
@@ -591,13 +591,13 @@
         Early Termination Fee:
         @if (in_array($property_type, ['Residential', 'Income', 'Vacant Land']))
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select whether the Seller agrees to pay a cancellation fee if the agreement is conditionally terminated before the end of the Listing Period. If “Yes” is selected, you’ll be prompted to enter the fee amount. This fee helps offset marketing costs and may be credited toward a future commission, depending on the Broker’s policy. If the property is sold before the original Termination Date to a party introduced during the Listing Period, the Broker may void the termination and enforce the full commission, less the cancellation fee.">
+                title="Select whether the Seller agrees to pay a cancellation fee if the agreement is conditionally terminated before the end of the Listing Period. If “Yes” is selected, you'll be prompted to enter the fee amount. This fee helps offset marketing costs and may be credited toward a future commission, depending on the Broker's policy. If the property is sold before the original Termination Date to a party introduced during the Listing Period, the Broker may void the termination and enforce the full commission, less the cancellation fee.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         @endif
         @if (in_array($property_type, ['Commercial', 'Business']))
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select whether the Seller agrees to pay a cancellation fee if the agreement is conditionally terminated before the end of the Listing Period. If “Yes” is selected, you’ll be prompted to enter the fee amount. This fee helps offset marketing costs and may be credited toward a future commission, depending on the Broker’s policy. If the property is sold before the original Termination Date to a party introduced during the Listing Period, the Broker may void the termination and enforce the full commission, less the cancellation fee.">
+                title="Select whether the Seller agrees to pay a cancellation fee if the agreement is conditionally terminated before the end of the Listing Period. If “Yes” is selected, you'll be prompted to enter the fee amount. This fee helps offset marketing costs and may be credited toward a future commission, depending on the Broker's policy. If the property is sold before the original Termination Date to a party introduced during the Listing Period, the Broker may void the termination and enforce the full commission, less the cancellation fee.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         @endif
@@ -685,10 +685,10 @@
 <div class="form-group mb-4">
 
     <label class="fw-bold d-flex align-items-center">
-        Seller’s Broker’s Share of Retained Deposits:
+        Seller's Broker's Share of Retained Deposits:
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the percentage of any retained deposit the Seller’s Broker is entitled to if the Buyer defaults, subject to applicable laws and limits defined in your agreement.">
+            title="Enter the percentage of any retained deposit the Seller's Broker is entitled to if the Buyer defaults, subject to applicable laws and limits defined in your agreement.">
             <i class="fa-solid fa-circle-info"></i>
 
         </span>
@@ -706,7 +706,7 @@
     <label class="fw-bold d-flex align-items-center">
         Seller Agency Agreement Timeframe:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select how long the Seller’s agreement with the Broker will last. Choose from a preset duration or select “Other” to enter a custom timeframe.">
+            title="Select how long the Seller's agreement with the Broker will last. Choose from a preset duration or select “Other” to enter a custom timeframe.">
             <i class="fa-solid fa-circle-info"></i>
 
         </span>
@@ -770,7 +770,7 @@
                 <ul class="mb-2 ps-3">
                     <li>The Broker acts as a fiduciary, providing the highest level of loyalty, confidentiality,
                         obedience, and full disclosure.</li>
-                    <li>The Broker must always act in the Seller’s best interest.</li>
+                    <li>The Broker must always act in the Seller's best interest.</li>
                     <li>Requires written consent from both the Seller and the Buyer.</li>
                     <li>Requires a Single Agent Notice signed by the Seller.</li>
                 </ul>
@@ -788,7 +788,7 @@
                 <ul class="mb-2 ps-3">
                     <li>The Broker does not represent the Seller and has no fiduciary duties.</li>
                     <li>Still required to act honestly and disclose all known facts that materially affect the
-                        property’s value.</li>
+                        property's value.</li>
                     <li>The Seller is responsible for their own due diligence and negotiations.</li>
                 </ul>
             @endif

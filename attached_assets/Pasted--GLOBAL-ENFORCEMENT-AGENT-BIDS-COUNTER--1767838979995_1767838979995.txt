@@ -1,0 +1,97 @@
+=========================================================
+GLOBAL ENFORCEMENT — AGENT BIDS + COUNTER BIDS (REQUIRED)
+=========================================================
+ALL edits and fixes defined in this task MUST apply consistently across:
+
+• Agent Bids (Agent creating or editing a bid)
+• Agent Counter Bids
+• Tenant Counter Bids
+• Seller Counter Bids (where applicable)
+• View Bid
+• View Counter Terms
+• Listing read-only display
+• Accepted Bid Summary / PDF (if applicable)
+
+----------------------------------------
+NON-NEGOTIABLE RULE
+----------------------------------------
+There must be **NO separate logic, markup, formatting, or field behavior** between:
+- Listing Creation
+- Agent Bid Creation
+- Counter Offer screens
+- Read-only bid views
+
+If the listing form allows a value, the bid and counter forms MUST allow the SAME value in the SAME format.
+
+----------------------------------------
+IMPLEMENTATION REQUIREMENT
+----------------------------------------
+1) All Seller / Buyer Broker Compensation fields MUST be rendered using a **shared, reusable component or config**.
+   - Example: `SellerBrokerCompensationSection`
+   - Example: `BuyerBrokerCompensationSection`
+
+2) This shared component MUST be used by:
+   - Listing Create/Edit
+   - Agent Bid Create/Edit
+   - Tenant Counter Offer
+   - Agent Counter Offer
+   - View Bid / View Counter Terms
+
+3) DO NOT:
+   - copy/paste compensation logic into bid or counter files
+   - re-implement numeric parsing separately for bids or counters
+   - re-define tooltips, placeholders, or labels in bid-only views
+
+----------------------------------------
+FIELD-LEVEL ENFORCEMENT
+----------------------------------------
+The following behaviors MUST work identically in:
+Listing → Agent Bid → Counter → View
+
+• Numeric inputs:
+  - Accept commas (e.g., 2,500)
+  - Never auto-delete input
+  - Store clean numeric value
+  - Display formatted with commas
+
+• Toggle behavior:
+  - Switching Flat Fee ↔ Percentage clears hidden values
+  - Switching property type clears conflicting fields
+  - Clearing occurs in bids and counters the same as listing creation
+
+• Conditional fields:
+  - Commercial vs Residential logic is identical in bids/counters
+  - Hidden fields are cleared everywhere, not just in listing creation
+
+• Tooltips:
+  - Same tooltip text everywhere
+  - Tooltips dismiss properly in bids and counters
+  - No tooltip persists when navigating between bids/counters
+
+• Labels, placeholders, options:
+  - Exact same wording, bullet formatting, and examples
+  - No bid-only or counter-only wording variations
+
+----------------------------------------
+FAIL CONDITION (DO NOT MERGE IF ANY FAIL)
+----------------------------------------
+❌ A value works in listing creation but breaks in an Agent Bid  
+❌ A comma is accepted in listing creation but wipes in a counter  
+❌ A tooltip or placeholder differs between listing and bid  
+❌ Commercial logic differs between listing and counter  
+❌ Hidden values remain stored after switching options in a bid  
+
+If ANY of the above occur, refactor to shared logic before merging.
+
+----------------------------------------
+ACCEPTANCE TEST (MANDATORY)
+----------------------------------------
+1) Create listing → enter values
+2) Agent submits bid → same values accepted
+3) Tenant counters → values persist
+4) Agent counters → values persist
+5) View Bid / View Counter → formatting identical
+6) No duplicate values stored
+7) No hidden values retained
+
+END GLOBAL ENFORCEMENT

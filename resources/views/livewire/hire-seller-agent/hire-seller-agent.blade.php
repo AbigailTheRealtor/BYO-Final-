@@ -952,7 +952,48 @@
     <script>
         let currentServiceType = null;
 
+        // Initialize Bootstrap tooltips and handle Livewire re-renders
+        function initializeTooltips() {
+            // Dispose of existing tooltips first to prevent sticking
+            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+                const existingTooltip = bootstrap.Tooltip.getInstance(el);
+                if (existingTooltip) {
+                    existingTooltip.dispose();
+                }
+            });
+            // Initialize fresh tooltips
+            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+                new bootstrap.Tooltip(el, {
+                    trigger: 'hover focus',
+                    container: 'body'
+                });
+            });
+        }
+
+        // Hide all tooltips when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('[data-bs-toggle="tooltip"]')) {
+                document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+                    const tooltip = bootstrap.Tooltip.getInstance(el);
+                    if (tooltip) {
+                        tooltip.hide();
+                    }
+                });
+            }
+        });
+
+        // Re-initialize tooltips after Livewire updates
+        document.addEventListener('livewire:load', function() {
+            initializeTooltips();
+            Livewire.hook('message.processed', (message, component) => {
+                initializeTooltips();
+            });
+        });
+
         document.addEventListener('DOMContentLoaded', () => {
+            // Initialize tooltips on page load
+            initializeTooltips();
+
             // Detect which service is preselected on load
             if (document.getElementById('fullService')?.checked) {
                 currentServiceType = 'full_service';
