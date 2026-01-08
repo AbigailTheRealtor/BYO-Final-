@@ -1,0 +1,185 @@
+Replit Instructions — Contact Info Phone Mask + Video Field Changes
+Applies to:
+
+Hire a Seller’s Agent → Tab 7: Seller Information
+
+Hire a Buyer’s Agent → Tab 8: Buyer Information
+
+Hire a Landlord’s Agent → Landlord Information tab
+
+Profiles for testing:
+
+User/Tenant-side profile example: tenant@exp.com
+
+(Do not modify Agent dashboard in this task)
+
+SAFEGUARDS (MUST FOLLOW — VERY IMPORTANT)
+DO NOT:
+
+delete/rename database columns, migrations, models, or existing keys
+
+change tab order, layout, styling, icons, or tooltip text
+
+modify any bid/counter-bid logic, dashboard logic, or listing page logic
+
+change validations globally across other flows (Tenant, Seller, Buyer, Landlord) unless specified below
+
+remove the video feature platform-wide (only remove it where specified)
+
+DO:
+
+implement changes only in the specified tabs/fields
+
+keep changes additive/non-destructive (hide/remove from UI without breaking stored data)
+
+ensure phone formatting works on desktop + mobile
+
+keep existing admin visibility unchanged (admin can still view submitted data)
+
+PART A — Phone Number Auto-Formatting (All 3 Tabs)
+Requirement
+
+Phone Number inputs should auto-format as:
+555-555-5555
+User should be able to type only digits, and hyphens appear automatically.
+
+Must support:
+
+typing: 5555555555 → becomes 555-555-5555
+
+backspace/delete behaves normally
+
+pasting: (555) 555 5555 or 555.555.5555 → normalizes to 555-555-5555
+
+save value consistently (either save formatted or digits-only—BUT be consistent everywhere)
+
+Implement in these exact locations
+
+Hire a Seller’s Agent → Tab 7: Seller Information → Phone Number
+
+Hire a Buyer’s Agent → Tab 8: Buyer Information → Phone Number
+
+Hire a Landlord’s Agent → Landlord Information tab → Phone Number
+
+Implementation guidance (choose ONE approach, don’t mix)
+
+Option 1 (preferred): Front-end mask
+
+Add an input mask (e.g., JS mask library OR lightweight custom mask) to these phone fields only.
+
+Ensure it does not affect other phone fields unless requested.
+
+Option 2: Livewire formatting
+
+On input update, strip non-digits and re-insert hyphens at positions 3 and 6.
+
+Prevent cursor-jump issues as much as possible.
+
+Validation
+
+Require exactly 10 digits (ignoring hyphens) for these phone fields where the field is required (see Part C).
+
+If optional (Landlord tab if not required), still validate format if user enters anything.
+
+PART B — Remove “Personal Video Upload” (Seller Tab 7 + Buyer Tab 8)
+1) Hire a Seller’s Agent → Tab 7: Seller Information
+
+✅ Delete/Remove from UI: Personal Video Upload
+
+IMPORTANT SAFETY:
+
+Do not delete the database column or storage logic.
+
+Just remove the field from the form UI and prevent it from being required.
+
+2) Hire a Buyer’s Agent → Tab 8: Buyer Information
+
+✅ Delete/Remove from UI: Personal Video Upload
+
+Same safeguard: do not remove DB/storage, only the UI input and any “required” validation tied to it.
+
+PART C — Buyer Info Required Fields (Tab 8)
+Requirement
+
+In Hire a Buyer’s Agent → Tab 8: Buyer Information, make these fields required:
+
+First Name (required)
+
+Last Name (required)
+
+Phone Number (required, with auto-format)
+
+Email (required)
+
+Reason: Admin must always be able to view contact details.
+
+Validation rules
+
+First/Last Name: required, min 1 char
+
+Phone: required, must contain 10 digits
+
+Email: required, valid email format
+
+Do not apply these validations to Seller Tab 7 or Landlord tab unless they already exist.
+Only enforce this requirement in Buyer Tab 8 for this task.
+
+PART D — “Personal Video Link” Embed (Buyer Tab 8)
+Current fields (Buyer Tab 8)
+
+Personal Video Link (keep)
+
+Personal Video Upload (remove from UI)
+
+Requirement
+
+✅ If the user enters a video link, show an embedded video preview on the website so the user/admin can watch without clicking away.
+
+Supported links (minimum)
+
+YouTube standard + share links (youtube.com/watch?v=…, youtu.be/…)
+
+Vimeo links (optional but recommended)
+
+Behavior
+
+If link is YouTube:
+
+Convert to embed URL format and render an <iframe> preview beneath the link field
+
+If link is not recognized:
+
+Show the link as clickable only (no embed), and do not break the page
+
+Safeguards
+
+Sanitize the URL (no raw HTML injection)
+
+Only allow http/https
+
+Do not allow arbitrary iframe sources—restrict to recognized providers (YouTube/Vimeo) or show as plain link.
+
+QA / ACCEPTANCE TESTS (Replit must confirm)
+Seller Tab 7
+
+Phone auto-formats to 555-555-5555
+
+“Personal Video Upload” is gone from UI
+
+Form still saves successfully
+
+Buyer Tab 8
+
+First/Last/Phone/Email required (cannot submit without them)
+
+Phone auto-formats to 555-555-5555
+
+“Personal Video Upload” gone from UI
+
+Personal Video Link shows embedded preview when YouTube link is pasted
+
+Non-YouTube link does not break page (shows as normal link)
+
+Landlord Information tab
+
+Phone auto-formats to 555-555-5555
