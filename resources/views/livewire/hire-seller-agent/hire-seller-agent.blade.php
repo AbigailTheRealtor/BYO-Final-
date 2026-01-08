@@ -860,64 +860,65 @@
                                     @endif
                                 </div>
 
-                        <!-- Services Tab -->
-                        <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}" id="services"
-                            role="tabpanel" aria-labelledby="services-tab">
+                                <!-- Services Tab -->
+                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}" id="services"
+                                    role="tabpanel" aria-labelledby="services-tab">
 
-                            @if ($user_type === 'tenant')
-                                @include('livewire.tenant-agent-auction-tabs.commission-based.services')
-                            @elseif($user_type === 'seller')
-                                @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.services')
-                            @elseif($user_type === 'buyer')
-                                @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.services')
-                            @elseif($user_type === 'landlord')
-                                @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.services')
-                            @endif
+                                    @if ($user_type === 'tenant')
+                                        @include('livewire.tenant-agent-auction-tabs.commission-based.services')
+                                    @elseif($user_type === 'seller')
+                                        @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.services')
+                                    @elseif($user_type === 'buyer')
+                                        @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.services')
+                                    @elseif($user_type === 'landlord')
+                                        @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.services')
+                                    @endif
 
-                        </div>
-                        <!-- Additional Details Tab -->
-                        <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
-                            id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
+                                </div>
 
-                            @if ($user_type === 'tenant')
-                                @include('livewire.tenant-agent-auction-tabs.commission-based.additional-details')
-                            @elseif($user_type === 'seller')
-                                @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.additional-details')
-                            @elseif($user_type === 'buyer')
-                                @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.additional-details')
-                            @elseif($user_type === 'landlord')
-                                @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.additional-details')
-                            @endif
-                        </div>
+                                <!-- Additional Details Tab -->
+                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
+                                    id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
 
-                        <!-- Broker Compensation Tab -->
-                        <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
-                            id="broker-compensation" role="tabpanel" aria-labelledby="broker-compensation-tab">
+                                    @if ($user_type === 'tenant')
+                                        @include('livewire.tenant-agent-auction-tabs.commission-based.additional-details')
+                                    @elseif($user_type === 'seller')
+                                        @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.additional-details')
+                                    @elseif($user_type === 'buyer')
+                                        @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.additional-details')
+                                    @elseif($user_type === 'landlord')
+                                        @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.additional-details')
+                                    @endif
+                                </div>
 
-                            @if ($user_type === 'tenant')
-                                @include('livewire.tenant-agent-auction-tabs.commission-based.broker-compensation')
-                            @elseif($user_type === 'seller')
-                                @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.broker-compensation')
-                            @elseif($user_type === 'buyer')
-                                @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.broker-compensation')
-                            @elseif($user_type === 'landlord')
-                                @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.broker-compensation')
-                            @endif
-                        </div>
+                                <!-- Broker Compensation Tab -->
+                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
+                                    id="broker-compensation" role="tabpanel" aria-labelledby="broker-compensation-tab">
 
-                        <!-- Seller Info Tab -->
-                        <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}" id="seller-information"
-                            role="tabpanel" aria-labelledby="seller-information-tab">
-                            @if ($user_type === 'tenant')
-                                @include('livewire.tenant-agent-auction-tabs.commission-based.tenant-info')
-                            @elseif($user_type === 'seller')
-                                @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-info')
-                            @elseif($user_type === 'buyer')
-                                @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.buyer-info')
-                            @elseif($user_type === 'landlord')
-                                @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.landlord-info')
-                            @endif
-                        </div>
+                                    @if ($user_type === 'tenant')
+                                        @include('livewire.tenant-agent-auction-tabs.commission-based.broker-compensation')
+                                    @elseif($user_type === 'seller')
+                                        @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.broker-compensation')
+                                    @elseif($user_type === 'buyer')
+                                        @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.broker-compensation')
+                                    @elseif($user_type === 'landlord')
+                                        @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.broker-compensation')
+                                    @endif
+                                </div>
+
+                                <!-- Seller Info Tab -->
+                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}" id="seller-information"
+                                    role="tabpanel" aria-labelledby="seller-information-tab">
+                                    @if ($user_type === 'tenant')
+                                        @include('livewire.tenant-agent-auction-tabs.commission-based.tenant-info')
+                                    @elseif($user_type === 'seller')
+                                        @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-info')
+                                    @elseif($user_type === 'buyer')
+                                        @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.buyer-info')
+                                    @elseif($user_type === 'landlord')
+                                        @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.landlord-info')
+                                    @endif
+                                </div>
                     @endif
                 </div>
                 <!-- Navigation Buttons -->
