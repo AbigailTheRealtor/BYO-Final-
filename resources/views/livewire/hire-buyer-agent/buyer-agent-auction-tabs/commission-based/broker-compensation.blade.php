@@ -54,14 +54,13 @@
 
     <div class="mt-3">
         @if ($purchase_fee_type === 'Flat Fee')
-            <div class="input-group">
+            <div class="input-group" x-data="moneyInput()">
                 <span class="input-group-text">$</span>
-                <input type="text" wire:model="purchase_fee_flat" class="form-control"
+                <input type="text" wire:model.lazy="purchase_fee_flat" class="form-control"
                     placeholder="Enter flat fee amount (e.g., 5,000)"
                     data-error-id="purchase_fee_flat_error"
-                    oninput="validateMoneyInput(this)" onblur="formatMoneyOnBlur(this)" onpaste="handleMoneyPaste(event)">
-                            <span class="error mt-2" id="purchase_fee_flat_error"></span>
-
+                    x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
+                <span class="error mt-2" id="purchase_fee_flat_error"></span>
             </div>
         @elseif($purchase_fee_type === 'Percentage of the Total Purchase Price')
             <div class="input-group">
@@ -81,11 +80,11 @@
                 <div class="col-md-1 text-center pt-2">+</div>
 
                 <div class="col-md-5">
-                    <div class="input-group">
+                    <div class="input-group" x-data="moneyInput()">
                         <span class="input-group-text"> $</span>
-                        <input type="text" wire:model="purchase_fee_flat_combo" class="form-control"
+                        <input type="text" wire:model.lazy="purchase_fee_flat_combo" class="form-control"
                             placeholder="Enter flat fee amount (e.g., 3,000)"
-                            oninput="validateMoneyInput(this)" onblur="formatMoneyOnBlur(this)" onpaste="handleMoneyPaste(event)">
+                            x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
                     </div>
                 </div>
             </div>
@@ -159,12 +158,12 @@
         <!-- Dynamic Inputs Based on Selection -->
         <div class="mt-3">
             @if ($lease_fee_type === 'flat')
-                <div class="input-group">
+                <div class="input-group" x-data="moneyInput()">
                     <span class="input-group-text">$</span>
-                    <input type="text" wire:model="lease_fee_flat" class="form-control"
+                    <input type="text" wire:model.lazy="lease_fee_flat" class="form-control"
                         placeholder="Enter flat fee amount (e.g., 2,500)"
                         data-error-id="lease_fee_flat_error"
-                        oninput="validateMoneyInput(this)" onblur="formatMoneyOnBlur(this)" onpaste="handleMoneyPaste(event)">
+                        x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
                     <span class="error mt-2" id="lease_fee_flat_error"></span>
                 </div>
             @elseif($lease_fee_type === 'Percentage of the Gross Lease Value')
@@ -202,11 +201,11 @@
             @elseif($lease_fee_type === 'Flat Fee + Percentage of the Gross Lease Value')
                 <div class="row g-2">
                     <div class="col-md-5">
-                        <div class="input-group">
+                        <div class="input-group" x-data="moneyInput()">
                             <span class="input-group-text">$</span>
-                            <input type="text" wire:model="lease_fee_flat_combo" class="form-control"
+                            <input type="text" wire:model.lazy="lease_fee_flat_combo" class="form-control"
                                 placeholder="Enter flat fee amount (e.g., 1,000)"
-                                oninput="validateMoneyInput(this)" onblur="formatMoneyOnBlur(this)" onpaste="handleMoneyPaste(event)">
+                                x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
                         </div>
                     </div>
                     <div class="col-md-1 text-center pt-2">+</div>
@@ -227,11 +226,11 @@
             @elseif($lease_fee_type === 'Flat Fee + Percentage of the Net Aggregate Rent')
                 <div class="row g-2">
                     <div class="col-md-5">
-                        <div class="input-group">
+                        <div class="input-group" x-data="moneyInput()">
                             <span class="input-group-text">$</span>
-                            <input type="text" wire:model="lease_fee_flat_combo_net" class="form-control"
+                            <input type="text" wire:model.lazy="lease_fee_flat_combo_net" class="form-control"
                                 placeholder="Enter flat fee amount (e.g., 1,500)"
-                                oninput="validateMoneyInput(this)" onblur="formatMoneyOnBlur(this)" onpaste="handleMoneyPaste(event)">
+                                x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
                         </div>
                     </div>
                     <div class="col-md-1 text-center pt-2">+</div>
@@ -344,7 +343,7 @@
         </h5>
 
         <div class="form-group">
-            <div class="input-group">
+            <div class="input-group" x-data="moneyInput()">
                 <!-- Select for type -->
                 <select wire:model="lease_type" wire:change="setType('lease', $event.target.value)"  class="form-select" style="max-width: 100px;">
                     <option value="percent">%</option>
@@ -356,7 +355,7 @@
                     placeholder="{{ $lease_type === 'percent'
                         ? 'Enter percentage of option consideration (e.g., 5)'
                         : 'Enter flat fee amount (e.g., 1,500)' }}"
-                    oninput="validateMoneyInput(this)" onblur="formatMoneyOnBlur(this)" onpaste="handleMoneyPaste(event)">
+                    x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
 
                 <!-- Suffix -->
                 <span class="input-group-text">
@@ -378,7 +377,7 @@
         </h5>
 
         <div class="form-group">
-            <div class="input-group">
+            <div class="input-group" x-data="moneyInput()">
                 <!-- Select for type -->
                 <select wire:model="purchase_type"  wire:change="setType('purchase', $event.target.value)" class="form-select" style="max-width: 100px;">
                     <option value="percent">%</option>
@@ -390,7 +389,7 @@
                     placeholder="{{ $purchase_type === 'percent'
                         ? 'Enter percentage of the total purchase price (e.g., 6)'
                         : 'Enter flat fee amount (e.g., 5,000)' }}"
-                    oninput="validateMoneyInput(this)" onblur="formatMoneyOnBlur(this)" onpaste="handleMoneyPaste(event)">
+                    x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
 
                 <!-- Suffix -->
                 <span class="input-group-text">
@@ -442,11 +441,11 @@
 
     @if ($early_termination_fee_option === 'yes')
         <div class="mt-3">
-            <div class="input-group">
+            <div class="input-group" x-data="moneyInput()">
                 <span class="input-group-text">$</span>
-                <input type="text" wire:model="early_termination_fee_amount" class="form-control"
+                <input type="text" wire:model.lazy="early_termination_fee_amount" class="form-control"
                     placeholder="Enter early termination fee amount (e.g., 1,000)"
-                    oninput="validateMoneyInput(this)" onblur="formatMoneyOnBlur(this)" onpaste="handleMoneyPaste(event)">
+                    x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
             </div>
             @error('early_termination_fee_amount')
                 <span class="text-danger small">{{ $message }}</span>
@@ -475,11 +474,11 @@
 
     @if ($retainer_fee_option === 'yes')
         <div class="mt-3">
-            <div class="input-group">
+            <div class="input-group" x-data="moneyInput()">
                 <span class="input-group-text">$</span>
-                <input type="text" wire:model="retainer_fee_amount" class="form-control"
+                <input type="text" wire:model.lazy="retainer_fee_amount" class="form-control"
                     placeholder="Enter retainer fee amount (e.g., 500)"
-                    oninput="validateMoneyInput(this)" onblur="formatMoneyOnBlur(this)" onpaste="handleMoneyPaste(event)">
+                    x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
             </div>
             @error('retainer_fee_amount')
                 <span class="text-danger small">{{ $message }}</span>

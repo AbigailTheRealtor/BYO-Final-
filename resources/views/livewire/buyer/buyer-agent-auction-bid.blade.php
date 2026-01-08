@@ -1043,45 +1043,58 @@
             return parts.join('.');
         }
 
-        function validateMoneyInput(input) {
-            // Allow typing without clearing - just remove invalid characters
-            let value = input.value;
-            // Keep digits, commas, and one decimal point
-            value = value.replace(/[^0-9.,]/g, '');
-            // Remove duplicate decimal points
-            const firstDot = value.indexOf('.');
-            if (firstDot !== -1) {
-                value = value.slice(0, firstDot + 1) + value.slice(firstDot + 1).replace(/\./g, '');
-            }
-            input.value = value;
-        }
-
-        function formatMoneyOnBlur(input) {
-            // On blur, clean and format the value
-            const clean = cleanMoneyInput(input.value);
-            if (clean) {
-                input.value = formatMoneyDisplay(clean);
-                // Update Livewire with the clean numeric value
-                if (input.hasAttribute('wire:model')) {
-                    const modelName = input.getAttribute('wire:model');
-                    if (window.Livewire) {
-                        const component = Livewire.find(input.closest('[wire\\:id]').getAttribute('wire:id'));
-                        if (component) {
-                            component.set(modelName, clean);
+        // Alpine.js money input component for comma-formatted currency inputs
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('moneyInput', () => ({
+                cleanValue(raw) {
+                    if (!raw) return '';
+                    let clean = String(raw).replace(/[^0-9.]/g, '');
+                    const parts = clean.split('.');
+                    if (parts.length > 2) {
+                        clean = parts[0] + '.' + parts.slice(1).join('');
+                    }
+                    return clean;
+                },
+                formatDisplay(clean) {
+                    if (!clean) return '';
+                    const parts = String(clean).split('.');
+                    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                    return parts.join('.');
+                },
+                validate(event) {
+                    let value = event.target.value;
+                    value = value.replace(/[^0-9.,]/g, '');
+                    const firstDot = value.indexOf('.');
+                    if (firstDot !== -1) {
+                        value = value.slice(0, firstDot + 1) + value.slice(firstDot + 1).replace(/\./g, '');
+                    }
+                    event.target.value = value;
+                },
+                format(event) {
+                    const input = event.target;
+                    const clean = this.cleanValue(input.value);
+                    if (clean) {
+                        input.value = this.formatDisplay(clean);
+                        const wireModel = input.getAttribute('wire:model') || input.getAttribute('wire:model.lazy');
+                        if (wireModel && window.Livewire) {
+                            const componentEl = input.closest('[wire\\:id]');
+                            if (componentEl) {
+                                const component = Livewire.find(componentEl.getAttribute('wire:id'));
+                                if (component) {
+                                    component.set(wireModel, clean);
+                                }
+                            }
                         }
                     }
+                },
+                handlePaste(event) {
+                    event.preventDefault();
+                    const paste = (event.clipboardData || window.clipboardData).getData('text');
+                    const clean = this.cleanValue(paste);
+                    event.target.value = this.formatDisplay(clean);
+                    event.target.dispatchEvent(new Event('input', { bubbles: true }));
                 }
-            }
-        }
-
-        function handleMoneyPaste(event) {
-            event.preventDefault();
-            const paste = (event.clipboardData || window.clipboardData).getData('text');
-            const clean = cleanMoneyInput(paste);
-            const input = event.target;
-            input.value = formatMoneyDisplay(clean);
-            // Trigger Livewire update
-            input.dispatchEvent(new Event('input', { bubbles: true }));
-        }
+            }));
+        });
     </script>
 @endpush

@@ -54,17 +54,17 @@
 
     <div class="mt-3">
         @if ($purchase_fee_type === 'Flat Fee')
-            <div class="input-group">
+            <div class="input-group" x-data="moneyInput()">
                 <span class="input-group-text">$</span>
                 <input type="text" wire:model="purchase_fee_flat" class="form-control"
                     placeholder="Enter flat fee amount (e.g., 5,000)"
                     data-error-id="purchase_fee_flat_error"
-                    oninput="validateMoneyInput(this)" onblur="formatMoneyOnBlur(this)" onpaste="handleMoneyPaste(event)">
+                    x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
                             <span class="error mt-2" id="purchase_fee_flat_error"></span>
 
             </div>
         @elseif($purchase_fee_type === 'Percentage of the Total Purchase Price')
-            <div class="input-group">
+            <div class="input-group" x-data="moneyInput()">
                 <input type="number" wire:model="purchase_fee_percentage" class="form-control"
                     placeholder="Enter percentage of the total purchase price (e.g., 3)">
                 <span class="input-group-text">%</span>
@@ -72,7 +72,7 @@
         @elseif($purchase_fee_type === 'Percentage of the Total Purchase Price + Flat Fee')
             <div class="row g-2">
                 <div class="col-md-6">
-                    <div class="input-group">
+                    <div class="input-group" x-data="moneyInput()">
                         <input type="number" wire:model="purchase_fee_percentage_combo" class="form-control"
                             placeholder="Enter percentage of the total purchase price (e.g., 2)">
                         <span class="input-group-text">%</span>
@@ -81,11 +81,11 @@
                 <div class="col-md-1 text-center pt-2">+</div>
 
                 <div class="col-md-5">
-                    <div class="input-group">
+                    <div class="input-group" x-data="moneyInput()">
                         <span class="input-group-text"> $</span>
                         <input type="text" wire:model="purchase_fee_flat_combo" class="form-control"
                             placeholder="Enter flat fee amount (e.g., 3,000)"
-                            oninput="validateMoneyInput(this)" onblur="formatMoneyOnBlur(this)" onpaste="handleMoneyPaste(event)">
+                            x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
                     </div>
                 </div>
             </div>
@@ -158,18 +158,18 @@
         <!-- Dynamic Inputs Based on Selection -->
         <div class="mt-3">
             @if ($lease_fee_type === 'flat')
-                <div class="input-group">
+                <div class="input-group" x-data="moneyInput()">
                     <span class="input-group-text">$</span>
                     <input type="text" wire:model="lease_fee_flat" class="form-control"
                         placeholder="Enter flat fee amount (e.g., 2,500)"
                         data-error-id="lease_fee_flat_error"
-                        oninput="validateMoneyInput(this)" onblur="formatMoneyOnBlur(this)" onpaste="handleMoneyPaste(event)">
+                        x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
                     <span class="error mt-2" id="lease_fee_flat_error"></span>
                 </div>
             @elseif($lease_fee_type === 'Percentage of the Gross Lease Value')
                 <div class="row g-2">
                     <div class="col-md-12">
-                        <div class="input-group">
+                        <div class="input-group" x-data="moneyInput()">
                             <input type="number" wire:model="lease_fee_percentage" class="form-control"
                                 placeholder="Enter percentage of the gross lease value (e.g., 10)">
                             <span class="input-group-text">%</span>
@@ -180,7 +180,7 @@
             @elseif($lease_fee_type === 'Percentage of Monthly Rent')
                 <div class="row g-2">
                     <div class="col-md-12">
-                        <div class="input-group">
+                        <div class="input-group" x-data="moneyInput()">
                             <input type="number" wire:model="lease_fee_percentage_monthly_rent" class="form-control"
                                 placeholder="Enter percentage of monthly rent (e.g., 100)">
                             <span class="input-group-text">%</span>
@@ -190,7 +190,7 @@
                 </div>
                 <div class="row mt-3">
                     <div class="col-md-12">
-                        <div class="input-group">
+                        <div class="input-group" x-data="moneyInput()">
                             <span class="input-group-text">#</span>
                             <input type="number" wire:model="lease_fee_percentage_monthly_number"
                                 class="form-control" placeholder="Enter number of months (e.g., 1)">
@@ -201,16 +201,16 @@
             @elseif($lease_fee_type === 'Flat Fee + Percentage of the Gross Lease Value')
                 <div class="row g-2">
                     <div class="col-md-5">
-                        <div class="input-group">
+                        <div class="input-group" x-data="moneyInput()">
                             <span class="input-group-text">$</span>
                             <input type="text" wire:model="lease_fee_flat_combo" class="form-control"
                                 placeholder="Enter flat fee amount (e.g., 1,000)"
-                                oninput="validateMoneyInput(this)" onblur="formatMoneyOnBlur(this)" onpaste="handleMoneyPaste(event)">
+                                x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
                         </div>
                     </div>
                     <div class="col-md-1 text-center pt-2">+</div>
                     <div class="col-md-6">
-                        <div class="input-group">
+                        <div class="input-group" x-data="moneyInput()">
                             <input type="number" wire:model="lease_fee_percentage_combo" class="form-control"
                                 placeholder="Enter percentage of the gross lease value (e.g., 7)">
                             <span class="input-group-text">%</span>
@@ -218,7 +218,7 @@
                     </div>
                 </div>
             @elseif($lease_fee_type === 'Percentage of the Net Aggregate Rent')
-                <div class="input-group">
+                <div class="input-group" x-data="moneyInput()">
                     <input type="number" wire:model="lease_fee_percentage_net" class="form-control"
                         placeholder="Enter percentage of the net aggregate rent (e.g., 6)">
                     <span class="input-group-text">%</span>
@@ -226,16 +226,16 @@
             @elseif($lease_fee_type === 'Flat Fee + Percentage of the Net Aggregate Rent')
                 <div class="row g-2">
                     <div class="col-md-5">
-                        <div class="input-group">
+                        <div class="input-group" x-data="moneyInput()">
                             <span class="input-group-text">$</span>
                             <input type="text" wire:model="lease_fee_flat_combo_net" class="form-control"
                                 placeholder="Enter flat fee amount (e.g., 1,500)"
-                                oninput="validateMoneyInput(this)" onblur="formatMoneyOnBlur(this)" onpaste="handleMoneyPaste(event)">
+                                x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
                         </div>
                     </div>
                     <div class="col-md-1 text-center pt-2">+</div>
                     <div class="col-md-6">
-                        <div class="input-group">
+                        <div class="input-group" x-data="moneyInput()">
                             <input type="number" wire:model="lease_fee_percentage_combo_net" class="form-control"
                                 placeholder="Enter percentage of the net aggregate rent (e.g., 6)">
                             <span class="input-group-text">%</span>
@@ -288,7 +288,7 @@
         <div class="form-group">
             <label class="fw-bold d-block mb-1">Compensation Amount</label>
 
-            <div class="input-group">
+            <div class="input-group" x-data="moneyInput()">
                 <!-- Select for type -->
                 <select wire:model="lease_type" wire:change="setType('lease', $event.target.value)"  class="form-select" style="max-width: 100px;">
                     <option value="percent">%</option>
@@ -300,7 +300,7 @@
                     placeholder="{{ $lease_type === 'percent'
                         ? 'Enter percentage of option consideration (e.g., 5)'
                         : 'Enter flat fee amount (e.g., 1,500)' }}"
-                    oninput="validateMoneyInput(this)" onblur="formatMoneyOnBlur(this)" onpaste="handleMoneyPaste(event)">
+                    x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
 
                 <!-- Suffix -->
                 <span class="input-group-text">
@@ -324,7 +324,7 @@
         <div class="form-group">
             <label class="fw-bold d-block mb-1">Compensation Amount</label>
 
-            <div class="input-group">
+            <div class="input-group" x-data="moneyInput()">
                 <!-- Select for type -->
                 <select wire:model="purchase_type"  wire:change="setType('purchase', $event.target.value)" class="form-select" style="max-width: 100px;">
                     <option value="percent">%</option>
@@ -336,7 +336,7 @@
                     placeholder="{{ $purchase_type === 'percent'
                         ? 'Enter percentage of the total purchase price (e.g., 6)'
                         : 'Enter flat fee amount (e.g., 5,000)' }}"
-                    oninput="validateMoneyInput(this)" onblur="formatMoneyOnBlur(this)" onpaste="handleMoneyPaste(event)">
+                    x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
 
                 <!-- Suffix -->
                 <span class="input-group-text">
@@ -391,11 +391,11 @@
 
     @if ($early_termination_fee_option === 'yes')
         <div class="mt-3">
-            <div class="input-group">
+            <div class="input-group" x-data="moneyInput()">
                 <span class="input-group-text">$</span>
                 <input type="text" wire:model="early_termination_fee_amount" class="form-control"
                     placeholder="Enter early termination fee amount (e.g., 1,000)"
-                    oninput="validateMoneyInput(this)" onblur="formatMoneyOnBlur(this)" onpaste="handleMoneyPaste(event)">
+                    x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
             </div>
             @error('early_termination_fee_amount')
                 <span class="text-danger small">{{ $message }}</span>
@@ -424,11 +424,11 @@
 
     @if ($retainer_fee_option === 'yes')
         <div class="mt-3">
-            <div class="input-group">
+            <div class="input-group" x-data="moneyInput()">
                 <span class="input-group-text">$</span>
                 <input type="text" wire:model="retainer_fee_amount" class="form-control"
                     placeholder="Enter retainer fee amount (e.g., 500)"
-                    oninput="validateMoneyInput(this)" onblur="formatMoneyOnBlur(this)" onpaste="handleMoneyPaste(event)">
+                    x-on:input="validate($event)" x-on:blur="format($event)" x-on:paste="handlePaste($event)">
             </div>
             @error('retainer_fee_amount')
                 <span class="text-danger small">{{ $message }}</span>

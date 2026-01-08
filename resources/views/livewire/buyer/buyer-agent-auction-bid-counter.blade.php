@@ -283,57 +283,58 @@ document.addEventListener('blur', function(e){
   if(e.target.matches('input, textarea, select')){ checkFieldValidity(e.target); updateSaveButton(); }
 }, true);
 
-// Money input helper functions for comma-formatted currency inputs
-function cleanMoneyInput(raw) {
-    if (!raw) return '';
-    let clean = String(raw).replace(/[^0-9.]/g, '');
-    const parts = clean.split('.');
-    if (parts.length > 2) {
-        clean = parts[0] + '.' + parts.slice(1).join('');
-    }
-    return clean;
-}
-
-function formatMoneyDisplay(clean) {
-    if (!clean) return '';
-    const parts = String(clean).split('.');
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    return parts.join('.');
-}
-
-function validateMoneyInput(input) {
-    let value = input.value;
-    value = value.replace(/[^0-9.,]/g, '');
-    const firstDot = value.indexOf('.');
-    if (firstDot !== -1) {
-        value = value.slice(0, firstDot + 1) + value.slice(firstDot + 1).replace(/\./g, '');
-    }
-    input.value = value;
-}
-
-function formatMoneyOnBlur(input) {
-    const clean = cleanMoneyInput(input.value);
-    if (clean) {
-        input.value = formatMoneyDisplay(clean);
-        if (input.hasAttribute('wire:model')) {
-            const modelName = input.getAttribute('wire:model');
-            if (window.Livewire) {
-                const component = Livewire.find(input.closest('[wire\\:id]').getAttribute('wire:id'));
-                if (component) {
-                    component.set(modelName, clean);
+// Alpine.js money input component for comma-formatted currency inputs
+document.addEventListener('alpine:init', () => {
+    Alpine.data('moneyInput', () => ({
+        cleanValue(raw) {
+            if (!raw) return '';
+            let clean = String(raw).replace(/[^0-9.]/g, '');
+            const parts = clean.split('.');
+            if (parts.length > 2) {
+                clean = parts[0] + '.' + parts.slice(1).join('');
+            }
+            return clean;
+        },
+        formatDisplay(clean) {
+            if (!clean) return '';
+            const parts = String(clean).split('.');
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            return parts.join('.');
+        },
+        validate(event) {
+            let value = event.target.value;
+            value = value.replace(/[^0-9.,]/g, '');
+            const firstDot = value.indexOf('.');
+            if (firstDot !== -1) {
+                value = value.slice(0, firstDot + 1) + value.slice(firstDot + 1).replace(/\./g, '');
+            }
+            event.target.value = value;
+        },
+        format(event) {
+            const input = event.target;
+            const clean = this.cleanValue(input.value);
+            if (clean) {
+                input.value = this.formatDisplay(clean);
+                const wireModel = input.getAttribute('wire:model') || input.getAttribute('wire:model.lazy');
+                if (wireModel && window.Livewire) {
+                    const componentEl = input.closest('[wire\\:id]');
+                    if (componentEl) {
+                        const component = Livewire.find(componentEl.getAttribute('wire:id'));
+                        if (component) {
+                            component.set(wireModel, clean);
+                        }
+                    }
                 }
             }
+        },
+        handlePaste(event) {
+            event.preventDefault();
+            const paste = (event.clipboardData || window.clipboardData).getData('text');
+            const clean = this.cleanValue(paste);
+            event.target.value = this.formatDisplay(clean);
+            event.target.dispatchEvent(new Event('input', { bubbles: true }));
         }
-    }
-}
-
-function handleMoneyPaste(event) {
-    event.preventDefault();
-    const paste = (event.clipboardData || window.clipboardData).getData('text');
-    const clean = cleanMoneyInput(paste);
-    const input = event.target;
-    input.value = formatMoneyDisplay(clean);
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-}
+    }));
+});
 </script>
 @endpush
