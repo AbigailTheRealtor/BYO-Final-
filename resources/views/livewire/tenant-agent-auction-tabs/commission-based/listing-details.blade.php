@@ -500,7 +500,7 @@
 
         </label>
        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="If you select Bidding Period, Agents may submit bids until the countdown ends. During the bidding period, you cannot view full bid details or hire an Agent. Once the bidding period ends, you may review all submitted bids and select an Agent. Participating Agents can view other Agents' Services, Broker Compensation &amp; Agency Agreement Terms, and Match Scores. If you select Traditional, you may hire an Agent at any time. Bids are private—only you and the Agent who submitted a bid can view that bid's Services, Broker Compensation &amp; Agency Agreement Terms, and Match Score.">
+            title="Choose Bidding Period to allow Agents to submit bids until the countdown ends. During the bidding period, you cannot view full bid details or hire an Agent. Once the bidding period ends, you may review all submitted bids and select an Agent. Participating Agents can view other Agents' Match Scores, as well as the listing's requested Offered Services and Broker Compensation &amp; Agency Agreement Terms. Choose Traditional to hire an Agent at any time. For Traditional listings, bids are private. Only the User and the Agent who submitted a bid can view the Agent's bid.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
 
