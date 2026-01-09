@@ -934,8 +934,9 @@
 
                         <button type="button" class="btn btn-primary wizard-step-next">Next</button>
 
-                        <button type="submit" class="btn btn-success wizard-step-finish disabled" id="save-button">
-                            Submit
+                        <button type="submit" class="btn btn-success wizard-step-finish" id="save-button" wire:loading.attr="disabled">
+                            <span wire:loading.remove wire:target="store">Submit</span>
+                            <span wire:loading wire:target="store">Submitting...</span>
                         </button>
                     </div>
 
@@ -1834,13 +1835,15 @@
             }
 
             function updateSaveButton() {
+                // Removed strict disabling - let Livewire handle validation
+                // Just add/remove visual styling class but don't disable the button
                 const allValid = validateAllTabsStrictly();
                 if (allValid) {
-                    saveButton.classList.remove('disabled');
-                    saveButton.removeAttribute('disabled');
+                    saveButton.classList.remove('btn-outline-success');
+                    saveButton.classList.add('btn-success');
                 } else {
-                    saveButton.classList.add('disabled');
-                    saveButton.setAttribute('disabled', 'disabled');
+                    saveButton.classList.remove('btn-success');
+                    saveButton.classList.add('btn-outline-success');
                 }
             }
 

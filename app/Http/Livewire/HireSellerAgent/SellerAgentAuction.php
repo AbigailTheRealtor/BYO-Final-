@@ -2088,6 +2088,7 @@ class SellerAgentAuction extends Component
             $auction->user_id = Auth::id();
             $auction->title = $this->listing_title;
             $auction->is_draft = 0;
+            $auction->is_approved = true; // Auto-approve for now so listings appear in search
             $auction->save();
 
             $this->listingId = $auction->id;
