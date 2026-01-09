@@ -993,7 +993,12 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Initialize tooltips on page load
             initializeTooltips();
+            addIconsToInputs();
+            checkRepresentationStatus();
+        });
 
+        // Wait for Livewire to be fully loaded before initializing service-specific code
+        document.addEventListener('livewire:load', () => {
             // Detect which service is preselected on load
             if (document.getElementById('fullService')?.checked) {
                 currentServiceType = 'full_service';
@@ -1002,9 +1007,6 @@
                 currentServiceType = 'limited_service';
                 initializeLimitedService();
             }
-
-            addIconsToInputs();
-            checkRepresentationStatus();
         });
 
         function selectService(serviceType) {
@@ -1044,63 +1046,83 @@
             if (backBtn && backClone) backBtn.parentNode.replaceChild(backClone, backBtn);
         }
 
+        // Store the Livewire component ID for safe access
+        const livewireComponentId = '{{ $this->id }}';
+
+        function getLivewireComponent() {
+            try {
+                return Livewire.find(livewireComponentId);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function safeSetLivewireProperty(property, value) {
+            const component = getLivewireComponent();
+            if (component) {
+                component.set(property, value);
+            }
+        }
+
+        function initializeSelect2Elements() {
+            const propertyItemsEl = $('#property_items');
+            const amenitiesEl = $('#non_negotiable_amenities');
+
+            if (propertyItemsEl.length) {
+                propertyItemsEl.select2({
+                    placeholder: "Select property style",
+                    allowClear: true,
+                });
+            }
+
+            if (amenitiesEl.length) {
+                amenitiesEl.select2({
+                    placeholder: "Select amenities",
+                    allowClear: true,
+                });
+            }
+        }
+
         function initializeFullService() {
-
-
-            $('#property_items').select2({
-                placeholder: "Select property style",
-                allowClear: true,
-            });
-
-            // Update Livewire property on change
-            $('#property_items').on('change', function(e) {
-                let selectedValues = $(this).val();
-                @this.set('property_items', selectedValues);
-            });
-
-            // Reinitialize Select2 after Livewire update
-            Livewire.hook('message.processed', (message, component) => {
-                $('#property_items').select2({
+            // Initialize Select2 for property_items
+            const propertyItemsEl = $('#property_items');
+            if (propertyItemsEl.length) {
+                propertyItemsEl.select2({
                     placeholder: "Select property style",
                     allowClear: true,
                 });
-            });
 
-            // Initialize with any existing values
-            Livewire.hook('component.initialized', (component) => {
-                $('#property_items').select2({
-                    placeholder: "Select property style",
-                    allowClear: true,
+                // Update Livewire property on change - remove old handlers first
+                propertyItemsEl.off('change.livewire').on('change.livewire', function(e) {
+                    let selectedValues = $(this).val();
+                    safeSetLivewireProperty('property_items', selectedValues);
                 });
-            });
+            }
 
-            // Initialize Select2 non_negotiable_amenities
-            $('#non_negotiable_amenities').select2({
-                placeholder: "Select credit score rating(s)",
-                allowClear: true,
-            });
-
-            // Update Livewire property on change
-            $('#non_negotiable_amenities').on('change', function(e) {
-                let selectedValues = $(this).val();
-                @this.set('non_negotiable_amenities', selectedValues);
-            });
-
-            // Reinitialize Select2 after Livewire update
-            Livewire.hook('message.processed', (message, component) => {
-                $('#non_negotiable_amenities').select2({
+            // Initialize Select2 for non_negotiable_amenities
+            const amenitiesEl = $('#non_negotiable_amenities');
+            if (amenitiesEl.length) {
+                amenitiesEl.select2({
                     placeholder: "Select amenities",
                     allowClear: true,
                 });
-            });
 
-            // Initialize with any existing values
-            Livewire.hook('component.initialized', (component) => {
-                $('#non_negotiable_amenities').select2({
-                    placeholder: "Select amenities",
-                    allowClear: true,
+                // Update Livewire property on change - remove old handlers first
+                amenitiesEl.off('change.livewire').on('change.livewire', function(e) {
+                    let selectedValues = $(this).val();
+                    safeSetLivewireProperty('non_negotiable_amenities', selectedValues);
                 });
-            });
+            }
+
+            // Single hook for reinitializing Select2 after Livewire updates
+            if (!window.fullServiceHooksRegistered) {
+                window.fullServiceHooksRegistered = true;
+                Livewire.hook('message.processed', (message, component) => {
+                    if (component.id === livewireComponentId) {
+                        initializeSelect2Elements();
+                    }
+                });
+            }
 
 
             // Function to toggle "auction time" input field
