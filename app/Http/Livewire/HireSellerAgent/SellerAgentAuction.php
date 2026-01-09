@@ -162,6 +162,16 @@ class SellerAgentAuction extends Component
     public $appliances = [];
     public $other_appliances = '';
     public $showOtherAppliances = false;
+    public $applianceOptions = [
+        'Refrigerator',
+        'Stove/Oven',
+        'Dishwasher',
+        'Microwave',
+        'Washer',
+        'Dryer',
+        'Garbage Disposal',
+        'Other'
+    ];
     public $real_estate_purchase = '';
     public $number_of_unit = '';
     public $number_of_unit_other = '';
