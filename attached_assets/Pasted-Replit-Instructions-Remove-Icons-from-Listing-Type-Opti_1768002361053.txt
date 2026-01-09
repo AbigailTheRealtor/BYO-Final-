@@ -1,0 +1,155 @@
+Replit Instructions
+
+Remove Icons from Listing Type Options (Bidding Period / Traditional)
+
+Scope
+
+Apply this change to Listing Type dropdowns for:
+
+Hire a Landlord’s Agent
+
+Hire a Tenant’s Agent
+
+Hire a Buyer’s Agent
+
+Reference behavior:
+The Listing Type dropdown should visually match Hire a Seller’s Agent, which already displays text-only options (no icons).
+
+Desired Behavior
+
+The Listing Type dropdown should display:
+
+Bidding Period
+
+Traditional
+
+No icons should appear next to either option.
+
+Styling, spacing, and alignment should match Hire a Seller’s Agent exactly.
+
+❌ Remove
+
+Any document, clock, gavel, or custom icons
+
+Any icon containers, SVGs, or font icon classes tied to:
+
+Bidding Period
+
+Traditional
+
+✅ Keep (DO NOT CHANGE)
+
+Option labels (Bidding Period, Traditional)
+
+Option values / enums used in logic
+
+Tooltip behavior on hover (new hover tooltips must still work)
+
+Validation logic
+
+Listing type selection logic
+
+Bid visibility, timing, or flow behavior
+
+Seller Agent implementation (use as visual reference only)
+
+🔒 SAFEGUARDS (MUST FOLLOW)
+
+DO NOT:
+
+rename or delete Listing Type values
+
+change database fields, enums, or migrations
+
+alter submission or draft-saving logic
+
+modify tooltip text or triggers
+
+affect Agent bids or counters logic
+
+introduce role-specific differences in logic
+
+This is a UI-only visual change.
+
+🛠️ Implementation Steps
+Step 1 — Identify Icon Source
+
+Locate the Listing Type dropdown component used in:
+
+Hire Landlord
+
+Hire Tenant
+
+Hire Buyer
+
+Identify where icons are injected:
+
+JSX/Blade conditional icon rendering
+
+SVG components
+
+Icon props passed to dropdown options
+
+CSS pseudo-elements (::before, ::after)
+
+Step 2 — Remove Icon Rendering
+
+Remove or disable icon rendering for Listing Type options ONLY.
+
+Ensure each option renders as plain text:
+
+Bidding Period
+Traditional
+
+
+Do not remove the option wrapper itself.
+
+Step 3 — Match Seller Agent Styling
+
+Confirm:
+
+Font size
+
+Font weight
+
+Padding
+
+Hover state
+
+Selected state
+
+Visually compare with Hire a Seller’s Agent Listing Type dropdown and mirror it exactly.
+
+Step 4 — Regression Check
+
+Verify the following for all three flows:
+
+Listing Type still saves correctly
+
+Drafts retain selected value
+
+Editing a listing preserves selection
+
+Hover tooltips still display for:
+
+Bidding Period
+
+Traditional
+
+No icons appear in:
+
+Create listing
+
+Edit listing
+
+Draft view
+
+Counter bid view (if applicable)
+
+✅ Final Acceptance Criteria
+
+✔ No icons next to Listing Type options
+✔ Matches Hire a Seller’s Agent visually
+✔ Tooltips still function on hover
+✔ No logic or data changes
+✔ Consistent across Landlord, Tenant, Buyer flows
