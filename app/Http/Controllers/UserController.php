@@ -56,20 +56,54 @@ class UserController extends Controller
             $page_data['pAuctions'] = LandlordAgentAuction::where('is_sold', false)->where('is_approved', 1)->paginate(12);
             return view('author_inc.landlord_agent_auctions', $page_data);
         } else if ($user->user_type == 'tenant') {
+            // Tenant dashboard: Owner sees all their listings (including unapproved),
+            // but other visitors only see approved listings for moderation
+            $isOwner = Auth::id() === $user->id;
+            
             if ($type == 0) {
-                $page_data['pAuctions'] = TenantAgentAuction::where('user_id', $user->id)->where('is_sold', false)->where('is_approved', 1)->where('is_draft', false)->paginate(12);
+                $query = TenantAgentAuction::where('user_id', $user->id)
+                    ->where('is_sold', false)
+                    ->where('is_draft', false);
+                if (!$isOwner) {
+                    $query->where('is_approved', 1);
+                }
+                $page_data['pAuctions'] = $query->paginate(12);
                 return view('author_inc.tenant_agent_auctions', $page_data);
             } else if ($type == 1) {
-                $page_data['pAuctions'] = SellerAgentAuction::where('user_id', $user->id)->where('is_sold', false)->where('is_approved', 1)->where('is_draft', false)->paginate(12);
+                $query = SellerAgentAuction::where('user_id', $user->id)
+                    ->where('is_sold', false)
+                    ->where('is_draft', false);
+                if (!$isOwner) {
+                    $query->where('is_approved', 1);
+                }
+                $page_data['pAuctions'] = $query->paginate(12);
                 return view('author_inc.seller_agent_auctions', $page_data);
             } else if ($type == 2) {
-                $page_data['pAuctions'] = BuyerAgentAuction::where('user_id', $user->id)->where('is_sold', false)->where('is_approved', 1)->where('is_draft', false)->paginate(12);
+                $query = BuyerAgentAuction::where('user_id', $user->id)
+                    ->where('is_sold', false)
+                    ->where('is_draft', false);
+                if (!$isOwner) {
+                    $query->where('is_approved', 1);
+                }
+                $page_data['pAuctions'] = $query->paginate(12);
                 return view('author_inc.buyer_agent_auctions', $page_data);
             } else if ($type == 3) {
-                $page_data['pAuctions'] = LandlordAgentAuction::where('user_id', $user->id)->where('is_sold', false)->where('is_approved', 1)->where('is_draft', false)->paginate(12);
+                $query = LandlordAgentAuction::where('user_id', $user->id)
+                    ->where('is_sold', false)
+                    ->where('is_draft', false);
+                if (!$isOwner) {
+                    $query->where('is_approved', 1);
+                }
+                $page_data['pAuctions'] = $query->paginate(12);
                 return view('author_inc.landlord_agent_auctions', $page_data);
             } else {
-                $page_data['pAuctions'] = TenantAgentAuction::where('user_id', $user->id)->where('is_sold', false)->where('is_approved', 1)->where('is_draft', false)->paginate(12);
+                $query = TenantAgentAuction::where('user_id', $user->id)
+                    ->where('is_sold', false)
+                    ->where('is_draft', false);
+                if (!$isOwner) {
+                    $query->where('is_approved', 1);
+                }
+                $page_data['pAuctions'] = $query->paginate(12);
                 return view('author_inc.tenant_agent_auctions', $page_data);
             }
         } else {

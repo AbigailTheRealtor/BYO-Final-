@@ -353,6 +353,28 @@
         ['name' => 'Turnkey'],
         ['name' => 'Unfurnished'],
     ];
+
+    $applianceOptions = [
+        ['name' => 'Refrigerator'],
+        ['name' => 'Stove/Range'],
+        ['name' => 'Oven'],
+        ['name' => 'Microwave'],
+        ['name' => 'Dishwasher'],
+        ['name' => 'Garbage Disposal'],
+        ['name' => 'Washer'],
+        ['name' => 'Dryer'],
+        ['name' => 'Washer/Dryer Combo'],
+        ['name' => 'Freezer'],
+        ['name' => 'Wine Cooler'],
+        ['name' => 'Ice Maker'],
+        ['name' => 'Trash Compactor'],
+        ['name' => 'Range Hood'],
+        ['name' => 'Central Vacuum'],
+        ['name' => 'Water Softener'],
+        ['name' => 'Water Heater'],
+        ['name' => 'Other'],
+    ];
+
     $preferences = [
         ['name' => 'Furniture, Fixtures, and Equipment (as per attached inventory)'],
         ['name' => 'Advertising Materials'],
@@ -982,6 +1004,18 @@
             }
         });
 
+        // Hide all tooltips when pressing Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+                    const tooltip = bootstrap.Tooltip.getInstance(el);
+                    if (tooltip) {
+                        tooltip.hide();
+                    }
+                });
+            }
+        });
+
         // Re-initialize tooltips after Livewire updates
         document.addEventListener('livewire:load', function() {
             initializeTooltips();
@@ -1293,12 +1327,48 @@
 
                 // Ensure the "Other" input field visibility is updated on re-render
                 let selectedValues = $('#view_preference').val();
-                if (selectedValues.includes('Other')) {
+                if (selectedValues && selectedValues.includes('Other')) {
                     $('#other_preferences').show();
                 } else {
                     $('#other_preferences').hide();
                 }
             });
+
+            // Initialize Select2 for appliances multi-select
+            $('#appliances').select2({
+                placeholder: "Select Appliances",
+                allowClear: true
+            });
+
+            // Listen for changes on appliances dropdown and update Livewire
+            $('#appliances').on('change', function() {
+                let selectedValues = $(this).val();
+                @this.set('appliances', selectedValues);
+
+                // Check if "Other" is in the selected values
+                if (selectedValues && selectedValues.includes('Other')) {
+                    $('#other_appliances').closest('.form-group').show();
+                } else {
+                    $('#other_appliances').closest('.form-group').hide();
+                }
+            });
+
+            // Reinitialize appliances Select2 after Livewire updates the DOM
+            Livewire.hook('message.processed', () => {
+                $('#appliances').select2({
+                    placeholder: "Select Appliances",
+                    allowClear: true
+                });
+
+                // Ensure the "Other" input field visibility is updated on re-render
+                let selectedApplianceValues = $('#appliances').val();
+                if (selectedApplianceValues && selectedApplianceValues.includes('Other')) {
+                    $('#other_appliances').closest('.form-group').show();
+                } else {
+                    $('#other_appliances').closest('.form-group').hide();
+                }
+            });
+
             // Function to toggle Non-Negotiable Amenities and Property Features:" input field
 
             function toggleOtherAmenities(selectElement) {

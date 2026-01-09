@@ -15,6 +15,9 @@ class SellerAgentAuction extends Component
 {
     use WithFileUploads;
 
+    protected $listeners = [
+        'updatePreference' => 'handleUpdatePreference',
+    ];
 
     // Livewire properties for form fields
     public $hasDrafts = false;
@@ -83,6 +86,14 @@ class SellerAgentAuction extends Component
     public $balloon_payment_date = '';
     public $assumable_terms = '';
     public $max_assumable_rate = '';
+    public $assumable_monthly_escrow = '';
+    public $assumable_loan_term_remaining = '';
+    public $assumable_loan_origination_date = '';
+    public $assumable_loan_servicer = '';
+    public $assumable_fee_type = '$';
+    public $assumable_fee_amount = '';
+    public $assumable_occupancy_requirement = '';
+    public $assumable_occupancy_other = '';
     public $max_monthly_payment = '';
     public $gap_payment_type = '$';
     public $gap_payment_amount = '';
@@ -147,6 +158,10 @@ class SellerAgentAuction extends Component
     public $pool_type = [];
     public $view_preference = [];
     public $other_preferences = '';
+    public $is_other_visible = false;
+    public $appliances = [];
+    public $other_appliances = '';
+    public $showOtherAppliances = false;
     public $real_estate_purchase = '';
     public $number_of_unit = '';
     public $number_of_unit_other = '';
@@ -536,6 +551,14 @@ class SellerAgentAuction extends Component
             'balloon_payment_date',
             'assumable_terms',
             'max_assumable_rate',
+            'assumable_monthly_escrow',
+            'assumable_loan_term_remaining',
+            'assumable_loan_origination_date',
+            'assumable_loan_servicer',
+            'assumable_fee_type',
+            'assumable_fee_amount',
+            'assumable_occupancy_requirement',
+            'assumable_occupancy_other',
             'max_monthly_payment',
             'gap_payment_amount'
         ]);
@@ -568,6 +591,21 @@ class SellerAgentAuction extends Component
         $this->reset(['assignment_fee_amount']);
     }
 
+    public function updatedViewPreference()
+    {
+        $this->is_other_visible = in_array('Other', $this->view_preference ?? []);
+    }
+
+    public function updatedAppliances()
+    {
+        $this->showOtherAppliances = in_array('Other', $this->appliances ?? []);
+    }
+
+    public function handleUpdatePreference($selectedValues)
+    {
+        $this->view_preference = $selectedValues ?? [];
+        $this->updatedViewPreference();
+    }
 
     // Methods
     public function mount($listingId = null)
@@ -1217,6 +1255,7 @@ class SellerAgentAuction extends Component
             $this->auction_time = $auction->get->auction_time;
 
             $this->state = $auction->get->state;
+            $this->zip_code = $auction->get->zip_code ?? '';
             $this->property_type = $auction->get->property_type;
             $this->cities = is_string($auction->get->cities) ? json_decode($auction->get->cities, true) ?? [] : (array)$auction->get->cities;
 
@@ -1274,6 +1313,14 @@ class SellerAgentAuction extends Component
             $this->balloon_payment_date = $auction->get->balloon_payment_date;
             $this->assumable_terms = $auction->get->assumable_terms;
             $this->max_assumable_rate = $auction->get->max_assumable_rate;
+            $this->assumable_monthly_escrow = $auction->get->assumable_monthly_escrow ?? '';
+            $this->assumable_loan_term_remaining = $auction->get->assumable_loan_term_remaining ?? '';
+            $this->assumable_loan_origination_date = $auction->get->assumable_loan_origination_date ?? '';
+            $this->assumable_loan_servicer = $auction->get->assumable_loan_servicer ?? '';
+            $this->assumable_fee_type = $auction->get->assumable_fee_type ?? '$';
+            $this->assumable_fee_amount = $auction->get->assumable_fee_amount ?? '';
+            $this->assumable_occupancy_requirement = $auction->get->assumable_occupancy_requirement ?? '';
+            $this->assumable_occupancy_other = $auction->get->assumable_occupancy_other ?? '';
             $this->max_monthly_payment = $auction->get->max_monthly_payment;
             $this->gap_payment_type = $auction->get->gap_payment_type;
             $this->gap_payment_amount = $auction->get->gap_payment_amount;
@@ -1348,10 +1395,12 @@ class SellerAgentAuction extends Component
 
 
             $this->view_preference = is_string($auction->get->view_preference) ? json_decode($auction->get->view_preference, true) ?? [] : (array)$auction->get->view_preference;
-
-
-
+            $this->is_other_visible = in_array('Other', $this->view_preference ?? []);
             $this->other_preferences = $auction->get->other_preferences;
+            
+            $this->appliances = is_string($auction->get->appliances) ? json_decode($auction->get->appliances, true) ?? [] : (array)$auction->get->appliances;
+            $this->showOtherAppliances = in_array('Other', $this->appliances ?? []);
+            $this->other_appliances = $auction->get->other_appliances;
             $this->real_estate_purchase = $auction->get->real_estate_purchase;
             $this->number_of_unit = $auction->get->number_of_unit;
             $this->number_of_unit_other = $auction->get->number_of_unit_other;
@@ -1563,6 +1612,7 @@ class SellerAgentAuction extends Component
         $auction->saveMeta('cities', json_encode($this->cities));
         $auction->saveMeta('counties', json_encode($this->counties));
         $auction->saveMeta('state', $this->state);
+        $auction->saveMeta('zip_code', $this->zip_code);
 
         // Property Details
         $auction->saveMeta('property_type', $this->property_type);
@@ -1615,6 +1665,14 @@ class SellerAgentAuction extends Component
         $auction->saveMeta('balloon_payment_date', $this->balloon_payment_date);
         $auction->saveMeta('assumable_terms', $this->assumable_terms);
         $auction->saveMeta('max_assumable_rate', $this->max_assumable_rate);
+        $auction->saveMeta('assumable_monthly_escrow', $this->assumable_monthly_escrow);
+        $auction->saveMeta('assumable_loan_term_remaining', $this->assumable_loan_term_remaining);
+        $auction->saveMeta('assumable_loan_origination_date', $this->assumable_loan_origination_date);
+        $auction->saveMeta('assumable_loan_servicer', $this->assumable_loan_servicer);
+        $auction->saveMeta('assumable_fee_type', $this->assumable_fee_type);
+        $auction->saveMeta('assumable_fee_amount', $this->assumable_fee_amount);
+        $auction->saveMeta('assumable_occupancy_requirement', $this->assumable_occupancy_requirement);
+        $auction->saveMeta('assumable_occupancy_other', $this->assumable_occupancy_other);
         $auction->saveMeta('max_monthly_payment', $this->max_monthly_payment);
         $auction->saveMeta('gap_payment_type', $this->gap_payment_type);
         $auction->saveMeta('gap_payment_amount', $this->gap_payment_amount);
@@ -1682,6 +1740,8 @@ class SellerAgentAuction extends Component
         $auction->saveMeta('pool_type', json_encode($this->pool_type));
         $auction->saveMeta('view_preference', json_encode($this->view_preference));
         $auction->saveMeta('other_preferences', $this->other_preferences);
+        $auction->saveMeta('appliances', json_encode($this->appliances));
+        $auction->saveMeta('other_appliances', $this->other_appliances);
         $auction->saveMeta('real_estate_purchase', $this->real_estate_purchase);
         $auction->saveMeta('number_of_unit', $this->number_of_unit);
         $auction->saveMeta('number_of_unit_other', $this->number_of_unit_other);

@@ -595,7 +595,7 @@
         <div class="input-cover" wire:ignore>
             <select wire:model="appliances" id="appliances" class="form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-plug input-icon2" multiple>
-                @foreach ($appliances as $row_pt)
+                @foreach ($applianceOptions as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach
             </select>

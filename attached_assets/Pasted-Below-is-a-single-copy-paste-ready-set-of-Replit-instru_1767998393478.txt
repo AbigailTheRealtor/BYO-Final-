@@ -1,0 +1,400 @@
+Below is a **single, copy/paste-ready** set of **Replit instructions** to fix ONLY the issues you listed for **(Tenant) profile ([Tenant@exp.com](mailto:Tenant@exp.com)) → Hire a Seller’s Agent → Listing Creation + Save Draft + Submit + Listings Display**.
+
+---
+
+## Replit Instructions — Hire a Seller’s Agent ([Tenant@exp.com](mailto:Tenant@exp.com)) Fix Draft + Submit + “Other” Inputs + Tooltip + Validation + Redirect
+
+### Applies to (ONLY)
+
+* **Tenant profile:** `Tenant@exp.com`
+* **Flow:** **Hire a Seller’s Agent → Create Listing**
+* **Areas:** Tooltips, Save Draft, Resume Draft, Submit Listing, Post-submit redirect, Required field validation, Listing appearing on website
+
+---
+
+## SAFEGUARDS (MUST FOLLOW — DO NOT BREAK ANYTHING ELSE)
+
+**DO NOT:**
+
+* Delete/rename any database tables, columns, models, enums, migrations, or IDs
+* Change any existing field keys/names used by Buyer/Tenant/Landlord flows
+* Modify UI styling, spacing, icons, headers, tab order, or existing tooltip text (except the specific tooltip behavior + one placeholder requested)
+* Remove any existing conditional logic for other flows
+* “Quick fix” by hardcoding Seller listings into Tenant listing routes or schemas
+
+**DO:**
+
+* Make fixes via **additive / non-destructive** changes:
+
+  * add missing persistence fields if needed
+  * fix draft serialization/deserialization
+  * fix conditional rendering for “Other” inputs
+  * fix validation gates
+  * fix redirect logic after successful submit
+  * fix tooltip close behavior
+
+---
+
+# 1) Fix “View” tooltip popover: it pops and doesn’t go away
+
+### Problem
+
+Tooltip for **View** stays open / “pops” and doesn’t close properly.
+
+### Required Behavior
+
+* Tooltip opens on hover/click (whatever is used globally), and **closes when mouse leaves**, **click outside**, or **Esc**.
+* Must behave the same as tooltips elsewhere in the platform.
+
+### Implementation Requirements
+
+* If using a tooltip library (ex: Radix/shadcn Tooltip, Tippy, etc.), ensure:
+
+  * It is not stuck in `open={true}` state
+  * If it’s controlled, implement `open` + `onOpenChange`
+  * Add `closeOnEsc`, `closeOnClickOutside`, and `onPointerLeave` / `onMouseLeave` support (depending on library)
+* If you are using a custom tooltip component:
+
+  * Ensure you remove any `stopPropagation()` that prevents outside click dismissal
+  * Ensure tooltip state resets on blur/unmount
+
+### Acceptance Test
+
+1. Open Hire a Seller listing.
+2. Hover/click the **View** tooltip.
+3. Move mouse away OR click outside → tooltip closes immediately.
+4. Press Esc → tooltip closes.
+
+---
+
+# 2) Acceptable Brokerage Relationship tooltip: add bullet points per sentence
+
+### Required Behavior
+
+Under **Acceptable Brokerage Relationship**, the tooltip must show **bullet points for each sentence**, matching the format used in **Hire a Buyer’s Agent**.
+
+### Implementation Requirements
+
+* Reuse the same tooltip rendering approach as Buyer:
+
+  * If Buyer uses an array of strings → render `<ul><li>…</li></ul>`
+  * If Buyer uses stored markup → match it
+* Convert the Seller tooltip content to the same bullet structure **without changing the wording**, only formatting.
+
+### Acceptance Test
+
+* Compare Buyer vs Seller tooltips visually: Seller has bullets per sentence, same spacing and list styling.
+
+---
+
+# 3) Save Draft deletes City/State/County/Zip and other entered fields
+
+### Problem
+
+When user saves a draft and reopens it, **City, State, County, Zip** (and other fields) are missing/cleared.
+
+### Required Behavior
+
+* **ALL fields that were entered when saving draft must persist** exactly when draft is reopened.
+* This includes Listing Details fields like City/State/County/Zip.
+
+### Fix Requirements (Core)
+
+You must fix BOTH:
+
+1. **Draft Save serialization (frontend → backend)**
+2. **Draft Load hydration (backend → frontend state)**
+
+### Implementation Steps
+
+**A) Identify the canonical data object used by this listing type**
+
+* There should be a “Seller Listing” payload object (example: `sellerListingForm`, `listingDraftPayload`, `formData`, etc.)
+* Confirm the draft save endpoint stores that payload (JSON) **without stripping fields**
+
+**B) Fix Draft Save (frontend)**
+
+* Ensure the Save Draft action sends the **FULL form state**, not a partial subset.
+* If you are building the payload manually, STOP hand-picking fields and instead serialize the entire form state object (or the entire form schema object) in one place.
+* If you use React Hook Form/Formik/etc:
+
+  * Save Draft must use `getValues()` (or equivalent) to capture **everything**
+
+**C) Fix Draft Save (backend)**
+
+* Ensure the backend stores all fields it receives for drafts:
+
+  * If drafts are stored as JSON blob, do not sanitize out location fields.
+  * If drafts are stored into columns, ensure City/State/County/Zip fields are included for drafts too.
+* Confirm no middleware is stripping “address/location” fields for privacy (if privacy exists, this must apply to display rules, not deleting saved data).
+
+**D) Fix Draft Load (frontend)**
+
+* When opening a draft, the form must be hydrated with the draft payload:
+
+  * Use `reset(draftData)` / `setValues` for all keys
+  * Ensure nested objects are properly set (no missing levels)
+* If certain fields are stored under different keys (common bug):
+
+  * Add a mapping layer **only for Seller draft hydration**, but do not rename DB keys.
+
+### Acceptance Test
+
+1. Create Seller listing → fill City/State/County/Zip + several other fields.
+2. Save Draft.
+3. Reopen draft → ALL filled fields still populated (including City/State/County/Zip).
+
+---
+
+# 4) “Other” under View or Appliances Included loses the custom input & box disappears
+
+### Problem
+
+When user selects **Other** for **View** or **Appliances Included**, the saved draft later shows “Other” selected but the **custom input value is lost** and/or the **textbox doesn’t appear**.
+
+### Required Behavior
+
+* If “Other” is selected:
+
+  * The “Other” textbox must appear
+  * The user’s previously entered custom text must remain and re-populate on draft load
+* If user changes away from “Other”:
+
+  * Either keep the saved text in state (hidden) or clear it (your choice), **but if they return to Other, restore it if previously entered** (preferred)
+
+### Implementation Requirements
+
+**A) Ensure there is a dedicated persisted field for each “Other” text**
+Example:
+
+* `view_other_text`
+* `appliances_included_other_text`
+
+**Do NOT reuse one generic `other_text` field across the form** (this causes overwrites).
+
+**B) Conditional rendering must check BOTH:**
+
+* selected value includes `"Other"`
+  AND/OR
+* the stored `*_other_text` exists (so the textbox appears when reloading)
+
+**C) Save Draft / Submit must persist these fields**
+
+* Confirm draft payload includes `view_other_text` and `appliances_included_other_text`
+* Confirm backend stores them and returns them on draft fetch
+
+### Acceptance Test
+
+1. Select View → Other → type custom view text → Save Draft
+2. Reopen draft → Other still selected, textbox visible, custom text still there
+3. Repeat for Appliances Included
+
+---
+
+# 5) Draft resume does not carry over Assumable / Occupancy Requirement sub-answers
+
+### Problem
+
+User selected **Assumable** under Offered Financing/Currency, but only some of the follow-up answers persisted.
+
+### Required Behavior
+
+* All conditional sub-fields triggered by **Assumable** must be saved and restored:
+
+  * Every dependent answer must persist through Save Draft → reopen
+  * Same persistence must occur on Submit
+
+### Implementation Requirements
+
+**A) Fix conditional fields persistence**
+
+* Common bug: code only saves “visible fields” at the moment of save, but misses nested/conditional values.
+* Save Draft must capture full form state, including:
+
+  * conditional objects
+  * nested values
+  * follow-up arrays
+
+**B) Fix hydration order**
+
+* When loading draft:
+
+  1. set Offered Financing/Currency first
+  2. ensure the UI renders assumable fields
+  3. then hydrate assumable sub-fields (or do one `reset()` with entire object and ensure the components read from state correctly)
+
+**C) Ensure keys match**
+
+* Verify the draft JSON keys for assumable follow-ups match the form input `name` attributes exactly.
+
+### Acceptance Test
+
+1. Pick Offered Financing/Currency → Assumable
+2. Fill out all assumable follow-up questions
+3. Save Draft → reopen draft → every answer still present
+
+---
+
+# 6) After Submit, redirect user directly to the listing just created
+
+### Required Behavior
+
+After successful submit:
+
+* redirect to the **new listing detail page** (the actual listing that was created)
+
+### Implementation Requirements
+
+* Submit endpoint must return the created listing identifier:
+
+  * `listing_id` (or internal id / slug)
+* Frontend must navigate immediately:
+
+  * `navigate(/hire-seller/listings/{listing_id})` (use the correct route)
+* Do not redirect to a generic list page unless the product flow requires it (user explicitly requested direct-to-listing).
+
+### Acceptance Test
+
+Submit listing → you land on the detail page for that exact listing and can see the saved values.
+
+---
+
+# 7) Required fields must block submit (red-star fields)
+
+### Problem
+
+Submit is allowed even when required fields are empty (especially after draft bug cleared location fields).
+
+### Required Behavior
+
+* Any required field (red star) must block submit.
+* Show inline validation errors and prevent API call (or block success response handling).
+* If backend validation fails, show message and do not “pretend submit succeeded”.
+
+### Implementation Requirements
+
+**A) Frontend validation**
+
+* Ensure form library has required rules applied consistently for required fields
+* On submit:
+
+  * `handleSubmit(onValid, onInvalid)`
+  * onInvalid: scroll to first error, highlight fields
+
+**B) Backend validation (must exist even if frontend fails)**
+
+* Backend must validate required fields too.
+* If missing, return `400` with field-level errors.
+
+**C) Prevent “silent success”**
+
+* If backend returns error, do not navigate away; show error.
+* If backend returns success but listing fails to create, treat as failure (see next section).
+
+### Acceptance Test
+
+Clear a required field → click Submit → cannot submit, errors shown, no redirect.
+
+---
+
+# 8) “Sometimes listing submits but doesn’t show on website listings”
+
+### Likely Root Cause (must investigate + fix)
+
+This usually happens when one of these is true:
+
+1. Submit returns success but DB insert failed / rolled back
+2. Listing created with wrong `listing_type` or wrong `profile_id/user_id` mapping
+3. Listing created as `draft=true` or `status=draft` even though submitted
+4. Listing created but filtered out by website query (status mismatch, missing required status, wrong tab/category)
+
+### Required Behavior
+
+* Successful submit must:
+
+  * create record
+  * set correct listing type = Seller
+  * set correct owner profile = [Tenant@exp.com](mailto:Tenant@exp.com)
+  * set status = Active (or whatever “submitted” means)
+  * make it discoverable in the Hire a Seller listings page
+
+### Implementation Requirements
+
+**A) Verify submit pipeline**
+
+* Confirm POST submit endpoint:
+
+  * writes to correct Seller listing table/model (not Tenant listing)
+  * sets `status` correctly on submit
+  * sets `is_draft=false`
+* If drafts share same table, ensure the submit action toggles draft → active.
+
+**B) Fix listings query filter**
+
+* Confirm the “Hire a Seller listings page” query includes:
+
+  * this listing type
+  * this status
+  * this user scope where appropriate
+
+**C) Add logging for creation**
+
+* Add server-side log on submit:
+
+  * incoming payload summary
+  * created listing id
+  * status/type/profile id
+* This is temporary debugging; do not spam logs in production.
+
+### Acceptance Test
+
+Submit listing → it appears:
+
+* in the Seller listings page under correct tab
+* in the user’s dashboard list
+* and loads in detail view
+
+---
+
+# 9) Placeholder update for Occupancy Requirement → Other (under Assumable)
+
+### Required Change
+
+Under **Offered Financing/Currency → Assumable → Occupancy Requirement → Other**, update placeholder to:
+
+**`Enter occupancy requirement (e.g., Flexible occupancy terms permitted)`**
+
+### Safeguard
+
+* Change ONLY the placeholder text for that specific “Other” occupancy input under assumable.
+* Do not change labels, field name, or validation.
+
+---
+
+# 10) End-to-end flow verification (must be done after fixes)
+
+### Required “Complete Flow” Test Checklist (Seller only, [Tenant@exp.com](mailto:Tenant@exp.com))
+
+1. Create listing → fill required fields → Save Draft → reopen → all fields persist
+2. Test “Other” fields: View + Appliances Included → Save Draft → reopen → textbox + text persist
+3. Test Assumable follow-ups → Save Draft → reopen → all answers persist
+4. Submit with missing required field → blocked
+5. Submit valid listing → redirect to listing detail page
+6. Listing appears in Seller listings page (not missing)
+7. No console errors on save, resume, submit, or listing display
+
+---
+
+## Deliverable expectation
+
+When complete, Hire a Seller’s Agent flow under [Tenant@exp.com](mailto:Tenant@exp.com) must:
+
+* Not lose any saved draft values
+* Correctly restore conditional sub-answers
+* Correctly restore “Other” custom text fields
+* Enforce required fields on submit
+* Redirect to created listing
+* Always show submitted listing on the website Seller listings page
+* Tooltip behavior + bullet formatting matches Buyer flow
+
+If you want, paste the Replit AI’s response (or any error logs) here and I’ll rewrite the instructions even tighter around the exact files/functions it touched—without expanding scope.

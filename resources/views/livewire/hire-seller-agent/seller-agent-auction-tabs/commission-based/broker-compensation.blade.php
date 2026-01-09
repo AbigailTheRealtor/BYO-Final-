@@ -768,7 +768,7 @@
     <label class="fw-bold d-flex align-items-center">
         Acceptable Brokerage Relationship:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select the type of legal relationship the Seller wishes to establish with the Broker. This determines the scope of representation provided. Real estate laws vary by state, and Brokers may offer different types of agency relationships. Both the Broker and Seller must comply with all current local, state, and federal real estate laws and regulations.">
+            title="<ul class='mb-0 ps-3'><li>Select the type of legal relationship the Seller wishes to establish with the Broker.</li><li>This determines the scope of representation provided.</li><li>Real estate laws vary by state, and Brokers may offer different types of agency relationships.</li><li>Both the Broker and Seller must comply with all current local, state, and federal real estate laws and regulations.</li></ul>">
             <i class="fa-solid fa-circle-info"></i>
 
         </span>
