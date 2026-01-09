@@ -36,6 +36,15 @@
         <li class="nav-item" role="presentation">
             <a href="{{route('author', $id)}}?type=0" class="nav-link {{ ($type==0)?"active":"" }}">Hiring Tenant's Agent</a>
         </li>
+        <li class="nav-item" role="presentation">
+            <a href="{{route('author', $id)}}?type=1" class="nav-link {{ ($type==1)?"active":"" }}">Hiring Seller's Agent</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a href="{{route('author', $id)}}?type=2" class="nav-link {{ ($type==2)?"active":"" }}">Hiring Buyer's Agent</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a href="{{route('author', $id)}}?type=3" class="nav-link {{ ($type==3)?"active":"" }}">Hiring Landlord's Agent</a>
+        </li>
         @endif
 
 
