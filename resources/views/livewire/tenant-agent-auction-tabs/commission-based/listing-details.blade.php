@@ -569,62 +569,6 @@
 </div>
 
 
-<script>
-    document.addEventListener('livewire:load', function() {
-        const select = document.getElementById('auction_type');
-        let isDropdownOpen = false;
-
-        // Store original options with emojis
-        const originalOptions = {
-            'Bidding Period': '🔨 Bidding Period',
-            'Traditional': '📝 Traditional'
-        };
-
-        // When clicking the select (before dropdown opens)
-        select.addEventListener('mousedown', function(e) {
-            isDropdownOpen = true;
-
-            // Temporarily show options with emojis
-            Array.from(this.options).forEach(option => {
-                if (option.value && originalOptions[option.value]) {
-                    option.text = originalOptions[option.value];
-                }
-            });
-        });
-
-        // When selection changes or dropdown closes
-        select.addEventListener('change', function() {
-            isDropdownOpen = false;
-
-            // Revert to text without emojis
-            Array.from(this.options).forEach(option => {
-                if (option.value && option.hasAttribute('data-display')) {
-                    option.text = option.getAttribute('data-display');
-                }
-            });
-        });
-
-        // Handle cases where user clicks away without selecting
-        document.addEventListener('click', function(e) {
-            if (isDropdownOpen && e.target !== select) {
-                isDropdownOpen = false;
-
-                Array.from(select.options).forEach(option => {
-                    if (option.value && option.hasAttribute('data-display')) {
-                        option.text = option.getAttribute('data-display');
-                    }
-                });
-            }
-        });
-
-        // Initialize with correct display
-        Array.from(select.options).forEach(option => {
-            if (option.value && option.hasAttribute('data-display')) {
-                option.text = option.getAttribute('data-display');
-            }
-        });
-    });
-</script>
 
 <style>
     .user-type-icon {
