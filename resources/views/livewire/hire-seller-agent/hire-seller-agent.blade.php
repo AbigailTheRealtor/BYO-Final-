@@ -934,9 +934,8 @@
 
                         <button type="button" class="btn btn-primary wizard-step-next">Next</button>
 
-                        <button type="submit" class="btn btn-success wizard-step-finish" id="save-button" wire:loading.attr="disabled">
-                            <span wire:loading.remove wire:target="store">Submit</span>
-                            <span wire:loading wire:target="store">Submitting...</span>
+                        <button type="submit" class="btn btn-success wizard-step-finish disabled" id="save-button">
+                            Submit
                         </button>
                     </div>
 
@@ -951,273 +950,505 @@
 
 @push('scripts')
     <script>
-        // Store the Livewire component ID for safe access
-        const livewireComponentId = '{{ $this->id }}';
         let currentServiceType = null;
-        let hooksRegistered = false;
 
-        // Safe Livewire component access
-        function getLivewireComponent() {
-            if (typeof Livewire === 'undefined') return null;
-            try {
-                return Livewire.find(livewireComponentId);
-            } catch (e) {
-                return null;
-            }
-        }
-
-        function safeSetLivewireProperty(property, value) {
-            const component = getLivewireComponent();
-            if (component) {
-                component.set(property, value);
-            }
-        }
-
-        // Initialize Bootstrap tooltips
+        // Initialize Bootstrap tooltips and handle Livewire re-renders
         function initializeTooltips() {
+            // Dispose of existing tooltips first to prevent sticking
             document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
                 const existingTooltip = bootstrap.Tooltip.getInstance(el);
-                if (existingTooltip) existingTooltip.dispose();
+                if (existingTooltip) {
+                    existingTooltip.dispose();
+                }
             });
+            // Initialize fresh tooltips
             document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
-                new bootstrap.Tooltip(el, { trigger: 'hover focus', container: 'body' });
+                new bootstrap.Tooltip(el, {
+                    trigger: 'hover focus',
+                    container: 'body'
+                });
             });
         }
 
-        // Hide tooltips when clicking outside
+        // Hide all tooltips when clicking outside
         document.addEventListener('click', function(e) {
             if (!e.target.closest('[data-bs-toggle="tooltip"]')) {
                 document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
                     const tooltip = bootstrap.Tooltip.getInstance(el);
-                    if (tooltip) tooltip.hide();
+                    if (tooltip) {
+                        tooltip.hide();
+                    }
                 });
             }
         });
 
-        // All DOM refresh functions - called after Livewire updates
-        function refreshAllDOMElements() {
-            initializeTooltips();
-            initializeSelect2Elements();
-            refreshToggleElements();
-            addIconsToInputs();
-            checkRepresentationStatus();
-        }
-
-        function initializeSelect2Elements() {
-            const propertyItemsEl = $('#property_items');
-            const amenitiesEl = $('#non_negotiable_amenities');
-
-            if (propertyItemsEl.length && !propertyItemsEl.hasClass('select2-hidden-accessible')) {
-                propertyItemsEl.select2({ placeholder: "Select property style", allowClear: true });
-            }
-
-            if (amenitiesEl.length && !amenitiesEl.hasClass('select2-hidden-accessible')) {
-                amenitiesEl.select2({ placeholder: "Select amenities", allowClear: true });
-            }
-        }
-
-        function refreshToggleElements() {
-            // Auction type toggle
-            const auctionDropdown = document.getElementById('auction_type');
-            const auctionTimeDiv = document.querySelector('.auction_time');
-            if (auctionDropdown && auctionTimeDiv) {
-                auctionTimeDiv.classList.toggle('d-none', auctionDropdown.value !== 'Auction');
-            }
-
-            // Bathrooms toggle
-            const bathroomsDropdown = document.getElementById('bathrooms');
-            const otherBathroomsDiv = document.querySelector('.other_bathrooms');
-            if (bathroomsDropdown && otherBathroomsDiv) {
-                otherBathroomsDiv.classList.toggle('d-none', bathroomsDropdown.value !== 'Other');
-            }
-
-            // Garage toggle
-            const garageSelect = document.getElementById('garage_parking_spaces');
-            const optionsWrapper = document.getElementById('garage_parking_spaces_option_wrapper');
-            const otherInputWrapper = document.getElementById('other_parking_space_wrapper');
-            const garageOptions = document.getElementById('garage_parking_spaces_option');
-            if (garageSelect && optionsWrapper) {
-                optionsWrapper.classList.toggle('d-none', garageSelect.value !== 'Yes');
-                if (otherInputWrapper) {
-                    otherInputWrapper.classList.toggle('d-none', !(garageOptions && garageOptions.value === 'Other' && garageSelect.value === 'Yes'));
-                }
-            }
-        }
-
-        // Register Livewire hooks ONCE when Livewire loads
+        // Re-initialize tooltips after Livewire updates
         document.addEventListener('livewire:load', function() {
-            if (hooksRegistered) return;
-            hooksRegistered = true;
-
-            // Single global hook for all DOM refreshes
+            initializeTooltips();
             Livewire.hook('message.processed', (message, component) => {
-                if (component && component.id === livewireComponentId) {
-                    setTimeout(() => {
-                        refreshAllDOMElements();
-                        addIconsToInputs();
-                        checkRepresentationStatus();
-                        
-                        // Detect and handle service type changes
-                        const fullServiceChecked = document.getElementById('fullService')?.checked;
-                        const limitedServiceChecked = document.getElementById('limitedService')?.checked;
-                        
-                        let newServiceType = null;
-                        if (fullServiceChecked) {
-                            newServiceType = 'full_service';
-                        } else if (limitedServiceChecked) {
-                            newServiceType = 'limited_service';
-                        }
-                        
-                        if (newServiceType && newServiceType !== currentServiceType) {
-                            currentServiceType = newServiceType;
-                            removeWizardEventListeners();
-                            if (currentServiceType === 'full_service') {
-                                initializeFullService();
-                            } else if (currentServiceType === 'limited_service') {
-                                initializeLimitedService();
-                            }
-                        }
-                        
-                        // Dispatch custom event for other script blocks to respond
-                        document.dispatchEvent(new CustomEvent('livewire-refreshed'));
-                    }, 50);
-                }
+                initializeTooltips();
             });
-
-            // Initialize service type
-            if (document.getElementById('fullService')?.checked) {
-                currentServiceType = 'full_service';
-                initializeFullServiceSetup();
-            } else if (document.getElementById('limitedService')?.checked) {
-                currentServiceType = 'limited_service';
-                initializeLimitedServiceSetup();
-            }
         });
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Initialize tooltips on page load
             initializeTooltips();
+
+            // Detect which service is preselected on load
+            if (document.getElementById('fullService')?.checked) {
+                currentServiceType = 'full_service';
+                initializeFullService();
+            } else if (document.getElementById('limitedService')?.checked) {
+                currentServiceType = 'limited_service';
+                initializeLimitedService();
+            }
+
             addIconsToInputs();
             checkRepresentationStatus();
         });
 
         function selectService(serviceType) {
             if (currentServiceType === serviceType) return;
+
             currentServiceType = serviceType;
 
-            document.querySelectorAll('.service-option-card').forEach(card => card.classList.remove('active-service'));
+            // Update card UI
+            document.querySelectorAll('.service-option-card').forEach(card => {
+                card.classList.remove('active-service');
+            });
+
             const activeCard = document.querySelector(`input[value="${serviceType}"]`)?.closest('.service-option-card');
             if (activeCard) activeCard.classList.add('active-service');
 
+            // Clear old event listeners
             removeWizardEventListeners();
 
+            // Initialize new service logic
             if (serviceType === 'full_service') {
-                initializeFullServiceSetup();
+                initializeFullService();
             } else if (serviceType === 'limited_service') {
-                initializeLimitedServiceSetup();
+                initializeLimitedService();
             }
 
-            if (typeof Livewire !== 'undefined') {
-                Livewire.emit('serviceTypeChanged', serviceType);
-            }
+            Livewire.emit('serviceTypeChanged', serviceType);
         }
 
         function removeWizardEventListeners() {
             const nextBtn = document.querySelector('.wizard-step-next');
             const backBtn = document.querySelector('.wizard-step-back');
-            if (nextBtn) {
-                const nextClone = nextBtn.cloneNode(true);
-                nextBtn.parentNode.replaceChild(nextClone, nextBtn);
-            }
-            if (backBtn) {
-                const backClone = backBtn.cloneNode(true);
-                backBtn.parentNode.replaceChild(backClone, backBtn);
-            }
-        }
 
-        function initializeFullServiceSetup() {
-            // Initialize Select2 elements
-            initializeSelect2Elements();
+            const nextClone = nextBtn?.cloneNode(true);
+            const backClone = backBtn?.cloneNode(true);
 
-            // Setup Select2 change handlers
-            $('#property_items').off('change.livewire').on('change.livewire', function() {
-                safeSetLivewireProperty('property_items', $(this).val());
-            });
-
-            $('#non_negotiable_amenities').off('change.livewire').on('change.livewire', function() {
-                safeSetLivewireProperty('non_negotiable_amenities', $(this).val());
-            });
-
-            // Setup toggle handlers
-            setupToggleHandlers();
-
-            // Initialize full service specific logic
-            initializeFullService();
-        }
-
-        function setupToggleHandlers() {
-            // Auction type handler
-            const auctionDropdown = document.getElementById('auction_type');
-            if (auctionDropdown) {
-                auctionDropdown.removeEventListener('change', handleAuctionChange);
-                auctionDropdown.addEventListener('change', handleAuctionChange);
-                handleAuctionChange.call(auctionDropdown);
-            }
-
-            // Bathrooms handler
-            const bathroomsDropdown = document.getElementById('bathrooms');
-            if (bathroomsDropdown) {
-                bathroomsDropdown.removeEventListener('change', handleBathroomsChange);
-                bathroomsDropdown.addEventListener('change', handleBathroomsChange);
-                handleBathroomsChange.call(bathroomsDropdown);
-            }
-
-            // Garage handler
-            const garageSelect = document.getElementById('garage_parking_spaces');
-            const garageOptions = document.getElementById('garage_parking_spaces_option');
-            if (garageSelect) {
-                garageSelect.removeEventListener('change', handleGarageChange);
-                garageSelect.addEventListener('change', handleGarageChange);
-            }
-            if (garageOptions) {
-                garageOptions.removeEventListener('change', handleGarageChange);
-                garageOptions.addEventListener('change', handleGarageChange);
-            }
-            handleGarageChange();
-        }
-
-        function handleAuctionChange() {
-            const auctionTimeDiv = document.querySelector('.auction_time');
-            if (auctionTimeDiv) {
-                auctionTimeDiv.classList.toggle('d-none', this.value !== 'Auction');
-            }
-        }
-
-        function handleBathroomsChange() {
-            const otherBathroomsDiv = document.querySelector('.other_bathrooms');
-            if (otherBathroomsDiv) {
-                otherBathroomsDiv.classList.toggle('d-none', this.value !== 'Other');
-            }
-        }
-
-        function handleGarageChange() {
-            const garageSelect = document.getElementById('garage_parking_spaces');
-            const optionsWrapper = document.getElementById('garage_parking_spaces_option_wrapper');
-            const otherInputWrapper = document.getElementById('other_parking_space_wrapper');
-            const garageOptions = document.getElementById('garage_parking_spaces_option');
-            
-            if (garageSelect && optionsWrapper) {
-                optionsWrapper.classList.toggle('d-none', garageSelect.value !== 'Yes');
-            }
-            if (otherInputWrapper && garageOptions && garageSelect) {
-                otherInputWrapper.classList.toggle('d-none', !(garageOptions.value === 'Other' && garageSelect.value === 'Yes'));
-            }
+            if (nextBtn && nextClone) nextBtn.parentNode.replaceChild(nextClone, nextBtn);
+            if (backBtn && backClone) backBtn.parentNode.replaceChild(backClone, backBtn);
         }
 
         function initializeFullService() {
-            // All toggle handlers and DOM refresh logic are now managed centrally by:
-            // - setupToggleHandlers() for initial event binding
-            // - refreshAllDOMElements() called from a single Livewire.hook
-            // This function now only handles wizard navigation and form validation
+
+
+            $('#property_items').select2({
+                placeholder: "Select property style",
+                allowClear: true,
+            });
+
+            // Update Livewire property on change
+            $('#property_items').on('change', function(e) {
+                let selectedValues = $(this).val();
+                @this.set('property_items', selectedValues);
+            });
+
+            // Reinitialize Select2 after Livewire update
+            Livewire.hook('message.processed', (message, component) => {
+                $('#property_items').select2({
+                    placeholder: "Select property style",
+                    allowClear: true,
+                });
+            });
+
+            // Initialize with any existing values
+            Livewire.hook('component.initialized', (component) => {
+                $('#property_items').select2({
+                    placeholder: "Select property style",
+                    allowClear: true,
+                });
+            });
+
+            // Initialize Select2 non_negotiable_amenities
+            $('#non_negotiable_amenities').select2({
+                placeholder: "Select credit score rating(s)",
+                allowClear: true,
+            });
+
+            // Update Livewire property on change
+            $('#non_negotiable_amenities').on('change', function(e) {
+                let selectedValues = $(this).val();
+                @this.set('non_negotiable_amenities', selectedValues);
+            });
+
+            // Reinitialize Select2 after Livewire update
+            Livewire.hook('message.processed', (message, component) => {
+                $('#non_negotiable_amenities').select2({
+                    placeholder: "Select amenities",
+                    allowClear: true,
+                });
+            });
+
+            // Initialize with any existing values
+            Livewire.hook('component.initialized', (component) => {
+                $('#non_negotiable_amenities').select2({
+                    placeholder: "Select amenities",
+                    allowClear: true,
+                });
+            });
+
+
+            // Function to toggle "auction time" input field
+            function toggleAuctionTime(selectElement) {
+                const auctionTimeDiv = document.querySelector('.auction_time');
+
+                if (!auctionTimeDiv) {
+                    return;
+                }
+
+                if (selectElement.value === 'Auction') {
+                    auctionTimeDiv.classList.remove('d-none'); // Show the auction time field
+                } else {
+                    auctionTimeDiv.classList.add('d-none'); // Hide the auction time field
+                }
+            }
+
+            // Function to attach the event listener to the auction type dropdown
+            function attachAuctionDropdownListener() {
+                const auctionDropdown = document.getElementById('auction_type');
+                if (auctionDropdown) {
+                    auctionDropdown.addEventListener('change', function() {
+                        toggleAuctionTime(this);
+                    });
+
+                    // Manually trigger the toggle function on page load or after Livewire re-renders
+                    toggleAuctionTime(auctionDropdown);
+                }
+            }
+
+            // Attach the event listener initially
+            document.addEventListener('DOMContentLoaded', () => {
+                attachAuctionDropdownListener();
+            });
+
+            // Re-attach the event listener after Livewire re-renders the DOM
+            Livewire.hook('message.processed', () => {
+                attachAuctionDropdownListener();
+            });
+
+
+            // Function to toggle "Other Bathrooms" input field
+            function toggleOtherBathrooms(selectElement) {
+                const otherBathroomsDiv = document.querySelector('.other_bathrooms');
+
+                if (!otherBathroomsDiv) {
+                    return;
+                }
+
+                if (selectElement.value === 'Other') {
+                    otherBathroomsDiv.classList.remove('d-none'); // Show the "Other" input field
+                } else {
+                    otherBathroomsDiv.classList.add('d-none'); // Hide the "Other" input field
+                }
+            }
+
+            // Function to attach the event listener to the bathrooms dropdown
+            function attachBathroomsDropdownListener() {
+                const bathroomsDropdown = document.getElementById('bathrooms');
+                if (bathroomsDropdown) {
+                    bathroomsDropdown.addEventListener('change', function() {
+                        toggleOtherBathrooms(this);
+                    });
+
+                    // Manually trigger the toggle function on page load or after Livewire re-renders
+                    toggleOtherBathrooms(bathroomsDropdown);
+                }
+            }
+
+            // Attach the event listener initially
+            attachBathroomsDropdownListener();
+
+            // Re-attach the event listener after Livewire re-renders the DOM
+            Livewire.hook('message.processed', () => {
+                attachBathroomsDropdownListener();
+            });
+
+
+
+
+
+            function toggleGarageOptions() {
+                let garageSelect = document.getElementById('garage_parking_spaces');
+                let optionsWrapper = document.getElementById('garage_parking_spaces_option_wrapper');
+                let otherInputWrapper = document.getElementById('other_parking_space_wrapper');
+                let garageOptions = document.getElementById('garage_parking_spaces_option');
+
+                // First check the main garage/parking spaces selection
+                if (garageSelect) {
+                    if (garageSelect.value === "Yes") {
+                        optionsWrapper.classList.remove('d-none'); // Show options dropdown
+                    } else {
+                        optionsWrapper.classList.add('d-none'); // Hide options dropdown
+                        otherInputWrapper.classList.add('d-none'); // Also hide other input
+                    }
+                }
+
+                // Then check if "Other" is selected in the options dropdown
+                if (garageOptions && garageOptions.value === "Other" && garageSelect.value === "Yes") {
+                    otherInputWrapper.classList.remove('d-none'); // Show input field
+                } else {
+                    otherInputWrapper.classList.add('d-none'); // Hide input field
+                }
+            }
+
+            // Initialize on page load
+            toggleGarageOptions();
+
+            // Listen for Livewire updates
+            Livewire.hook('message.processed', () => {
+                toggleGarageOptions();
+            });
+
+            // Add event listeners
+            let garageSelect = document.getElementById('garage_parking_spaces');
+            let garageOptions = document.getElementById('garage_parking_spaces_option');
+
+            if (garageSelect) {
+                garageSelect.addEventListener('change', toggleGarageOptions);
+            }
+
+            if (garageOptions) {
+                garageOptions.addEventListener('change', toggleGarageOptions);
+            }
+
+
+
+
+            function toggleSpaceInput(selectId, inputId) {
+                const selectElement = document.getElementById(selectId);
+                const inputDiv = document.getElementById(inputId);
+
+                if (!selectElement || !inputDiv) return;
+
+                selectElement.addEventListener('change', function() {
+                    if (this.value === 'Yes') {
+                        inputDiv.classList.remove('d-none');
+                    } else {
+                        inputDiv.classList.add('d-none');
+                        // Clear input field when hiding
+                        const inputField = inputDiv.querySelector('input');
+                        if (inputField) {
+                            inputField.value = '';
+                            Livewire.emit('updateModel', inputField.getAttribute('wire:model'), '');
+                        }
+                    }
+                });
+
+                // Initialize on page load
+                if (selectElement.value === 'Yes') {
+                    inputDiv.classList.remove('d-none');
+                }
+            }
+
+            // Attach event listeners
+            toggleSpaceInput('carport-needed', 'other-carport-needed');
+            toggleSpaceInput('garage-needed', 'other-garage-needed');
+
+            // Reinitialize after Livewire updates
+            Livewire.hook('message.processed', () => {
+                toggleSpaceInput('carport-needed', 'other-carport-needed');
+                toggleSpaceInput('garage-needed', 'other-garage-needed');
+            });
+
+            // Initialize Select2 for multi-select
+            $('#view_preference').select2({
+                placeholder: "Select Preference",
+                allowClear: true
+            });
+
+            // Listen for changes on the dropdown and update Livewire
+            $('#view_preference').on('change', function() {
+                let selectedValues = $(this).val(); // Get selected values as an array
+                Livewire.emit('updatePreference', selectedValues); // Send to Livewire
+
+                // Check if "Other" is in the selected values
+                if (selectedValues.includes('Other')) {
+                    $('#other_preferences').show(); // Show the "Other" input field
+                } else {
+                    $('#other_preferences').hide(); // Hide the "Other" input field
+                }
+            });
+
+            // Reinitialize Select2 after Livewire updates the DOM
+            Livewire.hook('message.processed', () => {
+                $('#view_preference').select2({
+                    placeholder: "Select Preference",
+                    allowClear: true
+                });
+
+                // Ensure the "Other" input field visibility is updated on re-render
+                let selectedValues = $('#view_preference').val();
+                if (selectedValues.includes('Other')) {
+                    $('#other_preferences').show();
+                } else {
+                    $('#other_preferences').hide();
+                }
+            });
+            // Function to toggle Non-Negotiable Amenities and Property Features:" input field
+
+            function toggleOtherAmenities(selectElement) {
+                const otherAmenitiesDiv = document.querySelector('.other_non_negotiable_amenities');
+
+                if (!otherAmenitiesDiv) {
+                    return;
+                }
+                if (selectElement.value === 'Other') {
+                    otherAmenitiesDiv.classList.remove('d-none'); // Show the "Other" input field
+                } else {
+                    otherAmenitiesDiv.classList.add('d-none'); // Hide the "Other" input field
+                }
+            }
+            // Function to attach the event listener to the bathrooms dropdown
+            function attachAmenitiesDropdownListener() {
+                const bathroomsDropdown = document.getElementById('non_negotiable_amenities');
+                if (bathroomsDropdown) {
+                    bathroomsDropdown.addEventListener('change', function() {
+                        toggleOtherAmenities(this);
+                    });
+
+                    // Manually trigger the toggle function on page load or after Livewire re-renders
+                    toggleOtherAmenities(bathroomsDropdown);
+                }
+            }
+
+            // Attach the event listener initially
+            attachAmenitiesDropdownListener();
+
+            // Re-attach the event listener after Livewire re-renders the DOM
+            Livewire.hook('message.processed', () => {
+                attachAmenitiesDropdownListener();
+            });
+
+            // Function to toggle "Other Bedrooms" input field
+            function toggleOtherBedrooms(selectElement) {
+                const otherBedroomsDiv = document.querySelector('.other_bedrooms');
+
+                if (!otherBedroomsDiv) {
+                    return;
+                }
+
+                if (selectElement.value === 'Other') {
+                    otherBedroomsDiv.classList.remove('d-none'); // Show the "Other" input field
+                } else {
+                    otherBedroomsDiv.classList.add('d-none'); // Hide the "Other" input field
+                }
+            }
+
+            // Function to attach the event listener to the bedrooms dropdown
+            function attachBedroomsDropdownListener() {
+                const bedroomsDropdown = document.getElementById('bedrooms'); // Corrected ID
+                if (bedroomsDropdown) {
+                    bedroomsDropdown.addEventListener('change', function() {
+                        toggleOtherBedrooms(this);
+                    });
+
+                    // Manually trigger the toggle function on page load or after Livewire re-renders
+                    toggleOtherBedrooms(bedroomsDropdown);
+                }
+            }
+
+            // Attach the event listener initially
+            attachBedroomsDropdownListener();
+
+            // Re-attach the event listener after Livewire re-renders the DOM
+            Livewire.hook('message.processed', () => {
+                attachBedroomsDropdownListener();
+            });
+
+            // Function to toggle "Other Property Condition" input field
+            function toggleOtherCondition(selectElement) {
+                const otherConditionDiv = document.querySelector('.other_property_condition');
+
+                if (!otherConditionDiv) {
+                    return;
+                }
+
+                // Show the "Other" input field if "Other" is selected
+                if (selectElement.value === 'Other') {
+                    otherConditionDiv.classList.remove('d-none'); // Show the "Other" input field
+                } else {
+                    otherConditionDiv.classList.add('d-none'); // Hide the "Other" input field
+                }
+            }
+
+            // Function to attach the event listener to the condition dropdown
+            function attachConditionDropdownListener() {
+                const conditionDropdown = document.getElementById('condition_prop');
+                if (conditionDropdown) {
+                    conditionDropdown.addEventListener('change', function() {
+                        toggleOtherCondition(this);
+                    });
+
+                    // Manually trigger the toggle function on page load or after Livewire re-renders
+                    toggleOtherCondition(conditionDropdown);
+                }
+            }
+
+            // Attach the event listener initially
+            document.addEventListener('DOMContentLoaded', () => {
+                attachConditionDropdownListener();
+            });
+
+            // Re-attach the event listener after Livewire re-renders the DOM
+            Livewire.hook('message.processed', () => {
+                attachConditionDropdownListener();
+            });
+
+
+
+
+            function toggleOtherPropertyItems(selectElement) {
+                const otherConditionItemDiv = document.querySelector('.other_property_items');
+
+                if (!otherConditionItemDiv) {
+                    return;
+                }
+
+                // Show the "Other" input field if "Other" is selected
+                if (selectElement.value === 'Other') {
+                    otherConditionItemDiv.classList.remove('d-none'); // Show the "Other" input field
+                } else {
+                    otherConditionItemDiv.classList.add('d-none'); // Hide the "Other" input field
+                }
+            }
+
+            // Function to attach the event listener to the condition dropdown
+            function attachItemConditionDropdownListener() {
+                const conditionDropdownItem = document.getElementById('property_items');
+                if (conditionDropdownItem) {
+                    conditionDropdownItem.addEventListener('change', function() {
+                        toggleOtherPropertyItems(this);
+                    });
+
+                    // Manually trigger the toggle function on page load or after Livewire re-renders
+                    toggleOtherPropertyItems(conditionDropdownItem);
+                }
+            }
+
+            // Attach the event listener initially
+            document.addEventListener('DOMContentLoaded', () => {
+                attachItemConditionDropdownListener();
+            });
+
+            // Re-attach the event listener after Livewire re-renders the DOM
+            Livewire.hook('message.processed', () => {
+                attachItemConditionDropdownListener();
+            });
 
             const photoInput = document.getElementById("photo-input");
             const photoError = document.getElementById("photo-error");
@@ -1762,7 +1993,33 @@
             }
         }
 
-        // Hook logic consolidated into global hook at livewire:load event above
+        Livewire.hook('message.processed', () => {
+            addIconsToInputs();
+            checkRepresentationStatus();
+
+            // Re-detect selected service type after DOM update
+            const fullServiceChecked = document.getElementById('fullService')?.checked;
+            const limitedServiceChecked = document.getElementById('limitedService')?.checked;
+
+            let newServiceType = null;
+            if (fullServiceChecked) {
+                newServiceType = 'full_service';
+            } else if (limitedServiceChecked) {
+                newServiceType = 'limited_service';
+            }
+
+            if (newServiceType !== currentServiceType) {
+                currentServiceType = newServiceType;
+            }
+
+            removeWizardEventListeners();
+
+            if (currentServiceType === 'full_service') {
+                initializeFullService();
+            } else if (currentServiceType === 'limited_service') {
+                initializeLimitedService();
+            }
+        });
     </script>
 
     <script>
@@ -1835,15 +2092,13 @@
             }
 
             function updateSaveButton() {
-                // Removed strict disabling - let Livewire handle validation
-                // Just add/remove visual styling class but don't disable the button
                 const allValid = validateAllTabsStrictly();
                 if (allValid) {
-                    saveButton.classList.remove('btn-outline-success');
-                    saveButton.classList.add('btn-success');
+                    saveButton.classList.remove('disabled');
+                    saveButton.removeAttribute('disabled');
                 } else {
-                    saveButton.classList.remove('btn-success');
-                    saveButton.classList.add('btn-outline-success');
+                    saveButton.classList.add('disabled');
+                    saveButton.setAttribute('disabled', 'disabled');
                 }
             }
 
@@ -1867,18 +2122,22 @@
             setupGlobalListeners();
             updateSaveButton();
 
-            // Note: Livewire hook for save button validation is consolidated into global hook
-            // Listen for custom event dispatched from global hook
-            document.addEventListener('livewire-refreshed', function() {
-                setTimeout(() => {
-                    const updatedServiceType = document.querySelector('[data-service-type]');
-                    if (updatedServiceType && formContainer) {
-                        formContainer.setAttribute('data-service-type', updatedServiceType.getAttribute('data-service-type'));
-                    }
-                    setupGlobalListeners();
-                    updateSaveButton();
-                }, 300);
-            });
+            // Livewire reactivity hook
+            if (typeof Livewire !== 'undefined') {
+                Livewire.hook('message.processed', () => {
+                    setTimeout(() => {
+                        // Refresh listeners and service type
+                        const updatedServiceType = document.querySelector('[data-service-type]');
+                        if (updatedServiceType) {
+                            formContainer.setAttribute('data-service-type', updatedServiceType
+                                .getAttribute('data-service-type'));
+                        }
+
+                        setupGlobalListeners();
+                        updateSaveButton();
+                    }, 300);
+                });
+            }
         });
     </script>
     <script>
