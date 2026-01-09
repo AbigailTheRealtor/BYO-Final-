@@ -1143,9 +1143,10 @@
                                     <i class="fas fa-save me-1"></i> Save Draft
                                 </button>
                                 <button type="button" class="btn btn-primary wizard-step-next">Next</button>
-                                <button type="submit" class="btn btn-success wizard-step-finish disabled"
+                                <button type="submit" class="btn btn-success wizard-step-finish"
                                     id="save-button">
-                                    Submit
+                                    <span wire:loading.remove wire:target="store">Submit</span>
+                                    <span wire:loading wire:target="store">Submitting...</span>
                                 </button>
                             </div>
 
@@ -2451,13 +2452,10 @@
             }
 
             function updateSaveButton() {
-                const allValid = validateAllTabsStrictly();
-                if (allValid) {
+                // Always keep submit button enabled - let Livewire handle validation
+                if (saveButton) {
                     saveButton.classList.remove('disabled');
                     saveButton.removeAttribute('disabled');
-                } else {
-                    saveButton.classList.add('disabled');
-                    saveButton.setAttribute('disabled', 'disabled');
                 }
             }
 
