@@ -1018,6 +1018,37 @@
             addIconsToInputs();
             checkRepresentationStatus();
         });
+        
+        // Sync select element values from Livewire component data
+        function syncSelectValues() {
+            const wireEl = document.querySelector('[wire\\:id]');
+            if (!wireEl || typeof Livewire === 'undefined') return;
+            const component = Livewire.find(wireEl.getAttribute('wire:id'));
+            if (!component) return;
+            document.querySelectorAll('select[wire\\:model]').forEach(select => {
+                const wireModel = select.getAttribute('wire:model');
+                if (wireModel && component.get) {
+                    try {
+                        const lwValue = component.get(wireModel);
+                        if (lwValue && select.value !== lwValue) {
+                            console.log('[SyncSelect] Syncing ' + wireModel + ': DOM="' + select.value + '" -> LW="' + lwValue + '"');
+                            select.value = lwValue;
+                        }
+                    } catch (e) {}
+                }
+            });
+        }
+        
+        // Listen for draftLoaded browser event
+        window.addEventListener('draftLoaded', function() {
+            console.log('[DraftLoaded] Event received - syncing select values');
+            setTimeout(function() {
+                syncSelectValues();
+                if (typeof window.updateSaveButton === 'function') {
+                    window.updateSaveButton();
+                }
+            }, 100);
+        });
 
         function selectService(serviceType) {
             if (currentServiceType === serviceType) return;
@@ -2113,6 +2144,9 @@
                     saveButton.setAttribute('disabled', 'disabled');
                 }
             }
+            
+            // Expose updateSaveButton globally for draftLoaded event
+            window.updateSaveButton = updateSaveButton;
 
             function setupGlobalListeners() {
                 const allTabs = document.querySelectorAll('.tab-pane');

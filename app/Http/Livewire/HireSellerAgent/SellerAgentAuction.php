@@ -1610,6 +1610,9 @@ class SellerAgentAuction extends Component
             //         $this->enable[$field] = $value;
             //     }
             // }
+            
+            // Dispatch browser event to sync select values after draft loads
+            $this->dispatchBrowserEvent('draftLoaded');
         }
     }
 

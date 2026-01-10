@@ -2125,6 +2125,19 @@ $lease_types = [
             }
         });
     }
+    
+    // Listen for draftLoaded browser event to sync values after draft loads
+    window.addEventListener('draftLoaded', function() {
+        console.log('[DraftLoaded] Event received - syncing select values');
+        // Small delay to ensure Livewire has finished updating the DOM
+        setTimeout(function() {
+            syncSelectValues();
+            // Trigger validation update if function exists
+            if (typeof window.updateSaveButton === 'function') {
+                window.updateSaveButton();
+            }
+        }, 100);
+    });
 
     function selectService(serviceType) {
         if (currentServiceType === serviceType) return;
@@ -4119,6 +4132,9 @@ $lease_types = [
                 saveButton.setAttribute('disabled', 'disabled');
             }
         }
+        
+        // Expose updateSaveButton globally for draftLoaded event
+        window.updateSaveButton = updateSaveButton;
 
         function setupGlobalListeners() {
             const allTabs = document.querySelectorAll('.tab-pane');
