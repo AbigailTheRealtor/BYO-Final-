@@ -2133,22 +2133,57 @@ $lease_types = [
         if (backBtn && backClone) backBtn.parentNode.replaceChild(backClone, backBtn);
     }
 
-    // GLOBAL: Helper function to check if element is visible (not hidden by d-none, display:none, etc.)
+    // GLOBAL: Helper function to check if element is visible (not hidden by d-none, display:none, collapse, etc.)
     // This is used by validation functions in both Full Service and Limited Service modes
     function isElementVisible(element) {
         if (!element) return false;
         if (element.disabled) return false;
         if (element.type === 'hidden') return false;
         
+        // Check if element has zero dimensions (collapsed/hidden via height/width)
+        if (element.offsetParent === null && element.tagName !== 'BODY' && element.tagName !== 'HTML') {
+            // offsetParent is null for hidden elements (except body/html)
+            // However, position:fixed elements also have null offsetParent, so check dimensions
+            if (element.offsetHeight === 0 && element.offsetWidth === 0) {
+                return false;
+            }
+        }
+        
+        // Check for zero dimensions directly
+        if (element.offsetHeight === 0 || element.offsetWidth === 0) {
+            return false;
+        }
+        
+        // Check for aria-hidden attribute
+        if (element.getAttribute('aria-hidden') === 'true') {
+            return false;
+        }
+        
         let el = element;
         while (el && el !== document.body) {
-            if (el.classList && (el.classList.contains('d-none') || el.classList.contains('hidden'))) {
+            if (el.classList && (
+                el.classList.contains('d-none') || 
+                el.classList.contains('hidden') ||
+                el.classList.contains('collapse') && !el.classList.contains('show')
+            )) {
                 return false;
             }
+            
+            // Check aria-hidden on parent elements too
+            if (el.getAttribute('aria-hidden') === 'true') {
+                return false;
+            }
+            
             const style = window.getComputedStyle(el);
-            if (style.display === 'none' || style.visibility === 'hidden') {
+            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
                 return false;
             }
+            
+            // Check for zero height/width via CSS (collapsed elements)
+            if (parseFloat(style.height) === 0 || parseFloat(style.maxHeight) === 0) {
+                return false;
+            }
+            
             el = el.parentElement;
         }
         return true;
@@ -3887,32 +3922,83 @@ $lease_types = [
             return requiredFields;
         }
 
-        // Helper function to check if element is visible (not hidden by d-none, display:none, etc.)
+        // Helper function to check if element is visible (not hidden by d-none, display:none, collapse, etc.)
         function isFieldVisible(element) {
             if (!element) return false;
             if (element.disabled) return false;
             if (element.type === 'hidden') return false;
             
+            // Check if element has zero dimensions (collapsed/hidden via height/width)
+            if (element.offsetParent === null && element.tagName !== 'BODY' && element.tagName !== 'HTML') {
+                if (element.offsetHeight === 0 && element.offsetWidth === 0) {
+                    return false;
+                }
+            }
+            
+            // Check for zero dimensions directly
+            if (element.offsetHeight === 0 || element.offsetWidth === 0) {
+                return false;
+            }
+            
+            // Check for aria-hidden attribute
+            if (element.getAttribute('aria-hidden') === 'true') {
+                return false;
+            }
+            
             let el = element;
             while (el && el !== document.body) {
-                if (el.classList && (el.classList.contains('d-none') || el.classList.contains('hidden'))) {
+                if (el.classList && (
+                    el.classList.contains('d-none') || 
+                    el.classList.contains('hidden') ||
+                    el.classList.contains('collapse') && !el.classList.contains('show')
+                )) {
                     return false;
                 }
+                
+                // Check aria-hidden on parent elements too
+                if (el.getAttribute('aria-hidden') === 'true') {
+                    return false;
+                }
+                
                 const style = window.getComputedStyle(el);
-                if (style.display === 'none' || style.visibility === 'hidden') {
+                if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
                     return false;
                 }
+                
+                // Check for zero height/width via CSS (collapsed elements)
+                if (parseFloat(style.height) === 0 || parseFloat(style.maxHeight) === 0) {
+                    return false;
+                }
+                
                 el = el.parentElement;
             }
             return true;
         }
 
         function isFieldValid(field) {
-            // Skip hidden or disabled fields - they should not block submit
-            if (!isFieldVisible(field)) {
-                return true; // Treat invisible fields as valid (they don't block)
+            // Check if field is in an inactive tab-pane (hidden by Bootstrap tabs)
+            const tabPane = field.closest('.tab-pane');
+            if (tabPane && !tabPane.classList.contains('active') && !tabPane.classList.contains('show')) {
+                // Field is in an inactive tab - check if it's a conditional field within that tab
+                // For inactive tabs, only validate if the field's parent wrapper is visible within the tab structure
+                // This is a simplified check - we trust that inactive tabs will be validated when navigated to
+                // but we still need to check the value because the user may have navigated through all tabs
+                
+                // If the field is inside a hidden wrapper within the tab, skip it
+                const wrapper = field.closest('.d-none, .hidden, [style*="display: none"], [style*="display:none"]');
+                if (wrapper && tabPane.contains(wrapper)) {
+                    return true; // Hidden conditional field - treat as valid
+                }
             }
             
+            // For fields in the active tab, check visibility normally
+            if (tabPane && (tabPane.classList.contains('active') || tabPane.classList.contains('show'))) {
+                if (!isFieldVisible(field)) {
+                    return true; // Treat invisible fields as valid (they don't block)
+                }
+            }
+            
+            // Now check the actual value
             if (field.type === 'checkbox' || field.type === 'radio') {
                 return field.checked;
             }
@@ -3933,16 +4019,18 @@ $lease_types = [
                     invalidFields.push({
                         tab: tabIndex,
                         field: field.name || field.id,
-                        value: field.value
+                        value: field.value,
+                        visible: isFieldVisible(field)
                     });
                 }
             });
 
             if (invalidFields.length > 0) {
-                invalidFields.forEach(item => {});
-                console.groupEnd();
+                // Debug: Log which fields are blocking submit
+                console.log('[Submit Debug] Invalid fields blocking submission:', invalidFields);
                 return false;
             }
+            console.log('[Submit Debug] All fields valid - submit enabled');
             return true;
         }
 
