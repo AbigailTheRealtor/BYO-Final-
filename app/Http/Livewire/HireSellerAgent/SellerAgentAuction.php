@@ -163,14 +163,24 @@ class SellerAgentAuction extends Component
     public $other_appliances = '';
     public $showOtherAppliances = false;
     public $applianceOptions = [
-        'Refrigerator',
-        'Stove/Oven',
-        'Dishwasher',
-        'Microwave',
-        'Washer',
-        'Dryer',
-        'Garbage Disposal',
-        'Other'
+        ['name' => 'Refrigerator'],
+        ['name' => 'Stove/Range'],
+        ['name' => 'Oven'],
+        ['name' => 'Microwave'],
+        ['name' => 'Dishwasher'],
+        ['name' => 'Garbage Disposal'],
+        ['name' => 'Washer'],
+        ['name' => 'Dryer'],
+        ['name' => 'Washer/Dryer Combo'],
+        ['name' => 'Freezer'],
+        ['name' => 'Wine Cooler'],
+        ['name' => 'Ice Maker'],
+        ['name' => 'Trash Compactor'],
+        ['name' => 'Range Hood'],
+        ['name' => 'Central Vacuum'],
+        ['name' => 'Water Softener'],
+        ['name' => 'Water Heater'],
+        ['name' => 'Other'],
     ];
     public $real_estate_purchase = '';
     public $number_of_unit = '';
