@@ -463,7 +463,7 @@
 
         </label>
        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Choose Bidding Period to allow Agents to submit bids until the countdown ends. During the bidding period, you cannot view full bid details or hire an Agent. Once the bidding period ends, you may review all submitted bids and select an Agent. Participating Agents can view other Agents' Match Scores, as well as the listing's requested Offered Services and Broker Compensation &amp; Agency Agreement Terms. Choose Traditional to hire an Agent at any time. For Traditional listings, bids are private. Only the User and the Agent who submitted a bid can view the Agent's bid.">
+            title="Select how Agents submit bids for this listing. This choice controls timing, bid visibility, and how Agent bids are reviewed.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
 
@@ -471,8 +471,8 @@
             <select wire:model="auction_type" id="auction_type" class="form-control has-icon"
                 data-icon="fa-solid fa-file-alt" required>
                 <option value="">Select</option>
-                <option value="Bidding Period" title="Agents can bid until the timer ends. Each bid will display the Agent’s First Name, Year Licensed, Why Should You Hire This Agent?, What Sets This Agent Apart?, and Services Offered.">Bidding Period</option>
-                <option value="Traditional" title="You may hire an Agent at any time and choose whether to show or hide bids. If shown, bids will display the Agent’s First Name, Year Licensed, Why Should You Hire This Agent?, What Sets This Agent Apart?, and Services Offered.">Traditional</option>
+                <option value="Bidding Period" data-tooltip="bidding">Bidding Period</option>
+                <option value="Traditional" data-tooltip="traditional">Traditional</option>
             </select>
         </div>
         <span class="error mt-2" id="auction_type_error"></span>
@@ -651,5 +651,74 @@
     #expired_tooltip:hover .expired_tooltip {
         display: block !important;
     }
+
+    /* Listing Type option hover tooltips */
+    .listing-type-option-tooltip {
+        display: none;
+        position: fixed;
+        background-color: rgba(0, 0, 0, 0.9);
+        color: #fff;
+        padding: 12px 16px;
+        border-radius: 6px;
+        font-size: 13px;
+        max-width: 350px;
+        z-index: 99999;
+        line-height: 1.5;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        pointer-events: none;
+    }
+
+    .listing-type-option-tooltip.show {
+        display: block;
+    }
 </style>
+
+<script>
+    document.addEventListener('livewire:load', function() {
+        // Listing Type hover tooltips
+        const listingTypeTooltips = {
+            'Bidding Period': 'Agents may submit bids until the bidding timer ends.\n\nDuring the bidding period, bids cannot be accepted or finalized. Once the timer ends, all Agent bids are revealed for review and comparison, including Services Offered, Broker Compensation & Agency Agreement Terms, and Match Scores.\n\nAfter the bidding period closes, the listing continues in Traditional mode for reviewing, countering, and accepting bids.',
+            'Traditional': 'Agents may submit bids at any time.\n\nAgent bids are visible as they are received and may be reviewed, accepted, countered, or rejected immediately. There is no bidding timer, and bids are handled on a rolling basis.'
+        };
+
+        function initListingTypeTooltips() {
+            const select = document.getElementById('auction_type');
+            if (!select) return;
+
+            let tooltip = document.querySelector('.listing-type-option-tooltip');
+            if (!tooltip) {
+                tooltip = document.createElement('div');
+                tooltip.className = 'listing-type-option-tooltip';
+                document.body.appendChild(tooltip);
+            }
+
+            select.addEventListener('mouseover', function(e) {
+                const rect = select.getBoundingClientRect();
+                if (select.matches(':focus') || document.activeElement === select) {
+                    const hoverIndex = Math.floor((e.clientY - rect.top) / (rect.height / select.options.length));
+                    const option = select.options[hoverIndex];
+                    if (option && listingTypeTooltips[option.value]) {
+                        tooltip.textContent = listingTypeTooltips[option.value];
+                        tooltip.style.left = (rect.right + 10) + 'px';
+                        tooltip.style.top = rect.top + 'px';
+                        tooltip.classList.add('show');
+                    }
+                }
+            });
+
+            select.addEventListener('mouseout', function() {
+                tooltip.classList.remove('show');
+            });
+
+            select.addEventListener('blur', function() {
+                tooltip.classList.remove('show');
+            });
+        }
+
+        initListingTypeTooltips();
+        Livewire.hook('message.processed', () => {
+            initListingTypeTooltips();
+        });
+    });
+</script>
 
