@@ -10,7 +10,13 @@ use Illuminate\Database\Eloquent\Model;
 class BuyerAgentAuction extends Model
 {
     use HasFactory, HasListingId;
+    protected $guarded = [];
     protected $appends = ["get"];
+    
+    protected $casts = [
+        'is_draft' => 'boolean',
+        'is_approved' => 'boolean',
+    ];
     
     protected $attributes = [
         'is_approved' => true,
