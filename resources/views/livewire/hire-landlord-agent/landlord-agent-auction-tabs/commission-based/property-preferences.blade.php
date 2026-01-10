@@ -45,7 +45,7 @@
 <div class="form-group mb-3">
     <label class="fw-bold">City:<span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Enter the city where the property is located. Selecting a city will auto-populate State and County.">
+        title="Enter the city where the property is located.<br>Selecting a city will automatically populate the county and state.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover position-relative">
@@ -84,7 +84,7 @@
 <div class="form-group mb-3">
     <label class="fw-bold">State:<span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="State where the property is located (auto-populated when city is selected).">
+        title="Select the state where the property is located.<br>This will be automatically populated when a city or county is selected.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
@@ -103,7 +103,7 @@
 <div class="form-group mb-3">
     <label class="fw-bold">County:<span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="County where the property is located (auto-populated when city is selected).">
+        title="Enter the county where the property is located.<br>This may be automatically populated when a city is selected.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">

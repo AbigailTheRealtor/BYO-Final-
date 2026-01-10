@@ -30,7 +30,7 @@
     <label class="fw-bold">Acceptable Cities:
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the cities where the Buyer is looking to purchase a property.">
+            title="Enter the cities where the Buyer is willing to purchase a property.<br>Selecting a city will automatically populate the associated county and state when available.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -87,7 +87,7 @@
     <label class="fw-bold">Acceptable Counties:<span class="text-danger">*</span>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the counties where the Buyer is looking to purchase a property.">
+            title="Enter the counties where the Buyer is willing to purchase a property.<br>If a county is selected, the state will automatically populate.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -137,7 +137,7 @@
 <div class="form-group">
     <label class="fw-bold">Acceptable State:<span class="text-danger">*</span>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the state where the Buyer is looking to purchase a property.">
+            title="Select the state where the Buyer is looking to purchase a property.<br>This may be automatically filled based on the counties selected.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
