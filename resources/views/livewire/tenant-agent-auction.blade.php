@@ -2083,6 +2083,9 @@ $lease_types = [
     let currentServiceType = null;
 
     document.addEventListener('DOMContentLoaded', () => {
+        // Sync select values from their selected options (fixes draft loading issue)
+        syncSelectValues();
+        
         // Detect which service is preselected on load
         if (document.getElementById('fullService')?.checked) {
             currentServiceType = 'full_service';
@@ -2095,6 +2098,19 @@ $lease_types = [
         addIconsToInputs();
         checkRepresentationStatus();
     });
+    
+    // Sync select element values with their selected options
+    // This fixes the issue where server-rendered selected attributes don't update the DOM value
+    function syncSelectValues() {
+        document.querySelectorAll('select').forEach(select => {
+            const selectedOption = select.querySelector('option[selected]');
+            if (selectedOption && select.value !== selectedOption.value) {
+                select.value = selectedOption.value;
+                // Dispatch change event so Livewire picks up the value
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        });
+    }
 
     function selectService(serviceType) {
         if (currentServiceType === serviceType) return;
