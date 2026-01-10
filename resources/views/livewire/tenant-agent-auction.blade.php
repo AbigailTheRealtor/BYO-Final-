@@ -4026,8 +4026,12 @@ $lease_types = [
             });
 
             if (invalidFields.length > 0) {
-                // Debug: Log which fields are blocking submit
-                console.log('[Submit Debug] Invalid fields blocking submission:', invalidFields);
+                // Debug: Log which fields are blocking submit - use table for better visibility
+                console.log('[Submit Debug] Invalid fields blocking submission (' + invalidFields.length + ' fields):');
+                console.table(invalidFields);
+                invalidFields.forEach((f, i) => {
+                    console.log('  Field ' + (i+1) + ': Tab ' + f.tab + ', Name: "' + f.field + '", Value: "' + f.value + '", Visible: ' + f.visible);
+                });
                 return false;
             }
             console.log('[Submit Debug] All fields valid - submit enabled');
