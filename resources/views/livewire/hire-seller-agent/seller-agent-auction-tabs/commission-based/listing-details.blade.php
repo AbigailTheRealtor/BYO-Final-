@@ -735,7 +735,7 @@
     }
 
     .listing-type-icon {
-        color: #0d6efd;
+        color: #11b7cf;
         margin-right: 10px;
     }
 
