@@ -1,3 +1,25 @@
+@php
+    $applianceOptions = [
+        ['name' => 'Refrigerator'],
+        ['name' => 'Stove/Range'],
+        ['name' => 'Oven'],
+        ['name' => 'Microwave'],
+        ['name' => 'Dishwasher'],
+        ['name' => 'Garbage Disposal'],
+        ['name' => 'Washer'],
+        ['name' => 'Dryer'],
+        ['name' => 'Washer/Dryer Combo'],
+        ['name' => 'Freezer'],
+        ['name' => 'Wine Cooler'],
+        ['name' => 'Ice Maker'],
+        ['name' => 'Trash Compactor'],
+        ['name' => 'Range Hood'],
+        ['name' => 'Central Vacuum'],
+        ['name' => 'Water Softener'],
+        ['name' => 'Water Heater'],
+        ['name' => 'Other'],
+    ];
+@endphp
 <style>
     .input-cover .input-icon2 {
         z-index: 1 !important;
