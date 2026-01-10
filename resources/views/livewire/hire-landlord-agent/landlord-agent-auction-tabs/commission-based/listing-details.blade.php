@@ -520,12 +520,31 @@
         </span>
 
         <div class="input-cover">
-            <select wire:model="auction_type" id="auction_type" class="form-control has-icon"
-                data-icon="fa-solid fa-file-alt" required>
-                <option value="">Select</option>
-                <option value="Bidding Period" data-tooltip="bidding">Bidding Period</option>
-                <option value="Traditional" data-tooltip="traditional">Traditional</option>
-            </select>
+            <input type="hidden" wire:model="auction_type" id="auction_type_hidden" required>
+            <div class="listing-type-custom-dropdown" id="listing_type_dropdown_landlord">
+                <div class="listing-type-selected" tabindex="0">
+                    <i class="fa-solid fa-file-alt listing-type-icon"></i>
+                    <span class="listing-type-text">{{ $auction_type ?: 'Select' }}</span>
+                    <i class="fa-solid fa-chevron-down listing-type-arrow"></i>
+                </div>
+                <div class="listing-type-options">
+                    <div class="listing-type-option" data-value="Bidding Period">
+                        <span>Bidding Period</span>
+                        <div class="listing-type-option-tooltip">
+                            Agents may submit bids until the bidding timer ends.<br><br>
+                            During the bidding period, bids cannot be accepted or finalized. Once the timer ends, all Agent bids are revealed for review and comparison, including Services Offered, Broker Compensation & Agency Agreement Terms, and Match Scores.<br><br>
+                            After the bidding period closes, the listing continues in Traditional mode for reviewing, countering, and accepting bids.
+                        </div>
+                    </div>
+                    <div class="listing-type-option" data-value="Traditional">
+                        <span>Traditional</span>
+                        <div class="listing-type-option-tooltip">
+                            Agents may submit bids at any time.<br><br>
+                            Agent bids are visible as they are received and may be reviewed, accepted, countered, or rejected immediately. There is no bidding timer, and bids are handled on a rolling basis.
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <span class="error mt-2" id="auction_type_error"></span>
     </div>
@@ -690,24 +709,134 @@
         display: block !important;
     }
 
-    /* Listing Type option hover tooltips */
+    /* Custom Listing Type Dropdown Styles */
+    .listing-type-custom-dropdown {
+        position: relative;
+        width: 100%;
+    }
+
+    .listing-type-selected {
+        display: flex;
+        align-items: center;
+        padding: 0.375rem 0.75rem;
+        font-size: 1rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #212529;
+        background-color: #fff;
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+
+    .listing-type-selected:focus {
+        border-color: #86b7fe;
+        outline: 0;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+
+    .listing-type-icon {
+        color: #6c757d;
+        margin-right: 10px;
+    }
+
+    .listing-type-text {
+        flex: 1;
+    }
+
+    .listing-type-arrow {
+        color: #6c757d;
+        transition: transform 0.2s ease;
+    }
+
+    .listing-type-custom-dropdown.open .listing-type-arrow {
+        transform: rotate(180deg);
+    }
+
+    .listing-type-options {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #fff;
+        border: 1px solid #ced4da;
+        border-top: none;
+        border-radius: 0 0 0.375rem 0.375rem;
+        z-index: 1000;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .listing-type-custom-dropdown.open .listing-type-options {
+        display: block;
+    }
+
+    .listing-type-option {
+        position: relative;
+        padding: 10px 15px;
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+    }
+
+    .listing-type-option:hover {
+        background-color: #f8f9fa;
+    }
+
+    .listing-type-option:last-child {
+        border-radius: 0 0 0.375rem 0.375rem;
+    }
+
+    .listing-type-option.selected {
+        background-color: #e7f1ff;
+    }
+
     .listing-type-option-tooltip {
         display: none;
-        position: fixed;
+        position: absolute;
+        left: calc(100% + 10px);
+        top: 50%;
+        transform: translateY(-50%);
         background-color: rgba(0, 0, 0, 0.9);
         color: #fff;
         padding: 12px 16px;
         border-radius: 6px;
         font-size: 13px;
-        max-width: 350px;
+        width: 320px;
         z-index: 99999;
         line-height: 1.5;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         pointer-events: none;
     }
 
-    .listing-type-option-tooltip.show {
+    .listing-type-option-tooltip::before {
+        content: '';
+        position: absolute;
+        left: -6px;
+        top: 50%;
+        transform: translateY(-50%);
+        border-top: 6px solid transparent;
+        border-bottom: 6px solid transparent;
+        border-right: 6px solid rgba(0, 0, 0, 0.9);
+    }
+
+    .listing-type-option:hover .listing-type-option-tooltip {
         display: block;
+    }
+
+    @media (max-width: 768px) {
+        .listing-type-option-tooltip {
+            left: 0;
+            right: 0;
+            top: 100%;
+            transform: none;
+            width: auto;
+            margin-top: 5px;
+        }
+
+        .listing-type-option-tooltip::before {
+            display: none;
+        }
     }
 </style>
 {{-- <script>
@@ -770,53 +899,94 @@
 <script>
     document.addEventListener('livewire:load', function() {
 
-        // Listing Type hover tooltips
-        const listingTypeTooltips = {
-            'Bidding Period': 'Agents may submit bids until the bidding timer ends.\n\nDuring the bidding period, bids cannot be accepted or finalized. Once the timer ends, all Agent bids are revealed for review and comparison, including Services Offered, Broker Compensation & Agency Agreement Terms, and Match Scores.\n\nAfter the bidding period closes, the listing continues in Traditional mode for reviewing, countering, and accepting bids.',
-            'Traditional': 'Agents may submit bids at any time.\n\nAgent bids are visible as they are received and may be reviewed, accepted, countered, or rejected immediately. There is no bidding timer, and bids are handled on a rolling basis.',
-            'Auction': 'Agents may submit bids until the auction timer ends.\n\nDuring the auction period, bids cannot be accepted or finalized. Once the timer ends, all Agent bids are revealed for review and comparison.\n\nAfter the auction closes, the listing continues in Traditional mode for reviewing, countering, and accepting bids.'
-        };
-
-        function initListingTypeTooltips() {
-            const selects = [document.getElementById('auction_type'), document.getElementById('auction_type1')];
+        // Custom Listing Type Dropdown
+        function initListingTypeDropdown() {
+            const dropdowns = document.querySelectorAll('.listing-type-custom-dropdown');
             
-            let tooltip = document.querySelector('.listing-type-option-tooltip');
-            if (!tooltip) {
-                tooltip = document.createElement('div');
-                tooltip.className = 'listing-type-option-tooltip';
-                document.body.appendChild(tooltip);
-            }
-
-            selects.forEach(select => {
-                if (!select) return;
+            dropdowns.forEach(dropdown => {
+                if (dropdown.dataset.initialized) return;
+                dropdown.dataset.initialized = 'true';
                 
-                select.addEventListener('mouseover', function(e) {
-                    const rect = select.getBoundingClientRect();
-                    if (select.matches(':focus') || document.activeElement === select) {
-                        const hoverIndex = Math.floor((e.clientY - rect.top) / (rect.height / select.options.length));
-                        const option = select.options[hoverIndex];
-                        if (option && listingTypeTooltips[option.value]) {
-                            tooltip.textContent = listingTypeTooltips[option.value];
-                            tooltip.style.left = (rect.right + 10) + 'px';
-                            tooltip.style.top = rect.top + 'px';
-                            tooltip.classList.add('show');
-                        }
+                const selected = dropdown.querySelector('.listing-type-selected');
+                const options = dropdown.querySelectorAll('.listing-type-option');
+                const textSpan = dropdown.querySelector('.listing-type-text');
+                const hiddenInput = dropdown.closest('.input-cover').querySelector('input[type="hidden"]');
+                
+                // Toggle dropdown
+                selected.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const wasOpen = dropdown.classList.contains('open');
+                    document.querySelectorAll('.listing-type-custom-dropdown.open').forEach(d => d.classList.remove('open'));
+                    if (!wasOpen) {
+                        dropdown.classList.add('open');
                     }
                 });
 
-                select.addEventListener('mouseout', function() {
-                    tooltip.classList.remove('show');
+                // Handle keyboard navigation
+                selected.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        selected.click();
+                    }
                 });
 
-                select.addEventListener('blur', function() {
-                    tooltip.classList.remove('show');
+                // Option selection
+                options.forEach(option => {
+                    option.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const value = this.dataset.value;
+                        textSpan.textContent = value;
+                        
+                        options.forEach(o => o.classList.remove('selected'));
+                        this.classList.add('selected');
+                        
+                        if (hiddenInput) {
+                            hiddenInput.value = value;
+                            hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                        
+                        dropdown.classList.remove('open');
+                        
+                        // Trigger Livewire update
+                        if (window.Livewire) {
+                            const component = Livewire.find(dropdown.closest('[wire\\:id]')?.getAttribute('wire:id'));
+                            if (component) {
+                                component.set('auction_type', value);
+                            }
+                        }
+                    });
                 });
+
+                // Mark currently selected option
+                const currentValue = hiddenInput?.value || textSpan.textContent;
+                options.forEach(option => {
+                    if (option.dataset.value === currentValue) {
+                        option.classList.add('selected');
+                    }
+                });
+            });
+
+            // Close dropdown on outside click
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.listing-type-custom-dropdown')) {
+                    document.querySelectorAll('.listing-type-custom-dropdown.open').forEach(d => d.classList.remove('open'));
+                }
             });
         }
 
-        initListingTypeTooltips();
+        initListingTypeDropdown();
         Livewire.hook('message.processed', () => {
-            initListingTypeTooltips();
+            // Re-sync dropdown text with Livewire state
+            document.querySelectorAll('.listing-type-custom-dropdown').forEach(dropdown => {
+                const hiddenInput = dropdown.closest('.input-cover')?.querySelector('input[type="hidden"]');
+                const textSpan = dropdown.querySelector('.listing-type-text');
+                if (hiddenInput && textSpan && hiddenInput.value) {
+                    textSpan.textContent = hiddenInput.value;
+                    dropdown.querySelectorAll('.listing-type-option').forEach(opt => {
+                        opt.classList.toggle('selected', opt.dataset.value === hiddenInput.value);
+                    });
+                }
+            });
         });
 
         // Function to toggle "auction time" input field

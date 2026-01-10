@@ -1,0 +1,138 @@
+Replit Instructions — Fix Listing Type Option Hover Tooltip (Must Show Immediately)
+Expected Behavior
+
+When the dropdown is open:
+
+Hover Bidding Period → tooltip appears instantly (no delay)
+
+Hover Traditional → tooltip appears instantly
+
+Tooltip disappears on mouse out
+
+Tooltip does not block selecting the option
+
+SAFEGUARDS (MUST FOLLOW)
+
+DO NOT:
+
+change listing type values or stored enums
+
+change bidding/traditional logic
+
+change other tooltips across the app
+
+change dropdown library globally
+
+This is Listing Type option tooltip behavior only.
+
+Step 1 — Attach tooltip to the rendered option row, not the <option>
+
+Most dropdown libraries (Select2 / custom selects) do not hover <option> elements.
+You must attach the tooltip to the element that appears in the dropdown list, usually:
+
+Select2: .select2-results__option
+
+React-Select: .react-select__option
+
+Custom: <li> rows in the menu
+
+✅ Fix:
+
+Ensure the tooltip is created on the results list item element, not the <select><option>.
+
+Step 2 — Initialize the tooltip AFTER the dropdown opens
+
+Because the option rows are created dynamically, tooltips must be bound when the dropdown opens.
+
+If using Select2
+
+Add tooltip binding inside the select2:open event (Seller may be different; apply per flow but ideally shared):
+
+Implementation requirements:
+
+On select2:open, select the dropdown results container
+
+Find each results option for “Bidding Period” and “Traditional”
+
+Attach tooltip content
+
+Set tooltip trigger to hover
+
+Disable delay (show immediately)
+
+✅ Must use:
+
+delay: { show: 0, hide: 0 }
+
+animation: false (if using Bootstrap tooltips)
+
+container: 'body' to avoid clipping
+
+boundary: 'window' to avoid offscreen issues
+
+Important: also remove any title attributes that cause native tooltips to conflict.
+
+Step 3 — Remove any tooltip delay / hover intent
+
+If using Bootstrap tooltip or similar, defaults can add a delay or fade animation.
+
+✅ Fix for Listing Type option tooltips:
+
+Set delay: 0
+
+Set animation: false
+
+Set trigger: 'hover' (and focus if you want keyboard support)
+
+This is what makes it “immediate.”
+
+Step 4 — Fix z-index / clipping so it appears instantly and visibly
+
+Tooltips sometimes “exist” but are hidden behind the dropdown or clipped.
+
+✅ Fix:
+
+Ensure tooltip is appended to body (container: 'body')
+
+Confirm tooltip z-index is higher than dropdown menu (Select2 menus can be high)
+
+Add CSS only if needed:
+
+.tooltip { z-index: 99999 !important; }
+(Do this only if you confirm tooltips are hidden.)
+
+Step 5 — Add a small hover activation zone
+
+Sometimes the option row is too thin or hover flickers.
+
+✅ Fix:
+
+Ensure the option row has normal padding and full-width hover hitbox (don’t change layout, just confirm it’s not display: inline).
+
+Step 6 — Acceptance Testing Checklist
+
+Test on all listing flows where Listing Type exists:
+
+Buyer / Tenant / Landlord / Seller
+
+Create listing
+
+Edit listing
+
+Draft reopen
+
+Confirm:
+
+Tooltip appears immediately on hover over each option
+
+No delay
+
+Tooltip doesn’t require “hovering and waiting”
+
+Tooltip doesn’t block selecting the option
+
+Tooltip doesn’t persist after selection
+
+Common Root Cause (what to tell your dev)
+
+“Tooltips must be bound on the dynamic dropdown list items created on open; binding to <option> won’t work.”
