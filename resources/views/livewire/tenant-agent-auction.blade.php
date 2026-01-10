@@ -2099,15 +2099,29 @@ $lease_types = [
         checkRepresentationStatus();
     });
     
-    // Sync select element values with their selected options
-    // This fixes the issue where server-rendered selected attributes don't update the DOM value
+    // Sync select element values from Livewire component data
+    // This fixes the issue where DOM select values don't match Livewire state after draft load
     function syncSelectValues() {
-        document.querySelectorAll('select').forEach(select => {
-            const selectedOption = select.querySelector('option[selected]');
-            if (selectedOption && select.value !== selectedOption.value) {
-                select.value = selectedOption.value;
-                // Dispatch change event so Livewire picks up the value
-                select.dispatchEvent(new Event('change', { bubbles: true }));
+        // Find Livewire component
+        const wireEl = document.querySelector('[wire\\:id]');
+        if (!wireEl || typeof Livewire === 'undefined') return;
+        
+        const component = Livewire.find(wireEl.getAttribute('wire:id'));
+        if (!component) return;
+        
+        // Sync all selects with wire:model
+        document.querySelectorAll('select[wire\\:model]').forEach(select => {
+            const wireModel = select.getAttribute('wire:model');
+            if (wireModel && component.get) {
+                try {
+                    const lwValue = component.get(wireModel);
+                    if (lwValue && select.value !== lwValue) {
+                        console.log('[SyncSelect] Syncing ' + wireModel + ': DOM="' + select.value + '" -> LW="' + lwValue + '"');
+                        select.value = lwValue;
+                    }
+                } catch (e) {
+                    // Silently ignore if property doesn't exist
+                }
             }
         });
     }
@@ -4131,6 +4145,11 @@ $lease_types = [
         if (typeof Livewire !== 'undefined') {
             Livewire.hook('message.processed', () => {
                 setTimeout(() => {
+                    // Sync select values from Livewire component data (fixes draft loading issue)
+                    if (typeof syncSelectValues === 'function') {
+                        syncSelectValues();
+                    }
+                    
                     // Refresh listeners and service type
                     const updatedServiceType = document.querySelector('[data-service-type]');
                     if (updatedServiceType) {
