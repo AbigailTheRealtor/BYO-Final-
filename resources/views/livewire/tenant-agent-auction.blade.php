@@ -3995,6 +3995,11 @@ $lease_types = [
         }
 
         function isFieldValid(field) {
+            // Skip fields without proper name/id attributes (auto-generated or malformed fields)
+            if (!field.name && !field.id) {
+                return true; // Skip fields without identifiers
+            }
+            
             // Skip any field that is not visible - regardless of which tab it's in
             // This includes fields hidden by CSS, conditional rendering, inactive tabs, etc.
             if (!isFieldVisible(field)) {
