@@ -35,10 +35,7 @@
     </div>
 </div>
 <div class="alert alert-warning mt-3 p-2 small">
-    <strong> 🛡️ Privacy Notice: </strong> Your full property address is only visible to the platform admin.
-    On the public listing, only your City, County, State, and ZIP code will be displayed.
-    This helps protect your privacy while still allowing Agents to understand your general location.
-
+    <strong>🛡️ On the listing, only your City, County, State, and ZIP code are displayed.</strong> Your full address is shared with the Agent you hire only after an Agent is selected, helping protect your privacy while still allowing Agents to understand your general location.
 </div>
 
 <!-- Property City -->
