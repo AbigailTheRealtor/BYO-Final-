@@ -2133,6 +2133,27 @@ $lease_types = [
         if (backBtn && backClone) backBtn.parentNode.replaceChild(backClone, backBtn);
     }
 
+    // GLOBAL: Helper function to check if element is visible (not hidden by d-none, display:none, etc.)
+    // This is used by validation functions in both Full Service and Limited Service modes
+    function isElementVisible(element) {
+        if (!element) return false;
+        if (element.disabled) return false;
+        if (element.type === 'hidden') return false;
+        
+        let el = element;
+        while (el && el !== document.body) {
+            if (el.classList && (el.classList.contains('d-none') || el.classList.contains('hidden'))) {
+                return false;
+            }
+            const style = window.getComputedStyle(el);
+            if (style.display === 'none' || style.visibility === 'hidden') {
+                return false;
+            }
+            el = el.parentElement;
+        }
+        return true;
+    }
+
     function initializeFullService() {
 
 
@@ -3385,9 +3406,13 @@ $lease_types = [
         function checkFormValidity() {
             let allValid = true;
 
-            // Check all tabs for required fields
+            // Check all tabs for required fields (skip hidden/disabled fields)
             document.querySelectorAll('.tab-pane').forEach(tabPane => {
                 tabPane.querySelectorAll('[required]').forEach(field => {
+                    // Skip hidden or disabled fields - they should not block form validity
+                    if (!isElementVisible(field)) {
+                        return;
+                    }
                     if (!field.value) {
                         allValid = false;
                     }
@@ -3469,26 +3494,6 @@ $lease_types = [
                 TAB_ORDER = getTabOrder();
             }
             return TAB_ORDER;
-        }
-
-        // Helper function to check if element is visible (not hidden by d-none, display:none, etc.)
-        function isElementVisible(element) {
-            if (!element) return false;
-            if (element.disabled) return false;
-            if (element.type === 'hidden') return false;
-            
-            let el = element;
-            while (el && el !== document.body) {
-                if (el.classList && (el.classList.contains('d-none') || el.classList.contains('hidden'))) {
-                    return false;
-                }
-                const style = window.getComputedStyle(el);
-                if (style.display === 'none' || style.visibility === 'hidden') {
-                    return false;
-                }
-                el = el.parentElement;
-            }
-            return true;
         }
 
         // Validate current tab content - returns true if valid
@@ -3700,9 +3705,13 @@ $lease_types = [
         function checkFormValidity() {
             let allValid = true;
 
-            // Check all tabs for required fields
+            // Check all tabs for required fields (skip hidden/disabled fields)
             document.querySelectorAll('.tab-pane').forEach(tabPane => {
                 tabPane.querySelectorAll('[required]').forEach(field => {
+                    // Skip hidden or disabled fields - they should not block form validity
+                    if (!isElementVisible(field)) {
+                        return;
+                    }
                     if (!field.value) {
                         allValid = false;
                     }
@@ -3878,7 +3887,32 @@ $lease_types = [
             return requiredFields;
         }
 
+        // Helper function to check if element is visible (not hidden by d-none, display:none, etc.)
+        function isFieldVisible(element) {
+            if (!element) return false;
+            if (element.disabled) return false;
+            if (element.type === 'hidden') return false;
+            
+            let el = element;
+            while (el && el !== document.body) {
+                if (el.classList && (el.classList.contains('d-none') || el.classList.contains('hidden'))) {
+                    return false;
+                }
+                const style = window.getComputedStyle(el);
+                if (style.display === 'none' || style.visibility === 'hidden') {
+                    return false;
+                }
+                el = el.parentElement;
+            }
+            return true;
+        }
+
         function isFieldValid(field) {
+            // Skip hidden or disabled fields - they should not block submit
+            if (!isFieldVisible(field)) {
+                return true; // Treat invisible fields as valid (they don't block)
+            }
+            
             if (field.type === 'checkbox' || field.type === 'radio') {
                 return field.checked;
             }
