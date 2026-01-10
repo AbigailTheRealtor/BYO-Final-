@@ -4006,14 +4006,47 @@ $lease_types = [
                 return true; // Treat invisible fields as valid (they don't block)
             }
             
+            // Helper to get Livewire component value as fallback
+            function getLivewireValue(fieldId) {
+                try {
+                    // Get the wire:model attribute
+                    const wireModel = field.getAttribute('wire:model') || field.getAttribute('wire:model.defer');
+                    if (wireModel && typeof Livewire !== 'undefined') {
+                        const component = Livewire.find(field.closest('[wire\\:id]')?.getAttribute('wire:id'));
+                        if (component && component.get) {
+                            return component.get(wireModel);
+                        }
+                    }
+                } catch (e) {
+                    // Silently fail if Livewire not available
+                }
+                return null;
+            }
+            
             // Now check the actual value for visible required fields
             if (field.type === 'checkbox' || field.type === 'radio') {
                 return field.checked;
             }
             if (field.type === 'select-one' || field.type === 'select-multiple') {
-                return field.value !== '' && field.value !== null;
+                let value = field.value;
+                // Fallback to Livewire value if DOM value is empty
+                if (value === '' || value === null) {
+                    const lwValue = getLivewireValue(field.id);
+                    if (lwValue !== null && lwValue !== '') {
+                        value = lwValue;
+                    }
+                }
+                return value !== '' && value !== null;
             }
-            return field.value.trim() !== '';
+            let value = field.value;
+            // Fallback to Livewire value if DOM value is empty
+            if (!value || value.trim() === '') {
+                const lwValue = getLivewireValue(field.id);
+                if (lwValue !== null && lwValue !== '') {
+                    value = lwValue;
+                }
+            }
+            return value && value.trim() !== '';
         }
 
         function validateAllTabsStrictly() {
