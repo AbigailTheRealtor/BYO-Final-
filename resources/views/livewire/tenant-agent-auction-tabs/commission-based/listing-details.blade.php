@@ -365,8 +365,8 @@
             <select wire:model="working_with_agent" id="working_with_agent" class="form-control has-icon"
                 data-icon="fa-solid fa-handshake" required>
                 <option value="">Select</option>
-                <option value="Represented">Represented</option>
-                <option value="Not Represented">Not Represented</option>
+                <option value="Represented" {{ $working_with_agent == 'Represented' ? 'selected' : '' }}>Represented</option>
+                <option value="Not Represented" {{ $working_with_agent == 'Not Represented' ? 'selected' : '' }}>Not Represented</option>
             </select>
         </div>
         <span class="error mt-2" id="working_with_agent_error"></span>

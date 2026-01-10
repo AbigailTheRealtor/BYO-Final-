@@ -1,0 +1,108 @@
+Issue:
+When a user selects Current Representation Type (“Are you currently working with an agent?”), saves the listing as a draft, and later reloads the draft, the field appears filled in on the UI, but the backend does not recognize the value as set.
+
+As a result, the listing cannot be submitted unless the user manually re-selects the option, even though it visually looks completed.
+
+Replit Instructions — Fix “Current Representation Type” Not Persisting for Submit
+Applies to
+
+Tenant@exp.com
+
+Hire a Tenant’s Agent → Create Listing
+
+Field: Current Representation Type
+(“Are you currently working with an agent?”)
+
+Problem
+
+Field is selected and saved correctly during draft
+
+On draft reload:
+
+UI shows the selected value
+
+Backend/form state treats it as unset
+
+Submit validation fails until user re-selects the field
+
+Root Cause (What to Check)
+
+This is typically caused by one or more of the following:
+
+Value is displayed but not written back into the form state on draft hydration
+
+Draft reload sets the value visually but does not trigger validation
+
+Stored value does not exactly match the expected enum/value used in validation
+
+setValue() is called without { shouldValidate: true, shouldDirty: true }
+
+The submit validation checks a different key than the one being hydrated
+
+Required Fix (Must Do All)
+1️⃣ Ensure backend draft payload includes the field
+
+Confirm current_representation_type (or exact key used) is stored in the draft payload
+
+Confirm it is returned intact when fetching the draft
+
+⚠️ Do not rename the key
+
+2️⃣ Fix draft hydration (frontend)
+
+When loading a draft:
+
+Explicitly set the field into form state using the form library
+
+Example logic (conceptual):
+
+setValue("current_representation_type", draftValue, { shouldValidate: true, shouldDirty: true })
+
+✔ This ensures:
+
+Form state knows the field is filled
+
+Validation re-runs
+
+Submit button logic updates correctly
+
+3️⃣ Ensure value matches expected enum
+
+Confirm the stored value exactly matches one of the valid options:
+
+Example: "Yes", "No", "Not Currently" (use exact casing/values)
+
+Do not display a label while storing a different internal value
+
+4️⃣ Fix submit gating logic
+
+Submit validation must rely on form state, not just UI state
+
+If submit checks isValid, ensure this field is registered as required and validated after hydration
+
+Acceptance Test (Required)
+
+Select Current Representation Type
+
+Save Draft
+
+Reload Draft
+
+Do not touch the field
+
+Click Submit
+✅ Listing submits successfully without re-selecting the field
+
+Safeguards
+
+DO NOT:
+
+Remove the field’s required status
+
+Add frontend hacks like auto-selecting a default
+
+Force re-selection on submit
+
+Change labels or option text
+
+Modify Buyer/Seller/Landlord flows

@@ -4073,9 +4073,10 @@ $lease_types = [
             return allFields;
         }
 
-        // Initial setup
+        // Initial setup - delay to ensure Livewire has synced the DOM values
         setupGlobalListeners();
-        updateSaveButton();
+        // Run validation after a brief delay to allow Livewire to hydrate draft values
+        setTimeout(updateSaveButton, 500);
 
         // Livewire reactivity hook
         if (typeof Livewire !== 'undefined') {
