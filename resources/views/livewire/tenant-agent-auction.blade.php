@@ -2189,6 +2189,25 @@ $lease_types = [
         return true;
     }
 
+    // Safe Livewire setter - prevents errors when Livewire isn't ready yet
+    var livewireComponentId = '{{ $_instance->id }}';
+    function safeLivewireSet(property, value, defer) {
+        try {
+            // Check if Livewire and the component exist before calling set
+            if (typeof Livewire !== 'undefined' && 
+                Livewire.components && 
+                Livewire.components.componentsById && 
+                Livewire.components.componentsById[livewireComponentId]) {
+                var component = Livewire.components.componentsById[livewireComponentId];
+                if (component && typeof component.set === 'function') {
+                    component.set(property, value, defer || false);
+                }
+            }
+        } catch (e) {
+            console.warn('[Livewire] Component not ready for property:', property, e);
+        }
+    }
+
     function initializeFullService() {
 
 
@@ -2197,7 +2216,7 @@ $lease_types = [
             allowClear: true,
         }).on('change', function() {
             // Update the model in Livewire (or any other reactive framework you're using)
-            @this.set('sale_provision', $(this).val());
+            safeLivewireSet('sale_provision', $(this).val());
 
             // Add tooltips to selected options dynamically
             $(this).find('option:selected').each(function() {
@@ -2223,7 +2242,7 @@ $lease_types = [
             allowClear: true,
         }).on('change', function() {
             // Update the model in Livewire (or any other reactive framework you're using)
-            @this.set('offered_financing', $(this).val());
+            safeLivewireSet('offered_financing', $(this).val());
 
             // Reapply tooltips to all options dynamically
             $(this).find('option').each(function() {
@@ -2251,7 +2270,7 @@ $lease_types = [
             // Handle changes
             $('.condition_prop_buyer').on('change', function(e) {
                 let data = $(this).val();
-                @this.set('condition_prop_buyer', data, true); // Livewire v2.x
+                safeLivewireSet('condition_prop_buyer', data, true); // Livewire v2.x
             });
         }
 
@@ -2293,7 +2312,7 @@ $lease_types = [
 
         selectEl.on('change', function() {
             let selectedValues = $(this).val();
-            @this.set('garage_parking_spaces_option', selectedValues);
+            safeLivewireSet('garage_parking_spaces_option', selectedValues);
 
             if (selectedValues && selectedValues.includes('Other')) {
                 $('#other_garage_parking_spaces_option_landlord').removeClass('d-none').show();
@@ -2340,7 +2359,7 @@ $lease_types = [
         // Livewire updates on selection change
         $('#lease_for').on('change', function(e) {
             let selectedValues = $(this).val();
-            @this.set('lease_for', selectedValues); // Update Livewire property
+            safeLivewireSet('lease_for', selectedValues); // Update Livewire property
             toggleOtherLeaseInput(); // Show or hide the "Other" input
         });
 
@@ -2374,7 +2393,7 @@ $lease_types = [
         // Update Livewire property on change
         $('#property_items').on('change', function(e) {
             let selectedValues = $(this).val();
-            @this.set('property_items', selectedValues);
+            safeLivewireSet('property_items', selectedValues);
         });
 
         // Reinitialize Select2 after Livewire update
@@ -2568,7 +2587,7 @@ $lease_types = [
         // Update Livewire property on change
         $('#credit_scroe_rating').on('change', function(e) {
             let selectedValues = $(this).val();
-            @this.set('credit_scroe_rating', selectedValues);
+            safeLivewireSet('credit_scroe_rating', selectedValues);
         });
 
         // Reinitialize Select2 after Livewire update
@@ -2601,10 +2620,10 @@ $lease_types = [
                     $('.other_non_negotiable_amenities')
                         .addClass('d-none')
                         .find('input').val('').trigger('input');
-                    @this.set('other_non_negotiable_amenities', '');
+                    safeLivewireSet('other_non_negotiable_amenities', '');
                 }
                 // sync back to Livewire if you need it:
-                @this.set('non_negotiable_amenities', vals);
+                safeLivewireSet('non_negotiable_amenities', vals);
             });
         // End to non_negotiable_amenities
 
@@ -2849,7 +2868,7 @@ $lease_types = [
                 $('#other_parking_space_wrapper').show(); // Show "Other" input
             } else {
                 $('#other_parking_space_wrapper').hide(); // Hide "Other" input
-                @this.set('other_parking_space_wrapper', null); // Clear the text input
+                safeLivewireSet('other_parking_space_wrapper', null); // Clear the text input
             }
         });
 
@@ -2903,7 +2922,7 @@ $lease_types = [
                     $('#other_appliances').show();
                 } else {
                     $('#other_appliances').hide();
-                    @this.set('other_appliances', null); // Clear other appliances if "Other" is deselected
+                    safeLivewireSet('other_appliances', null); // Clear other appliances if "Other" is deselected
                 }
             });
         }
@@ -2950,7 +2969,7 @@ $lease_types = [
 
         // Update Livewire when Select2 changes
         $('#leasing_spaces_tenant').on('change', function(e) {
-            @this.set('leasing_spaces_tenant', $(this).val());
+            safeLivewireSet('leasing_spaces_tenant', $(this).val());
         });
 
         // Reinitialize Select2 when Livewire updates the DOM
@@ -2988,7 +3007,7 @@ $lease_types = [
             } else {
                 $('.tenant_pays_other').hide();
             }
-            @this.set('tenant_pays', selectedValues);
+            safeLivewireSet('tenant_pays', selectedValues);
             // toggleOtherTenantField(selectedValues);
         });
 
@@ -3042,7 +3061,7 @@ $lease_types = [
                 const selectedValues = $(this).val() || [];
 
                 // Update Livewire
-                @this.set('terms_of_lease', selectedValues);
+                safeLivewireSet('terms_of_lease', selectedValues);
 
                 // Toggle "Other" input
                 toggleLeaseOther(selectedValues);
@@ -3095,9 +3114,9 @@ $lease_types = [
                 $('.other_owner_pays').show();
             } else {
                 $('.other_owner_pays').hide();
-                @this.set('other_owner_pays', null);
+                safeLivewireSet('other_owner_pays', null);
             }
-            @this.set('owner_pays', selectedValues);
+            safeLivewireSet('owner_pays', selectedValues);
         });
 
 
@@ -3108,9 +3127,9 @@ $lease_types = [
                 $('.other_lease_term').show();
             } else {
                 $('.other_lease_term').hide();
-                @this.set('other_lease_term', null);
+                safeLivewireSet('other_lease_term', null);
             }
-            @this.set('desired_lease_length', selectedValues);
+            safeLivewireSet('desired_lease_length', selectedValues);
         });
 
         // Reinit after DOM update
@@ -3148,7 +3167,7 @@ $lease_types = [
 
             $('.lease_for').off('change').on('change', function() {
                 let selectedLease = $(this).val() || [];
-                @this.set('lease_for', selectedLease);
+                safeLivewireSet('lease_for', selectedLease);
                 toggleLease(selectedLease);
             });
         }
@@ -3187,9 +3206,9 @@ $lease_types = [
                 $('.other_rent_input_wrapper').show();
             } else {
                 $('.other_rent_input_wrapper').hide();
-                @this.set('other_rent_include', null);
+                safeLivewireSet('other_rent_include', null);
             }
-            @this.set('rent_includes', selectedValues);
+            safeLivewireSet('rent_includes', selectedValues);
             //toggleOtherField(selectedValues);
         });
 
@@ -3976,29 +3995,13 @@ $lease_types = [
         }
 
         function isFieldValid(field) {
-            // Check if field is in an inactive tab-pane (hidden by Bootstrap tabs)
-            const tabPane = field.closest('.tab-pane');
-            if (tabPane && !tabPane.classList.contains('active') && !tabPane.classList.contains('show')) {
-                // Field is in an inactive tab - check if it's a conditional field within that tab
-                // For inactive tabs, only validate if the field's parent wrapper is visible within the tab structure
-                // This is a simplified check - we trust that inactive tabs will be validated when navigated to
-                // but we still need to check the value because the user may have navigated through all tabs
-                
-                // If the field is inside a hidden wrapper within the tab, skip it
-                const wrapper = field.closest('.d-none, .hidden, [style*="display: none"], [style*="display:none"]');
-                if (wrapper && tabPane.contains(wrapper)) {
-                    return true; // Hidden conditional field - treat as valid
-                }
+            // Skip any field that is not visible - regardless of which tab it's in
+            // This includes fields hidden by CSS, conditional rendering, inactive tabs, etc.
+            if (!isFieldVisible(field)) {
+                return true; // Treat invisible fields as valid (they don't block)
             }
             
-            // For fields in the active tab, check visibility normally
-            if (tabPane && (tabPane.classList.contains('active') || tabPane.classList.contains('show'))) {
-                if (!isFieldVisible(field)) {
-                    return true; // Treat invisible fields as valid (they don't block)
-                }
-            }
-            
-            // Now check the actual value
+            // Now check the actual value for visible required fields
             if (field.type === 'checkbox' || field.type === 'radio') {
                 return field.checked;
             }

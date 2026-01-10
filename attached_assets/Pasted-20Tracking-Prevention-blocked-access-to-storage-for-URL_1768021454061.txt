@@ -1,0 +1,355 @@
+20Tracking Prevention blocked access to storage for <URL>.
+Spinner.gif:1   Failed to load resource: the server responded with a status of 404 (Not Found)
+tenant:5647 [Submit Debug] Invalid fields blocking submission: Array(14)
+5index.js:32  Uncaught (in promise) TypeError: Cannot read properties of undefined (reading '$wire')
+    at Livewire.value (index.js:32:60)
+    at tenant:4434:50
+    at MessageBus.js:17:21
+    at Array.forEach (<anonymous>)
+    at MessageBus.value (MessageBus.js:16:38)
+    at Object.call (HookManager.js:38:18)
+    at Object.callHook (Store.js:121:20)
+    at Component.value (index.js:340:15)
+    at Component.value (index.js:269:14)
+    at Connection.value (index.js:11:27)
+tenant:5647 [Submit Debug] Invalid fields blocking submission: Array(1)
+index.js:32  Uncaught (in promise) TypeError: Cannot read properties of undefined (reading '$wire')
+    at Livewire.value (index.js:32:60)
+    at tenant:4434:50
+    at MessageBus.js:17:21
+    at Array.forEach (<anonymous>)
+    at MessageBus.value (MessageBus.js:16:38)
+    at Object.call (HookManager.js:38:18)
+    at Object.callHook (Store.js:121:20)
+    at Component.value (index.js:340:15)
+    at Component.value (index.js:269:14)
+    at Connection.value (index.js:11:27)
+[NEW] Explain Console errors by using Copilot in Edge: click
+         
+         to explain an error. 
+        Learn more
+        Don't show again
+index.js:32  Uncaught (in promise) TypeError: Cannot read properties of undefined (reading '$wire')
+    at Livewire.value (index.js:32:60)
+    at tenant:4434:50
+    at MessageBus.js:17:21
+    at Array.forEach (<anonymous>)
+    at MessageBus.value (MessageBus.js:16:38)
+    at Object.call (HookManager.js:38:18)
+    at Object.callHook (Store.js:121:20)
+    at Component.value (index.js:340:15)
+    at Component.value (index.js:269:14)
+    at Connection.value (index.js:11:27)
+value @ index.js:32
+(anonymous) @ tenant:4434
+(anonymous) @ MessageBus.js:17
+value @ MessageBus.js:16
+call @ HookManager.js:38
+callHook @ Store.js:121
+value @ index.js:340
+value @ index.js:269
+value @ index.js:11
+(anonymous) @ index.js:75
+Promise.then
+(anonymous) @ index.js:70
+Promise.then
+value @ index.js:68
+sendMessage @ index.js:242
+value @ index.js:252
+later @ debounce.js:8
+setTimeout
+(anonymous) @ debounce.js:12
+value @ index.js:225
+(anonymous) @ node_initializer.js:243
+value @ index.js:582
+(anonymous) @ node_initializer.js:201
+tenant:5647 [Submit Debug] Invalid fields blocking submission: [{…}]
+tenant:5647 [Submit Debug] Invalid fields blocking submission: [{…}]
+index.js:32  Uncaught (in promise) TypeError: Cannot read properties of undefined (reading '$wire')
+    at Livewire.value (index.js:32:60)
+    at tenant:4434:50
+    at MessageBus.js:17:21
+    at Array.forEach (<anonymous>)
+    at MessageBus.value (MessageBus.js:16:38)
+    at Object.call (HookManager.js:38:18)
+    at Object.callHook (Store.js:121:20)
+    at Component.value (index.js:340:15)
+    at Component.value (index.js:269:14)
+    at Connection.value (index.js:11:27)
+value @ index.js:32
+(anonymous) @ tenant:4434
+(anonymous) @ MessageBus.js:17
+value @ MessageBus.js:16
+call @ HookManager.js:38
+callHook @ Store.js:121
+value @ index.js:340
+value @ index.js:269
+value @ index.js:11
+(anonymous) @ index.js:75
+Promise.then
+(anonymous) @ index.js:70
+Promise.then
+value @ index.js:68
+sendMessage @ index.js:242
+value @ index.js:252
+later @ debounce.js:8
+setTimeout
+(anonymous) @ debounce.js:12
+value @ index.js:225
+callback @ node_initializer.js:94
+handleMouseUp_ @ unknown
+index.js:32  Uncaught (in promise) TypeError: Cannot read properties of undefined (reading '$wire')
+    at Livewire.value (index.js:32:60)
+    at tenant:4434:50
+    at MessageBus.js:17:21
+    at Array.forEach (<anonymous>)
+    at MessageBus.value (MessageBus.js:16:38)
+    at Object.call (HookManager.js:38:18)
+    at Object.callHook (Store.js:121:20)
+    at Component.value (index.js:340:15)
+    at Component.value (index.js:269:14)
+    at Connection.value (index.js:11:27)
+value @ index.js:32
+(anonymous) @ tenant:4434
+(anonymous) @ MessageBus.js:17
+value @ MessageBus.js:16
+call @ HookManager.js:38
+callHook @ Store.js:121
+value @ index.js:340
+value @ index.js:269
+value @ index.js:11
+(anonymous) @ index.js:75
+Promise.then
+(anonymous) @ index.js:70
+Promise.then
+value @ index.js:68
+sendMessage @ index.js:242
+value @ index.js:252
+later @ debounce.js:8
+setTimeout
+(anonymous) @ debounce.js:12
+value @ index.js:225
+value @ index.js:165
+(anonymous) @ index.js:678
+(anonymous) @ tenant:3994
+dispatch @ jquery-3.6.1.min.js:2
+y.handle @ jquery-3.6.1.min.js:2
+trigger @ jquery-3.6.1.min.js:2
+(anonymous) @ jquery-3.6.1.min.js:2
+each @ jquery-3.6.1.min.js:2
+each @ jquery-3.6.1.min.js:2
+trigger @ jquery-3.6.1.min.js:2
+n.select @ select2.full.min.js:2
+(anonymous) @ select2.full.min.js:2
+e.invoke @ select2.full.min.js:2
+e.trigger @ select2.full.min.js:2
+d.trigger @ select2.full.min.js:2
+(anonymous) @ select2.full.min.js:2
+e.invoke @ select2.full.min.js:2
+e.trigger @ select2.full.min.js:2
+(anonymous) @ select2.full.min.js:2
+dispatch @ jquery-3.6.1.min.js:2
+y.handle @ jquery-3.6.1.min.js:2
+2index.js:32  Uncaught (in promise) TypeError: Cannot read properties of undefined (reading '$wire')
+    at Livewire.value (index.js:32:60)
+    at tenant:4434:50
+    at MessageBus.js:17:21
+    at Array.forEach (<anonymous>)
+    at MessageBus.value (MessageBus.js:16:38)
+    at Object.call (HookManager.js:38:18)
+    at Object.callHook (Store.js:121:20)
+    at Component.value (index.js:340:15)
+    at Component.value (index.js:269:14)
+    at Connection.value (index.js:11:27)
+value @ index.js:32
+(anonymous) @ tenant:4434
+(anonymous) @ MessageBus.js:17
+value @ MessageBus.js:16
+call @ HookManager.js:38
+callHook @ Store.js:121
+value @ index.js:340
+value @ index.js:269
+value @ index.js:11
+(anonymous) @ index.js:75
+Promise.then
+(anonymous) @ index.js:70
+Promise.then
+value @ index.js:68
+sendMessage @ index.js:242
+value @ index.js:252
+later @ debounce.js:8
+setTimeout
+(anonymous) @ debounce.js:12
+value @ index.js:225
+(anonymous) @ node_initializer.js:243
+value @ index.js:582
+(anonymous) @ node_initializer.js:201
+tenant:5647 [Submit Debug] Invalid fields blocking submission: [{…}]
+tenant:5647 [Submit Debug] Invalid fields blocking submission: [{…}]
+index.js:32  Uncaught (in promise) TypeError: Cannot read properties of undefined (reading '$wire')
+    at Livewire.value (index.js:32:60)
+    at tenant:4434:50
+    at MessageBus.js:17:21
+    at Array.forEach (<anonymous>)
+    at MessageBus.value (MessageBus.js:16:38)
+    at Object.call (HookManager.js:38:18)
+    at Object.callHook (Store.js:121:20)
+    at Component.value (index.js:340:15)
+    at Component.value (index.js:269:14)
+    at Connection.value (index.js:11:27)
+value @ index.js:32
+(anonymous) @ tenant:4434
+(anonymous) @ MessageBus.js:17
+value @ MessageBus.js:16
+call @ HookManager.js:38
+callHook @ Store.js:121
+value @ index.js:340
+value @ index.js:269
+value @ index.js:11
+(anonymous) @ index.js:75
+Promise.then
+(anonymous) @ index.js:70
+Promise.then
+value @ index.js:68
+sendMessage @ index.js:242
+value @ index.js:252
+later @ debounce.js:8
+setTimeout
+(anonymous) @ debounce.js:12
+value @ index.js:225
+callback @ node_initializer.js:94
+handleMouseUp_ @ unknown
+index.js:32  Uncaught (in promise) TypeError: Cannot read properties of undefined (reading '$wire')
+    at Livewire.value (index.js:32:60)
+    at tenant:4434:50
+    at MessageBus.js:17:21
+    at Array.forEach (<anonymous>)
+    at MessageBus.value (MessageBus.js:16:38)
+    at Object.call (HookManager.js:38:18)
+    at Object.callHook (Store.js:121:20)
+    at Component.value (index.js:340:15)
+    at Component.value (index.js:269:14)
+    at Connection.value (index.js:11:27)
+value @ index.js:32
+(anonymous) @ tenant:4434
+(anonymous) @ MessageBus.js:17
+value @ MessageBus.js:16
+call @ HookManager.js:38
+callHook @ Store.js:121
+value @ index.js:340
+value @ index.js:269
+value @ index.js:11
+(anonymous) @ index.js:75
+Promise.then
+(anonymous) @ index.js:70
+Promise.then
+value @ index.js:68
+sendMessage @ index.js:242
+value @ index.js:252
+later @ debounce.js:8
+setTimeout
+(anonymous) @ debounce.js:12
+value @ index.js:225
+value @ index.js:165
+(anonymous) @ index.js:678
+(anonymous) @ tenant:3994
+dispatch @ jquery-3.6.1.min.js:2
+y.handle @ jquery-3.6.1.min.js:2
+trigger @ jquery-3.6.1.min.js:2
+(anonymous) @ jquery-3.6.1.min.js:2
+each @ jquery-3.6.1.min.js:2
+each @ jquery-3.6.1.min.js:2
+trigger @ jquery-3.6.1.min.js:2
+n.select @ select2.full.min.js:2
+(anonymous) @ select2.full.min.js:2
+e.invoke @ select2.full.min.js:2
+e.trigger @ select2.full.min.js:2
+d.trigger @ select2.full.min.js:2
+(anonymous) @ select2.full.min.js:2
+e.invoke @ select2.full.min.js:2
+e.trigger @ select2.full.min.js:2
+(anonymous) @ select2.full.min.js:2
+dispatch @ jquery-3.6.1.min.js:2
+y.handle @ jquery-3.6.1.min.js:2
+index.js:32  Uncaught (in promise) TypeError: Cannot read properties of undefined (reading '$wire')
+    at Livewire.value (index.js:32:60)
+    at tenant:4434:50
+    at MessageBus.js:17:21
+    at Array.forEach (<anonymous>)
+    at MessageBus.value (MessageBus.js:16:38)
+    at Object.call (HookManager.js:38:18)
+    at Object.callHook (Store.js:121:20)
+    at Component.value (index.js:340:15)
+    at Component.value (index.js:269:14)
+    at Connection.value (index.js:11:27)
+value @ index.js:32
+(anonymous) @ tenant:4434
+(anonymous) @ MessageBus.js:17
+value @ MessageBus.js:16
+call @ HookManager.js:38
+callHook @ Store.js:121
+value @ index.js:340
+value @ index.js:269
+value @ index.js:11
+(anonymous) @ index.js:75
+Promise.then
+(anonymous) @ index.js:70
+Promise.then
+value @ index.js:68
+sendMessage @ index.js:242
+value @ index.js:252
+later @ debounce.js:8
+setTimeout
+(anonymous) @ debounce.js:12
+value @ index.js:225
+callback @ node_initializer.js:94
+handleMouseUp_ @ unknown
+tenant:5138 Tab order derived from DOM: (8) ['listing-details', 'property-preferences', 'leasing-terms', 'pre-screening', 'services', 'additional-details', 'broker-compensation-agency-agreement-terms', 'tenant-information']
+tenant:5275 Navigating from property-preferences to leasing-terms
+index.js:32  Uncaught (in promise) TypeError: Cannot read properties of undefined (reading '$wire')
+    at Livewire.value (index.js:32:60)
+    at tenant:4434:50
+    at MessageBus.js:17:21
+    at Array.forEach (<anonymous>)
+    at MessageBus.value (MessageBus.js:16:38)
+    at Object.call (HookManager.js:38:18)
+    at Object.callHook (Store.js:121:20)
+    at Component.value (index.js:340:15)
+    at Component.value (index.js:269:14)
+    at Connection.value (index.js:11:27)
+value @ index.js:32
+(anonymous) @ tenant:4434
+(anonymous) @ MessageBus.js:17
+value @ MessageBus.js:16
+call @ HookManager.js:38
+callHook @ Store.js:121
+value @ index.js:340
+value @ index.js:269
+value @ index.js:11
+(anonymous) @ index.js:75
+Promise.then
+(anonymous) @ index.js:70
+Promise.then
+value @ index.js:68
+sendMessage @ index.js:242
+value @ index.js:252
+later @ debounce.js:8
+setTimeout
+(anonymous) @ debounce.js:12
+value @ index.js:225
+(anonymous) @ Store.js:56
+emit @ Store.js:55
+value @ index.js:58
+goToNextTab @ tenant:5277
+(anonymous) @ tenant:5319
+2index.js:32  Uncaught (in promise) TypeError: Cannot read properties of undefined (reading '$wire')
+    at Livewire.value (index.js:32:60)
+    at tenant:4434:50
+    at MessageBus.js:17:21
+    at Array.forEach (<anonymous>)
+    at MessageBus.value (MessageBus.js:16:38)
+    at Object.call (HookManager.js:38:18)
+    at Object.callHook (Store.js:121:20)
+    at Component.value (index.js:340:15)
+    at Component.value (index.js:269:14)
+    at Connection.value (index.js:11:27)
