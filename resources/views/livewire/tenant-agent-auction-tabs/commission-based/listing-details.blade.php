@@ -747,7 +747,7 @@
     }
 
     .listing-type-icon {
-        color: #6c757d;
+        color: #0d6efd;
         margin-right: 10px;
     }
 
@@ -928,18 +928,27 @@
         }
 
         initListingTypeDropdown();
-        Livewire.hook('message.processed', () => {
-            // Re-sync dropdown text with Livewire state
+        
+        // Sync dropdown display with Livewire state
+        function syncDropdownDisplay() {
             document.querySelectorAll('.listing-type-custom-dropdown').forEach(dropdown => {
                 const hiddenInput = dropdown.closest('.input-cover')?.querySelector('input[type="hidden"]');
                 const textSpan = dropdown.querySelector('.listing-type-text');
-                if (hiddenInput && textSpan && hiddenInput.value) {
-                    textSpan.textContent = hiddenInput.value;
+                if (hiddenInput && textSpan) {
+                    const value = hiddenInput.value;
+                    textSpan.textContent = value || 'Select';
                     dropdown.querySelectorAll('.listing-type-option').forEach(opt => {
-                        opt.classList.toggle('selected', opt.dataset.value === hiddenInput.value);
+                        opt.classList.toggle('selected', opt.dataset.value === value);
                     });
                 }
             });
+        }
+        
+        // Initial sync on page load
+        syncDropdownDisplay();
+        
+        Livewire.hook('message.processed', () => {
+            syncDropdownDisplay();
         });
     });
 </script>

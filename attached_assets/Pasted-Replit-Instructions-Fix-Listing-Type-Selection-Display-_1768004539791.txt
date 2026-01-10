@@ -1,0 +1,134 @@
+Replit Instructions — Fix Listing Type Selection Display (Selected Value Must Show)
+Expected Behavior
+
+When a user selects:
+
+Bidding Period → the closed dropdown field should display “Bidding Period”
+
+Traditional → the closed dropdown field should display “Traditional”
+
+It must persist on:
+
+Next/Back
+
+Save Draft / reopen draft
+
+Edit listing load
+
+SAFEGUARDS (MUST FOLLOW)
+
+DO NOT:
+
+change listing type stored values/enums
+
+change bidding/traditional logic
+
+remove the hover-tooltips you just fixed
+
+change other dropdown fields
+
+This is a binding/display fix only.
+
+Step 1 — Confirm the value is actually being saved
+
+When the user selects an option:
+
+Confirm listing_type (or equivalent) is being set in state / form data.
+
+Confirm it’s not staying blank/null after selection.
+
+If it saves correctly but the UI still shows “Select,” it’s a display sync problem.
+
+Step 2 — If using Select2 (most likely)
+Fix: Ensure selection updates the Select2 display
+
+Confirm the Listing Type select is initialized one time (not reinitialized on each open).
+
+On selection, Select2 must update its displayed text automatically. If it doesn’t, you’re either:
+
+re-rendering the <select> underneath Select2 without telling Select2, or
+
+setting the value programmatically without triggering change.
+
+✅ Required fix (programmatic set):
+
+Anytime you set Listing Type via code, do:
+
+$(select).val(value).trigger('change.select2');
+
+✅ Required fix (avoid reinit reset):
+
+Do NOT call .select2() again inside select2:open or hover-tooltip binding.
+
+Tooltip binding must attach to results DOM only — it must not recreate the select.
+
+Step 3 — If using React (controlled component mismatch)
+
+If Listing Type is controlled:
+
+Ensure value={form.listing_type} is bound
+
+Ensure onChange updates the same state key
+
+Ensure the option values exactly match stored values:
+
+"Bidding Period" and "Traditional" (case + spaces must match)
+
+Common bug:
+
+options are Traditional but stored value is traditional → display stays blank.
+
+✅ Fix:
+
+Standardize to one exact set of values used everywhere (do not rename; just map if needed).
+
+Step 4 — Check for placeholder overwrite
+
+Sometimes after selection, code forces placeholder back:
+
+setFieldValue('listing_type', '')
+
+reset() called on field group
+
+a validation function “normalizes” and accidentally clears it
+
+✅ Fix:
+
+Remove any code that clears listing_type after selection.
+
+Only clear it when user explicitly resets the form.
+
+Step 5 — Draft/Edit Load Must Hydrate Display
+
+When loading an existing listing/draft:
+
+Ensure the select is set to the saved value and the UI shows it.
+
+Select2 hydration
+
+After setting the value from DB:
+
+$(select).val(savedValue).trigger('change.select2');
+
+React hydration
+
+Ensure initial state includes the saved value and matches option values.
+
+Step 6 — Regression Tests
+
+Select Bidding Period → field shows “Bidding Period”
+
+Select Traditional → field shows “Traditional”
+
+Save draft → reopen → still shows selection
+
+Edit listing → still shows selection
+
+Tooltips still appear immediately on hover in dropdown list
+
+Acceptance Criteria
+
+✅ Selected Listing Type displays correctly (no stuck “Select”)
+✅ Persists through draft/edit
+✅ Tooltip fix remains working
+✅ No logic/enums changed
