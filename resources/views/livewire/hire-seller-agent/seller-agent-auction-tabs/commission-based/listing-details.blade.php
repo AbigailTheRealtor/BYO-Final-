@@ -491,7 +491,7 @@
         </span>
         <div class="input-cover">
             <input type="date" wire:model="listing_date" class="form-control has-icon"
-                data-icon="fa-regular fa-calendar-days" required readonly>
+                data-icon="fa-regular fa-calendar-days" required>
         </div>
         <span class="error mt-2" id="listing_date_error"></span>
     </div>
