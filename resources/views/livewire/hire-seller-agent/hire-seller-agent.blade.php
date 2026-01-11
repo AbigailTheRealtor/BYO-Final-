@@ -1078,6 +1078,12 @@
             }, 100);
         });
 
+        // Listen for force-redirect event to ensure redirect works after submit
+        window.addEventListener('force-redirect', function(event) {
+            console.log('[ForceRedirect] Redirecting to:', event.detail.url);
+            window.location.href = event.detail.url;
+        });
+
         function selectService(serviceType) {
             if (currentServiceType === serviceType) return;
 
