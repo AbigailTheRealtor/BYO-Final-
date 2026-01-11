@@ -2093,6 +2093,10 @@ $lease_types = [
         } else if (document.getElementById('limitedService')?.checked) {
             currentServiceType = 'limited_service';
             initializeLimitedService();
+        } else {
+            // Default to full service if no service type radio buttons found (limited service removed)
+            currentServiceType = 'full_service';
+            initializeFullService();
         }
 
         addIconsToInputs();
@@ -3927,6 +3931,9 @@ $lease_types = [
             newServiceType = 'full_service';
         } else if (limitedServiceChecked) {
             newServiceType = 'limited_service';
+        } else {
+            // Default to full service if no service type radio buttons found
+            newServiceType = 'full_service';
         }
 
         if (newServiceType !== currentServiceType) {
