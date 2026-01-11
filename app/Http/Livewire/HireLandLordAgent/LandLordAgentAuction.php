@@ -2001,13 +2001,19 @@ class LandLordAgentAuction extends Component
 
             session()->flash('success', 'Listing submitted successfully!');
 
+            $url = route('landlord.agent.auction.view', ['id' => $auction->id]);
+
             \Log::info('[LANDLORD FORM REDIRECT]', [
                 'route_name' => 'landlord.agent.auction.view',
                 'listing_id' => $auction->id,
-                'url' => route('landlord.agent.auction.view', ['id' => $auction->id]),
+                'url' => $url,
             ]);
 
-            return redirect()->to(route('landlord.agent.auction.view', ['id' => $auction->id]));
+            // Dispatch browser event to force redirect (Livewire v2 compatible)
+            $this->dispatchBrowserEvent('force-redirect', ['url' => $url]);
+
+            // Keep redirect as fallback
+            return redirect()->to($url);
 
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving listing: ' . $e->getMessage());

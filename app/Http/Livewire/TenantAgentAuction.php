@@ -3544,13 +3544,19 @@ class TenantAgentAuction extends Component
                 default    => 'hire.agent.auction',
             };
 
+            $url = route($routeName, ['id' => $auction->id]);
+
             \Log::info('[TENANT FORM REDIRECT]', [
                 'route_name' => $routeName,
                 'listing_id' => $auction->id,
-                'url' => route($routeName, ['id' => $auction->id]),
+                'url' => $url,
             ]);
 
-            return redirect()->to(route($routeName, ['id' => $auction->id]));
+            // Dispatch browser event to force redirect (Livewire v2 compatible)
+            $this->dispatchBrowserEvent('force-redirect', ['url' => $url]);
+
+            // Keep redirect as fallback
+            return redirect()->to($url);
         } catch (\Exception $e) {
 
 

@@ -2192,14 +2192,19 @@ class SellerAgentAuction extends Component
 
             session()->flash('success', 'Listing submitted successfully!');
 
+            $url = route('seller.agent.auction.detail', ['id' => $auction->id]);
+
             \Log::info('[SELLER FORM REDIRECT]', [
                 'route_name' => 'seller.agent.auction.detail',
                 'listing_id' => $auction->id,
-                'url' => route('seller.agent.auction.detail', ['id' => $auction->id]),
+                'url' => $url,
             ]);
 
-            // Redirect to the Seller listing view page
-            return redirect()->to(route('seller.agent.auction.detail', ['id' => $auction->id]));
+            // Dispatch browser event to force redirect (Livewire v2 compatible)
+            $this->dispatchBrowserEvent('force-redirect', ['url' => $url]);
+
+            // Redirect to the Seller listing view page (fallback)
+            return redirect()->to($url);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             // Log validation errors for debugging

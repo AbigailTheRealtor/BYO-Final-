@@ -1,0 +1,143 @@
+Replit Instructions — FINAL FIX: Guaranteed Redirect via Browser Event (All 4 Hire Types) + Proof Requirements (WITH SAFEGUARDS)
+What Replit already tried (not working)
+
+return redirect()->to(route(...)) in store methods
+
+button locking + wiring
+
+global search for window.location onclick overrides
+
+Redirect still not happening in UI → meaning the browser is not applying the redirect response.
+
+SAFEGUARDS (NON-NEGOTIABLE)
+
+DO NOT:
+
+delete/rename any database tables/columns/models/migrations
+
+rename routes/controllers/Livewire components/views
+
+change UI copy (labels, tooltips, placeholders, tabs)
+
+remove validation rules
+
+ONLY ALLOWED:
+
+add a post-submit browser redirect event + one listener
+
+keep existing backend redirect returns as fallback
+
+add temporary logs
+
+PART 1 — Add a browser redirect event on success (All 4 store() methods)
+
+For each listing type store() method:
+
+Tenant store()
+
+Buyer store()
+
+Seller store()
+
+Landlord store()
+
+Required steps inside store(), AFTER save succeeds:
+
+Build the exact detail URL string in PHP:
+
+$url = route('ROUTE_NAME', ['id' => $auction->id]);
+
+Dispatch a browser event with that URL (Livewire v2 compatible):
+
+$this->dispatchBrowserEvent('force-redirect', ['url' => $url]);
+
+KEEP the existing return redirect as fallback:
+
+return redirect()->to($url);
+
+✅ This ensures:
+
+if Livewire honors the redirect, it redirects
+
+if it doesn’t, the browser event forces navigation anyway
+
+Important: Do not remove toasts. Do not change UI text.
+
+PART 2 — Add ONE global JS listener in the main layout (runs on all pages)
+
+In the primary app layout Blade file (the shared layout that loads Livewire scripts), add a single listener:
+
+Required listener:
+
+On force-redirect event:
+
+read event.detail.url
+
+do window.location.href = url
+
+Also add a temporary console log:
+
+console.log('Forcing redirect to:', url);
+
+✅ Must be added once globally — not per page.
+
+PART 3 — Fix the “double click / delayed submit” symptom (still required)
+
+Even with forced redirect, double submit can still happen and cause weird behavior.
+
+Confirm each form uses:
+
+<form wire:submit.prevent="store">
+
+
+Submit button must be:
+
+<button type="submit" wire:loading.attr="disabled" wire:target="store">
+
+
+✅ Ensure no wire:click="store" exists on submit buttons if the form uses wire:submit.prevent.
+
+PART 4 — Required proof (so this ends)
+
+Replit must provide these 3 proofs:
+
+Proof A — Code snippet per store() method
+
+Paste the exact lines showing:
+
+$url = route(...)
+
+$this->dispatchBrowserEvent('force-redirect', ['url' => $url]);
+
+return redirect()->to($url);
+
+Proof B — Layout JS listener snippet
+
+Paste the exact layout code where:
+
+the force-redirect listener is registered
+
+it runs window.location.href = url
+
+Proof C — Browser proof
+
+Provide a screenshot of browser console after submit showing:
+
+“Forcing redirect to: <url>”
+AND confirm it navigates immediately.
+
+Acceptance Criteria (must pass for Tenant/Buyer/Seller/Landlord)
+
+Click Submit once
+✅ one success toast
+✅ immediate redirect to correct detail page
+✅ detail page shows listing ID/code
+✅ listing visible under correct Hiring tab
+
+Why this solves it permanently
+
+Because it doesn’t matter why the Livewire redirect isn’t being honored.
+Once the submit succeeds and you have the new listing URL, the browser will go there. Period.
+
+If you want to tighten this even more, tell Replit:
+“Do not mark complete until you can screen-record: click submit once → console prints forced redirect → browser navigates to detail page.”

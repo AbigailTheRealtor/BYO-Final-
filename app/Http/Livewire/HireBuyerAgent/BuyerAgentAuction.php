@@ -1726,13 +1726,19 @@ class BuyerAgentAuction extends Component
 
             session()->flash('success', 'Listing submitted successfully!');
 
+            $url = route('buyer.view-auction', ['id' => $auction->id]);
+
             \Log::info('[BUYER FORM REDIRECT]', [
                 'route_name' => 'buyer.view-auction',
                 'listing_id' => $auction->id,
-                'url' => route('buyer.view-auction', ['id' => $auction->id]),
+                'url' => $url,
             ]);
 
-            return redirect()->to(route('buyer.view-auction', ['id' => $auction->id]));
+            // Dispatch browser event to force redirect (Livewire v2 compatible)
+            $this->dispatchBrowserEvent('force-redirect', ['url' => $url]);
+
+            // Keep redirect as fallback
+            return redirect()->to($url);
 
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving listing: ' . $e->getMessage());

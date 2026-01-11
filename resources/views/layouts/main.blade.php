@@ -485,6 +485,15 @@
 
 
 
+    {{-- Global force-redirect listener for Livewire form submissions --}}
+    <script>
+        window.addEventListener('force-redirect', function(event) {
+            var url = event.detail.url;
+            console.log('Forcing redirect to:', url);
+            window.location.href = url;
+        });
+    </script>
+
     @stack('scripts')
 
 
