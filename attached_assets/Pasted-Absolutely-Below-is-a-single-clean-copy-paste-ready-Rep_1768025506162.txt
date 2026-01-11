@@ -1,0 +1,220 @@
+Absolutely. Below is a **single, clean, copy-paste-ready Replit instruction set** that **adds the “yes, migrate misfiled Buyer listings safely” decision** into the **last instructions**, with **clear justification, guardrails, and Buyer-first scope**.
+
+You can paste this **as-is** into Replit.
+
+---
+
+# Replit Instructions — Buyer Listings Misfiled Under Tenant → Safe Migration + Correct Mapping (Buyer-First)
+
+## Context / Why This Is Required
+
+In the **[Tenant@exp.com](mailto:Tenant@exp.com)** example profile:
+
+* **Hire a Tenant** and **Hire a Landlord** listings correctly appear under their respective tabs.
+* **Hire a Buyer** and **Hire a Seller** listings are incorrectly:
+
+  * saved as Tenant listings on the backend
+  * displayed under the **Hiring a Tenant** tab
+  * rendered using **Tenant listing fields** instead of Buyer/Seller fields
+
+This occurred because the prior developer did **not complete backend Buyer/Seller listing schemas** and incorrectly mapped Buyer/Seller creation + retrieval to the Tenant listing flow.
+
+---
+
+## IMPORTANT DECISION (APPROVED APPROACH)
+
+✅ **Yes, we will migrate existing misfiled Buyer listings from Hiring a Tenant → Hiring a Buyer**
+This is **intentional and required** so we can:
+
+* validate the Buyer tab
+* confirm Buyer fields render correctly
+* test submit/draft/display end-to-end with real data
+
+⚠️ This must be done **Buyer-first**, **safely**, and **reversibly**.
+
+---
+
+## SCOPE (DO NOT EXPAND)
+
+* Fix **Buyer listings ONLY** in this task
+* Do **NOT** touch Seller until Buyer works end-to-end
+* Tenant and Landlord flows must remain untouched
+
+---
+
+## SAFEGUARDS (MANDATORY — NON-DESTRUCTIVE)
+
+**DO NOT:**
+
+* Delete any listings, drafts, bids, counters, or related data
+* Rename or remove any DB tables, columns, models, migrations, enums, or routes
+* Modify Tenant or Landlord logic (these are the baseline reference)
+* Guess listing type or convert ambiguous records
+* Change listing IDs, timestamps, or ownership
+* Bulk-convert records without verification
+
+**DO:**
+
+* Use additive migrations only (if needed)
+* Keep an audit log of all migrated records
+* Provide rollback capability
+* Start with **Buyer only**
+* Test using **[Tenant@exp.com](mailto:Tenant@exp.com) first**
+
+---
+
+## Step 1 — Stop Creating New Buyer Listings as Tenant (Fix Forward)
+
+Ensure that **new Hire a Buyer’s Agent listings**:
+
+* are created with `listing_type = buyer`
+* use Buyer backend fields
+* do NOT reference Tenant schema or Tenant create endpoints
+
+This prevents new Buyer listings from being misfiled.
+
+---
+
+## Step 2 — Identify Existing Misfiled Buyer Listings (Read-Only)
+
+Before changing anything, locate listings that:
+
+* currently appear under **Hiring a Tenant**
+* were created from the **Hire a Buyer’s Agent** flow
+
+A listing may be treated as a Buyer candidate **ONLY IF** it meets **high-confidence criteria**, such as:
+
+**Strong Signal (preferred):**
+
+* `source_flow = "buyer"`
+* OR `created_from = "hire_buyer_agent"`
+* OR `schema_type = buyer`
+
+**OR**
+
+**Payload-Based Signal (acceptable):**
+
+* Buyer-only keys exist in the payload
+  (e.g., purchase criteria, financing preferences, closing timeline, etc.)
+* AND Tenant-only keys are NOT present
+
+❌ Do NOT convert any listing that is ambiguous.
+
+---
+
+## Step 3 — Add Minimal Metadata (Only if Needed)
+
+If Buyer origin cannot be reliably detected, add ONE additive field:
+
+* `source_flow` (string or enum)
+
+Default: `null`
+
+This helps prevent future misrouting and supports safe migration.
+
+---
+
+## Step 4 — Create a Reversible Buyer Migration Script
+
+Create a **one-time, reversible repair script** that:
+
+1. Finds listings where:
+
+   * `listing_type = tenant`
+   * AND listing matches Buyer identification rules above
+
+2. For each matched listing:
+
+   * Update `listing_type = buyer`
+   * Set `source_flow = buyer` (if used)
+   * Preserve:
+
+     * listing ID
+     * draft/active status
+     * owner/profile
+     * timestamps
+     * bids/counters
+
+3. Log every change:
+
+   * listing_id
+   * old_type
+   * new_type
+   * timestamp
+   * reason
+
+4. Provide rollback using the log.
+
+⚠️ Run this **first on [Tenant@exp.com](mailto:Tenant@exp.com) only** to validate behavior.
+
+---
+
+## Step 5 — Fix Hiring a Buyer Tab Query
+
+Ensure **Hiring a Buyer’s Agent** tab:
+
+* fetches only `listing_type = buyer`
+
+Ensure **Hiring a Tenant’s Agent** tab:
+
+* fetches only `listing_type = tenant`
+
+After migration, Buyer listings must appear ONLY under Buyer tab.
+
+---
+
+## Step 6 — Fix Buyer Listing Detail Rendering
+
+Update the listing detail page logic so it renders by `listing_type`:
+
+* buyer → Buyer schema + Buyer fields/questions
+* tenant → Tenant schema
+* landlord → Landlord schema
+
+Do NOT reuse Tenant display for Buyer.
+
+---
+
+## Step 7 — Acceptance Tests (Buyer Only)
+
+### Migration Validation
+
+1. Identify a Buyer listing currently under Tenant tab
+2. Run Buyer migration script
+3. Listing now appears under **Hiring a Buyer**
+4. Listing no longer appears under **Hiring a Tenant**
+
+### Field Validation
+
+1. Open migrated Buyer listing
+2. Confirm **Buyer questions, text, and format** render correctly
+3. Save draft → reopen → Buyer fields persist
+4. Submit → listing submits and displays correctly
+
+---
+
+## Step 8 — Stop and Report Before Seller Work
+
+Once Buyer works end-to-end:
+
+* STOP
+* Report:
+
+  * how Buyer listings were identified
+  * what fields were migrated
+  * confirmation Buyer creation/display works
+
+Seller will be handled next using the **exact same pattern**.
+
+---
+
+### Final Note to Replit AI
+
+> Buyer is the pilot. Do not touch Seller until Buyer mapping, migration, display, save draft, and submit are fully working and verified.
+
+---
+
+If you want, next I can:
+
+* rewrite this into a **Replit AI “command style”** version, or
+* help you define **exact Buyer-only field detection rules** from your schema to make migration 100% safe.

@@ -632,6 +632,10 @@ class SellerAgentAuction extends Component
     {
         $this->addService();
 
+        // Set listing_date to today's date by default (only if creating new listing)
+        // loadDraft() will overwrite this with the saved value if loading a draft
+        $this->listing_date = now()->format('Y-m-d');
+
         // Check for existing drafts
         $this->hasDrafts = SellerAgentAuctionModel::where('user_id', Auth::id())
             ->where('is_draft', true)

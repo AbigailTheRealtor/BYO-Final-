@@ -1,0 +1,305 @@
+Replit Instructions (START WITH BUYER FIRST)
+Goal
+
+Listing Date must be editable for Hire a Tenant / Buyer / Seller / Landlord listings.
+
+It can still auto-fill on first creation (correct), BUT when a user saves a draft and returns later, the Listing Date must be editable and must not cause the listing to be excluded from “Actual Listings.”
+
+Hire a Buyer’s Agent listings must route and display correctly:
+
+Buyer listings must show under Hiring Buyer’s Agent tab (NOT Hiring Tenant’s Agent)
+
+Buyer listings must use the Buyer field set (NOT Tenant fields)
+
+Do Buyer first only so we can validate it works before repeating for Seller.
+
+SAFEGUARDS (MUST FOLLOW — NON-NEGOTIABLE)
+
+DO NOT:
+
+delete/rename any database tables, columns, models, or migrations
+
+change existing field keys/names already used by Tenant/Landlord flows
+
+alter UI text, tooltips, placeholder text, icons, or tab order (unless explicitly instructed below)
+
+refactor/replace the Tenant flow (it is the baseline and must remain unchanged)
+
+“quick fix” by hardcoding Buyer to Tenant views/partials
+
+ONLY ALLOWED:
+
+add new columns (additive migrations only) if absolutely required
+
+add new routing logic/filters based on an existing “agent hire type” field (preferred)
+
+add Buyer-specific form mapping and Buyer-specific display partials that mirror how Landlord was correctly separated
+
+update listing query filters so drafts don’t disappear due to Listing Date logic
+
+PART A — FIX “LISTING DATE” (Editable + Draft-safe)
+Problem
+
+Listing Date is auto-set (good), but when saving a draft and returning the next day, the listing may not appear in “Actual Listings” because it’s being filtered/excluded based on an older Listing Date.
+
+Expected Behavior
+
+Listing Date defaults to today when a listing is first created.
+
+When user saves draft and returns later, Listing Date:
+
+remains whatever it was last saved as
+
+is editable via a date picker
+
+Actual Listings page must NOT exclude listings solely because Listing Date is not today.
+
+Expiration logic (if tied to Listing Date) must not “auto-expire” drafts incorrectly.
+
+A1) UI Change (All 4 listing types)
+
+In Tab 1: Listing Details, for each flow (Tenant/Buyer/Seller/Landlord):
+
+Ensure Listing Date field is a date input / date picker.
+
+It should:
+
+auto-fill with today’s date on first create
+
+on edit/resume draft, it should load the saved value
+
+allow user to change it manually
+
+Important: Do not remove any existing fields. Just ensure Listing Date is editable.
+
+A2) Backend Save Logic
+
+Wherever “Save Draft” and “Submit/Publish” happen:
+
+REQUIRED:
+
+Do not override Listing Date on every save.
+
+Only set default Listing Date if it is currently null/empty.
+
+If a Listing Date already exists, keep it as-is unless user changes it.
+
+Pseudo-behavior:
+
+if listing_date is empty → set to today
+
+else → keep existing listing_date unless user submitted a new value
+
+A3) Actual Listings Query Fix (This is what’s hiding drafts)
+
+Find the query used to display “Actual Listings” / “My Listings” under the top navigation tabs.
+
+REQUIRED:
+
+Remove any filter like:
+
+listing_date = today
+
+listing_date >= today
+
+whereDate(listing_date, today)
+
+or any logic that excludes older listing_date rows by default
+
+Replace with:
+
+Listings should be shown based on ownership + status, NOT the listing_date being “today.”
+
+Example logic (conceptually):
+
+show listings where:
+
+created_by / user_id matches current user (or correct account context)
+
+status in: Active, Pending, Hired Agent, Expired (whatever your system uses)
+
+optionally not deleted/archived
+
+If you need sorting:
+
+sort by updated_at DESC (best for drafts) or created_at DESC
+
+Listing Date should be display-only metadata, not the gatekeeper for visibility
+
+A4) If Expiration Is Calculated From Listing Date
+
+If your app calculates expiration as listing_date + X days:
+
+REQUIRED:
+
+Drafts should not become hidden/expired simply because listing_date is old.
+
+If you have a status = Draft, Drafts must always appear in “Drafts” or “My Listings” regardless of listing_date.
+
+If you don’t have a draft status:
+
+Use updated_at for draft visibility.
+
+Do not auto-expire unless the listing is actually “Active” (published).
+
+(Do not change status names. Just ensure expiration/visibility doesn’t depend on listing_date for drafts.)
+
+PART B — FIX BUYER ROUTING + FIELD MAPPING (DO THIS FIRST)
+Problem
+
+Hire a Buyer’s Agent listings are being stored/routed as if they are Tenant listings, so they:
+
+appear under Hiring Tenant’s Agent
+
+display Tenant fields
+
+use the Tenant listing template/partial
+
+Goal
+
+Buyer listings must:
+
+save with an internal value like agent_hire_type = buyer
+
+appear under Hiring Buyer’s Agent tab
+
+use the Buyer field set for create/edit/show
+
+behave like Landlord separation (use Landlord implementation as the example pattern)
+
+B1) Confirm There Is a Single Unified Listing System
+
+Since tenant@exp.com
+ now selects agent type (Tenant/Buyer/Seller/Landlord) inside one workflow:
+
+There must be one listing table/model with a field that identifies the hire type.
+
+Preferred:
+
+Use an existing column if present (examples):
+
+agent_type
+
+hire_type
+
+listing_role
+
+service_type
+
+If it does NOT exist:
+
+Add a new nullable string column (ADDITIVE ONLY):
+
+agent_hire_type with allowed values:
+
+tenant, buyer, seller, landlord
+
+Safeguard: do not remove/rename any old columns; just add this if missing.
+
+B2) Set Buyer Type on Create (Hidden Input + Controller)
+
+In the “Select Agent Type” cards (where user clicks Hire a Buyer’s Agent):
+
+ensure it sets a hidden field like:
+
+agent_hire_type = buyer
+
+on submit, controller must persist that value.
+
+IMPORTANT: This value must be saved on:
+
+Save Draft
+
+Submit/Publish
+
+B3) Fix the “Hiring Buyer’s Agent” Tab Listing Query
+
+In the top navigation tabs (Hiring Seller’s Agent / Hiring Buyer’s Agent / etc.):
+
+REQUIRED:
+
+When clicking Hiring Buyer’s Agent, the listings page must filter:
+
+agent_hire_type = buyer
+
+Right now, Buyer is likely being filtered incorrectly as tenant (or not filtered and defaulting to tenant).
+
+B4) Fix the Buyer “Show Listing” Display Template
+
+Right now, Buyer listings are rendering the Tenant display view (Tenant fields).
+
+REQUIRED:
+
+When agent_hire_type = buyer, the show page must use:
+
+Buyer display partial/view (Buyer fields)
+
+NOT tenant display partial/view
+
+Do not copy Tenant labels into Buyer. Use the Buyer field mapping you already defined in your Buyer listing creation specs.
+
+B5) Fix the Buyer “Edit Listing” Form Template
+
+When editing a Buyer listing:
+
+it must load the Buyer form fields
+
+with saved values mapped to Buyer keys
+
+NOT tenant fields
+
+B6) Data Mapping (Most Common Root Cause)
+
+Your original dev likely wrote Buyer/Seller submissions into Tenant columns/keys.
+
+REQUIRED:
+
+For Buyer flow, map inputs to the correct Buyer keys/columns (whatever your Buyer schema uses).
+
+If the Buyer schema is not implemented yet, implement it the same way Landlord was separated:
+
+Buyer-specific columns or a Buyer-specific JSON/meta structure (whatever your system currently uses)
+
+Buyer-specific create/edit/show views that read those Buyer values
+
+Safeguard: additive only—do not break Tenant or Landlord mappings.
+
+VALIDATION CHECKLIST (BUYER FIRST)
+
+After changes, test this exact scenario:
+
+Log in under the unified tenant@exp.com
+ workflow
+
+Create Hire a Buyer’s Agent listing
+
+Save Draft
+
+Log out
+
+Next day (or simulate by changing system date / just re-login later)
+
+Go to:
+
+Hiring Buyer’s Agent tab → listing MUST appear
+
+Hiring Tenant’s Agent tab → listing MUST NOT appear
+
+Open the listing:
+
+Show page must display Buyer fields (not Tenant)
+
+Edit listing:
+
+Listing Date is editable
+
+Buyer fields load correctly
+
+Ensure “Actual Listings” view does not hide the listing due to listing_date
+
+AFTER BUYER WORKS
+
+Once Buyer routing + fields are confirmed working, repeat the exact same pattern for:
+
+Seller (agent_hire_type = seller + Seller tab filter + Seller views/forms)
+Then finally confirm Tenant/Landlord still behave exactly as before.
