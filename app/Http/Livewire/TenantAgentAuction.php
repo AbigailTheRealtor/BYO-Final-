@@ -3536,7 +3536,7 @@ class TenantAgentAuction extends Component
             session()->flash('success', 'Listing submitted successfully!');
 
             // Redirect to the correct detail page based on user_type
-            $route = match ($this->user_type) {
+            $routeName = match ($this->user_type) {
                 'tenant'   => 'tenant.agent.auction.view',
                 'landlord' => 'landlord.agent.auction.view',
                 'buyer'    => 'buyer.view-auction',
@@ -3544,7 +3544,13 @@ class TenantAgentAuction extends Component
                 default    => 'hire.agent.auction',
             };
 
-            return redirect()->route($route, ['id' => $auction->id]);
+            \Log::info('[TENANT FORM REDIRECT]', [
+                'route_name' => $routeName,
+                'listing_id' => $auction->id,
+                'url' => route($routeName, ['id' => $auction->id]),
+            ]);
+
+            return redirect()->to(route($routeName, ['id' => $auction->id]));
         } catch (\Exception $e) {
 
 

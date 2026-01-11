@@ -2192,8 +2192,14 @@ class SellerAgentAuction extends Component
 
             session()->flash('success', 'Listing submitted successfully!');
 
+            \Log::info('[SELLER FORM REDIRECT]', [
+                'route_name' => 'seller.agent.auction.detail',
+                'listing_id' => $auction->id,
+                'url' => route('seller.agent.auction.detail', ['id' => $auction->id]),
+            ]);
+
             // Redirect to the Seller listing view page
-            return redirect()->route('seller.agent.auction.detail', ['id' => $auction->id]);
+            return redirect()->to(route('seller.agent.auction.detail', ['id' => $auction->id]));
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             // Log validation errors for debugging

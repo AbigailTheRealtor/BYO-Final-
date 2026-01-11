@@ -2001,7 +2001,13 @@ class LandLordAgentAuction extends Component
 
             session()->flash('success', 'Listing submitted successfully!');
 
-            return redirect()->route('landlord.agent.auction.view', ['id' => $auction->id]);
+            \Log::info('[LANDLORD FORM REDIRECT]', [
+                'route_name' => 'landlord.agent.auction.view',
+                'listing_id' => $auction->id,
+                'url' => route('landlord.agent.auction.view', ['id' => $auction->id]),
+            ]);
+
+            return redirect()->to(route('landlord.agent.auction.view', ['id' => $auction->id]));
 
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving listing: ' . $e->getMessage());

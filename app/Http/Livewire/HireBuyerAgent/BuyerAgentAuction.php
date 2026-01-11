@@ -1726,7 +1726,13 @@ class BuyerAgentAuction extends Component
 
             session()->flash('success', 'Listing submitted successfully!');
 
-            return redirect()->route('buyer.view-auction', ['id' => $auction->id]);
+            \Log::info('[BUYER FORM REDIRECT]', [
+                'route_name' => 'buyer.view-auction',
+                'listing_id' => $auction->id,
+                'url' => route('buyer.view-auction', ['id' => $auction->id]),
+            ]);
+
+            return redirect()->to(route('buyer.view-auction', ['id' => $auction->id]));
 
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving listing: ' . $e->getMessage());
