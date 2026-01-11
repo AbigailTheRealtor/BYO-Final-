@@ -874,7 +874,16 @@ class BuyerAgentAuctionEdit extends Component
 
             $this->saveAllMetadata($auction);
 
-            session()->flash('success', 'Draft saved successfully. You can return later to complete your listing.');
+            \Log::info('[BUYER EDIT DRAFT SAVED]', [
+                'record_id' => $auction->id,
+                'listing_id' => $auction->listing_id ?? 'N/A',
+                'user_id' => $auction->user_id,
+                'is_draft' => $auction->is_draft,
+                'is_approved' => $auction->is_approved,
+            ]);
+
+            $displayId = $auction->listing_id ?? $auction->id;
+            session()->flash('success', "Draft saved (Listing ID: {$displayId}). You can return later to complete your listing.");
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving draft: ' . $e->getMessage());
         }
@@ -1562,10 +1571,18 @@ class BuyerAgentAuctionEdit extends Component
 
             $this->saveAllMetadata($auction);
 
+            \Log::info('[BUYER LISTING UPDATED]', [
+                'record_id' => $auction->id,
+                'listing_id' => $auction->listing_id ?? 'N/A',
+                'user_id' => $auction->user_id,
+                'is_draft' => $auction->is_draft,
+                'is_approved' => $auction->is_approved,
+                'is_sold' => $auction->is_sold,
+            ]);
+
             session()->flash('success', 'Listing updated successfully!');
 
-            // Optionally redirect to a success page
-            // return redirect()->route('listings.success');
+            return redirect()->route('buyer.view-auction', ['id' => $auction->id]);
 
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving listing: ' . $e->getMessage());

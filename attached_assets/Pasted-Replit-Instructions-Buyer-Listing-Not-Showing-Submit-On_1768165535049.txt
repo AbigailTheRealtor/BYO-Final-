@@ -1,0 +1,216 @@
+Replit Instructions — Buyer Listing Not Showing + Submit-Only Redirect + Draft Save Confirmation (BUYER FIRST)
+SCOPE
+
+Fix ONLY Hire a Buyer’s Agent listing flow under the unified tenant@exp.com
+ workflow.
+Do not modify Seller until Buyer is verified working.
+Do not modify Tenant or Landlord flows (they are the baseline).
+
+SAFEGUARDS (MUST FOLLOW — NON-NEGOTIABLE)
+DO NOT:
+
+delete/rename any database tables, columns, models, migrations, enums, or constants
+
+rename existing routes, controller methods, Livewire components, or blade views
+
+change any UI text, tooltips, placeholders, icons, section titles, or tab order
+
+refactor the architecture or merge Buyer into Tenant logic
+
+“quick fix” by reusing Tenant forms/views/queries for Buyer
+
+change Listing Date logic (it is already working and must remain untouched)
+
+ONLY ALLOWED:
+
+fix Buyer save/create so Buyer listings consistently persist and can be retrieved
+
+fix Buyer tab query/filters so saved Buyer listings actually display
+
+add Submit-only redirect to the Buyer listing detail page after successful submission
+
+add a Draft-saved success message that includes Listing ID (no redirect)
+
+add temporary server-side logs for verification
+
+PART 1 — Add Submit-Only Redirect (Required)
+Goal
+
+When a Buyer listing is actually submitted/published, immediately open the detail page so we know it saved and where it lives.
+
+Requirement
+
+ONLY on Submit/Publish (not Save Draft):
+
+After successful submit, redirect to Buyer listing detail page using the new listing ID.
+
+Examples (use whichever pattern your project uses):
+
+return redirect()->route('buyer.agent.auctions.show', $id);
+
+$this->redirectRoute('buyer.agent.auctions.show', $id);
+
+✅ This redirect must happen only in the Submit method (not in saveDraft).
+
+PART 2 — Save Draft Must NOT Redirect (But Must Confirm Listing ID)
+Goal
+
+Draft should remain on the form, but user must still get proof the draft saved.
+
+Requirement
+
+On Save Draft:
+
+Do NOT redirect away from the form
+
+Show success confirmation using existing toast/flash pattern
+
+The confirmation must include the saved record’s Listing ID (or database ID if Listing ID is generated later)
+
+Example message format (do not change UI style):
+
+“Draft saved (Listing ID: ABC-12345)”
+
+If Listing ID is generated only after submit:
+
+show: “Draft saved (Draft ID: 123)” and ensure the Listing ID is generated on submit.
+
+PART 3 — Buyer Listings Not Appearing Under Buyer Tab (Fix Retrieval Filters)
+
+You currently see 0 results in Hiring Buyer’s Agent tab even after submitting. That almost always means the tab query is filtering the record out.
+
+3A) Confirm the Buyer tab query is filtering the correct model/table
+
+Where the “Hiring Buyer’s Agent” tab loads results:
+
+Ensure it queries BuyerAgentAuction (or the Buyer table/model used for Buyer listings)
+
+Ensure it is NOT querying Tenant auctions by default
+
+No architecture change required—just confirm and correct the query source if wrong.
+
+3B) Fix the filters that hide saved Buyer listings
+
+Find the exact filters used in the Buyer tab list query and verify these:
+
+REQUIRED
+
+Buyer tab must include listings created by the current user:
+
+where user_id = auth()->id() (or your project’s equivalent)
+
+REQUIRED
+
+Buyer tab must NOT hide listings due to:
+
+listing_date = today
+
+whereDate(listing_date, today)
+
+any date-based gating
+
+REQUIRED
+
+Buyer tab must not be restricted only to Active if drafts exist
+If the current logic is something like:
+
+status = Active only
+then drafts won’t show.
+
+Pick ONE of these acceptable solutions (do not change labels/layout):
+
+Include Draft in the Buyer tab list, OR
+
+Show Draft under the Buyer tab using the existing status display rules
+
+Minimum requirement:
+
+The owner must be able to see their own Draft listing somewhere under Buyer tab.
+
+REQUIRED
+
+Ensure the “type” discriminator (if used) matches what the tab expects
+If Buyer tab filters on type = 2, then Buyer records must be saved with type=2.
+Confirm Buyer create/save writes the same value the query filters on.
+
+PART 4 — Add Minimal Logging to Prove Save + Prove Query (Temporary)
+
+Add temporary server logs (no UI changes) to confirm:
+
+On Save Draft + Submit:
+
+Log these values after save:
+
+record ID
+
+Listing ID (if generated)
+
+user_id
+
+status
+
+type (if used)
+
+On Buyer tab query:
+
+Log:
+
+current user id
+
+applied filters (status/type)
+
+resulting count
+
+This will immediately show whether:
+
+the record saved under a different user_id
+
+the record saved with wrong type
+
+the record saved as draft but query only shows active
+
+the record is being filtered out by date
+
+PART 5 — Verification Checklist (Buyer ONLY)
+Draft Test
+
+Login tenant@exp.com
+
+Create Hire a Buyer’s Agent listing
+
+Click Save Draft
+✅ Expected:
+
+No redirect
+
+“Draft saved” message includes Listing ID (or Draft ID)
+
+Listing appears under Hiring Buyer’s Agent tab for that user
+
+Submit Test
+
+Open the draft and click Submit/Publish
+✅ Expected:
+
+Redirect immediately to Buyer listing detail page
+
+Listing detail shows Buyer fields
+
+Listing appears in Hiring Buyer’s Agent tab
+
+Visibility Test
+
+Confirm it does NOT appear under Hiring Tenant’s Agent tab
+✅ Expected:
+
+Buyer listings only appear in Buyer tab
+
+IMPORTANT NOTE (Based on your screenshot)
+
+Since Buyer tab shows 0 results, your issue is almost certainly:
+
+Buyer tab query is filtering incorrectly (status/type/user_id/date), OR
+
+the create/save isn’t writing the expected status/type/user_id
+
+This instruction set forces Replit to prove which one it is.
