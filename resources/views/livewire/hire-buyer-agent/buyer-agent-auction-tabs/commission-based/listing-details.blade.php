@@ -803,7 +803,7 @@
 </style>
 
 <script>
-    document.addEventListener('livewire:load', function() {
+    (function() {
         // Custom Listing Type Dropdown
         function initListingTypeDropdown() {
             const dropdowns = document.querySelectorAll('.listing-type-custom-dropdown');
@@ -870,17 +870,8 @@
                     }
                 });
             });
-
-            // Close dropdown on outside click
-            document.addEventListener('click', function(e) {
-                if (!e.target.closest('.listing-type-custom-dropdown')) {
-                    document.querySelectorAll('.listing-type-custom-dropdown.open').forEach(d => d.classList.remove('open'));
-                }
-            });
         }
 
-        initListingTypeDropdown();
-        
         // Sync dropdown display with Livewire state
         function syncDropdownDisplay() {
             document.querySelectorAll('.listing-type-custom-dropdown').forEach(dropdown => {
@@ -895,13 +886,41 @@
                 }
             });
         }
-        
-        // Initial sync on page load
+
+        // Close dropdown on outside click (only attach once)
+        if (!window._listingTypeOutsideClickAttached) {
+            window._listingTypeOutsideClickAttached = true;
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.listing-type-custom-dropdown')) {
+                    document.querySelectorAll('.listing-type-custom-dropdown.open').forEach(d => d.classList.remove('open'));
+                }
+            });
+        }
+
+        // Initialize immediately (for when partial loads after livewire:load already fired)
+        initListingTypeDropdown();
         syncDropdownDisplay();
-        
-        Livewire.hook('message.processed', () => {
+
+        // Also initialize on DOMContentLoaded if not ready yet
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                initListingTypeDropdown();
+                syncDropdownDisplay();
+            });
+        }
+
+        // Initialize on Livewire load event
+        document.addEventListener('livewire:load', function() {
+            initListingTypeDropdown();
             syncDropdownDisplay();
+            
+            if (window.Livewire) {
+                Livewire.hook('message.processed', () => {
+                    initListingTypeDropdown();
+                    syncDropdownDisplay();
+                });
+            }
         });
-    });
+    })();
 </script>
 

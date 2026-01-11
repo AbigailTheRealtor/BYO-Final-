@@ -897,8 +897,7 @@
 </script> --}}
 
 <script>
-    document.addEventListener('livewire:load', function() {
-
+    (function() {
         // Custom Listing Type Dropdown
         function initListingTypeDropdown() {
             const dropdowns = document.querySelectorAll('.listing-type-custom-dropdown');
@@ -965,17 +964,8 @@
                     }
                 });
             });
-
-            // Close dropdown on outside click
-            document.addEventListener('click', function(e) {
-                if (!e.target.closest('.listing-type-custom-dropdown')) {
-                    document.querySelectorAll('.listing-type-custom-dropdown.open').forEach(d => d.classList.remove('open'));
-                }
-            });
         }
 
-        initListingTypeDropdown();
-        
         // Sync dropdown display with Livewire state
         function syncDropdownDisplay() {
             document.querySelectorAll('.listing-type-custom-dropdown').forEach(dropdown => {
@@ -990,12 +980,40 @@
                 }
             });
         }
-        
-        // Initial sync on page load
+
+        // Close dropdown on outside click (only attach once)
+        if (!window._listingTypeOutsideClickAttached) {
+            window._listingTypeOutsideClickAttached = true;
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.listing-type-custom-dropdown')) {
+                    document.querySelectorAll('.listing-type-custom-dropdown.open').forEach(d => d.classList.remove('open'));
+                }
+            });
+        }
+
+        // Initialize immediately (for when partial loads after livewire:load already fired)
+        initListingTypeDropdown();
         syncDropdownDisplay();
-        
-        Livewire.hook('message.processed', () => {
+
+        // Also initialize on DOMContentLoaded if not ready yet
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                initListingTypeDropdown();
+                syncDropdownDisplay();
+            });
+        }
+
+        // Initialize on Livewire load event
+        document.addEventListener('livewire:load', function() {
+            initListingTypeDropdown();
             syncDropdownDisplay();
+            
+            if (window.Livewire) {
+                Livewire.hook('message.processed', () => {
+                    initListingTypeDropdown();
+                    syncDropdownDisplay();
+                });
+            }
         });
 
         // Function to toggle "auction time" input field
@@ -1007,9 +1025,9 @@
             }
 
             if (selectElement1.value === 'Bidding Period') {
-                auctionTimeDiv1.classList.remove('d-none'); // Show the auction time field
+                auctionTimeDiv1.classList.remove('d-none');
             } else {
-                auctionTimeDiv1.classList.add('d-none'); // Hide the auction time field
+                auctionTimeDiv1.classList.add('d-none');
             }
         }
 
@@ -1020,21 +1038,22 @@
                 auctionDropdown1.addEventListener('change', function() {
                     toggleAuctionTime1(this);
                 });
-
-                // Manually trigger the toggle function on page load or after Livewire re-renders
                 toggleAuctionTime1(auctionDropdown1);
             }
         }
 
         // Attach the event listener initially
-        document.addEventListener('DOMContentLoaded', () => {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', attachAuctionDropdownListener1);
+        } else {
             attachAuctionDropdownListener1();
-        });
+        }
 
         // Re-attach the event listener after Livewire re-renders the DOM
-        Livewire.hook('message.processed', () => {
-            attachAuctionDropdownListener1();
+        document.addEventListener('livewire:load', function() {
+            if (window.Livewire) {
+                Livewire.hook('message.processed', attachAuctionDropdownListener1);
+            }
         });
-
-    });
+    })();
 </script>
