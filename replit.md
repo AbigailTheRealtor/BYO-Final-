@@ -20,6 +20,8 @@ A Match Score system rates agent bids against tenant baselines, displayed with c
 
 **Listing Type Separation**: Each listing type uses its own dedicated table and model: TenantAgentAuction (tenant_agent_auctions), BuyerAgentAuction (buyer_agent_auctions), SellerAgentAuction (seller_agent_auctions), LandlordAgentAuction (landlord_agent_auctions). UserController::author() queries the correct model based on tab type parameter (0=Tenant, 1=Seller, 2=Buyer, 3=Landlord). No cross-mapping between listing types.
 
+**Buyer Listing Flow**: Upon successful Submit/Publish, the user is redirected to the Buyer listing detail page (`buyer.view-auction` route). Save Draft does not redirect but displays a confirmation message including the Listing ID (e.g., "Draft saved (Listing ID: ABC-12345)"). Owners can see their own drafts in the "Hiring Buyer's Agent" tab, while non-owners only see published, approved listings. Temporary server-side logging tracks save/submit events and tab queries for debugging.
+
 ### System Design Choices
 The architecture emphasizes modularity through Laravel's structure and Livewire components. A database-first approach prioritizes local database solutions for core services like location. Clear separation of concerns is maintained between frontend, backend, and data persistence. The system is deployment-ready with production environment optimizations. Existing database schema and storage logic for fees are immutable, with fee format updates being display-only.
 
