@@ -1944,15 +1944,13 @@ $lease_types = [
                                 </div>
                                 <div class="d-flex justify-content-between set-button">
 
-                                    <button type="button" class="btn btn-outline-primary" wire:click="saveDraft" wire:ignore.self
-                                        onclick="setTimeout(() => { window.location = '{{ route('hire.agent.auction' , ['user_type' => $user_type])}}' }, 100)">
+                                    <button type="button" class="btn btn-outline-primary" wire:click="saveDraft" wire:ignore.self>
                                         <i class="fas fa-save me-1"></i> Save Draft
                                     </button>
 
                                     <button type="button" class="btn btn-primary wizard-step-next">Next</button>
 
-                                    <button type="submit" class="btn btn-success wizard-step-finish disabled" id="save-button" wire:ignore.self
-                                        onclick="setTimeout(() => { window.location = '{{ route('hire.agent.auction' , ['user_type' => $user_type])}}' }, 100)">
+                                    <button type="submit" class="btn btn-success wizard-step-finish disabled" id="save-button" wire:ignore.self>
                                         Submit
                                     </button>
                                 </div>

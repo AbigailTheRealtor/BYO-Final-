@@ -1,0 +1,154 @@
+Replit Instructions — After “Listing submitted successfully!” MUST redirect to the new Listing Detail page (All 4 Hire Types)
+Problem
+
+On Submit, the system shows a success toast (“Listing submitted successfully!”) but does not navigate to the newly created listing detail page. This makes it impossible to confirm the listing saved correctly and contributes to “missing listings” under the tabs.
+
+Required Behavior
+
+When the user clicks Submit (NOT Save Draft):
+
+Listing is saved/submitted successfully
+
+Immediately redirect the user to the new listing’s Detail page
+
+The listing must appear under the correct tab:
+
+Hire a Tenant → Hiring Tenant’s Agent
+
+Hire a Buyer → Hiring Buyer’s Agent
+
+Hire a Landlord → Hiring Landlord’s Agent
+
+Hire a Seller → Hiring Seller’s Agent
+
+Save Draft behavior stays unchanged (no redirect requirement).
+
+SAFEGUARDS (MUST FOLLOW — NON-NEGOTIABLE)
+DO NOT:
+
+delete/rename any database tables, columns, models, migrations
+
+rename existing routes, controller methods, Livewire components, or blade views
+
+change any UI text, placeholders, tooltips, icons, tab names, or tab order
+
+change Listing Date logic or other field logic already working
+
+merge Buyer/Seller/Landlord into Tenant logic or reuse Tenant views as shortcuts
+
+ONLY ALLOWED:
+
+add post-submit redirect logic to the existing Submit handler(s)
+
+ensure the submit handler returns a redirect response correctly (Livewire-compatible)
+
+add minimal temporary logging to confirm redirect path + new listing id
+
+PART 1 — Implement Redirect in the Submit Handler (not in the toast)
+Important
+
+Right now, the toast is being fired, but there is no navigation. The redirect must be performed in the same submit method after the record is saved.
+
+For EACH listing type (Tenant, Buyer, Landlord, Seller):
+
+Locate the submit method that runs when the user clicks Submit (examples: submit(), store(), publish(), submitListing()).
+
+REQUIRED pattern
+
+After successful save, capture the listing ID, then redirect to the detail route.
+
+Livewire required redirect patterns (use one that matches your project):
+
+Option A
+
+return redirect()->route('<DETAIL_ROUTE_NAME>', ['id' => $listing->id]);
+
+Option B
+
+$this->redirectRoute('<DETAIL_ROUTE_NAME>', ['id' => $listing->id]); return;
+
+Option C
+
+return redirect()->to(route('<DETAIL_ROUTE_NAME>', $listing->id));
+
+✅ The redirect must use the newly created listing’s ID (or Listing Code if that’s your show route).
+
+PART 2 — Prevent the toast from “ending” the method before redirect
+
+In the submit method, you likely have something like:
+
+$this->dispatchBrowserEvent(...)
+
+$this->alert('success', ...)
+
+session()->flash('success', ...)
+
+These are fine, but you must ensure they do NOT stop execution.
+
+REQUIRED
+
+Do NOT return; immediately after firing the toast.
+
+Do NOT only emit an event and then exit.
+
+The method must reach the redirect statement at the end.
+
+Expected flow:
+
+validate
+
+save record
+
+fire toast/flash (optional)
+
+redirect to detail route (required)
+
+PART 3 — Make sure the submit method actually has the created ID
+
+Sometimes submit is updating an existing “draft” row and losing the ID reference.
+
+REQUIRED
+
+After save, ensure you have a reliable reference:
+
+$listing->id exists
+
+or the model instance is returned from create/update
+
+If it updates an existing draft: ensure it still returns that same row’s ID
+
+PART 4 — Add temporary logging to prove redirect runs
+
+Add a temporary log line right before redirect (server logs only):
+
+Log:
+
+listing type (tenant/buyer/landlord/seller)
+
+listing id
+
+route name being used
+
+This proves whether:
+
+redirect code is executed
+
+correct route is being used
+
+correct id is being passed
+
+PART 5 — Verify correct tab placement (do not change UI)
+
+Once redirect works, confirm the listing shows in the correct tab.
+
+If it redirects correctly but still doesn’t show in the tab list, the issue is tab query filters (status/type/user_id/date). Do not change this in this task unless needed—first make redirect work so we can confirm record identity.
+
+Acceptance Criteria (Must Pass)
+
+For EACH type (Tenant, Buyer, Landlord, Seller):
+
+Click Submit
+✅ See “Listing submitted successfully!” toast (existing behavior)
+✅ Immediately redirects to the correct listing detail page
+✅ Detail page shows the correct listing ID/code
+✅ Listing is discoverable under its correct “Hiring ___ Agent” tab
