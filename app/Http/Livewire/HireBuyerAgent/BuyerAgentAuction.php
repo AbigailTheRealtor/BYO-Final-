@@ -1699,6 +1699,11 @@ class BuyerAgentAuction extends Component
 
     public function store()
     {
+        \Log::info('[BUYER STORE START]', [
+            'user_id' => auth()->id(),
+            'listing_date' => $this->listing_date ?? null,
+        ]);
+
         try {
             $this->isDraft = 0;
 
@@ -1728,11 +1733,7 @@ class BuyerAgentAuction extends Component
 
             $url = route('buyer.view-auction', ['id' => $auction->id]);
 
-            \Log::info('[BUYER FORM REDIRECT]', [
-                'route_name' => 'buyer.view-auction',
-                'listing_id' => $auction->id,
-                'url' => $url,
-            ]);
+            \Log::info('[BUYER STORE BEFORE REDIRECT EVENT]', ['url' => $url]);
 
             // Dispatch browser event to force redirect (Livewire v2 compatible)
             $this->dispatchBrowserEvent('force-redirect', ['url' => $url]);

@@ -1,0 +1,164 @@
+Replit Instructions — Buyer + Seller: Submit Does Not Redirect (Tenant/Landlord Working) (WITH SAFEGUARDS)
+Current Status
+
+✅ Tenant: Submit → redirects to detail page
+✅ Landlord: Submit → redirects to detail page
+❌ Buyer: Submit → no navigation / appears to do nothing after click
+❌ Seller: Submit → no navigation / appears to do nothing after click
+
+Since Tenant/Landlord works, the global force-redirect listener is confirmed working. The issue is in Buyer/Seller submit/store execution.
+
+SAFEGUARDS (NON-NEGOTIABLE)
+DO NOT:
+
+change Tenant or Landlord code in this task
+
+delete/rename DB tables/columns/models/migrations
+
+rename routes/controllers/Livewire components/views
+
+change any UI copy (labels/tooltips/placeholders/tabs)
+
+remove validation rules
+
+ONLY ALLOWED:
+
+fix Buyer + Seller form wiring to ensure submit calls the correct method
+
+ensure Buyer + Seller store() reaches success branch and dispatches force-redirect
+
+fix validation error display so user sees errors immediately
+
+add temporary logging (server + browser console)
+
+PART 1 — Confirm Buyer/Seller forms call the correct submit method
+Required
+
+In Buyer and Seller create/edit views confirm:
+
+<form wire:submit.prevent="store"> exists
+
+Submit button is type="submit"
+
+Submit button uses wire:target="store" (not a different method name)
+
+✅ If Buyer or Seller uses submit() instead of store(), either:
+
+update form to call the correct method name, OR
+
+rename nothing; just align wire:submit.prevent to the method that exists.
+
+Do NOT modify Tenant/Landlord wiring.
+
+PART 2 — Add mandatory “START” + “SUCCESS” logs in Buyer/Seller store()
+
+We need proof if store() is even running.
+
+Required logs (Buyer store)
+
+At top of Buyer store():
+
+\Log::info('[BUYER STORE START]', [
+  'user_id' => auth()->id(),
+  'listing_date' => $this->listing_date ?? null,
+]);
+
+
+Right before dispatchBrowserEvent:
+
+\Log::info('[BUYER STORE BEFORE REDIRECT EVENT]', ['url' => $url]);
+
+Required logs (Seller store)
+
+At top of Seller store():
+
+\Log::info('[SELLER STORE START]', [
+  'user_id' => auth()->id(),
+  'listing_date' => $this->listing_date ?? null,
+]);
+
+
+Right before dispatchBrowserEvent:
+
+\Log::info('[SELLER STORE BEFORE REDIRECT EVENT]', ['url' => $url]);
+
+
+✅ If you only see START but not BEFORE REDIRECT EVENT, the method is failing/returning early.
+
+PART 3 — Ensure Buyer/Seller dispatchBrowserEvent occurs on the actual Submit path
+
+Buyer/Seller may have conditional branches like:
+
+if draft → return
+
+if validation fails → return
+
+if status not set → return
+
+Required
+
+Make sure the Submit action always ends in:
+
+save success
+
+$url = route(...)
+
+$this->dispatchBrowserEvent('force-redirect', ['url' => $url]);
+
+return redirect()->to($url);
+
+This must run for SUBMIT, not just for Draft.
+
+If Buyer/Seller has separate methods (saveDraft vs submit):
+
+ensure the force-redirect is only in the submit method branch.
+
+PART 4 — If validation fails, user must see it (no silent failure)
+
+Right now you click submit and “nothing happens.” That is often hidden validation errors.
+
+Required
+
+Ensure Buyer/Seller forms display validation errors the same way Tenant does (reuse existing error display patterns; no copy changes).
+
+On validation failure, show errors immediately without refresh.
+
+PART 5 — Verify the browser event actually fires for Buyer/Seller
+
+Tenant/Landlord already redirect, but we need to confirm Buyer/Seller emits the same event.
+
+Required test
+
+Open DevTools console, click Submit on Buyer and Seller.
+
+Expected:
+
+“Forcing redirect to: …” appears, then navigation happens.
+
+If you do NOT see the log, the event never fired → focus on store() execution/validation.
+
+Acceptance Criteria (Buyer + Seller)
+
+✅ Click Submit once on Buyer → one toast → redirect to Buyer detail page
+✅ Click Submit once on Seller → one toast → redirect to Seller detail page
+✅ Laravel logs show:
+
+BUYER STORE START
+
+BUYER STORE BEFORE REDIRECT EVENT
+
+SELLER STORE START
+
+SELLER STORE BEFORE REDIRECT EVENT
+
+REQUIRED PROOF BACK FROM REPLIT
+
+They must paste:
+
+Buyer form <form ...> line and submit button line
+
+Seller form <form ...> line and submit button line
+
+Log output showing START + BEFORE REDIRECT EVENT for both Buyer and Seller
+
+Console screenshot showing “Forcing redirect to …” for Buyer and Seller

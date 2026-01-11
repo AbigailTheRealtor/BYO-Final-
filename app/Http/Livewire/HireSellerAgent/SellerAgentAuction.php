@@ -2156,6 +2156,11 @@ class SellerAgentAuction extends Component
 
     public function store()
     {
+        \Log::info('[SELLER STORE START]', [
+            'user_id' => auth()->id(),
+            'listing_date' => $this->listing_date ?? null,
+        ]);
+
         try {
             // Sanitize stale values before validation
             $this->sanitizeBeforeSubmit();
@@ -2194,11 +2199,7 @@ class SellerAgentAuction extends Component
 
             $url = route('seller.agent.auction.detail', ['id' => $auction->id]);
 
-            \Log::info('[SELLER FORM REDIRECT]', [
-                'route_name' => 'seller.agent.auction.detail',
-                'listing_id' => $auction->id,
-                'url' => $url,
-            ]);
+            \Log::info('[SELLER STORE BEFORE REDIRECT EVENT]', ['url' => $url]);
 
             // Dispatch browser event to force redirect (Livewire v2 compatible)
             $this->dispatchBrowserEvent('force-redirect', ['url' => $url]);
