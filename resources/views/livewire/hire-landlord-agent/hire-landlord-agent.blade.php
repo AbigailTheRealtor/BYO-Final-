@@ -2030,10 +2030,16 @@
                     });
                 });
 
-                // Enable/disable save button
+                // Enable/disable save button (both CSS class and attribute)
                 const saveButton = document.querySelector('.wizard-step-finish');
                 if (saveButton) {
-                    saveButton.disabled = !allValid;
+                    if (allValid) {
+                        saveButton.classList.remove('disabled');
+                        saveButton.removeAttribute('disabled');
+                    } else {
+                        saveButton.classList.add('disabled');
+                        saveButton.setAttribute('disabled', 'disabled');
+                    }
                 }
                 return allValid;
             }
@@ -2295,10 +2301,16 @@
                     });
                 });
 
-                // Enable/disable save button
+                // Enable/disable save button (both CSS class and attribute)
                 const saveButton = document.querySelector('.wizard-step-finish');
                 if (saveButton) {
-                    saveButton.disabled = !allValid;
+                    if (allValid) {
+                        saveButton.classList.remove('disabled');
+                        saveButton.removeAttribute('disabled');
+                    } else {
+                        saveButton.classList.add('disabled');
+                        saveButton.setAttribute('disabled', 'disabled');
+                    }
                 }
 
                 return allValid;

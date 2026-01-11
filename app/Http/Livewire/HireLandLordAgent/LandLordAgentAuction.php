@@ -1202,6 +1202,8 @@ class LandLordAgentAuction extends Component
             $this->auction_time = $auction->get->auction_time;
 
             $this->state = $auction->get->state;
+            $this->zipCodes = is_string($auction->get->zipCodes) ? json_decode($auction->get->zipCodes, true) ?? [] : (array)($auction->get->zipCodes ?? []);
+            $this->zip_code = $this->zipCodes[0] ?? ($auction->get->zip_code ?? '');
             $this->property_type = $auction->get->property_type;
             $this->cities = is_string($auction->get->cities) ? json_decode($auction->get->cities, true) ?? [] : (array)$auction->get->cities;
 
@@ -1598,6 +1600,8 @@ class LandLordAgentAuction extends Component
         $auction->saveMeta('cities', json_encode($this->cities));
         $auction->saveMeta('counties', json_encode($this->counties));
         $auction->saveMeta('state', $this->state);
+        $auction->saveMeta('zip_code', $this->zip_code);
+        $auction->saveMeta('zipCodes', json_encode($this->zipCodes));
 
         // Property Details
         $auction->saveMeta('property_type', $this->property_type);
