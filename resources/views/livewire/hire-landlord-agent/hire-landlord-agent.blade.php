@@ -1961,13 +1961,65 @@
             });
 
 
+            // Helper function to check if element is visible (not hidden by d-none, display:none, collapse, etc.)
+            function isElementVisible(element) {
+                if (!element) return false;
+                if (element.disabled) return false;
+                if (element.type === 'hidden') return false;
+                
+                if (element.offsetParent === null && element.tagName !== 'BODY' && element.tagName !== 'HTML') {
+                    if (element.offsetHeight === 0 && element.offsetWidth === 0) {
+                        return false;
+                    }
+                }
+                
+                if (element.offsetHeight === 0 || element.offsetWidth === 0) {
+                    return false;
+                }
+                
+                if (element.getAttribute('aria-hidden') === 'true') {
+                    return false;
+                }
+                
+                let el = element;
+                while (el && el !== document.body) {
+                    if (el.classList && (
+                        el.classList.contains('d-none') || 
+                        el.classList.contains('hidden') ||
+                        el.classList.contains('collapse') && !el.classList.contains('show')
+                    )) {
+                        return false;
+                    }
+                    
+                    if (el.getAttribute('aria-hidden') === 'true') {
+                        return false;
+                    }
+                    
+                    const style = window.getComputedStyle(el);
+                    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+                        return false;
+                    }
+                    
+                    if (parseFloat(style.height) === 0 || parseFloat(style.maxHeight) === 0) {
+                        return false;
+                    }
+                    
+                    el = el.parentElement;
+                }
+                return true;
+            }
+
             // Function to check if all required fields are filled
             function checkFormValidity() {
                 let allValid = true;
 
-                // Check all tabs for required fields
+                // Check all tabs for required fields (skip hidden/disabled fields)
                 document.querySelectorAll('.tab-pane').forEach(tabPane => {
                     tabPane.querySelectorAll('[required]').forEach(field => {
+                        // Skip hidden or disabled fields - they should not block form validity
+                        if (!isElementVisible(field)) {
+                            return;
+                        }
                         if (!field.value) {
                             allValid = false;
                         }
@@ -2174,13 +2226,65 @@
 
         function initializeLimitedService() {
 
+            // Helper function to check if element is visible (not hidden by d-none, display:none, collapse, etc.)
+            function isElementVisible(element) {
+                if (!element) return false;
+                if (element.disabled) return false;
+                if (element.type === 'hidden') return false;
+                
+                if (element.offsetParent === null && element.tagName !== 'BODY' && element.tagName !== 'HTML') {
+                    if (element.offsetHeight === 0 && element.offsetWidth === 0) {
+                        return false;
+                    }
+                }
+                
+                if (element.offsetHeight === 0 || element.offsetWidth === 0) {
+                    return false;
+                }
+                
+                if (element.getAttribute('aria-hidden') === 'true') {
+                    return false;
+                }
+                
+                let el = element;
+                while (el && el !== document.body) {
+                    if (el.classList && (
+                        el.classList.contains('d-none') || 
+                        el.classList.contains('hidden') ||
+                        el.classList.contains('collapse') && !el.classList.contains('show')
+                    )) {
+                        return false;
+                    }
+                    
+                    if (el.getAttribute('aria-hidden') === 'true') {
+                        return false;
+                    }
+                    
+                    const style = window.getComputedStyle(el);
+                    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+                        return false;
+                    }
+                    
+                    if (parseFloat(style.height) === 0 || parseFloat(style.maxHeight) === 0) {
+                        return false;
+                    }
+                    
+                    el = el.parentElement;
+                }
+                return true;
+            }
+
             // Function to check if all required fields are filled
             function checkFormValidity() {
                 let allValid = true;
 
-                // Check all tabs for required fields
+                // Check all tabs for required fields (skip hidden/disabled fields)
                 document.querySelectorAll('.tab-pane').forEach(tabPane => {
                     tabPane.querySelectorAll('[required]').forEach(field => {
+                        // Skip hidden or disabled fields - they should not block form validity
+                        if (!isElementVisible(field)) {
+                            return;
+                        }
                         if (!field.value) {
                             allValid = false;
                         }
