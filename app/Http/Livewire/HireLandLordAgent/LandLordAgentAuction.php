@@ -1990,10 +1990,18 @@ class LandLordAgentAuction extends Component
 
             $this->saveAllMetadata($auction);
 
+            \Log::info('[LANDLORD LISTING SUBMITTED]', [
+                'record_id' => $auction->id,
+                'listing_id' => $auction->listing_id ?? 'N/A',
+                'user_id' => $auction->user_id,
+                'is_draft' => $auction->is_draft,
+                'is_approved' => $auction->is_approved,
+                'is_sold' => $auction->is_sold,
+            ]);
+
             session()->flash('success', 'Listing submitted successfully!');
 
-            // Optionally redirect to a success page
-            // return redirect()->route('listings.success');
+            return redirect()->route('landlord.agent.auction.view', ['id' => $auction->id]);
 
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving listing: ' . $e->getMessage());

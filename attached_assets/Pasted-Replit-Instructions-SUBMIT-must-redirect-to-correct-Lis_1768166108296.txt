@@ -1,0 +1,236 @@
+Replit Instructions — SUBMIT must redirect to correct Listing + correct Tab (Tenant/Buyer/Landlord/Seller)
+Goal
+
+When a user clicks Submit (NOT Save Draft), the system must:
+
+Create/submit the listing successfully
+
+Immediately redirect the user to the new listing’s Detail page
+
+The listing must appear under the correct “Hiring ___’s Agent” tab:
+
+Hire a Tenant → Hiring Tenant’s Agent
+
+Hire a Buyer → Hiring Buyer’s Agent
+
+Hire a Landlord → Hiring Landlord’s Agent
+
+Hire a Seller → Hiring Seller’s Agent
+
+Save Draft behavior stays the same (no redirect required unless already implemented).
+
+SAFEGUARDS (MUST FOLLOW — NON-NEGOTIABLE)
+DO NOT:
+
+delete/rename any database tables, columns, models, migrations, enums, or constants
+
+rename existing routes, controller methods, Livewire component names, or blade view filenames
+
+change any UI text, labels, placeholders, tooltips, icons, tab names, or tab order
+
+change Listing Date logic (already working) or any other working field logic
+
+merge Buyer/Seller into Tenant logic or “reuse Tenant view” as a shortcut
+
+modify Tenant/Landlord/Seller/Buyer form field definitions beyond redirect + routing fixes
+
+ONLY ALLOWED:
+
+add/adjust post-submit redirect logic
+
+add/adjust tab routing logic so the correct tab query picks up the submitted listing
+
+add minimal logging for verification (server logs only)
+
+add new route entries ONLY if missing (no renames)
+
+PART A — Identify the “Submit” handlers for all 4 hire types
+
+For each listing type, locate the exact submit action method that runs when user clicks Submit (NOT Save Draft).
+
+Common patterns (examples):
+
+Livewire: submit(), store(), publish(), saveAndSubmit()
+
+Controller: store(), submitListing(), etc.
+
+DO NOT change Save Draft behavior except ensuring it does not accidentally redirect.
+
+PART B — Implement Submit Redirect (Required) for ALL 4 Types
+Required Behavior
+
+After successful Submit, immediately redirect to the listing detail page for that specific listing type.
+
+Tenant Submit redirect
+
+After Tenant submit creates the record:
+
+redirect to: Tenant listing detail route
+
+Example: tenant.agent.auctions.show (use your actual route)
+
+Buyer Submit redirect
+
+After Buyer submit creates the record:
+
+redirect to: Buyer listing detail route
+
+Example: buyer.agent.auctions.show
+
+Landlord Submit redirect
+
+After Landlord submit creates the record:
+
+redirect to: Landlord listing detail route
+
+Example: landlord.agent.auctions.show
+
+Seller Submit redirect
+
+After Seller submit creates the record:
+
+redirect to: Seller listing detail route
+
+Example: seller.agent.auctions.show
+
+Important: Do not redirect to a generic “list page.” Redirect must go to the detail view and include the new listing id (or listing code).
+
+Implementation Notes (Livewire)
+
+Use the project’s standard redirect style (pick one that matches the existing codebase):
+
+return redirect()->route('...', $listing->id);
+OR
+
+$this->redirectRoute('...', ['id' => $listing->id]);
+
+This redirect must occur only after the record is confirmed saved.
+
+PART C — Ensure submitted listing appears under the correct tab (Fix filter logic, not UI)
+
+The redirect proves the listing saved. The tab issue is usually a filter mismatch.
+
+Required Tab Mapping
+
+Confirm the list query for each tab filters on the correct model/table AND includes submitted listings:
+
+Hiring Tenant’s Agent tab
+
+Must query Tenant listings only (Tenant model/table) and include newly submitted status.
+
+Hiring Buyer’s Agent tab
+
+Must query Buyer listings only and include newly submitted status.
+
+Hiring Landlord’s Agent tab
+
+Must query Landlord listings only and include newly submitted status.
+
+Hiring Seller’s Agent tab
+
+Must query Seller listings only and include newly submitted status.
+
+Fix Common Reasons Listings Don’t Show After Submit
+
+For EACH tab query, confirm and correct these, WITHOUT changing UI:
+
+1) Status filter mismatch
+
+If tab query only shows Active, but submit creates Pending, it will look like it disappeared.
+
+✅ REQUIRED:
+
+Either include the submitted status in the tab query, OR
+
+Ensure submit sets the correct status that the tab expects.
+
+Do not rename statuses. Just align the filter with what submit actually sets.
+
+2) Type discriminator mismatch (if used)
+
+If tab query filters type=2 but submit saves type=null or type=1, you’ll see 0 results.
+
+✅ REQUIRED:
+
+Ensure each submit sets the correct type value expected by that tab query.
+
+3) Ownership / guard mismatch
+
+If tab query filters by user_id and submit saves with a different user/guard, it won’t show.
+
+✅ REQUIRED:
+
+Ensure submit saves with the same user_id/created_by field used by the list queries.
+
+4) Date-based filtering
+
+If any list query filters by listing_date “today,” it will hide records.
+
+✅ REQUIRED:
+
+Remove listing_date gating from list visibility. Visibility should depend on correct listing type + status + ownership rules.
+
+PART D — Add “Post-Submit Routing Verification” logging (temporary)
+
+Add minimal server logs (no UI changes) in each submit handler:
+
+Log after save:
+
+listing id
+
+listing type / model name
+
+status saved
+
+type saved (if exists)
+
+user_id saved
+
+Then log on each tab query load:
+
+which model is being queried
+
+filters applied (status/type/user_id)
+
+count returned
+
+This guarantees we can prove exactly why a submitted listing isn’t appearing.
+
+PART E — Required End-to-End Testing (All 4 types)
+
+After implementing, test each of these and confirm behavior:
+
+Tenant
+
+Create Tenant listing → Submit
+✅ Redirects to Tenant listing detail page
+✅ Appears under Hiring Tenant’s Agent tab
+
+Buyer
+
+Create Buyer listing → Submit
+✅ Redirects to Buyer listing detail page
+✅ Appears under Hiring Buyer’s Agent tab
+✅ Does NOT appear under Tenant tab
+
+Landlord
+
+Create Landlord listing → Submit
+✅ Redirects to Landlord listing detail page
+✅ Appears under Hiring Landlord’s Agent tab
+
+Seller
+
+Create Seller listing → Submit
+✅ Redirects to Seller listing detail page
+✅ Appears under Hiring Seller’s Agent tab
+✅ Does NOT appear under Tenant tab
+
+EXTRA REQUIREMENT (No UI text changes)
+
+Do NOT add new buttons or change copy.
+This fix must be purely:
+
+submit redirect logic
+
+correct tab list filtering/mapping

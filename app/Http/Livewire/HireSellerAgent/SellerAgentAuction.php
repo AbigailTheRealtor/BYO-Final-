@@ -2181,6 +2181,15 @@ class SellerAgentAuction extends Component
 
             $this->saveAllMetadata($auction);
 
+            \Log::info('[SELLER LISTING SUBMITTED]', [
+                'record_id' => $auction->id,
+                'listing_id' => $auction->listing_id ?? 'N/A',
+                'user_id' => $auction->user_id,
+                'is_draft' => $auction->is_draft,
+                'is_approved' => $auction->is_approved ?? 'N/A',
+                'is_sold' => $auction->is_sold ?? 'N/A',
+            ]);
+
             session()->flash('success', 'Listing submitted successfully!');
 
             // Redirect to the Seller listing view page

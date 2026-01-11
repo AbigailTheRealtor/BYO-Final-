@@ -3523,8 +3523,28 @@ class TenantAgentAuction extends Component
 
             $this->saveAllMetadata($auction);
 
+            \Log::info('[TENANT FORM LISTING SUBMITTED]', [
+                'record_id' => $auction->id,
+                'listing_id' => $auction->listing_id ?? 'N/A',
+                'user_type' => $this->user_type,
+                'model_class' => $auctionClass,
+                'user_id' => $auction->user_id,
+                'is_draft' => $auction->is_draft,
+                'is_approved' => $auction->is_approved ?? 'N/A',
+            ]);
+
             session()->flash('success', 'Listing submitted successfully!');
-            return redirect()->route('hire.agent.auction');
+
+            // Redirect to the correct detail page based on user_type
+            $route = match ($this->user_type) {
+                'tenant'   => 'tenant.agent.auction.view',
+                'landlord' => 'landlord.agent.auction.view',
+                'buyer'    => 'buyer.view-auction',
+                'seller'   => 'seller.agent.auction.detail',
+                default    => 'hire.agent.auction',
+            };
+
+            return redirect()->route($route, ['id' => $auction->id]);
         } catch (\Exception $e) {
 
 

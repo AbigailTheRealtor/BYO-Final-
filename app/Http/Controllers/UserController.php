@@ -62,21 +62,39 @@ class UserController extends Controller
             
             if ($type == 0) {
                 $query = TenantAgentAuction::where('user_id', $user->id)
-                    ->where('is_sold', false)
-                    ->where('is_draft', false);
+                    ->where('is_sold', false);
                 if (!$isOwner) {
+                    $query->where('is_draft', false);
                     $query->where('is_approved', 1);
                 }
                 $page_data['pAuctions'] = $query->paginate(12);
+                
+                \Log::info('[TENANT TAB QUERY]', [
+                    'current_user_id' => Auth::id(),
+                    'profile_user_id' => $user->id,
+                    'is_owner' => $isOwner,
+                    'filters' => ['is_sold' => false, 'is_draft' => $isOwner ? 'not filtered (owner sees drafts)' : 'false', 'is_approved' => $isOwner ? 'not filtered' : '1'],
+                    'result_count' => $page_data['pAuctions']->total(),
+                ]);
+                
                 return view('author_inc.tenant_agent_auctions', $page_data);
             } else if ($type == 1) {
                 $query = SellerAgentAuction::where('user_id', $user->id)
-                    ->where('is_sold', false)
-                    ->where('is_draft', false);
+                    ->where('is_sold', false);
                 if (!$isOwner) {
+                    $query->where('is_draft', false);
                     $query->where('is_approved', 1);
                 }
                 $page_data['pAuctions'] = $query->paginate(12);
+                
+                \Log::info('[SELLER TAB QUERY]', [
+                    'current_user_id' => Auth::id(),
+                    'profile_user_id' => $user->id,
+                    'is_owner' => $isOwner,
+                    'filters' => ['is_sold' => false, 'is_draft' => $isOwner ? 'not filtered (owner sees drafts)' : 'false', 'is_approved' => $isOwner ? 'not filtered' : '1'],
+                    'result_count' => $page_data['pAuctions']->total(),
+                ]);
+                
                 return view('author_inc.seller_agent_auctions', $page_data);
             } else if ($type == 2) {
                 $query = BuyerAgentAuction::where('user_id', $user->id)
@@ -98,18 +116,27 @@ class UserController extends Controller
                 return view('author_inc.buyer_agent_auctions', $page_data);
             } else if ($type == 3) {
                 $query = LandlordAgentAuction::where('user_id', $user->id)
-                    ->where('is_sold', false)
-                    ->where('is_draft', false);
+                    ->where('is_sold', false);
                 if (!$isOwner) {
+                    $query->where('is_draft', false);
                     $query->where('is_approved', 1);
                 }
                 $page_data['pAuctions'] = $query->paginate(12);
+                
+                \Log::info('[LANDLORD TAB QUERY]', [
+                    'current_user_id' => Auth::id(),
+                    'profile_user_id' => $user->id,
+                    'is_owner' => $isOwner,
+                    'filters' => ['is_sold' => false, 'is_draft' => $isOwner ? 'not filtered (owner sees drafts)' : 'false', 'is_approved' => $isOwner ? 'not filtered' : '1'],
+                    'result_count' => $page_data['pAuctions']->total(),
+                ]);
+                
                 return view('author_inc.landlord_agent_auctions', $page_data);
             } else {
                 $query = TenantAgentAuction::where('user_id', $user->id)
-                    ->where('is_sold', false)
-                    ->where('is_draft', false);
+                    ->where('is_sold', false);
                 if (!$isOwner) {
+                    $query->where('is_draft', false);
                     $query->where('is_approved', 1);
                 }
                 $page_data['pAuctions'] = $query->paginate(12);
