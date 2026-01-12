@@ -1,0 +1,120 @@
+Replit Instructions — Landlord Listing Display Fixes (“Other” + Date Format)
+Applies To
+
+Hire a Landlord’s Agent → Actual Listing Display
+
+Residential + Commercial
+
+Also apply to Agent view / Bid view / PDF only if they reuse the same display component/partial.
+
+1) Remove “Other” from display values (View, Desired Lease Term, Rent Includes)
+Problem
+
+On the Landlord listing display, when a user selects Other and enters custom text, the display currently:
+
+shows the literal word “Other”
+
+and/or wraps the custom text in parentheses like: Other (Example text)
+
+and/or shows parentheses in the middle of the value list
+
+Expected Behavior
+
+For these fields:
+
+View
+
+Desired Lease Term
+
+Rent Includes
+
+✅ The listing display should NOT show “Other” as a visible option.
+✅ The display should show only the user’s custom text (if provided), inline with the other selected options.
+✅ There should be no parentheses inserted between Other and the custom text.
+
+Examples
+
+Desired Lease Term: 1 Year, Example Desired Lease Term
+(not 1 Year, Other (Example Desired Lease Term))
+
+Rent Includes: Cable TV, Insurance, Pest Control, Example Rent Includes
+(not Cable TV, Insurance, Pest Control, Other (Example Rent Includes))
+
+View: Water View, Example View
+(not Water View, Other (Example View))
+
+Implementation Notes (safe + consistent)
+
+For each of the three fields above:
+
+Start with the selected options array.
+
+Filter out the literal "Other" from what is displayed.
+
+If the corresponding “Other text” input exists and is not empty, append that text to the displayed list.
+
+Render the final list as a comma-separated string (or the same chip style you use elsewhere), without parentheses.
+
+2) Fix Occupied Until date display format
+Problem
+
+Occupied Until is currently displaying as:
+09 January 2026 (Day Month Year)
+
+Expected Behavior
+
+Display should be:
+January 9, 2026 (Month Day, Year)
+
+Implementation Notes
+
+Update only the display formatter for Occupied Until in the Landlord listing display.
+
+Use the same date formatting used elsewhere on the platform where dates appear in the Month Day, Year format.
+
+Ensure it works whether the stored value is:
+
+a date string (YYYY-MM-DD)
+
+a timestamp
+
+or a Carbon date
+
+✅ Output must always be: F j, Y (example: January 9, 2026)
+
+SAFEGUARDS (MUST FOLLOW)
+
+DO NOT:
+
+rename any database columns or Livewire keys
+
+change how “Other” fields are saved
+
+change field labels, tooltips, placeholders, or validation rules
+
+modify form UI or the listing creation flow
+
+alter any Tenant/Buyer/Seller display logic unless this exact shared component is reused
+
+ONLY:
+
+update the Landlord listing display rendering/formatting for these specific fields
+
+filter “Other” out of displayed lists and append the custom text inline
+
+change only the date display format for Occupied Until
+
+QA CHECKLIST (Replit must verify)
+
+View = Water View + Other text “Example View”
+✅ Display: Water View, Example View
+❌ No “Other” and no parentheses
+
+Desired Lease Term = 1 Year + Other text “Example Desired Lease Term”
+✅ Display: 1 Year, Example Desired Lease Term
+
+Rent Includes = Cable TV + Insurance + Other text “Example Rent Includes”
+✅ Display: Cable TV, Insurance, Example Rent Includes
+
+Occupied Until = 2026-01-09
+✅ Display: January 9, 2026

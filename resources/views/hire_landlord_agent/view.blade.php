@@ -620,14 +620,18 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             @php
             $displayViews = [];
 
-            // Add all selected view preferences
+            // Add all selected view preferences, filtering out "Other"
             if (!empty($auction->get->view_preference) && $auction->get->view_preference != 'null') {
-            $displayViews = $auction->get->view_preference;
+                foreach ($auction->get->view_preference as $item) {
+                    if ($item !== 'Other') {
+                        $displayViews[] = $item;
+                    }
+                }
             }
 
             // Add the custom preferences if they exist
             if (!empty($auction->get->other_preferences)) {
-            $displayViews[] = $auction->get->other_preferences;
+                $displayViews[] = $auction->get->other_preferences;
             }
             @endphp
 
@@ -732,9 +736,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 <div class="col-12 fw-bold">  Occupied Until:
                     <span class="removeBold">
                         @php
-                            // Format the date from Y-m-d to d F Y
+                            // Format the date from Y-m-d to F j, Y (e.g., January 9, 2026)
                             $date = \Carbon\Carbon::parse($auction->get->occupant_tenant);
-                            echo $date->format('d F Y');
+                            echo $date->format('F j, Y');
                         @endphp
                     </span>
                 </div>
@@ -926,26 +930,24 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @if (@$auction->get->desired_lease_length != null || @$auction->get->other_lease_term != null)
         <div class="col-md-12 col-12 pt-2 fw-bold"> Desired Lease Term:
             @foreach (@$auction->get->desired_lease_length as $item)
-            <span class="removeBold badge bg-secondary">
-                {{ @$item }}
-
-            </span>
+                @if ($item !== 'Other')
+                <span class="removeBold badge bg-secondary">{{ @$item }}</span>
+                @endif
             @endforeach
             @if (@$auction->get->other_lease_term)
-            <span class="removeBold">({{ @$auction->get->other_lease_term }})</span>
+            <span class="removeBold badge bg-secondary">{{ @$auction->get->other_lease_term }}</span>
             @endif
         </div>
         @endif
         @if (@$auction->get->rent_includes != null || @$auction->get->other_rent_include != null)
         <div class="col-md-12 col-12 pt-2 fw-bold"> Rent Includes:
             @foreach (@$auction->get->rent_includes as $item)
-            <span class="removeBold badge bg-secondary">
-                {{ @$item }}
-
-            </span>
+                @if ($item !== 'Other')
+                <span class="removeBold badge bg-secondary">{{ @$item }}</span>
+                @endif
             @endforeach
             @if (@$auction->get->other_rent_include)
-            <span class="removeBold">({{ @$auction->get->other_rent_include }})</span>
+            <span class="removeBold badge bg-secondary">{{ @$auction->get->other_rent_include }}</span>
             @endif
         </div>
         @endif
