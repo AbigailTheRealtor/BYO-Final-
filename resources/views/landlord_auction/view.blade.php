@@ -437,14 +437,7 @@
               @if(gettype(json_decode(@$auction->get->rent)) == 'array')
                   <div class="col-md-12 fw-bold">Rent Includes:
                       @foreach (json_decode(@$auction->get->rent) as $item)
-                          <span class="removeBold badge bg-secondary">
-                              @if($item !='Other')
-                              {{ $item }} 
-                              @endif
-                              @if($item == 'Other')
-                                  {{ $auction->get->rentOther }}
-                              @endif
-                          </span>
+                          <span class="removeBold badge bg-secondary">{{ $item !== 'Other' ? $item : $auction->get->rentOther }}</span>
                       @endforeach
                   </div>
               @endif
@@ -744,14 +737,7 @@
               @if(gettype(json_decode(@$auction->get->appliances)) == 'array')
                   <div class="col-md-12 fw-bold">Appliances:
                       @foreach (json_decode(@$auction->get->appliances) as $item)
-                          <span class="removeBold badge bg-secondary">
-                              @if($item !='Other')
-                              {{ $item }} 
-                              @endif
-                              @if($item == 'Other')
-                                  {{ $auction->get->appliancesOther }}
-                              @endif
-                          </span>
+                          <span class="removeBold badge bg-secondary">{{ $item !== 'Other' ? $item : $auction->get->appliancesOther }}</span>
                       @endforeach
                   </div>
               @endif
@@ -771,13 +757,7 @@
                 @endphp
                 <div class="col-md-12 col-12 fw-bold">Amenities or Property Features:
                   @foreach ($amenities as $item)
-                    @if ($item !== 'Other')
-                      <span class="badge bg-secondary removeBold"> {{ $item }}</span>
-                    @endif
-                    
-                    @if ($item == 'Other' && isset($auction->get->otherAmenities))
-                      <span class="d-inline-block removeBold  badge bg-secondary"> {{ $auction->get->otherAmenities }}</span>
-                    @endif
+                    <span class="badge bg-secondary removeBold">{{ $item !== 'Other' ? $item : ($auction->get->otherAmenities ?? '') }}</span>
                   @endforeach
                 </div>
               @endif
@@ -818,42 +798,21 @@
               @if(isset($auction->get->interiorFeatures) && is_Array($auction->get->interiorFeatures))
                   <div class="col-md-12 fw-bold">Interior Features:
                       @foreach (json_decode($auction->get->interiorFeatures) as $item)
-                          <span class="removeBold badge bg-secondary">
-                              @if($item !='Other')
-                              {{ $item }} 
-                              @endif
-                              @if($item == 'Other')
-                                  {{ $auction->get->interiorFeatureOther }}
-                              @endif
-                          </span>
+                          <span class="removeBold badge bg-secondary">{{ $item !== 'Other' ? $item : $auction->get->interiorFeatureOther }}</span>
                       @endforeach
                   </div>
               @endif
               @if(isset($auction->get->additional_rooms) && is_Array($auction->get->additional_rooms))
                   <div class="col-md-12 fw-bold">Additional Rooms:
                       @foreach (json_decode(@$auction->get->additional_rooms) as $item)
-                          <span class="removeBold badge bg-secondary">
-                              @if($item !='Other')
-                              {{ $item }} 
-                              @endif
-                              @if($item == 'Other')
-                                  {{ $auction->get->roomOther }}
-                              @endif
-                          </span>
+                          <span class="removeBold badge bg-secondary">{{ $item !== 'Other' ? $item : $auction->get->roomOther }}</span>
                       @endforeach
                   </div>
               @endif
               @if(gettype(json_decode(@$auction->get->laundry)) == 'array')
                   <div class="col-md-12 fw-bold">Laundry Features:
                       @foreach (json_decode(@$auction->get->laundry) as $item)
-                          <span class="removeBold badge bg-secondary">
-                              @if($item !='Other')
-                              {{ $item }} 
-                              @endif
-                              @if($item == 'Other')
-                                  {{ $auction->get->laundryOther }}
-                              @endif
-                          </span>
+                          <span class="removeBold badge bg-secondary">{{ $item !== 'Other' ? $item : $auction->get->laundryOther }}</span>
                       @endforeach
                   </div>
               @endif
@@ -861,56 +820,28 @@
               @if(gettype(json_decode(@$auction->get->floor_covering)) == 'array')
                   <div class="col-md-12 fw-bold">Floor Covering:
                       @foreach (json_decode(@$auction->get->floor_covering) as $item)
-                          <span class="removeBold badge bg-secondary">
-                              @if($item !='Other')
-                              {{ $item }} 
-                              @endif
-                              @if($item == 'Other')
-                                  {{ $auction->get->floorConvringOther }}
-                              @endif
-                          </span>
+                          <span class="removeBold badge bg-secondary">{{ $item !== 'Other' ? $item : $auction->get->floorConvringOther }}</span>
                       @endforeach
                   </div>
               @endif
               @if(gettype(json_decode(@$auction->get->utilities)) == 'array')
                   <div class="col-md-12 fw-bold">Utilities:
                       @foreach (json_decode(@$auction->get->utilities) as $item)
-                          <span class="removeBold badge bg-secondary">
-                              @if($item !='Other')
-                              {{ $item }} 
-                              @endif
-                              @if($item == 'Other')
-                                  {{ $auction->get->otherUtilities }}
-                              @endif
-                          </span>
+                          <span class="removeBold badge bg-secondary">{{ $item !== 'Other' ? $item : $auction->get->otherUtilities }}</span>
                       @endforeach
                   </div>
               @endif
               @if(isset($auction->get->sewer) && gettype(json_decode(@$auction->get->sewer)) == 'array')
                   <div class="col-md-12 fw-bold">Sewer:
                       @foreach (json_decode(@$auction->get->sewer) as $item)
-                          <span class="removeBold badge bg-secondary">
-                              @if($item != 'Other')
-                              {{ $item }} 
-                              @endif
-                              @if($item == 'Other' && isset($auction->get->otherSewer))
-                                  {{ $auction->get->otherSewer }} 
-                              @endif
-                          </span>
+                          <span class="removeBold badge bg-secondary">{{ $item !== 'Other' ? $item : ($auction->get->otherSewer ?? '') }}</span>
                       @endforeach
                   </div>
               @endif
               @if(gettype(json_decode(@$auction->get->water)) == 'array')
                   <div class="col-md-12 fw-bold">Water:
                       @foreach (json_decode(@$auction->get->water) as $item)
-                          <span class="removeBold badge bg-secondary">
-                              @if($item !='Other')
-                              {{ $item }} 
-                              @endif
-                              @if($item == 'Other')
-                                  {{ $auction->get->otherWater }}
-                              @endif
-                          </span>
+                          <span class="removeBold badge bg-secondary">{{ $item !== 'Other' ? $item : $auction->get->otherWater }}</span>
                       @endforeach
                   </div>
               @endif
@@ -918,28 +849,14 @@
               @if(gettype(json_decode(@$auction->get->airConditioning)) == 'array')
                   <div class="col-md-12 fw-bold">Air Conditioning:
                       @foreach (json_decode(@$auction->get->airConditioning) as $item)
-                          <span class="removeBold badge bg-secondary">
-                              @if($item !='Other')
-                              {{ $item }} 
-                              @endif
-                              @if($item == 'Other')
-                                  {{ $auction->get->otherAirCondition }}
-                              @endif
-                          </span>
+                          <span class="removeBold badge bg-secondary">{{ $item !== 'Other' ? $item : $auction->get->otherAirCondition }}</span>
                       @endforeach
                   </div>
               @endif
               @if(gettype(json_decode(@$auction->get->heatingFuel)) == 'array')
                   <div class="col-md-12 fw-bold">Heating and Fuel:
                       @foreach (json_decode(@$auction->get->heatingFuel) as $item)
-                          <span class="removeBold badge bg-secondary">
-                              @if($item !='Other')
-                              {{ $item }} 
-                              @endif
-                              @if($item == 'Other')
-                                  {{ $auction->get->otherFuel }}
-                              @endif
-                          </span>
+                          <span class="removeBold badge bg-secondary">{{ $item !== 'Other' ? $item : $auction->get->otherFuel }}</span>
                       @endforeach
                   </div>
               @endif
@@ -1005,56 +922,28 @@
               @if(gettype(json_decode(@$auction->get->foundation)) == 'array')
                   <div class="col-md-12 fw-bold">Foundation:
                       @foreach (json_decode(@$auction->get->foundation) as $item)
-                          <span class="removeBold badge bg-secondary">
-                              @if($item !='Other')
-                              {{ $item }} 
-                              @endif
-                              @if($item == 'Other')
-                                  {{ $auction->get->foundationOther }}
-                              @endif
-                          </span>
+                          <span class="removeBold badge bg-secondary">{{ $item !== 'Other' ? $item : $auction->get->foundationOther }}</span>
                       @endforeach
                   </div>
               @endif
               @if(gettype(json_decode(@$auction->get->exterior_construction)) == 'array')
                   <div class="col-md-12 fw-bold">Exterior Construction:
                       @foreach (json_decode(@$auction->get->exterior_construction) as $item)
-                          <span class="removeBold badge bg-secondary">
-                              @if($item !='Other')
-                              {{ $item }} 
-                              @endif
-                              @if($item == 'Other')
-                                  {{ $auction->get->exteriorOther }}
-                              @endif
-                          </span>
+                          <span class="removeBold badge bg-secondary">{{ $item !== 'Other' ? $item : $auction->get->exteriorOther }}</span>
                       @endforeach
                   </div>
               @endif
               @if(isset($auction->get->buildingFeatures) && gettype(json_decode(@$auction->get->buildingFeatures)) == 'array')
                   <div class="col-md-12 fw-bold">Building Features:
                       @foreach (json_decode(@$auction->get->buildingFeatures) as $item)
-                          <span class="removeBold badge bg-secondary">
-                              @if($item !='Other')
-                              {{ $item }} 
-                              @endif
-                              @if($item == 'Other')
-                                  {{ $auction->get->buildingFeaturesOther }}
-                              @endif
-                          </span>
+                          <span class="removeBold badge bg-secondary">{{ $item !== 'Other' ? $item : $auction->get->buildingFeaturesOther }}</span>
                       @endforeach
                   </div>
               @endif
               @if(isset($auction->get->road_frontage) && is_Array($auction->get->road_frontage))
                   <div class="col-md-12 fw-bold">Road Frontage:
                       @foreach (json_decode(@$auction->get->road_frontage) as $item)
-                          <span class="removeBold badge bg-secondary">
-                              @if($item !='Other')
-                              {{ $item }} 
-                              @endif
-                              @if($item == 'Other')
-                                  {{ $auction->get->roadFrontageOther }}
-                              @endif
-                          </span>
+                          <span class="removeBold badge bg-secondary">{{ $item !== 'Other' ? $item : $auction->get->roadFrontageOther }}</span>
                       @endforeach
                   </div>
               @endif
@@ -1075,14 +964,7 @@
               @if(gettype(json_decode(@$auction->get->roof)) == 'array')
               <div class="col-md-12 fw-bold">Roof:
                 @foreach (json_decode(@$auction->get->roof) as $item)
-                <span class="removeBold badge bg-secondary">
-                  @if($item !='Other')
-                  {{ $item }} 
-                  @endif
-                  @if($item == 'Other')
-                  {{ $auction->get->roofCementOther }}
-                  @endif
-                </span>
+                  <span class="removeBold badge bg-secondary">{{ $item !== 'Other' ? $item : $auction->get->roofCementOther }}</span>
                 @endforeach
               </div>
               @endif
@@ -1106,13 +988,7 @@
               @if(gettype(json_decode(@$auction->get->road_surface_type)) == 'array')
                   <div class="col-md-12 fw-bold">Road Surface Type:
                       @foreach (json_decode(@$auction->get->road_surface_type) as $item)
-                          <span class="removeBold badge bg-secondary">
-                              @if($item !== 'Other')
-                                {{ $item }} 
-                              @else
-                                {{ $auction->get->roadSurfaceOther }}
-                              @endif
-                          </span>
+                          <span class="removeBold badge bg-secondary">{{ $item !== 'Other' ? $item : $auction->get->roadSurfaceOther }}</span>
                       @endforeach
                   </div>
               @endif

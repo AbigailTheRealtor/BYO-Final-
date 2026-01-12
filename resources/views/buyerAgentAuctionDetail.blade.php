@@ -403,11 +403,12 @@
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
                                             Acceptable Property Styles:
                                             @foreach (@$auction->get->property_items as $item)
-                                                <span class="removeBold badge bg-secondary">{{ $item }}</span>
+                                                @if ($item != 'Other')
+                                                    <span class="removeBold badge bg-secondary">{{ $item }}</span>
+                                                @elseif (@$auction->get->other_property_items)
+                                                    <span class="removeBold badge bg-secondary">{{ @$auction->get->other_property_items }}</span>
+                                                @endif
                                             @endforeach
-                                            @if (@$auction->get->other_property_items)
-                                                <span class="removeBold badge bg-secondary">{{ @$auction->get->other_property_items }}</span>
-                                            @endif
                                         </div>
                                     @endif
 
@@ -415,8 +416,9 @@
                                     @if (@$auction->get->business_type != null)
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
                                             Business Type:
-                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->business_type }}</span>
-                                            @if (@$auction->get->other_business_type)
+                                            @if (@$auction->get->business_type != 'Other')
+                                                <span class="removeBold badge bg-secondary">{{ @$auction->get->business_type }}</span>
+                                            @elseif (@$auction->get->other_business_type)
                                                 <span class="removeBold badge bg-secondary">{{ @$auction->get->other_business_type }}</span>
                                             @endif
                                         </div>
@@ -427,8 +429,9 @@
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
                                             Acceptable Property Conditions:
                                             @foreach (@$auction->get->condition_prop_buyer as $item)
-                                                <span class="removeBold badge bg-secondary">{{ $item }}</span>
-                                                @if ($item == 'Other' && @$auction->get->other_property_condition)
+                                                @if ($item != 'Other')
+                                                    <span class="removeBold badge bg-secondary">{{ $item }}</span>
+                                                @elseif (@$auction->get->other_property_condition)
                                                     <span class="removeBold badge bg-secondary">{{ @$auction->get->other_property_condition }}</span>
                                                 @endif
                                             @endforeach
@@ -774,8 +777,9 @@
                                 @endphp
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Offered Financing/Currency:
-                                    <span class="removeBold badge bg-secondary">{{ $displayFinancing }}</span>
-                                    @if (@$auction->get->other_financing)
+                                    @if ($displayFinancing != 'Other')
+                                        <span class="removeBold badge bg-secondary">{{ $displayFinancing }}</span>
+                                    @elseif (@$auction->get->other_financing)
                                         <span class="removeBold badge bg-secondary">{{ $displayOtherFinancing }}</span>
                                     @endif
                                 </div>

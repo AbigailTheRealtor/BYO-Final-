@@ -403,13 +403,13 @@
                                 Property Condition:
                                 @if (gettype(@$auction->get->condition_prop_buyer) == 'array')
                                     @foreach (array_filter(@$auction->get->condition_prop_buyer) as $item)
-                                        <span class="removeBold"> {{ $item }}</span>
-                                        @if ($item == 'Other')
+                                        @if ($item != 'Other')
+                                            <span class="removeBold"> {{ $item }}</span>
+                                        @elseif (@$auction->get->other_property_condition)
                                             <span class="removeBold"> {{ @$auction->get->other_property_condition }}</span>
                                         @endif
                                     @endforeach
                                 @endif
-
                             </div>
 {{-- Leasing Space field removed - not applicable for seller listings --}}
                             @if (@$auction->get->bedrooms != null)
