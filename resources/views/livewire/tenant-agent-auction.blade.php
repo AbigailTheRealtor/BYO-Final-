@@ -4162,8 +4162,27 @@ $lease_types = [
                 invalidFields.forEach((f, i) => {
                     console.log('  Field ' + (i+1) + ': Tab ' + f.tab + ', Name: "' + f.field + '", Value: "' + f.value + '", Visible: ' + f.visible);
                 });
+                
+                // Show visible debug message near submit button
+                let debugEl = document.getElementById('validation-debug');
+                if (!debugEl) {
+                    debugEl = document.createElement('div');
+                    debugEl.id = 'validation-debug';
+                    debugEl.style.cssText = 'background: #fff3cd; border: 1px solid #ffc107; padding: 10px; margin: 10px 0; border-radius: 5px; font-size: 13px;';
+                    const submitBtn = document.getElementById('save-button');
+                    if (submitBtn && submitBtn.parentElement) {
+                        submitBtn.parentElement.insertBefore(debugEl, submitBtn);
+                    }
+                }
+                debugEl.innerHTML = '<strong>Missing required fields:</strong><br>' + 
+                    invalidFields.map(f => '- Tab ' + f.tab + ': ' + f.field).join('<br>');
+                
                 return false;
             }
+            
+            // Clear debug message when all valid
+            const debugEl = document.getElementById('validation-debug');
+            if (debugEl) debugEl.remove();
             console.log('[Submit Debug] All fields valid - submit enabled');
             return true;
         }
