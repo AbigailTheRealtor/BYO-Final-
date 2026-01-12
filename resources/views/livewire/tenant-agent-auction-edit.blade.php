@@ -3442,12 +3442,15 @@
                     });
                 }
 
-                // Validate cities array - SKIP for buyer (cities optional for buyer)
+                // Validation matrix: Cities optional for buyer/tenant, Counties required for all
+                const citiesOptionalFor = ['buyer', 'tenant'];
+                
+                // Validate cities array - SKIP for buyer and tenant (cities optional)
                 const citiesContainer = currentTabContent.querySelector('.cities-container');
                 if (citiesContainer) {
                     const cityBadges = citiesContainer.querySelectorAll('.badge');
-                    // For buyer user type, cities are OPTIONAL - skip validation
-                    if (CURRENT_USER_TYPE !== 'buyer') {
+                    // For buyer/tenant user types, cities are OPTIONAL - skip validation
+                    if (!citiesOptionalFor.includes(CURRENT_USER_TYPE)) {
                         if (!cityBadges || cityBadges.length === 0) {
                             isValid = false;
                             const existingError = citiesContainer.parentNode.querySelector('.error');
@@ -3465,7 +3468,7 @@
                             }
                         }
                     } else {
-                        // For buyer, always remove any existing city error
+                        // For buyer/tenant, always remove any existing city error
                         const existingError = citiesContainer.parentNode.querySelector('.error');
                         if (existingError && existingError.textContent.includes('city')) {
                             existingError.remove();
@@ -3473,7 +3476,7 @@
                     }
                 }
 
-                // Validate counties array (your existing code)
+                // Validate counties array - REQUIRED for ALL user types
                 const countiesContainer = currentTabContent.querySelector('.counties-container');
                 if (countiesContainer) {
                     const countyBadges = countiesContainer.querySelectorAll('.badge');
@@ -3483,7 +3486,7 @@
                         if (!existingError) {
                             const countiesError = document.createElement('div');
                             countiesError.className = 'error';
-                            countiesError.textContent = 'At least one county is required.';
+                            countiesError.textContent = 'This field is required.';
                             countiesContainer.parentNode.insertBefore(countiesError, countiesContainer
                                 .nextSibling);
                         }
@@ -3622,12 +3625,15 @@
                     });
                 }
 
-                // Validate cities array - SKIP for buyer (cities optional for buyer)
+                // Validation matrix: Cities optional for buyer/tenant, Counties required for all
+                const citiesOptionalFor = ['buyer', 'tenant'];
+                
+                // Validate cities array - SKIP for buyer and tenant (cities optional)
                 const citiesContainer = currentTabContent.querySelector('.cities-container');
                 if (citiesContainer) {
                     const cityBadges = citiesContainer.querySelectorAll('.badge');
-                    // For buyer user type, cities are OPTIONAL - skip validation
-                    if (CURRENT_USER_TYPE !== 'buyer') {
+                    // For buyer/tenant user types, cities are OPTIONAL - skip validation
+                    if (!citiesOptionalFor.includes(CURRENT_USER_TYPE)) {
                         if (!cityBadges || cityBadges.length === 0) {
                             isValid = false;
                             const existingError = citiesContainer.parentNode.querySelector('.error');
@@ -3645,7 +3651,7 @@
                             }
                         }
                     } else {
-                        // For buyer, always remove any existing city error
+                        // For buyer/tenant, always remove any existing city error
                         const existingError = citiesContainer.parentNode.querySelector('.error');
                         if (existingError && existingError.textContent.includes('city')) {
                             existingError.remove();
@@ -3653,7 +3659,7 @@
                     }
                 }
 
-                // Validate counties array (your existing code)
+                // Validate counties array - REQUIRED for ALL user types
                 const countiesContainer = currentTabContent.querySelector('.counties-container');
                 if (countiesContainer) {
                     const countyBadges = countiesContainer.querySelectorAll('.badge');
@@ -3663,7 +3669,7 @@
                         if (!existingError) {
                             const countiesError = document.createElement('div');
                             countiesError.className = 'error';
-                            countiesError.textContent = 'At least one county is required.';
+                            countiesError.textContent = 'This field is required.';
                             countiesContainer.parentNode.insertBefore(countiesError, countiesContainer
                                 .nextSibling);
                         }

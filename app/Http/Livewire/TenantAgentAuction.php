@@ -1617,8 +1617,8 @@ class TenantAgentAuction extends Component
             $this->newCity = '';
         }
 
-        // Cities are OPTIONAL for buyer user type, required for others
-        if ($this->user_type !== 'buyer') {
+        // Cities are OPTIONAL for buyer and tenant, required for seller/landlord
+        if (!in_array($this->user_type, ['buyer', 'tenant'])) {
             $this->validate(['cities' => 'required|array|min:1']);
         }
     }
@@ -1628,8 +1628,8 @@ class TenantAgentAuction extends Component
         unset($this->cities[$index]);
         $this->cities = array_values($this->cities);
         
-        // Cities are OPTIONAL for buyer user type, required for others
-        if ($this->user_type !== 'buyer') {
+        // Cities are OPTIONAL for buyer and tenant, required for seller/landlord
+        if (!in_array($this->user_type, ['buyer', 'tenant'])) {
             $this->validate(['cities' => 'required|array|min:1']);
         }
     }
@@ -1644,6 +1644,7 @@ class TenantAgentAuction extends Component
             $this->newCounty = '';
         }
 
+        // Counties are REQUIRED for all user types
         $this->validate(['counties' => 'required|array|min:1']);
     }
 
@@ -1668,6 +1669,8 @@ class TenantAgentAuction extends Component
     {
         unset($this->counties[$index]);
         $this->counties = array_values($this->counties);
+        
+        // Counties are REQUIRED for all user types
         $this->validate(['counties' => 'required|array|min:1']);
     }
 
