@@ -1462,12 +1462,13 @@
                                     $pct = $fmtPercent(@$auction->get->purchase_fee_percentage);
                                     $purchaseFeeValue = $joinParts([$pct, $basisText('Total Purchase Price')]);
                                 } elseif ($purchaseFeeType === 'Percentage of the Total Purchase Price + Flat Fee') {
-                                    $pct = $fmtPercent(@$auction->get->purchase_fee_percentage_combo);
-                                    $flat = $fmtMoney(@$auction->get->purchase_fee_flat_combo);
-                                    $purchaseFeeValue = $joinParts([$pct, $flat]);
-                                    if ($purchaseFeeValue) {
-                                        $purchaseFeeValue .= ' of Total Purchase Price';
-                                    }
+                                    $pctPart = @$auction->get->purchase_fee_percentage_combo 
+                                        ? $fmtPercent(@$auction->get->purchase_fee_percentage_combo) . ' of Total Purchase Price'
+                                        : null;
+                                    $flatPart = @$auction->get->purchase_fee_flat_combo
+                                        ? $fmtMoney(@$auction->get->purchase_fee_flat_combo) . ' flat'
+                                        : null;
+                                    $purchaseFeeValue = $pctPart && $flatPart ? "$pctPart + $flatPart" : ($pctPart ?? $flatPart);
                                 } elseif ($purchaseFeeType === 'other' && @$auction->get->purchase_fee_other) {
                                     $purchaseFeeValue = @$auction->get->purchase_fee_other;
                                 }
@@ -2313,12 +2314,13 @@
                     $pct = $fmtPercent(data_get($bid, 'get.purchase_fee_percentage'));
                     $bidPurchaseFeeValue = $joinParts([$pct, $basisText('Total Purchase Price')]);
                 } elseif ($bidPurchaseFeeType === 'Percentage of the Total Purchase Price + Flat Fee') {
-                    $pct = $fmtPercent(data_get($bid, 'get.purchase_fee_percentage_combo'));
-                    $flat = $fmtMoney(data_get($bid, 'get.purchase_fee_flat_combo'));
-                    $bidPurchaseFeeValue = $joinParts([$pct, $flat]);
-                    if ($bidPurchaseFeeValue) {
-                        $bidPurchaseFeeValue .= ' of Total Purchase Price';
-                    }
+                    $pctPart = data_get($bid, 'get.purchase_fee_percentage_combo') 
+                        ? $fmtPercent(data_get($bid, 'get.purchase_fee_percentage_combo')) . ' of Total Purchase Price'
+                        : null;
+                    $flatPart = data_get($bid, 'get.purchase_fee_flat_combo')
+                        ? $fmtMoney(data_get($bid, 'get.purchase_fee_flat_combo')) . ' flat'
+                        : null;
+                    $bidPurchaseFeeValue = $pctPart && $flatPart ? "$pctPart + $flatPart" : ($pctPart ?? $flatPart);
                 } elseif ($bidPurchaseFeeType === 'other' && data_get($bid, 'get.purchase_fee_other')) {
                     $bidPurchaseFeeValue = data_get($bid, 'get.purchase_fee_other');
                 }
@@ -3321,14 +3323,13 @@
                 } elseif ($cpType === 'Percentage of the Total Purchase Price' && !empty($allMeta['purchase_fee_percentage'])) {
                     $counterPurchaseValue = rtrim(rtrim(number_format($allMeta['purchase_fee_percentage'], 2), '0'), '.') . '% of Total Purchase Price';
                 } elseif ($cpType === 'Percentage of the Total Purchase Price + Flat Fee') {
-                    $parts = [];
-                    if (!empty($allMeta['purchase_fee_percentage_combo'])) {
-                        $parts[] = rtrim(rtrim(number_format($allMeta['purchase_fee_percentage_combo'], 2), '0'), '.') . '%';
-                    }
-                    if (!empty($allMeta['purchase_fee_flat_combo'])) {
-                        $parts[] = '$' . number_format($allMeta['purchase_fee_flat_combo'], 2);
-                    }
-                    $counterPurchaseValue = !empty($parts) ? implode(' + ', $parts) . ' of Total Purchase Price' : null;
+                    $pctPart = !empty($allMeta['purchase_fee_percentage_combo']) 
+                        ? rtrim(rtrim(number_format($allMeta['purchase_fee_percentage_combo'], 2), '0'), '.') . '% of Total Purchase Price'
+                        : null;
+                    $flatPart = !empty($allMeta['purchase_fee_flat_combo'])
+                        ? '$' . number_format($allMeta['purchase_fee_flat_combo'], 2) . ' flat'
+                        : null;
+                    $counterPurchaseValue = $pctPart && $flatPart ? "$pctPart + $flatPart" : ($pctPart ?? $flatPart);
                 } elseif ($cpType === 'other' && !empty($allMeta['purchase_fee_other'])) {
                     $counterPurchaseValue = $allMeta['purchase_fee_other'];
                 }
