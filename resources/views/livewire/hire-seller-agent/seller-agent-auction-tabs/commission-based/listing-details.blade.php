@@ -995,5 +995,5 @@
             attachAuctionDropdownListener1();
         });
 
-    });
+    })();
 </script>
