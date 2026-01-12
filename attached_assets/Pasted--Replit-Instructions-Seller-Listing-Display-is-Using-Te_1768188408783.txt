@@ -1,0 +1,143 @@
+✅ Replit Instructions — Seller Listing Display is Using Tenant Verbiage (Must Use Seller Verbiage) + Safeguards
+Issue
+
+The Hire a Seller’s Agent listing is submitting, but the live listing display is showing Tenant verbiage in the Property Details and Broker Compensation sections.
+
+Examples of Tenant verbiage currently showing on a Seller listing:
+
+“Acceptable Property Styles”
+
+“Acceptable Leasing Space”
+
+“Minimum Bedrooms Needed”
+
+“Minimum Bathrooms Needed”
+
+“Acceptable Property Conditions”
+
+“Tenant’s Broker Commission Structure…”
+
+“Tenant Agency Agreement Timeframe…”
+
+This is incorrect. A Seller listing must use Seller verbiage (property description language), not Tenant “search criteria” language.
+
+1) SAFEGUARDS (Required)
+
+Do NOT delete or rename database columns.
+
+Do NOT change Tenant or Buyer pages while fixing Seller display.
+
+Fix must be isolated to the Seller listing display template / label mapping only.
+
+Add log proof:
+
+[SELLER_LISTING_VERBIAGE_FIX] listing_id=__ template=__ label_map=__ listing_type=seller
+
+2) REQUIRED FIX (What to Change)
+A) Property Details section — Seller must NOT show Tenant verbiage
+Current wrong label pattern (Tenant verbiage)
+
+“Acceptable ____”
+
+“Minimum ____ Needed”
+
+“Needed: Yes/No” (when it reads like search criteria)
+
+Correct Seller label pattern (Seller verbiage)
+
+Seller listing labels must describe the property, not what a Tenant is looking for.
+
+Replace Tenant-style labels with Seller-style labels such as:
+
+Property Style: (instead of “Acceptable Property Styles”)
+
+Property Condition: (instead of “Acceptable Property Conditions”)
+
+Bedrooms: (instead of “Minimum Bedrooms Needed”)
+
+Bathrooms: (instead of “Minimum Bathrooms Needed”)
+
+Parking / Garage / Carport: (describe the property’s features, not “needed”)
+
+Pool: (describe whether property has pool, not “Pool Needed”)
+
+View: (describe view, not “View Preference Needed”)
+
+Amenities / Features: (instead of “Non-Negotiable Amenities Needed”)
+
+✅ Rule: No “Acceptable” or “Minimum Needed” wording on Seller listings.
+
+B) Broker Compensation section — remove “Tenant” words from Seller listing
+
+Seller listing Broker Compensation is currently using Tenant wording.
+
+Current wrong (Tenant verbiage)
+
+“Tenant’s Broker Commission Structure…”
+
+“Tenant Agency Agreement Timeframe…”
+
+Required Seller verbiage
+
+Must display Seller wording such as:
+
+Seller’s Broker Commission Structure:
+
+Buyer’s Broker Compensation: (if applicable)
+
+Protection Period Timeframe (Days):
+
+Early Termination Fee:
+
+Seller Agency Agreement Timeframe:
+
+Acceptable Brokerage Relationship:
+
+✅ Rule: No “Tenant” wording anywhere inside Seller Broker Compensation.
+
+3) IMPLEMENTATION REQUIREMENTS (How to Fix It Without Breaking Anything)
+Step 1 — Find where labels are coming from
+
+Search the codebase for these exact strings:
+
+Acceptable Property Styles
+
+Minimum Bedrooms Needed
+
+Tenant’s Broker
+
+Tenant Agency Agreement Timeframe
+
+Locate the Blade/Livewire view partial printing them.
+
+Step 2 — Add listing_type branching (required)
+
+The display template must switch labels based on listing type.
+
+Example logic:
+
+if listing_type === 'seller' → use Seller label map
+
+else if tenant/buyer/landlord → use their own label maps
+
+Do not do global text replacements.
+This must be role-specific to avoid breaking Tenant/Buyer displays.
+
+Step 3 — Create a dedicated Seller label map
+
+Create a Seller label map file/class (whatever pattern you already use) that defines Seller labels.
+
+Then ensure the Seller listing view uses that Seller map.
+
+Step 4 — Confirm Seller listing pulls Seller fields
+
+Verify the Seller listing display is not pulling from Tenant criteria objects/fields.
+It must pull from Seller listing fields/model.
+
+4) ACCEPTANCE TEST (Must Pass)
+
+✅ Seller listing page shows Seller verbiage only
+✅ No “Acceptable” / “Minimum Needed” labels on Seller
+✅ No “Tenant” wording inside Seller Broker Compensation
+✅ Tenant/Buyer/Landlord listing pages remain unchanged
+✅ Logging proof added

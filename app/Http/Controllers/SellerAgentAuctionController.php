@@ -412,11 +412,15 @@ class SellerAgentAuctionController extends Controller
     public function viewDetail($id, Request $request)
     {
         $data = SellerAgentAuction::with('meta')->find($id);
-        // dd($data->get);
-
-        // Check the values of $start and $end for debugging
-
+        
         $auction = SellerAgentAuction::find($id);
+
+        \Log::info('[SELLER_LISTING_VERBIAGE_FIX]', [
+            'listing_id' => $id,
+            'template' => 'hire_seller_agent.view',
+            'label_map' => 'seller_labels',
+            'listing_type' => 'seller'
+        ]);
 
         $page_data['title'] = $auction->address;
         $counties = County::all();
