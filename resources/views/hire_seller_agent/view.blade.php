@@ -256,8 +256,8 @@
                             @endif
 
                             @if (@$auction->get->county != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i> Need a
-                                    tenant’s agent for a property:
+                                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i> Property
+                                    Location:
                                     @if (gettype(@$auction->get->cities) == 'array')
                                         @foreach (@$auction->get->cities as $item)
                                             <span class="removeBold">{{ $item }}</span>
@@ -285,14 +285,7 @@
                                 @endif
 
                             </div>
-                            @if (@$auction->get->condition_prop != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
-                                    Leasing Space:
-                                    <span class="removeBold">{{ $auction->get->leasing_space }}
-
-                                    </span>
-                                </div>
-                            @endif
+{{-- Leasing Space field removed - not applicable for seller listings --}}
                             @if (@$auction->get->bedrooms != null)
                                 <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
                                     Bedrooms:
@@ -454,29 +447,27 @@
                                     @endif
                                 </div>
                             @endif
+                            @if (@$auction->get->leasing_55_plus != null && @$auction->get->leasing_55_plus != '')
                             <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
-                                EEligibility/Interest in Leasing in 55-and-Over Communities:
+                                Age-Restricted Community:
                                 <span class="removeBold">
-                                    {{ @$auction->get->leasing_55_plus != '' ? @$auction->get->leasing_55_plus : '' }}</span>
+                                    {{ @$auction->get->leasing_55_plus }}</span>
                             </div>
+                            @endif
 
-                            @if (@$auction->get->non_negotiable_amenities != null || $auction->get->other_non_negotiable_amenities != null)
-
+                            @if (@$auction->get->non_negotiable_amenities != null || @$auction->get->other_non_negotiable_amenities != null)
                                 <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
-                                    Non-Negotiable
-                                    Amenities and Property Features
-
+                                    Amenities and Property Features:
                                     @if (gettype(@$auction->get->non_negotiable_amenities) == 'array')
                                         @foreach (@$auction->get->non_negotiable_amenities as $item)
                                             <span class="removeBold badge bg-secondary">
                                                 {{ @$item }}
                                             </span>
                                         @endforeach
-                                    @elseif(@$auction->get->other_non_negotiable_amenities)
-                                        <span
-                                            class="removeBold">({{ @$auction->get->other_non_negotiable_amenities }})</span>
                                     @endif
-
+                                    @if (@$auction->get->other_non_negotiable_amenities)
+                                        <span class="removeBold">({{ @$auction->get->other_non_negotiable_amenities }})</span>
+                                    @endif
                                 </div>
                             @endif
 
