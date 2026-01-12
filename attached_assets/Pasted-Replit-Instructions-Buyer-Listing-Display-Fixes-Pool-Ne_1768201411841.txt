@@ -1,0 +1,154 @@
+Replit Instructions — Buyer Listing Display Fixes (Pool Needed + “Other” Cleanup + $ Placement)
+Applies To
+
+Hire a Buyer’s Agent → Actual Listing Display
+
+Also apply to: Agent view, Bid/Counter views, and PDF/Accepted Summary only if they reuse the same display partial/component
+
+1) Fix “Pool Needed” display to match Tenant format
+Problem
+
+On Buyer listing display, Pool Needed should render like Tenant does:
+
+Pool Needed: Yes (Private, Community)
+
+…but Buyer is not consistently showing the selected sub-options inline and/or format differs.
+
+Expected Behavior
+
+If Pool Needed = Yes:
+
+Display as a single line:
+Pool Needed: Yes (Private, Community)
+
+Only show the parenthetical list if sub-options exist.
+
+If Pool Needed = No:
+Pool Needed: No
+(no parentheses)
+
+Implementation Notes
+
+Use the same formatter/renderer logic used by Hire a Tenant Agent for Pool Needed.
+
+Treat Pool sub-options as an array and render:
+Yes (Option1, Option2, ...)
+
+Ensure commas and spacing match the Tenant display.
+
+2) Remove “Other” label from multi-select display values (show answer only)
+Fields
+
+View Preference Needed
+
+Non-Negotiable Amenities
+
+Property Features
+
+Problem
+
+When a user selects Other and enters custom text, the listing display shows the word “Other” as a visible item in the answers.
+
+Expected Behavior
+
+On the listing display:
+
+Do NOT show the literal word “Other” as a selectable chip/value.
+
+Instead:
+
+show the user’s custom “Other” text (if provided)
+
+plus any other selected options
+
+Example
+
+If selected: Water View, Other + custom text: “Sunset-facing balcony”
+✅ Display should show:
+View Preference Needed: Water View, Sunset-facing balcony
+❌ Not: Water View, Other, Sunset-facing balcony
+
+Implementation Notes (safe + consistent)
+
+For each affected field:
+
+Start with the selected options array.
+
+Filter out the literal string "Other" from the displayed list.
+
+If a custom Other text field exists and is not empty, append that text to the display list.
+
+3) Fix currency formatting: “$” must appear BEFORE the amount
+Problem
+
+In Buyer Purchasing Terms, some currency displays show the dollar sign after the number:
+
+Assignment Fee to Broker: 5,000$
+
+Expected Behavior
+
+All currency displays must be formatted like:
+
+Assignment Fee to Broker: $5,000.00
+(or if you don’t show cents in this view: $5,000 — but be consistent with the rest of the platform)
+
+Implementation Notes
+
+Do not concatenate strings like amount + "$".
+
+Use a shared helper/formatter for money fields:
+
+$ prefix
+
+thousands separators
+
+optional 2 decimals (match Tenant/Seller conventions)
+
+Apply this fix to:
+
+Assignment Fee to Broker (and any other Buyer fields that are currency-based)
+
+SAFEGUARDS (MUST FOLLOW)
+
+DO NOT:
+
+rename database columns or Livewire keys
+
+modify form fields, tooltips, placeholders, or validations
+
+change what gets saved to the DB
+
+delete “Other” support (users must still be able to enter custom text)
+
+change Tenant logic (Buyer should match Tenant, not the reverse)
+
+ONLY:
+
+adjust display formatting/rendering for Buyer listing output
+
+reuse the same formatter logic as Tenant where applicable
+
+filter “Other” from displayed option lists and show only the custom text
+
+QA CHECKLIST (Replit must verify before closing)
+Pool Needed
+
+Create Buyer listing → Pool Needed = Yes → check Private + Community
+✅ Listing display: Pool Needed: Yes (Private, Community)
+
+Pool Needed = No
+✅ Listing display: Pool Needed: No (no parentheses)
+
+“Other” Removal
+
+Select View Preference Needed: Water View + Other (“Sunset balcony”)
+✅ Display shows: Water View, Sunset balcony
+❌ “Other” does NOT appear
+
+Same for Non-Negotiable Amenities and Property Features.
+
+Currency
+
+Enter Assignment Fee to Broker: 5000
+✅ Display: $5,000 or $5,000.00
+❌ Never: 5,000$

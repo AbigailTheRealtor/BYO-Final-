@@ -545,15 +545,13 @@
                                     ->implode(', ');
                             @endphp
 
-                            @if (optional($auction->get)->pool_needed === 'Yes' && $poolTypeList !== '')
+                            @if (optional($auction->get)->pool_needed === 'Yes')
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    
                                     Pool Needed:
-                                    <span class="removeBold">{{ $poolTypeList }}</span>
+                                    <span class="removeBold">Yes{{ $poolTypeList !== '' ? ' (' . $poolTypeList . ')' : '' }}</span>
                                 </div>
                             @elseif (in_array(optional($auction->get)->pool_needed, ['No', 'Optional'], true))
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    
                                     Pool Needed:
                                     <span class="removeBold">{{ optional($auction->get)->pool_needed }}</span>
                                 </div>
@@ -564,7 +562,9 @@
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 View Preference Needed:
                                 @foreach (@$auction->get->view_preference as $item)
-                                    <span class="removeBold badge bg-secondary">{{ $item }}</span>
+                                    @if ($item != 'Other')
+                                        <span class="removeBold badge bg-secondary">{{ $item }}</span>
+                                    @endif
                                 @endforeach
                                 @if (@$auction->get->other_preferences)
                                     <span class="removeBold badge bg-secondary">{{ @$auction->get->other_preferences }}</span>
@@ -585,7 +585,9 @@
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Non-Negotiable Amenities and Property Features:
                                 @foreach (@$auction->get->non_negotiable_amenities as $item)
-                                    <span class="removeBold badge bg-secondary">{{ $item }}</span>
+                                    @if ($item != 'Other')
+                                        <span class="removeBold badge bg-secondary">{{ $item }}</span>
+                                    @endif
                                 @endforeach
                                 @if (@$auction->get->other_non_negotiable_amenities)
                                     <span class="removeBold badge bg-secondary">{{ @$auction->get->other_non_negotiable_amenities }}</span>
@@ -605,7 +607,9 @@
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Required Property or Business Assets:
                                 @foreach (@$auction->get->assets as $item)
-                                    <span class="removeBold badge bg-secondary">{{ $item }}</span>
+                                    @if ($item != 'Other')
+                                        <span class="removeBold badge bg-secondary">{{ $item }}</span>
+                                    @endif
                                 @endforeach
                                 @if (@$auction->get->assets_other)
                                     <span class="removeBold badge bg-secondary">{{ @$auction->get->assets_other }}</span>
@@ -754,7 +758,19 @@
                                 @if (@$auction->get->sale_provision_assignment === 'Yes' && @$auction->get->assignment_fee_amount)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Assignment Fee to Broker:
-                                        <span class="removeBold">{{ @$auction->get->assignment_fee_amount }}{{ @$auction->get->assignment_fee_type }}</span>
+                                        <span class="removeBold">
+                                            @php
+                                                $feeType = @$auction->get->assignment_fee_type;
+                                                $feeAmount = @$auction->get->assignment_fee_amount;
+                                                if ($feeType === '$' || $feeType === 'dollar' || empty($feeType)) {
+                                                    echo $fmtMoney($feeAmount);
+                                                } elseif ($feeType === '%' || $feeType === 'percent') {
+                                                    echo $fmtPercent($feeAmount);
+                                                } else {
+                                                    echo $fmtMoney($feeAmount) . ' ' . $feeType;
+                                                }
+                                            @endphp
+                                        </span>
                                     </div>
                                 @endif
                             @endif
