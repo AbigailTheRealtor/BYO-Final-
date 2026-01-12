@@ -717,11 +717,10 @@
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Acceptable Special Sale Provisions:
                                     @foreach (@$auction->get->sale_provision as $sale)
-                                        @php
-                                            $displaySale = str_replace('"', '', $sale);
-                                        @endphp
-                                        <span class="removeBold badge bg-secondary">{{ $displaySale }}</span>
-                                        @if ($sale == 'Other' && @$auction->get->sale_provision_other)
+                                        @if ($sale != 'Other')
+                                            @php $displaySale = str_replace('"', '', $sale); @endphp
+                                            <span class="removeBold badge bg-secondary">{{ $displaySale }}</span>
+                                        @elseif (@$auction->get->sale_provision_other)
                                             <span class="removeBold badge bg-secondary">{{ @$auction->get->sale_provision_other }}</span>
                                         @endif
                                     @endforeach
