@@ -1680,6 +1680,18 @@ $auser = $auctionUser::find(@$auction->user_id);
         <span class="badge bg-secondary" style="font-size: 0.9rem;">Listing ID: {{ @$auction->listing_id }}</span>
     </div>
     @endif
+
+    @php
+        $auth_id = auth()->id();
+    @endphp
+    @if($auth_id && $auth_id == @$auction->user_id)
+    <div class="mb-2">
+        <a href="{{ route('landlord.hire.agent.auction.edit', ['auctionId' => $auction->id]) }}" 
+           class="btn btn-outline-primary btn-sm">
+            <i class="fa fa-edit me-1"></i> Edit Listing
+        </a>
+    </div>
+    @endif
     <hr>
 
     {{-- 🏆 Display Winner Information if Listing is Sold --}}
