@@ -35,9 +35,14 @@ Save Draft does NOT redirect but displays a confirmation message including the L
 **Listing Display Normalization (Jan 2026)**: All listing display views (Seller, Buyer, Landlord) are normalized to match the Tenant view as the "gold standard." Each view includes:
 - Formatting helpers (`$fmtMoney`, `$fmtPercent`, `$joinParts`, `$basisText`) for consistent currency/percentage display
 - CSS classes (`section-header`, `section-title`) for uniform section header styling
-- Services sections with property-type-aware groupings (Residential vs Commercial categories)
+- Services sections with property-type-aware groupings (Residential vs Commercial categories) using emoji category headers (📣, 🔍, 🏡/🏢, 📝, 📋, 💡) and round bullet points
 - Broker Compensation sections renamed to "Broker Compensation & Agency Agreement Terms" with type-specific labels (Seller's, Buyer's, Landlord's)
+- Value-first broker compensation display format: "6% of Total Purchase Price" instead of showing type and value separately
+- Combo fee format: "2% of Total Purchase Price + $5,000 flat" (not "2% + $5,000 of Total Purchase Price")
 - Hide-if-empty logic and "Other" option handling matching the Tenant pattern
+- Character encoding uses curly apostrophes (U+2019) for exact matching with Livewire form data
+
+The Buyer view (buyerAgentAuctionDetail.blade.php) includes property-type-aware categories for Residential, Income, Commercial, and Business property types. Agent bids and counter-bids also follow the same categorized services display and value-first broker compensation format.
 
 ### System Design Choices
 The architecture emphasizes modularity through Laravel's structure and Livewire components. A database-first approach prioritizes local database solutions for core services like location. Clear separation of concerns is maintained between frontend, backend, and data persistence. The system is deployment-ready with production environment optimizations. Existing database schema and storage logic for fees are immutable, with fee format updates being display-only.
