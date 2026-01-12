@@ -1,0 +1,268 @@
+Replit Instructions — Hire a Buyer’s Agent
+Fix Required Fields, Submit Enablement, Submit Action, Routing, and Listing Display
+Applies ONLY to
+
+Hire a Buyer’s Agent listings (all property types)
+
+Traditional and Bidding Period listing types
+
+🚫 Do NOT modify Tenant, Seller, or Landlord flows in this task
+
+SAFEGUARDS (MUST FOLLOW — NON-NEGOTIABLE)
+
+DO NOT:
+
+Delete, rename, or repurpose any database tables, columns, models, or migrations.
+
+Rename or change any existing field keys, input names, IDs, or request parameters.
+
+Change UI layout, spacing, labels, tooltips, icons, placeholder text, or styling.
+
+Change tab order, section titles, or which fields exist.
+
+Make fields optional globally or disable validation globally.
+
+Force-enable the submit button without validating required fields.
+
+Route Buyer listings into Tenant listing views or reuse Tenant templates.
+
+Mask errors or allow silent failures.
+
+ALLOWED:
+
+Fix Buyer-only frontend and backend validation.
+
+Fix Buyer checkFormValidity() logic.
+
+Fix Buyer submit handler so it actually submits.
+
+Fix routing so Buyer listings appear under the correct tab.
+
+Add temporary debug logging and remove after QA.
+
+1️⃣ TAB 2 VALIDATION RULES (CRITICAL)
+Correct Requirements
+
+Acceptable Cities: ❌ NOT required
+
+Acceptable Counties: ✅ REQUIRED
+
+Acceptable State: ✅ REQUIRED
+
+Required Fix
+Frontend
+
+Remove any validation rule, error message, or “required” check for Acceptable Cities.
+
+Ensure Acceptable Cities is excluded from checkFormValidity() required-field checks.
+
+Keep Acceptable Counties and Acceptable State required (unchanged).
+
+Backend
+
+Update Buyer submit request validation:
+
+Acceptable Cities → nullable / optional
+
+Acceptable Counties → required
+
+Acceptable State → required
+
+Allow Acceptable Cities to be missing or an empty array.
+
+🚫 Do NOT require Cities in order for Counties to validate.
+
+2️⃣ FIX SUBMIT BUTTON ENABLEMENT (TRADITIONAL vs BIDDING PERIOD)
+Current Problems
+
+Traditional: Submit enables but does not submit.
+
+Bidding Period: Submit does NOT enable even when all required fields are filled.
+
+Required Fix
+2.1 Split validation logic by listing type
+
+In Buyer checkFormValidity():
+
+If Traditional is selected:
+
+Validate ONLY Traditional-required fields.
+
+Ignore Bidding Period-only fields.
+
+If Bidding Period is selected:
+
+Validate ONLY Bidding Period-required fields.
+
+Ignore Traditional-only fields.
+
+✅ Only validate fields that are visible and applicable based on the user’s selection.
+
+2.2 Ensure field keys match exactly
+
+Confirm validity logic references the exact input names/IDs used in the form.
+
+Do NOT rename inputs — fix the checker instead.
+
+2.3 Toggle BOTH disabled mechanisms
+
+When valid:
+
+Remove disabled attribute
+
+Remove .disabled CSS class
+
+When invalid:
+
+Add attribute
+
+Add class
+
+This must match the Tenant pattern.
+
+3️⃣ FIX BUYER SUBMIT ACTION (NO MORE “NOTHING HAPPENS”)
+Required Fix
+3.1 Ensure submit handler is actually triggered
+
+Confirm the Submit button is bound to the correct Buyer submit function.
+
+Add temporary console log:
+
+"Buyer submit clicked"
+
+3.2 Ensure submit handler executes fully
+
+Wrap submit logic in try/catch
+
+await the API call
+
+If validation fails → show visible error
+
+If API fails → show visible error
+
+No silent returns
+
+No swallowed errors
+
+3.3 Ensure correct endpoint + payload
+
+Submit must post to the Buyer listing endpoint.
+
+Payload must include correct Buyer listing type.
+
+Do NOT submit to Tenant endpoints.
+
+4️⃣ DATE HANDLING (SUBMIT MUST WORK AFTER EDITING DATE)
+Problem
+
+Editing the date on a Draft breaks submit.
+
+Required Fix
+
+Before validation AND submit:
+
+Normalize date into the canonical backend-safe format.
+
+This must run on Submit, not just Draft save.
+
+If date is invalid → show visible error.
+
+🚫 Do NOT overwrite user input with hardcoded defaults.
+
+5️⃣ REQUIRED POST-SUBMIT BEHAVIOR (MUST ADD THIS)
+Expected Behavior After Successful Submit
+
+When a Buyer listing is submitted successfully:
+
+The listing must be created/published (not Draft).
+
+The user must be:
+
+redirected directly to the new listing
+OR
+
+shown a confirmation with a View Listing action.
+
+The listing must appear under the website tab:
+Hiring a Buyer’s Agent.
+
+The listing display must show the exact Buyer fields entered during creation:
+
+no Tenant fields
+
+no missing fields
+
+no mismapped fields.
+
+The listing must remain visible after refresh and in the dashboard/list view.
+
+🚫 Do NOT “fix” this by routing Buyer listings into Tenant views.
+
+6️⃣ TEMP DEBUGGING (REMOVE AFTER QA)
+
+Add temporary logs to identify blockers:
+
+Which required field is failing validation
+
+Which listing type is active
+
+Submit payload contents
+
+API response or error
+
+Logs must be removed after verification.
+
+7️⃣ REQUIRED QA TESTS (PASS / FAIL)
+Test A — Cities Optional
+
+Leave Acceptable Cities blank
+
+Fill Acceptable Counties + State
+
+No city error shown
+
+Submit allowed
+
+Test B — Traditional
+
+Select Traditional
+
+Fill all required fields
+
+Submit enables
+
+Click Submit → listing created
+
+Listing appears under Hiring a Buyer’s Agent
+
+Test C — Bidding Period
+
+Select Bidding Period
+
+Fill all required fields (including bidding period fields)
+
+Submit enables
+
+Click Submit → listing created
+
+Listing appears under Hiring a Buyer’s Agent
+
+Test D — Date Edit
+
+Save Draft
+
+Reload Draft
+
+Edit Date
+
+Submit works every time
+
+DELIVERABLE REQUIREMENT
+
+Before closing this task, confirm:
+
+Listing ID created on submit
+
+Route/URL used after submit
+
+Screenshot showing listing under Hiring a Buyer’s Agent tab with correct fields

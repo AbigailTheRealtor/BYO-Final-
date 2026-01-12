@@ -1429,25 +1429,143 @@
                     videoLoader.style.visibility = "hidden";
                 }, 30000);
             });
+            
+            // State tracking for Buyer Edit form validation (populated by browser events from Livewire)
+            window.buyerState = {
+                countiesCount: {{ count($counties ?? []) }},
+                auctionType: '{{ $auction_type ?? '' }}'
+            };
+            
+            // Listen for Livewire browser events to update state
+            window.addEventListener('buyer-state-init', (e) => {
+                window.buyerState.countiesCount = e.detail.countiesCount || 0;
+                window.buyerState.auctionType = e.detail.auctionType || '';
+                console.log('[Buyer Edit] State init:', window.buyerState);
+                checkFormValidity();
+            });
+            
+            window.addEventListener('buyer-counties-updated', (e) => {
+                window.buyerState.countiesCount = e.detail.count || 0;
+                console.log('[Buyer Edit] Counties updated:', window.buyerState.countiesCount);
+                checkFormValidity();
+            });
+            
+            window.addEventListener('buyer-auction-type-changed', (e) => {
+                window.buyerState.auctionType = e.detail.type || '';
+                console.log('[Buyer Edit] Auction type changed:', window.buyerState.auctionType);
+                checkFormValidity();
+            });
 
+
+            // Helper function to check if element is visible
+            function isElementVisible(element) {
+                if (!element) return false;
+                if (element.disabled) return false;
+                if (element.type === 'hidden') return false;
+                
+                let el = element;
+                while (el && el !== document.body) {
+                    if (el.classList && (
+                        el.classList.contains('d-none') || 
+                        el.classList.contains('hidden') ||
+                        el.classList.contains('collapse') && !el.classList.contains('show')
+                    )) {
+                        return false;
+                    }
+                    
+                    const style = window.getComputedStyle(el);
+                    if (style.display === 'none' || style.visibility === 'hidden') {
+                        return false;
+                    }
+                    
+                    el = el.parentElement;
+                }
+                return true;
+            }
 
             // Function to check if all required fields are filled
+            // Split logic by listing type: Traditional vs Bidding Period
             function checkFormValidity() {
                 let allValid = true;
+                let invalidFields = []; // TEMP DEBUG
+
+                // Get auction type from buyerState (set by browser events) - authoritative source
+                let currentListingType = window.buyerState ? window.buyerState.auctionType : '';
+                
+                // Fallback to hidden input if buyerState not set
+                if (!currentListingType) {
+                    const auctionTypeHidden = document.getElementById('auction_type_hidden');
+                    currentListingType = auctionTypeHidden ? auctionTypeHidden.value : '';
+                }
+                console.log('[Buyer Edit] Current listing type:', currentListingType);
+
+                // Define fields that are ONLY required for Bidding Period
+                const biddingPeriodOnlyFields = ['auction_time'];
+                
+                // EXPLICIT CHECK: Counties are REQUIRED (use buyerState - authoritative source)
+                let hasCounties = window.buyerState ? window.buyerState.countiesCount > 0 : false;
+                console.log('[Buyer Edit] Counties count from state:', window.buyerState ? window.buyerState.countiesCount : 'N/A');
+                
+                if (!hasCounties) {
+                    allValid = false;
+                    invalidFields.push('counties (at least one required)');
+                }
 
                 // Check all tabs for required fields
                 document.querySelectorAll('.tab-pane').forEach(tabPane => {
                     tabPane.querySelectorAll('[required]').forEach(field => {
+                        const fieldName = field.name || field.id || field.getAttribute('wire:model') || 'unknown';
+                        
+                        // Skip the counties_hidden field - we check badges explicitly above
+                        if (field.id === 'counties_hidden') {
+                            return;
+                        }
+                        
+                        // Skip hidden or disabled fields
+                        if (!isElementVisible(field)) {
+                            return;
+                        }
+                        if (field.disabled) {
+                            return;
+                        }
+                        
+                        // SPLIT LOGIC: Skip Bidding Period-only fields when Traditional is selected
+                        if (currentListingType === 'Traditional' && biddingPeriodOnlyFields.includes(field.id)) {
+                            console.log('[Buyer Edit] Skipping Bidding Period field for Traditional:', fieldName);
+                            return;
+                        }
+                        
+                        // SPLIT LOGIC: Skip auction_type validation for hidden required field if value exists
+                        if (field.id === 'auction_type_hidden' && field.value) {
+                            return;
+                        }
+                        
                         if (!field.value) {
                             allValid = false;
+                            invalidFields.push(fieldName);
                         }
                     });
                 });
 
-                // Enable/disable save button
+                // TEMP DEBUG
+                if (invalidFields.length > 0) {
+                    console.log('[Buyer Edit validity check failing]:', invalidFields.join(', '));
+                } else {
+                    console.log('[Buyer Edit validity check] All fields valid');
+                }
+
+                // Enable/disable save button (both CSS class and attribute)
                 const saveButton = document.querySelector('.wizard-step-finish');
                 if (saveButton) {
-                    saveButton.disabled = !allValid;
+                    if (allValid) {
+                        saveButton.classList.remove('disabled');
+                        saveButton.removeAttribute('disabled');
+                        console.log('[Buyer Edit Submit] Button ENABLED');
+                    } else {
+                        saveButton.classList.add('disabled');
+                        saveButton.setAttribute('disabled', 'disabled');
+                        console.log('[Buyer Edit Submit] Button DISABLED');
+                    }
                 }
 
                 return allValid;
@@ -1618,23 +1736,115 @@
 
         function initializeLimitedService() {
 
+            // Helper function to check if element is visible
+            function isElementVisible(element) {
+                if (!element) return false;
+                if (element.disabled) return false;
+                if (element.type === 'hidden') return false;
+                
+                let el = element;
+                while (el && el !== document.body) {
+                    if (el.classList && (
+                        el.classList.contains('d-none') || 
+                        el.classList.contains('hidden') ||
+                        el.classList.contains('collapse') && !el.classList.contains('show')
+                    )) {
+                        return false;
+                    }
+                    
+                    const style = window.getComputedStyle(el);
+                    if (style.display === 'none' || style.visibility === 'hidden') {
+                        return false;
+                    }
+                    
+                    el = el.parentElement;
+                }
+                return true;
+            }
+
             // Function to check if all required fields are filled
+            // Split logic by listing type: Traditional vs Bidding Period
             function checkFormValidity() {
                 let allValid = true;
+                let invalidFields = []; // TEMP DEBUG
+
+                // Get auction type from buyerState (set by browser events) - authoritative source
+                let currentListingType = window.buyerState ? window.buyerState.auctionType : '';
+                
+                // Fallback to hidden input if buyerState not set
+                if (!currentListingType) {
+                    const auctionTypeHidden = document.getElementById('auction_type_hidden');
+                    currentListingType = auctionTypeHidden ? auctionTypeHidden.value : '';
+                }
+                console.log('[Buyer Edit Limited] Current listing type:', currentListingType);
+
+                // Define fields that are ONLY required for Bidding Period
+                const biddingPeriodOnlyFields = ['auction_time'];
+                
+                // EXPLICIT CHECK: Counties are REQUIRED (use buyerState - authoritative source)
+                let hasCounties = window.buyerState ? window.buyerState.countiesCount > 0 : false;
+                console.log('[Buyer Edit Limited] Counties count from state:', window.buyerState ? window.buyerState.countiesCount : 'N/A');
+                
+                if (!hasCounties) {
+                    allValid = false;
+                    invalidFields.push('counties (at least one required)');
+                }
 
                 // Check all tabs for required fields
                 document.querySelectorAll('.tab-pane').forEach(tabPane => {
                     tabPane.querySelectorAll('[required]').forEach(field => {
+                        const fieldName = field.name || field.id || field.getAttribute('wire:model') || 'unknown';
+                        
+                        // Skip the counties_hidden field - we check badges explicitly above
+                        if (field.id === 'counties_hidden') {
+                            return;
+                        }
+                        
+                        // Skip hidden or disabled fields
+                        if (!isElementVisible(field)) {
+                            return;
+                        }
+                        if (field.disabled) {
+                            return;
+                        }
+                        
+                        // SPLIT LOGIC: Skip Bidding Period-only fields when Traditional is selected
+                        if (currentListingType === 'Traditional' && biddingPeriodOnlyFields.includes(field.id)) {
+                            console.log('[Buyer Edit Limited] Skipping Bidding Period field for Traditional:', fieldName);
+                            return;
+                        }
+                        
+                        // SPLIT LOGIC: Skip auction_type validation for hidden required field if value exists
+                        if (field.id === 'auction_type_hidden' && field.value) {
+                            return;
+                        }
+                        
                         if (!field.value) {
                             allValid = false;
+                            invalidFields.push(fieldName);
                         }
                     });
                 });
 
-                // Enable/disable save button
+                // TEMP DEBUG
+                if (invalidFields.length > 0) {
+                    console.log('[Buyer Edit Limited validity check failing]:', invalidFields.join(', '));
+                } else {
+                    console.log('[Buyer Edit Limited validity check] All fields valid');
+                }
+
+                // Enable/disable save button (both CSS class and attribute)
                 const saveButton = document.querySelector('.wizard-step-finish');
                 if (saveButton) {
-                    saveButton.disabled = !allValid;
+                    if (allValid) {
+                        saveButton.classList.remove('disabled');
+                        saveButton.removeAttribute('disabled');
+                        console.log('[Buyer Edit Limited Submit] Button ENABLED');
+                    } else {
+                        saveButton.classList.add('disabled');
+                        saveButton.setAttribute('disabled', 'disabled');
+                        console.log('[Buyer Edit Limited Submit] Button DISABLED');
+                    }
                 }
 
                 return allValid;

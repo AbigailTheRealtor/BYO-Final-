@@ -635,6 +635,8 @@ class BuyerAgentAuctionEdit extends Component
 
     public function updatedAuctionType($value)
     {
+        $this->dispatchBrowserEvent('buyer-auction-type-changed', ['type' => $value]);
+        
         if ($value === 'Auction') {
             $this->dispatchBrowserEvent('show-auction-time');
         } else {
@@ -671,14 +673,14 @@ class BuyerAgentAuctionEdit extends Component
             $this->counties[] = $county;
             $this->newCounty = '';
         }
-        // Counties are optional - no validation required
+        $this->dispatchBrowserEvent('buyer-counties-updated', ['count' => count($this->counties)]);
     }
 
     public function removeCounty($index)
     {
         unset($this->counties[$index]);
         $this->counties = array_values($this->counties);
-        // Counties are optional - no validation required
+        $this->dispatchBrowserEvent('buyer-counties-updated', ['count' => count($this->counties)]);
     }
 
     // These methods will trigger Livewire to update the view
@@ -845,6 +847,12 @@ class BuyerAgentAuctionEdit extends Component
             $this->auctionId = $auctionId;
             $this->loadAuctionData($auctionId); // Load auction data if auctionId is provided
         }
+        
+        // Emit initial state for frontend validation
+        $this->dispatchBrowserEvent('buyer-state-init', [
+            'countiesCount' => count($this->counties ?? []),
+            'auctionType' => $this->auction_type ?? ''
+        ]);
     }
     public function render()
     {
@@ -1555,7 +1563,34 @@ class BuyerAgentAuctionEdit extends Component
 
     public function update()
     {
+        \Log::info('[BUYER UPDATE START]', [
+            'user_id' => auth()->id(),
+            'listing_date' => $this->listing_date ?? null,
+            'auction_type' => $this->auction_type ?? null,
+            'counties' => $this->counties ?? [],
+            'cities' => $this->cities ?? [],
+            'state' => $this->state ?? null,
+        ]);
+
         try {
+            // Validate required fields: Counties and State are required, Cities are optional
+            $validationRules = [
+                'counties' => 'required|array|min:1',
+                'state' => 'required|string',
+            ];
+            
+            // Add Bidding Period specific validation
+            if ($this->auction_type === 'Bidding Period') {
+                $validationRules['auction_time'] = 'required|string';
+            }
+            
+            $this->validate($validationRules, [
+                'counties.required' => 'At least one county is required.',
+                'counties.min' => 'At least one county is required.',
+                'state.required' => 'State is required.',
+                'auction_time.required' => 'Bidding Period Length is required.',
+            ]);
+            
             $this->isDraft = 0;
 
             $auction =$this->auctionId
@@ -1580,9 +1615,13 @@ class BuyerAgentAuctionEdit extends Component
 
             session()->flash('success', 'Listing updated successfully!');
 
+            // Dispatch browser event to force redirect (Livewire v2 compatible)
+            $this->dispatchBrowserEvent('force-redirect', ['url' => route('buyer.view-auction', ['id' => $auction->id])]);
+
             return redirect()->route('buyer.view-auction', ['id' => $auction->id]);
 
         } catch (\Exception $e) {
+            \Log::error('[BUYER UPDATE ERROR]', ['error' => $e->getMessage()]);
             session()->flash('error', 'Error saving listing: ' . $e->getMessage());
         }
     }

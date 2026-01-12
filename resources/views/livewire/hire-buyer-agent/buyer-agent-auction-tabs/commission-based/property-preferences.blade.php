@@ -119,6 +119,11 @@
         @enderror
     </div>
 
+    <!-- Hidden field for counties validation (required) -->
+    <input type="hidden" id="counties_hidden" name="counties_hidden" 
+           value="{{ count($counties) > 0 ? json_encode($counties) : '' }}" 
+           required>
+
     <!-- Display added counties -->
     <div class="mt-1 counties-container">
         @if (count($counties) > 0)
@@ -133,6 +138,7 @@
 
         @endif
     </div>
+    <span class="error mt-2" id="counties_error"></span>
 </div>
 <div class="form-group">
     <label class="fw-bold">Acceptable State:<span class="text-danger">*</span>
