@@ -30,6 +30,8 @@ Save Draft does NOT redirect but displays a confirmation message including the L
 
 **Tab Visibility (All 4 Agent Types)**: Owners can see their own drafts in all tabs (Tenant, Seller, Buyer, Landlord), while non-owners only see published, approved listings. UserController::author() applies conditional filtering: `is_sold=false` always, plus `is_draft=false AND is_approved=1` only for non-owners. Temporary server-side logging tracks save/submit events and tab queries for debugging.
 
+**Buyer Form - Optional Cities/Counties**: Acceptable Cities and Acceptable Counties are now optional fields in the Buyer listing form. Users can submit a listing without selecting any cities or counties. The validation was removed from both backend Livewire methods (addCity/removeCity/addCounty/removeCounty) and frontend tab validation logic. This change applies to both create and edit forms (BuyerAgentAuction.php and BuyerAgentAuctionEdit.php).
+
 ### System Design Choices
 The architecture emphasizes modularity through Laravel's structure and Livewire components. A database-first approach prioritizes local database solutions for core services like location. Clear separation of concerns is maintained between frontend, backend, and data persistence. The system is deployment-ready with production environment optimizations. Existing database schema and storage logic for fees are immutable, with fee format updates being display-only.
 
