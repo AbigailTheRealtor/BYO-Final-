@@ -652,15 +652,14 @@ class BuyerAgentAuctionEdit extends Component
             $this->cities[] = $city;
             $this->newCity = '';
         }
-
-        $this->validate(['cities' => 'required|array|min:1']);
+        // Cities are optional - no validation required
     }
 
     public function removeCity($index)
     {
         unset($this->cities[$index]);
         $this->cities = array_values($this->cities);
-        $this->validate(['cities' => 'required|array|min:1']);
+        // Cities are optional - no validation required
     }
 
     public function addCounty()
@@ -672,15 +671,14 @@ class BuyerAgentAuctionEdit extends Component
             $this->counties[] = $county;
             $this->newCounty = '';
         }
-
-        $this->validate(['counties' => 'required|array|min:1']);
+        // Counties are optional - no validation required
     }
 
     public function removeCounty($index)
     {
         unset($this->counties[$index]);
         $this->counties = array_values($this->counties);
-        $this->validate(['counties' => 'required|array|min:1']);
+        // Counties are optional - no validation required
     }
 
     // These methods will trigger Livewire to update the view

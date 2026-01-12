@@ -1674,6 +1674,7 @@
             // Function to check if all required fields are filled
             function checkFormValidity() {
                 let allValid = true;
+                let invalidFields = []; // TEMP DEBUG
 
                 // Check all tabs for required fields (skip hidden/disabled fields)
                 document.querySelectorAll('.tab-pane').forEach(tabPane => {
@@ -1682,11 +1683,25 @@
                         if (!isElementVisible(field)) {
                             return;
                         }
+                        // Skip disabled fields
+                        if (field.disabled) {
+                            return;
+                        }
                         if (!field.value) {
                             allValid = false;
+                            // TEMP DEBUG: Log which fields are failing
+                            const fieldName = field.name || field.id || field.getAttribute('wire:model') || 'unknown';
+                            invalidFields.push(fieldName);
                         }
                     });
                 });
+
+                // TEMP DEBUG: Log invalid fields to console
+                if (invalidFields.length > 0) {
+                    console.log('[Buyer validity check failing]:', invalidFields.join(', '));
+                } else {
+                    console.log('[Buyer validity check] All fields valid');
+                }
 
                 // Enable/disable save button (both CSS class and attribute)
                 const saveButton = document.querySelector('.wizard-step-finish');
@@ -1694,9 +1709,11 @@
                     if (allValid) {
                         saveButton.classList.remove('disabled');
                         saveButton.removeAttribute('disabled');
+                        console.log('[Buyer Submit] Button ENABLED');
                     } else {
                         saveButton.classList.add('disabled');
                         saveButton.setAttribute('disabled', 'disabled');
+                        console.log('[Buyer Submit] Button DISABLED');
                     }
                 }
 
@@ -1790,47 +1807,20 @@
                     });
                 }
 
-                // Validate cities array (your existing code)
+                // Cities and Counties are OPTIONAL - no validation required
+                // Clear any existing error messages for cities/counties
                 const citiesContainer = currentTabContent.querySelector('.cities-container');
                 if (citiesContainer) {
-                    const cityBadges = citiesContainer.querySelectorAll('.badge');
-                    if (!cityBadges || cityBadges.length === 0) {
-                        isValid = false;
-                        const existingError = citiesContainer.parentNode.querySelector('.error');
-                        if (!existingError) {
-                            const citiesError = document.createElement('div');
-                            citiesError.className = 'error';
-                            citiesError.textContent = 'At least one city is required.';
-                            citiesContainer.parentNode.insertBefore(citiesError, citiesContainer
-                                .nextSibling);
-                        }
-                    } else {
-                        const existingError = citiesContainer.parentNode.querySelector('.error');
-                        if (existingError) {
-                            existingError.remove();
-                        }
+                    const existingCitiesError = citiesContainer.parentNode.querySelector('.error');
+                    if (existingCitiesError) {
+                        existingCitiesError.remove();
                     }
                 }
-
-                // Validate counties array (your existing code)
                 const countiesContainer = currentTabContent.querySelector('.counties-container');
                 if (countiesContainer) {
-                    const countyBadges = countiesContainer.querySelectorAll('.badge');
-                    if (!countyBadges || countyBadges.length === 0) {
-                        isValid = false;
-                        const existingError = countiesContainer.parentNode.querySelector('.error');
-                        if (!existingError) {
-                            const countiesError = document.createElement('div');
-                            countiesError.className = 'error';
-                            countiesError.textContent = 'At least one county is required.';
-                            countiesContainer.parentNode.insertBefore(countiesError, countiesContainer
-                                .nextSibling);
-                        }
-                    } else {
-                        const existingError = countiesContainer.parentNode.querySelector('.error');
-                        if (existingError) {
-                            existingError.remove();
-                        }
+                    const existingCountiesError = countiesContainer.parentNode.querySelector('.error');
+                    if (existingCountiesError) {
+                        existingCountiesError.remove();
                     }
                 }
 
@@ -1946,6 +1936,7 @@
             // Function to check if all required fields are filled
             function checkFormValidity() {
                 let allValid = true;
+                let invalidFields = []; // TEMP DEBUG
 
                 // Check all tabs for required fields (skip hidden/disabled fields)
                 document.querySelectorAll('.tab-pane').forEach(tabPane => {
@@ -1954,11 +1945,25 @@
                         if (!isElementVisible(field)) {
                             return;
                         }
+                        // Skip disabled fields
+                        if (field.disabled) {
+                            return;
+                        }
                         if (!field.value) {
                             allValid = false;
+                            // TEMP DEBUG: Log which fields are failing
+                            const fieldName = field.name || field.id || field.getAttribute('wire:model') || 'unknown';
+                            invalidFields.push(fieldName);
                         }
                     });
                 });
+
+                // TEMP DEBUG: Log invalid fields to console
+                if (invalidFields.length > 0) {
+                    console.log('[Buyer validity check failing]:', invalidFields.join(', '));
+                } else {
+                    console.log('[Buyer validity check] All fields valid');
+                }
 
                 // Enable/disable save button (both CSS class and attribute)
                 const saveButton = document.querySelector('.wizard-step-finish');
@@ -1966,9 +1971,11 @@
                     if (allValid) {
                         saveButton.classList.remove('disabled');
                         saveButton.removeAttribute('disabled');
+                        console.log('[Buyer Submit] Button ENABLED');
                     } else {
                         saveButton.classList.add('disabled');
                         saveButton.setAttribute('disabled', 'disabled');
+                        console.log('[Buyer Submit] Button DISABLED');
                     }
                 }
 
@@ -2019,47 +2026,20 @@
                     });
                 }
 
-                // Validate cities array (your existing code)
-                const citiesContainer = currentTabContent.querySelector('.cities-container');
-                if (citiesContainer) {
-                    const cityBadges = citiesContainer.querySelectorAll('.badge');
-                    if (!cityBadges || cityBadges.length === 0) {
-                        isValid = false;
-                        const existingError = citiesContainer.parentNode.querySelector('.error');
-                        if (!existingError) {
-                            const citiesError = document.createElement('div');
-                            citiesError.className = 'error';
-                            citiesError.textContent = 'At least one city is required.';
-                            citiesContainer.parentNode.insertBefore(citiesError, citiesContainer
-                                .nextSibling);
-                        }
-                    } else {
-                        const existingError = citiesContainer.parentNode.querySelector('.error');
-                        if (existingError) {
-                            existingError.remove();
-                        }
+                // Cities and Counties are OPTIONAL - no validation required
+                // Clear any existing error messages for cities/counties
+                const citiesContainer2 = currentTabContent.querySelector('.cities-container');
+                if (citiesContainer2) {
+                    const existingCitiesError2 = citiesContainer2.parentNode.querySelector('.error');
+                    if (existingCitiesError2) {
+                        existingCitiesError2.remove();
                     }
                 }
-
-                // Validate counties array (your existing code)
-                const countiesContainer = currentTabContent.querySelector('.counties-container');
-                if (countiesContainer) {
-                    const countyBadges = countiesContainer.querySelectorAll('.badge');
-                    if (!countyBadges || countyBadges.length === 0) {
-                        isValid = false;
-                        const existingError = countiesContainer.parentNode.querySelector('.error');
-                        if (!existingError) {
-                            const countiesError = document.createElement('div');
-                            countiesError.className = 'error';
-                            countiesError.textContent = 'At least one county is required.';
-                            countiesContainer.parentNode.insertBefore(countiesError, countiesContainer
-                                .nextSibling);
-                        }
-                    } else {
-                        const existingError = countiesContainer.parentNode.querySelector('.error');
-                        if (existingError) {
-                            existingError.remove();
-                        }
+                const countiesContainer2 = currentTabContent.querySelector('.counties-container');
+                if (countiesContainer2) {
+                    const existingCountiesError2 = countiesContainer2.parentNode.querySelector('.error');
+                    if (existingCountiesError2) {
+                        existingCountiesError2.remove();
                     }
                 }
                 if (currentTabContent.id === 'service-selection-and-pricing') {
