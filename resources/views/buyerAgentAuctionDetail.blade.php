@@ -1436,6 +1436,7 @@
                     $auser = $auctionUser::find(@$auction->user_id);
                 @endphp
                 <!-- Review  -->
+                @if($auser)
                 <div class="card review">
                     <div class="card-body d-flex align-items-center">
                         <div class="left d-flex align-items-center">
@@ -1465,6 +1466,7 @@
 
                     </div>
                 </div>
+                @endif
             </div>
 
             <div class="col-sm-12 col-md-4 col-lg-4 rightCol">
