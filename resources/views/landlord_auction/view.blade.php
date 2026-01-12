@@ -1,4 +1,32 @@
 @extends('layouts.main')
+
+{{-- Combined Fee Display Helper Functions (display-only, no storage changes) --}}
+@php
+  $fmtMoney = function($v) {
+    if ($v === null || $v === '') return null;
+    $raw = preg_replace('/[^0-9.]/', '', (string)$v);
+    if ($raw === '' || !is_numeric($raw)) return null;
+    return '$' . number_format((float)$raw, 0);
+  };
+
+  $fmtPercent = function($v) {
+    if ($v === null || $v === '') return null;
+    $raw = preg_replace('/[^0-9.]/', '', (string)$v);
+    if ($raw === '' || !is_numeric($raw)) return null;
+    $num = (float)$raw;
+    return (floor($num) == $num ? (string)(int)$num : (string)$num) . '%';
+  };
+
+  $joinParts = function($parts) {
+    $parts = array_values(array_filter($parts, fn($p) => $p !== null && $p !== ''));
+    return count($parts) ? implode(' + ', $parts) : null;
+  };
+
+  $basisText = function($basis) {
+    return $basis ? ('of ' . $basis) : null;
+  };
+@endphp
+
 @push('styles')
   <!-- //Listing Description css  -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bbbootstrap/libraries@main/choices.min.css">
@@ -16,6 +44,90 @@
     /* Firefox */
     input[type=number] {
       -moz-appearance: textfield;
+    }
+
+    /* Section Title Hierarchy - Larger, bold, spaced, more prominent */
+    .card-header h4,
+    .section-title {
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+        color: #0f1a24;
+    }
+
+    /* SECTION HEADER BAR — shorter + true vertical centering */
+    .card-header.section-header {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start;
+        padding: 12px 18px !important;
+        min-height: 0 !important;
+        margin-top: 1.25rem;
+    }
+
+    /* SECTION TITLE TEXT — remove default heading spacing */
+    .section-header .section-title {
+        margin: 0 !important;
+        padding: 0 !important;
+        line-height: 1 !important;
+        display: block;
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        color: #0f1a24;
+    }
+
+    /* Services section - extra breathing room before header */
+    .services-section-header {
+        margin-top: 0.75rem !important;
+    }
+
+    hr {
+        margin-top: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Field row styling - improved line-height for scan-readability */
+    .col-md-12.col-12.pt-2.fw-bold {
+        line-height: 1.6;
+        padding-top: 0.6rem !important;
+        padding-bottom: 0.2rem;
+    }
+
+    /* Broker Compensation subsection headers - breathing room */
+    h5.mt-3.mb-2 {
+        padding-top: 0.75rem;
+        margin-top: 1rem !important;
+    }
+
+    /* Services section - Tighter spacing and indentation */
+    ul.services {
+        list-style: none !important;
+        padding-left: 1.2em;
+        margin-top: 0.35rem;
+        margin-bottom: 0.5rem;
+    }
+
+    ul.services li {
+        padding: 0.15rem 0;
+        color: #34465c;
+        position: relative;
+        padding-left: 0;
+        list-style: none !important;
+        line-height: 1.4;
+    }
+
+    ul.services li::marker {
+        content: none !important;
+    }
+
+    ul.services li::before {
+        content: "\f101";
+        font-family: FontAwesome;
+        font-size: 1em;
+        position: absolute;
+        left: -1.2em;
+        color: #11b7cf;
     }
 
     table .small {
@@ -1335,14 +1447,19 @@
               <hr>
             @endif
 
-            <h4>Tenant’s Agent Compensation:</h4>
+            <div class="card-header section-header">
+              <h4 class="section-title">Broker Compensation & Agency Agreement Terms</h4>
+            </div>
+
+            <!-- Landlord's Broker Compensation Sub-section -->
+            <h5 class="mt-3 mb-2"><strong>Landlord's Broker Compensation:</strong></h5>
             @if (isset($auction->get->compensation_structure))
-              <div class="col-md-12 fw-bold"><i class="far fa-check-square"></i> Tenant’s Broker Commission Structure:
+              <div class="col-md-12 fw-bold"><i class="far fa-check-square"></i> Landlord's Broker Commission Structure:
                 <span class="removeBold">{{ $auction->get->compensation_structure }}</span>
               </div>
             @endif
             @if (isset($auction->get->compensation_structure_yes))
-              <div class="col-md-12 fw-bold"><i class="far fa-check-square"></i> Tenant’s Broker Commission:
+              <div class="col-md-12 fw-bold"><i class="far fa-check-square"></i> Landlord's Broker Commission:
                 <span class="removeBold">{{ $auction->get->compensation_structure_yes }}</span>
               </div>
             @endif

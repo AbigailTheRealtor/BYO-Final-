@@ -1,88 +1,215 @@
 @extends('layouts.main')
+
+{{-- Combined Fee Display Helper Functions (display-only, no storage changes) --}}
+@php
+  $fmtMoney = function($v) {
+    if ($v === null || $v === '') return null;
+    $raw = preg_replace('/[^0-9.]/', '', (string)$v);
+    if ($raw === '' || !is_numeric($raw)) return null;
+    return '$' . number_format((float)$raw, 0);
+  };
+
+  $fmtPercent = function($v) {
+    if ($v === null || $v === '') return null;
+    $raw = preg_replace('/[^0-9.]/', '', (string)$v);
+    if ($raw === '' || !is_numeric($raw)) return null;
+    $num = (float)$raw;
+    return (floor($num) == $num ? (string)(int)$num : (string)$num) . '%';
+  };
+
+  $joinParts = function($parts) {
+    $parts = array_values(array_filter($parts, fn($p) => $p !== null && $p !== ''));
+    return count($parts) ? implode(' + ', $parts) : null;
+  };
+
+  $basisText = function($basis) {
+    return $basis ? ('of ' . $basis) : null;
+  };
+@endphp
+
 @push('styles')
-    <!-- //Listing Description css  -->
-    <link rel="stylesheet" href="{{ asset('assets/css/listingDescription.css') }}" />
-    <style>
-        /* Chrome, Safari, Edge, Opera */
-        input::-webkit-outer-spin-button,
-        input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
+<!-- //Listing Description css  -->
+<link rel="stylesheet" href="{{ asset('assets/css/listingDescription.css') }}" />
+<style>
+    /* Chrome, Safari, Edge, Opera */
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
 
-        /* Firefox */
-        input[type=number] {
-            -moz-appearance: textfield;
-        }
+    /* Firefox */
+    input[type=number] {
+        -moz-appearance: textfield;
+    }
 
-        .fa-dollar,
-        .fa-percent {
-            padding: 0 20px;
-            background: #facd34;
-            color: #fff;
-            border: 0;
-            font-weight: 700 !important;
-            line-height: 39px !important;
-            margin-right: -5px;
-            z-index: 1;
-            border-radius: 3px 0 0 3px;
-        }
+    .fa-dollar,
+    .fa-percent {
+        padding: 0 20px;
+        background: #facd34;
+        color: #fff;
+        border: 0;
+        font-weight: 700 !important;
+        line-height: 39px !important;
+        margin-right: -5px;
+        z-index: 1;
+        border-radius: 3px 0 0 3px;
+    }
 
-        .form-control,
-        .form-select {
-            border-radius: 0.25rem;
-            box-shadow: inset 0 1px 2px 0 rgb(66 71 112 / 12%);
-            border-radius: 0.25rem;
-            background-color: #fafafb;
-            margin-bottom: 15px;
-        }
+    .form-control,
+    .form-select {
+        border-radius: 0.25rem;
+        box-shadow: inset 0 1px 2px 0 rgb(66 71 112 / 12%);
+        border-radius: 0.25rem;
+        background-color: #fafafb;
+        margin-bottom: 15px;
+    }
 
-        ul {
-            --icon-size: 1em;
-            --gutter: .5em;
-            padding: 0 0 0 calc(var(--icon-size) + 2em);
-        }
+    /* Section Title Hierarchy - Larger, bold, spaced, more prominent */
+    .card-header h4,
+    .section-title {
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+        color: #0f1a24;
+    }
 
-        ul li {
-            padding-left: var(--gutter);
-            color: #34465c;
-        }
+    /* SECTION HEADER BAR — shorter + true vertical centering */
+    .card-header.section-header {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start;
+        padding: 12px 18px !important;
+        min-height: 0 !important;
+        margin-top: 1.25rem;
+    }
 
-        ul li::marker {
-            content: "\f101";
-            /* FontAwesome Unicode */
-            font-family: FontAwesome;
-            font-size: var(--icon-size);
-            /* color: #006e9f; */
-            color: #11b7cf;
-        }
+    /* SECTION TITLE TEXT — remove default heading spacing */
+    .section-header .section-title {
+        margin: 0 !important;
+        padding: 0 !important;
+        line-height: 1 !important;
+        display: block;
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        color: #0f1a24;
+    }
 
-        ul.services li {
-            padding-left: var(--gutter);
-            color: #34465c;
-            list-style: none;
-            /* Remove default list style */
-            position: relative;
-            /* Set position relative for ::before pseudo-element */
-        }
+    /* Services section - extra breathing room before header */
+    .services-section-header {
+        margin-top: 0.75rem !important;
+    }
 
-        ul.services li::before {
-            content: "\f101";
-            /* FontAwesome icon content */
-            font-family: FontAwesome;
-            font-size: var(--icon-size);
-            /* Set the desired icon size */
-            position: absolute;
-            /* Position the icon */
-            left: -1.5em;
-            /* Adjust the icon position */
-            color: #11b7cf;
-            /* Set the icon color */
-        }
+    hr {
+        margin-top: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
 
-        .removeBold {
-            font-weight: normal;
-        }
+    /* Field row styling - improved line-height for scan-readability */
+    .col-md-12.col-12.pt-2.fw-bold {
+        line-height: 1.6;
+        padding-top: 0.6rem !important;
+        padding-bottom: 0.2rem;
+    }
+
+    .field-row {
+        padding: 0.5rem 0;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    .field-label {
+        font-weight: 600;
+        color: #34465c;
+    }
+
+    .field-value {
+        font-weight: normal;
+        color: #34465c;
+    }
+
+    /* Broker Compensation subsection headers - breathing room */
+    h5.mt-3.mb-2 {
+        padding-top: 0.75rem;
+        margin-top: 1rem !important;
+    }
+
+    /* Fix blank space under section headers - reduce gap to first content */
+    .card-body {
+        padding-top: 12px !important;
+    }
+
+    .card-body > :first-child {
+        margin-top: 0 !important;
+    }
+
+    /* Broker Compensation section text - match other section text color */
+    .broker-compensation-section,
+    .broker-compensation-section p,
+    .broker-compensation-section .col-md-12,
+    .broker-compensation-section .fw-bold {
+        color: #34465c !important;
+    }
+
+    ul {
+        --icon-size: 1em;
+        --gutter: .5em;
+        padding: 0 0 0 calc(var(--icon-size) + 2em);
+    }
+
+    ul li {
+        padding-left: var(--gutter);
+        color: #34465c;
+    }
+
+    ul:not(.services) li::marker {
+        content: "\f101";
+        /* FontAwesome Unicode */
+        font-family: FontAwesome;
+        font-size: var(--icon-size);
+        /* color: #006e9f; */
+        color: #11b7cf;
+    }
+
+    /* Services section - Tighter spacing and indentation */
+    ul.services {
+        list-style: none !important;
+        padding-left: 1.2em;
+        margin-top: 0.35rem;
+        margin-bottom: 0.5rem;
+    }
+
+    ul.services li {
+        padding: 0.15rem 0;
+        color: #34465c;
+        position: relative;
+        padding-left: 0;
+        list-style: none !important;
+        line-height: 1.4;
+    }
+
+    ul.services li::marker {
+        content: none !important;
+    }
+
+    ul.services li::before {
+        content: "\f101";
+        /* FontAwesome icon content */
+        font-family: FontAwesome;
+        font-size: var(--icon-size);
+        /* Set the desired icon size */
+        position: absolute;
+        /* Position the icon */
+        left: -1.2em;
+        /* Adjust the icon position */
+        color: #11b7cf;
+        /* Set the icon color */
+    }
+
+    .removeBold {
+        font-weight: normal;
+    }
 
         /* Base button style */
         .btn-custom {
@@ -156,8 +283,8 @@
         <div class="row">
             <div class="col-sm-12 col-md-8 col-lg-8 leftCol">
                 <div class="card description">
-                    <div class="card-header">
-                        <h4>Listing Details: </h5>
+                    <div class="card-header section-header">
+                        <h4 class="section-title">Listing Details:</h4>
                     </div>
                     <div class="card-body">
                         <div class="row" style="flex-wrap: wrap;">
@@ -217,8 +344,8 @@
 
                         </div>
                           <hr>
-                        <div class="card-header">
-                            <h4>Property Details: </h4>
+                        <div class="card-header section-header">
+                            <h4 class="section-title">Property Details:</h4>
                         </div>
 
                         <div class="row" style="flex-wrap: wrap;">
@@ -498,8 +625,8 @@
 
                         </div>
                         <hr>
-                        <div class="card-header">
-                            <h4>Sale Terms: </h4>
+                        <div class="card-header section-header">
+                            <h4 class="section-title">Sale Terms</h4>
                         </div>
 
                          @if (@$auction->get->sale_provision != '' && @$auction->get->sale_provision != 'null')
@@ -571,55 +698,145 @@
 
                         <hr>
 
-                        <div class="card-header">
-                            <h4>Services: </h4>
+                        @php
+                        // Check if services exist before showing the section
+                        $hasServices = !empty(@$auction->get->services) || !empty(@$auction->get->other_services);
+                        @endphp
+
+                        @if ($hasServices)
+                        <div class="card-header section-header services-section-header">
+                            <h4 class="section-title">Services:</h4>
                         </div>
 
-                        <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i> Services the
-                            Seller Requests from Their Agent:
+                        @php
+                        // Define seller service categories based on property type
+                        $isResidential = in_array(@$auction->get->property_type, ['Residential', 'Residential Property']);
+                        $isCommercial = in_array(@$auction->get->property_type, ['Commercial', 'Commercial Property']);
+                        $isIncome = in_array(@$auction->get->property_type, ['Income', 'Income Property']);
+                        $isVacantLand = in_array(@$auction->get->property_type, ['Vacant Land']);
+                        $isBusinessOpportunity = in_array(@$auction->get->property_type, ['Business Opportunity']);
 
-                            <ul>
-                                @if (!empty($auction->get->services))
-                                    @if (!empty($auction->get->services))
-                                        @foreach ($auction->get->services as $service)
-                                            <li style="font-size: 16px;">
-                                                {{ $service }}
-                                            </li>
-                                        @endforeach
+                        // Residential seller service categories
+                        $residentialCategories = [
+                            '📢 Property Marketing & Promotion' => [
+                                'Create professional listing photos',
+                                'Create virtual tour or video walkthrough',
+                                'List property on MLS',
+                                'Promote on social media platforms',
+                                'Create property flyer or brochure',
+                                'Host open houses',
+                                'Coordinate showings with buyer agents',
+                            ],
+                            '🔍 Pricing & Market Analysis' => [
+                                'Provide Comparative Market Analysis (CMA)',
+                                'Recommend listing price based on market conditions',
+                                'Monitor market trends and adjust strategy',
+                            ],
+                            '📝 Transaction & Negotiation Support' => [
+                                'Review and present offers',
+                                'Negotiate terms with buyer agents',
+                                'Coordinate inspections and appraisals',
+                                'Manage contract timelines and deadlines',
+                            ],
+                            '📃 Closing Support' => [
+                                'Coordinate with title company and escrow',
+                                'Review closing documents',
+                                'Attend closing on behalf of seller',
+                            ],
+                        ];
+
+                        // Commercial seller service categories
+                        $commercialCategories = [
+                            '📢 Property Marketing & Promotion' => [
+                                'Create professional listing photos',
+                                'Create virtual tour or video walkthrough',
+                                'List property on commercial platforms (LoopNet, Crexi, CoStar)',
+                                'Promote on social media platforms',
+                                'Create property flyer or brochure',
+                                'Host property tours',
+                            ],
+                            '🔍 Pricing & Market Analysis' => [
+                                'Provide Comparative Market Analysis (CMA)',
+                                'Analyze cap rates and NOI',
+                                'Recommend listing price based on market conditions',
+                            ],
+                            '📝 Transaction & Negotiation Support' => [
+                                'Review and present offers',
+                                'Negotiate terms with buyer agents',
+                                'Coordinate inspections and due diligence',
+                                'Manage contract timelines',
+                            ],
+                            '📃 Closing Support' => [
+                                'Coordinate with title company and escrow',
+                                'Review closing documents',
+                                'Attend closing on behalf of seller',
+                            ],
+                        ];
+
+                        $categories = $isCommercial ? $commercialCategories : $residentialCategories;
+                        $allServices = is_array(@$auction->get->services) ? $auction->get->services : [];
+                        $otherServices = is_array(@$auction->get->other_services) ? $auction->get->other_services : [];
+
+                        // Check if we have any services that match categories
+                        $hasMatchedServices = false;
+                        foreach ($categories as $categoryServices) {
+                            $matched = array_filter($allServices, fn($s) => in_array($s, $categoryServices));
+                            if (!empty($matched)) {
+                                $hasMatchedServices = true;
+                                break;
+                            }
+                        }
+                        @endphp
+
+                        <div class="col-md-12 col-12 pt-2">
+                            @if ($hasMatchedServices)
+                                @foreach ($categories as $categoryName => $categoryServices)
+                                    @php
+                                        $matchedServices = array_filter($allServices, function($service) use ($categoryServices) {
+                                            return in_array($service, $categoryServices);
+                                        });
+                                    @endphp
+                                    @if (!empty($matchedServices))
+                                    <div class="mt-3">
+                                        <strong>{{ $categoryName }}</strong>
+                                        <ul class="services">
+                                            @foreach ($matchedServices as $service)
+                                            <li style="font-size: 16px;">{{ $service }}</li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
                                     @endif
-
+                                @endforeach
+                            @else
+                                {{-- Fallback: show all services if none match categories --}}
+                                @if (!empty($allServices))
+                                <div class="mt-3">
+                                    <strong>📋 Services Requested</strong>
+                                    <ul class="services">
+                                        @foreach ($allServices as $service)
+                                        <li style="font-size: 16px;">{{ $service }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
                                 @endif
-                            </ul>
+                            @endif
 
-                        </div>
-
-                        @if (@$auction->get->other_services != null)
-                            <hr>
-
-                            <div class="card-header">
-                                <h4>Other Services: </h4>
-                            </div>
-                            <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i> Other
-                                Services
-                                the
-                                Seller Requests from Their Agent:
-                                <ul>
-
-                                    @if (!empty($auction->get->other_services))
-                                        @foreach ($auction->get->other_services as $other_service)
-                                            <li style="font-size: 16px;">
-                                                {{ $other_service }}
-                                            </li>
-                                        @endforeach
-                                    @endif
+                            @if (!empty($otherServices))
+                            <div class="mt-3">
+                                <strong>✍️ Additional Services</strong>
+                                <ul class="services">
+                                    @foreach ($otherServices as $other_service)
+                                    <li style="font-size: 16px;">{{ $other_service }}</li>
+                                    @endforeach
                                 </ul>
-
                             </div>
+                            @endif
+                        </div>
                         @endif
                         <hr>
                         @if (@$auction->get->additional_details != null)
-                            <div class="card-header">
-                                <h4>Additional Details: </h4>
+                            <div class="card-header section-header">
+                                <h4 class="section-title">Additional Details:</h4>
                             </div>
 
                             <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
@@ -629,9 +846,12 @@
                         @endif
 
                         <hr />
-                        <div class="card-header">
-                            <h4>Broker Compensation: </h4>
+                        <div class="card-header section-header">
+                            <h4 class="section-title">Broker Compensation & Agency Agreement Terms</h4>
                         </div>
+
+                        <!-- Seller's Broker Compensation Sub-section -->
+                        <h5 class="mt-3 mb-2"><strong>Seller's Broker Compensation:</strong></h5>
 
                         @if (@$auction->get->commission_structure != null)
                             <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
@@ -736,8 +956,8 @@
                         @endif
 
                         <hr />
-                        <div class="card-header">
-                            <h4>Seller Info </h4>
+                        <div class="card-header section-header">
+                            <h4 class="section-title">Seller Info</h4>
                         </div>
                         @if (!empty($auction->get->first_name))
                             <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i> First
