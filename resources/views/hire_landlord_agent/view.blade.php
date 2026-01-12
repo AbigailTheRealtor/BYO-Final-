@@ -97,7 +97,7 @@
         color: #34465c;
     }
 
-    ul li::marker {
+    ul:not(.services) li::marker {
         content: "\f101";
         /* FontAwesome Unicode */
         font-family: FontAwesome;
@@ -106,27 +106,33 @@
         color: #11b7cf;
     }
 
+    /* Services section - Tighter spacing and indentation */
+    ul.services {
+        list-style: none !important;
+        padding-left: 1.2em;
+        margin-top: 0.35rem;
+        margin-bottom: 0.5rem;
+    }
+
     ul.services li {
-        padding-left: var(--gutter);
+        padding: 0.15rem 0;
         color: #34465c;
-        list-style: none;
-        /* Remove default list style */
         position: relative;
-        /* Set position relative for ::before pseudo-element */
+        padding-left: 0;
+        list-style: none !important;
+        line-height: 1.4;
+    }
+
+    ul.services li::marker {
+        content: none !important;
     }
 
     ul.services li::before {
-        content: "\f101";
-        /* FontAwesome icon content */
-        font-family: FontAwesome;
-        font-size: var(--icon-size);
-        /* Set the desired icon size */
+        content: "•";
         position: absolute;
-        /* Position the icon */
-        left: -1.5em;
-        /* Adjust the icon position */
-        color: #11b7cf;
-        /* Set the icon color */
+        left: -0.9em;
+        color: #34465c;
+        font-size: 1.1em;
     }
 
     .removeBold {
