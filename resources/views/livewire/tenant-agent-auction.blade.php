@@ -3685,22 +3685,17 @@ $lease_types = [
 
             // Validate counties array - REQUIRED for ALL user types
             const countiesContainer = currentTabContent.querySelector('.counties-container');
+            const countiesErrorSpan = currentTabContent.querySelector('#counties_error');
             if (countiesContainer) {
                 const countyBadges = countiesContainer.querySelectorAll('.badge');
                 if (!countyBadges || countyBadges.length === 0) {
                     isValid = false;
-                    const existingError = countiesContainer.parentNode.querySelector('.error');
-                    if (!existingError) {
-                        const countiesError = document.createElement('div');
-                        countiesError.className = 'error';
-                        countiesError.textContent = 'This field is required.';
-                        countiesContainer.parentNode.insertBefore(countiesError, countiesContainer
-                            .nextSibling);
+                    if (countiesErrorSpan) {
+                        countiesErrorSpan.textContent = 'This field is required.';
                     }
                 } else {
-                    const existingError = countiesContainer.parentNode.querySelector('.error');
-                    if (existingError) {
-                        existingError.remove();
+                    if (countiesErrorSpan) {
+                        countiesErrorSpan.textContent = '';
                     }
                 }
             }

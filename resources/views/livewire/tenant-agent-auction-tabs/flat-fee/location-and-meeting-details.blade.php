@@ -91,6 +91,7 @@
 
         @endif
     </div>
+    <span class="error mt-2" id="counties_error"></span>
 </div>
 
 <!-- Acceptable State -->

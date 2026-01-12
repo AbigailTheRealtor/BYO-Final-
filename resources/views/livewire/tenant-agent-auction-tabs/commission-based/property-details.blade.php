@@ -195,6 +195,7 @@
 
         @endif
     </div>
+    <span class="error mt-2" id="counties_error"></span>
 </div>
 
 <div class="form-group">
