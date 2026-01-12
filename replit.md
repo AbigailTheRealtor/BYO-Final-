@@ -44,14 +44,14 @@ Save Draft does NOT redirect but displays a confirmation message including the L
 
 The Buyer view (buyerAgentAuctionDetail.blade.php) includes property-type-aware categories for Residential, Income, Commercial, and Business property types. Agent bids and counter-bids also follow the same categorized services display and value-first broker compensation format.
 
-**Buyer Broker Compensation Structure (Jan 2026)**: The Buyer view Broker Compensation section is organized into 6 labeled subsections with bullets and dividers across main listing, agent bid, and counter-bid contexts:
+**Buyer Broker Compensation Structure (Jan 2026)**: The Buyer view Broker Compensation section uses the same label:value pair format as Tenant and Landlord views, organized into 6 labeled subsections with dividers across main listing, agent bid, and counter-bid contexts:
 1. Buyer's Broker Compensation (commission structure, purchase fee)
 2. Buyer's Broker Lease Fee (interested in lease, lease fee value-first)
 3. Lease-Option Details (lease-option interest, compensation amounts)
-4. Legal Terms (protection period, early termination with nested sub-bullets, retainer with nested sub-bullets, agency timeframe)
+4. Legal Terms (protection period, early termination fee, retainer fee, agency timeframe)
 5. Brokerage Relationship
 6. Additional Terms
-Each field uses `<ul class="services">` bullets, and nested sub-bullets display conditional amounts (e.g., Early Termination Fee Amount when Yes).
+Each field uses `<div class="col-md-12 col-12 pt-2 fw-bold">Label: <span class="removeBold">Value</span></div>` format matching Tenant/Landlord views. Raw stored values are displayed without transformation (only quote stripping applied).
 
 ### System Design Choices
 The architecture emphasizes modularity through Laravel's structure and Livewire components. A database-first approach prioritizes local database solutions for core services like location. Clear separation of concerns is maintained between frontend, backend, and data persistence. The system is deployment-ready with production environment optimizations. Existing database schema and storage logic for fees are immutable, with fee format updates being display-only.
