@@ -2182,6 +2182,15 @@ class SellerAgentAuction extends Component
             $auction->user_id = Auth::id();
             $auction->title = $this->listing_title;
             $auction->is_draft = 0;
+            
+            // Set required NOT NULL fields for seller type
+            if (empty($auction->address)) {
+                $auction->address = $this->listing_title ?? 'Seller Agent Listing';
+            }
+            $auction->is_approved = 1;
+            $auction->is_sold = 0;
+            $auction->is_paid = 0;
+            
             $auction->save();
 
             $this->listingId = $auction->id;
