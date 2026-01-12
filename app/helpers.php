@@ -32,6 +32,12 @@ if (!function_exists('db_time')) {
 
     function selected_in($val, $array, $selected = "selected")
     {
+        if (is_string($array)) {
+            $array = json_decode($array, true) ?? [];
+        }
+        if (!is_array($array)) {
+            $array = [];
+        }
         if (in_array($val, $array)) {
             return $selected;
         } else {
