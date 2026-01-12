@@ -1617,14 +1617,21 @@ class TenantAgentAuction extends Component
             $this->newCity = '';
         }
 
-        $this->validate(['cities' => 'required|array|min:1']);
+        // Cities are OPTIONAL for buyer user type, required for others
+        if ($this->user_type !== 'buyer') {
+            $this->validate(['cities' => 'required|array|min:1']);
+        }
     }
 
     public function removeCity($index)
     {
         unset($this->cities[$index]);
         $this->cities = array_values($this->cities);
-        $this->validate(['cities' => 'required|array|min:1']);
+        
+        // Cities are OPTIONAL for buyer user type, required for others
+        if ($this->user_type !== 'buyer') {
+            $this->validate(['cities' => 'required|array|min:1']);
+        }
     }
 
     public function addCounty()

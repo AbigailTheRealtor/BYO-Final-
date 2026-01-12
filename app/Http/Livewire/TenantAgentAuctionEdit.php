@@ -1433,7 +1433,10 @@ class TenantAgentAuctionEdit extends Component
             $this->newCity = '';
         }
 
-        $this->validate(['cities' => 'required|array|min:1']);
+        // Cities are OPTIONAL for buyer user type, required for others
+        if ($this->user_type !== 'buyer') {
+            $this->validate(['cities' => 'required|array|min:1']);
+        }
     }
 
 
@@ -1442,7 +1445,11 @@ class TenantAgentAuctionEdit extends Component
     {
         unset($this->cities[$index]);
         $this->cities = array_values($this->cities);
-        $this->validate(['cities' => 'required|array|min:1']);
+        
+        // Cities are OPTIONAL for buyer user type, required for others
+        if ($this->user_type !== 'buyer') {
+            $this->validate(['cities' => 'required|array|min:1']);
+        }
     }
 
 

@@ -1950,6 +1950,9 @@
     </script> --}}
 
     <script>
+        // Store user_type for validation logic - Cities optional for buyer, required for others
+        const CURRENT_USER_TYPE = '{{ $user_type ?? "tenant" }}';
+        
         // Global array to store tooltip instances
         let tooltipInstances = [];
 
@@ -3439,23 +3442,32 @@
                     });
                 }
 
-                // Validate cities array (your existing code)
+                // Validate cities array - SKIP for buyer (cities optional for buyer)
                 const citiesContainer = currentTabContent.querySelector('.cities-container');
                 if (citiesContainer) {
                     const cityBadges = citiesContainer.querySelectorAll('.badge');
-                    if (!cityBadges || cityBadges.length === 0) {
-                        isValid = false;
-                        const existingError = citiesContainer.parentNode.querySelector('.error');
-                        if (!existingError) {
-                            const citiesError = document.createElement('div');
-                            citiesError.className = 'error';
-                            citiesError.textContent = 'At least one city is required.';
-                            citiesContainer.parentNode.insertBefore(citiesError, citiesContainer
-                                .nextSibling);
+                    // For buyer user type, cities are OPTIONAL - skip validation
+                    if (CURRENT_USER_TYPE !== 'buyer') {
+                        if (!cityBadges || cityBadges.length === 0) {
+                            isValid = false;
+                            const existingError = citiesContainer.parentNode.querySelector('.error');
+                            if (!existingError) {
+                                const citiesError = document.createElement('div');
+                                citiesError.className = 'error';
+                                citiesError.textContent = 'At least one city is required.';
+                                citiesContainer.parentNode.insertBefore(citiesError, citiesContainer
+                                    .nextSibling);
+                            }
+                        } else {
+                            const existingError = citiesContainer.parentNode.querySelector('.error');
+                            if (existingError) {
+                                existingError.remove();
+                            }
                         }
                     } else {
+                        // For buyer, always remove any existing city error
                         const existingError = citiesContainer.parentNode.querySelector('.error');
-                        if (existingError) {
+                        if (existingError && existingError.textContent.includes('city')) {
                             existingError.remove();
                         }
                     }
@@ -3610,23 +3622,32 @@
                     });
                 }
 
-                // Validate cities array (your existing code)
+                // Validate cities array - SKIP for buyer (cities optional for buyer)
                 const citiesContainer = currentTabContent.querySelector('.cities-container');
                 if (citiesContainer) {
                     const cityBadges = citiesContainer.querySelectorAll('.badge');
-                    if (!cityBadges || cityBadges.length === 0) {
-                        isValid = false;
-                        const existingError = citiesContainer.parentNode.querySelector('.error');
-                        if (!existingError) {
-                            const citiesError = document.createElement('div');
-                            citiesError.className = 'error';
-                            citiesError.textContent = 'At least one city is required.';
-                            citiesContainer.parentNode.insertBefore(citiesError, citiesContainer
-                                .nextSibling);
+                    // For buyer user type, cities are OPTIONAL - skip validation
+                    if (CURRENT_USER_TYPE !== 'buyer') {
+                        if (!cityBadges || cityBadges.length === 0) {
+                            isValid = false;
+                            const existingError = citiesContainer.parentNode.querySelector('.error');
+                            if (!existingError) {
+                                const citiesError = document.createElement('div');
+                                citiesError.className = 'error';
+                                citiesError.textContent = 'At least one city is required.';
+                                citiesContainer.parentNode.insertBefore(citiesError, citiesContainer
+                                    .nextSibling);
+                            }
+                        } else {
+                            const existingError = citiesContainer.parentNode.querySelector('.error');
+                            if (existingError) {
+                                existingError.remove();
+                            }
                         }
                     } else {
+                        // For buyer, always remove any existing city error
                         const existingError = citiesContainer.parentNode.querySelector('.error');
-                        if (existingError) {
+                        if (existingError && existingError.textContent.includes('city')) {
                             existingError.remove();
                         }
                     }
