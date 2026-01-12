@@ -557,13 +557,12 @@
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     View:
                                     @foreach (@$auction->get->view_preference as $item)
-                                        <span class="removeBold badge bg-secondary">
-                                            {{ @$item }}
-
-                                        </span>
+                                        @if ($item !== 'Other')
+                                        <span class="removeBold badge bg-secondary">{{ @$item }}</span>
+                                        @endif
                                     @endforeach
                                     @if (@$auction->get->other_preferences)
-                                        <span class="removeBold">({{ @$auction->get->other_preferences }})</span>
+                                        <span class="removeBold badge bg-secondary">{{ @$auction->get->other_preferences }}</span>
                                     @endif
                                 </div>
                             @endif
@@ -580,13 +579,13 @@
                                     Amenities and Property Features:
                                     @if (gettype(@$auction->get->non_negotiable_amenities) == 'array')
                                         @foreach (@$auction->get->non_negotiable_amenities as $item)
-                                            <span class="removeBold badge bg-secondary">
-                                                {{ @$item }}
-                                            </span>
+                                            @if ($item !== 'Other')
+                                            <span class="removeBold badge bg-secondary">{{ @$item }}</span>
+                                            @endif
                                         @endforeach
                                     @endif
                                     @if (@$auction->get->other_non_negotiable_amenities)
-                                        <span class="removeBold">({{ @$auction->get->other_non_negotiable_amenities }})</span>
+                                        <span class="removeBold badge bg-secondary">{{ @$auction->get->other_non_negotiable_amenities }}</span>
                                     @endif
                                 </div>
                             @endif
@@ -657,6 +656,15 @@
                                 {{ @$auction->get->occupant_status }}
                             </div>
                         @endif
+                        @if (@$auction->get->occupant_tenant != '' && @$auction->get->occupant_tenant != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold">
+                                <span class="fw-bold">Occupied Until:</span>
+                                @php
+                                    $occupiedDate = \Carbon\Carbon::parse($auction->get->occupant_tenant);
+                                    echo $occupiedDate->format('F j, Y');
+                                @endphp
+                            </div>
+                        @endif
                         @if (@$auction->get->maximum_budget != null)
                             <div class="col-md-12 col-12 pt-2 removeBold">
                                 <span class="fw-bold">Desired Sale Price:</span>
@@ -669,25 +677,176 @@
                                 Financing/Currency:
                                 @if (gettype(@$auction->get->offered_financing) == 'array')
                                     @foreach ($auction->get->offered_financing as $financing)
-                                        @if ($financing != 'Other')
-                                            <span class="removeBold badge bg-secondary">
-                                                {{ $financing }}
-                                            </span>
-                                        @else
-                                            <br>
-                                            <ul class="leasing">
-                                                <li style="font-size:16px;">
-                                                    <span class="removeBold">
-                                                        {{ $auction->get->other_financing }}</span>
-                                                </li>
-                                            </ul>
+                                        @if ($financing !== 'Other')
+                                        <span class="removeBold badge bg-secondary">{{ $financing }}</span>
                                         @endif
                                     @endforeach
+                                    @if (@$auction->get->other_financing)
+                                        <span class="removeBold badge bg-secondary">{{ $auction->get->other_financing }}</span>
+                                    @endif
                                 @endif
                             </div>
                         @endif
 
+                        {{-- Assumable Sub-Questions --}}
+                        @if (is_array(@$auction->get->offered_financing) && in_array('Assumable', @$auction->get->offered_financing))
+                            @if (@$auction->get->assumable_terms != '' && @$auction->get->assumable_terms != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Offered Assumable Terms:</span>
+                                {{ @$auction->get->assumable_terms }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->assumable_loan_type != '' && @$auction->get->assumable_loan_type != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Assumable Loan Type:</span>
+                                {{ @$auction->get->assumable_loan_type }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->max_assumable_rate != '' && @$auction->get->max_assumable_rate != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Interest Rate of Assumable Loan:</span>
+                                {{ @$auction->get->max_assumable_rate }}%
+                            </div>
+                            @endif
+                            @if (@$auction->get->assumable_monthly_payment != '' && @$auction->get->assumable_monthly_payment != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Monthly Payment (P&I) for Assumable Loan:</span>
+                                ${{ number_format(@$auction->get->assumable_monthly_payment, 0) }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->assumable_balance != '' && @$auction->get->assumable_balance != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Assumable Balance:</span>
+                                ${{ number_format(@$auction->get->assumable_balance, 0) }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->lender_approval != '' && @$auction->get->lender_approval != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Lender Approval Required:</span>
+                                {{ @$auction->get->lender_approval }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->assumable_down_payment != '' && @$auction->get->assumable_down_payment != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Down Payment to Bridge Gap:</span>
+                                ${{ number_format(@$auction->get->assumable_down_payment, 0) }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->assumable_loan_term_remaining != '' && @$auction->get->assumable_loan_term_remaining != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Remaining Loan Term:</span>
+                                {{ @$auction->get->assumable_loan_term_remaining }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->assumable_loan_servicer != '' && @$auction->get->assumable_loan_servicer != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Loan Servicer:</span>
+                                {{ @$auction->get->assumable_loan_servicer }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->assumable_fee_amount != '' && @$auction->get->assumable_fee_amount != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Assumption Fee:</span>
+                                @if (@$auction->get->assumable_fee_type === '%')
+                                    {{ @$auction->get->assumable_fee_amount }}%
+                                @else
+                                    ${{ number_format(@$auction->get->assumable_fee_amount, 0) }}
+                                @endif
+                            </div>
+                            @endif
+                        @endif
 
+                        {{-- Seller Financing Sub-Questions --}}
+                        @if (is_array(@$auction->get->offered_financing) && in_array('Seller Financing', @$auction->get->offered_financing))
+                            @if (@$auction->get->seller_financing_amount != '' && @$auction->get->seller_financing_amount != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Seller Financing Amount:</span>
+                                @if (@$auction->get->seller_financing_type === '%')
+                                    {{ @$auction->get->seller_financing_amount }}% of Total Purchase Price
+                                @else
+                                    ${{ number_format(@$auction->get->seller_financing_amount, 0) }}
+                                @endif
+                            </div>
+                            @endif
+                            @if (@$auction->get->seller_financing_interest_rate != '' && @$auction->get->seller_financing_interest_rate != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Seller Financing Interest Rate:</span>
+                                {{ @$auction->get->seller_financing_interest_rate }}%
+                            </div>
+                            @endif
+                            @if (@$auction->get->seller_financing_term != '' && @$auction->get->seller_financing_term != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Seller Financing Term:</span>
+                                {{ @$auction->get->seller_financing_term }}
+                            </div>
+                            @endif
+                        @endif
+
+                        {{-- Lease Option Sub-Questions --}}
+                        @if (is_array(@$auction->get->offered_financing) && in_array('Lease Option', @$auction->get->offered_financing))
+                            @if (@$auction->get->lease_option_price != '' && @$auction->get->lease_option_price != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Lease Option Purchase Price:</span>
+                                ${{ number_format(@$auction->get->lease_option_price, 0) }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->lease_option_payment != '' && @$auction->get->lease_option_payment != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Monthly Lease Payment:</span>
+                                ${{ number_format(@$auction->get->lease_option_payment, 0) }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->lease_option_duration != '' && @$auction->get->lease_option_duration != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Lease Option Duration:</span>
+                                {{ @$auction->get->lease_option_duration }} months
+                            </div>
+                            @endif
+                            @if (@$auction->get->lease_option_fee != '' && @$auction->get->lease_option_fee != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Option Fee:</span>
+                                ${{ number_format(@$auction->get->lease_option_fee, 0) }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->lease_option_fee_credit != '' && @$auction->get->lease_option_fee_credit != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Option Fee Credit:</span>
+                                {{ @$auction->get->lease_option_fee_credit }}
+                            </div>
+                            @endif
+                        @endif
+
+                        {{-- Cryptocurrency Sub-Questions --}}
+                        @if (is_array(@$auction->get->offered_financing) && in_array('Cryptocurrency', @$auction->get->offered_financing))
+                            @if (@$auction->get->cryptocurrency_type != '' && @$auction->get->cryptocurrency_type != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Acceptable Cryptocurrency:</span>
+                                {{ @$auction->get->cryptocurrency_type }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->cryptocurrency_percentage != '' && @$auction->get->cryptocurrency_percentage != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Percentage Payable in Crypto:</span>
+                                {{ @$auction->get->cryptocurrency_percentage }}%
+                            </div>
+                            @endif
+                        @endif
+
+                        {{-- NFT Sub-Questions --}}
+                        @if (is_array(@$auction->get->offered_financing) && in_array('Non-Fungible Token (NFT)', @$auction->get->offered_financing))
+                            @if (@$auction->get->nft_description != '' && @$auction->get->nft_description != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Acceptable NFT Type:</span>
+                                {{ @$auction->get->nft_description }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->nft_percentage != '' && @$auction->get->nft_percentage != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Percentage Acceptable as NFT:</span>
+                                {{ @$auction->get->nft_percentage }}%
+                            </div>
+                            @endif
+                        @endif
 
                         <hr>
 
@@ -952,15 +1111,15 @@
                             if ($sellerLeaseFeeType === 'Flat Fee' && @$auction->get->lease_fee_flat) {
                                 $sellerLeaseFeeCombined = $fmtMoney(@$auction->get->lease_fee_flat);
                             } elseif ($sellerLeaseFeeType === 'Percentage of the Total Purchase Price' && @$auction->get->lease_fee_percentage) {
-                                $sellerLeaseFeeCombined = $fmtPercent(@$auction->get->lease_fee_percentage);
+                                $sellerLeaseFeeCombined = $fmtPercent(@$auction->get->lease_fee_percentage) . ' of Total Purchase Price';
                             } elseif ($sellerLeaseFeeType === 'Percentage of the Gross Lease Value' && @$auction->get->lease_fee_percentage_combo) {
                                 $sellerLeaseFeeCombined = $fmtPercent(@$auction->get->lease_fee_percentage_combo) . ' of Gross Lease Value';
                             } elseif ($sellerLeaseFeeType === "Percentage of the Monthly Rent" && @$auction->get->lease_fee_percentage_monthly_rent) {
                                 $sellerLeaseFeeCombined = $fmtPercent(@$auction->get->lease_fee_percentage_monthly_rent) . ' of Monthly Rent';
                             } elseif ($sellerLeaseFeeType === 'Flat Fee + Percentage' && (@$auction->get->lease_fee_flat_combo || @$auction->get->lease_fee_percentage_combo)) {
                                 $parts = [];
-                                if (@$auction->get->lease_fee_flat_combo) $parts[] = $fmtMoney(@$auction->get->lease_fee_flat_combo);
-                                if (@$auction->get->lease_fee_percentage_combo) $parts[] = $fmtPercent(@$auction->get->lease_fee_percentage_combo);
+                                if (@$auction->get->lease_fee_percentage_combo) $parts[] = $fmtPercent(@$auction->get->lease_fee_percentage_combo) . ' of Total Purchase Price';
+                                if (@$auction->get->lease_fee_flat_combo) $parts[] = $fmtMoney(@$auction->get->lease_fee_flat_combo) . ' flat';
                                 $sellerLeaseFeeCombined = implode(' + ', $parts);
                             } elseif ($sellerLeaseFeeType === 'Percentage of the Net Aggregate Rent' && @$auction->get->lease_fee_percentage_net) {
                                 $sellerLeaseFeeCombined = $fmtPercent(@$auction->get->lease_fee_percentage_net) . ' of Net Aggregate Rent';
@@ -976,6 +1135,86 @@
                         </div>
                         @endif
 
+                        <hr class="my-2">
+
+                        <!-- Lease Terms Sub-section -->
+                        @if (@$auction->get->interested_purchase_fee_type != null)
+                        <h5 class="mt-3 mb-2"><strong>Lease Terms:</strong></h5>
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
+                            Interested in Offering a Lease Agreement:
+                            <span class="removeBold">{{ in_array(strtolower(@$auction->get->interested_purchase_fee_type ?? ''), ['yes']) ? 'Yes' : 'No' }}</span>
+                        </div>
+                        @if (in_array(strtolower(@$auction->get->interested_purchase_fee_type ?? ''), ['yes']) && @$auction->get->seller_leasing_fee_type != null)
+                        @php
+                            $sellerLeasingFee = '—';
+                            $leasingType = @$auction->get->seller_leasing_fee_type;
+                            if ($leasingType === 'Flat Fee' && @$auction->get->seller_leasing_gross_purchase_fee_flat_amount) {
+                                $sellerLeasingFee = $fmtMoney(@$auction->get->seller_leasing_gross_purchase_fee_flat_amount);
+                            } elseif ($leasingType === 'Percentage of Gross Lease Value' && @$auction->get->seller_leasing_gross) {
+                                $sellerLeasingFee = $fmtPercent(@$auction->get->seller_leasing_gross) . ' of Gross Lease Value';
+                            } elseif ($leasingType === 'Percentage of Gross Monthly Rent' && @$auction->get->seller_leasing_gross_month_rent) {
+                                $sellerLeasingFee = $fmtPercent(@$auction->get->seller_leasing_gross_month_rent) . ' of Gross Monthly Rent';
+                            } elseif (strtolower($leasingType) === 'other' && @$auction->get->seller_leasing_gross_other) {
+                                $sellerLeasingFee = @$auction->get->seller_leasing_gross_other;
+                            } else {
+                                $sellerLeasingFee = $leasingType;
+                            }
+                        @endphp
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
+                            Seller's Broker Leasing Fee:
+                            <span class="removeBold">{{ $sellerLeasingFee }}</span>
+                        </div>
+                        @endif
+                        @endif
+
+                        <hr class="my-2">
+
+                        <!-- Lease-Option Terms Sub-section -->
+                        @if (@$auction->get->interested_lease_option_agreement != null)
+                        <h5 class="mt-3 mb-2"><strong>Lease-Option Terms:</strong></h5>
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
+                            Interested in Offering a Lease-Option Agreement:
+                            <span class="removeBold">{{ in_array(strtolower(@$auction->get->interested_lease_option_agreement ?? ''), ['yes']) ? 'Yes' : 'No' }}</span>
+                        </div>
+                        @if (in_array(strtolower(@$auction->get->interested_lease_option_agreement ?? ''), ['yes']))
+                            @if (@$auction->get->lease_value != '' && @$auction->get->lease_value != 'null')
+                            @php
+                                $leaseCompDisplay = @$auction->get->lease_value;
+                                $leaseType = @$auction->get->lease_type ?? '$';
+                                if ($leaseType === '%') {
+                                    $leaseCompDisplay = $leaseCompDisplay . '% of Total Purchase Price';
+                                } else {
+                                    $leaseCompDisplay = $fmtMoney($leaseCompDisplay);
+                                }
+                            @endphp
+                            <div class="col-md-12 col-12 pt-2 fw-bold">
+                                Compensation (When Option Is Created):
+                                <span class="removeBold">{{ $leaseCompDisplay }}</span>
+                            </div>
+                            @endif
+                            @if (@$auction->get->purchase_value != '' && @$auction->get->purchase_value != 'null')
+                            @php
+                                $purchaseCompDisplay = @$auction->get->purchase_value;
+                                $purchaseType = @$auction->get->purchase_type ?? '$';
+                                if ($purchaseType === '%') {
+                                    $purchaseCompDisplay = $purchaseCompDisplay . '% of Total Purchase Price';
+                                } else {
+                                    $purchaseCompDisplay = $fmtMoney($purchaseCompDisplay);
+                                }
+                            @endphp
+                            <div class="col-md-12 col-12 pt-2 fw-bold">
+                                Compensation (If Purchase Option Is Exercised):
+                                <span class="removeBold">{{ $purchaseCompDisplay }}</span>
+                            </div>
+                            @endif
+                        @endif
+                        @endif
+
+                        <hr class="my-2">
+
+                        <!-- Legal Terms Sub-section -->
+                        <h5 class="mt-3 mb-2"><strong>Legal Terms:</strong></h5>
+
                         @if (@$auction->get->protection_period != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Protection Period Timeframe:
@@ -984,15 +1223,43 @@
                         @endif
 
                         @if (@$auction->get->early_termination_fee_option != null)
-                        @php
-                            $earlyTermDisplay = @$auction->get->early_termination_fee_option;
-                            if ($earlyTermDisplay === 'Yes' && @$auction->get->early_termination_fee_amount) {
-                                $earlyTermDisplay = 'Yes (' . $fmtMoney(@$auction->get->early_termination_fee_amount) . ')';
-                            }
-                        @endphp
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Early Termination Fee:
-                            <span class="removeBold">{{ $earlyTermDisplay }}</span>
+                            <span class="removeBold">{{ @$auction->get->early_termination_fee_option }}</span>
+                        </div>
+                        @if (@$auction->get->early_termination_fee_option === 'Yes' && @$auction->get->early_termination_fee_amount)
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
+                            Termination Fee Amount:
+                            <span class="removeBold">{{ $fmtMoney(@$auction->get->early_termination_fee_amount) }}</span>
+                        </div>
+                        @endif
+                        @endif
+
+                        @if (@$auction->get->retainer_fee_option != null)
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
+                            Retainer Fee:
+                            <span class="removeBold">{{ in_array(strtolower(@$auction->get->retainer_fee_option ?? ''), ['yes']) ? 'Yes' : 'No' }}</span>
+                        </div>
+                        @if (in_array(strtolower(@$auction->get->retainer_fee_option ?? ''), ['yes']))
+                            @if (@$auction->get->retainer_fee_amount)
+                            <div class="col-md-12 col-12 pt-2 fw-bold">
+                                Retainer Fee Amount:
+                                <span class="removeBold">{{ $fmtMoney(@$auction->get->retainer_fee_amount) }}</span>
+                            </div>
+                            @endif
+                            @if (@$auction->get->retainer_fee_application)
+                            <div class="col-md-12 col-12 pt-2 fw-bold">
+                                Retainer Fee Application:
+                                <span class="removeBold">{{ @$auction->get->retainer_fee_application }}</span>
+                            </div>
+                            @endif
+                        @endif
+                        @endif
+
+                        @if (@$auction->get->retained_deposits != null && @$auction->get->retained_deposits != '' && @$auction->get->retained_deposits != 'null')
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
+                            Seller's Broker's Share of Retained Deposits:
+                            <span class="removeBold">{{ $fmtMoney(@$auction->get->retained_deposits) }}</span>
                         </div>
                         @endif
 
@@ -1009,10 +1276,23 @@
                         </div>
                         @endif
 
+                        <hr class="my-2">
+
+                        <!-- Brokerage Relationship Sub-section -->
+                        <h5 class="mt-3 mb-2"><strong>Brokerage Relationship:</strong></h5>
+
                         @if (@$auction->get->brokerage_relationship != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Acceptable Brokerage Relationship:
                             <span class="removeBold">{{ $auction->get->brokerage_relationship ?? '' }}</span>
+                        </div>
+                        @endif
+
+                        @if (@$auction->get->additional_details_broker != null && @$auction->get->additional_details_broker != '')
+                        <hr class="my-2">
+                        <h5 class="mt-3 mb-2"><strong>Additional Terms:</strong></h5>
+                        <div class="col-md-12 col-12 pt-2 removeBold">
+                            {{ @$auction->get->additional_details_broker }}
                         </div>
                         @endif
 

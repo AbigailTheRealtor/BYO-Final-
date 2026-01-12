@@ -1566,7 +1566,7 @@
                                 Compensation (When Option Is Created):
                                 <span class="removeBold">
                                     @if (@$auction->get->lease_type === 'percent')
-                                        {{ @$auction->get->lease_value }}%
+                                        {{ @$auction->get->lease_value }}% of Total Purchase Price
                                     @else
                                         ${{ number_format((float)str_replace(',', '', @$auction->get->lease_value), 0) }}
                                     @endif
@@ -1579,7 +1579,7 @@
                                 Compensation (If Purchase Option Is Exercised):
                                 <span class="removeBold">
                                     @if (@$auction->get->purchase_type === 'percent')
-                                        {{ @$auction->get->purchase_value }}%
+                                        {{ @$auction->get->purchase_value }}% of Total Purchase Price
                                     @else
                                         ${{ number_format((float)str_replace(',', '', @$auction->get->purchase_value), 0) }}
                                     @endif

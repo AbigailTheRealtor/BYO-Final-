@@ -1410,7 +1410,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 Compensation (When Option Is Created):
                 <span class="removeBold">
                     @if (@$auction->get->lease_type === 'percent')
-                        {{ $fmtPercent($auction->get->lease_value) }}
+                        {{ $fmtPercent($auction->get->lease_value) }} of Total Purchase Price
                     @else
                         {{ $fmtMoney($auction->get->lease_value) }}
                     @endif
@@ -1420,10 +1420,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
             @if (@$auction->get->purchase_value != null)
             <div class="col-md-12 col-12 pt-2 fw-bold">
-                Compensation (If Purchase Option is Exercised):
+                Compensation (If Purchase Option Is Exercised):
                 <span class="removeBold">
                     @if (@$auction->get->purchase_type === 'percent')
-                        {{ $fmtPercent($auction->get->purchase_value) }}
+                        {{ $fmtPercent($auction->get->purchase_value) }} of Total Purchase Price
                     @else
                         {{ $fmtMoney($auction->get->purchase_value) }}
                     @endif
