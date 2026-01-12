@@ -1,4 +1,36 @@
 @extends('layouts.main')
+
+{{-- Combined Fee Display Helper Functions (display-only, no storage changes) --}}
+@php
+  $fmtMoney = function($v) {
+    if ($v === null || $v === '') return null;
+    $raw = preg_replace('/[^0-9.]/', '', (string)$v);
+    if ($raw === '' || !is_numeric($raw)) return null;
+    return '$' . number_format((float)$raw, 0);
+  };
+
+  $fmtPercent = function($v) {
+    if ($v === null || $v === '') return null;
+    $raw = preg_replace('/[^0-9.]/', '', (string)$v);
+    if ($raw === '' || !is_numeric($raw)) return null;
+    $num = (float)$raw;
+    return (floor($num) == $num ? (string)(int)$num : (string)$num) . '%';
+  };
+
+  $joinParts = function($parts) {
+    $parts = array_values(array_filter($parts, fn($p) => $p !== null && $p !== ''));
+    return count($parts) ? implode(' + ', $parts) : null;
+  };
+
+  $basisText = function($basis) {
+    return $basis ? ('of ' . $basis) : null;
+  };
+
+  // Determine if property is Residential or Commercial
+  $isResidential = !empty($auction->get->property_type) && stripos($auction->get->property_type, 'Residential') !== false;
+  $isCommercial = !empty($auction->get->property_type) && stripos($auction->get->property_type, 'Commercial') !== false;
+@endphp
+
 @push('styles')
 <!-- //Listing Description css  -->
 <link rel="stylesheet" href="{{ asset('assets/css/listingDescription.css') }}" />
@@ -85,6 +117,30 @@
 
     .removeBold {
         font-weight: normal;
+    }
+
+    /* Section Title Hierarchy - Larger, bold, spaced, more prominent */
+    .card-header h4,
+    .section-title {
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+        color: #0f1a24;
+    }
+
+    /* Broker Compensation subsection headers - breathing room */
+    h5.mt-3.mb-2 {
+        padding-top: 0.75rem;
+        margin-top: 1rem !important;
+    }
+
+    /* Broker Compensation section text - match other section text color */
+    .broker-compensation-section,
+    .broker-compensation-section p,
+    .broker-compensation-section .col-md-12,
+    .broker-compensation-section .fw-bold {
+        color: #34465c !important;
     }
 
     /* Base button style */
@@ -933,481 +989,369 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endif
 
         <hr />
-        <div class="card-header">
-            <h4>Broker Compensation: </h4>
+        <div class="card-header section-header">
+            <h4 class="section-title">Broker Compensation & Agency Agreement Terms</h4>
         </div>
 
+        <div class="broker-compensation-section">
+
+        <!-- Landlord's Broker Compensation Sub-section -->
+        <h5 class="mt-3 mb-2"><strong>Landlord's Broker Compensation:</strong></h5>
 
         @if (@$auction->get->purchase_fee_type != null)
+        @php
+            // Build combined Landlord's Broker Lease Fee display
+            $landlordLeaseFeeType = @$auction->get->purchase_fee_type ?? '';
+            $landlordLeaseFeeCombined = '—';
+            
+            if ($landlordLeaseFeeType === 'Flat Fee' && @$auction->get->purchase_fee_flat) {
+                $landlordLeaseFeeCombined = $fmtMoney(@$auction->get->purchase_fee_flat);
+            } elseif ($landlordLeaseFeeType === 'Percentage of the Rent Due Each Rental Period' && @$auction->get->purchase_fee_rental_period) {
+                $landlordLeaseFeeCombined = $fmtPercent(@$auction->get->purchase_fee_rental_period) . ' of rent due each rental period';
+            } elseif ($landlordLeaseFeeType === 'Percentage of the Gross Lease Value' && @$auction->get->purchase_fee_percentage_combo) {
+                $landlordLeaseFeeCombined = $fmtPercent(@$auction->get->purchase_fee_percentage_combo) . ' of Gross Lease Value';
+            } elseif ($landlordLeaseFeeType === "Percentage of the First Month's Rent" && @$auction->get->purchase_fee_flat_combo) {
+                $landlordLeaseFeeCombined = $fmtPercent(@$auction->get->purchase_fee_flat_combo) . " of First Month's Rent";
+            } elseif ($landlordLeaseFeeType === 'Percentage of the Net Aggregate Rent' && @$auction->get->purchase_fee_net_aggregate) {
+                $landlordLeaseFeeCombined = $fmtPercent(@$auction->get->purchase_fee_net_aggregate) . ' of Net Aggregate Rent';
+            } elseif ($landlordLeaseFeeType === 'Percentage of the Gross Rent' && @$auction->get->purchase_fee_gross_rent) {
+                $landlordLeaseFeeCombined = $fmtPercent(@$auction->get->purchase_fee_gross_rent) . ' of Gross Rent';
+            } elseif ($landlordLeaseFeeType === "Percentage of Month's Rent" && @$auction->get->purchase_fee_monthly_percentage) {
+                $display = $fmtPercent(@$auction->get->purchase_fee_monthly_percentage) . " of Month's Rent";
+                if (@$auction->get->purchase_fee_months) {
+                    $display .= ' x ' . @$auction->get->purchase_fee_months . ' Months';
+                }
+                $landlordLeaseFeeCombined = $display;
+            } elseif (strtolower($landlordLeaseFeeType) === 'other') {
+                $landlordLeaseFeeCombined = @$auction->get->purchase_fee_other ?? @$auction->get->purchase_fee_other_commercial ?? '—';
+            } elseif ($landlordLeaseFeeType) {
+                $landlordLeaseFeeCombined = $landlordLeaseFeeType;
+            }
+        @endphp
         <div class="col-md-12 col-12 pt-2 fw-bold">
             Landlord's Broker Lease Fee:
-            <span class="removeBold">
-                {{ $auction->get->purchase_fee_type ?? '' }}</span>
+            <span class="removeBold">{{ $landlordLeaseFeeCombined }}</span>
         </div>
         @endif
 
-
-        @if (@$auction->get->purchase_fee_type === 'Flat Fee' && @$auction->get->purchase_fee_flat_type != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->purchase_fee_flat_type }}{{ $auction->get->purchase_fee_flat }}</li>
-        </ul>
-        @endif
-        @if (
-        @$auction->get->purchase_fee_type === 'Percentage of the Rent Due Each Rental Period' &&
-        @$auction->get->purchase_fee_rental_period != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->purchase_fee_rental_period }}%</li>
-        </ul>
-        @endif
-        @if (
-        @$auction->get->purchase_fee_type === 'Percentage of the Gross Lease Value' &&
-        @$auction->get->purchase_fee_percentage_combo != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->purchase_fee_percentage_combo }}%</li>
-        </ul>
-        @endif
-        @if (
-        @$auction->get->purchase_fee_type === "Percentage of the First Month's Rent" &&
-        @$auction->get->purchase_fee_flat_combo != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->purchase_fee_flat_combo }} %</li>
-        </ul>
-        @endif
-        @if (
-        @$auction->get->purchase_fee_type === 'Percentage of the Net Aggregate Rent' &&
-        @$auction->get->purchase_fee_net_aggregate != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->purchase_fee_net_aggregate }} %</li>
-        </ul>
-        @endif
-        @if (
-        @$auction->get->purchase_fee_type === 'Percentage of the Gross Rent' &&
-        @$auction->get->purchase_fee_gross_rent != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->purchase_fee_gross_rent }} %</li>
-        </ul>
-        @endif
-        @if (
-        @$auction->get->purchase_fee_type === 'Percentage of the Gross Rent' &&
-        @$auction->get->sales_tax_option_gross != null)
-        <ul>
-            <li style="font-size: 16px;">Sales Tax: {{ $auction->get->sales_tax_option_gross }}</li>
-        </ul>
-        @endif
-        @if (
-        @$auction->get->purchase_fee_type === "Percentage of Month's Rent" &&
-        @$auction->get->purchase_fee_monthly_percentage != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->purchase_fee_monthly_percentage }} %</li>
-        </ul>
-        @endif
-        @if (@$auction->get->purchase_fee_type === "Percentage of Month's Rent" && @$auction->get->purchase_fee_months != null)
-        <ul>
-            <li style="font-size: 16px;">Number of Months: {{ $auction->get->purchase_fee_months }}</li>
-        </ul>
-        @endif
-        @if (
-        @$auction->get->purchase_fee_type === "Percentage of Month's Rent" &&
-        @$auction->get->sales_tax_option_monthly != null)
-        <ul>
-            <li style="font-size: 16px;">Sales Tax: {{ $auction->get->sales_tax_option_monthly }}</li>
-        </ul>
+        @if (@$auction->get->purchase_fee_type === 'Percentage of the Gross Rent' && @$auction->get->sales_tax_option_gross != null)
+        <div class="col-md-12 col-12 pt-2 fw-bold">
+            Sales Tax:
+            <span class="removeBold">{{ $auction->get->sales_tax_option_gross }}</span>
+        </div>
         @endif
 
-        @if (@$purchase_fee_type === 'other' && @$auction->get->purchase_fee_other != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->purchase_fee_other }}</li>
-        </ul>
-        @endif
-        @if (@$purchase_fee_type === 'other' && @$auction->get->purchase_fee_other_commercial != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->purchase_fee_other_commercial }}</li>
-        </ul>
+        @if (@$auction->get->purchase_fee_type === "Percentage of Month's Rent" && @$auction->get->sales_tax_option_monthly != null)
+        <div class="col-md-12 col-12 pt-2 fw-bold">
+            Sales Tax:
+            <span class="removeBold">{{ $auction->get->sales_tax_option_monthly }}</span>
+        </div>
         @endif
 
-        <!-- Tenant's Broker Commission Fee -->
+        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
+
+        <!-- Tenant's Broker Compensation Sub-section (Residential Only) -->
+        @if ($isResidential && @$auction->get->tenant_broker_commission_structure != null)
+        <h5 class="mt-3 mb-2"><strong>Tenant's Broker Compensation:</strong></h5>
+
         @if (@$auction->get->tenant_broker_commission_structure != null)
         <div class="col-md-12 col-12 pt-2 fw-bold">
-            Tenant's Broker Commission Fee:
-            <span class="removeBold">
-                {{ $auction->get->tenant_broker_commission_structure ?? '' }}</span>
+            Tenant's Broker Commission Structure:
+            <span class="removeBold">{{ $auction->get->tenant_broker_commission_structure ?? '' }}</span>
         </div>
         @endif
 
         @if (@$auction->get->tenant_broker_commission_structure != 'no_compensation')
-        @if (@$auction->get->tenant_broker_fee_structure != null)
-        <ul>
-            <li style="font-size: 16px;">Fee Structure: {{ $auction->get->tenant_broker_fee_structure }}</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->tenant_broker_percentage != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->tenant_broker_percentage }}%</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->tenant_broker_gross_lease != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->tenant_broker_gross_lease }}%</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->tenant_broker_first_month_rent != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->tenant_broker_first_month_rent }}%</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->tenant_broker_flat_fee != null)
-        <ul>
-            <li style="font-size: 16px;">${{ $auction->get->tenant_broker_flat_fee }}</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->tenant_broker_other != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->tenant_broker_other }}</li>
-        </ul>
-        @endif
-        @endif
-
-        <!-- Payment Timing for Broker Fees -->
-        @if (@$auction->get->broker_fee_timing != null)
+        @php
+            // Build combined Tenant's Broker Fee display
+            $tenantFeeType = @$auction->get->tenant_broker_fee_structure ?? '';
+            $tenantFeeCombined = '—';
+            
+            if ($tenantFeeType === 'Flat Fee' && @$auction->get->tenant_broker_flat_fee) {
+                $tenantFeeCombined = $fmtMoney(@$auction->get->tenant_broker_flat_fee);
+            } elseif ($tenantFeeType === 'Percentage of the Rent Due Each Rental Period' && @$auction->get->tenant_broker_percentage) {
+                $tenantFeeCombined = $fmtPercent(@$auction->get->tenant_broker_percentage) . ' of rent due each rental period';
+            } elseif ($tenantFeeType === 'Percentage of the Gross Lease Value' && @$auction->get->tenant_broker_gross_lease) {
+                $tenantFeeCombined = $fmtPercent(@$auction->get->tenant_broker_gross_lease) . ' of Gross Lease Value';
+            } elseif ($tenantFeeType === "Percentage of the First Month's Rent" && @$auction->get->tenant_broker_first_month_rent) {
+                $tenantFeeCombined = $fmtPercent(@$auction->get->tenant_broker_first_month_rent) . " of First Month's Rent";
+            } elseif (strtolower($tenantFeeType) === 'other' && @$auction->get->tenant_broker_other) {
+                $tenantFeeCombined = @$auction->get->tenant_broker_other;
+            } elseif ($tenantFeeType) {
+                $tenantFeeCombined = $tenantFeeType;
+            }
+        @endphp
+        @if ($tenantFeeCombined !== '—')
         <div class="col-md-12 col-12 pt-2 fw-bold">
-            Payment Timing for Broker Fees:
-            <span class="removeBold">
-                {{ $auction->get->broker_fee_timing ?? '' }}</span>
+            Tenant's Broker Commission Fee:
+            <span class="removeBold">{{ $tenantFeeCombined }}</span>
         </div>
         @endif
-
-        @if (@$auction->get->broker_fee_timing === 'Deducted from Rent Collected' && @$auction->get->broker_fee_days_from_rent != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->broker_fee_days_from_rent }} days</li>
-        </ul>
         @endif
 
-        @if (@$auction->get->broker_fee_timing === 'Paid Within Calendar Days After Executed Lease' && @$auction->get->broker_fee_days_after_lease != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->broker_fee_days_after_lease }} days</li>
-        </ul>
+        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
         @endif
 
-        @if (@$auction->get->broker_fee_timing === 'Paid Within Calendar Days of Tenant Rent Payment' && @$auction->get->broker_fee_days_after_rent != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->broker_fee_days_after_rent }} days</li>
-        </ul>
-        @endif
+        <!-- Payment Timing & Renewal Terms Sub-section -->
+        <h5 class="mt-3 mb-2"><strong>Payment Timing & Renewal Terms:</strong></h5>
 
-        @if (@$auction->get->broker_fee_timing === 'other' && @$auction->get->broker_fee_timing_other != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->broker_fee_timing_other }}</li>
-        </ul>
-        @endif
-
-        <!-- Commercial Payment Timing -->
-        @if (@$auction->get->broker_fee_timing === 'full_execution')
-        <ul>
-            <li style="font-size: 16px;">Full amount upon execution of lease, sales contract, or other transfer agreement</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->broker_fee_timing === '50% due upon execution, 50% due upon commencement of agreement')
-        <ul>
-            <li style="font-size: 16px;">50% due upon execution, 50% due upon commencement of agreement</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->broker_fee_timing === '50% due upon execution, 50% due upon occupancy of premises')
-        <ul>
-            <li style="font-size: 16px;">50% due upon execution, 50% due upon occupancy of premises</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->broker_fee_timing === 'Other' && @$auction->get->broker_fee_timing_other != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->broker_fee_timing_other }}</li>
-        </ul>
+        @if (@$auction->get->broker_fee_timing != null)
+        @php
+            $paymentTimingDisplay = @$auction->get->broker_fee_timing;
+            $daysValue = @$auction->get->broker_fee_days_from_rent ?? @$auction->get->broker_fee_days_after_lease ?? @$auction->get->broker_fee_days_after_rent ?? null;
+            
+            if ($paymentTimingDisplay === 'other' || $paymentTimingDisplay === 'Other') {
+                $paymentTimingDisplay = @$auction->get->broker_fee_timing_other ?? '';
+            }
+            
+            // Add days if applicable
+            if ($daysValue && (
+                strpos($paymentTimingDisplay, 'Calendar Days') !== false || 
+                strpos($paymentTimingDisplay, 'Rent Collected') !== false
+            )) {
+                $paymentTimingDisplay .= ' (' . $daysValue . ' days)';
+            }
+        @endphp
+        <div class="col-md-12 col-12 pt-2 fw-bold">
+            Payment Timing for Broker Fees:
+            <span class="removeBold">{{ $paymentTimingDisplay }}</span>
+        </div>
         @endif
 
         @if (@$auction->get->broker_fee_days_after_due_event != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->broker_fee_days_after_due_event }} days after due event</li>
-        </ul>
-        @endif
-
-        <!-- Lease Renewal/Extension Fee -->
-        @if (@$auction->get->renewal_fee_type != null)
         <div class="col-md-12 col-12 pt-2 fw-bold">
-            Lease Renewal/Extension Fee:
-            <span class="removeBold">
-                {{ $auction->get->renewal_fee_type ?? '' }}</span>
+            Days After Due Event:
+            <span class="removeBold">{{ $auction->get->broker_fee_days_after_due_event }} days</span>
         </div>
         @endif
 
-        @if (@$auction->get->renewal_fee_type === 'Percentage of the Rent Due Each Rental Period' && @$auction->get->renewal_fee_percentage != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->renewal_fee_percentage }}%</li>
-        </ul>
+        @if (@$auction->get->renewal_fee_type != null)
+        @php
+            // Build combined Lease Renewal/Extension Fee display
+            $renewalFeeType = @$auction->get->renewal_fee_type ?? '';
+            $renewalFeeCombined = '—';
+            
+            if ($renewalFeeType === 'Flat Fee' && @$auction->get->renewal_fee_flat_free) {
+                $renewalFeeCombined = $fmtMoney(@$auction->get->renewal_fee_flat_free);
+            } elseif ($renewalFeeType === 'Percentage of the Rent Due Each Rental Period' && @$auction->get->renewal_fee_percentage) {
+                $renewalFeeCombined = $fmtPercent(@$auction->get->renewal_fee_percentage) . ' of rent due each rental period';
+            } elseif ($renewalFeeType === 'Percentage of the Gross Lease Value' && @$auction->get->renewal_fee_lease_value) {
+                $renewalFeeCombined = $fmtPercent(@$auction->get->renewal_fee_lease_value) . ' of Gross Lease Value';
+            } elseif ($renewalFeeType === "Percentage of the First Month's Rent" && @$auction->get->renewal_fee_first_month) {
+                $renewalFeeCombined = $fmtPercent(@$auction->get->renewal_fee_first_month) . " of First Month's Rent";
+            } elseif ($renewalFeeType === 'Percentage of the Net Aggregate Rent' && @$auction->get->renewal_fee_percentage) {
+                $renewalFeeCombined = $fmtPercent(@$auction->get->renewal_fee_percentage) . ' of Net Aggregate Rent';
+            } elseif ($renewalFeeType === 'Percentage of the Gross Rent' && @$auction->get->renewal_fee_lease_value) {
+                $renewalFeeCombined = $fmtPercent(@$auction->get->renewal_fee_lease_value) . ' of Gross Rent';
+            } elseif ($renewalFeeType === "Percentage of Month's Rent" && @$auction->get->renewal_fee_first_month) {
+                $display = $fmtPercent(@$auction->get->renewal_fee_first_month) . " of Month's Rent";
+                if (@$auction->get->renewal_fee_no_of_months) {
+                    $display .= ' x ' . @$auction->get->renewal_fee_no_of_months . ' Months';
+                }
+                $renewalFeeCombined = $display;
+            } elseif (strtolower($renewalFeeType) === 'other' && @$auction->get->renewal_fee_custom) {
+                $renewalFeeCombined = @$auction->get->renewal_fee_custom;
+            } elseif ($renewalFeeType) {
+                $renewalFeeCombined = $renewalFeeType;
+            }
+        @endphp
+        <div class="col-md-12 col-12 pt-2 fw-bold">
+            Lease Renewal/Extension Fee:
+            <span class="removeBold">{{ $renewalFeeCombined }}</span>
+        </div>
         @endif
 
-        @if (@$auction->get->renewal_fee_type === 'Percentage of the Gross Lease Value' && @$auction->get->renewal_fee_lease_value != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->renewal_fee_lease_value }}%</li>
-        </ul>
+        @if (@$auction->get->renewal_fee_sales_tax_lease_value != null || @$auction->get->renewal_fee_sales_tax_first_month != null || @$auction->get->renewal_fee_sales_tax_flat_fee != null)
+        <div class="col-md-12 col-12 pt-2 fw-bold">
+            Sales Tax:
+            <span class="removeBold">{{ @$auction->get->renewal_fee_sales_tax_lease_value ?? @$auction->get->renewal_fee_sales_tax_first_month ?? @$auction->get->renewal_fee_sales_tax_flat_fee }}</span>
+        </div>
         @endif
 
-        @if (@$auction->get->renewal_fee_type === "Percentage of the First Month's Rent" && @$auction->get->renewal_fee_first_month != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->renewal_fee_first_month }}%</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->renewal_fee_type === 'Flat Fee' && @$auction->get->renewal_fee_flat_free != null)
-        <ul>
-            <li style="font-size: 16px;">${{ $auction->get->renewal_fee_flat_free }}</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->renewal_fee_type === 'other' && @$auction->get->renewal_fee_custom != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->renewal_fee_custom }}</li>
-        </ul>
-        @endif
-
-        <!-- Commercial Renewal Fees -->
-        @if (@$auction->get->renewal_fee_type === 'Percentage of the Net Aggregate Rent' && @$auction->get->renewal_fee_percentage != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->renewal_fee_percentage }}%</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->renewal_fee_type === 'Percentage of the Gross Rent' && @$auction->get->renewal_fee_lease_value != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->renewal_fee_lease_value }}%</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->renewal_fee_type === "Percentage of Month's Rent" && @$auction->get->renewal_fee_first_month != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->renewal_fee_first_month }}%</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->renewal_fee_no_of_months != null)
-        <ul>
-            <li style="font-size: 16px;">Number of Months: {{ $auction->get->renewal_fee_no_of_months }}</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->renewal_fee_sales_tax_lease_value != null)
-        <ul>
-            <li style="font-size: 16px;">Sales Tax: {{ $auction->get->renewal_fee_sales_tax_lease_value }}</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->renewal_fee_sales_tax_first_month != null)
-        <ul>
-            <li style="font-size: 16px;">Sales Tax: {{ $auction->get->renewal_fee_sales_tax_first_month }}</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->renewal_fee_sales_tax_flat_fee != null)
-        <ul>
-            <li style="font-size: 16px;">Sales Tax: {{ $auction->get->renewal_fee_sales_tax_flat_fee }}</li>
-        </ul>
-        @endif
-
-        <!-- Expansion Commission for Lease Amendment -->
         @if (@$auction->get->expansion_commission_percentage != null)
         <div class="col-md-12 col-12 pt-2 fw-bold">
             Expansion Commission for Lease Amendment:
-            <span class="removeBold">
-                {{ $auction->get->expansion_commission_percentage ?? '' }}%</span>
+            <span class="removeBold">{{ $fmtPercent($auction->get->expansion_commission_percentage) }} of original commission</span>
         </div>
         @endif
 
-        <!-- Interested in Property Management -->
+        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
+
+        <!-- Property Management Sub-section -->
+        <h5 class="mt-3 mb-2"><strong>Property Management:</strong></h5>
+
         @if (@$auction->get->interested_in_property_management != null)
         <div class="col-md-12 col-12 pt-2 fw-bold">
             Interested in Property Management:
-            <span class="removeBold">
-                {{ $auction->get->interested_in_property_management === 'yes' ? 'Yes' : 'No' }}</span>
+            <span class="removeBold">{{ $auction->get->interested_in_property_management === 'yes' ? 'Yes' : 'No' }}</span>
         </div>
         @endif
 
         @if (@$auction->get->interested_in_property_management === 'yes')
-        @if (@$auction->get->interested_in_property_management_fee != null)
-        <ul>
-            <li style="font-size: 16px;">Property Management Fee: {{ $auction->get->interested_in_property_management_fee }}</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->interested_in_property_management_fee_gross_lease != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->interested_in_property_management_fee_gross_lease }}%</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->interested_in_property_management_fee_rental_periord != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->interested_in_property_management_fee_rental_periord }}%</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->interested_in_property_management_fee_flate_free != null)
-        <ul>
-            <li style="font-size: 16px;">${{ $auction->get->interested_in_property_management_fee_flate_free }}</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->interested_in_property_management_fee_other != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->interested_in_property_management_fee_other }}</li>
-        </ul>
+        @php
+            // Build combined Property Management Fee display
+            $pmFeeType = @$auction->get->interested_in_property_management_fee ?? '';
+            $pmFeeCombined = '—';
+            
+            if ($pmFeeType === 'Flat Fee' && @$auction->get->interested_in_property_management_fee_flate_free) {
+                $pmFeeCombined = $fmtMoney(@$auction->get->interested_in_property_management_fee_flate_free);
+            } elseif ($pmFeeType === 'Percentage of the Rent Due Each Rental Period' && @$auction->get->interested_in_property_management_fee_rental_periord) {
+                $pmFeeCombined = $fmtPercent(@$auction->get->interested_in_property_management_fee_rental_periord) . ' of rent due each rental period';
+            } elseif ($pmFeeType === 'Percentage of the Gross Lease Value' && @$auction->get->interested_in_property_management_fee_gross_lease) {
+                $pmFeeCombined = $fmtPercent(@$auction->get->interested_in_property_management_fee_gross_lease) . ' of Gross Lease Value';
+            } elseif (strtolower($pmFeeType) === 'other' && @$auction->get->interested_in_property_management_fee_other) {
+                $pmFeeCombined = @$auction->get->interested_in_property_management_fee_other;
+            } elseif ($pmFeeType) {
+                $pmFeeCombined = $pmFeeType;
+            }
+        @endphp
+        @if ($pmFeeCombined !== '—')
+        <div class="col-md-12 col-12 pt-2 fw-bold">
+            Property Management Fee:
+            <span class="removeBold">{{ $pmFeeCombined }}</span>
+        </div>
         @endif
         @endif
 
-        <!-- Interested in Lease-Option Agreement -->
-   @if (@$auction->get->interested_lease_option_agreement != null)
-    <div class="col-md-12 col-12 pt-2 fw-bold">
-        
-        Interested in Offering a Lease-Option Agreement:
-        <span class="removeBold">{{ $auction->get->interested_lease_option_agreement ?? '' }}</span>
-    </div>
-@endif
+        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
-@if (@$auction->get->interested_lease_option_agreement === 'Yes')
-    <ul>
-        @if (@$auction->get->lease_value != null)
-            <li style="font-size: 16px;">
-                Lease-Option Compensation:
-                @if($auction->get->lease_type === 'percent')
-                    {{ $auction->get->lease_value }}%
-                @else
-                    ${{ $auction->get->lease_value }}
-                @endif
-            </li>
+        <!-- Lease-Option Details Sub-section -->
+        <h5 class="mt-3 mb-2"><strong>Lease-Option Details:</strong></h5>
+
+        @if (@$auction->get->interested_lease_option_agreement != null)
+        <div class="col-md-12 col-12 pt-2 fw-bold">
+            Interested in Offering a Lease-Option Agreement:
+            <span class="removeBold">{{ $auction->get->interested_lease_option_agreement ?? '' }}</span>
+        </div>
         @endif
 
-        @if (@$auction->get->purchase_value != null)
-            <li style="font-size: 16px;">
-                Purchase Compensation:
-                @if($auction->get->purchase_type === 'percent')
-                    {{ $auction->get->purchase_value }}%
-                @else
-                    ${{ $auction->get->purchase_value }}
-                @endif
-            </li>
-        @endif
-    </ul>
-@endif
+        @if (@$auction->get->interested_lease_option_agreement === 'Yes')
+            @if (@$auction->get->lease_value != null)
+            <div class="col-md-12 col-12 pt-2 fw-bold">
+                Compensation (When Option Is Created):
+                <span class="removeBold">
+                    @if (@$auction->get->lease_type === 'percent')
+                        {{ $fmtPercent($auction->get->lease_value) }}
+                    @else
+                        {{ $fmtMoney($auction->get->lease_value) }}
+                    @endif
+                </span>
+            </div>
+            @endif
 
-        <!-- Interested in Selling -->
+            @if (@$auction->get->purchase_value != null)
+            <div class="col-md-12 col-12 pt-2 fw-bold">
+                Compensation (If Purchase Option is Exercised):
+                <span class="removeBold">
+                    @if (@$auction->get->purchase_type === 'percent')
+                        {{ $fmtPercent($auction->get->purchase_value) }}
+                    @else
+                        {{ $fmtMoney($auction->get->purchase_value) }}
+                    @endif
+                </span>
+            </div>
+            @endif
+        @endif
+
+        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
+
+        <!-- Purchase Fee Details Sub-section -->
+        <h5 class="mt-3 mb-2"><strong>Purchase Fee Details:</strong></h5>
+
         @if (@$auction->get->interested_in_selling != null)
         <div class="col-md-12 col-12 pt-2 fw-bold">
             Interested in Selling:
-            <span class="removeBold">
-                {{ $auction->get->interested_in_selling ?? '' }}</span>
+            <span class="removeBold">{{ $auction->get->interested_in_selling ?? '' }}</span>
         </div>
         @endif
 
         @if (@$auction->get->interested_in_selling === 'Yes')
-        @if (@$auction->get->interested_in_selling_type != null)
+        @php
+            // Build combined Landlord's Broker Purchase Fee display
+            $purchaseFeeType = @$auction->get->interested_in_selling_type ?? '';
+            $purchaseFeeCombined = '—';
+            
+            if ($purchaseFeeType === 'Flat Fee' && @$auction->get->landlord_broker_flate_fee) {
+                $purchaseFeeCombined = $fmtMoney(@$auction->get->landlord_broker_flate_fee);
+            } elseif ($purchaseFeeType === 'Percentage of the Total Purchase Price' && @$auction->get->landlord_broker_purchase_price) {
+                $purchaseFeeCombined = $fmtPercent(@$auction->get->landlord_broker_purchase_price) . ' of Total Purchase Price';
+            } elseif ($purchaseFeeType === 'Percentage of the Total Purchase Price + Flat Fee') {
+                $purchaseFeeCombined = $joinParts([
+                    @$auction->get->landlord_broker_percentage_price ? ($fmtPercent(@$auction->get->landlord_broker_percentage_price)) : null,
+                    $fmtMoney(@$auction->get->landlord_broker_dollar_price),
+                ]) ?? '—';
+            } elseif (strtolower($purchaseFeeType) === 'other' && @$auction->get->landlord_broker_other) {
+                $purchaseFeeCombined = @$auction->get->landlord_broker_other;
+            } elseif ($purchaseFeeType) {
+                $purchaseFeeCombined = $purchaseFeeType;
+            }
+        @endphp
         <div class="col-md-12 col-12 pt-2 fw-bold">
             Landlord's Broker Purchase Fee:
-            <span class="removeBold">
-                {{ $auction->get->interested_in_selling_type ?? '' }}</span>
+            <span class="removeBold">{{ $purchaseFeeCombined }}</span>
         </div>
         @endif
 
-        @if (@$auction->get->interested_in_selling_type === 'Percentage of the Total Purchase Price' && @$auction->get->landlord_broker_purchase_price != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->landlord_broker_purchase_price }}%</li>
-        </ul>
-        @endif
+        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
-        @if (@$auction->get->interested_in_selling_type === 'Percentage of the Total Purchase Price + Flat Fee')
-        @if (@$auction->get->landlord_broker_percentage_price != null)
-        <ul>
-            <li style="font-size: 16px;">Percentage: {{ $auction->get->landlord_broker_percentage_price }}%</li>
-        </ul>
-        @endif
-        @if (@$auction->get->landlord_broker_dollar_price != null)
-        <ul>
-            <li style="font-size: 16px;">Flat Fee: ${{ $auction->get->landlord_broker_dollar_price }}</li>
-        </ul>
-        @endif
-        @endif
-
-        @if (@$auction->get->interested_in_selling_type === 'Flat Fee' && @$auction->get->landlord_broker_flate_fee != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->landlord_broker_flate_fee }}{{ $auction->get->lease_fee_flat_type === '%' ? '%' : '$' }}</li>
-        </ul>
-        @endif
-
-        @if (@$auction->get->interested_in_selling_type === 'Other' && @$auction->get->landlord_broker_other != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->landlord_broker_other }}</li>
-        </ul>
-        @endif
-        @endif
+        <!-- Legal Terms Sub-section -->
+        <h5 class="mt-3 mb-2"><strong>Legal Terms:</strong></h5>
 
         @if (@$auction->get->protection_period != null)
         <div class="col-md-12 col-12 pt-2 fw-bold">
-            Protection Period Timeframe (Days):
-            <span class="removeBold">
-                {{ $auction->get->protection_period ?? '' }}</span>
+            Protection Period Timeframe:
+            <span class="removeBold">{{ $auction->get->protection_period }} days</span>
         </div>
         @endif
 
-        @if (@$auction->get->early_termination_fee_option != null)
+        @if ($isResidential && @$auction->get->early_termination_fee_option != null)
         <div class="col-md-12 col-12 pt-2 fw-bold">
             Early Termination Fee:
-            <span class="removeBold">
-
-
-
-
-                {{ $auction->get->early_termination_fee_option == 'yes' ? 'Yes' : 'No' }}</span>
+            <span class="removeBold">{{ $auction->get->early_termination_fee_option == 'yes' ? 'Yes' : 'No' }}</span>
         </div>
         @endif
-        @if (@$auction->get->early_termination_fee_amount != null)
-        <ul>
-            <li style="font-size: 16px;">${{ str_replace(',', '', $auction->get->early_termination_fee_amount ?? '') }}
-            </li>
-        </ul>
+
+        @if ($isResidential && @$auction->get->early_termination_fee_option == 'yes' && @$auction->get->early_termination_fee_amount != null)
+        <div class="col-md-12 col-12 pt-2 fw-bold">
+            Termination Fee Amount:
+            <span class="removeBold">{{ $fmtMoney($auction->get->early_termination_fee_amount) }}</span>
+        </div>
         @endif
 
         @if (@$auction->get->agency_agreement_timeframe != null)
         <div class="col-md-12 col-12 pt-2 fw-bold">
             Landlord Agency Agreement Timeframe:
             <span class="removeBold">
-                {{ $auction->get->agency_agreement_timeframe ?? '' }}</span>
+                {{ $auction->get->agency_agreement_timeframe === 'Other' ? $auction->get->agency_agreement_custom : $auction->get->agency_agreement_timeframe }}
+            </span>
         </div>
         @endif
-        @if (@$auction->get->agency_agreement_custom != null)
-        <ul>
-            <li style="font-size: 16px;">{{ $auction->get->agency_agreement_custom }}</li>
-        </ul>
-        @endif
+
+        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
+
+        <!-- Brokerage Relationship Sub-section -->
+        <h5 class="mt-3 mb-2"><strong>Brokerage Relationship:</strong></h5>
 
         @if (@$auction->get->brokerage_relationship != null)
         <div class="col-md-12 col-12 pt-2 fw-bold">
             Acceptable Brokerage Relationship:
-            <span class="removeBold">
-                {{ $auction->get->brokerage_relationship ?? '' }}</span>
+            <span class="removeBold">{{ $auction->get->brokerage_relationship ?? '' }}</span>
         </div>
         @endif
 
-        <!-- Additional Terms -->
         @if (@$auction->get->additional_details_broker != null)
+        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
+
+        <!-- Additional Terms Sub-section -->
+        <h5 class="mt-3 mb-2"><strong>Additional Terms:</strong></h5>
 
         <div class="col-md-12 col-12 pt-2 fw-bold">
-            Additional Terms: <span
-                class="removeBold">{{ $auction->get->additional_details ?? '' }}</span>
+            Additional Terms:
+            <span class="removeBold">{{ $auction->get->additional_details_broker }}</span>
         </div>
         @endif
+
+        </div> <!-- end broker-compensation-section -->
         <hr />
         <div class="card-header">
             <h4>Landlord's Info </h4>

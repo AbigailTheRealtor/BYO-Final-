@@ -1,0 +1,152 @@
+GOAL:
+Update the Landlord listing display for “Broker Compensation & Agency Agreement Terms” so it matches the updated Tenant (gold standard) formatting and output style.
+
+SOURCE OF TRUTH:
+Use the Tenant listing’s updated “Broker Compensation & Agency Agreement Terms” section as the exact formatting template (section headers, spacing, divider lines, label/value style, and how combined fees are displayed).
+
+SCOPE:
+Landlord listing display page (show view) + any partials used to render Broker Compensation.
+This is DISPLAY/RENDERING only. Do NOT change database schema unless required to display final values cleanly.
+
+RENDERING RULES (MATCH TENANT STYLE):
+1) Section Layout & Dividers
+- Render this block using Tenant-style formatting with clear section headers and dividers (horizontal rule lines) between:
+  - Landlord’s Broker Compensation
+  - Tenant’s Broker Compensation (Residential only)
+  - Payment Timing & Renewal Terms
+  - Property Management
+  - Lease-Option Details
+  - Purchase Fee Details
+  - Legal Terms
+  - Brokerage Relationship
+  - Additional Terms
+  - Additional Details
+
+2) “Show final combined value” on primary lines (IMPORTANT)
+- Replace the old Landlord format that shows:
+  “Fee Type: Flat Fee”
+  “Flat Fee Amount: $6,000”
+  as separate top-level lines.
+- Instead, the first/primary line for each fee must display the FINAL value like Tenant does.
+
+Examples:
+- Landlord’s Broker Lease Fee:
+  OLD (wrong): “Landlord’s Broker Lease Fee: Flat Fee” + “Flat Fee Amount: $6,000”
+  NEW (correct): “Landlord’s Broker Lease Fee: $6,000.00”
+
+- If fee type is Percentage (or Percent + Flat):
+  NEW must display combined like Tenant:
+  “Landlord’s Broker Lease Fee: 10% of rent due each rental period”
+  or
+  “Landlord’s Broker Purchase Fee: 2% + $2,000”
+
+3) When to show breakdown sub-lines
+Only show sub-lines when needed for clarity, similar to Tenant:
+- If Percentage only: show the combined sentence on one line (no extra breakdown lines unless required by your UI rules).
+- If Flat Fee only: show one line with currency value (no “Flat Fee Amount” line).
+- If Percentage + Flat Fee: show combined on one line AND optionally show breakdown lines below it:
+  “Purchase Percentage: 2%”
+  “Additional Flat Fee: $2,000”
+
+- For lease-option:
+  Show the two rows like your new structure:
+  “Compensation (When Option Is Created): 2%”
+  “Compensation (If Purchase Option is Exercised): $7,000”
+  Do NOT show “Compensation Type: Flat Fee” unless absolutely required — always show the final value line.
+
+4) Residential vs Commercial logic (MUST MATCH YOUR SPECS)
+A) Tenant’s Broker Compensation (ONLY for Residential; do not show for Commercial)
+- Show the Tenant’s Broker section only when property type is Residential.
+- Format it like Tenant style:
+  “Tenant’s Broker Commission Structure: [sentence]”
+  “Tenant’s Broker Commission Fee: $X,XXX.XX” (final combined value)
+
+B) Payment Timing & Renewal Terms
+- Residential example fields:
+  - Payment Timing for Broker Fees: Paid within calendar days of Tenant rent payment
+  - Calendar Days to Pay: 5 days
+  - Lease Renewal / Extension Fee: 10% of rent due each rental period (combined line)
+- Commercial example fields:
+  - Payment Timing for Broker Fees: 50% due upon execution, 50% due upon occupancy of premises
+  - Lease Renewal / Extension Fee: $5,000.00 (combined line)
+  - Sales Tax: Including Sales Tax (if selected)
+  - Expansion Commission for Lease Amendment: 50% of original commission (if applicable)
+
+5) Property Management section
+- If Interested in Property Management = Yes:
+  Display:
+  “Interested in Property Management: Yes”
+  “Property Management Fee: $1,000.00” (combined line)
+- Do not show “Fee Type” + “Flat Fee Amount” as separate primary fields.
+
+6) Lease-Option Details section
+- If Interested in Offering a Lease-Option Agreement = Yes:
+  Display the two final-value lines:
+  “Compensation (When Option Is Created): 2%”
+  “Compensation (If Purchase Option is Exercised): $7,000.00”
+- If either part is missing, omit that line.
+
+7) Purchase Fee Details section
+- If Interested in Selling = Yes:
+  Display:
+  “Landlord’s Broker Purchase Fee: 2% + $2,000.00” (combined line)
+  (Optional breakdown lines only if stored separately)
+  - Purchase Percentage: 2%
+  - Additional Flat Fee: $2,000.00
+
+8) Legal Terms section
+- Always display:
+  - Protection Period Timeframe: 90 days
+  - Landlord Agency Agreement Timeframe: 9 Months
+- Early Termination Fee + Termination Fee Amount:
+  - Residential only (do not show on Commercial)
+  - Only show Termination Fee Amount if Early Termination Fee = Yes
+
+9) Brokerage Relationship section
+- Display as one clean line:
+  “Acceptable Brokerage Relationship: Transaction Broker Representation”
+
+10) Remove placeholder/example leaks
+- Never display placeholder strings such as “Example: …” on live listings.
+- If value is empty/null, omit the line entirely (match Tenant behavior).
+
+11) Currency and numeric formatting (same as Tenant)
+- Currency must be formatted with commas and 2 decimals:
+  $6,000.00 not $6000
+- Percent must be formatted consistently:
+  2% not 2.0% (unless your system standard is different)
+- Days must show “days” consistently:
+  “5 days”, “90 days”
+
+IMPLEMENTATION NOTE (HOW TO DO IT CLEANLY):
+- Reuse Tenant formatting helpers/partials if they exist.
+- Create a shared formatter function that outputs:
+  - Flat Fee → "$X,XXX.XX"
+  - Percentage → "X% ..."
+  - Percentage + Flat → "X% + $X,XXX.XX"
+- Then use that formatter to output the primary combined lines for each fee.
+
+ACCEPTANCE TEST:
+Create 2 Landlord listings and verify output matches Tenant style:
+
+A) Residential Landlord listing:
+- Landlord lease fee = Flat $6,000
+- Tenant broker comp enabled (Residential only) with Flat $6,000
+- Payment timing: “Paid within calendar days…” and 5 days
+- Renewal: 10% of rent due each period
+- Property management = Yes with Flat $1,000
+- Lease-option = Yes (2% and $7,000)
+- Selling = Yes (2% + $2,000)
+- Early termination = Yes (Residential only) and $1,000
+- Protection = 90 days
+- Agency timeframe = 9 months
+- Brokerage relationship set
+Confirm that no “Fee Type:” lines appear as primary outputs and formatting matches Tenant.
+
+B) Commercial Landlord listing:
+- No Tenant’s Broker Compensation section
+- Payment timing = “50% due upon execution…”
+- Renewal = Flat $5,000
+- Sales tax shown if selected
+- Expansion commission shown if applicable
+Confirm Tenant broker section does not appear and formatting still matches Tenant structure.
