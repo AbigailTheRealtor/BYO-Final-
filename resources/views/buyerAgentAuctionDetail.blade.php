@@ -194,17 +194,19 @@
     }
 
     ul.services li::before {
-        content: "\f101";
-        /* FontAwesome icon content */
-        font-family: FontAwesome;
-        font-size: var(--icon-size);
-        /* Set the desired icon size */
+        content: "•";
         position: absolute;
-        /* Position the icon */
-        left: -1.2em;
-        /* Adjust the icon position */
-        color: #11b7cf;
-        /* Set the icon color */
+        left: -0.9em;
+        color: #34465c;
+        font-size: 1.1em;
+    }
+
+    /* Service category title styling */
+    .service-category-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
     }
 
     .removeBold {
