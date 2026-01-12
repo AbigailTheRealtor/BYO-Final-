@@ -3508,7 +3508,12 @@ class TenantAgentAuction extends Component
         try {
 
             $this->isDraft = 0;
+            
+            \Log::info('[STORE] About to validate', ['user_type' => $this->user_type]);
+            
             $this->validateOnlyFilledFields();
+            
+            \Log::info('[STORE] Validation passed', ['user_type' => $this->user_type]);
 
             // $auction = $this->listingId
             //     ? HireTenantAgentAuction::find($this->listingId)
@@ -3575,7 +3580,12 @@ class TenantAgentAuction extends Component
             // Keep redirect as fallback
             return redirect()->to($url);
         } catch (\Exception $e) {
-
+            \Log::error('[STORE] Exception caught', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'user_type' => $this->user_type,
+            ]);
 
             session()->flash('error', 'Error saving listing: ' . $e->getMessage());
         }
