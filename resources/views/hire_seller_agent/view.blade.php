@@ -494,17 +494,6 @@
                                     @endif
                                 </div>
                             @endif
-                            @if (@$auction->get->tenant_require != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Furnishings:
-                                    <span class="removeBold">
-
-                                        <span
-                                            class="removeBold badge bg-secondary">{{ @$auction->get->tenant_require }}</span>
-
-                                    </span>
-                                </div>
-                            @endif
                             @if (@$auction->get->carport_needed != null)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                    Carport:
