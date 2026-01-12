@@ -26,9 +26,23 @@
     return $basis ? ('of ' . $basis) : null;
   };
 
-  // Determine if property is Residential or Commercial
-  $isResidential = !empty($auction->get->property_type) && stripos($auction->get->property_type, 'Residential') !== false;
-  $isCommercial = !empty($auction->get->property_type) && stripos($auction->get->property_type, 'Commercial') !== false;
+  // Determine if property is Residential or Commercial (case-insensitive, handles variations)
+  $propertyType = strtolower(trim($auction->get->property_type ?? ''));
+  $isResidential = str_contains($propertyType, 'residential') || 
+                   str_contains($propertyType, 'single-family') || 
+                   str_contains($propertyType, 'single family') ||
+                   str_contains($propertyType, 'condo') ||
+                   str_contains($propertyType, 'townhouse') ||
+                   str_contains($propertyType, 'apartment');
+  $isCommercial = str_contains($propertyType, 'commercial') || 
+                  str_contains($propertyType, 'industrial') ||
+                  str_contains($propertyType, 'office') ||
+                  str_contains($propertyType, 'retail') ||
+                  str_contains($propertyType, 'warehouse');
+  // Default to Residential if neither is explicitly set
+  if (!$isResidential && !$isCommercial && !empty($propertyType)) {
+      $isResidential = true;
+  }
 @endphp
 
 @push('styles')
@@ -1277,7 +1291,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 $purchaseFeeCombined = $fmtPercent(@$auction->get->landlord_broker_purchase_price) . ' of Total Purchase Price';
             } elseif ($purchaseFeeType === 'Percentage of the Total Purchase Price + Flat Fee') {
                 $purchaseFeeCombined = $joinParts([
-                    @$auction->get->landlord_broker_percentage_price ? ($fmtPercent(@$auction->get->landlord_broker_percentage_price)) : null,
+                    @$auction->get->landlord_broker_percentage_price ? ($fmtPercent(@$auction->get->landlord_broker_percentage_price) . ' of Total Purchase Price') : null,
                     $fmtMoney(@$auction->get->landlord_broker_dollar_price),
                 ]) ?? '—';
             } elseif (strtolower($purchaseFeeType) === 'other' && @$auction->get->landlord_broker_other) {
