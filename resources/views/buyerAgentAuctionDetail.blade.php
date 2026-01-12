@@ -292,41 +292,41 @@
                     <div class="card-body">
                         <div class="row" style="flex-wrap: wrap;">
                             @if (@$auction->get->listing_title != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Listing Title
                                     <span class="removeBold">{{ @$auction->get->listing_title }}</span>
                                 </div>
                             @endif
                             @if (@$auction->get->working_with_agent != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Current Representation Status with Broker?
                                     <span class="removeBold">{{ @$auction->get->working_with_agent }}</span>
                                 </div>
                             @endif
 
                             @if (@$auction->get->desired_agent_hire_date != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Desired Agent Hire Date:
                                     <span class="removeBold">
-                                        {{ date('m-d-Y', strtotime(@$auction->get->desired_agent_hire_date)) }}</span>
+                                        {{ date('F j, Y', strtotime(@$auction->get->desired_agent_hire_date)) }}</span>
                                 </div>
                             @endif
                             @if (@$auction->get->listing_date != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Listing Date:
                                     <span
-                                        class="removeBold">{{ date('m-d-Y', strtotime(@$auction->get->listing_date)) }}</span>
+                                        class="removeBold">{{ date('F j, Y', strtotime(@$auction->get->listing_date)) }}</span>
                                 </div>
                             @endif
                             @if (@$auction->get->expiration_date != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Expiration Date:
-                                    <span class="removeBold">{{ date('m-d-Y', strtotime(@$auction->get->expiration_date)) }}
+                                    <span class="removeBold">{{ date('F j, Y', strtotime(@$auction->get->expiration_date)) }}
                                     </span>
                                 </div>
                             @endif
                             @if (@$auction->get->auction_type != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Listing Type:
                                     <span class="removeBold"> {{ @$auction->get->auction_type }}
                                     </span>
@@ -334,14 +334,14 @@
                             @endif
 
                             @if (@$auction->get->auction_time != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Bidding Period Length:
                                     <span class="removeBold"> {{ @$auction->get->auction_time }}
                                     </span>
                                 </div>
                             @endif
                             @if (@$auction->get->meeting_Preference != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Meeting Preference:
                                     <span class="removeBold"> {{ @$auction->get->meeting_Preference }}
                                     </span>
@@ -359,7 +359,7 @@
                                     <!-- Location Information -->
                                     @if (@$auction->get->cities != null && count(@$auction->get->cities) > 0)
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            <i class="fa-regular fa-check-square"></i> Acceptable Cities:
+                                            Acceptable Cities:
                                             @foreach (@$auction->get->cities as $item)
                                                 <span class="removeBold badge bg-secondary">{{ $item }}</span>
                                             @endforeach
@@ -368,7 +368,7 @@
 
                                     @if (@$auction->get->counties != null && count(@$auction->get->counties) > 0)
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            <i class="fa-regular fa-check-square"></i> Acceptable Counties:
+                                            Acceptable Counties:
                                             @foreach (@$auction->get->counties as $item)
                                                 <span class="removeBold badge bg-secondary">{{ $item }}</span>
                                             @endforeach
@@ -377,7 +377,7 @@
 
                                     @if (@$auction->get->zipCodes != null && count(@$auction->get->zipCodes) > 0)
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            <i class="fa-regular fa-check-square"></i> Acceptable ZIP Codes:
+                                            Acceptable ZIP Codes:
                                             @foreach (@$auction->get->zipCodes as $item)
                                                 <span class="removeBold badge bg-secondary">{{ $item }}</span>
                                             @endforeach
@@ -386,7 +386,7 @@
 
                                     @if (@$auction->get->state != null)
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            <i class="fa-regular fa-check-square"></i> Acceptable State:
+                                            Acceptable State:
                                             <span class="removeBold">{{ @$auction->get->state }}</span>
                                         </div>
                                     @endif
@@ -394,14 +394,14 @@
                                     <!-- Property Type and Style -->
                                     @if (@$auction->get->property_type != null)
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            <i class="fa-regular fa-check-square"></i> Acceptable Property Type:
+                                            Acceptable Property Type:
                                             <span class="removeBold badge bg-secondary">{{ @$auction->get->property_type }}</span>
                                         </div>
                                     @endif
 
                                     @if (@$auction->get->property_items != null && count(@$auction->get->property_items) > 0)
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            <i class="fa-regular fa-check-square"></i> Acceptable Property Styles:
+                                            Acceptable Property Styles:
                                             @foreach (@$auction->get->property_items as $item)
                                                 <span class="removeBold badge bg-secondary">{{ $item }}</span>
                                             @endforeach
@@ -414,7 +414,7 @@
                                     <!-- Business Type (if applicable) -->
                                     @if (@$auction->get->business_type != null)
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            <i class="fa-regular fa-check-square"></i> Business Type:
+                                            Business Type:
                                             <span class="removeBold badge bg-secondary">{{ @$auction->get->business_type }}</span>
                                             @if (@$auction->get->other_business_type)
                                                 <span class="removeBold badge bg-secondary">{{ @$auction->get->other_business_type }}</span>
@@ -425,7 +425,7 @@
                                     <!-- Property Conditions -->
                                     @if (@$auction->get->condition_prop_buyer != null && count(@$auction->get->condition_prop_buyer) > 0)
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            <i class="fa-regular fa-check-square"></i> Acceptable Property Conditions:
+                                            Acceptable Property Conditions:
                                             @foreach (@$auction->get->condition_prop_buyer as $item)
                                                 <span class="removeBold badge bg-secondary">{{ $item }}</span>
                                                 @if ($item == 'Other' && @$auction->get->other_property_condition)
@@ -438,7 +438,7 @@
                                     <!-- Bedrooms and Bathrooms -->
                                     @if (@$auction->get->bedrooms != null)
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            <i class="fa-regular fa-check-square"></i> Minimum Bedrooms Needed:
+                                            Minimum Bedrooms Needed:
                                             <span class="removeBold">
                                                 @if (@$auction->get->bedrooms != 'Other')
                                                     {{ @$auction->get->bedrooms }}
@@ -451,7 +451,7 @@
 
                                     @if (@$auction->get->bathrooms != null)
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            <i class="fa-regular fa-check-square"></i> Minimum Bathrooms Needed:
+                                            Minimum Bathrooms Needed:
                                             <span class="removeBold">
                                                 @if (@$auction->get->bathrooms != 'Other')
                                                     {{ @$auction->get->bathrooms }}
@@ -465,14 +465,14 @@
                                     <!-- Square Footage and Acreage -->
                                     @if (@$auction->get->minimum_heated_square != null)
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            <i class="fa-regular fa-check-square"></i> Minimum Heated SqFt Needed:
+                                            Minimum Heated SqFt Needed:
                                             <span class="removeBold">{{ @$auction->get->minimum_heated_square }}</span>
                                         </div>
                                     @endif
 
                                     @if (@$auction->get->total_acreage != null)
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            <i class="fa-regular fa-check-square"></i> Minimum Total Acreage Needed:
+                                            Minimum Total Acreage Needed:
                                             <span class="removeBold">{{ @$auction->get->total_acreage }}</span>
                                         </div>
                                     @endif
@@ -480,7 +480,7 @@
                                     <!-- Carport and Garage -->
                                     @if (@$auction->get->carport_needed != null)
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            <i class="fa-regular fa-check-square"></i> Carport Needed:
+                                            Carport Needed:
                                             <span class="removeBold badge bg-secondary">{{ @$auction->get->carport_needed }}</span>
                                             @if (@$auction->get->carport_needed == 'Yes' && @$auction->get->other_carport_needed)
                                                 <span class="removeBold">({{ @$auction->get->other_carport_needed }} spaces)</span>
@@ -490,7 +490,7 @@
 
                                     @if (@$auction->get->garage_needed != null)
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            <i class="fa-regular fa-check-square"></i> Garage Needed:
+                                            Garage Needed:
                                             <span class="removeBold badge bg-secondary">{{ @$auction->get->garage_needed }}</span>
                                             @if (@$auction->get->garage_needed == 'Yes' && @$auction->get->other_garage_needed)
                                                 <span class="removeBold">({{ @$auction->get->other_garage_needed }} spaces)</span>
@@ -501,7 +501,7 @@
                                     <!-- Garage/Parking Features for Commercial/Business -->
                                     @if (@$auction->get->garage_parking_spaces != null)
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            <i class="fa-regular fa-check-square"></i> Garage Parking Features Needed:
+                                            Garage Parking Features Needed:
                                             <span class="removeBold badge bg-secondary">{{ @$auction->get->garage_parking_spaces }}</span>
                                             @if (@$auction->get->garage_parking_spaces_option && count(@$auction->get->garage_parking_spaces_option) > 0)
                                                 @foreach (@$auction->get->garage_parking_spaces_option as $item)
@@ -535,13 +535,13 @@
 
                             @if (optional($auction->get)->pool_needed === 'Yes' && $poolTypeList !== '')
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    <i class="fa-regular fa-check-square"></i>
+                                    
                                     Pool Needed:
                                     <span class="removeBold">{{ $poolTypeList }}</span>
                                 </div>
                             @elseif (in_array(optional($auction->get)->pool_needed, ['No', 'Optional'], true))
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    <i class="fa-regular fa-check-square"></i>
+                                    
                                     Pool Needed:
                                     <span class="removeBold">{{ optional($auction->get)->pool_needed }}</span>
                                 </div>
@@ -550,7 +550,7 @@
                         <!-- View Preferences -->
                         @if (@$auction->get->view_preference != null && count(@$auction->get->view_preference) > 0)
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                <i class="fa-regular fa-check-square"></i> View Preference Needed:
+                                View Preference Needed:
                                 @foreach (@$auction->get->view_preference as $item)
                                     <span class="removeBold badge bg-secondary">{{ $item }}</span>
                                 @endforeach
@@ -563,7 +563,7 @@
                         <!-- 55+ Communities -->
                         @if (@$auction->get->leasing_55_plus != null)
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                <i class="fa-regular fa-check-square"></i> Age-Restricted Community:
+                                Age-Restricted Community:
                                 <span class="removeBold">{{ @$auction->get->leasing_55_plus }}</span>
                             </div>
                         @endif
@@ -571,7 +571,7 @@
                         <!-- Non-Negotiable Amenities -->
                         @if (@$auction->get->non_negotiable_amenities != null && count(@$auction->get->non_negotiable_amenities) > 0)
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                <i class="fa-regular fa-check-square"></i> Non-Negotiable Amenities and Property Features:
+                                Non-Negotiable Amenities and Property Features:
                                 @foreach (@$auction->get->non_negotiable_amenities as $item)
                                     <span class="removeBold badge bg-secondary">{{ $item }}</span>
                                 @endforeach
@@ -584,14 +584,14 @@
                         <!-- Business Specific Fields -->
                         @if (@$auction->get->real_estate_purchase != null)
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                <i class="fa-regular fa-check-square"></i> Business & Real Estate Purchase Requirements:
+                                Business & Real Estate Purchase Requirements:
                                 <span class="removeBold">{{ @$auction->get->real_estate_purchase }}</span>
                             </div>
                         @endif
 
                         @if (@$auction->get->assets != null && count(@$auction->get->assets) > 0)
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                <i class="fa-regular fa-check-square"></i> Required Property or Business Assets:
+                                Required Property or Business Assets:
                                 @foreach (@$auction->get->assets as $item)
                                     <span class="removeBold badge bg-secondary">{{ $item }}</span>
                                 @endforeach
@@ -604,14 +604,14 @@
                         <!-- Income Property Specific Fields -->
                         @if (@$auction->get->property_criteria != null)
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                <i class="fa-regular fa-check-square"></i> Income Property Criteria:
+                                Income Property Criteria:
                                 <span class="removeBold">{{ @$auction->get->property_criteria }}</span>
                             </div>
                         @endif
 
                         @if (@$auction->get->unit_size != null)
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                <i class="fa-regular fa-check-square"></i> Acceptable Number of Units:
+                                Acceptable Number of Units:
                                 <span class="removeBold">
                                     @if (@$auction->get->unit_size != 'Other')
                                         {{ @$auction->get->unit_size }}
@@ -624,7 +624,7 @@
 
                         @if (@$auction->get->number_of_unit_type != null && count(@$auction->get->number_of_unit_type) > 0)
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                <i class="fa-regular fa-check-square"></i> Acceptable Unit Type:
+                                Acceptable Unit Type:
                                 @foreach (@$auction->get->number_of_unit_type as $item)
                                     <span class="removeBold badge bg-secondary">{{ $item }}</span>
                                 @endforeach
@@ -634,14 +634,14 @@
                         <!-- Financial Fields -->
                         @if (@$auction->get->minimum_annual_net_income != null)
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                <i class="fa-regular fa-check-square"></i> Minimum Annual Net Income Needed:
+                                Minimum Annual Net Income Needed:
                                 <span class="removeBold">${{ number_format(@$auction->get->minimum_annual_net_income) }}</span>
                             </div>
                         @endif
 
                         @if (@$auction->get->minimum_cap_rate != null)
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                <i class="fa-regular fa-check-square"></i> Minimum Cap Rate Needed:
+                                Minimum Cap Rate Needed:
                                 <span class="removeBold">{{ @$auction->get->minimum_cap_rate }}%</span>
                             </div>
                         @endif
@@ -649,49 +649,49 @@
                         <!-- Pets Information -->
                         @if (@$auction->get->pets != null)
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                <i class="fa-regular fa-check-square"></i> Pets:
+                                Pets:
                                 <span class="removeBold badge bg-secondary">{{ @$auction->get->pets }}</span>
                             </div>
 
                             @if (@$auction->get->pets == 'Yes')
                                 @if (@$auction->get->number_of_pets)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Number of Pets:
+                                        Number of Pets:
                                         <span class="removeBold">{{ @$auction->get->number_of_pets }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->type_of_pets)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Type of Pets:
+                                        Type of Pets:
                                         <span class="removeBold">{{ @$auction->get->type_of_pets }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->breed_of_pets)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Breed of Pets:
+                                        Breed of Pets:
                                         <span class="removeBold">{{ @$auction->get->breed_of_pets }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->weight_of_pets)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Weight of Pets:
+                                        Weight of Pets:
                                         <span class="removeBold">{{ @$auction->get->weight_of_pets }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->service_animal)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Service Animal:
+                                        Service Animal:
                                         <span class="removeBold">{{ @$auction->get->service_animal }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->emotional_support_animal)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Emotional Support Animal:
+                                        Emotional Support Animal:
                                         <span class="removeBold">{{ @$auction->get->emotional_support_animal }}</span>
                                     </div>
                                 @endif
@@ -700,7 +700,7 @@
                         @if (@$auction->get->preferance_details != null)
 
 
-                            <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                            <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Additional Details:<span class="removeBold">
                                     {{ $auction->get->preferance_details ?? '' }}</span>
                             </div>
@@ -715,7 +715,7 @@
                             <!-- Special Sale Provisions -->
                             @if (@$auction->get->sale_provision != null && count(@$auction->get->sale_provision) > 0)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    <i class="fa-regular fa-check-square"></i> Acceptable Special Sale Provisions:
+                                    Acceptable Special Sale Provisions:
                                     @foreach (@$auction->get->sale_provision as $sale)
                                         @php
                                             $displaySale = str_replace('"', '', $sale);
@@ -735,14 +735,14 @@
                                         $displayAssignment = str_replace('"', '', @$auction->get->sale_provision_assignment);
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Buyer Open to Purchasing an Assignment Contract:
+                                        Buyer Open to Purchasing an Assignment Contract:
                                         <span class="removeBold badge bg-secondary">{{ $displayAssignment }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->sale_provision_assignment === 'Yes' && @$auction->get->assignment_fee_amount)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Assignment Fee to Broker:
+                                        Assignment Fee to Broker:
                                         <span class="removeBold">{{ @$auction->get->assignment_fee_amount }}{{ @$auction->get->assignment_fee_type }}</span>
                                     </div>
                                 @endif
@@ -754,7 +754,7 @@
                                     $displayClosingDate = str_replace('"', '', @$auction->get->target_closing_date);
                                 @endphp
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    <i class="fa-regular fa-check-square"></i> Target Closing Date:
+                                    Target Closing Date:
                                     <span class="removeBold">{{ $displayClosingDate }}</span>
                                 </div>
                             @endif
@@ -762,7 +762,7 @@
                             <!-- Maximum Budget -->
                             @if (@$auction->get->maximum_budget != null)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    <i class="fa-regular fa-check-square"></i> Maximum Budget:
+                                    Maximum Budget:
                                     <span class="removeBold">${{ @$auction->get->maximum_budget }}</span>
                                 </div>
                             @endif
@@ -774,7 +774,7 @@
                                     $displayOtherFinancing = str_replace('"', '', @$auction->get->other_financing);
                                 @endphp
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    <i class="fa-regular fa-check-square"></i> Offered Financing/Currency:
+                                    Offered Financing/Currency:
                                     <span class="removeBold badge bg-secondary">{{ $displayFinancing }}</span>
                                     @if (@$auction->get->other_financing)
                                         <span class="removeBold badge bg-secondary">{{ $displayOtherFinancing }}</span>
@@ -785,7 +785,7 @@
                             <!-- Cash Financing Details -->
                             @if (str_replace('"', '', @$auction->get->offered_financing) === 'Cash' && @$auction->get->cash_budget)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    <i class="fa-regular fa-check-square"></i> Offered Cash Amount:
+                                    Offered Cash Amount:
                                     <span class="removeBold">${{ @$auction->get->cash_budget }}</span>
                                 </div>
                             @endif
@@ -797,14 +797,14 @@
                                         $displayPreApproved = str_replace('"', '', @$auction->get->pre_approved);
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Buyer Pre-Approved for a Loan:
+                                        Buyer Pre-Approved for a Loan:
                                         <span class="removeBold badge bg-secondary">{{ $displayPreApproved }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->pre_approved === 'Yes' && @$auction->get->pre_approval_amount)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Buyer Pre-Approval Amount:
+                                        Buyer Pre-Approval Amount:
                                         <span class="removeBold">${{ @$auction->get->pre_approval_amount }}</span>
                                     </div>
                                 @endif
@@ -814,28 +814,28 @@
                             @if (str_replace('"', '', @$auction->get->offered_financing) === 'Seller Financing')
                                 @if (@$auction->get->purchase_price)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Desired Purchase Price:
+                                        Desired Purchase Price:
                                         <span class="removeBold">${{ @$auction->get->purchase_price }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->down_payment_amount)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Desired Down Payment:
+                                        Desired Down Payment:
                                         <span class="removeBold">{{ @$auction->get->down_payment_amount }}{{ @$auction->get->down_payment_type }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->seller_financing_amount)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Desired Seller Financing Amount:
+                                        Desired Seller Financing Amount:
                                         <span class="removeBold">{{ @$auction->get->seller_financing_amount }}{{ @$auction->get->seller_financing_type }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->interest_rate)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Desired Interest Rate:
+                                        Desired Interest Rate:
                                         <span class="removeBold">{{ @$auction->get->interest_rate }}%</span>
                                     </div>
                                 @endif
@@ -845,7 +845,7 @@
                                         $displayLoanDuration = str_replace('"', '', @$auction->get->loan_duration);
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Desired Loan Duration:
+                                        Desired Loan Duration:
                                         <span class="removeBold">{{ $displayLoanDuration }}</span>
                                     </div>
                                 @endif
@@ -855,14 +855,14 @@
                                         $displayPrepayment = str_replace('"', '', @$auction->get->prepayment_penalty);
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Prepayment Penalty:
+                                        Prepayment Penalty:
                                         <span class="removeBold badge bg-secondary">{{ $displayPrepayment }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->prepayment_penalty === 'Yes' && @$auction->get->prepayment_penalty_amount)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Prepayment Penalty Amount:
+                                        Prepayment Penalty Amount:
                                         <span class="removeBold">${{ @$auction->get->prepayment_penalty_amount }}</span>
                                     </div>
                                 @endif
@@ -872,7 +872,7 @@
                                         $displayBalloon = str_replace('"', '', @$auction->get->balloon_payment);
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Balloon Payment:
+                                        Balloon Payment:
                                         <span class="removeBold badge bg-secondary">{{ $displayBalloon }}</span>
                                     </div>
                                 @endif
@@ -880,7 +880,7 @@
                                 @if (@$auction->get->balloon_payment === 'Yes')
                                     @if (@$auction->get->balloon_payment_amount)
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            <i class="fa-regular fa-check-square"></i> Balloon Payment Amount:
+                                            Balloon Payment Amount:
                                             <span class="removeBold">${{ @$auction->get->balloon_payment_amount }}</span>
                                         </div>
                                     @endif
@@ -890,7 +890,7 @@
                                             $displayBalloonDate = str_replace('"', '', @$auction->get->balloon_payment_date);
                                         @endphp
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            <i class="fa-regular fa-check-square"></i> Balloon Payment Due Date:
+                                            Balloon Payment Due Date:
                                             <span class="removeBold">{{ $displayBalloonDate }}</span>
                                         </div>
                                     @endif
@@ -904,28 +904,28 @@
                                         $displayAssumableTerms = str_replace('"', '', @$auction->get->assumable_terms);
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Offered Assumable Terms:
+                                        Offered Assumable Terms:
                                         <span class="removeBold">{{ $displayAssumableTerms }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->max_assumable_rate)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Maximum Interest Rate of Assumable Loan:
+                                        Maximum Interest Rate of Assumable Loan:
                                         <span class="removeBold">{{ @$auction->get->max_assumable_rate }}%</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->max_monthly_payment)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Maximum Monthly Payment (Principal & Interest):
+                                        Maximum Monthly Payment (Principal & Interest):
                                         <span class="removeBold">${{ @$auction->get->max_monthly_payment }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->gap_payment_amount)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Down Payment to Bridge the Gap:
+                                        Down Payment to Bridge the Gap:
                                         <span class="removeBold">{{ @$auction->get->gap_payment_amount }}</span>
                                     </div>
                                 @endif
@@ -939,7 +939,7 @@
                                         $displayOtherExchange = str_replace('"', '', @$auction->get->other_exchange_item);
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Acceptable Exchange Item:
+                                        Acceptable Exchange Item:
                                         <span class="removeBold badge bg-secondary">{{ $displayExchangeItem }}</span>
                                         @if (@$auction->get->exchange_item === 'Other' && @$auction->get->other_exchange_item)
                                             <span class="removeBold badge bg-secondary">{{ $displayOtherExchange }}</span>
@@ -949,7 +949,7 @@
 
                                 @if (@$auction->get->exchange_item_value)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Estimated Value of Exchange/Trade Item:
+                                        Estimated Value of Exchange/Trade Item:
                                         <span class="removeBold">${{ @$auction->get->exchange_item_value }}</span>
                                     </div>
                                 @endif
@@ -959,14 +959,14 @@
                                         $displayExchangeCondition = str_replace('"', '', @$auction->get->exchange_item_condition);
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Condition of Exchange/Trade Item:
+                                        Condition of Exchange/Trade Item:
                                         <span class="removeBold badge bg-secondary">{{ $displayExchangeCondition }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->additional_cash)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Additional Cash Buyer Will Offer:
+                                        Additional Cash Buyer Will Offer:
                                         <span class="removeBold">${{ @$auction->get->additional_cash }}</span>
                                     </div>
                                 @endif
@@ -976,7 +976,7 @@
                                         $displayValueDetermination = str_replace('"', '', @$auction->get->value_determination);
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Value of Exchange/Trade Item Determined By:
+                                        Value of Exchange/Trade Item Determined By:
                                         <span class="removeBold">{{ $displayValueDetermination }}</span>
                                     </div>
                                 @endif
@@ -986,7 +986,7 @@
                             @if (str_replace('"', '', @$auction->get->offered_financing) === 'Lease Option')
                                 @if (@$auction->get->lease_option_price)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Buyer's Desired Offering Price for Lease Option:
+                                        Buyer's Desired Offering Price for Lease Option:
                                         <span class="removeBold">${{ @$auction->get->lease_option_price }}</span>
                                     </div>
                                 @endif
@@ -996,21 +996,21 @@
                                         $displayLeaseTerms = str_replace('"', '', @$auction->get->lease_option_terms);
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Specific Terms Proposed for Lease Option:
+                                        Specific Terms Proposed for Lease Option:
                                         <span class="removeBold">{{ $displayLeaseTerms }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->lease_option_duration)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Proposed Duration of Lease:
+                                        Proposed Duration of Lease:
                                         <span class="removeBold">{{ @$auction->get->lease_option_duration }} Months</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->lease_option_payment)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Monthly Payment Buyer is Offering:
+                                        Monthly Payment Buyer is Offering:
                                         <span class="removeBold">${{ @$auction->get->lease_option_payment }}</span>
                                     </div>
                                 @endif
@@ -1020,7 +1020,7 @@
                                         $displayLeaseConditions = str_replace('"', '', @$auction->get->lease_option_conditions);
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Conditions or Requirements for Lease Option:
+                                        Conditions or Requirements for Lease Option:
                                         <span class="removeBold">{{ $displayLeaseConditions }}</span>
                                     </div>
                                 @endif
@@ -1030,14 +1030,14 @@
                                         $displayOptionFee = str_replace('"', '', @$auction->get->has_option_fee);
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Offered Option Fee:
+                                        Offered Option Fee:
                                         <span class="removeBold badge bg-secondary">{{ $displayOptionFee }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->has_option_fee === 'Yes' && @$auction->get->option_fee_amount)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Option Fee Amount:
+                                        Option Fee Amount:
                                         <span class="removeBold">${{ @$auction->get->option_fee_amount }}</span>
                                     </div>
                                 @endif
@@ -1047,7 +1047,7 @@
                             @if (str_replace('"', '', @$auction->get->offered_financing) === 'Lease Purchase')
                                 @if (@$auction->get->lease_purchase_price)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Buyer's Desired Offering Price for Lease Purchase:
+                                        Buyer's Desired Offering Price for Lease Purchase:
                                         <span class="removeBold">${{ @$auction->get->lease_purchase_price }}</span>
                                     </div>
                                 @endif
@@ -1057,21 +1057,21 @@
                                         $displayLeasePurchaseTerms = str_replace('"', '', @$auction->get->lease_purchase_terms);
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Specific Terms Proposed for Lease Purchase:
+                                        Specific Terms Proposed for Lease Purchase:
                                         <span class="removeBold">{{ $displayLeasePurchaseTerms }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->lease_purchase_duration)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Proposed Duration of Lease:
+                                        Proposed Duration of Lease:
                                         <span class="removeBold">{{ @$auction->get->lease_purchase_duration }} Months</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->lease_purchase_payment)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Monthly Payment Buyer is Offering:
+                                        Monthly Payment Buyer is Offering:
                                         <span class="removeBold">${{ @$auction->get->lease_purchase_payment }}</span>
                                     </div>
                                 @endif
@@ -1081,7 +1081,7 @@
                                         $displayLeasePurchaseConditions = str_replace('"', '', @$auction->get->lease_purchase_conditions);
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Conditions or Requirements for Lease Purchase:
+                                        Conditions or Requirements for Lease Purchase:
                                         <span class="removeBold">{{ $displayLeasePurchaseConditions }}</span>
                                     </div>
                                 @endif
@@ -1091,14 +1091,14 @@
                                         $displayLeasePurchaseOptionFee = str_replace('"', '', @$auction->get->lease_purchase_option_fee);
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Offered Option Fee:
+                                        Offered Option Fee:
                                         <span class="removeBold badge bg-secondary">{{ $displayLeasePurchaseOptionFee }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->lease_purchase_option_fee === 'Yes' && @$auction->get->lease_purchase_option_fee_amount)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Option Fee Amount:
+                                        Option Fee Amount:
                                         <span class="removeBold">${{ @$auction->get->lease_purchase_option_fee_amount }}</span>
                                     </div>
                                 @endif
@@ -1111,21 +1111,21 @@
                                         $displayCryptoType = str_replace('"', '', @$auction->get->cryptocurrency_type);
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Offered Cryptocurrency:
+                                        Offered Cryptocurrency:
                                         <span class="removeBold">{{ $displayCryptoType }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->crypto_percentage)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Percentage to be Paid with Cryptocurrency:
+                                        Percentage to be Paid with Cryptocurrency:
                                         <span class="removeBold">{{ @$auction->get->crypto_percentage }}%</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->cash_percentage_crypto)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Percentage to be Paid with Cash:
+                                        Percentage to be Paid with Cash:
                                         <span class="removeBold">{{ @$auction->get->cash_percentage_crypto }}%</span>
                                     </div>
                                 @endif
@@ -1138,21 +1138,21 @@
                                         $displayNFTDescription = str_replace('"', '', @$auction->get->nft_description);
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Offered Non-Fungible Token (NFT):
+                                        Offered Non-Fungible Token (NFT):
                                         <span class="removeBold">{{ $displayNFTDescription }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->nft_percentage)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Percentage to be Paid with NFT:
+                                        Percentage to be Paid with NFT:
                                         <span class="removeBold">{{ @$auction->get->nft_percentage }}%</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->cash_percentage_nft)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        <i class="fa-regular fa-check-square"></i> Percentage to be Paid with Cash:
+                                        Percentage to be Paid with Cash:
                                         <span class="removeBold">{{ @$auction->get->cash_percentage_nft }}%</span>
                                     </div>
                                 @endif
@@ -1315,7 +1315,7 @@
                                 <h4 class="section-title">Additional Details:</h4>
                             </div>
 
-                            <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i>
+                            <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Additional Details:<span
                                     class="removeBold">{{ $auction->get->additional_details ?? '' }}</span>
                             </div>
@@ -1335,7 +1335,7 @@
                                 $displayCommissionStructure = str_replace('"', '', @$auction->get->commission_structure);
                             @endphp
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                <i class="fa-regular fa-check-square"></i> Buyer's Broker Commission Structure:
+                                Buyer's Broker Commission Structure:
                                 <span class="removeBold">{{ $displayCommissionStructure }}</span>
                             </div>
                         @endif
@@ -1346,7 +1346,7 @@
                                 $displayPurchaseFeeType = str_replace('"', '', @$auction->get->purchase_fee_type);
                             @endphp
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                <i class="fa-regular fa-check-square"></i> Buyer's Broker Purchase Fee:
+                                Buyer's Broker Purchase Fee:
                                 <span class="removeBold badge bg-secondary">{{ $displayPurchaseFeeType }}</span>
                             </div>
 
@@ -1378,7 +1378,7 @@
                                 $displayLeaseOption = str_replace('"', '', @$auction->get->interested_lease_option);
                             @endphp
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                <i class="fa-regular fa-check-square"></i> Interested in a Lease Agreement:
+                                Interested in a Lease Agreement:
                                 <span class="removeBold badge bg-secondary">{{ $displayLeaseOption }}</span>
                             </div>
                         @endif
@@ -1389,7 +1389,7 @@
                                 $displayLeaseFeeType = str_replace('"', '', @$auction->get->lease_fee_type);
                             @endphp
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                <i class="fa-regular fa-check-square"></i> Buyer's Broker Lease Fee:
+                                Buyer's Broker Lease Fee:
                                 <span class="removeBold badge bg-secondary">{{ $displayLeaseFeeType }}</span>
                             </div>
 
@@ -1435,7 +1435,7 @@
                                 $displayLeaseOptionAgreement = str_replace('"', '', @$auction->get->interested_lease_option_agreement);
                             @endphp
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                <i class="fa-regular fa-check-square"></i> Interested in a Lease-Option Agreement:
+                                Interested in a Lease-Option Agreement:
                                 <span class="removeBold badge bg-secondary">{{ $displayLeaseOptionAgreement }}</span>
                             </div>
                         @endif
@@ -1445,7 +1445,7 @@
                             <!-- Compensation for Creating the Lease-Option Agreement -->
                             @if (@$auction->get->lease_value)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    <i class="fa-regular fa-check-square"></i> Compensation for Creating Lease-Option Agreement:
+                                    Compensation for Creating Lease-Option Agreement:
                                     <span class="removeBold">
                                         {{ @$auction->get->lease_value }}{{ @$auction->get->lease_type === 'percent' ? '%' : '$' }}
                                     </span>
@@ -1455,7 +1455,7 @@
                             <!-- Compensation if Purchase Option is Exercised -->
                             @if (@$auction->get->purchase_value)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    <i class="fa-regular fa-check-square"></i> Compensation if Purchase Option is Exercised:
+                                    Compensation if Purchase Option is Exercised:
                                     <span class="removeBold">
                                         {{ @$auction->get->purchase_value }}{{ @$auction->get->purchase_type === 'percent' ? '%' : '$' }}
                                     </span>
@@ -1466,7 +1466,7 @@
                         <!-- Protection Period -->
                         @if (@$auction->get->protection_period != null)
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                <i class="fa-regular fa-check-square"></i> Protection Period Timeframe (Days):
+                                Protection Period Timeframe (Days):
                                 <span class="removeBold">{{ @$auction->get->protection_period }}</span>
                             </div>
                         @endif
@@ -1477,7 +1477,7 @@
                                 $displayEarlyTermination = str_replace('"', '', @$auction->get->early_termination_fee_option);
                             @endphp
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                <i class="fa-regular fa-check-square"></i> Early Termination Fee:
+                                Early Termination Fee:
                                 <span class="removeBold badge bg-secondary">{{ $displayEarlyTermination }}</span>
                             </div>
 
@@ -1494,7 +1494,7 @@
                                 $displayRetainerFee = str_replace('"', '', @$auction->get->retainer_fee_option);
                             @endphp
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                <i class="fa-regular fa-check-square"></i> Retainer Fee:
+                                Retainer Fee:
                                 <span class="removeBold badge bg-secondary">{{ $displayRetainerFee }}</span>
                             </div>
 
@@ -1522,7 +1522,7 @@
                                 $displayAgencyTimeframe = str_replace('"', '', @$auction->get->agency_agreement_timeframe);
                             @endphp
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                <i class="fa-regular fa-check-square"></i> Buyer Agency Agreement Timeframe:
+                                Buyer Agency Agreement Timeframe:
                                 <span class="removeBold">{{ $displayAgencyTimeframe }}</span>
                             </div>
 
@@ -1539,7 +1539,7 @@
                                 $displayBrokerageRelationship = str_replace('"', '', @$auction->get->brokerage_relationship);
                             @endphp
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                <i class="fa-regular fa-check-square"></i> Acceptable Brokerage Relationship:
+                                Acceptable Brokerage Relationship:
                                 <span class="removeBold badge bg-secondary">{{ $displayBrokerageRelationship }}</span>
                             </div>
                         @endif
@@ -1547,7 +1547,7 @@
                         <!-- Additional Terms -->
                         @if (@$auction->get->additional_details_broker != null)
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                <i class="fa-regular fa-check-square"></i> Additional Terms:
+                                Additional Terms:
                                 <span class="removeBold">{{ @$auction->get->additional_details_broker }}</span>
                             </div>
                         @endif
@@ -1556,7 +1556,7 @@
                             <h4 class="section-title">Buyer's Info</h4>
                         </div>
                         @if (!empty($auction->get->first_name))
-                            <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-regular fa-check-square"></i> First
+                            <div class="col-md-12 col-12 pt-2 fw-bold">First
                                 Name:
                                 <span class="removeBold">
                                     {{ $auction->get->first_name }}
