@@ -1436,23 +1436,19 @@
                         <hr />
                         <div class="card-header section-header">
                             <h4 class="section-title">Broker Compensation & Agency Agreement Terms</h4>
-                        </div>
 
-                        <!-- Buyer’s Broker Compensation Sub-section -->
+                        <!-- Broker Compensation Section with Organized Sub-sections -->
+                        <div class="broker-compensation-section">
+
+                        <!-- 1. Buyer’s Broker Compensation Sub-section -->
                         <h5 class="mt-3 mb-2"><strong>Buyer’s Broker Compensation:</strong></h5>
 
-                        <!-- Commission Structure -->
                         @if (@$auction->get->commission_structure != null)
-                            @php
-                                $displayCommissionStructure = str_replace('"', '', @$auction->get->commission_structure);
-                            @endphp
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Buyer’s Broker Commission Structure:
-                                <span class="removeBold">{{ $displayCommissionStructure }}</span>
-                            </div>
+                            <ul class="services">
+                                <li>Buyer’s Broker Commission Structure: {{ str_replace('"', '', @$auction->get->commission_structure) }}</li>
+                            </ul>
                         @endif
 
-                        <!-- Purchase Fee (Value-First Format) -->
                         @if (@$auction->get->purchase_fee_type != null)
                             @php
                                 $purchaseFeeValue = null;
@@ -1461,8 +1457,7 @@
                                 if ($purchaseFeeType === 'Flat Fee' && @$auction->get->purchase_fee_flat) {
                                     $purchaseFeeValue = $fmtMoney(@$auction->get->purchase_fee_flat);
                                 } elseif ($purchaseFeeType === 'Percentage of the Total Purchase Price' && @$auction->get->purchase_fee_percentage) {
-                                    $pct = $fmtPercent(@$auction->get->purchase_fee_percentage);
-                                    $purchaseFeeValue = $joinParts([$pct, $basisText('Total Purchase Price')]);
+                                    $purchaseFeeValue = $fmtPercent(@$auction->get->purchase_fee_percentage) . ' of Total Purchase Price';
                                 } elseif ($purchaseFeeType === 'Percentage of the Total Purchase Price + Flat Fee') {
                                     $pctPart = @$auction->get->purchase_fee_percentage_combo 
                                         ? $fmtPercent(@$auction->get->purchase_fee_percentage_combo) . ' of Total Purchase Price'
@@ -1476,192 +1471,169 @@
                                 }
                             @endphp
                             @if ($purchaseFeeValue)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Buyer’s Broker Purchase Fee:
-                                    <span class="removeBold">{{ $purchaseFeeValue }}</span>
-                                </div>
+                                <ul class="services">
+                                    <li>Buyer’s Broker Purchase Fee: {{ $purchaseFeeValue }}</li>
+                                </ul>
                             @endif
                         @endif
 
-                        <!-- Interested in Lease Agreement -->
+                        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
+
+                        <!-- 2. Buyer’s Broker Lease Fee Sub-section -->
+                        <h5 class="mt-3 mb-2"><strong>Buyer’s Broker Lease Fee:</strong></h5>
+
                         @if (@$auction->get->interested_lease_option != null)
-                            @php
-                                $displayLeaseOption = str_replace('"', '', @$auction->get->interested_lease_option);
-                            @endphp
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Interested in a Lease Agreement:
-                                <span class="removeBold badge bg-secondary">{{ $displayLeaseOption }}</span>
-                            </div>
+                            <ul class="services">
+                                <li>Interested in a Lease Agreement: {{ str_replace('"', '', @$auction->get->interested_lease_option) }}</li>
+                            </ul>
                         @endif
 
-                        <!-- Lease Fee Details (Only show if interested_lease_option is 'Yes') -->
                         @if (@$auction->get->interested_lease_option === 'Yes' && @$auction->get->lease_fee_type != null)
                             @php
-                                $displayLeaseFeeType = str_replace('"', '', @$auction->get->lease_fee_type);
+                                $leaseFeeValue = null;
+                                $leaseFeeType = @$auction->get->lease_fee_type;
+                                
+                                if ($leaseFeeType === 'flat' && @$auction->get->lease_fee_flat) {
+                                    $leaseFeeValue = $fmtMoney(@$auction->get->lease_fee_flat);
+                                } elseif ($leaseFeeType === 'Percentage of the Gross Lease Value' && @$auction->get->lease_fee_percentage) {
+                                    $leaseFeeValue = $fmtPercent(@$auction->get->lease_fee_percentage) . ' of Gross Lease Value';
+                                } elseif ($leaseFeeType === 'Percentage of Monthly Rent' && @$auction->get->lease_fee_percentage_monthly_rent) {
+                                    $leaseFeeValue = $fmtPercent(@$auction->get->lease_fee_percentage_monthly_rent) . ' of Monthly Rent';
+                                    if (@$auction->get->lease_fee_percentage_monthly_number) {
+                                        $leaseFeeValue .= ' x ' . @$auction->get->lease_fee_percentage_monthly_number . ' Months';
+                                    }
+                                } elseif ($leaseFeeType === 'Flat Fee + Percentage of the Gross Lease Value') {
+                                    $flatPart = @$auction->get->lease_fee_flat_combo ? $fmtMoney(@$auction->get->lease_fee_flat_combo) : null;
+                                    $pctPart = @$auction->get->lease_fee_percentage_combo ? ($fmtPercent(@$auction->get->lease_fee_percentage_combo) . ' of Gross Lease Value') : null;
+                                    $leaseFeeValue = $flatPart && $pctPart ? "$flatPart + $pctPart" : ($flatPart ?? $pctPart);
+                                } elseif ($leaseFeeType === 'Percentage of the Net Aggregate Rent' && @$auction->get->lease_fee_percentage_net) {
+                                    $leaseFeeValue = $fmtPercent(@$auction->get->lease_fee_percentage_net) . ' of Net Aggregate Rent';
+                                } elseif ($leaseFeeType === 'Flat Fee + Percentage of the Net Aggregate Rent') {
+                                    $flatPart = @$auction->get->lease_fee_flat_combo_net ? $fmtMoney(@$auction->get->lease_fee_flat_combo_net) : null;
+                                    $pctPart = @$auction->get->lease_fee_percentage_combo_net ? ($fmtPercent(@$auction->get->lease_fee_percentage_combo_net) . ' of Net Aggregate Rent') : null;
+                                    $leaseFeeValue = $flatPart && $pctPart ? "$flatPart + $pctPart" : ($flatPart ?? $pctPart);
+                                } elseif (strtolower($leaseFeeType) === 'other' && @$auction->get->lease_fee_other) {
+                                    $leaseFeeValue = @$auction->get->lease_fee_other;
+                                }
                             @endphp
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Buyer’s Broker Lease Fee:
-                                <span class="removeBold badge bg-secondary">{{ $displayLeaseFeeType }}</span>
-                            </div>
-
-                            <!-- Lease Fee Amounts -->
-                            @if (@$auction->get->lease_fee_type === 'flat' && @$auction->get->lease_fee_flat)
-                                <div class="col-md-12 col-12 pt-1">
-                                    <span class="removeBold">${{ @$auction->get->lease_fee_flat }}</span>
-                                </div>
-                            @elseif(@$auction->get->lease_fee_type === 'Percentage of the Gross Lease Value' && @$auction->get->lease_fee_percentage)
-                                <div class="col-md-12 col-12 pt-1">
-                                    <span class="removeBold">{{ @$auction->get->lease_fee_percentage }}%</span>
-                                </div>
-                            @elseif(@$auction->get->lease_fee_type === 'Percentage of Monthly Rent' && @$auction->get->lease_fee_percentage_monthly_rent)
-                                <div class="col-md-12 col-12 pt-1">
-                                    <span class="removeBold">{{ @$auction->get->lease_fee_percentage_monthly_rent }}% for {{ @$auction->get->lease_fee_percentage_monthly_number }} months</span>
-                                </div>
-                            @elseif(@$auction->get->lease_fee_type === 'Flat Fee + Percentage of the Gross Lease Value')
-                                @if (@$auction->get->lease_fee_flat_combo || @$auction->get->lease_fee_percentage_combo)
-                                    <div class="col-md-12 col-12 pt-1">
-                                        <span class="removeBold">${{ @$auction->get->lease_fee_flat_combo }} + {{ @$auction->get->lease_fee_percentage_combo }}%</span>
-                                    </div>
-                                @endif
-                            @elseif(@$auction->get->lease_fee_type === 'Percentage of the Net Aggregate Rent' && @$auction->get->lease_fee_percentage_net)
-                                <div class="col-md-12 col-12 pt-1">
-                                    <span class="removeBold">{{ @$auction->get->lease_fee_percentage_net }}%</span>
-                                </div>
-                            @elseif(@$auction->get->lease_fee_type === 'Flat Fee + Percentage of the Net Aggregate Rent')
-                                @if (@$auction->get->lease_fee_flat_combo_net || @$auction->get->lease_fee_percentage_combo_net)
-                                    <div class="col-md-12 col-12 pt-1">
-                                        <span class="removeBold">${{ @$auction->get->lease_fee_flat_combo_net }} + {{ @$auction->get->lease_fee_percentage_combo_net }}%</span>
-                                    </div>
-                                @endif
-                            @elseif(@$auction->get->lease_fee_type === 'other' && @$auction->get->lease_fee_other)
-                                <div class="col-md-12 col-12 pt-1">
-                                    <span class="removeBold">{{ @$auction->get->lease_fee_other }}</span>
-                                </div>
+                            @if ($leaseFeeValue)
+                                <ul class="services">
+                                    <li>Buyer’s Broker Lease Fee: {{ $leaseFeeValue }}</li>
+                                </ul>
                             @endif
                         @endif
 
-                        <!-- Interested in Lease-Option Agreement -->
+                        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
+
+                        <!-- 3. Lease-Option Details Sub-section -->
+                        <h5 class="mt-3 mb-2"><strong>Lease-Option Details:</strong></h5>
+
                         @if (@$auction->get->interested_lease_option_agreement != null)
-                            @php
-                                $displayLeaseOptionAgreement = str_replace('"', '', @$auction->get->interested_lease_option_agreement);
-                            @endphp
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Interested in a Lease-Option Agreement:
-                                <span class="removeBold badge bg-secondary">{{ $displayLeaseOptionAgreement }}</span>
-                            </div>
+                            <ul class="services">
+                                <li>Interested in a Lease-Option Agreement: {{ str_replace('"', '', @$auction->get->interested_lease_option_agreement) }}</li>
+                            </ul>
                         @endif
 
-                        <!-- Lease-Option Agreement Compensation (Only show if interested_lease_option_agreement is 'Yes') -->
                         @if (@$auction->get->interested_lease_option_agreement === 'Yes')
-                            <!-- Compensation for Creating the Lease-Option Agreement -->
-                            @if (@$auction->get->lease_value)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Compensation for Creating Lease-Option Agreement:
-                                    <span class="removeBold">
-                                        {{ @$auction->get->lease_value }}{{ @$auction->get->lease_type === 'percent' ? '%' : '$' }}
-                                    </span>
-                                </div>
+                            @if (@$auction->get->lease_value != null)
+                                <ul class="services">
+                                    <li>Compensation (When Option Is Created): 
+                                        @if (@$auction->get->lease_type === 'percent')
+                                            {{ @$auction->get->lease_value }}%
+                                        @else
+                                            ${{ number_format((float)str_replace(',', '', @$auction->get->lease_value), 0) }}
+                                        @endif
+                                    </li>
+                                </ul>
                             @endif
 
-                            <!-- Compensation if Purchase Option is Exercised -->
-                            @if (@$auction->get->purchase_value)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Compensation if Purchase Option is Exercised:
-                                    <span class="removeBold">
-                                        {{ @$auction->get->purchase_value }}{{ @$auction->get->purchase_type === 'percent' ? '%' : '$' }}
-                                    </span>
-                                </div>
+                            @if (@$auction->get->purchase_value != null)
+                                <ul class="services">
+                                    <li>Compensation (If Purchase Option Is Exercised): 
+                                        @if (@$auction->get->purchase_type === 'percent')
+                                            {{ @$auction->get->purchase_value }}%
+                                        @else
+                                            ${{ number_format((float)str_replace(',', '', @$auction->get->purchase_value), 0) }}
+                                        @endif
+                                    </li>
+                                </ul>
                             @endif
                         @endif
 
-                        <!-- Protection Period -->
+                        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
+
+                        <!-- 4. Legal Terms Sub-section -->
+                        <h5 class="mt-3 mb-2"><strong>Legal Terms:</strong></h5>
+
                         @if (@$auction->get->protection_period != null)
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Protection Period Timeframe (Days):
-                                <span class="removeBold">{{ @$auction->get->protection_period }}</span>
-                            </div>
+                            <ul class="services">
+                                <li>Protection Period Timeframe: {{ @$auction->get->protection_period }} Days</li>
+                            </ul>
                         @endif
 
-                        <!-- Early Termination Fee -->
                         @if (@$auction->get->early_termination_fee_option != null)
-                            @php
-                                $displayEarlyTermination = str_replace('"', '', @$auction->get->early_termination_fee_option);
-                            @endphp
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Early Termination Fee:
-                                <span class="removeBold badge bg-secondary">{{ $displayEarlyTermination }}</span>
-                            </div>
-
-                            @if (@$auction->get->early_termination_fee_option === 'yes' && @$auction->get->early_termination_fee_amount)
-                                <div class="col-md-12 col-12 pt-1">
-                                    <span class="removeBold">${{ @$auction->get->early_termination_fee_amount }}</span>
-                                </div>
-                            @endif
+                            <ul class="services">
+                                <li>Early Termination Fee: {{ ucfirst(str_replace('"', '', @$auction->get->early_termination_fee_option)) }}
+                                    @if (@$auction->get->early_termination_fee_option === 'yes' || @$auction->get->early_termination_fee_option === 'Yes')
+                                        @if (@$auction->get->early_termination_fee_amount)
+                                            <ul class="services" style="margin-top: 0.25rem;">
+                                                <li>Termination Fee Amount: ${{ number_format((float)str_replace(',', '', @$auction->get->early_termination_fee_amount), 0) }}</li>
+                                            </ul>
+                                        @endif
+                                    @endif
+                                </li>
+                            </ul>
                         @endif
 
-                        <!-- Retainer Fee -->
                         @if (@$auction->get->retainer_fee_option != null)
-                            @php
-                                $displayRetainerFee = str_replace('"', '', @$auction->get->retainer_fee_option);
-                            @endphp
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Retainer Fee:
-                                <span class="removeBold badge bg-secondary">{{ $displayRetainerFee }}</span>
-                            </div>
-
-                            @if (@$auction->get->retainer_fee_option === 'yes')
-                                @if (@$auction->get->retainer_fee_amount)
-                                    <div class="col-md-12 col-12 pt-1">
-                                        <span class="removeBold">${{ @$auction->get->retainer_fee_amount }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->retainer_fee_application)
-                                    @php
-                                        $displayRetainerApplication = str_replace('"', '', @$auction->get->retainer_fee_application);
-                                    @endphp
-                                    <div class="col-md-12 col-12 pt-1">
-                                        <span class="removeBold">{{ $displayRetainerApplication }}</span>
-                                    </div>
-                                @endif
-                            @endif
+                            <ul class="services">
+                                <li>Retainer Fee: {{ ucfirst(str_replace('"', '', @$auction->get->retainer_fee_option)) }}
+                                    @if (@$auction->get->retainer_fee_option === 'yes' || @$auction->get->retainer_fee_option === 'Yes')
+                                        @if (@$auction->get->retainer_fee_amount)
+                                            <ul class="services" style="margin-top: 0.25rem;">
+                                                <li>Retainer Fee Amount: ${{ number_format((float)str_replace(',', '', @$auction->get->retainer_fee_amount), 0) }}</li>
+                                            </ul>
+                                        @endif
+                                        @if (@$auction->get->retainer_fee_application)
+                                            <ul class="services" style="margin-top: 0.25rem;">
+                                                <li>Retainer Fee Application: {{ @$auction->get->retainer_fee_application === 'applied' ? 'Applied toward final compensation' : 'Charged in addition to final compensation' }}</li>
+                                            </ul>
+                                        @endif
+                                    @endif
+                                </li>
+                            </ul>
                         @endif
 
-                        <!-- Agency Agreement Timeframe -->
                         @if (@$auction->get->agency_agreement_timeframe != null)
-                            @php
-                                $displayAgencyTimeframe = str_replace('"', '', @$auction->get->agency_agreement_timeframe);
-                            @endphp
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Buyer Agency Agreement Timeframe:
-                                <span class="removeBold">{{ $displayAgencyTimeframe }}</span>
-                            </div>
-
-                            @if (@$auction->get->agency_agreement_timeframe === 'custom' && @$auction->get->agency_agreement_custom)
-                                <div class="col-md-12 col-12 pt-1">
-                                    <span class="removeBold">{{ @$auction->get->agency_agreement_custom }}</span>
-                                </div>
-                            @endif
+                            <ul class="services">
+                                <li>Buyer Agency Agreement Timeframe: {{ @$auction->get->agency_agreement_timeframe === 'custom' ? @$auction->get->agency_agreement_custom : str_replace('"', '', @$auction->get->agency_agreement_timeframe) }}</li>
+                            </ul>
                         @endif
 
-                        <!-- Brokerage Relationship -->
+                        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
+
+                        <!-- 5. Brokerage Relationship Sub-section -->
+                        <h5 class="mt-3 mb-2"><strong>Brokerage Relationship:</strong></h5>
+
                         @if (@$auction->get->brokerage_relationship != null)
-                            @php
-                                $displayBrokerageRelationship = str_replace('"', '', @$auction->get->brokerage_relationship);
-                            @endphp
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Acceptable Brokerage Relationship:
-                                <span class="removeBold badge bg-secondary">{{ $displayBrokerageRelationship }}</span>
-                            </div>
+                            <ul class="services">
+                                <li>Acceptable Brokerage Relationship: {{ str_replace('"', '', @$auction->get->brokerage_relationship) }}</li>
+                            </ul>
                         @endif
 
-                        <!-- Additional Terms -->
+                        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
+
+                        <!-- 6. Additional Terms Sub-section -->
+                        <h5 class="mt-3 mb-2"><strong>Additional Terms:</strong></h5>
+
                         @if (@$auction->get->additional_details_broker != null)
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Additional Terms:
-                                <span class="removeBold">{{ @$auction->get->additional_details_broker }}</span>
-                            </div>
+                            <ul class="services">
+                                <li>{{ @$auction->get->additional_details_broker }}</li>
+                            </ul>
                         @endif
+
+                        </div>
+                        <!-- End Broker Compensation Section -->
                         <hr />
                         <div class="card-header section-header">
                             <h4 class="section-title">Buyer’s Info</h4>
@@ -2277,7 +2249,7 @@
 
                                                                         </div>
 
-                                                                       <!-- 2. Broker Compensation & Agency Agreement Terms -->
+                                                                       <!-- Bid Broker Compensation & Agency Agreement Terms (6 Sections) -->
 @if (data_get($bid, 'get.commission_structure') ||
      data_get($bid, 'get.purchase_fee_type') ||
      data_get($bid, 'get.interested_lease_option') ||
@@ -2289,22 +2261,20 @@
      data_get($bid, 'get.agency_agreement_timeframe') ||
      data_get($bid, 'get.brokerage_relationship') ||
      data_get($bid, 'get.additional_details_broker'))
-    <div class="mb-5">
+    <div class="mb-5 broker-compensation-section">
         <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
             <i class="fa fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
         </h6>
 
-        <!-- Commission Structure -->
+        <!-- 1. Buyer’s Broker Compensation -->
+        <h6 class="mt-3 mb-2" style="font-weight: 600;">Buyer’s Broker Compensation:</h6>
+        
         @if (data_get($bid, 'get.commission_structure'))
-            <div class="mb-3">
-                <div class="fw-semibold" style="color: #049399;">Buyer’s Broker Commission Structure</div>
-                <div class="text-muted">
-                    {{ data_get($bid, 'get.commission_structure') }}
-                </div>
-            </div>
+            <ul class="services">
+                <li>Buyer’s Broker Commission Structure: {{ data_get($bid, 'get.commission_structure') }}</li>
+            </ul>
         @endif
 
-        <!-- Purchase Fee (Value-First Format) -->
         @if (data_get($bid, 'get.purchase_fee_type'))
             @php
                 $bidPurchaseFeeValue = null;
@@ -2313,8 +2283,7 @@
                 if ($bidPurchaseFeeType === 'Flat Fee' && data_get($bid, 'get.purchase_fee_flat')) {
                     $bidPurchaseFeeValue = $fmtMoney(data_get($bid, 'get.purchase_fee_flat'));
                 } elseif ($bidPurchaseFeeType === 'Percentage of the Total Purchase Price' && data_get($bid, 'get.purchase_fee_percentage')) {
-                    $pct = $fmtPercent(data_get($bid, 'get.purchase_fee_percentage'));
-                    $bidPurchaseFeeValue = $joinParts([$pct, $basisText('Total Purchase Price')]);
+                    $bidPurchaseFeeValue = $fmtPercent(data_get($bid, 'get.purchase_fee_percentage')) . ' of Total Purchase Price';
                 } elseif ($bidPurchaseFeeType === 'Percentage of the Total Purchase Price + Flat Fee') {
                     $pctPart = data_get($bid, 'get.purchase_fee_percentage_combo') 
                         ? $fmtPercent(data_get($bid, 'get.purchase_fee_percentage_combo')) . ' of Total Purchase Price'
@@ -2328,266 +2297,163 @@
                 }
             @endphp
             @if ($bidPurchaseFeeValue)
-                <div class="mb-3">
-                    <div class="fw-semibold" style="color: #049399;">Buyer’s Broker Purchase Fee</div>
-                    <div class="text-muted">{{ $bidPurchaseFeeValue }}</div>
-                </div>
+                <ul class="services">
+                    <li>Buyer’s Broker Purchase Fee: {{ $bidPurchaseFeeValue }}</li>
+                </ul>
             @endif
         @endif
 
+        <div class="my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
-        <!-- Lease Agreement Interest -->
+        <!-- 2. Buyer’s Broker Lease Fee -->
+        <h6 class="mt-3 mb-2" style="font-weight: 600;">Buyer’s Broker Lease Fee:</h6>
+
         @if (data_get($bid, 'get.interested_lease_option'))
-            <div class="mb-3">
-                <div class="fw-semibold" style="color: #049399;">Interested in a Lease Agreement</div>
-                <div class="text-muted">
-                    {{ data_get($bid, 'get.interested_lease_option') }}
-                </div>
-            </div>
+            <ul class="services">
+                <li>Interested in a Lease Agreement: {{ data_get($bid, 'get.interested_lease_option') }}</li>
+            </ul>
         @endif
 
-        <!-- Lease Fee Details (Only show if interested_lease_option is 'Yes') -->
         @if (data_get($bid, 'get.interested_lease_option') === 'Yes' && data_get($bid, 'get.lease_fee_type'))
-            <div class="mt-4 pt-3 border-top">
-                <h6 class="mb-3" style="color: #049399; font-weight: 600;">Lease Fee Details</h6>
-
-                <div class="mb-3">
-                    <div class="fw-semibold" style="color: #049399;">Buyer’s Broker Lease Fee Type</div>
-                    <div class="text-muted">
-                        {{ data_get($bid, 'get.lease_fee_type') }}
-                    </div>
-                </div>
-
-                @if (data_get($bid, 'get.lease_fee_type') === 'flat' && data_get($bid, 'get.lease_fee_flat'))
-                    <div class="mb-3">
-                        <div class="fw-semibold" style="color: #049399;">Flat Fee Amount</div>
-                        <div class="text-muted">
-                            ${{ number_format(data_get($bid, 'get.lease_fee_flat'), 2) }}
-                        </div>
-                    </div>
-                @endif
-
-                @if (data_get($bid, 'get.lease_fee_type') === 'Percentage of the Gross Lease Value' && data_get($bid, 'get.lease_fee_percentage'))
-                    <div class="mb-3">
-                        <div class="fw-semibold" style="color: #049399;">Percentage of Gross Lease Value</div>
-                        <div class="text-muted">
-                            {{ data_get($bid, 'get.lease_fee_percentage') }}%
-                        </div>
-                    </div>
-                @endif
-
-                @if (data_get($bid, 'get.lease_fee_type') === 'Percentage of Monthly Rent')
-                    @if (data_get($bid, 'get.lease_fee_percentage_monthly_rent'))
-                        <div class="mb-2">
-                            <div class="fw-semibold" style="color: #049399;">Percentage of Monthly Rent</div>
-                            <div class="text-muted">
-                                {{ data_get($bid, 'get.lease_fee_percentage_monthly_rent') }}%
-                            </div>
-                        </div>
-                    @endif
-                    @if (data_get($bid, 'get.lease_fee_percentage_monthly_number'))
-                        <div class="mb-3">
-                            <div class="fw-semibold" style="color: #049399;">Number of Months</div>
-                            <div class="text-muted">
-                                {{ data_get($bid, 'get.lease_fee_percentage_monthly_number') }} months
-                            </div>
-                        </div>
-                    @endif
-                @endif
-
-                @if (data_get($bid, 'get.lease_fee_type') === 'Flat Fee + Percentage of the Gross Lease Value')
-                    @if (data_get($bid, 'get.lease_fee_flat_combo'))
-                        <div class="mb-2">
-                            <div class="fw-semibold" style="color: #049399;">Flat Fee Portion</div>
-                            <div class="text-muted">
-                                ${{ number_format(data_get($bid, 'get.lease_fee_flat_combo'), 2) }}
-                            </div>
-                        </div>
-                    @endif
-                    @if (data_get($bid, 'get.lease_fee_percentage_combo'))
-                        <div class="mb-3">
-                            <div class="fw-semibold" style="color: #049399;">Percentage Portion</div>
-                            <div class="text-muted">
-                                {{ data_get($bid, 'get.lease_fee_percentage_combo') }}%
-                            </div>
-                        </div>
-                    @endif
-                @endif
-
-                @if (data_get($bid, 'get.lease_fee_type') === 'Percentage of the Net Aggregate Rent' && data_get($bid, 'get.lease_fee_percentage_net'))
-                    <div class="mb-3">
-                        <div class="fw-semibold" style="color: #049399;">Percentage of Net Aggregate Rent</div>
-                        <div class="text-muted">
-                            {{ data_get($bid, 'get.lease_fee_percentage_net') }}%
-                        </div>
-                    </div>
-                @endif
-
-                @if (data_get($bid, 'get.lease_fee_type') === 'Flat Fee + Percentage of the Net Aggregate Rent')
-                    @if (data_get($bid, 'get.lease_fee_flat_combo_net'))
-                        <div class="mb-2">
-                            <div class="fw-semibold" style="color: #049399;">Flat Fee Portion</div>
-                            <div class="text-muted">
-                                ${{ number_format(data_get($bid, 'get.lease_fee_flat_combo_net'), 2) }}
-                            </div>
-                        </div>
-                    @endif
-                    @if (data_get($bid, 'get.lease_fee_percentage_combo_net'))
-                        <div class="mb-3">
-                            <div class="fw-semibold" style="color: #049399;">Percentage Portion</div>
-                            <div class="text-muted">
-                                {{ data_get($bid, 'get.lease_fee_percentage_combo_net') }}%
-                            </div>
-                        </div>
-                    @endif
-                @endif
-
-                @if (data_get($bid, 'get.lease_fee_type') === 'other' && data_get($bid, 'get.lease_fee_other'))
-                    <div class="mb-3">
-                        <div class="fw-semibold" style="color: #049399;">Other Lease Fee</div>
-                        <div class="text-muted">
-                            {{ data_get($bid, 'get.lease_fee_other') }}
-                        </div>
-                    </div>
-                @endif
-            </div>
+            @php
+                $bidLeaseFeeValue = null;
+                $bidLeaseFeeType = data_get($bid, 'get.lease_fee_type');
+                
+                if ($bidLeaseFeeType === 'flat' && data_get($bid, 'get.lease_fee_flat')) {
+                    $bidLeaseFeeValue = $fmtMoney(data_get($bid, 'get.lease_fee_flat'));
+                } elseif ($bidLeaseFeeType === 'Percentage of the Gross Lease Value' && data_get($bid, 'get.lease_fee_percentage')) {
+                    $bidLeaseFeeValue = $fmtPercent(data_get($bid, 'get.lease_fee_percentage')) . ' of Gross Lease Value';
+                } elseif ($bidLeaseFeeType === 'Percentage of Monthly Rent') {
+                    $bidLeaseFeeValue = $fmtPercent(data_get($bid, 'get.lease_fee_percentage_monthly_rent')) . ' of Monthly Rent';
+                    if (data_get($bid, 'get.lease_fee_percentage_monthly_number')) {
+                        $bidLeaseFeeValue .= ' x ' . data_get($bid, 'get.lease_fee_percentage_monthly_number') . ' Months';
+                    }
+                } elseif ($bidLeaseFeeType === 'Flat Fee + Percentage of the Gross Lease Value') {
+                    $flatPart = data_get($bid, 'get.lease_fee_flat_combo') ? $fmtMoney(data_get($bid, 'get.lease_fee_flat_combo')) : null;
+                    $pctPart = data_get($bid, 'get.lease_fee_percentage_combo') ? ($fmtPercent(data_get($bid, 'get.lease_fee_percentage_combo')) . ' of Gross Lease Value') : null;
+                    $bidLeaseFeeValue = $flatPart && $pctPart ? "$flatPart + $pctPart" : ($flatPart ?? $pctPart);
+                } elseif ($bidLeaseFeeType === 'Percentage of the Net Aggregate Rent' && data_get($bid, 'get.lease_fee_percentage_net')) {
+                    $bidLeaseFeeValue = $fmtPercent(data_get($bid, 'get.lease_fee_percentage_net')) . ' of Net Aggregate Rent';
+                } elseif (strtolower($bidLeaseFeeType) === 'other' && data_get($bid, 'get.lease_fee_other')) {
+                    $bidLeaseFeeValue = data_get($bid, 'get.lease_fee_other');
+                }
+            @endphp
+            @if ($bidLeaseFeeValue)
+                <ul class="services">
+                    <li>Buyer’s Broker Lease Fee: {{ $bidLeaseFeeValue }}</li>
+                </ul>
+            @endif
         @endif
 
-        <!-- Lease-Option Agreement Interest -->
+        <div class="my-3"><hr style="border-top: 1px solid #ccc;"></div>
+
+        <!-- 3. Lease-Option Details -->
+        <h6 class="mt-3 mb-2" style="font-weight: 600;">Lease-Option Details:</h6>
+
         @if (data_get($bid, 'get.interested_lease_option_agreement'))
-            <div class="mb-3">
-                <div class="fw-semibold" style="color: #049399;">Interested in a Lease-Option Agreement</div>
-                <div class="text-muted">
-                    {{ data_get($bid, 'get.interested_lease_option_agreement') }}
-                </div>
-            </div>
+            <ul class="services">
+                <li>Interested in a Lease-Option Agreement: {{ data_get($bid, 'get.interested_lease_option_agreement') }}</li>
+            </ul>
         @endif
 
-        <!-- Lease-Option Agreement Details (Only show if interested_lease_option_agreement is 'Yes') -->
         @if (data_get($bid, 'get.interested_lease_option_agreement') === 'Yes')
-            <div class="mt-4 pt-3 border-top">
-                <h6 class="mb-3" style="color: #049399; font-weight: 600;">Lease-Option Agreement Details</h6>
-
-                @if (data_get($bid, 'get.lease_value'))
-                    <div class="mb-3">
-                        <div class="fw-semibold" style="color: #049399;">Compensation for Creating Lease-Option Agreement</div>
-                        <div class="text-muted">
-                            @if (data_get($bid, 'get.lease_type') === 'percent')
-                                {{ data_get($bid, 'get.lease_value') }}%
-                            @else
-                                ${{ number_format(data_get($bid, 'get.lease_value'), 2) }}
-                            @endif
-                        </div>
-                    </div>
-                @endif
-
-                @if (data_get($bid, 'get.purchase_value'))
-                    <div class="mb-3">
-                        <div class="fw-semibold" style="color: #049399;">Compensation if Purchase Option is Exercised</div>
-                        <div class="text-muted">
-                            @if (data_get($bid, 'get.purchase_type') === 'percent')
-                                {{ data_get($bid, 'get.purchase_value') }}%
-                            @else
-                                ${{ number_format(data_get($bid, 'get.purchase_value'), 2) }}
-                            @endif
-                        </div>
-                    </div>
-                @endif
-            </div>
+            @if (data_get($bid, 'get.lease_value'))
+                <ul class="services">
+                    <li>Compensation (When Option Is Created): 
+                        @if (data_get($bid, 'get.lease_type') === 'percent')
+                            {{ data_get($bid, 'get.lease_value') }}%
+                        @else
+                            ${{ number_format((float)str_replace(',', '', data_get($bid, 'get.lease_value')), 0) }}
+                        @endif
+                    </li>
+                </ul>
+            @endif
+            @if (data_get($bid, 'get.purchase_value'))
+                <ul class="services">
+                    <li>Compensation (If Purchase Option Is Exercised): 
+                        @if (data_get($bid, 'get.purchase_type') === 'percent')
+                            {{ data_get($bid, 'get.purchase_value') }}%
+                        @else
+                            ${{ number_format((float)str_replace(',', '', data_get($bid, 'get.purchase_value')), 0) }}
+                        @endif
+                    </li>
+                </ul>
+            @endif
         @endif
 
-        <!-- Protection Period -->
+        <div class="my-3"><hr style="border-top: 1px solid #ccc;"></div>
+
+        <!-- 4. Legal Terms -->
+        <h6 class="mt-3 mb-2" style="font-weight: 600;">Legal Terms:</h6>
+
         @if (data_get($bid, 'get.protection_period'))
-            <div class="mb-3">
-                <div class="fw-semibold" style="color: #049399;">Protection Period Timeframe</div>
-                <div class="text-muted">
-                    {{ data_get($bid, 'get.protection_period') }} days
-                </div>
-            </div>
+            <ul class="services">
+                <li>Protection Period Timeframe: {{ data_get($bid, 'get.protection_period') }} Days</li>
+            </ul>
         @endif
 
-        <!-- Early Termination Fee -->
         @if (data_get($bid, 'get.early_termination_fee_option'))
-            <div class="mb-3">
-                <div class="fw-semibold" style="color: #049399;">Early Termination Fee</div>
-                <div class="text-muted">
-                    {{ data_get($bid, 'get.early_termination_fee_option') === 'yes' ? 'Yes' : 'No' }}
-                </div>
-            </div>
-
-            @if (data_get($bid, 'get.early_termination_fee_option') === 'yes' && data_get($bid, 'get.early_termination_fee_amount'))
-                <div class="mb-3">
-                    <div class="fw-semibold" style="color: #049399;">Early Termination Fee Amount</div>
-                    <div class="text-muted">
-                        ${{ number_format(data_get($bid, 'get.early_termination_fee_amount'), 2) }}
-                    </div>
-                </div>
-            @endif
+            <ul class="services">
+                <li>Early Termination Fee: {{ ucfirst(data_get($bid, 'get.early_termination_fee_option')) }}
+                    @if (in_array(strtolower(data_get($bid, 'get.early_termination_fee_option')), ['yes']))
+                        @if (data_get($bid, 'get.early_termination_fee_amount'))
+                            <ul class="services" style="margin-top: 0.25rem;">
+                                <li>Termination Fee Amount: {{ $fmtMoney(data_get($bid, 'get.early_termination_fee_amount')) }}</li>
+                            </ul>
+                        @endif
+                    @endif
+                </li>
+            </ul>
         @endif
 
-        <!-- Retainer Fee -->
         @if (data_get($bid, 'get.retainer_fee_option'))
-            <div class="mb-3">
-                <div class="fw-semibold" style="color: #049399;">Retainer Fee</div>
-                <div class="text-muted">
-                    {{ data_get($bid, 'get.retainer_fee_option') === 'yes' ? 'Yes' : 'No' }}
-                </div>
-            </div>
-
-            @if (data_get($bid, 'get.retainer_fee_option') === 'yes')
-                @if (data_get($bid, 'get.retainer_fee_amount'))
-                    <div class="mb-2">
-                        <div class="fw-semibold" style="color: #049399;">Retainer Fee Amount</div>
-                        <div class="text-muted">
-                            ${{ number_format(data_get($bid, 'get.retainer_fee_amount'), 2) }}
-                        </div>
-                    </div>
-                @endif
-
-                @if (data_get($bid, 'get.retainer_fee_application'))
-                    <div class="mb-3">
-                        <div class="fw-semibold" style="color: #049399;">Retainer Fee Application</div>
-                        <div class="text-muted">
-                            {{ data_get($bid, 'get.retainer_fee_application') }}
-                        </div>
-                    </div>
-                @endif
-            @endif
+            <ul class="services">
+                <li>Retainer Fee: {{ ucfirst(data_get($bid, 'get.retainer_fee_option')) }}
+                    @if (in_array(strtolower(data_get($bid, 'get.retainer_fee_option')), ['yes']))
+                        @if (data_get($bid, 'get.retainer_fee_amount'))
+                            <ul class="services" style="margin-top: 0.25rem;">
+                                <li>Retainer Fee Amount: {{ $fmtMoney(data_get($bid, 'get.retainer_fee_amount')) }}</li>
+                            </ul>
+                        @endif
+                        @if (data_get($bid, 'get.retainer_fee_application'))
+                            <ul class="services" style="margin-top: 0.25rem;">
+                                <li>Retainer Fee Application: {{ data_get($bid, 'get.retainer_fee_application') === 'applied' ? 'Applied toward final compensation' : 'Charged in addition to final compensation' }}</li>
+                            </ul>
+                        @endif
+                    @endif
+                </li>
+            </ul>
         @endif
 
-        <!-- Agency Agreement Timeframe -->
         @if (data_get($bid, 'get.agency_agreement_timeframe'))
-            <div class="mb-3">
-                <div class="fw-semibold" style="color: #049399;">Buyer Agency Agreement Timeframe</div>
-                <div class="text-muted">
-                    {{ data_get($bid, 'get.agency_agreement_timeframe') }}
-                </div>
-            </div>
-
-            @if (data_get($bid, 'get.agency_agreement_timeframe') === 'custom' && data_get($bid, 'get.agency_agreement_custom'))
-                <div class="mb-3">
-                    <div class="fw-semibold" style="color: #049399;">Custom Timeframe</div>
-                    <div class="text-muted">
-                        {{ data_get($bid, 'get.agency_agreement_custom') }}
-                    </div>
-                </div>
-            @endif
+            <ul class="services">
+                <li>Buyer Agency Agreement Timeframe: {{ data_get($bid, 'get.agency_agreement_timeframe') === 'custom' ? data_get($bid, 'get.agency_agreement_custom') : data_get($bid, 'get.agency_agreement_timeframe') }}</li>
+            </ul>
         @endif
 
-        <!-- Brokerage Relationship -->
+        <div class="my-3"><hr style="border-top: 1px solid #ccc;"></div>
+
+        <!-- 5. Brokerage Relationship -->
+        <h6 class="mt-3 mb-2" style="font-weight: 600;">Brokerage Relationship:</h6>
+
         @if (data_get($bid, 'get.brokerage_relationship'))
-            <div class="mb-3">
-                <div class="fw-semibold" style="color: #049399;">Acceptable Brokerage Relationship</div>
-                <div class="text-muted">
-                    {{ data_get($bid, 'get.brokerage_relationship') }}
-                </div>
-            </div>
+            <ul class="services">
+                <li>Acceptable Brokerage Relationship: {{ data_get($bid, 'get.brokerage_relationship') }}</li>
+            </ul>
         @endif
 
+        <div class="my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
+        <!-- 6. Additional Terms -->
+        <h6 class="mt-3 mb-2" style="font-weight: 600;">Additional Terms:</h6>
+
+        @if (data_get($bid, 'get.additional_details_broker'))
+            <ul class="services">
+                <li>{{ data_get($bid, 'get.additional_details_broker') }}</li>
+            </ul>
+        @endif
     </div>
 @endif
-
                                                                         <!-- 3. Additional Terms & Details -->
                                                                         @if (data_get($bid, 'get.additional_details_broker') || data_get($bid, 'get.additional_details'))
                                                                             <div class="mb-5">
@@ -3291,6 +3157,7 @@
                                                                             </div>
 
                                                                            @php $allMeta = $counterBid->getAllMeta(); @endphp
+                                                                           @php $allMeta = $counterBid->getAllMeta(); @endphp
 @if (
     !empty($allMeta['commission_structure']) ||
     !empty($allMeta['purchase_fee_type']) ||
@@ -3302,28 +3169,28 @@
     !empty($allMeta['agency_agreement_timeframe']) ||
     !empty($allMeta['brokerage_relationship']) ||
     !empty($allMeta['additional_details_broker']))
-    <div class="mb-4">
+    <div class="mb-4 broker-compensation-section">
         <h6 class="mb-3" style="font-weight: 600; border-bottom: 1px solid #ddd; padding-bottom: 8px;">
-            Broker Compensation
+            Broker Compensation & Agency Agreement Terms
         </h6>
 
-        <!-- Commission Structure -->
+        <!-- 1. Buyer’s Broker Compensation -->
+        <div class="mb-2"><strong style="font-size: 13px;">Buyer’s Broker Compensation:</strong></div>
+        
         @if (!empty($allMeta['commission_structure']))
-            <div class="mb-1" style="font-size: 12px;">
-                <span style="font-size: 13px; font-weight: 600;">Buyer’s Broker Commission Structure:</span>
-                {{ $allMeta['commission_structure'] }}
-            </div>
+            <ul class="services" style="font-size: 12px;">
+                <li>Buyer’s Broker Commission Structure: {{ $allMeta['commission_structure'] }}</li>
+            </ul>
         @endif
 
-        <!-- Purchase Fee (Value-First) -->
         @if (!empty($allMeta['purchase_fee_type']))
             @php
-                $counterPurchaseValue = null;
+                $ctrPurchaseVal = null;
                 $cpType = $allMeta['purchase_fee_type'];
                 if ($cpType === 'Flat Fee' && !empty($allMeta['purchase_fee_flat'])) {
-                    $counterPurchaseValue = '$' . number_format($allMeta['purchase_fee_flat'], 2);
+                    $ctrPurchaseVal = '$' . number_format($allMeta['purchase_fee_flat'], 2);
                 } elseif ($cpType === 'Percentage of the Total Purchase Price' && !empty($allMeta['purchase_fee_percentage'])) {
-                    $counterPurchaseValue = rtrim(rtrim(number_format($allMeta['purchase_fee_percentage'], 2), '0'), '.') . '% of Total Purchase Price';
+                    $ctrPurchaseVal = rtrim(rtrim(number_format($allMeta['purchase_fee_percentage'], 2), '0'), '.') . '% of Total Purchase Price';
                 } elseif ($cpType === 'Percentage of the Total Purchase Price + Flat Fee') {
                     $pctPart = !empty($allMeta['purchase_fee_percentage_combo']) 
                         ? rtrim(rtrim(number_format($allMeta['purchase_fee_percentage_combo'], 2), '0'), '.') . '% of Total Purchase Price'
@@ -3331,207 +3198,168 @@
                     $flatPart = !empty($allMeta['purchase_fee_flat_combo'])
                         ? '$' . number_format($allMeta['purchase_fee_flat_combo'], 2) . ' flat'
                         : null;
-                    $counterPurchaseValue = $pctPart && $flatPart ? "$pctPart + $flatPart" : ($pctPart ?? $flatPart);
+                    $ctrPurchaseVal = $pctPart && $flatPart ? "$pctPart + $flatPart" : ($pctPart ?? $flatPart);
                 } elseif ($cpType === 'other' && !empty($allMeta['purchase_fee_other'])) {
-                    $counterPurchaseValue = $allMeta['purchase_fee_other'];
+                    $ctrPurchaseVal = $allMeta['purchase_fee_other'];
                 }
             @endphp
-            @if ($counterPurchaseValue)
-                <div class="mb-1" style="font-size: 12px;">
-                    <span style="font-size: 13px; font-weight: 600;">Buyer’s Broker Purchase Fee:</span>
-                    {{ $counterPurchaseValue }}
-                </div>
+            @if ($ctrPurchaseVal)
+                <ul class="services" style="font-size: 12px;">
+                    <li>Buyer’s Broker Purchase Fee: {{ $ctrPurchaseVal }}</li>
+                </ul>
             @endif
         @endif
 
-        <!-- Interested in Lease Agreement -->
+        <div class="my-2"><hr style="border-top: 1px solid #eee;"></div>
+
+        <!-- 2. Buyer’s Broker Lease Fee -->
+        <div class="mb-2"><strong style="font-size: 13px;">Buyer’s Broker Lease Fee:</strong></div>
+
         @if (!empty($allMeta['interested_lease_option']))
-            <div class="mb-1" style="font-size: 12px;">
-                <span style="font-size: 13px; font-weight: 600;">Interested in a Lease Agreement:</span>
-                {{ $allMeta['interested_lease_option'] }}
-            </div>
+            <ul class="services" style="font-size: 12px;">
+                <li>Interested in a Lease Agreement: {{ $allMeta['interested_lease_option'] }}</li>
+            </ul>
         @endif
 
-        <!-- Lease Fee Details (only show if interested_lease_option is 'Yes') -->
         @if (!empty($allMeta['interested_lease_option']) && $allMeta['interested_lease_option'] === 'Yes' && !empty($allMeta['lease_fee_type']))
-            <div class="mb-1" style="font-size: 12px;">
-                <span style="font-size: 13px; font-weight: 600;">Buyer’s Broker Lease Fee:</span>
-                {{ $allMeta['lease_fee_type'] }}
-            </div>
-
-            <!-- Lease Fee Amounts -->
-            @if ($allMeta['lease_fee_type'] === 'flat' && !empty($allMeta['lease_fee_flat']))
-                <div class="mb-1" style="font-size: 12px;">
-                    <span style="font-size: 13px; font-weight: 600;">Flat Fee Amount:</span>
-                    ${{ number_format($allMeta['lease_fee_flat'], 2) }}
-                </div>
-            @elseif($allMeta['lease_fee_type'] === 'Percentage of the Gross Lease Value' && !empty($allMeta['lease_fee_percentage']))
-                <div class="mb-1" style="font-size: 12px;">
-                    <span style="font-size: 13px; font-weight: 600;">Percentage of Gross Lease Value:</span>
-                    {{ $allMeta['lease_fee_percentage'] }}%
-                </div>
-            @elseif($allMeta['lease_fee_type'] === 'Percentage of Monthly Rent')
-                @if (!empty($allMeta['lease_fee_percentage_monthly_rent']))
-                    <div class="mb-1" style="font-size: 12px;">
-                        <span style="font-size: 13px; font-weight: 600;">Percentage of Monthly Rent:</span>
-                        {{ $allMeta['lease_fee_percentage_monthly_rent'] }}%
-                    </div>
-                @endif
-                @if (!empty($allMeta['lease_fee_percentage_monthly_number']))
-                    <div class="mb-1" style="font-size: 12px;">
-                        <span style="font-size: 13px; font-weight: 600;">Number of Months:</span>
-                        {{ $allMeta['lease_fee_percentage_monthly_number'] }} months
-                    </div>
-                @endif
-            @elseif($allMeta['lease_fee_type'] === 'Flat Fee + Percentage of the Gross Lease Value')
-                @if (!empty($allMeta['lease_fee_flat_combo']))
-                    <div class="mb-1" style="font-size: 12px;">
-                        <span style="font-size: 13px; font-weight: 600;">Flat Fee Portion:</span>
-                        ${{ number_format($allMeta['lease_fee_flat_combo'], 2) }}
-                    </div>
-                @endif
-                @if (!empty($allMeta['lease_fee_percentage_combo']))
-                    <div class="mb-1" style="font-size: 12px;">
-                        <span style="font-size: 13px; font-weight: 600;">Percentage Portion:</span>
-                        {{ $allMeta['lease_fee_percentage_combo'] }}%
-                    </div>
-                @endif
-            @elseif($allMeta['lease_fee_type'] === 'Percentage of the Net Aggregate Rent' && !empty($allMeta['lease_fee_percentage_net']))
-                <div class="mb-1" style="font-size: 12px;">
-                    <span style="font-size: 13px; font-weight: 600;">Percentage of Net Aggregate Rent:</span>
-                    {{ $allMeta['lease_fee_percentage_net'] }}%
-                </div>
-            @elseif($allMeta['lease_fee_type'] === 'Flat Fee + Percentage of the Net Aggregate Rent')
-                @if (!empty($allMeta['lease_fee_flat_combo_net']))
-                    <div class="mb-1" style="font-size: 12px;">
-                        <span style="font-size: 13px; font-weight: 600;">Flat Fee Portion:</span>
-                        ${{ number_format($allMeta['lease_fee_flat_combo_net'], 2) }}
-                    </div>
-                @endif
-                @if (!empty($allMeta['lease_fee_percentage_combo_net']))
-                    <div class="mb-1" style="font-size: 12px;">
-                        <span style="font-size: 13px; font-weight: 600;">Percentage Portion:</span>
-                        {{ $allMeta['lease_fee_percentage_combo_net'] }}%
-                    </div>
-                @endif
-            @elseif($allMeta['lease_fee_type'] === 'other' && !empty($allMeta['lease_fee_other']))
-                <div class="mb-1" style="font-size: 12px;">
-                    <span style="font-size: 13px; font-weight: 600;">Other Lease Fee:</span>
-                    {{ $allMeta['lease_fee_other'] }}
-                </div>
+            @php
+                $ctrLeaseVal = null;
+                $lfType = $allMeta['lease_fee_type'];
+                if ($lfType === 'flat' && !empty($allMeta['lease_fee_flat'])) {
+                    $ctrLeaseVal = '$' . number_format($allMeta['lease_fee_flat'], 2);
+                } elseif ($lfType === 'Percentage of the Gross Lease Value' && !empty($allMeta['lease_fee_percentage'])) {
+                    $ctrLeaseVal = $allMeta['lease_fee_percentage'] . '% of Gross Lease Value';
+                } elseif ($lfType === 'Percentage of Monthly Rent' && !empty($allMeta['lease_fee_percentage_monthly_rent'])) {
+                    $ctrLeaseVal = $allMeta['lease_fee_percentage_monthly_rent'] . '% of Monthly Rent';
+                    if (!empty($allMeta['lease_fee_percentage_monthly_number'])) {
+                        $ctrLeaseVal .= ' x ' . $allMeta['lease_fee_percentage_monthly_number'] . ' Months';
+                    }
+                } elseif ($lfType === 'Flat Fee + Percentage of the Gross Lease Value') {
+                    $flatPart = !empty($allMeta['lease_fee_flat_combo']) ? '$' . number_format($allMeta['lease_fee_flat_combo'], 2) : null;
+                    $pctPart = !empty($allMeta['lease_fee_percentage_combo']) ? ($allMeta['lease_fee_percentage_combo'] . '% of Gross Lease Value') : null;
+                    $ctrLeaseVal = $flatPart && $pctPart ? "$flatPart + $pctPart" : ($flatPart ?? $pctPart);
+                } elseif ($lfType === 'Percentage of the Net Aggregate Rent' && !empty($allMeta['lease_fee_percentage_net'])) {
+                    $ctrLeaseVal = $allMeta['lease_fee_percentage_net'] . '% of Net Aggregate Rent';
+                } elseif (strtolower($lfType) === 'other' && !empty($allMeta['lease_fee_other'])) {
+                    $ctrLeaseVal = $allMeta['lease_fee_other'];
+                }
+            @endphp
+            @if ($ctrLeaseVal)
+                <ul class="services" style="font-size: 12px;">
+                    <li>Buyer’s Broker Lease Fee: {{ $ctrLeaseVal }}</li>
+                </ul>
             @endif
         @endif
 
-        <!-- Lease Option Agreement -->
+        <div class="my-2"><hr style="border-top: 1px solid #eee;"></div>
+
+        <!-- 3. Lease-Option Details -->
+        <div class="mb-2"><strong style="font-size: 13px;">Lease-Option Details:</strong></div>
+
         @if (!empty($allMeta['interested_lease_option_agreement']))
-            <div class="mb-1" style="font-size: 12px;">
-                <span style="font-size: 13px; font-weight: 600;">Interested in a Lease-Option Agreement:</span>
-                {{ $allMeta['interested_lease_option_agreement'] }}
-            </div>
+            <ul class="services" style="font-size: 12px;">
+                <li>Interested in a Lease-Option Agreement: {{ $allMeta['interested_lease_option_agreement'] }}</li>
+            </ul>
         @endif
 
-        <!-- Lease-Option Agreement Details (only show if interested_lease_option_agreement is 'Yes') -->
         @if (!empty($allMeta['interested_lease_option_agreement']) && $allMeta['interested_lease_option_agreement'] === 'Yes')
             @if (!empty($allMeta['lease_value']))
-                <div class="mb-1" style="font-size: 12px;">
-                    <span style="font-size: 13px; font-weight: 600;">Compensation for Creating Lease-Option Agreement:</span>
-                    @if (!empty($allMeta['lease_type']) && $allMeta['lease_type'] === 'percent')
-                        {{ $allMeta['lease_value'] }}%
-                    @else
-                        ${{ number_format($allMeta['lease_value'], 2) }}
-                    @endif
-                </div>
+                <ul class="services" style="font-size: 12px;">
+                    <li>Compensation (When Option Is Created): 
+                        @if (($allMeta['lease_type'] ?? '') === 'percent')
+                            {{ $allMeta['lease_value'] }}%
+                        @else
+                            ${{ number_format((float)str_replace(',', '', $allMeta['lease_value']), 0) }}
+                        @endif
+                    </li>
+                </ul>
             @endif
-
             @if (!empty($allMeta['purchase_value']))
-                <div class="mb-1" style="font-size: 12px;">
-                    <span style="font-size: 13px; font-weight: 600;">Compensation if Purchase Option is Exercised:</span>
-                    @if (!empty($allMeta['purchase_type']) && $allMeta['purchase_type'] === 'percent')
-                        {{ $allMeta['purchase_value'] }}%
-                    @else
-                        ${{ number_format($allMeta['purchase_value'], 2) }}
-                    @endif
-                </div>
+                <ul class="services" style="font-size: 12px;">
+                    <li>Compensation (If Purchase Option Is Exercised): 
+                        @if (($allMeta['purchase_type'] ?? '') === 'percent')
+                            {{ $allMeta['purchase_value'] }}%
+                        @else
+                            ${{ number_format((float)str_replace(',', '', $allMeta['purchase_value']), 0) }}
+                        @endif
+                    </li>
+                </ul>
             @endif
         @endif
 
-        <!-- Protection Period -->
+        <div class="my-2"><hr style="border-top: 1px solid #eee;"></div>
+
+        <!-- 4. Legal Terms -->
+        <div class="mb-2"><strong style="font-size: 13px;">Legal Terms:</strong></div>
+
         @if (!empty($allMeta['protection_period']))
-            <div class="mb-1" style="font-size: 12px;">
-                <span style="font-size: 13px; font-weight: 600;">Protection Period Timeframe:</span>
-                {{ $allMeta['protection_period'] }} days
-            </div>
+            <ul class="services" style="font-size: 12px;">
+                <li>Protection Period Timeframe: {{ $allMeta['protection_period'] }} Days</li>
+            </ul>
         @endif
 
-        <!-- Early Termination Fee -->
         @if (!empty($allMeta['early_termination_fee_option']))
-            <div class="mb-1" style="font-size: 12px;">
-                <span style="font-size: 13px; font-weight: 600;">Early Termination Fee:</span>
-                {{ $allMeta['early_termination_fee_option'] === 'yes' ? 'Yes' : 'No' }}
-            </div>
+            <ul class="services" style="font-size: 12px;">
+                <li>Early Termination Fee: {{ ucfirst($allMeta['early_termination_fee_option']) }}
+                    @if (in_array(strtolower($allMeta['early_termination_fee_option']), ['yes']))
+                        @if (!empty($allMeta['early_termination_fee_amount']))
+                            <ul class="services" style="margin-top: 0.25rem; font-size: 12px;">
+                                <li>Termination Fee Amount: ${{ number_format((float)str_replace(',', '', $allMeta['early_termination_fee_amount']), 0) }}</li>
+                            </ul>
+                        @endif
+                    @endif
+                </li>
+            </ul>
         @endif
 
-        @if (!empty($allMeta['early_termination_fee_amount']) && $allMeta['early_termination_fee_option'] === 'yes')
-            <div class="mb-1" style="font-size: 12px;">
-                <span style="font-size: 13px; font-weight: 600;">Termination Fee Amount:</span>
-                ${{ number_format($allMeta['early_termination_fee_amount'], 2) }}
-            </div>
-        @endif
-
-        <!-- Retainer Fee -->
         @if (!empty($allMeta['retainer_fee_option']))
-            <div class="mb-1" style="font-size: 12px;">
-                <span style="font-size: 13px; font-weight: 600;">Retainer Fee:</span>
-                {{ $allMeta['retainer_fee_option'] === 'yes' ? 'Yes' : 'No' }}
-            </div>
+            <ul class="services" style="font-size: 12px;">
+                <li>Retainer Fee: {{ ucfirst($allMeta['retainer_fee_option']) }}
+                    @if (in_array(strtolower($allMeta['retainer_fee_option']), ['yes']))
+                        @if (!empty($allMeta['retainer_fee_amount']))
+                            <ul class="services" style="margin-top: 0.25rem; font-size: 12px;">
+                                <li>Retainer Fee Amount: ${{ number_format((float)str_replace(',', '', $allMeta['retainer_fee_amount']), 0) }}</li>
+                            </ul>
+                        @endif
+                        @if (!empty($allMeta['retainer_fee_application']))
+                            <ul class="services" style="margin-top: 0.25rem; font-size: 12px;">
+                                <li>Retainer Fee Application: {{ $allMeta['retainer_fee_application'] === 'applied' ? 'Applied toward final compensation' : 'Charged in addition to final compensation' }}</li>
+                            </ul>
+                        @endif
+                    @endif
+                </li>
+            </ul>
         @endif
 
-        @if (!empty($allMeta['retainer_fee_option']) && $allMeta['retainer_fee_option'] === 'yes')
-            @if (!empty($allMeta['retainer_fee_amount']))
-                <div class="mb-1" style="font-size: 12px;">
-                    <span style="font-size: 13px; font-weight: 600;">Retainer Fee Amount:</span>
-                    ${{ number_format($allMeta['retainer_fee_amount'], 2) }}
-                </div>
-            @endif
-
-            @if (!empty($allMeta['retainer_fee_application']))
-                <div class="mb-1" style="font-size: 12px;">
-                    <span style="font-size: 13px; font-weight: 600;">Retainer Fee Application:</span>
-                    {{ $allMeta['retainer_fee_application'] }}
-                </div>
-            @endif
-        @endif
-
-        <!-- Agency Agreement Timeframe -->
         @if (!empty($allMeta['agency_agreement_timeframe']))
-            <div class="mb-1" style="font-size: 12px;">
-                <span style="font-size: 13px; font-weight: 600;">Buyer Agency Agreement Timeframe:</span>
-                {{ $allMeta['agency_agreement_timeframe'] === 'custom' && !empty($allMeta['agency_agreement_custom']) ? $allMeta['agency_agreement_custom'] : $allMeta['agency_agreement_timeframe'] }}
-            </div>
+            <ul class="services" style="font-size: 12px;">
+                <li>Buyer Agency Agreement Timeframe: {{ ($allMeta['agency_agreement_timeframe'] === 'custom' && !empty($allMeta['agency_agreement_custom'])) ? $allMeta['agency_agreement_custom'] : $allMeta['agency_agreement_timeframe'] }}</li>
+            </ul>
         @endif
 
-        <!-- Brokerage Relationship -->
+        <div class="my-2"><hr style="border-top: 1px solid #eee;"></div>
+
+        <!-- 5. Brokerage Relationship -->
+        <div class="mb-2"><strong style="font-size: 13px;">Brokerage Relationship:</strong></div>
+
         @if (!empty($allMeta['brokerage_relationship']))
-            <div class="mb-1" style="font-size: 12px;">
-                <span style="font-size: 13px; font-weight: 600;">Acceptable Brokerage Relationship:</span>
-                {{ $allMeta['brokerage_relationship'] }}
-            </div>
+            <ul class="services" style="font-size: 12px;">
+                <li>Acceptable Brokerage Relationship: {{ $allMeta['brokerage_relationship'] }}</li>
+            </ul>
         @endif
 
-        <!-- Additional Terms -->
+        <div class="my-2"><hr style="border-top: 1px solid #eee;"></div>
+
+        <!-- 6. Additional Terms -->
+        <div class="mb-2"><strong style="font-size: 13px;">Additional Terms:</strong></div>
+
         @if (!empty($allMeta['additional_details_broker']))
-            <div class="mt-3">
-                <div style="font-size: 13px; font-weight: 600; margin-bottom: 5px;">
-                    Additional Terms:
-                </div>
-                <div style="font-size: 12px;">
-                    {{ $allMeta['additional_details_broker'] }}
-                </div>
-            </div>
+            <ul class="services" style="font-size: 12px;">
+                <li>{{ $allMeta['additional_details_broker'] }}</li>
+            </ul>
         @endif
     </div>
 @endif
-
                                                                             <!-- Services Offered (Categorized) -->
                                                                             @php
                                                                                 $counterServices = is_string(
