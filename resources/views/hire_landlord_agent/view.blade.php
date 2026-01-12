@@ -750,108 +750,110 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endif
 
         @if (@$auction->get->restrictions != '' && @$auction->get->restrictions != 'null')
-        <ul>
-            <li style="font-size: 16px;"><span class="fw-bold">Restrictions
-                    Include: </span>{{ $auction->get->restrictions }}</li>
-        </ul>
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Restrictions Include:
+                <span class="removeBold">{{ $auction->get->restrictions }}</span>
+            </div>
+        </div>
         @endif
         @if (@$auction->get->maintenance_by != '' && @$auction->get->maintenance_by != 'null')
-        <ul style="margin-top: -18px">
-            <li style="font-size: 16px;"><span class="fw-bold"> Maintenance and Repairs Are Handled
-                    By: </span>{{ $auction->get->maintenance_by }}</li>
-        </ul>
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Maintenance and Repairs Are Handled By:
+                <span class="removeBold">{{ $auction->get->maintenance_by }}</span>
+            </div>
+        </div>
         @endif
         @if (@$auction->get->maintenance_response_time != '' && @$auction->get->maintenance_response_time != 'null')
-        <ul style="margin-top: -18px">
-
-            <li style="font-size: 16px;"><span class="fw-bold"> Maintenance Response
-                    Time: </span>{{ $auction->get->maintenance_response_time }}</li>
-        </ul>
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Maintenance Response Time:
+                <span class="removeBold">{{ $auction->get->maintenance_response_time }}</span>
+            </div>
+        </div>
         @endif
         @if (@$auction->get->storage_space_res_both != '' && @$auction->get->storage_space_res_both != 'null')
-        <ul style="margin-top: -18px">
-
-            <li style="font-size: 16px;"><span class="fw-bold">Storage Space
-                    Size: </span>{{ $auction->get->storage_space_res_both }}</li>
-        </ul>
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Storage Space Size:
+                <span class="removeBold">{{ $auction->get->storage_space_res_both }}</span>
+            </div>
+        </div>
         @endif
         @if (@$auction->get->guests_allowed != '' && @$auction->get->guests_allowed != 'null')
-        <ul style="margin-top: -18px">
-
-            <li style="font-size: 16px;"><span class="fw-bold">Guests
-                    are: </span>{{ $auction->get->guests_allowed }}</li>
-        </ul>
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Guests are:
+                <span class="removeBold">{{ $auction->get->guests_allowed }}</span>
+            </div>
+        </div>
         @endif
         @if (@$auction->get->common_areas_access != '' && @$auction->get->common_areas_access != 'null')
-        <ul style="margin-top: -18px">
-
-            <li style="font-size: 16px;"><span class="fw-bold">Shared Areas
-                    Available: </span>{{ $auction->get->common_areas_access }}</li>
-        </ul>
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Shared Areas Available:
+                <span class="removeBold">{{ $auction->get->common_areas_access }}</span>
+            </div>
+        </div>
         @endif
         @if (@$auction->get->utilities != '' && @$auction->get->utilities != 'null')
-        <ul style="margin-top: -18px">
-
-            <li style="font-size: 16px;"><span
-                    class="fw-bold">Utilities: </span>{{ $auction->get->utilities }}</li>
-        </ul>
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Utilities:
+                <span class="removeBold">{{ $auction->get->utilities }}</span>
+            </div>
+        </div>
         @endif
         @if (@$auction->get->common_areas_cleaning != '' && @$auction->get->common_areas_cleaning != 'null')
-        <ul style="margin-top: -18px">
-
-            <li style="font-size: 16px;"><span class="fw-bold">Common Area
-                    Maintenance: </span>{{ $auction->get->common_areas_cleaning }}</li>
-        </ul>
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Common Area Maintenance:
+                <span class="removeBold">{{ $auction->get->common_areas_cleaning }}</span>
+            </div>
+        </div>
         @endif
 
         @if (@$auction->get->storage_space_res_single != '' && @$auction->get->storage_space_res_single != 'null')
-        <ul style="margin-top: -18px">
-
-            <li style="font-size: 16px;"><span class="fw-bold">Storage Space
-                    Size: </span>{{ $auction->get->storage_space_res_single }}</li>
-        </ul>
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Storage Space Size:
+                <span class="removeBold">{{ $auction->get->storage_space_res_single }}</span>
+            </div>
+        </div>
         @endif
         @if (@$auction->get->bathroom_facilities != '' && @$auction->get->bathroom_facilities != 'null')
-        <ul style="margin-top: -18px">
-
-            <li style="font-size: 16px;"><span class="fw-bold">Bathroom
-                    Facilities: </span>{{ $auction->get->bathroom_facilities }}</li>
-        </ul>
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Bathroom Facilities:
+                <span class="removeBold">{{ $auction->get->bathroom_facilities }}</span>
+            </div>
+        </div>
         @endif
         @if (@$auction->get->room_size != '' && @$auction->get->room_size != 'null')
-        <ul style="margin-top: -18px">
-
-            <li style="font-size: 16px;"><span class="fw-bold">Approximate Room
-                    Size: </span>{{ $auction->get->room_size }}</li>
-        </ul>
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Approximate Room Size:
+                <span class="removeBold">{{ $auction->get->room_size }}</span>
+            </div>
+        </div>
         @endif
         @if (@$auction->get->shared_amenities != '' && @$auction->get->shared_amenities != 'null')
-        <ul style="margin-top: -18px">
-
-            <li style="font-size: 16px;"><span class="fw-bold">Shared Amenities
-                    Include: </span>{{ $auction->get->shared_amenities }}</li>
-        </ul>
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Shared Amenities Include:
+                <span class="removeBold">{{ $auction->get->shared_amenities }}</span>
+            </div>
+        </div>
         @endif
         @if (@$auction->get->building_hours != '' && @$auction->get->building_hours != 'null')
-        <ul style="margin-top: -18px">
-
-            <li style="font-size: 16px;"><span class="fw-bold">Building
-                    Hours: </span>{{ $auction->get->building_hours }}</li>
-        </ul>
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Building Hours:
+                <span class="removeBold">{{ $auction->get->building_hours }}</span>
+            </div>
+        </div>
         @endif
         @if (@$auction->get->access_24_7 != '' && @$auction->get->access_24_7 != 'null')
-        <ul style="margin-top: -18px">
-
-            <li style="font-size: 16px;"><span class="fw-bold">24/7 Access
-                    Available: </span>{{ $auction->get->access_24_7 }}</li>
-        </ul>
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">24/7 Access Available:
+                <span class="removeBold">{{ $auction->get->access_24_7 }}</span>
+            </div>
+        </div>
         @endif
         @if (@$auction->get->zoning_allows != '' && @$auction->get->zoning_allows != 'null')
-        <ul style="margin-top: -18px">
-
-            <li style="font-size: 16px;"><span class="fw-bold">Zoning
-                    Allows: </span>{{ $auction->get->zoning_allows }}</li>
-        </ul>
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Zoning Allows:
+                <span class="removeBold">{{ $auction->get->zoning_allows }}</span>
+            </div>
+        </div>
         @endif
 
         @php

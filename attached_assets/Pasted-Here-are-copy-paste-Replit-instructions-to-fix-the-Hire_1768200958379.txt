@@ -1,0 +1,121 @@
+Here are **copy/paste Replit instructions** to fix the **Hire a Landlord → Leasing Terms → “Leasing Space” display bug** (the overlapping/stacked text with the weird blue “X” bullets).
+
+---
+
+## Replit Instructions — Fix “Leasing Space” Follow-Up Display (Hire a Landlord Listing)
+
+### Applies To
+
+* **Hire a Landlord’s Agent** → **Actual Listing Display** (public listing view + internal listing view)
+* **Residential + Commercial**
+* Also apply the same fix anywhere this summary renders (ex: **PDF**, **Agent view**, **Bid view**) *if the same component is reused*
+
+---
+
+## Problem
+
+Under **Leasing Terms**, after:
+
+* **Leasing Space: Entire Property**
+
+the follow-up “Leasing Space” questions are rendering as **stacked/overlapping text** with **blue X bullet icons**, making the section unreadable (see screenshot).
+
+This looks like:
+
+* the follow-up items are being rendered inside a **list (`ul/li`)** or **chip/tag container**
+* and/or the container has a **fixed height / wrong line-height / absolute positioning**
+* causing multiple rows of text to sit on top of each other
+
+---
+
+## Expected Behavior (Correct Display)
+
+The follow-up questions under **Leasing Space** must display as clean **label: value** rows like all other fields, with normal spacing, **no bullets**, and no overlap.
+
+Example expected output:
+
+**Leasing Space:** Entire Property
+**Restrictions Include:** Example restrictions include
+**Maintenance Responsibilities:** Example maintenance responsibilities / response time
+**Storage Space Size:** Example storage space size
+
+✅ Each item on its own line
+✅ No icons/bullets
+✅ Proper spacing above/below the group
+
+---
+
+## What To Change (Implementation Notes)
+
+### 1) Fix the HTML structure (most likely cause)
+
+In the **Landlord listing display component** where Leasing Terms are rendered:
+
+* Do **NOT** render these follow-up items as `<ul><li>`
+* Do **NOT** render them as “tag pills/chips”
+* Render them using the same pattern as other fields:
+
+**Use a simple vertical stack:**
+
+* `<div class="space-y-1">`
+* each field row: `<div><strong>Label:</strong> Value</div>`
+
+### 2) Remove/override list styling if a list is required
+
+If a list is currently being used and you don’t want to refactor:
+
+* remove list styling so no bullets/icons appear:
+
+  * `list-style: none;`
+  * `padding-left: 0;`
+  * `margin: 0;`
+
+### 3) Fix the CSS that is causing overlap
+
+Check the wrapper around the Leasing Space follow-up block for any of these and remove them:
+
+* `position: absolute`
+* `top/left` offsets
+* fixed height like `height: 24px` or `max-height` that clips
+* `overflow: hidden`
+* incorrect `line-height` (set it to normal)
+
+**Required:** The container must allow multiple lines and grow naturally.
+
+### 4) Make sure the follow-ups are only shown when they actually exist
+
+Only show each line if the stored value is not empty.
+
+---
+
+## SAFEGUARDS (MUST FOLLOW)
+
+DO NOT:
+
+* rename database columns
+* change Livewire keys / field names
+* change form questions, tooltips, placeholders, or validation rules
+* change what gets saved
+* delete any existing Leasing Space follow-up fields
+
+ONLY:
+
+* adjust the **display template/CSS** for the listing view rendering
+* refactor the **presentation layout** so it matches the label/value format
+
+---
+
+## Quick QA Checklist (Replit must verify)
+
+1. Create a **Hire a Landlord** listing
+2. Set **Leasing Space = Entire Property**
+3. Fill out the Leasing Space follow-up fields (Restrictions / Maintenance / Storage)
+4. View the **actual listing display**
+   ✅ No overlapping text
+   ✅ No blue bullet icons
+   ✅ Each follow-up appears on its own line
+   ✅ Spacing matches the rest of Leasing Terms
+
+---
+
+If you want, paste the file/component name Replit is editing (or the Blade/Livewire snippet for the Leasing Terms block) and I’ll rewrite this into **exact code-level directions** (“replace this block with this structure”) without changing any of your field names.
