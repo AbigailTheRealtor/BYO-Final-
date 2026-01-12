@@ -3999,6 +3999,10 @@ $lease_types = [
                 if (!tab) return;
                 const fields = tab.querySelectorAll('[required]');
                 fields.forEach(field => requiredFields.push(field));
+                
+                // Also include special Livewire-validated fields (e.g., counties)
+                const livewireFields = tab.querySelectorAll('[data-livewire-counties]');
+                livewireFields.forEach(field => requiredFields.push(field));
             });
 
             return requiredFields;
@@ -4061,6 +4065,28 @@ $lease_types = [
             // Skip fields without proper name/id attributes (auto-generated or malformed fields)
             if (!field.name && !field.id) {
                 return true; // Skip fields without identifiers
+            }
+            
+            // Special handling for counties validation - check Livewire state directly
+            if (field.hasAttribute('data-livewire-counties')) {
+                try {
+                    const componentEl = field.closest('[wire\\:id]');
+                    if (componentEl && typeof Livewire !== 'undefined') {
+                        const component = Livewire.find(componentEl.getAttribute('wire:id'));
+                        if (component && component.get) {
+                            const counties = component.get('counties');
+                            const isValid = Array.isArray(counties) && counties.length > 0;
+                            if (!isValid) {
+                                console.log('[Counties Validation] Counties array is empty or not set');
+                            }
+                            return isValid;
+                        }
+                    }
+                } catch (e) {
+                    console.log('[Counties Validation] Error checking Livewire state:', e);
+                }
+                // Fallback: check DOM value
+                return field.value && field.value.trim() !== '' && field.value !== '[]';
             }
             
             // Skip any field that is not visible - regardless of which tab it's in

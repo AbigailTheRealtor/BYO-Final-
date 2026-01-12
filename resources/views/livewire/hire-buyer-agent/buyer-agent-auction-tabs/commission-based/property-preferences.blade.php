@@ -119,10 +119,10 @@
         @enderror
     </div>
 
-    <!-- Hidden field for counties validation (required) -->
+    <!-- Hidden field for counties validation - validated via Livewire state -->
     <input type="hidden" id="counties_hidden" name="counties_hidden" 
-           value="{{ count($counties) > 0 ? json_encode($counties) : '' }}" 
-           required>
+           value="{{ count($counties) > 0 ? json_encode($counties) : '' }}"
+           data-livewire-counties="true">
 
     <!-- Display added counties -->
     <div class="mt-1 counties-container">
