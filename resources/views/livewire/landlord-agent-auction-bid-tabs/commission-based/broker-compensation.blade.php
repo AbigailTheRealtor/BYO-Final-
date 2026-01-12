@@ -244,7 +244,9 @@
             @endif
         </div>
     </div>
-@endif@if ($property_type === 'Residential Property')
+@endif
+
+@if ($property_type === 'Residential Property')
 
     <!-- Tenant's Broker Commission Structure -->
     <div class="form-group mb-4">
@@ -692,6 +694,7 @@
 
     </div>
 @endif
+
 @if ($property_type === 'Commercial Property')
     <!-- Expansion Commission for Lease Amendment (Commercial only) -->
     <div class="form-group mb-4">
@@ -715,7 +718,9 @@
             @enderror
         </div>
     </div>
-@endif<!-- Interested in Property Management -->
+@endif
+
+<!-- Interested in Property Management -->
 <div class="form-group">
     <label class="fw-bold d-flex align-items-center">
         Interested in Property Management:
