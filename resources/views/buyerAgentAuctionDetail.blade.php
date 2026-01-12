@@ -989,7 +989,7 @@
                             @if (str_replace('"', '', @$auction->get->offered_financing) === 'Lease Option')
                                 @if (@$auction->get->lease_option_price)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Buyer's Desired Offering Price for Lease Option:
+                                        Buyer’s Desired Offering Price for Lease Option:
                                         <span class="removeBold">${{ @$auction->get->lease_option_price }}</span>
                                     </div>
                                 @endif
@@ -1050,7 +1050,7 @@
                             @if (str_replace('"', '', @$auction->get->offered_financing) === 'Lease Purchase')
                                 @if (@$auction->get->lease_purchase_price)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Buyer's Desired Offering Price for Lease Purchase:
+                                        Buyer’s Desired Offering Price for Lease Purchase:
                                         <span class="removeBold">${{ @$auction->get->lease_purchase_price }}</span>
                                     </div>
                                 @endif
@@ -1182,77 +1182,184 @@
 
                         @php
                         // Define buyer service categories based on property type
-                        $isResidential = in_array(@$auction->get->property_type, ['Residential', 'Residential Property']);
-                        $isCommercial = in_array(@$auction->get->property_type, ['Commercial', 'Commercial Property']);
+                        $propertyType = @$auction->get->property_type;
+                        $isResidential = in_array($propertyType, ['Residential', 'Residential Property']);
+                        $isIncome = in_array($propertyType, ['Income', 'Income Property']);
+                        $isCommercial = in_array($propertyType, ['Commercial', 'Commercial Property']);
+                        $isBusiness = in_array($propertyType, ['Business', 'Business Opportunity']);
+                        $isLand = in_array($propertyType, ['Land', 'Land Property']);
 
-                        // Buyer residential service categories
+                        // Buyer Residential service categories (exact strings from form)
                         $residentialCategories = [
-                            '📢 Buyer Criteria Marketing & Promotion' => [
-                                'Create a branded flyer summarizing the Buyer\'s purchasing criteria',
-                                'Post the Buyer\'s purchasing criteria on Craigslist under the "Real Estate Wanted" section',
-                                'Share the Buyer\'s purchasing criteria on Facebook in Real Estate or Housing Groups',
-                                'Promote the Buyer\'s purchasing criteria on LinkedIn in Professional Groups',
+                            "📣 Buyer Criteria Marketing & Promotion" => [
+                                "Create a branded flyer summarizing the Buyer’s purchase criteria",
+                                "Post the Buyer’s purchase criteria on Craigslist under the \"Real Estate Wanted\" section",
+                                "Share the Buyer’s purchase criteria on Nextdoor in Neighborhood or Community Groups",
+                                "Promote the Buyer’s purchase criteria on Facebook in Real Estate or Housing Groups",
+                                "Share the Buyer’s purchase criteria on Instagram using posts, stories, or reels",
+                                "Promote the Buyer’s purchase criteria on LinkedIn in Real Estate or Housing Groups",
+                                "Upload a TikTok video summarizing the Buyer’s purchase criteria",
+                                "Upload a YouTube video summarizing the Buyer’s purchase criteria",
+                                "Launch a mass email campaign promoting the Buyer’s purchase criteria",
+                                "Distribute branded postcards or flyers in the Buyer’s preferred neighborhoods",
+                                "Launch hyperlocal digital ads targeting the Buyer’s preferred purchase areas",
                             ],
-                            '🔍 Property Search, Alerts & Matching' => [
-                                'Send email alerts with new listings from the MLS that match the Buyer\'s purchasing criteria',
-                                'Search for off-market, pre-market, withdrawn, canceled, or expired properties',
-                                'Communicate with the Seller\'s Agent to confirm availability and showing instructions',
-                                'Evaluate properties with the Buyer and provide insights on pricing and fit',
+                            "🔍 Property Search, Alerts & Matching" => [
+                                "Send email alerts with new listings from the MLS that match the Buyer’s purchase criteria",
+                                "Search for off-market, pre-market, distressed, withdrawn, canceled, or expired properties that meet the Buyer’s purchase criteria",
+                                "Communicate with the Seller’s Agent or Seller to confirm availability, purchase terms, and showing instructions",
+                                "Evaluate properties with the Buyer and provide insights on pricing, terms, potential, and overall fit",
                             ],
-                            '🏡 Property Showings & Virtual Tours' => [
-                                'Schedule and attend property showings with the Buyer',
-                                'Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs',
-                                'Preview properties on behalf of the Buyer upon request',
-                                'Provide factual observations on property layout and condition',
+                            "🏡 Property Showings & Virtual Tours" => [
+                                "Schedule and attend property showings with the Buyer",
+                                "Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs",
+                                "Preview properties on behalf of the Buyer upon request",
+                                "Provide factual observations on property layout and condition",
                             ],
-                            '📝 Offer Preparation & Negotiation' => [
-                                'Prepare purchase offer documents',
-                                'Negotiate terms with the Seller\'s Agent',
-                                'Coordinate inspections and appraisals',
-                                'Manage contract timelines and deadlines',
+                            "📝 Offer & Contract Coordination" => [
+                                "Draft and submit offers using state-approved purchase forms",
+                                "Provide the Buyer with the necessary disclosure forms required by state or local law",
+                                "Draft and deliver counteroffers and manage revisions to the purchase agreement",
+                                "Negotiate price, deposits, and contingencies with the Seller’s Agent or Seller ",
+                                "Manage communications with the Seller’s Agent or Seller",
+                                "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
+                                "Assist with inspection-related negotiations and Buyer requests for repairs",
+                                "Monitor contract milestones, contingency periods, and financing deadlines",
+                                "Provide referrals to Attorneys, Title Companies, Escrow Professionals, or Lenders (referrals only — no endorsement or warranty is made)",
                             ],
-                            '📃 Closing Support' => [
-                                'Coordinate with title company and escrow',
-                                'Review closing documents',
-                                'Attend closing on behalf of buyer',
+                            "📋 Closing Coordination & Transaction Management" => [
+                                "Review and provide the Buyer with Seller-supplied due diligence documentation, including property disclosures, inspection reports, HOA documents, and utility summaries (as available)",
+                                "Coordinate scheduling for inspections, appraisals, and other requested evaluations",
+                                "Coordinate with the Lender, Title, Escrow, and/or Attorney to prepare for Closing",
+                                "Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed ",
+                                "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
+                                "Schedule and confirm the Final Walkthrough",
+                                "Schedule and confirm the Closing Appointment",
                             ],
-                            '💡 Purchasing Strategy & Guidance' => [
-                                'Provide Comparative Market Analysis (CMA) for properties of interest',
-                                'Advise on offer strategies and market conditions',
-                                'Provide general guidance on Buyer rights under state law',
+                            "💡 Buying Strategy & Guidance" => [
+                                "Provide a Comparative Market Analysis (CMA) with pricing recommendations based on comparable sales, neighborhood trends, and current market conditions",
+                                "Provide general guidance on financing, loan options, property taxes, insurance, and escrow timelines",
+                                "Provide factual information about neighborhood characteristics, school zones, crime data, and local amenities using third-party sources",
+                                "Provide general guidance on inspection expectations, common repair requests, and contingency planning",
                             ],
                         ];
 
-                        // Buyer commercial service categories
+                        // Buyer Income service categories (exact strings from form)
+                        $incomeCategories = [
+                            "📣 Buyer Criteria Marketing & Promotion" => [
+                                "Create a branded flyer summarizing the Buyer’s purchase criteria",
+                                "Post the Buyer’s purchase criteria on Craigslist under the \"Real Estate Wanted\" section",
+                                "Share the Buyer’s purchase criteria on Nextdoor in Neighborhood or Community Groups",
+                                "Promote the Buyer’s purchase criteria on Facebook in Real Estate Investor or Multifamily Groups",
+                                "Share the Buyer’s purchase criteria on Instagram using posts, stories, or reels",
+                                "Promote the Buyer’s purchase criteria on LinkedIn in Investment or Property Management Groups",
+                                "Upload a TikTok video summarizing the Buyer’s purchase criteria",
+                                "Upload a YouTube video summarizing the Buyer’s purchase criteria",
+                                "Launch a mass email campaign promoting the Buyer’s purchase criteria",
+                                "Distribute branded postcards or flyers in the Buyer’s preferred neighborhoods",
+                                "Launch hyperlocal digital ads targeting the Buyer’s preferred purchase areas",
+                            ],
+                            "🔍 Property Search, Alerts & Matching" => [
+                                "Send email alerts with new listings that match the Buyer’s purchase criteria",
+                                "Search for off-market, pre-market, distressed, withdrawn, canceled, or expired properties that meet the Buyer’s purchase criteria",
+                                "Communicate with the Seller’s Agent or Sellers to confirm pricing, rental income, expenses, and showing instructions",
+                                "Evaluate investment properties with the Buyer and provide insights on cash flow, cap rates, and value-add potential",
+                            ],
+                            "🏘 Property Showings & Virtual Tours" => [
+                                "Schedule and attend property showings with the Buyer",
+                                "Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs",
+                                "Preview properties on behalf of the Buyer upon request",
+                                "Provide observations on Tenant occupancy, building condition, and operating expenses",
+                            ],
+                            "📝 Offer & Contract Management" => [
+                                "Draft and submit offers using state-approved purchase forms",
+                                "Provide the Buyer with the necessary disclosure forms required by state or local law",
+                                "Draft and deliver counteroffers and manage revisions to the purchase agreement",
+                                "Negotiate price, deposits, and contingencies with the Seller’s Agent or Seller",
+                                "Manage communication with the Seller’s Agent or Seller",
+                                "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
+                                "Assist with inspection-related negotiations and Buyer requests for repairs",
+                                "Monitor contract milestones, contingency periods, and financing deadlines",
+                                "Provide referrals to Attorneys, Title Companies, Escrow Professionals, Lenders, or 1031 Exchange Intermediaries (referrals only — no endorsement or warranty is made)",
+                            ],
+                            "📋 Closing Coordination & Transaction Management" => [
+                                "Review and provide due diligence documents such as lease agreements, estoppel certificates, rent rolls, utility summaries, and operating expense breakdowns (as available)",
+                                "Coordinate with the Seller’s Agent, Buyer’s Lender, Title, Escrow, and/or Attorney to prepare for Closing",
+                                "Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed ",
+                                "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
+                                "Schedule and confirm the Final Walkthrough",
+                                "Schedule and confirm the Closing Appointment",
+                            ],
+                            "💡 Buying Strategy & Guidance" => [
+                                "Provide a Comparative Market Analysis (CMA) with pricing recommendations, rental comps, and Cap Rate estimates",
+                                "Provide general guidance on financing options, rent control, property taxes, and Landlord responsibilities",
+                                "Provide factual information on rental demand, turnover rates, and submarket conditions using third-party sources",
+                                "Provide general guidance on due diligence steps, lease audits, and estoppel reviews",
+                            ],
+                        ];
+
+                        // Buyer Commercial service categories (exact strings from form)
                         $commercialCategories = [
-                            '📢 Buyer Criteria Marketing & Promotion' => [
-                                'Create a branded flyer summarizing the Buyer\'s purchasing criteria',
-                                'Post the Buyer\'s purchasing criteria on commercial platforms',
-                                'Promote the Buyer\'s purchasing criteria on LinkedIn',
+                            "📣 Buyer Criteria Marketing & Promotion" => [
+                                "Create a branded flyer summarizing the Buyer’s purchase criteria",
+                                "Post the Buyer’s criteria on Craigslist under \"Real Estate Wanted – Commercial\"",
+                                "Promote the Buyer’s criteria on Facebook in Commercial Real Estate or Investment Groups",
+                                "Share the Buyer’s criteria on Instagram using posts, stories, or reels",
+                                "Promote the Buyer’s criteria on LinkedIn in Commercial or Investment Groups",
+                                "Upload a TikTok video summarizing the Buyer’s purchase criteria",
+                                "Upload a YouTube video summarizing the Buyer’s purchase criteria",
+                                "Launch a mass email campaign promoting the Buyer’s purchase criteria",
+                                "Distribute branded postcards or flyers in the Buyer’s preferred purchase areas",
+                                "Launch hyperlocal or interest-based digital ad campaigns targeting desired commercial property types",
                             ],
-                            '🔍 Property Search, Alerts & Matching' => [
-                                'Send listing alerts from commercial platforms (LoopNet, Crexi, CoStar)',
-                                'Search for off-market properties that meet the Buyer\'s criteria',
-                                'Evaluate properties for investment potential and cap rates',
+                            "🔍 Property Search, Alerts & Matching" => [
+                                "Send property alerts that match the Buyer’s purchase criteria from the MLS or commercial listing platforms",
+                                "Search for off-market, pre-market, distressed, withdrawn, canceled, or expired listings that meet the Buyer’s criteria",
+                                "Communicate with the Seller’s Agent or Seller to confirm availability, purchase terms, and showing instructions",
+                                "Analyze building class, property zoning, income potential, and redevelopment opportunities",
                             ],
-                            '🏢 Property Showings & Due Diligence' => [
-                                'Schedule and attend property tours',
-                                'Coordinate or conduct virtual showings',
-                                'Review property financials and tenant information',
+                            "🏢 Property Showings & Virtual Tours" => [
+                                "Schedule and attend property showings with the Buyer",
+                                "Coordinate or conduct virtual showings via live video or recorded walkthroughs",
+                                "Preview properties on behalf of the Buyer upon request",
+                                "Provide insights on layout, access, visibility, Tenant mix, and surrounding infrastructure",
                             ],
-                            '📝 Offer Preparation & Negotiation' => [
-                                'Draft or assist with Letter of Intent (LOI)',
-                                'Negotiate purchase terms with Seller\'s Agent',
-                                'Coordinate inspections and due diligence',
+                            "📝 Offer & Contract Management" => [
+                                "Draft and submit offers using state-approved purchase agreements or Letters of Intent (LOIs)",
+                                "Provide the Buyer with the necessary disclosure forms required by state or local law",
+                                "Draft and deliver counteroffers and manage revisions to the purchase agreement",
+                                "Negotiate price, deposit structure, timelines, and contingencies with the Seller or Seller’s Agent",
+                                "Manage communication with the Seller’s Agent or Seller",
+                                "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
+                                "Assist with due diligence negotiations, including repair requests or credits",
+                                "Monitor contract contingencies, including financing, estoppel review, lease audits, and environmental reports",
+                                "Provide referrals to Attorneys, Title Companies, Escrow Officers, Commercial Lenders, or 1031 Exchange Intermediaries (referrals only — no endorsement or warranty is made)",
                             ],
-                            '📃 Closing Support' => [
-                                'Coordinate with title company and escrow',
-                                'Review closing documents',
-                                'Attend closing on behalf of buyer',
+                            "📋 Closing Coordination & Transaction Management" => [
+                                "Coordinate inspections, appraisals, environmental assessments, and estoppel certificate collection as needed",
+                                "Review and request due diligence documentation such as lease agreements, estoppel certificates, rent rolls, utility summaries, and operating expense breakdowns (as available)",
+                                "Coordinate with the Lender, Title Company, Escrow Officer, and/or Attorney to prepare for Closing",
+                                "Review the Settlement Statement for accuracy and coordinate with all parties if corrections are needed ",
+                                "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
+                                "Schedule and confirm the Final Walkthrough",
+                                "Schedule and confirm the Closing Appointment",
+                            ],
+                            "💡 Buying Strategy & Guidance" => [
+                                "Provide a Comparative Market Analysis (CMA) with recent sales comps, lease comps, and an estimated value range",
+                                "Provide general guidance on zoning regulations, permitted uses, and rental income potential",
+                                "Provide factual data on traffic counts, commercial market trends, and area demographics using third-party sources",
+                                "Provide general guidance on lease types, contingency timelines, due diligence, and environmental risks",
                             ],
                         ];
 
-                        $categories = $isCommercial ? $commercialCategories : $residentialCategories;
+                        // Select categories based on property type
+                        if ($isIncome) {
+                            $categories = $incomeCategories;
+                        } elseif ($isCommercial || $isBusiness) {
+                            $categories = $commercialCategories;
+                        } else {
+                            $categories = $residentialCategories;
+                        }
                         $allServices = is_array(@$auction->get->services) ? $auction->get->services : [];
                         $otherServices = is_array(@$auction->get->other_services) ? $auction->get->other_services : [];
 
@@ -1329,8 +1436,8 @@
                             <h4 class="section-title">Broker Compensation & Agency Agreement Terms</h4>
                         </div>
 
-                        <!-- Buyer's Broker Compensation Sub-section -->
-                        <h5 class="mt-3 mb-2"><strong>Buyer's Broker Compensation:</strong></h5>
+                        <!-- Buyer’s Broker Compensation Sub-section -->
+                        <h5 class="mt-3 mb-2"><strong>Buyer’s Broker Compensation:</strong></h5>
 
                         <!-- Commission Structure -->
                         @if (@$auction->get->commission_structure != null)
@@ -1338,39 +1445,37 @@
                                 $displayCommissionStructure = str_replace('"', '', @$auction->get->commission_structure);
                             @endphp
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Buyer's Broker Commission Structure:
+                                Buyer’s Broker Commission Structure:
                                 <span class="removeBold">{{ $displayCommissionStructure }}</span>
                             </div>
                         @endif
 
-                        <!-- Purchase Fee -->
+                        <!-- Purchase Fee (Value-First Format) -->
                         @if (@$auction->get->purchase_fee_type != null)
                             @php
-                                $displayPurchaseFeeType = str_replace('"', '', @$auction->get->purchase_fee_type);
+                                $purchaseFeeValue = null;
+                                $purchaseFeeType = @$auction->get->purchase_fee_type;
+                                
+                                if ($purchaseFeeType === 'Flat Fee' && @$auction->get->purchase_fee_flat) {
+                                    $purchaseFeeValue = $fmtMoney(@$auction->get->purchase_fee_flat);
+                                } elseif ($purchaseFeeType === 'Percentage of the Total Purchase Price' && @$auction->get->purchase_fee_percentage) {
+                                    $pct = $fmtPercent(@$auction->get->purchase_fee_percentage);
+                                    $purchaseFeeValue = $joinParts([$pct, $basisText('Total Purchase Price')]);
+                                } elseif ($purchaseFeeType === 'Percentage of the Total Purchase Price + Flat Fee') {
+                                    $pct = $fmtPercent(@$auction->get->purchase_fee_percentage_combo);
+                                    $flat = $fmtMoney(@$auction->get->purchase_fee_flat_combo);
+                                    $purchaseFeeValue = $joinParts([$pct, $flat]);
+                                    if ($purchaseFeeValue) {
+                                        $purchaseFeeValue .= ' of Total Purchase Price';
+                                    }
+                                } elseif ($purchaseFeeType === 'other' && @$auction->get->purchase_fee_other) {
+                                    $purchaseFeeValue = @$auction->get->purchase_fee_other;
+                                }
                             @endphp
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Buyer's Broker Purchase Fee:
-                                <span class="removeBold badge bg-secondary">{{ $displayPurchaseFeeType }}</span>
-                            </div>
-
-                            <!-- Purchase Fee Amounts -->
-                            @if (@$auction->get->purchase_fee_type === 'Flat Fee' && @$auction->get->purchase_fee_flat)
-                                <div class="col-md-12 col-12 pt-1">
-                                    <span class="removeBold">${{ @$auction->get->purchase_fee_flat }}</span>
-                                </div>
-                            @elseif(@$auction->get->purchase_fee_type === 'Percentage of the Total Purchase Price' && @$auction->get->purchase_fee_percentage)
-                                <div class="col-md-12 col-12 pt-1">
-                                    <span class="removeBold">{{ @$auction->get->purchase_fee_percentage }}%</span>
-                                </div>
-                            @elseif(@$auction->get->purchase_fee_type === 'Percentage of the Total Purchase Price + Flat Fee')
-                                @if (@$auction->get->purchase_fee_percentage_combo)
-                                    <div class="col-md-12 col-12 pt-1">
-                                        <span class="removeBold">{{ @$auction->get->purchase_fee_percentage_combo }}% + ${{ @$auction->get->purchase_fee_flat_combo }}</span>
-                                    </div>
-                                @endif
-                            @elseif(@$auction->get->purchase_fee_type === 'other' && @$auction->get->purchase_fee_other)
-                                <div class="col-md-12 col-12 pt-1">
-                                    <span class="removeBold">{{ @$auction->get->purchase_fee_other }}</span>
+                            @if ($purchaseFeeValue)
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
+                                    Buyer’s Broker Purchase Fee:
+                                    <span class="removeBold">{{ $purchaseFeeValue }}</span>
                                 </div>
                             @endif
                         @endif
@@ -1392,7 +1497,7 @@
                                 $displayLeaseFeeType = str_replace('"', '', @$auction->get->lease_fee_type);
                             @endphp
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Buyer's Broker Lease Fee:
+                                Buyer’s Broker Lease Fee:
                                 <span class="removeBold badge bg-secondary">{{ $displayLeaseFeeType }}</span>
                             </div>
 
@@ -1556,7 +1661,7 @@
                         @endif
                         <hr />
                         <div class="card-header section-header">
-                            <h4 class="section-title">Buyer's Info</h4>
+                            <h4 class="section-title">Buyer’s Info</h4>
                         </div>
                         @if (!empty($auction->get->first_name))
                             <div class="col-md-12 col-12 pt-2 fw-bold">First
@@ -1947,22 +2052,47 @@
                                                         </span>
                                                     </p> --}}
 
-                                                    <!-- Services Offered -->
-                                                    @php $servicesList = (array) data_get($bid,'get.services',[]); @endphp
-                                                    @if (!empty($servicesList))
-                                                        <div>
-                                                            <label style="font-size: large;">
+                                                    <!-- Services Offered (Categorized Display) -->
+                                                    @php 
+                                                        $bidServicesList = (array) data_get($bid,'get.services',[]);
+                                                        // Check if any services match categories
+                                                        $bidHasMatchedServices = false;
+                                                        if (!empty($bidServicesList)) {
+                                                            foreach ($categories as $catServices) {
+                                                                $matched = array_filter($bidServicesList, fn($s) => in_array($s, $catServices));
+                                                                if (!empty($matched)) { $bidHasMatchedServices = true; break; }
+                                                            }
+                                                        }
+                                                    @endphp
+                                                    @if (!empty($bidServicesList))
+                                                        <div class="mt-3">
+                                                            <label style="font-size: large; font-weight: 600; color: #049399;">
                                                                 Services Offered:</label>
-                                                            <ul class="services services-offered">
-                                                                @foreach ($servicesList as $service)
-                                                                    @if ($service == 'Other')
-                                                                        @continue
+                                                            @if ($bidHasMatchedServices)
+                                                                @foreach ($categories as $catName => $catServices)
+                                                                    @php
+                                                                        $bidMatched = array_filter($bidServicesList, fn($s) => in_array($s, $catServices));
+                                                                    @endphp
+                                                                    @if (!empty($bidMatched))
+                                                                        <div class="mt-2">
+                                                                            <strong>{{ $catName }}</strong>
+                                                                            <ul class="services services-offered">
+                                                                                @foreach ($bidMatched as $service)
+                                                                                    <li style="font-size: 16px;">{{ $service }}</li>
+                                                                                @endforeach
+                                                                            </ul>
+                                                                        </div>
                                                                     @endif
-                                                                    <li class="alert-font"
-                                                                        style="font-size: 16px; margin-top:15px;">
-                                                                        {{ $service }}</li>
                                                                 @endforeach
-                                                            </ul>
+                                                            @else
+                                                                <ul class="services services-offered">
+                                                                    @foreach ($bidServicesList as $service)
+                                                                        @if ($service != 'Other')
+                                                                            <li style="font-size: 16px;">{{ $service }}</li>
+                                                                        @endif
+                                                                    @endforeach
+                                                                </ul>
+                                                            @endif
                                                         </div>
                                                     @endif
 
@@ -2164,69 +2294,43 @@
         <!-- Commission Structure -->
         @if (data_get($bid, 'get.commission_structure'))
             <div class="mb-3">
-                <div class="fw-semibold" style="color: #049399;">Buyer's Broker Commission Structure</div>
+                <div class="fw-semibold" style="color: #049399;">Buyer’s Broker Commission Structure</div>
                 <div class="text-muted">
                     {{ data_get($bid, 'get.commission_structure') }}
                 </div>
             </div>
         @endif
 
-        <!-- Purchase Fee -->
+        <!-- Purchase Fee (Value-First Format) -->
         @if (data_get($bid, 'get.purchase_fee_type'))
-            <div class="mb-3">
-                <div class="fw-semibold" style="color: #049399;">Buyer's Broker Purchase Fee</div>
-                <div class="text-muted">
-                    {{ data_get($bid, 'get.purchase_fee_type') }}
-                </div>
-            </div>
-
-            <!-- Purchase Fee Amounts -->
-            @if (data_get($bid, 'get.purchase_fee_type') === 'Flat Fee' && data_get($bid, 'get.purchase_fee_flat'))
+            @php
+                $bidPurchaseFeeValue = null;
+                $bidPurchaseFeeType = data_get($bid, 'get.purchase_fee_type');
+                
+                if ($bidPurchaseFeeType === 'Flat Fee' && data_get($bid, 'get.purchase_fee_flat')) {
+                    $bidPurchaseFeeValue = $fmtMoney(data_get($bid, 'get.purchase_fee_flat'));
+                } elseif ($bidPurchaseFeeType === 'Percentage of the Total Purchase Price' && data_get($bid, 'get.purchase_fee_percentage')) {
+                    $pct = $fmtPercent(data_get($bid, 'get.purchase_fee_percentage'));
+                    $bidPurchaseFeeValue = $joinParts([$pct, $basisText('Total Purchase Price')]);
+                } elseif ($bidPurchaseFeeType === 'Percentage of the Total Purchase Price + Flat Fee') {
+                    $pct = $fmtPercent(data_get($bid, 'get.purchase_fee_percentage_combo'));
+                    $flat = $fmtMoney(data_get($bid, 'get.purchase_fee_flat_combo'));
+                    $bidPurchaseFeeValue = $joinParts([$pct, $flat]);
+                    if ($bidPurchaseFeeValue) {
+                        $bidPurchaseFeeValue .= ' of Total Purchase Price';
+                    }
+                } elseif ($bidPurchaseFeeType === 'other' && data_get($bid, 'get.purchase_fee_other')) {
+                    $bidPurchaseFeeValue = data_get($bid, 'get.purchase_fee_other');
+                }
+            @endphp
+            @if ($bidPurchaseFeeValue)
                 <div class="mb-3">
-                    <div class="fw-semibold" style="color: #049399;">Flat Fee Amount</div>
-                    <div class="text-muted">
-                        ${{ number_format(data_get($bid, 'get.purchase_fee_flat'), 2) }}
-                    </div>
-                </div>
-            @endif
-
-            @if (data_get($bid, 'get.purchase_fee_type') === 'Percentage of the Total Purchase Price' && data_get($bid, 'get.purchase_fee_percentage'))
-                <div class="mb-3">
-                    <div class="fw-semibold" style="color: #049399;">Percentage of Total Purchase Price</div>
-                    <div class="text-muted">
-                        {{ data_get($bid, 'get.purchase_fee_percentage') }}%
-                    </div>
-                </div>
-            @endif
-
-            @if (data_get($bid, 'get.purchase_fee_type') === 'Percentage of the Total Purchase Price + Flat Fee')
-                @if (data_get($bid, 'get.purchase_fee_percentage_combo'))
-                    <div class="mb-2">
-                        <div class="fw-semibold" style="color: #049399;">Percentage Portion</div>
-                        <div class="text-muted">
-                            {{ data_get($bid, 'get.purchase_fee_percentage_combo') }}%
-                        </div>
-                    </div>
-                @endif
-                @if (data_get($bid, 'get.purchase_fee_flat_combo'))
-                    <div class="mb-3">
-                        <div class="fw-semibold" style="color: #049399;">Flat Fee Portion</div>
-                        <div class="text-muted">
-                            ${{ number_format(data_get($bid, 'get.purchase_fee_flat_combo'), 2) }}
-                        </div>
-                    </div>
-                @endif
-            @endif
-
-            @if (data_get($bid, 'get.purchase_fee_type') === 'other' && data_get($bid, 'get.purchase_fee_other'))
-                <div class="mb-3">
-                    <div class="fw-semibold" style="color: #049399;">Other Purchase Fee</div>
-                    <div class="text-muted">
-                        {{ data_get($bid, 'get.purchase_fee_other') }}
-                    </div>
+                    <div class="fw-semibold" style="color: #049399;">Buyer’s Broker Purchase Fee</div>
+                    <div class="text-muted">{{ $bidPurchaseFeeValue }}</div>
                 </div>
             @endif
         @endif
+
 
         <!-- Lease Agreement Interest -->
         @if (data_get($bid, 'get.interested_lease_option'))
@@ -2244,7 +2348,7 @@
                 <h6 class="mb-3" style="color: #049399; font-weight: 600;">Lease Fee Details</h6>
 
                 <div class="mb-3">
-                    <div class="fw-semibold" style="color: #049399;">Buyer's Broker Lease Fee Type</div>
+                    <div class="fw-semibold" style="color: #049399;">Buyer’s Broker Lease Fee Type</div>
                     <div class="text-muted">
                         {{ data_get($bid, 'get.lease_fee_type') }}
                     </div>
@@ -3202,46 +3306,37 @@
         <!-- Commission Structure -->
         @if (!empty($allMeta['commission_structure']))
             <div class="mb-1" style="font-size: 12px;">
-                <span style="font-size: 13px; font-weight: 600;">Buyer's Broker Commission Structure:</span>
+                <span style="font-size: 13px; font-weight: 600;">Buyer’s Broker Commission Structure:</span>
                 {{ $allMeta['commission_structure'] }}
             </div>
         @endif
 
-        <!-- Purchase Fee -->
+        <!-- Purchase Fee (Value-First) -->
         @if (!empty($allMeta['purchase_fee_type']))
-            <div class="mb-1" style="font-size: 12px;">
-                <span style="font-size: 13px; font-weight: 600;">Buyer's Broker Purchase Fee:</span>
-                {{ $allMeta['purchase_fee_type'] }}
-            </div>
-
-            <!-- Purchase Fee Amounts -->
-            @if ($allMeta['purchase_fee_type'] === 'Flat Fee' && !empty($allMeta['purchase_fee_flat']))
+            @php
+                $counterPurchaseValue = null;
+                $cpType = $allMeta['purchase_fee_type'];
+                if ($cpType === 'Flat Fee' && !empty($allMeta['purchase_fee_flat'])) {
+                    $counterPurchaseValue = '$' . number_format($allMeta['purchase_fee_flat'], 2);
+                } elseif ($cpType === 'Percentage of the Total Purchase Price' && !empty($allMeta['purchase_fee_percentage'])) {
+                    $counterPurchaseValue = rtrim(rtrim(number_format($allMeta['purchase_fee_percentage'], 2), '0'), '.') . '% of Total Purchase Price';
+                } elseif ($cpType === 'Percentage of the Total Purchase Price + Flat Fee') {
+                    $parts = [];
+                    if (!empty($allMeta['purchase_fee_percentage_combo'])) {
+                        $parts[] = rtrim(rtrim(number_format($allMeta['purchase_fee_percentage_combo'], 2), '0'), '.') . '%';
+                    }
+                    if (!empty($allMeta['purchase_fee_flat_combo'])) {
+                        $parts[] = '$' . number_format($allMeta['purchase_fee_flat_combo'], 2);
+                    }
+                    $counterPurchaseValue = !empty($parts) ? implode(' + ', $parts) . ' of Total Purchase Price' : null;
+                } elseif ($cpType === 'other' && !empty($allMeta['purchase_fee_other'])) {
+                    $counterPurchaseValue = $allMeta['purchase_fee_other'];
+                }
+            @endphp
+            @if ($counterPurchaseValue)
                 <div class="mb-1" style="font-size: 12px;">
-                    <span style="font-size: 13px; font-weight: 600;">Flat Fee Amount:</span>
-                    ${{ number_format($allMeta['purchase_fee_flat'], 2) }}
-                </div>
-            @elseif($allMeta['purchase_fee_type'] === 'Percentage of the Total Purchase Price' && !empty($allMeta['purchase_fee_percentage']))
-                <div class="mb-1" style="font-size: 12px;">
-                    <span style="font-size: 13px; font-weight: 600;">Percentage of Total Purchase Price:</span>
-                    {{ $allMeta['purchase_fee_percentage'] }}%
-                </div>
-            @elseif($allMeta['purchase_fee_type'] === 'Percentage of the Total Purchase Price + Flat Fee')
-                @if (!empty($allMeta['purchase_fee_percentage_combo']))
-                    <div class="mb-1" style="font-size: 12px;">
-                        <span style="font-size: 13px; font-weight: 600;">Percentage Portion:</span>
-                        {{ $allMeta['purchase_fee_percentage_combo'] }}%
-                    </div>
-                @endif
-                @if (!empty($allMeta['purchase_fee_flat_combo']))
-                    <div class="mb-1" style="font-size: 12px;">
-                        <span style="font-size: 13px; font-weight: 600;">Flat Fee Portion:</span>
-                        ${{ number_format($allMeta['purchase_fee_flat_combo'], 2) }}
-                    </div>
-                @endif
-            @elseif($allMeta['purchase_fee_type'] === 'other' && !empty($allMeta['purchase_fee_other']))
-                <div class="mb-1" style="font-size: 12px;">
-                    <span style="font-size: 13px; font-weight: 600;">Other Purchase Fee:</span>
-                    {{ $allMeta['purchase_fee_other'] }}
+                    <span style="font-size: 13px; font-weight: 600;">Buyer’s Broker Purchase Fee:</span>
+                    {{ $counterPurchaseValue }}
                 </div>
             @endif
         @endif
@@ -3257,7 +3352,7 @@
         <!-- Lease Fee Details (only show if interested_lease_option is 'Yes') -->
         @if (!empty($allMeta['interested_lease_option']) && $allMeta['interested_lease_option'] === 'Yes' && !empty($allMeta['lease_fee_type']))
             <div class="mb-1" style="font-size: 12px;">
-                <span style="font-size: 13px; font-weight: 600;">Buyer's Broker Lease Fee:</span>
+                <span style="font-size: 13px; font-weight: 600;">Buyer’s Broker Lease Fee:</span>
                 {{ $allMeta['lease_fee_type'] }}
             </div>
 
@@ -3434,67 +3529,76 @@
     </div>
 @endif
 
-                                                                            <!-- Services Offered -->
+                                                                            <!-- Services Offered (Categorized) -->
                                                                             @php
-                                                                                $services = is_string(
-                                                                                    $allMeta['services'],
+                                                                                $counterServices = is_string(
+                                                                                    $allMeta['services'] ?? ''
                                                                                 )
-                                                                                    ? json_decode(
-                                                                                        $allMeta['services'],
-                                                                                        true,
-                                                                                    )
-                                                                                    : $allMeta['services'];
+                                                                                    ? json_decode($allMeta['services'] ?? '', true)
+                                                                                    : ($allMeta['services'] ?? []);
+                                                                                $counterServices = $counterServices ?: [];
+                                                                                
+                                                                                // Check if services match categories
+                                                                                $counterHasMatch = false;
+                                                                                foreach ($categories as $catSrvs) {
+                                                                                    if (!empty(array_filter($counterServices, fn($s) => in_array($s, $catSrvs)))) {
+                                                                                        $counterHasMatch = true;
+                                                                                        break;
+                                                                                    }
+                                                                                }
                                                                             @endphp
 
-                                                                            @if (!empty($services))
+                                                                            @if (!empty($counterServices))
                                                                                 <div style="margin-top: 20px;">
-                                                                                    <label
-                                                                                        style="font-size: 18px; font-weight: bold; display: block; margin-bottom: 10px;">
-                                                                                        Services:
+                                                                                    <label style="font-size: 15px; font-weight: 600; color: #049399; display: block; margin-bottom: 10px;">
+                                                                                        Services Offered:
                                                                                     </label>
-                                                                                    <div
-                                                                                        style="display: flex; flex-wrap: wrap; gap: 10px;">
-                                                                                        @foreach ($services as $service)
-                                                                                            @if ($service == 'Other')
-                                                                                                @continue
+                                                                                    @if ($counterHasMatch)
+                                                                                        @foreach ($categories as $catName => $catSrvs)
+                                                                                            @php $matched = array_filter($counterServices, fn($s) => in_array($s, $catSrvs)); @endphp
+                                                                                            @if (!empty($matched))
+                                                                                                <div class="mb-2">
+                                                                                                    <strong style="font-size: 13px;">{{ $catName }}</strong>
+                                                                                                    <ul class="services services-offered" style="margin-top: 5px;">
+                                                                                                        @foreach ($matched as $svc)
+                                                                                                            <li style="font-size: 12px;">{{ $svc }}</li>
+                                                                                                        @endforeach
+                                                                                                    </ul>
+                                                                                                </div>
                                                                                             @endif
-                                                                                            <span
-                                                                                                style="background: #f1f5f9; color: #111; padding: 6px 12px; border-radius: 8px; font-size: 12px; border: 1px solid #ddd;">
-                                                                                                {{ $service }}
-                                                                                            </span>
                                                                                         @endforeach
-                                                                                    </div>
+                                                                                    @else
+                                                                                        <ul class="services services-offered">
+                                                                                            @foreach ($counterServices as $svc)
+                                                                                                @if ($svc != 'Other')
+                                                                                                    <li style="font-size: 12px;">{{ $svc }}</li>
+                                                                                                @endif
+                                                                                            @endforeach
+                                                                                        </ul>
+                                                                                    @endif
                                                                                 </div>
                                                                             @endif
 
                                                                             @php
-                                                                                $other_services = is_string(
-                                                                                    $allMeta['other_services'],
-                                                                                )
-                                                                                    ? json_decode(
-                                                                                        $allMeta['other_services'],
-                                                                                        true,
-                                                                                    )
-                                                                                    : $allMeta['other_services'];
+                                                                                $counter_other_services = is_string($allMeta['other_services'] ?? '')
+                                                                                    ? json_decode($allMeta['other_services'] ?? '', true)
+                                                                                    : ($allMeta['other_services'] ?? []);
+                                                                                $counter_other_services = $counter_other_services ?: [];
                                                                             @endphp
 
-                                                                            @if (!empty($other_services))
-                                                                                <div style="margin-top: 20px;">
-                                                                                    <label
-                                                                                        style="font-size: 18px; font-weight: bold; display: block; margin-bottom: 10px;">
+                                                                            @if (!empty($counter_other_services))
+                                                                                <div style="margin-top: 15px;">
+                                                                                    <label style="font-size: 13px; font-weight: 600;">
                                                                                         Other Services:
                                                                                     </label>
-                                                                                    <div
-                                                                                        style="display: flex; flex-wrap: wrap; gap: 10px;">
-                                                                                        @foreach ($other_services as $other_service)
-                                                                                            <span
-                                                                                                style="background: #f1f5f9; color: #111; padding: 6px 12px; border-radius: 8px; font-size: 12px; border: 1px solid #ddd;">
-                                                                                                {{ $other_service }}
-                                                                                            </span>
+                                                                                    <ul class="services services-offered">
+                                                                                        @foreach ($counter_other_services as $other_svc)
+                                                                                            <li style="font-size: 12px;">{{ $other_svc }}</li>
                                                                                         @endforeach
-                                                                                    </div>
+                                                                                    </ul>
                                                                                 </div>
                                                                             @endif
+
 
                                                                             <!-- Counter actions (only when both pending & viewer is the other party) -->
                                                                         @inject('carbon', 'Carbon\Carbon')
