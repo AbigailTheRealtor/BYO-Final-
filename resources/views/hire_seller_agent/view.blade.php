@@ -1384,7 +1384,7 @@
                 @endphp
                 @if($auth_id && $auth_id == @$auction->user_id)
                 <div class="mb-2">
-                    <a href="{{ route('editSellerAgentHireAuction', ['id' => $auction->id]) }}" 
+                    <a href="{{ route('hire.agent.auction.edit', ['auctionId' => $auction->id, 'user_type' => 'seller']) }}" 
                        class="btn btn-outline-primary btn-sm">
                         <i class="fa fa-edit me-1"></i> Edit Listing
                     </a>
