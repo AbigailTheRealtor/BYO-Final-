@@ -201,6 +201,13 @@
         font-size: 1.1em;
     }
 
+    /* Nested services lists inside another services list */
+    ul.services ul.services {
+        padding-left: 1.5em;
+        margin-top: 0.25rem;
+        margin-bottom: 0;
+    }
+
     /* Service category title styling */
     .service-category-title {
         font-size: 1.1rem;
@@ -1441,7 +1448,7 @@
                         <div class="broker-compensation-section">
 
                         <!-- 1. Buyer’s Broker Compensation Sub-section -->
-                        <h5 class="mt-3 mb-2"><strong>Buyer’s Broker Compensation:</strong></h5>
+                        <div class="mt-3 mb-2" style="font-size: 14px; font-weight: 600; font-family: inherit;">Buyer’s Broker Compensation:</div>
 
                         @if (@$auction->get->commission_structure != null)
                             <ul class="services">
@@ -1480,7 +1487,7 @@
                         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
                         <!-- 2. Buyer’s Broker Lease Fee Sub-section -->
-                        <h5 class="mt-3 mb-2"><strong>Buyer’s Broker Lease Fee:</strong></h5>
+                        <div class="mt-3 mb-2" style="font-size: 14px; font-weight: 600; font-family: inherit;">Buyer’s Broker Lease Fee:</div>
 
                         @if (@$auction->get->interested_lease_option != null)
                             <ul class="services">
@@ -1526,7 +1533,7 @@
                         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
                         <!-- 3. Lease-Option Details Sub-section -->
-                        <h5 class="mt-3 mb-2"><strong>Lease-Option Details:</strong></h5>
+                        <div class="mt-3 mb-2" style="font-size: 14px; font-weight: 600; font-family: inherit;">Lease-Option Details:</div>
 
                         @if (@$auction->get->interested_lease_option_agreement != null)
                             <ul class="services">
@@ -1563,7 +1570,7 @@
                         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
                         <!-- 4. Legal Terms Sub-section -->
-                        <h5 class="mt-3 mb-2"><strong>Legal Terms:</strong></h5>
+                        <div class="mt-3 mb-2" style="font-size: 14px; font-weight: 600; font-family: inherit;">Legal Terms:</div>
 
                         @if (@$auction->get->protection_period != null)
                             <ul class="services">
@@ -1613,7 +1620,7 @@
                         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
                         <!-- 5. Brokerage Relationship Sub-section -->
-                        <h5 class="mt-3 mb-2"><strong>Brokerage Relationship:</strong></h5>
+                        <div class="mt-3 mb-2" style="font-size: 14px; font-weight: 600; font-family: inherit;">Brokerage Relationship:</div>
 
                         @if (@$auction->get->brokerage_relationship != null)
                             <ul class="services">
@@ -1624,7 +1631,7 @@
                         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
                         <!-- 6. Additional Terms Sub-section -->
-                        <h5 class="mt-3 mb-2"><strong>Additional Terms:</strong></h5>
+                        <div class="mt-3 mb-2" style="font-size: 14px; font-weight: 600; font-family: inherit;">Additional Terms:</div>
 
                         @if (@$auction->get->additional_details_broker != null)
                             <ul class="services">
@@ -3175,7 +3182,7 @@
         </h6>
 
         <!-- 1. Buyer’s Broker Compensation -->
-        <div class="mb-2"><strong style="font-size: 13px;">Buyer’s Broker Compensation:</strong></div>
+        <div class="mb-2" style="font-size: 13px; font-weight: 600; font-family: inherit;">Buyer’s Broker Compensation:</div>
         
         @if (!empty($allMeta['commission_structure']))
             <ul class="services" style="font-size: 12px;">
@@ -3213,7 +3220,7 @@
         <div class="my-2"><hr style="border-top: 1px solid #eee;"></div>
 
         <!-- 2. Buyer’s Broker Lease Fee -->
-        <div class="mb-2"><strong style="font-size: 13px;">Buyer’s Broker Lease Fee:</strong></div>
+        <div class="mb-2" style="font-size: 13px; font-weight: 600; font-family: inherit;">Buyer’s Broker Lease Fee:</div>
 
         @if (!empty($allMeta['interested_lease_option']))
             <ul class="services" style="font-size: 12px;">
@@ -3254,7 +3261,7 @@
         <div class="my-2"><hr style="border-top: 1px solid #eee;"></div>
 
         <!-- 3. Lease-Option Details -->
-        <div class="mb-2"><strong style="font-size: 13px;">Lease-Option Details:</strong></div>
+        <div class="mb-2" style="font-size: 13px; font-weight: 600; font-family: inherit;">Lease-Option Details:</div>
 
         @if (!empty($allMeta['interested_lease_option_agreement']))
             <ul class="services" style="font-size: 12px;">
@@ -3290,7 +3297,7 @@
         <div class="my-2"><hr style="border-top: 1px solid #eee;"></div>
 
         <!-- 4. Legal Terms -->
-        <div class="mb-2"><strong style="font-size: 13px;">Legal Terms:</strong></div>
+        <div class="mb-2" style="font-size: 13px; font-weight: 600; font-family: inherit;">Legal Terms:</div>
 
         @if (!empty($allMeta['protection_period']))
             <ul class="services" style="font-size: 12px;">
@@ -3340,7 +3347,7 @@
         <div class="my-2"><hr style="border-top: 1px solid #eee;"></div>
 
         <!-- 5. Brokerage Relationship -->
-        <div class="mb-2"><strong style="font-size: 13px;">Brokerage Relationship:</strong></div>
+        <div class="mb-2" style="font-size: 13px; font-weight: 600; font-family: inherit;">Brokerage Relationship:</div>
 
         @if (!empty($allMeta['brokerage_relationship']))
             <ul class="services" style="font-size: 12px;">
@@ -3351,7 +3358,7 @@
         <div class="my-2"><hr style="border-top: 1px solid #eee;"></div>
 
         <!-- 6. Additional Terms -->
-        <div class="mb-2"><strong style="font-size: 13px;">Additional Terms:</strong></div>
+        <div class="mb-2" style="font-size: 13px; font-weight: 600; font-family: inherit;">Additional Terms:</div>
 
         @if (!empty($allMeta['additional_details_broker']))
             <ul class="services" style="font-size: 12px;">
@@ -3904,7 +3911,7 @@
             $('.time').html("<div class='w-100 text-center text-danger fw-bold'>Bidding Ended</div>");
             $('.bid-btn').fadeOut(300, function() {
                 $(this).after(
-                    "<div class='alert alert-warning text-center mt-2 mb-0 p-2'><strong>Bidding Ended</strong></div>"
+                    "<div class='alert alert-warning text-center mt-2 mb-0 p-2'><strong>Bidding Ended</div>"
                 );
             });
         }
