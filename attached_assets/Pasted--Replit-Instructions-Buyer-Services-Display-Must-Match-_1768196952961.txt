@@ -1,0 +1,105 @@
+## Replit Instructions — Buyer “Services” Display Must Match Tenant Formatting (All Buyer Property Types)
+
+### Applies To
+
+**ONLY: Hire a Buyer’s Agent** (all Buyer listing types / property types your platform supports)
+
+Wherever **Services** are shown:
+
+* Public / actual listing display
+* Agent bid view (including private “Terms” / modal/panel)
+* Counter-bid view
+* Accepted bid summary view (if Services appear there)
+
+---
+
+## Problem
+
+Buyer Services are currently displayed as a **flat list** (no section headers, no emojis, no bullet formatting).
+
+Tenant Services already display correctly with:
+
+* **Section Titles**
+* **Emojis**
+* **Bulleted items**
+* **Clean spacing + indentation**
+
+Buyer Services must display **the exact same way as Tenant Services.**
+
+---
+
+## Required Outcome
+
+Buyer Services must render as:
+
+1. **Group by Service Category** (do not flatten)
+2. Show **Category Header** formatted exactly like Tenant:
+
+   * **Emoji + Title**
+3. Under each header, show services as **bullet points** exactly like Tenant:
+
+   * same bullet style
+   * same font sizes
+   * same spacing/indentation
+4. Same behavior across all Buyer listing/property types
+
+---
+
+## Implementation Requirement (Display-Only)
+
+* **DO NOT edit** the service list content, wording, categories, or ordering.
+* **DO NOT migrate** or rewrite data.
+* This is strictly a **frontend rendering/layout fix**.
+
+Use the **same component / renderer / template** used for Tenant Services and apply it to Buyer Services.
+
+If Tenant uses something like:
+
+* `renderServicesByCategory(servicesGrouped)`
+  or a reusable component like:
+* `<ServicesSectionedDisplay />`
+
+Then Buyer must use the same pattern, pulling from Buyer’s existing Services dataset.
+
+---
+
+## Safeguards (Non-Negotiable)
+
+### DO NOT:
+
+* change any service titles, text, or bullet wording
+* add/remove services
+* reorder services
+* rename categories
+* change icons/emojis or section headings
+* change any Tenant Services code or styling
+* change database models, columns, or stored JSON
+* change the Buyer Services selection UI (checkboxes) — display-only task
+
+### DO:
+
+* only change **how Buyer Services are displayed**
+* reuse the **Tenant Services formatting exactly**
+
+---
+
+## Acceptance Criteria (How We Confirm It’s Done)
+
+✅ Buyer Services show:
+
+* **Emoji + Category Title**
+* **Bulleted services under each category**
+* **Same styling as Tenant Services**
+
+✅ Works in:
+
+* Buyer listing display
+* Agent bid view
+* Counter-bid view
+
+✅ Works across all Buyer listing/property types
+
+Provide screenshots:
+
+1. Tenant Services (existing correct formatting)
+2. Buyer Services after fix (must match format)

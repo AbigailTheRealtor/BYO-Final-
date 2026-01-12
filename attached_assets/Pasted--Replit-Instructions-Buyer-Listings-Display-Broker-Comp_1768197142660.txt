@@ -1,0 +1,150 @@
+## Replit Instructions — Buyer Listings: Display “Broker Compensation & Agency Agreement Terms” in Tenant-Style (Value-First) Format
+
+### Applies To
+
+**ONLY: Hire a Buyer’s Agent** listings (all Buyer property types / flows)
+
+Wherever **Broker Compensation & Agency Agreement Terms** are shown:
+
+* Public / actual listing display
+* Agent bid view (including private “Terms” / modal/panel)
+* Counter-bid view
+* Accepted bid summary view (if this section appears)
+
+---
+
+## Problem
+
+Buyer “Broker Compensation & Agency Agreement Terms” is currently displaying the **old, verbose format** that repeats structure/type labels, e.g.:
+
+* “Percentage of the Total Purchase Price + Flat Fee”
+* then separate indented lines for percentage and flat fee
+
+You want the **Tenant-style value-first format**, e.g.:
+
+✅ **Buyer’s Broker Purchase Fee: 2% + $2,000**
+(instead of showing the structure label + separate lines)
+
+---
+
+## Required Formatting Rules (Tenant-Style / Value-First)
+
+### Rule 1 — Main line must show the final combined value (when available)
+
+For each compensation line, display:
+
+**`<Field Label>: <Combined Value>`**
+
+Examples (formatting only — do NOT change any data):
+
+* `Buyer’s Broker Purchase Fee: 2% + $2,000`
+* `Buyer’s Broker Lease Fee: $6,000`
+* `Compensation (When Option Is Created): 2%`
+* `Compensation (If Purchase Option Is Exercised): $7,000`
+* `Protection Period Timeframe: 90 days`
+* `Early Termination Fee: Yes` (and show amount only if Yes)
+
+---
+
+### Rule 2 — Hide “structure/type label” lines when value exists
+
+If the system has the numeric value(s), then **do not display** lines like:
+
+* “Percentage of the Total Purchase Price”
+* “Compensation Type: Percentage”
+* “Compensation Type: Flat Fee”
+* “Percentage + Flat Fee” (as a standalone descriptor)
+
+Those are redundant once the final value is shown.
+
+---
+
+### Rule 3 — Only show sub-lines when conditional and necessary
+
+Keep sub-lines ONLY when they provide extra conditional detail, such as:
+
+* If **Early Termination Fee = Yes** → show `Termination Fee Amount: $X`
+* If **Retainer Fee = Yes** → show `Retainer Fee Amount: $X`
+* If Lease-Option includes two events → show both event lines separately (but still value-first)
+
+But do NOT list “Purchase Percentage” and “Additional Flat Fee” as sub-lines if the combined value is already shown on the main line.
+
+---
+
+### Rule 4 — Combine values in this order
+
+When both percent and flat fee exist, show in this order:
+
+* **`<percent>% + $<flat fee>`**
+
+If only one exists:
+
+* Percent only → `2%`
+* Flat only → `$2,000`
+
+---
+
+### Rule 5 — Keep section headers and spacing consistent with Tenant display
+
+The Buyer broker comp section should match the Tenant listing style for:
+
+* section headers
+* spacing
+* bullet/bold style (whatever Tenant uses)
+* indentation rules
+
+(Do not redesign — reuse the Tenant display styling.)
+
+---
+
+## Implementation Requirement (Display-Only)
+
+This is strictly a **rendering/layout** change:
+
+* Use the same Tenant “value-first” rendering logic/component for broker compensation display
+* Apply that same formatting logic to Buyer listings
+
+No changes to stored values, form inputs, or validation.
+
+---
+
+## Safeguards (Non-Negotiable)
+
+### DO NOT:
+
+* change database fields, column names, or JSON keys
+* change Buyer listing creation form inputs or required validations
+* change any tooltip text, placeholder text, labels, or UI layout in the form
+* change the meaning of compensation structures
+* remove any fields from being saved
+* change Tenant formatting (Tenant is the source of truth)
+* “hardcode” sample values into the UI
+
+### DO:
+
+* update Buyer listing display templates/components only
+* format output strings using existing saved values
+* show combined values on the main line exactly as specified
+
+---
+
+## Acceptance Criteria (How We Confirm It’s Done)
+
+✅ Buyer listings show value-first lines like:
+
+* `Buyer’s Broker Purchase Fee: 2% + $2,000`
+* `Buyer’s Broker Lease Fee: $6,000`
+* Lease-Option event compensation shows as value-first lines
+
+✅ No redundant “Percentage of…” / “Compensation Type…” lines appear when values exist
+✅ Works in listing view + agent bid view + counter view
+✅ No changes to saved data or form UI
+
+Provide screenshots:
+
+1. Before (old verbose format)
+2. After (value-first Tenant-style format)
+
+---
+
+If you want, paste one screenshot of your Tenant broker comp section (the “correct” layout) and I’ll mirror the exact header/bullet styling in these instructions so Replit can match it pixel-for-pixel.
