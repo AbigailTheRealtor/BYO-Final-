@@ -1,0 +1,299 @@
+REPLIT INSTRUCTIONS — FULL LISTING DISPLAY AUDIT & NORMALIZATION (COPY/PASTE AS ONE)
+OBJECTIVE (READ CAREFULLY)
+
+Perform a full audit and correction so that ALL live listings render exactly as entered during listing creation, using Hire a Tenant Agent live listing output as the GOLD STANDARD renderer/layout.
+
+This is not just a field-mapping issue — it is also a renderer/layout normalization issue.
+
+LISTING TYPES & PROPERTY TYPES (AUTHORITATIVE)
+
+Seller & Buyer listings support:
+
+Residential
+
+Income
+
+Commercial
+
+Business Opportunity
+
+Vacant Land
+
+Tenant & Landlord listings support:
+
+Residential
+
+Commercial
+
+These combinations must be audited and validated.
+
+GOLD STANDARD (NON-NEGOTIABLE)
+
+The Hire a Tenant Agent LIVE LISTING DISPLAY is the gold standard for:
+
+section layout
+
+section headers
+
+spacing & typography
+
+Services grouping (section titles + bullet points)
+
+Broker Compensation & Agency Agreement Terms structure (grouped subsections)
+
+hide-if-empty behavior
+
+conditional/secondary field rendering
+
+Seller, Buyer, and Landlord live listings must use the SAME renderer/layout components as Tenant, with only the schema (fields + labels) changing per listing type and property type.
+
+CORE REQUIREMENT (NO GUESSING)
+
+The live listing display must NOT invent labels or reuse hardcoded summaries.
+
+Instead:
+
+Replit must locate the exact labels/verbiage and field definitions used during listing creation
+
+The live listing must render a read-only version of those same definitions
+
+This guarantees that if creation changes, display stays in sync
+
+SAFEGUARDS (MANDATORY)
+
+No destructive DB changes
+
+Do not delete tables or columns
+
+Do not rename columns unless backward-compatible aliases are added
+
+No global text replacements
+
+Do NOT find/replace strings like “Acceptable”, “Minimum”, “Tenant”
+
+Fix must be structural (renderer + schema selection)
+
+Single renderer rule
+
+One shared “Tenant Gold Standard” renderer/layout
+
+Different schemas per listing_type + property_type
+
+Proof required
+
+Logs + screenshots must be provided
+
+No “fixed” without evidence
+
+DISPLAY RULES (MUST PASS EVERYWHERE)
+1) Exact field match
+
+Live listing must show exactly the fields the user filled out — no more, no less.
+
+2) Hide empty fields
+
+If a field was not filled out → do not show it at all.
+
+3) Property type + listing type logic
+
+Fields shown must respect both:
+
+listing type (Seller / Buyer / Tenant / Landlord)
+
+property type (Residential / Income / Commercial / Business / Vacant Land)
+
+4) “Other” handling
+
+If user selected Other and typed custom text:
+
+show ONLY the custom text
+
+never display the word “Other”
+
+5) Currency & percent formatting
+
+Currency → $500 (symbol BEFORE number)
+
+Percent → 50% (symbol AFTER number)
+
+Fields that can be % or $ must format based on the user’s selection
+
+6) Conditional / secondary fields
+
+Secondary questions display only if the user filled them out.
+
+7) Date formatting
+
+All dates must display as:
+
+January 12, 2026
+Never numeric formats like 01-12-2026.
+
+SERVICES DISPLAY (CRITICAL)
+
+Live Services display must match Tenant exactly:
+
+Grouped by section title
+
+Bullet points under each section
+
+“Additional / Other Services” shown as its own section
+
+Custom “Other” text displayed properly
+
+❌ Do NOT show:
+
+flat checklists
+
+paragraphs
+
+raw arrays
+
+BROKER COMPENSATION & AGENCY AGREEMENT TERMS (CRITICAL)
+
+Live Broker Compensation must match Tenant format exactly:
+
+Main header
+
+Grouped subsections (e.g., Compensation, Purchase, Lease-Option, Legal Terms, Brokerage Relationship, Additional Terms)
+
+Same spacing, indentation, separators
+
+Only the fields inside each subsection change per listing type.
+
+REQUIRED IMPLEMENTATION STEPS
+STEP 1 — Identify Tenant Gold Standard renderer
+
+Locate the exact Blade/Livewire files responsible for Tenant live listing display (layout + sections + services + broker comp).
+
+Log:
+
+[RENDERER_BASELINE]
+tenant_renderer_file=...
+
+STEP 2 — Identify current Buyer/Seller/Landlord renderers
+
+Locate files rendering live listings for Buyer, Seller, Landlord that differ in layout.
+
+Log:
+
+[RENDERER_CURRENT]
+listing_type=...
+renderer_file=...
+
+STEP 3 — Force all listings to use Tenant renderer layout
+
+Update routing/components so:
+
+Seller → Tenant renderer
+
+Buyer → Tenant renderer
+
+Landlord → Tenant renderer
+
+Tenant → Tenant renderer (already correct)
+
+Schemas determine content — NOT layout.
+
+Log:
+
+[RENDERER_SELECTED]
+listing_id=...
+listing_type=...
+property_type=...
+renderer=tenant_gold_standard
+
+STEP 4 — Implement schema-driven rendering
+
+Create schemas that mirror creation forms exactly for:
+
+Seller (5 schemas)
+
+Buyer (5 schemas)
+
+Tenant (2 schemas)
+
+Landlord (2 schemas)
+
+Each schema defines:
+
+label (exact creation verbiage)
+
+field_key
+
+type (text / currency / percent / date / select / multi)
+
+hide_if_empty = true
+
+other_text_key (if applicable)
+
+secondary_fields (if applicable)
+
+STEP 5 — Centralize formatting helpers
+
+All live listings must use shared helpers:
+
+formatCurrency()
+
+formatPercent()
+
+formatDate()
+
+resolveOther()
+
+No inline formatting.
+
+AUDIT MATRIX (MUST BE TESTED)
+
+Validate these 14 combinations:
+
+Seller (5): Residential, Income, Commercial, Business, Vacant Land
+
+Buyer (5): Residential, Income, Commercial, Business, Vacant Land
+
+Tenant (2): Residential, Commercial
+
+Landlord (2): Residential, Commercial
+
+Each test listing must include:
+
+filled + empty fields
+
+“Other” input
+
+currency
+
+percent
+
+conditional fields
+
+dates
+
+REQUIRED DELIVERABLES
+
+Audit results (what failed, what was fixed)
+
+Screenshot proof:
+
+Tenant (baseline)
+
+Seller (Residential + Commercial)
+
+Buyer (Residential + Vacant Land)
+
+Landlord (Commercial)
+
+Log excerpts proving:
+
+renderer selection
+
+schema selection
+
+fields shown vs hidden
+
+formatting applied
+
+HARD RULE (FINAL)
+
+Tenant live listing is the gold standard renderer.
+All other listing types must look the same visually and structurally — only the schema changes.
