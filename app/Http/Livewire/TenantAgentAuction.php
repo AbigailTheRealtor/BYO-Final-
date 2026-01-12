@@ -3498,6 +3498,13 @@ class TenantAgentAuction extends Component
 
     public function store()
     {
+        \Log::info('[STORE METHOD CALLED]', [
+            'user_type' => $this->user_type,
+            'listing_title' => $this->listing_title ?? 'N/A',
+            'counties' => $this->counties ?? [],
+            'timestamp' => now()->toDateTimeString(),
+        ]);
+        
         try {
 
             $this->isDraft = 0;
