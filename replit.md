@@ -44,6 +44,22 @@ Save Draft does NOT redirect but displays a confirmation message including the L
 
 The Buyer view (buyerAgentAuctionDetail.blade.php) includes property-type-aware categories for Residential, Income, Commercial, and Business property types. Agent bids and counter-bids also follow the same categorized services display and value-first broker compensation format.
 
+**Seller View Normalization (Jan 2026)**: The Seller listing detail view is fully normalized to match platform standards:
+- "Other" option cleanup: Filters literal "Other" from View, Amenities, Property Features arrays; shows custom text as regular badges (not in parentheses)
+- Occupant Type display: Shows "Occupied Until" with date in "F j, Y" format when Occupant Type is "Tenant"
+- Offered Financing/Currency: Displays comprehensive sub-questions for Assumable (terms, loan type, interest rate, monthly payment, balance, lender approval, down payment, remaining term, loan servicer, assumption fee), Seller Financing (amount, interest rate, term), Lease Option (price, payment, duration, fee, fee credit), Cryptocurrency (coin type, accepted percentage), and NFT (if offered)
+- Broker Compensation section: Organized into 6 subsections with horizontal dividers: Seller's Broker Compensation, Lease Terms (lease agreement interest, leasing fee), Lease-Option Terms (interest, compensation values), Legal Terms (protection period, early termination, retainer, retained deposits, agency timeframe), Brokerage Relationship, Additional Terms
+- Case-insensitive, null-safe comparisons: Uses `in_array(strtolower($value ?? ''), ['yes'])` pattern for Yes/No field checks
+
+**Lease-Option Compensation Standardization (Jan 2026)**: All 4 agent type views (Tenant, Buyer, Seller, Landlord) display Lease-Option compensation values in standardized format:
+- Percentages show "X% of Total Purchase Price" (not bare "X%")
+- Flat amounts show "$X,XXX" currency format
+- Consistent labels: "Compensation (When Option Is Created)" and "Compensation (If Purchase Option Is Exercised)"
+
+**Text Normalization**: Removed "the" from broker compensation phrases across all views:
+- "of Total Purchase Price" (not "of the Total Purchase Price")
+- "of Gross Lease Value" (not "of the Gross Lease Value")
+
 **Buyer Broker Compensation Structure (Jan 2026)**: The Buyer view Broker Compensation section uses the same label:value pair format as Tenant and Landlord views, organized into 6 labeled subsections with dividers across main listing, agent bid, and counter-bid contexts:
 1. Buyer's Broker Compensation (commission structure, purchase fee)
 2. Buyer's Broker Lease Fee (interested in lease, lease fee value-first)
