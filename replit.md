@@ -32,6 +32,13 @@ Save Draft does NOT redirect but displays a confirmation message including the L
 
 **Buyer Form - Validation Rules**: Counties are REQUIRED while Cities are optional. The frontend validation uses a browser event synchronization pattern where Livewire dispatches `buyer-counties-updated`, `buyer-auction-type-changed`, and `buyer-state-init` events to maintain synchronized state in `window.buyerState`. All four `checkFormValidity` functions (create/edit, full/limited service) use this authoritative state object rather than DOM queries. Split validation logic applies: Traditional listings skip `auction_time` validation, while Bidding Period listings require it. Backend validation in `store()` and `update()` methods enforces the same rules, ensuring frontend/backend alignment.
 
+**Listing Display Normalization (Jan 2026)**: All listing display views (Seller, Buyer, Landlord) are normalized to match the Tenant view as the "gold standard." Each view includes:
+- Formatting helpers (`$fmtMoney`, `$fmtPercent`, `$joinParts`, `$basisText`) for consistent currency/percentage display
+- CSS classes (`section-header`, `section-title`) for uniform section header styling
+- Services sections with property-type-aware groupings (Residential vs Commercial categories)
+- Broker Compensation sections renamed to "Broker Compensation & Agency Agreement Terms" with type-specific labels (Seller's, Buyer's, Landlord's)
+- Hide-if-empty logic and "Other" option handling matching the Tenant pattern
+
 ### System Design Choices
 The architecture emphasizes modularity through Laravel's structure and Livewire components. A database-first approach prioritizes local database solutions for core services like location. Clear separation of concerns is maintained between frontend, backend, and data persistence. The system is deployment-ready with production environment optimizations. Existing database schema and storage logic for fees are immutable, with fee format updates being display-only.
 
