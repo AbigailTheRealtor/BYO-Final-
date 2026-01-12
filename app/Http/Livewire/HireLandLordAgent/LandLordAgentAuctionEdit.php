@@ -1038,18 +1038,18 @@ class LandLordAgentAuctionEdit extends Component
             $this->property_criteria = $auction->get->property_criteria;
             $this->unit_size = $auction->get->unit_size;
             $this->unit_size_other = $auction->get->unit_size_other;
-            $this->appliances = $auction->get->appliances;
-            $this->appliances_other = $auction->get->appliances_other;
-            $this->preferance_details = $auction->get->preferance_details;
+            $this->appliances = $auction->get->appliances ?? '';
+            $this->appliances_other = $auction->get->appliances_other ?? '';
+            $this->preferance_details = $auction->get->preferance_details ?? '';
 
 
             // Sale Provision
-            $this->sale_provision = $auction->get->sale_provision;
-            $this->sale_provision_other = $auction->get->sale_provision_other;
-            $this->sale_provision_assignment = $auction->get->sale_provision_assignment;
-            $this->assignment_fee_type = $auction->get->assignment_fee_type;
-            $this->assignment_fee_amount = $auction->get->assignment_fee_amount;
-            $this->buyer_sell_contract = $auction->get->buyer_sell_contract;
+            $this->sale_provision = $auction->get->sale_provision ?? '';
+            $this->sale_provision_other = $auction->get->sale_provision_other ?? '';
+            $this->sale_provision_assignment = $auction->get->sale_provision_assignment ?? '';
+            $this->assignment_fee_type = $auction->get->assignment_fee_type ?? '$';
+            $this->assignment_fee_amount = $auction->get->assignment_fee_amount ?? '';
+            $this->buyer_sell_contract = $auction->get->buyer_sell_contract ?? '';
 
             // Budget & Financing
             $this->maximum_budget = $auction->get->maximum_budget;
