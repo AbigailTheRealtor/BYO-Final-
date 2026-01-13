@@ -3535,7 +3535,13 @@ class TenantAgentAuction extends Component
 
             $auction = $this->listingId
                 ? $auctionClass::find($this->listingId)
-                : new $auctionClass();
+                : null;
+            
+            // If listingId was set but record not found, create new instance
+            if (!$auction) {
+                $auction = new $auctionClass();
+            }
+            
             $auction->user_id = Auth::id();
             $auction->title = $this->listing_title;
             $auction->is_draft = 0;
