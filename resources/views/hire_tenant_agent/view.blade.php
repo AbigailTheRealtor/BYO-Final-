@@ -3894,13 +3894,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                     <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">{{ $catName }}</div>
                                                                     <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem; list-style: none;">
                                                                         @foreach ($matchedSvcs as $svc)
+                                                                            @php $displaySvc = function_exists('normalize_service_text') ? normalize_service_text($svc) : $svc; @endphp
                                                                             @if($isServiceMatched($svc))
                                                                             <li style="font-size: 0.9rem; margin-bottom: 4px; color: #28a745;">
-                                                                                <i class="fa fa-check-circle me-1"></i>{{ $svc }}
+                                                                                <i class="fa fa-check-circle me-1"></i>{{ $displaySvc }}
                                                                             </li>
                                                                             @else
                                                                             <li style="font-size: 0.9rem; margin-bottom: 4px; color: #17a2b8;">
-                                                                                <i class="fa fa-plus-circle me-1"></i>{{ $svc }} <small>(extra)</small>
+                                                                                <i class="fa fa-plus-circle me-1"></i>{{ $displaySvc }} <small>(extra)</small>
                                                                             </li>
                                                                             @endif
                                                                         @endforeach
@@ -3914,13 +3915,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Additional Services</div>
                                                                 <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem; list-style: none;">
                                                                     @foreach ($ltdOtherServices as $otherSvc)
+                                                                        @php $displayOtherSvc = function_exists('normalize_service_text') ? normalize_service_text($otherSvc) : $otherSvc; @endphp
                                                                         @if($isServiceMatched($otherSvc))
                                                                         <li style="font-size: 0.9rem; margin-bottom: 4px; color: #28a745;">
-                                                                            <i class="fa fa-check-circle me-1"></i>{{ $otherSvc }}
+                                                                            <i class="fa fa-check-circle me-1"></i>{{ $displayOtherSvc }}
                                                                         </li>
                                                                         @else
                                                                         <li style="font-size: 0.9rem; margin-bottom: 4px; color: #17a2b8;">
-                                                                            <i class="fa fa-plus-circle me-1"></i>{{ $otherSvc }} <small>(extra)</small>
+                                                                            <i class="fa fa-plus-circle me-1"></i>{{ $displayOtherSvc }} <small>(extra)</small>
                                                                         </li>
                                                                         @endif
                                                                     @endforeach
@@ -3936,8 +3938,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 </div>
                                                                 <ul class="services mb-0" style="margin-top: 0.5rem; padding-left: 1.2rem; list-style: none;">
                                                                     @foreach ($missingServices as $missingSvc)
+                                                                    @php $displayMissingSvc = function_exists('normalize_service_text') ? normalize_service_text($missingSvc) : $missingSvc; @endphp
                                                                     <li style="font-size: 0.9rem; margin-bottom: 4px; color: #dc3545;">
-                                                                        <i class="fa fa-times-circle me-1"></i>{{ $missingSvc }}
+                                                                        <i class="fa fa-times-circle me-1"></i>{{ $displayMissingSvc }}
                                                                     </li>
                                                                     @endforeach
                                                                 </ul>
@@ -4440,9 +4443,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     
                                                     // Create normalized lookup for selected services
                                                     // Apply display-layer normalization for legacy data
+                                                    // Key by the NORMALIZED NEW text so legacy data matches updated config
                                                     $selectedNormalized = [];
                                                     foreach ($services as $svc) {
                                                         $displaySvc = function_exists('normalize_service_text') ? normalize_service_text($svc) : $svc;
+                                                        // Key by normalized NEW text so config lookup works
+                                                        $selectedNormalized[$normalizeStr($displaySvc)] = $displaySvc;
+                                                        // Also key by original normalized text for backwards compatibility
                                                         $selectedNormalized[$normalizeStr($svc)] = $displaySvc;
                                                     }
                                                     
@@ -4565,10 +4572,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     }
                                                     
                                                     // Find unmapped services (services in listing not in config)
+                                                    // Check both original and normalized display text to handle legacy data
                                                     $unmappedServices = [];
                                                     foreach ($services as $svc) {
-                                                        if (!isset($configFlatNormalized[$normalizeStr($svc)]) && $svc !== 'Other') {
-                                                            $unmappedServices[] = $svc;
+                                                        $displaySvc = function_exists('normalize_service_text') ? normalize_service_text($svc) : $svc;
+                                                        // Check if either original or normalized text matches config
+                                                        $matchesConfig = isset($configFlatNormalized[$normalizeStr($svc)]) || isset($configFlatNormalized[$normalizeStr($displaySvc)]);
+                                                        if (!$matchesConfig && $svc !== 'Other') {
+                                                            $unmappedServices[] = $displaySvc;
                                                         }
                                                     }
                                                     @endphp
