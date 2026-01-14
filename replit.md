@@ -60,6 +60,15 @@ The Buyer view (buyerAgentAuctionDetail.blade.php) includes property-type-aware 
 - "of Total Purchase Price" (not "of the Total Purchase Price")
 - "of Gross Lease Value" (not "of the Gross Lease Value")
 
+**Service Text Normalization (Jan 2026)**: For Commercial Tenant Agent listings, service text has been standardized:
+- Old: "Send listing alerts from commercial platforms (e.g., LoopNet, Crexi, CoStar, or local MLS) that match the Tenant's leasing criteria"
+- New: "Send listing alerts from real estate platforms that match the Tenant's leasing criteria."
+- Helper functions in `app/helpers.php`:
+  - `normalize_service_text($service)`: Maps legacy service text to new standardized text for display
+  - `normalize_services_array($services)`: Applies normalization to arrays of services
+- Display-layer fallback mapping: Legacy data is automatically translated at render time without modifying database rows
+- ADU option ("Accessory Unit / Guest Suite (ADU)") is excluded from Commercial property leasing space dropdown
+
 **Buyer Broker Compensation Structure (Jan 2026)**: The Buyer view Broker Compensation section uses the same label:value pair format as Tenant and Landlord views, organized into 6 labeled subsections with dividers across main listing, agent bid, and counter-bid contexts:
 1. Buyer's Broker Compensation (commission structure, purchase fee)
 2. Buyer's Broker Lease Fee (interested in lease, lease fee value-first)
