@@ -117,7 +117,7 @@
         <label class="fw-bold d-flex align-items-center">
             Landlord’s Broker Lease Fee:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Choose how the Landlord’s Broker will be compensated if the property is leased. Options include: a percentage of the net aggregate rent, a percentage of the gross rent, a percentage of one month’s rent, a flat fee, or select “Other” to define a custom payment structure. Then, enter the appropriate amount based on your selection.">
+                title="Choose how the Landlord’s Broker will be compensated if the property is leased. Options include: a percentage of the net aggregate rent, a percentage of the gross rent, a percentage of the month’s rent, a flat fee, or select “Other” to define a custom payment structure. Then, enter the appropriate amount based on your selection.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -578,7 +578,7 @@
             Lease Renewal/Extension Fee:
 
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select how the Broker will be compensated if the Tenant renews or extends the lease. Options include: a percentage of the net aggregate rent, a percentage of the gross rent, a percentage of one month’s rent, a flat fee, or select “Other” to define a custom payment structure. Then, enter the appropriate amount based on your selection.">
+                title="Select how the Broker will be compensated if the Tenant renews or extends the lease. Options include: a percentage of the net aggregate rent, a percentage of the gross rent, a percentage of the month’s rent, a flat fee, or select “Other” to define a custom payment structure. Then, enter the appropriate amount based on your selection.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
 
@@ -726,7 +726,7 @@
         Interested in Property Management:
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select “Yes” if you would like the Agent/Broker to provide ongoing property management services in addition to leasing. Property management typically includes tasks such as rent collection, maintenance coordination, Tenant communications, lease enforcement, and renewals.">
+            title="Select whether you would like the Agent/Broker to provide ongoing property management services in addition to leasing. If &quot;Yes&quot; is selected, you will be prompted to enter compensation details.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -1047,7 +1047,7 @@
         <label class="fw-bold d-flex align-items-center">
             Protection Period Timeframe (Days):
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the number of days after the Listing Period ends during which the Landlord’s Broker is entitled to a fee if the property is leased to a prospect with whom the Broker—or any other Broker—communicated during the Listing Period. If requested, the Broker must provide a list of those prospects, and compensation is limited to the names on that list. This protection ends if the Landlord signs a good faith exclusive right-to-lease agreement with another Broker after the Listing Period.">
+                title="Enter the number of days after the Listing Period ends during which the Landlord agrees to pay a commission if the property is leased, sold, or otherwise transferred or acquired to a prospect with whom the Broker—or any other Broker—communicated during the Listing Period. If requested, the Broker must provide a list of such prospects, and compensation is limited to the names on that list. This protection period ends if the Landlord enters into a good-faith exclusive leasing agreement with another Broker after the Listing Period.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -1064,7 +1064,7 @@
         <label class="fw-bold d-flex align-items-center">
             Protection Period Timeframe (Days):
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the number of days after the Leasing Period ends during which the Landlord agrees to pay a commission if the property is leased to a prospect with whom the Broker—or any other Broker—communicated during the Leasing Period. If requested, the Broker must provide a list of such prospects, and compensation is limited to the names on that list. This protection period ends if the Landlord enters into a good faith exclusive leasing agreement with another Broker after the Leasing Period.">
+                title="Enter the number of days after the Listing Period ends during which the Landlord agrees to pay a commission if the property is leased, sold, or otherwise transferred or acquired to a prospect with whom the Broker—or any other Broker—communicated during the Listing Period. If requested, the Broker must provide a list of such prospects, and compensation is limited to the names on that list. This protection period ends if the Landlord enters into a good-faith exclusive leasing agreement with another Broker after the Listing Period.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
