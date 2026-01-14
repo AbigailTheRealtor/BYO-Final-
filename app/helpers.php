@@ -77,4 +77,51 @@ if (!function_exists('db_time')) {
     {
         return QrCode::size($size)->generate($uri);
     }
+
+    /**
+     * Normalize service text for display - applies fallback mapping for legacy data.
+     * This function translates old service text to new standardized text.
+     * For Commercial Tenant Agent services only.
+     * 
+     * @param string $service The service text from database
+     * @return string Normalized service text for display
+     */
+    function normalize_service_text($service)
+    {
+        // Mapping of old service text to new standardized text
+        $serviceMappings = [
+            // Commercial Tenant Agent - Property Search service text update
+            "Send listing alerts from commercial platforms (e.g., LoopNet, Crexi, CoStar, or local MLS) that match the Tenant's leasing criteria" 
+                => "Send listing alerts from real estate platforms that match the Tenant's leasing criteria.",
+        ];
+        
+        // Check if the service matches any old text (case-insensitive normalized comparison)
+        foreach ($serviceMappings as $oldText => $newText) {
+            // Normalize both strings for comparison (handle smart quotes vs regular quotes)
+            $normalizedService = preg_replace('/[\x{2018}\x{2019}]/u', "'", $service);
+            $normalizedOld = preg_replace('/[\x{2018}\x{2019}]/u', "'", $oldText);
+            
+            if (strcasecmp(trim($normalizedService), trim($normalizedOld)) === 0) {
+                return $newText;
+            }
+        }
+        
+        return $service;
+    }
+
+    /**
+     * Normalize an array of services for display.
+     * Applies fallback mapping for legacy data.
+     * 
+     * @param array $services Array of service texts
+     * @return array Normalized service texts
+     */
+    function normalize_services_array($services)
+    {
+        if (!is_array($services)) {
+            return $services;
+        }
+        
+        return array_map('normalize_service_text', $services);
+    }
 }

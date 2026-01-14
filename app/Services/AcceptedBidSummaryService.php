@@ -227,7 +227,7 @@ class AcceptedBidSummaryService
             "Launch hyperlocal digital ads targeting the Tenant's preferred leasing areas"
         ],
         'Property Search, Alerts & Matching' => [
-            "Send listing alerts from commercial platforms (e.g., LoopNet, Crexi, CoStar, or local MLS) that match the Tenant's leasing criteria",
+            "Send listing alerts from real estate platforms that match the Tenant's leasing criteria.",
             "Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant's rental criteria",
             "Communicate with the Landlord's Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions",
             "Evaluate properties for layout efficiency, building specs, logistics, zoning fit, and operational alignment"

@@ -894,7 +894,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         'Launch hyperlocal digital ads targeting the Tenant’s preferred leasing areas',
                     ],
                     '🔍 Property Search, Alerts & Matching' => [
-                        'Send listing alerts from commercial platforms (e.g., LoopNet, Crexi, CoStar, or local MLS) that match the Tenant’s leasing criteria',
+                        'Send listing alerts from real estate platforms that match the Tenant's leasing criteria.',
                         'Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant’s rental criteria',
                         'Communicate with the Landlord’s Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions',
                         'Evaluate properties for layout efficiency, building specs, logistics, zoning fit, and operational alignment',
@@ -2690,7 +2690,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         'Launch hyperlocal digital ads targeting the Tenant’s preferred leasing areas',
                                                     ],
                                                     '🔍 Property Search, Alerts & Matching' => [
-                                                        'Send listing alerts from commercial platforms (e.g., LoopNet, Crexi, CoStar, or local MLS) that match the Tenant’s leasing criteria',
+                                                        'Send listing alerts from real estate platforms that match the Tenant's leasing criteria.',
                                                         'Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant’s rental criteria',
                                                         'Communicate with the Landlord’s Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions',
                                                         'Evaluate properties for layout efficiency, building specs, logistics, zoning fit, and operational alignment',
@@ -3749,7 +3749,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             "Launch hyperlocal digital ads targeting the Tenant's preferred leasing areas",
                                                         ],
                                                         "🔍 Property Search, Alerts & Matching" => [
-                                                            "Send listing alerts from commercial platforms (e.g., LoopNet, Crexi, CoStar, or local MLS) that match the Tenant's leasing criteria",
+                                                            "Send listing alerts from real estate platforms that match the Tenant's leasing criteria.",
                                                             "Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant's rental criteria",
                                                             "Communicate with the Landlord's Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions",
                                                             "Evaluate properties for layout efficiency, building specs, logistics, zoning fit, and operational alignment",
@@ -4439,9 +4439,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     };
                                                     
                                                     // Create normalized lookup for selected services
+                                                    // Apply display-layer normalization for legacy data
                                                     $selectedNormalized = [];
                                                     foreach ($services as $svc) {
-                                                        $selectedNormalized[$normalizeStr($svc)] = $svc;
+                                                        $displaySvc = function_exists('normalize_service_text') ? normalize_service_text($svc) : $svc;
+                                                        $selectedNormalized[$normalizeStr($svc)] = $displaySvc;
                                                     }
                                                     
                                                     $bidPropertyType = $allMeta['property_type'] ?? @$auction->get->property_type ?? 'Residential Property';
@@ -4513,7 +4515,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             "Launch hyperlocal digital ads targeting the Tenant's preferred leasing areas"
                                                         ],
                                                         'Property Search, Alerts & Matching' => [
-                                                            "Send listing alerts from commercial platforms (e.g., LoopNet, Crexi, CoStar, or local MLS) that match the Tenant's leasing criteria",
+                                                            "Send listing alerts from real estate platforms that match the Tenant's leasing criteria.",
                                                             "Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant's rental criteria",
                                                             "Communicate with the Landlord's Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions",
                                                             "Evaluate properties for layout efficiency, building specs, logistics, zoning fit, and operational alignment"

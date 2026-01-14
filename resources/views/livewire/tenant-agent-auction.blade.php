@@ -1207,14 +1207,16 @@ $leasing_space = [
 'class' => 'commercial-length',
 ],
 ];
-$acceptable_leasing_space = [
-['name' => 'Accessory Unit / Guest Suite (ADU)'],
-
-['name' => 'Entire Property'],
-['name' => 'Single Room'],
-
-// ['name' => 'Open to Leasing Either Entire Property or Single Room'],
-];
+$acceptable_leasing_space = $property_type === 'Commercial Property' 
+    ? [
+        ['name' => 'Entire Property'],
+        ['name' => 'Single Room'],
+    ]
+    : [
+        ['name' => 'Accessory Unit / Guest Suite (ADU)'],
+        ['name' => 'Entire Property'],
+        ['name' => 'Single Room'],
+    ];
 $garage_parking_spaces = [
 ['name' => '1 to 5 Spaces'],
 ['name' => '6 to 12 Spaces'],
