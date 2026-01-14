@@ -4,7 +4,7 @@
         Interested in Property Management:
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select “Yes” if you would like the Agent/Broker to provide ongoing property management services in addition to leasing. Property management typically includes tasks such as rent collection, maintenance coordination, Tenant communications, lease enforcement, and renewals.">
+            title="Select whether you would like the Agent/Broker to provide ongoing property management services in addition to leasing. If &quot;Yes&quot; is selected, you will be prompted to enter compensation details.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
