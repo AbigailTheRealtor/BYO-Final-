@@ -812,7 +812,7 @@
         <label class="fw-bold">Pets Allowed:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select whether pets are allowed. If so, provide details on pet types, number, weight limits, and any restrictions.">
+            title="Select whether pets are allowed at the property. If &quot;Yes&quot; is selected, provide details including the number of pets allowed, acceptable pet types, maximum weight per pet, and any applicable pet restrictions.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
 
