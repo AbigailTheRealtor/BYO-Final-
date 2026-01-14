@@ -253,7 +253,7 @@
         <label class="fw-bold d-flex align-items-center">
             Tenant's Broker Commission Structure:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select how the Tenant's Broker will be compensated. Options include: the Landlord's Broker compensating the Tenant's Broker from the Landlord's Broker Commission, the Landlord paying the Tenant's Broker separately, or offering no compensation to the Tenant's Broker.">
+            title="Select how the Tenant's Broker will be compensated. Options include compensation from the Landlord's Broker commission, the Landlord paying the Tenant's Broker separately, or offering no compensation to the Tenant's Broker.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -278,7 +278,7 @@
                     <label class="form-label">Tenant's Broker Commission Fee:
 
                         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                            title="Choose how the Tenant’s Broker will be compensated if a lease is secured. Options include: a percentage of the rent due each rental period, a percentage of the gross lease value, a percentage of the first month’s rent, a flat fee, or “Other” to define a custom payment structure. Then, enter the appropriate amount based on your selection.">
+                            title="Enter the amount offered to the Tenant’s Broker if a lease is secured. This can be a percentage of rent, a percentage of the gross lease value, a percentage of the first month’s rent, a flat fee, or a custom amount if &quot;Other&quot; is selected. Enter the appropriate amount based on your selection.">
                             <i class="fa-solid fa-circle-info"></i>
                         </span>
                     </label>

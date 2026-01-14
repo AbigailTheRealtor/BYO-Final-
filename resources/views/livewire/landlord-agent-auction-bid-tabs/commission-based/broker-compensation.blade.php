@@ -253,7 +253,7 @@
         <label class="fw-bold d-flex align-items-center">
             Tenant's Broker Commission Structure:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select how the Tenant's Broker will be compensated. Options include: the Landlord's Broker compensating the Tenant's Broker from the Landlord's Broker Commission, the Landlord paying the Tenant's Broker separately, or offering no compensation to the Tenant's Broker.">
+            title="Select how the Tenant's Broker will be compensated. Options include compensation from the Landlord's Broker commission, the Landlord paying the Tenant's Broker separately, or offering no compensation to the Tenant's Broker.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
