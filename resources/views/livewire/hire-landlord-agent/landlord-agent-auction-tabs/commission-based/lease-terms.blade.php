@@ -12,7 +12,7 @@
 <div class="form-group">
     <label class="fw-bold">Occupant Type: <span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Select who currently occupies the property, or indicate if it is vacant. If &quot;Owner&quot; or &quot;Tenant&quot; is selected, you’ll be prompted to enter the date the property will be vacated.">
+        title="Select who currently occupies the property. If Tenant or Owner is selected, enter the Occupied Until date. If Vacant is selected, no date is required.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
@@ -1027,7 +1027,7 @@
     <label class="fw-bold">Desired Lease Term: <span class="text-danger">*</span></label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Select the Landlord’s preferred lease duration.">
+        title="Select the lease term the Landlord prefers to offer.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
