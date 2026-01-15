@@ -590,11 +590,10 @@ $safeKey = function(...$parts) {
             @elseif($brokerage_relationship === 'Single Agent Representation')
                 <h6 class="fw-bold">• Single Agent Representation:</h6>
                 <ul class="mb-2 ps-3" style="list-style-type: disc;">
-                    <li>The Broker acts as a fiduciary, providing the highest level of loyalty, confidentiality,
-                        obedience, and full disclosure.</li>
-                    <li>Always acts in the Buyer’s best interest.</li>
-                    <li>If required by state law, a Single Agent Notice will be provided by the Broker and signed by the appropriate party.</li>
+                    <li>The Broker acts as a fiduciary, providing the highest level of loyalty, confidentiality, obedience, and full disclosure.</li>
+                    <li>The Broker must always act in the Buyer’s best interest.</li>
                     <li>Requires written consent from both parties.</li>
+                    <li>If required by state law, a Single Agent Notice will be provided by the Broker and signed by the appropriate party.</li>
                 </ul>
             @elseif($brokerage_relationship === 'Dual Agency Representation')
                 <h6 class="fw-bold">• Dual Agency Representation:</h6>
