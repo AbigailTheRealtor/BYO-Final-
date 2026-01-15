@@ -327,7 +327,7 @@
         <label class="fw-bold"> Purchase Price:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the purchase price being offered.">
+            title="Enter the total price the Seller is seeking for the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
@@ -343,7 +343,10 @@
 
     <div class="form-group mt-2">
         <label class="fw-bold"> Down Payment:</label>
-
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the minimum down payment amount the Seller will accept from the Buyer.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
         <div class="input-group">
             <!-- Select for type -->
             <select wire:model="down_payment_type" class="form-select" style="max-width: 100px;">
@@ -371,8 +374,7 @@
     <div class="form-group mt-2">
         <label class="fw-bold"> Seller Financing:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the total amount of financing the Seller will provide to the Buyer.
-This amount represents the portion of the purchase price that the Seller will finance directly, instead of through traditional lending institutions.">
+            title="Enter the portion of the purchase price the Seller is willing to finance for the Buyer.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-group">
@@ -403,7 +405,7 @@ This amount represents the portion of the purchase price that the Seller will fi
         <label class="fw-bold"> Interest Rate:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the interest rate charged on the financed amount.">
+            title="Enter the interest rate the Seller will charge on the seller-financed amount.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
 

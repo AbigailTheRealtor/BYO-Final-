@@ -300,7 +300,7 @@
         <label class="fw-bold">Desired Purchase Price:<span class="text-danger">*</span></label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the total price the Buyer is offering to purchase the property.">
+            title="Enter the total price the Buyer is offering to purchase a property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
@@ -402,7 +402,7 @@
 
 
            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the amount the Buyer would like the Seller to finance.">
+            title="Enter the amount the Buyer is requesting the Seller to finance toward the purchase price.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
 
@@ -477,7 +477,7 @@
         <label class="fw-bold">Desired Interest Rate:<span class="text-danger">*</span></label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the interest rate the Buyer is offering.">
+            title="Enter the interest rate the Buyer is requesting for the seller-financed amount.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-group">
