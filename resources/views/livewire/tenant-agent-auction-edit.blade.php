@@ -1353,154 +1353,154 @@
         [
             'name' => 'Assumable',
             'description' =>
-                'Buyer is allowed to assume the Seller’s existing mortgage, subject to lender approval. This can be attractive if the current interest rate is lower than prevailing market rates.',
+                'Allows an existing mortgage to be assumed by a Buyer, subject to lender approval. This may be beneficial if the existing interest rate is lower than current market rates.',
         ],
         [
             'name' => 'Cash',
-            'description' => 'Buyer is allowed to pay the full purchase price in cash, with no financing contingency.',
+            'description' => 'Purchase is completed without financing, with the full price paid in cash and no financing contingency.',
         ],
         [
             'name' => 'Conventional',
-            'description' => 'Buyer is allowed to use a traditional loan that meets standard underwriting guidelines.',
+            'description' => 'Uses a traditional mortgage that meets standard underwriting guidelines.',
         ],
         [
             'name' => 'Cryptocurrency',
             'description' =>
-                'Buyer is allowed to use digital currency (e.g., Bitcoin or Ethereum) as a form of payment, subject to Seller acceptance.',
+                'Uses digital currency (e.g., Bitcoin or Ethereum) as full or partial consideration, subject to Seller acceptance.',
         ],
         [
             'name' => 'Exchange/Trade',
-            'description' => 'Buyer is allowed to offer another asset as part of the purchase in a trade.',
+            'description' => 'Includes another asset as part of the purchase consideration in a trade.',
         ],
         [
             'name' => 'FHA',
             'description' =>
-                'Buyer is allowed to use a loan backed by the Federal Housing Administration, typically requiring the property to meet condition standards.',
+                'Uses a loan backed by the Federal Housing Administration, typically requiring the property to meet condition standards.',
         ],
         [
             'name' => 'Jumbo',
             'description' =>
-                'Buyer is allowed to use a loan above conforming loan limits, often requiring stricter qualifications.',
+                'Uses a loan that exceeds conforming loan limits and often requires stricter borrower qualifications.',
         ],
         [
             'name' => 'Lease Option',
             'description' =>
-                'Buyer is allowed to lease the property with the option to purchase it later under pre-agreed terms.',
+                'Allows the property to be leased with an option to purchase later under pre-agreed terms.',
         ],
         [
             'name' => 'Lease Purchase',
             'description' =>
-                'Buyer is allowed to lease the property now and commit to purchase it later, often with a portion of rent credited toward the purchase.',
+                'Allows the property to be leased now with a commitment to purchase later, often with a portion of rent credited toward the purchase price.',
         ],
         [
             'name' => 'Non-Fungible Token (NFT)',
             'description' =>
-                'Buyer is allowed to use a verified digital asset as full or partial consideration, subject to Seller approval.',
+                'Uses a verified digital asset as full or partial consideration, subject to Seller approval.',
         ],
         [
             'name' => 'No-Doc',
             'description' =>
-                'Buyer is allowed to use a loan requiring little to no income documentation, often used by self-employed borrowers.',
+                'Uses a loan requiring limited or no income documentation.',
         ],
         [
             'name' => 'Non-QM',
             'description' =>
-                'Buyer is allowed to use a Non-Qualified Mortgage that allows alternative income verification methods.',
+                'Uses a Non-Qualified Mortgage that allows alternative income verification methods.',
         ],
         [
             'name' => 'Seller Financing',
-            'description' => 'Seller is offering to finance all or part of the purchase price directly to the Buyer.',
+            'description' => 'Purchase price is financed in whole or in part directly by the Seller.',
         ],
         [
             'name' => 'USDA',
             'description' =>
-                'Buyer is allowed to use a USDA loan for eligible rural properties and low-to-moderate income buyers.',
+                'Uses a USDA-backed loan for eligible rural properties and qualifying buyers.',
         ],
         [
             'name' => 'VA',
             'description' =>
-                'Buyer is allowed to use a VA loan backed by the U.S. Department of Veterans Affairs, available to eligible veterans and active-duty service members.',
+                'Uses a VA-backed loan available to eligible veterans and active-duty service members.',
         ],
         [
             'name' => 'Other',
-            'description' => 'Buyer is allowed to use an alternative financing method not listed above.',
+            'description' => 'Uses an alternative financing or consideration method not listed above.',
         ],
     ];
     $financing_options = [
         [
             'name' => 'Assumable',
             'description' =>
-                'Buyer is allowed to assume the Seller’s existing mortgage, subject to lender approval. This can be attractive if the current interest rate is lower than prevailing market rates.',
+                'Allows an existing mortgage to be assumed by a Buyer, subject to lender approval. This may be beneficial if the existing interest rate is lower than current market rates.',
         ],
         [
             'name' => 'Cash',
-            'description' => 'Buyer is allowed to pay the full purchase price in cash, with no financing contingency.',
+            'description' => 'Purchase is completed without financing, with the full price paid in cash and no financing contingency.',
         ],
         [
             'name' => 'Conventional',
-            'description' => 'Buyer is allowed to use a traditional loan that meets standard underwriting guidelines.',
+            'description' => 'Uses a traditional mortgage that meets standard underwriting guidelines.',
         ],
         [
             'name' => 'Cryptocurrency',
             'description' =>
-                'Buyer is allowed to use digital currency (e.g., Bitcoin or Ethereum) as a form of payment, subject to Seller acceptance.',
+                'Uses digital currency (e.g., Bitcoin or Ethereum) as full or partial consideration, subject to Seller acceptance.',
         ],
         [
             'name' => 'Exchange/Trade',
-            'description' => 'Buyer is allowed to offer another asset as part of the purchase in a trade.',
+            'description' => 'Includes another asset as part of the purchase consideration in a trade.',
         ],
         [
             'name' => 'FHA',
             'description' =>
-                'Buyer is allowed to use a loan backed by the Federal Housing Administration, typically requiring the property to meet condition standards.',
+                'Uses a loan backed by the Federal Housing Administration, typically requiring the property to meet condition standards.',
         ],
         [
             'name' => 'Jumbo',
             'description' =>
-                'Buyer is allowed to use a loan above conforming loan limits, often requiring stricter qualifications.',
+                'Uses a loan that exceeds conforming loan limits and often requires stricter borrower qualifications.',
         ],
         [
             'name' => 'Lease Option',
             'description' =>
-                'Buyer is allowed to lease the property with the option to purchase it later under pre-agreed terms.',
+                'Allows the property to be leased with an option to purchase later under pre-agreed terms.',
         ],
         [
             'name' => 'Lease Purchase',
             'description' =>
-                'Buyer is allowed to lease the property now and commit to purchase it later, often with a portion of rent credited toward the purchase.',
+                'Allows the property to be leased now with a commitment to purchase later, often with a portion of rent credited toward the purchase price.',
         ],
         [
             'name' => 'Non-Fungible Token (NFT)',
             'description' =>
-                'Buyer is allowed to use a verified digital asset as full or partial consideration, subject to Seller approval.',
+                'Uses a verified digital asset as full or partial consideration, subject to Seller approval.',
         ],
         [
             'name' => 'No-Doc',
             'description' =>
-                'Buyer is allowed to use a loan requiring little to no income documentation, often used by self-employed borrowers.',
+                'Uses a loan requiring limited or no income documentation.',
         ],
         [
             'name' => 'Non-QM',
             'description' =>
-                'Buyer is allowed to use a Non-Qualified Mortgage that allows alternative income verification methods.',
+                'Uses a Non-Qualified Mortgage that allows alternative income verification methods.',
         ],
         [
             'name' => 'Seller Financing',
-            'description' => 'Seller is offering to finance all or part of the purchase price directly to the Buyer.',
+            'description' => 'Purchase price is financed in whole or in part directly by the Seller.',
         ],
         [
             'name' => 'USDA',
             'description' =>
-                'Buyer is allowed to use a USDA loan for eligible rural properties and low-to-moderate income buyers.',
+                'Uses a USDA-backed loan for eligible rural properties and qualifying buyers.',
         ],
         [
             'name' => 'VA',
             'description' =>
-                'Buyer is allowed to use a VA loan backed by the U.S. Department of Veterans Affairs, available to eligible veterans and active-duty service members.',
+                'Uses a VA-backed loan available to eligible veterans and active-duty service members.',
         ],
         [
             'name' => 'Other',
-            'description' => 'Buyer is allowed to use an alternative financing method not listed above.',
+            'description' => 'Uses an alternative financing or consideration method not listed above.',
         ],
     ];
 
