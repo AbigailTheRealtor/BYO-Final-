@@ -504,24 +504,15 @@ $safeKey = function(...$parts) {
 
     @if ($retainer_fee_option === 'Yes')
         <div class="mt-3" wire:key="{{ $safeKey('retainer-fee-details', $retainer_fee_option) }}">
-
-            <div class="form-group mb-4">
-                <label class="fw-bold">
-                    Retainer Fee Amount:
-                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                        title=" Enter the amount of the retainer fee you agree to pay the Broker upfront before services begin.">
-                        <i class="fa-solid fa-circle-info"></i>
-
-                    </span>
-                </label>
-                <div class="input-group">
-                    <span class="input-group-text">$</span>
-                    <input type="text" wire:model.lazy="retainer_fee_amount" class="form-control"
-                        placeholder="Enter retainer fee amount (e.g., 500)"
-                        oninput="formatWithCommas(this)" onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
-                </div>
-
+            <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input type="text" wire:model.lazy="retainer_fee_amount" class="form-control"
+                    placeholder="Enter retainer fee amount (e.g., 500)"
+                    oninput="formatWithCommas(this)" onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
             </div>
+            @error('retainer_fee_amount')
+                <span class="text-danger small">{{ $message }}</span>
+            @enderror
 
             <div class="mt-3">
                 <label class="fw-bold">
