@@ -386,20 +386,20 @@
         <span class="error mt-2" id="bedrooms_error"></span>
     </div>
     <!-- Other Bedrooms Input (only shown when "Other" is selected) -->
-    @php $bedroomsVal = is_string($bedrooms ?? '') ? ($bedrooms ?? '') : ''; @endphp
-    <div class="form-group" wire:key="other-bedrooms-wrapper-{{ $bedroomsVal ?: 'empty' }}" style="{{ $bedroomsVal === 'Other' ? '' : 'display: none;' }}">
-        <div class="input-cover">
-            <input type="number" wire:model="other_bedrooms" class="form-control has-icon"
-                data-icon="fa-solid fa-bed" placeholder="Enter minimum bedrooms needed (e.g., 11)">
+    @if ($bedrooms === 'Other')
+        <div class="form-group">
+            <div class="input-cover">
+                <input type="number" wire:model="other_bedrooms" class="form-control has-icon"
+                    data-icon="fa-solid fa-bed" placeholder="Enter minimum bedrooms needed (e.g., 11)">
+            </div>
+            <span class="error mt-2" id="other_bedrooms_error"></span>
         </div>
-        <span class="error mt-2" id="other_bedrooms_error"></span>
-    </div>
+    @endif
 @endif
 
 <!-- Minimum Bathrooms Needed -->
 @if (in_array($property_type, ['Residential', 'Commercial', 'Business']))
-    @php $bathroomsVal = is_string($bathrooms ?? '') ? ($bathrooms ?? '') : ''; @endphp
-    <div class="form-group" wire:key="bathrooms-wrapper-{{ $bathroomsVal ?: 'empty' }}">
+    <div class="form-group">
         <label class="fw-bold">Minimum Bathrooms Needed:<span class="text-danger">*</span>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Select the minimum number of bathrooms the Buyer requires.">
@@ -419,13 +419,15 @@
         <span class="error mt-2" id="bathrooms_error"></span>
     </div>
     <!-- Other Bathrooms Input (only shown when "Other" is selected) -->
-    <div class="form-group" wire:key="other-bathrooms-wrapper-{{ $bathroomsVal ?: 'empty' }}" style="{{ $bathroomsVal === 'Other' ? '' : 'display: none;' }}">
-        <div class="input-cover">
-            <input type="number" wire:model="other_bathrooms" class="form-control has-icon"
-                data-icon="fa-solid fa-bath" placeholder="Enter minimum bathrooms needed (e.g., 11)">
+    @if ($bathrooms === 'Other')
+        <div class="form-group">
+            <div class="input-cover">
+                <input type="number" wire:model="other_bathrooms" class="form-control has-icon"
+                    data-icon="fa-solid fa-bath" placeholder="Enter minimum bathrooms needed (e.g., 11)">
+            </div>
+            <span class="error mt-2" id="other_bathrooms_error"></span>
         </div>
-        <span class="error mt-2" id="other_bathrooms_error"></span>
-    </div>
+    @endif
 @endif
 
 <!-- Minimum Heated Sqft Needed -->
