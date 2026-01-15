@@ -24,7 +24,7 @@
     <div class="input-cover">
         <select wire:model="sale_provision" id="sale_provision" class="form-control has-icon select2-multiple"
             data-icon="fa-solid fa-screwdriver-wrench input-icon2" multiple>
-            @foreach ($buyer_property as $row_pt)
+            @foreach ($seller_property as $row_pt)
                 <option value="{{ $row_pt['name'] }}" title="{{ $row_pt['description'] }}">{{ $row_pt['name'] }}
                 </option>
             @endforeach
@@ -146,9 +146,9 @@
 @endif
 
 <div class="form-group mt-4">
-    <label class="fw-bold">Target Closing Date: <span class="text-danger">*</span>
+    <label class="fw-bold">Target Closing Timeframe: <span class="text-danger">*</span>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the date by which the Buyer would ideally like to close on a property.">
+            title="Select the Buyer's preferred closing timeframe. This helps Sellers and their Agents understand the Buyer's desired timing and evaluate whether it aligns with the Seller's expectations.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -811,24 +811,6 @@
 
             </div>
 
-    </div>
-
-    <!-- Type of Loan for Assumable Financing -->
-    <div class="form-group mt-3">
-        <label class="fw-bold">Type of Loan:
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Assumable loans allow a buyer to take over the seller's existing financing. FHA, VA, and USDA loans are the most common types that may be assumed, but lender approval is usually required. Conventional loans almost always have a due-on-sale clause and are not assumable.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-        </label>
-        <div class="input-cover">
-            <select wire:model="assumable_loan_type" class="form-control has-icon" data-icon="fa-solid fa-file-contract">
-                <option value="">Select</option>
-                <option value="FHA">FHA</option>
-                <option value="VA">VA</option>
-                <option value="USDA">USDA</option>
-            </select>
-        </div>
     </div>
 
 @endif

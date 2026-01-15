@@ -307,7 +307,7 @@
     <h5 class="section-header bg-info text-white p-2 mb-3">🔍 Property Search, Alerts & Matching</h5>
     <div class="service-options">
         @foreach ([
-            'Send property alerts that match the Buyer’s purchase criteria from the MLS or commercial listing platforms',
+            'Send listing alerts from real estate platforms that match the Buyer’s purchase criteria.',
             'Search for off-market, pre-market, distressed, withdrawn, canceled, or expired listings that meet the Buyer’s criteria',
             'Communicate with the Seller’s Agent or Seller to confirm availability, purchase terms, and showing instructions',
             'Analyze building class, property zoning, income potential, and redevelopment opportunities'
@@ -471,7 +471,7 @@
     <h5 class="section-header bg-info text-white p-2 mb-3">🔍 Business Search, Alerts & Matching</h5>
     <div class="service-options">
         @foreach ([
-            'Send alerts for businesses that match the Buyer’s acquisition criteria from MLS, BizBuySell, or other listing platforms',
+            'Send alerts for businesses that match the Buyer’s acquisition criteria from available business listing sources.',
             'Search for off-market, pre-market, distressed, or recently closed businesses that meet the Buyer’s criteria',
             'Communicate with the Seller’s Broker or Seller to confirm pricing, lease terms, licensing status, and showing availability',
             'Analyze financials, lease assignments, business licensing requirements, and overall market positioning'
@@ -634,7 +634,7 @@
     <h5 class="section-header bg-info text-white p-2 mb-3">🔍 Property Search, Alerts & Matching</h5>
     <div class="service-options">
         @foreach ([
-            'Send property alerts for land listings that match the Buyer’s goals from MLS and land-specific platforms',
+            'Send property alerts for land listings that match the Buyer’s goals from relevant real estate and land-specific platforms.',
             'Search for off-market, pre-market, distressed, withdrawn, canceled, or expired properties that meet the Buyer’s purchase criteria',
             'Communicate with the Seller’s Agent or Seller to confirm zoning, access, utilities, and pricing',
             'Evaluate development feasibility, land use restrictions, and agricultural potential with the Buyer'

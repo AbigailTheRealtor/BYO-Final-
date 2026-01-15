@@ -376,7 +376,7 @@
             <select wire:model="bathrooms" id="bathrooms" class="form-control has-icon" data-icon="fa-solid fa-bath"
                 required>
                 <option value="">Select</option>
-                @foreach ($bathrooms as $row_pt)
+                @foreach ($bathroomsRes as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach
             </select>
@@ -855,7 +855,7 @@
             <div class="form-group">
                 <label class="fw-bold">Number of Pets:</label>
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Enter the total number of pets you currently have (e.g., 2).">
+                    title="Enter the total number of pets the Buyer currently has (e.g., 2).">
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
             </label>
@@ -869,7 +869,7 @@
             <div class="form-group">
                 <label class="fw-bold">Type of Pets:</label>
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Enter the types of pets you own (e.g., Dog, Cat).">
+                    title="Enter the types of pets the Buyer has (e.g., Dog, Cat).">
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
             </label>
@@ -883,7 +883,7 @@
             <div class="form-group">
                 <label class="fw-bold">Breed of Pets:</label>
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Enter the breed(s) of your pets (e.g., Labrador, Siamese).">
+                    title="Enter the breed(s) of the Buyer's pets (e.g., Labrador, Siamese). If the Buyer has multiple pets with different breeds, list them all.">
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
             </label>
@@ -897,7 +897,7 @@
             <div class="form-group">
                 <label class="fw-bold">Weight of Pets (lbs):</label>
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Enter the weight of your pet(s) in pounds.">
+                    title="Enter the weight of the Buyer's pet(s) in pounds (e.g., 30 lbs, 50 lbs). If the Buyer has multiple pets, list their weights individually.">
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
             </label>
@@ -911,7 +911,7 @@
             <div class="form-group">
                 <label class="fw-bold">Service Animal:</label>
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Select if any of your pets are trained service animals.">
+                    title="Select if any of the Buyer's pets are trained service animals (e.g., for assistance with disabilities).">
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
             </label>
@@ -928,7 +928,7 @@
             <div class="form-group">
                 <label class="fw-bold">Emotional Support Animal:</label>
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Select if any of your pets are emotional support animals.">
+                    title="Select if any of the Buyer's pets are emotional support animals, providing therapeutic support.">
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
             </label>
@@ -947,10 +947,15 @@
 
     {{-- a) Income Property Criteria --}}
     <div class="form-group">
-        <label class="fw-bold">Income Property Criteria:</label>
+        <label class="fw-bold">Income Property Criteria:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter high-level investment preferences or deal characteristics not captured in the fields below.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
         <div class="input-cover">
             <input type="text" wire:model="property_criteria" class="form-control has-icon"
-                data-icon="fas fa-building" placeholder="Please Enter the Buyer's Preferred Income Property Criteria">
+                data-icon="fas fa-building" placeholder="Enter investment preferences or deal characteristics">
         </div>
     </div>
 
@@ -976,9 +981,6 @@
     </div>
     @if ($unit_size === 'Other')
         <div class="form-group">
-            <label class="fw-bold">Acceptable Unit Sizes:
-
-            </label>
             <div class="input-cover">
                 <input type="text" wire:model="unit_size_other" class="form-control has-icon"
                     data-icon="fas fa-building" placeholder="Enter acceptable number of units (e.g., 15 Units)">
@@ -1049,7 +1051,7 @@
         <div class="form-group">
             <label class="fw-bold">Number of Pets:</label>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the total number of pets you currently have (e.g., 2).">
+                title="Enter the total number of pets the Buyer currently has (e.g., 2).">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -1065,7 +1067,7 @@
         <div class="form-group">
             <label class="fw-bold">Type of Pets:</label>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the types of pets you own (e.g., Dog, Cat).">
+                title="Enter the types of pets the Buyer has (e.g., Dog, Cat).">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -1081,7 +1083,7 @@
         <div class="form-group">
             <label class="fw-bold">Breed of Pets:</label>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the breed(s) of your pets (e.g., Labrador, Siamese). If you have multiple pets with different breeds, list them all.">
+                title="Enter the breed(s) of the Buyer's pets (e.g., Labrador, Siamese). If the Buyer has multiple pets with different breeds, list them all.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -1097,7 +1099,7 @@
         <div class="form-group">
             <label class="fw-bold">Weight of Pets (lbs):</label>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the weight of your pet(s) in pounds (e.g., 30 lbs, 50 lbs). If you have multiple pets, you can list their weights individually.">
+                title="Enter the weight of the Buyer's pet(s) in pounds (e.g., 30 lbs, 50 lbs). If the Buyer has multiple pets, list their weights individually.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -1114,7 +1116,7 @@
             <label class="fw-bold">Service Animal:</label>
 
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select if any of your pets are trained service animals (e.g., for assistance with disabilities).">
+                title="Select if any of the Buyer's pets are trained service animals (e.g., for assistance with disabilities).">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -1134,7 +1136,7 @@
             <label class="fw-bold">Emotional Support Animal:</label>
 
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select if any of your pets are emotional support animals, providing therapeutic support.">
+                title="Select if any of the Buyer's pets are emotional support animals, providing therapeutic support.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -1165,7 +1167,7 @@
                 <span class="input-group-text-seller">$</span>
 
                 <input type="text" wire:model="minimum_annual_net_income" class="form-control"
-                    placeholder="Enter minimum annual net income needed (e.g., 50,000)"
+                    placeholder="Enter minimum annual net income needed (e.g., 50000)"
                     data-error-id="minimum_annual_net_income_error" oninput="validateInput(this)"
                     onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             </div>
@@ -1213,7 +1215,7 @@
         </div>
     </div>
 @endif
-@if ($property_type !== 'Residential' && $property_type !== 'Vacant Land')
+@if ($property_type === 'Income')
 <div class="form-group">
     <label class="fw-bold">Additional Details:
 

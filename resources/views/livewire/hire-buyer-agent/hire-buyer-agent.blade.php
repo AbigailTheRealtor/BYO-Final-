@@ -312,7 +312,7 @@
         ['name' => 'Other'],
     ];
 
-    $bathrooms = [
+    $bathroomsRes = [
         ['name' => '1'],
         ['name' => '1.5'],
         ['name' => '2'],
@@ -733,14 +733,14 @@
     ];
 
     $seller_property = [
-        ['name' => 'Assignment Contract'],
-        ['name' => 'Auction'],
-        ['name' => 'Bank Owned/REO'],
-        ['name' => 'Government Owned'],
-        ['name' => 'None'],
-        ['name' => 'Probate Listing'],
-        ['name' => 'Short Sale'],
-        ['name' => 'Other'],
+        ['name' => 'Assignment Contract', 'description' => 'The Buyer is open to purchasing an assignment contract from a wholesaler.'],
+        ['name' => 'Auction', 'description' => 'The Buyer is open to purchasing a property at auction.'],
+        ['name' => 'Bank Owned/REO', 'description' => 'The Buyer is open to properties that have been foreclosed on and are now owned by the bank (Real Estate Owned).'],
+        ['name' => 'Government Owned', 'description' => 'The Buyer is open to purchasing government-owned properties.'],
+        ['name' => 'None', 'description' => 'The Buyer is not interested in special sale provisions.'],
+        ['name' => 'Probate Listing', 'description' => 'The Buyer is open to purchasing properties being sold through probate court.'],
+        ['name' => 'Short Sale', 'description' => 'The Buyer is open to purchasing a property where the sale price is less than the outstanding mortgage balance.'],
+        ['name' => 'Other', 'description' => 'The Buyer is open to other special sale provisions not listed here.'],
     ];
 @endphp
 

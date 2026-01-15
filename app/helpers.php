@@ -93,6 +93,15 @@ if (!function_exists('db_time')) {
             // Commercial Tenant Agent - Property Search service text update
             "Send listing alerts from commercial platforms (e.g., LoopNet, Crexi, CoStar, or local MLS) that match the Tenant's leasing criteria" 
                 => "Send listing alerts from real estate platforms that match the Tenant's leasing criteria.",
+            // Buyer Commercial - Property Search service text update
+            "Send property alerts that match the Buyer's purchase criteria from the MLS or commercial listing platforms"
+                => "Send listing alerts from real estate platforms that match the Buyer's purchase criteria.",
+            // Buyer Business Opportunity - Business Search service text update
+            "Send alerts for businesses that match the Buyer's acquisition criteria from MLS, BizBuySell, or other listing platforms"
+                => "Send alerts for businesses that match the Buyer's acquisition criteria from available business listing sources.",
+            // Buyer Vacant Land - Property Search service text update
+            "Send property alerts for land listings that match the Buyer's goals from MLS and land-specific platforms"
+                => "Send property alerts for land listings that match the Buyer's goals from relevant real estate and land-specific platforms.",
         ];
         
         // Check if the service matches any old text (case-insensitive normalized comparison)
