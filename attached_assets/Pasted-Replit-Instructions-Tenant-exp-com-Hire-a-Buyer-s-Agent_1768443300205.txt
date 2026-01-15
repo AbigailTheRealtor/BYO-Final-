@@ -1,0 +1,107 @@
+Replit Instructions — Tenant@exp.com
+Hire a Buyer’s Agent → Income Property → Tab 2: Property Preferences
+Fix Wrong Tooltip on “Acceptable Number of Units” (Tooltip Mapping Issue)
+Problem (What’s happening)
+
+On Income Property listings, the tooltip shown next to Acceptable Number of Units is displaying the wrong tooltip content (it appears to be pulling text intended for a different field, such as unit types/layouts). This indicates the tooltip/help-icon is mapped to the wrong tooltip key or wrong field reference.
+
+✅ Change Required (Tooltip Mapping Fix Only)
+Location
+
+Hire a Buyer’s Agent
+→ Income Property
+→ Tab 2: Property Preferences
+→ Field: Acceptable Number of Units
+→ Tooltip (info icon)
+
+Requirements
+
+The tooltip (info icon) next to Acceptable Number of Units must display the correct tooltip text for unit-count ranges, NOT unit-type/layout text.
+
+Ensure the tooltip is mapped to the correct field key/config entry specifically for:
+
+Buyer flow
+
+Income Property
+
+Acceptable Number of Units
+
+Correct Tooltip Text (Use Exactly)
+
+Select the acceptable unit count range for the investment property (e.g., 1–4 units, 5–10 units, 10+ units). If “Other” is selected, enter a custom unit count or range.
+
+🔧 Implementation Notes (How to fix safely)
+
+Do NOT rewrite tooltips globally.
+
+Find where the tooltip text is assigned for the Acceptable Number of Units field:
+
+If tooltips come from a config/JSON map: update the mapping so the field references the correct tooltip key.
+
+If tooltips are passed into a shared component: confirm the prop/key passed for Acceptable Number of Units is correct (not reusing “Acceptable Unit Sizes” or “Unit Types/Layout”).
+
+Verify the tooltip icon adjacent to “Acceptable Number of Units” is not accidentally using a reused tooltip id from a different field.
+
+🛡️ SAFEGUARDS (MUST FOLLOW — DO NOT VIOLATE)
+
+Tooltip fix only (mapping + correct text).
+Do NOT:
+
+change dropdown options (Select, 1–4 Units, 5–10 Units, 10+ Units, Other)
+
+change field labels, placeholders, input types, required logic, validations, or conditional behavior
+
+change any other tooltips besides this one
+
+modify database schema, migrations, models, or stored values
+
+affect Residential, Commercial, Business, Seller, Tenant, or Landlord flows
+
+change UI layout, spacing, icons, styling, or formatting
+
+refactor shared tooltip components unless scoped only to Buyer → Income → Acceptable Number of Units
+
+✅ Expected Outcome
+
+Tooltip next to Acceptable Number of Units displays the correct unit-count guidance
+
+Dropdown options remain unchanged
+
+“Other” selection behavior remains unchanged (textbox still appears)
+
+No impact to saving drafts, editing, submitting, bids, or counter-bids
+
+🧪 Testing Required Before Completion
+
+Login as Tenant@exp.com
+
+Create Hire a Buyer’s Agent → Income Property listing
+
+Go to Tab 2: Property Preferences
+
+Hover/click the tooltip next to Acceptable Number of Units
+
+Confirm tooltip shows the exact correct text above (unit-count guidance)
+
+Open dropdown and verify options unchanged
+
+Select Other and verify textbox behavior unchanged
+
+Save draft → reload → confirm no errors and tooltip still correct
+
+Submit listing → confirm no validation errors
+
+⚠️ CRITICAL — WHERE THIS MUST UPDATE
+
+This corrected tooltip must render consistently anywhere this exact field is displayed, including:
+
+Listing creation UI
+
+Saved listing edit view
+
+Draft preview / review screens
+
+Agent-facing listing details (read-only)
+
+❌ Do NOT mass-update database rows.
+✅ Tooltip is display-layer only.
