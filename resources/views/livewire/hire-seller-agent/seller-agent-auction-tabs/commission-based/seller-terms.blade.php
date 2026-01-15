@@ -215,7 +215,7 @@
     <div class="form-group">
         <label class="fw-bold">Desired Sale Price:<span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the Seller’s desired sale price. Buyers and their Agents may use this as a reference when preparing and evaluating offers.">
+            title="Enter the amount the Seller would like to receive for the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
 
