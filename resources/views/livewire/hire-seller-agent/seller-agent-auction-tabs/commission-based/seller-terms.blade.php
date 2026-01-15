@@ -724,7 +724,7 @@
     <div class="form-group mt-3">
         <label class="fw-bold">Date Loan Originated:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the date the original loan was originated. This helps Buyers understand how far into the loan's amortization schedule it currently is.">
+                title="Enter the date the original loan was originated. This helps Buyers understand the loan's current position within its amortization schedule.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
