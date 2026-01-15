@@ -778,92 +778,8 @@
 </div>
 @endif
 
-{{-- 1) Business & Real Estate Purchase Requirements (Business Opportunity only) --}}
-@if ($property_type === 'Business')
-    <div class="form-group">
-        <label class="fw-bold">
-            Business &amp; Real Estate Purchase Requirements:<span class="text-danger">*</span>
-
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select whether the Buyer is looking to purchase both the real estate and the business, or just the business operation.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-        </label>
-
-
-        <div class="input-cover">
-            <select wire:model="real_estate_purchase" class="form-control has-icon" data-icon="fas fa-building"
-                required>
-                <option value="">Select</option>
-                <option value="Real Estate Building and Business">
-                    Real Estate Building and Business
-                </option>
-                <option value="Business Only">
-                    Business Only
-                </option>
-            </select>
-        </div>
-        <span class="error mt-2" id="real_estate_purchase_error"></span>
-    </div>
-@endif
-
-{{-- 2) Required Property or Business Assets (Income, Commercial, Business Opportunity) --}}
-@if (in_array($property_type, ['Income', 'Commercial', 'Business']))
-    <div class="form-group">
-        <label class="fw-bold">
-            Required Property or Business Assets:
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select the assets that must be included (e.g., equipment, intellectual property, rights, or licenses).">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-        </label>
-
-
-        <div class="input-cover">
-            <select wire:model="assets" id="assets" class="form-control has-icon select2-multiple"
-                data-icon="fas fa-building input-icon2" multiple>
-                <option value="Goodwill and Business Name">
-                    Goodwill and Business Name
-                </option>
-                <option value="Furniture, Fixtures, and Equipment (as per attached inventory)">
-                    Furniture, Fixtures, and Equipment (as per attached inventory)
-                </option>
-                <option value="Advertising Materials">
-                    Advertising Materials
-                </option>
-                <option value="Contract Rights">
-                    Contract Rights
-                </option>
-                <option value="Leases">
-                    Leases
-                </option>
-                <option value="Licenses">
-                    Licenses
-                </option>
-                <option value="Rights under any Agreement for Interests">
-                    Rights under any Agreement for Interests
-                </option>
-                <option value="Other">Other</option>
-            </select>
-        </div>
-        <span class="error mt-2" id="assets_error"></span>
-    </div>
-@endif
-{{-- "Other" text input (only for Income, Commercial, Business when "Other" is selected) --}}
-@if (in_array($property_type, ['Income', 'Commercial', 'Business']) && is_array($assets ?? []) && in_array('Other', $assets ?? []))
-<div class="form-group" wire:key="other-assets-wrapper">
-    <div class="input-cover">
-        <input type="text" wire:model="assets_other" class="form-control has-icon" data-icon="fas fa-building"
-            placeholder="Enter any included assets (e.g., Inventory, Customer Lists, Trademarks, Software Rights)">
-    </div>
-    <span class="error mt-2" id="assets_other_error"></span>
-</div>
-@endif
-
-{{-- 3) Income-only fields --}}
+{{-- Pets for Income Property (after Non-Negotiable Amenities, before Required Property or Business Assets) --}}
 @if ($property_type === 'Income')
-
-    {{-- Pets for Income Property (moved above Income Property Criteria) --}}
     <div class="form-group">
         <label class="fw-bold">Pets:<span class="text-danger">*</span>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -977,6 +893,92 @@
             </div>
         </div>
     @endif
+@endif
+
+{{-- 1) Business & Real Estate Purchase Requirements (Business Opportunity only) --}}
+@if ($property_type === 'Business')
+    <div class="form-group">
+        <label class="fw-bold">
+            Business &amp; Real Estate Purchase Requirements:<span class="text-danger">*</span>
+
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select whether the Buyer is looking to purchase both the real estate and the business, or just the business operation.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+
+
+        <div class="input-cover">
+            <select wire:model="real_estate_purchase" class="form-control has-icon" data-icon="fas fa-building"
+                required>
+                <option value="">Select</option>
+                <option value="Real Estate Building and Business">
+                    Real Estate Building and Business
+                </option>
+                <option value="Business Only">
+                    Business Only
+                </option>
+            </select>
+        </div>
+        <span class="error mt-2" id="real_estate_purchase_error"></span>
+    </div>
+@endif
+
+{{-- 2) Required Property or Business Assets (Income, Commercial, Business Opportunity) --}}
+@if (in_array($property_type, ['Income', 'Commercial', 'Business']))
+    <div class="form-group">
+        <label class="fw-bold">
+            Required Property or Business Assets:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select the assets that must be included (e.g., equipment, intellectual property, rights, or licenses).">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+
+
+        <div class="input-cover">
+            <select wire:model="assets" id="assets" class="form-control has-icon select2-multiple"
+                data-icon="fas fa-building input-icon2" multiple>
+                <option value="Goodwill and Business Name">
+                    Goodwill and Business Name
+                </option>
+                <option value="Furniture, Fixtures, and Equipment (as per attached inventory)">
+                    Furniture, Fixtures, and Equipment (as per attached inventory)
+                </option>
+                <option value="Advertising Materials">
+                    Advertising Materials
+                </option>
+                <option value="Contract Rights">
+                    Contract Rights
+                </option>
+                <option value="Leases">
+                    Leases
+                </option>
+                <option value="Licenses">
+                    Licenses
+                </option>
+                <option value="Rights under any Agreement for Interests">
+                    Rights under any Agreement for Interests
+                </option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+        <span class="error mt-2" id="assets_error"></span>
+    </div>
+@endif
+{{-- "Other" text input (only for Income, Commercial, Business when "Other" is selected) --}}
+@if (in_array($property_type, ['Income', 'Commercial', 'Business']) && is_array($assets ?? []) && in_array('Other', $assets ?? []))
+<div class="form-group" wire:key="other-assets-wrapper">
+    <div class="input-cover">
+        <input type="text" wire:model="assets_other" class="form-control has-icon" data-icon="fas fa-building"
+            placeholder="Enter any included assets (e.g., Inventory, Customer Lists, Trademarks, Software Rights)">
+    </div>
+    <span class="error mt-2" id="assets_other_error"></span>
+</div>
+@endif
+
+{{-- 3) Income-only fields --}}
+@if ($property_type === 'Income')
 
     {{-- a) Income Property Criteria --}}
     <div class="form-group">
