@@ -719,6 +719,9 @@
 
     .listing-type-text {
         flex: 1;
+        font-family: 'Poppins', sans-serif;
+        font-size: 1rem;
+        font-weight: 400;
     }
 
     .listing-type-arrow {
@@ -753,6 +756,7 @@
         padding: 10px 15px;
         cursor: pointer;
         transition: background-color 0.15s ease;
+        font-family: 'Poppins', sans-serif;
         font-size: 1rem;
         font-weight: 400;
         color: #212529;
