@@ -574,7 +574,7 @@
     <div class="form-group mt-3">
         <label class="fw-bold">Late Payment Fee:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the late payment fee and timing for when it applies. For example: &quot;$100 after 10 days late&quot; or &quot;5% of the monthly payment after 15 days late.&quot; This ensures both the amount and the grace period are clear.">
+                title="Enter the late payment fee amount and when it applies.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -709,7 +709,7 @@
     <div class="form-group mt-3">
         <label class="fw-bold">Loan Term Remaining (Years):
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the number of years left on the existing loan term. This helps buyers understand how much time is left before the loan is fully paid off.">
+                title="Enter the number of years remaining on the existing loan term. This helps Buyers understand how long payments will continue before the loan is fully paid off.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -724,7 +724,7 @@
     <div class="form-group mt-3">
         <label class="fw-bold">Date Loan Originated:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the date the original loan began. This helps buyers understand how far into the amortization schedule the loan currently is.">
+                title="Enter the date the original loan was originated. This helps Buyers understand how far into the loan's amortization schedule it currently is.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -775,7 +775,7 @@
     <div class="form-group mt-3">
         <label class="fw-bold">Occupancy Requirement:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select whether the loan requires the buyer to occupy the property as their primary residence (common for FHA and VA loans).">
+                title="Select whether the loan requires the Buyer to occupy the property as their primary residence (common for FHA and VA loans).">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -962,7 +962,7 @@
     <div class="form-group mt-3">
         <label class="fw-bold">Inspection / Verification Rights:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select whether the party receiving the trade item may inspect or verify its condition/value before closing.">
+                title="Select whether the party receiving the exchange or trade item may inspect or verify the item's condition or value before closing.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>

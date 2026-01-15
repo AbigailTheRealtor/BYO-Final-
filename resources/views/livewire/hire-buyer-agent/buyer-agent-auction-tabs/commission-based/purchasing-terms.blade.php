@@ -640,7 +640,7 @@
     <div class="form-group mt-3">
         <label class="fw-bold">Late Payment Fee:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the late payment fee and timing for when it applies. For example: &quot;$100 after 10 days late&quot; or &quot;5% of the monthly payment after 15 days late.&quot; This ensures both the amount and the grace period are clear.">
+                title="Enter the late payment fee amount and when it applies.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -978,7 +978,7 @@
     <div class="form-group mt-3">
         <label class="fw-bold">Inspection / Verification Rights:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select whether the party receiving the trade item may inspect or verify its condition/value before closing.">
+                title="Select whether the party receiving the exchange or trade item may inspect or verify the item's condition or value before closing.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
