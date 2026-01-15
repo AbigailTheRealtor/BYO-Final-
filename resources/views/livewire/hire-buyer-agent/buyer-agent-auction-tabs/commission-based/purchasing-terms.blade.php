@@ -841,7 +841,6 @@
 
     @if ($exchange_item === 'Other')
         <div class="form-group">
-            <label class="fw-bold">Other Exchange Item:</label>
             <div class="input-cover">
                 <input type="text" wire:model="other_exchange_item" class="form-control has-icon"
                     data-icon="fa-solid fa-exchange-alt"
@@ -951,7 +950,7 @@
     <div class="form-group mt-3">
         <label class="fw-bold">Liens / Encumbrances Disclosure:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Indicate if the exchange/trade item has any liens or encumbrances (such as loans, leases, or legal claims). Buyers and sellers should resolve these before closing.">
+                title="Indicate whether the exchange or trade item has any liens or encumbrances that would need to be resolved before closing.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
