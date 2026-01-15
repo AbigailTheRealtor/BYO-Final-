@@ -1673,7 +1673,8 @@ class BuyerAgentAuction extends Component
         // Contact Information
         $auction->saveMeta('first_name', $this->first_name);
         $auction->saveMeta('last_name', $this->last_name);
-        $auction->saveMeta('phone_number', $this->phone_number);
+        $phoneDigitsOnly = preg_replace('/\D/', '', $this->phone_number);
+        $auction->saveMeta('phone_number', $phoneDigitsOnly);
         $auction->saveMeta('email', $this->email);
         $auction->saveMeta('video_link', $this->video_link);
 

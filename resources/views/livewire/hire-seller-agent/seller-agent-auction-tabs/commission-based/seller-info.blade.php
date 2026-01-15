@@ -180,10 +180,29 @@ function formatSellerPhone(input) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+function handleSellerPhonePaste(event) {
+    event.preventDefault();
+    let paste = (event.clipboardData || window.clipboardData).getData('text');
+    event.target.value = paste.replace(/\D/g, '');
+    formatSellerPhone(event.target);
+}
+
+function initSellerPhoneFormatting() {
     const phoneInput = document.getElementById('seller_phone_number');
-    if (phoneInput && phoneInput.value) {
-        formatSellerPhone(phoneInput);
+    if (phoneInput) {
+        if (phoneInput.value) {
+            formatSellerPhone(phoneInput);
+        }
+        phoneInput.removeEventListener('paste', handleSellerPhonePaste);
+        phoneInput.addEventListener('paste', handleSellerPhonePaste);
     }
-});
+}
+
+document.addEventListener('DOMContentLoaded', initSellerPhoneFormatting);
+
+if (typeof Livewire !== 'undefined') {
+    document.addEventListener('livewire:load', function() {
+        Livewire.hook('message.processed', initSellerPhoneFormatting);
+    });
+}
 </script>

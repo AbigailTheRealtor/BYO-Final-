@@ -1216,8 +1216,7 @@ this agreement ends.">
                 <h6 class="fw-bold">• No Brokerage Relationship:</h6>
                 <ul class="mb-2 ps-3" style="list-style-type: disc;">
                     <li>The Broker does not represent the Landlord and has no fiduciary duties.</li>
-                    <li>The Broker must still act honestly and disclose all known material facts that materially affect the
-                        property’s value.</li>
+                    <li>The Broker must still act honestly and disclose all known material facts that materially affect the property’s value.</li>
                     <li>The Landlord is responsible for their own due diligence and negotiations.</li>
                 </ul>
             @endif

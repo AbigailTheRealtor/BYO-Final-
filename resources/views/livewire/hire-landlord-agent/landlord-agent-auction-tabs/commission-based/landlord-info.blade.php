@@ -237,10 +237,29 @@ function formatLandlordPhone(input) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+function handleLandlordPhonePaste(event) {
+    event.preventDefault();
+    let paste = (event.clipboardData || window.clipboardData).getData('text');
+    event.target.value = paste.replace(/\D/g, '');
+    formatLandlordPhone(event.target);
+}
+
+function initLandlordPhoneFormatting() {
     const phoneInput = document.getElementById('phone_number');
-    if (phoneInput && phoneInput.value) {
-        formatLandlordPhone(phoneInput);
+    if (phoneInput) {
+        if (phoneInput.value) {
+            formatLandlordPhone(phoneInput);
+        }
+        phoneInput.removeEventListener('paste', handleLandlordPhonePaste);
+        phoneInput.addEventListener('paste', handleLandlordPhonePaste);
     }
-});
+}
+
+document.addEventListener('DOMContentLoaded', initLandlordPhoneFormatting);
+
+if (typeof Livewire !== 'undefined') {
+    document.addEventListener('livewire:load', function() {
+        Livewire.hook('message.processed', initLandlordPhoneFormatting);
+    });
+}
 </script>

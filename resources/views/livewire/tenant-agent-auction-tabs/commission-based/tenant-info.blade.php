@@ -172,10 +172,29 @@ function formatPhoneNumber(input) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+function handlePhonePaste(event) {
+    event.preventDefault();
+    let paste = (event.clipboardData || window.clipboardData).getData('text');
+    event.target.value = paste.replace(/\D/g, '');
+    formatPhoneNumber(event.target);
+}
+
+function initPhoneFormatting() {
     const phoneInput = document.getElementById('phone_number_input');
-    if (phoneInput && phoneInput.value) {
-        formatPhoneNumber(phoneInput);
+    if (phoneInput) {
+        if (phoneInput.value) {
+            formatPhoneNumber(phoneInput);
+        }
+        phoneInput.removeEventListener('paste', handlePhonePaste);
+        phoneInput.addEventListener('paste', handlePhonePaste);
     }
-});
+}
+
+document.addEventListener('DOMContentLoaded', initPhoneFormatting);
+
+if (typeof Livewire !== 'undefined') {
+    document.addEventListener('livewire:load', function() {
+        Livewire.hook('message.processed', initPhoneFormatting);
+    });
+}
 </script>
