@@ -899,7 +899,7 @@
                                 "Install a lockbox for Agent access",
                                 "Schedule and attend showings with prospective Buyers",
                                 "Coordinate showings with Buyer’s Agents",
-                                "Collect and relay feedback to the Seller after each showing",
+                                "Collect and relay showing feedback to the Seller",
                             ],
                             "📑 Offer & Contract Management" => [
                                 "Present all offers to the Seller and summarize key terms, pricing, and contingencies",
@@ -970,7 +970,7 @@
                                 "Install a lockbox for Agent access",
                                 "Schedule and attend showings with prospective Buyers",
                                 "Coordinate showings with Buyer’s Agents",
-                                "Collect and relay feedback to the Seller after each showing",
+                                "Collect and relay showing feedback to the Seller",
                             ],
                             "📉 Offer & Contract Management" => [
                                 "Present all offers to the Seller and summarize key terms, pricing, and contingencies",

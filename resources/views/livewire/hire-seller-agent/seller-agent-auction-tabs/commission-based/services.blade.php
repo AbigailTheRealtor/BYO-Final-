@@ -97,7 +97,7 @@
     <div class="service-section mb-4">
         <h5 class="section-header bg-info text-white p-2 mb-3">🏡 Showings & Access Coordination</h5>
         <div class="service-options">
-            @foreach (['Ensure proper notice is provided if the property is occupied', 'Install a real estate sign on the property', 'Install a lockbox for Agent access', 'Schedule and attend showings with prospective Buyers', 'Coordinate showings with Buyer’s Agents', 'Collect and relay feedback to the Seller after each showing'] as $service)
+            @foreach (['Ensure proper notice is provided if the property is occupied', 'Install a real estate sign on the property', 'Install a lockbox for Agent access', 'Schedule and attend showings with prospective Buyers', 'Coordinate showings with Buyer’s Agents', 'Collect and relay showing feedback to the Seller'] as $service)
                 <div class="form-check service-item">
                     <input class="form-check-input service-checkbox" type="checkbox" wire:model="services"
                         value="{{ $service }}" id="showings-{{ Str::slug($service) }}"
@@ -301,7 +301,7 @@
     <div class="service-section mb-4">
         <h5 class="section-header bg-info text-white p-2 mb-3">🏘️ Showings & Access Coordination</h5>
         <div class="service-options">
-            @foreach (['Respond to Buyer inquiries and screen for general qualifications', 'Provide Non-Disclosure Agreement (NDA) templates for confidential showings or document access', 'Ensure proper notice is provided if the property is occupied', 'Install a real estate sign on the property', 'Install a lockbox for Agent access', 'Schedule and attend showings with prospective Buyers', 'Coordinate showings with Buyer’s Agents', 'Collect and relay feedback to the Seller after each showing'] as $service)
+            @foreach (['Respond to Buyer inquiries and screen for general qualifications', 'Provide Non-Disclosure Agreement (NDA) templates for confidential showings or document access', 'Ensure proper notice is provided if the property is occupied', 'Install a real estate sign on the property', 'Install a lockbox for Agent access', 'Schedule and attend showings with prospective Buyers', 'Coordinate showings with Buyer’s Agents', 'Collect and relay showing feedback to the Seller'] as $service)
                 <div class="form-check service-item">
                     <input class="form-check-input service-checkbox" type="checkbox" wire:model="services"
                         value="{{ $service }}" id="showings-{{ Str::slug($service) }}">
@@ -453,7 +453,7 @@
     <div class="service-section mb-4">
         <h5 class="section-header bg-info text-white p-2 mb-3">🏢 Showings & Access Coordination</h5>
         <div class="service-options">
-            @foreach (['Respond to Buyer inquiries and screen for general qualifications','Provide Non-Disclosure Agreement (NDA) templates for access to confidential documents or showings', 'Ensure proper notice is provided if the property is occupied', 'Install a real estate sign on the property', 'Install a lockbox for Agent access', 'Schedule and attend showings with prospective Buyers', 'Coordinate showings with Buyer’s Agents', 'Collect and relay feedback to the Seller after each showing'] as $service)
+            @foreach (['Respond to Buyer inquiries and screen for general qualifications','Provide Non-Disclosure Agreement (NDA) templates for access to confidential documents or showings', 'Ensure proper notice is provided if the property is occupied', 'Install a real estate sign on the property', 'Install a lockbox for Agent access', 'Schedule and attend showings with prospective Buyers', 'Coordinate showings with Buyer’s Agents', 'Collect and relay showing feedback to the Seller'] as $service)
                 <div class="form-check service-item">
                     <input class="form-check-input service-checkbox" type="checkbox" wire:model="services"
                         value="{{ $service }}" id="showings-{{ Str::slug($service) }}">
@@ -630,7 +630,7 @@
     <div class="service-section mb-4">
         <h5 class="section-header bg-info text-white p-2 mb-3">🏢 Showings & Access Coordination</h5>
         <div class="service-options">
-            @foreach (['Respond to Buyer inquiries and screen for general qualifications', 'Provide Non-Disclosure Agreement (NDA) templates for confidential showings or document access', 'Ensure proper notice is provided if the property or business premises is occupied', 'Install a real estate sign on the property', 'Install a lockbox for Agent access', 'Schedule and attend showings with prospective Buyers', 'Coordinate showings with Buyer’s Agents', 'Coordinate directly with Tenant(s) or business staff to arrange access for showings', 'Collect and relay feedback to the Seller after each showing'] as $service)
+            @foreach (['Respond to Buyer inquiries and screen for general qualifications', 'Provide Non-Disclosure Agreement (NDA) templates for confidential showings or document access', 'Ensure proper notice is provided if the property or business premises is occupied', 'Install a real estate sign on the property', 'Install a lockbox for Agent access', 'Schedule and attend showings with prospective Buyers', 'Coordinate showings with Buyer’s Agents', 'Coordinate directly with Tenant(s) or business staff to arrange access for showings', 'Collect and relay showing feedback to the Seller'] as $service)
                 <div class="form-check service-item">
                     <input class="form-check-input service-checkbox" type="checkbox" wire:model="services"
                         value="{{ $service }}" id="showings-{{ Str::slug($service) }}"
@@ -814,7 +814,7 @@
     <div class="service-section mb-4">
         <h5 class="section-header bg-info text-white p-2 mb-3">🏡 Showings & Access Coordination</h5>
         <div class="service-options">
-            @foreach (['Install a real estate sign on the property', 'Schedule and attend showings with prospective Buyers', 'Coordinate showings with Buyer’s Agents', 'Collect and relay feedback to the Seller after each showing'] as $service)
+            @foreach (['Install a real estate sign on the property', 'Schedule and attend showings with prospective Buyers', 'Coordinate showings with Buyer’s Agents', 'Collect and relay showing feedback to the Seller'] as $service)
                 <div class="form-check service-item">
                     <input class="form-check-input" type="checkbox" wire:model="services"
                         value="{{ $service }}" id="showing-{{ Str::slug($service) }}">
