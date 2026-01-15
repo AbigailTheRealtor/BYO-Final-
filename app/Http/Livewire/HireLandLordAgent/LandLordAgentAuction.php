@@ -222,6 +222,13 @@ class LandLordAgentAuction extends Component
     public $agency_agreement_custom = '';
     public $brokerage_relationship = '';
 
+    // Lease-Option Agreement Compensation
+    public $interested_lease_option_agreement = '';
+    public $lease_type = 'percent'; // 'percent' or 'flat'
+    public $lease_value = '';
+    public $purchase_type = 'percent'; // 'percent' or 'flat'
+    public $purchase_value = '';
+
     // Personal information
     public $first_name = '';
     public $last_name = '';
@@ -667,6 +674,17 @@ class LandLordAgentAuction extends Component
         $this->reset(['assignment_fee_amount']);
     }
 
+    /**
+     * Handle type changes for lease-option compensation fields
+     */
+    public function setType($field, $value)
+    {
+        if ($field === 'lease') {
+            $this->lease_type = $value;
+        } elseif ($field === 'purchase') {
+            $this->purchase_type = $value;
+        }
+    }
 
     // Methods
     public function mount($listingId = null)
