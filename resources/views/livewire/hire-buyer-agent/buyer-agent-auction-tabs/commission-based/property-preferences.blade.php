@@ -409,7 +409,7 @@
 
         <div class="input-cover">
             <select wire:model="bathrooms" id="bathrooms" class="form-control has-icon" data-icon="fa-solid fa-bath"
-                required>
+                required onchange="toggleOtherBathrooms(this)">
                 <option value="">Select</option>
                 @foreach ($bathroomsRes as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -419,15 +419,44 @@
         <span class="error mt-2" id="bathrooms_error"></span>
     </div>
     <!-- Other Bathrooms Input (only shown when "Other" is selected) -->
-    @if ($bathrooms === 'Other')
-        <div class="form-group">
-            <div class="input-cover">
-                <input type="number" wire:model="other_bathrooms" class="form-control has-icon"
-                    data-icon="fa-solid fa-bath" placeholder="Enter minimum bathrooms needed (e.g., 11)">
-            </div>
-            <span class="error mt-2" id="other_bathrooms_error"></span>
+    <div class="form-group" id="other_bathrooms_container" style="{{ ($bathrooms ?? '') === 'Other' ? '' : 'display: none;' }}">
+        <div class="input-cover">
+            <input type="number" wire:model="other_bathrooms" class="form-control has-icon"
+                data-icon="fa-solid fa-bath" placeholder="Enter minimum bathrooms needed (e.g., 11)">
         </div>
-    @endif
+        <span class="error mt-2" id="other_bathrooms_error"></span>
+    </div>
+    <script>
+        function toggleOtherBathrooms(select) {
+            var container = document.getElementById('other_bathrooms_container');
+            if (select.value === 'Other') {
+                container.style.display = '';
+            } else {
+                container.style.display = 'none';
+            }
+        }
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            var bathroomsSelect = document.getElementById('bathrooms');
+            if (bathroomsSelect && bathroomsSelect.value === 'Other') {
+                document.getElementById('other_bathrooms_container').style.display = '';
+            }
+        });
+        // Also listen for Livewire updates
+        document.addEventListener('livewire:load', function() {
+            Livewire.hook('message.processed', function() {
+                var bathroomsSelect = document.getElementById('bathrooms');
+                var container = document.getElementById('other_bathrooms_container');
+                if (bathroomsSelect && container) {
+                    if (bathroomsSelect.value === 'Other') {
+                        container.style.display = '';
+                    } else {
+                        container.style.display = 'none';
+                    }
+                }
+            });
+        });
+    </script>
 @endif
 
 <!-- Minimum Heated Sqft Needed -->
