@@ -1,0 +1,123 @@
+Here are **clean, copy-paste-ready Replit instructions with strict safeguards**, scoped **only** to the issue shown in your screenshot.
+
+---
+
+## Replit Instructions — [Tenant@exp.com](mailto:Tenant@exp.com)
+
+## Hire a Buyer’s Agent → **Income Property**
+
+## Property Preferences Tab
+
+## Remove Label Text Only for “Other Acceptable Number of Units”
+
+---
+
+### Applies To
+
+[Tenant@exp.com](mailto:Tenant@exp.com) → **Hire a Buyer’s Agent**
+Property Type: **Income Property**
+Tab: **Property Preferences**
+
+---
+
+## Issue
+
+When **Acceptable Number of Units = Other** is selected, an extra label appears above the textbox:
+
+> **“Other Acceptable Number of Units:”**
+
+This label should **not** display. Only the input box should remain.
+
+---
+
+## ✅ Change Required (UI Text Only)
+
+### Location
+
+Hire a Buyer’s Agent
+→ Income Property
+→ Property Preferences
+→ Field: **Acceptable Number of Units**
+→ When **Other** is selected
+
+---
+
+### Action
+
+* **Remove only the label text**:
+
+  * `Other Acceptable Number of Units:`
+* **Keep the textbox exactly as-is**, including:
+
+  * position
+  * spacing
+  * icon
+  * placeholder text
+  * input behavior
+
+⚠️ **Do NOT move, resize, restyle, or replace the textbox.**
+
+---
+
+## 🛡️ SAFEGUARDS (MUST FOLLOW — DO NOT VIOLATE)
+
+UI text removal **only**. Do **NOT**:
+
+* change field order, spacing, or layout
+* change placeholder text inside the textbox
+* change dropdown options or “Other” logic
+* change validations or required-field rules
+* rename field keys or stored values
+* modify database schema, migrations, or models
+* affect Residential, Commercial, Business, Seller, Tenant, or Landlord flows
+* refactor shared components unless scoped **only** to this specific label rendering
+
+If the label is conditionally rendered:
+
+* disable or hide the **label text only**
+* do **not** remove the container or input element
+
+---
+
+## ✅ Expected Outcome
+
+* When **Acceptable Number of Units = Other**:
+
+  * ✅ The textbox appears
+  * ❌ The label text **“Other Acceptable Number of Units:”** does **not** appear
+* Save draft, reload, preview, submit all work normally
+* No visual layout shift other than removal of the label text
+
+---
+
+## 🧪 Testing Required Before Completion
+
+1. Login as **[Tenant@exp.com](mailto:Tenant@exp.com)**
+2. Create **Hire a Buyer’s Agent → Income Property** listing
+3. Go to **Property Preferences**
+4. Select **Acceptable Number of Units = Other**
+5. Confirm:
+
+   * Textbox appears
+   * Label text is **not** shown
+6. Enter a value → save draft → reload
+7. Preview / review screen → confirm textbox displays correctly
+8. Submit listing → confirm no validation or console errors
+
+---
+
+## ⚠️ CRITICAL — WHERE THIS MUST UPDATE
+
+This UI change must apply consistently everywhere this field is rendered, including:
+
+* Listing creation UI
+* Saved listing edit view
+* Draft preview / review screens
+* Agent-facing read-only listing details
+
+❌ Do **NOT** mass-update database rows
+✅ This is a **display-layer UI text change only**
+
+---
+
+If you want next, I can also give you a **one-line conditional render rule** Replit can reuse for *all* “Other” fields so this never happens again.

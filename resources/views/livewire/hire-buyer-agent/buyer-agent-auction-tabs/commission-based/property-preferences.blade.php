@@ -1015,7 +1015,6 @@
     </div>
     @if ($unit_size === 'Other')
         <div class="form-group" wire:key="unit-size-other-wrapper">
-            <label class="fw-bold">Other Acceptable Number of Units:</label>
             <div class="input-cover">
                 <input type="text" wire:model="unit_size_other" class="form-control has-icon"
                     data-icon="fas fa-building" placeholder="Enter acceptable number of units (e.g., 15 Units)">
