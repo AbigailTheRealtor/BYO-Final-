@@ -30,7 +30,7 @@
     <label class="fw-bold">Phone Number:<span class="text-danger">*</span></label>
     <div class="input-cover">
         <input type="text" wire:model.defer="phone_number" class="form-control has-icon" data-icon="fa-solid fa-phone"
-            placeholder="555-555-5555" id="buyer_phone_number" inputmode="numeric" autocomplete="tel" maxlength="12"
+            placeholder="(555) 555-5555" id="buyer_phone_number" inputmode="numeric" autocomplete="tel" maxlength="14"
             oninput="formatBuyerPhone(this)" required>
     </div>
 </div>
@@ -178,19 +178,19 @@
 
 <script>
 function formatBuyerPhone(input) {
-    let digits = input.value.replace(/\D/g, '');
-    if (digits.length > 10) {
-        digits = digits.substring(0, 10);
+    let value = input.value.replace(/\D/g, '');
+    if (value.length > 10) {
+        value = value.substring(0, 10);
     }
-    let formatted = '';
-    if (digits.length <= 3) {
-        formatted = digits;
-    } else if (digits.length <= 6) {
-        formatted = digits.substring(0, 3) + '-' + digits.substring(3);
+    if (value.length >= 6) {
+        input.value = '(' + value.substring(0, 3) + ') ' + value.substring(3, 6) + '-' + value.substring(6);
+    } else if (value.length >= 3) {
+        input.value = '(' + value.substring(0, 3) + ') ' + value.substring(3);
+    } else if (value.length > 0) {
+        input.value = '(' + value;
     } else {
-        formatted = digits.substring(0, 3) + '-' + digits.substring(3, 6) + '-' + digits.substring(6);
+        input.value = '';
     }
-    input.value = formatted;
 }
 
 document.addEventListener('DOMContentLoaded', function() {

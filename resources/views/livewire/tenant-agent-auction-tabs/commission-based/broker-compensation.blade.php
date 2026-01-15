@@ -602,35 +602,32 @@ $safeKey = function(...$parts) {
             @if ($brokerage_relationship === 'Transaction Broker Representation')
                 <h6 class="fw-bold">• Transaction Broker Representation:</h6>
                 <ul class="mb-2 ps-3">
-                    <li>Default in Florida unless otherwise specified.</li>
+                    <li>Default brokerage relationship in Florida unless otherwise specified by law.</li>
                     <li>The Broker provides limited representation to both parties without full fiduciary duties.</li>
-                    <li>Must act honestly, fairly, and with skill, care, and diligence.</li>
-                    <li>Not permitted in Texas, Alaska, Vermont, Kansas, or Colorado.</li>
-                    {{-- <li>In those states, Brokers must act as Single Agents or Designated Agents</li> --}}
+                    <li>The Broker must act honestly, fairly, and with skill, care, and diligence.</li>
+                    <li>This brokerage relationship may not be permitted in certain states, including Texas, Alaska, Vermont, Kansas, or Colorado.</li>
                 </ul>
             @elseif($brokerage_relationship === 'Single Agent Representation')
                 <h6 class="fw-bold">• Single Agent Representation:</h6>
                 <ul class="mb-2 ps-3">
-                    <li>The Broker acts as a fiduciary, providing the highest level of loyalty, confidentiality,
-                        obedience, and full disclosure.</li>
+                    <li>The Broker acts as a fiduciary, providing the highest level of loyalty, confidentiality, obedience, and full disclosure.</li>
                     <li>The Broker must always act in the Tenant's best interest.</li>
-                    <li>Requires written consent from both the Tenant and the Landlord.</li>
+                    <li>Requires written consent from both parties.</li>
+                    <li>If required by state law, a Single Agent Notice will be provided by the Broker and signed by the appropriate party.</li>
                 </ul>
             @elseif($brokerage_relationship === 'Dual Agency Representation')
                 <h6 class="fw-bold">• Dual Agency Representation:</h6>
                 <ul class="mb-2 ps-3">
                     <li>The Broker represents both the Tenant and the Landlord in the same transaction.</li>
-                    <li>Must remain neutral and may not disclose confidential information from either party.</li>
-                    <li>Requires written consent from both the Tenant and the Landlord.</li>
-                    <li>Not permitted in Alaska, Colorado, Florida, Kansas, Maryland, Oklahoma, Texas, Vermont, and
-                        Wyoming.</li>
+                    <li>The Broker must remain neutral and may not disclose confidential information from either party.</li>
+                    <li>Requires written consent from both parties.</li>
+                    <li>This brokerage relationship may not be permitted in certain states, including Alaska, Colorado, Florida, Kansas, Maryland, Oklahoma, Texas, Vermont, and Wyoming.</li>
                 </ul>
             @elseif($brokerage_relationship === 'No Brokerage Relationship')
                 <h6 class="fw-bold">• No Brokerage Relationship:</h6>
                 <ul class="mb-2 ps-3">
                     <li>The Broker does not represent the Tenant and has no fiduciary duties.</li>
-                    <li>Still required to act honestly and disclose all known facts that materially affect the
-                        property's value.</li>
+                    <li>The Broker must still act honestly and disclose all known material facts that materially affect the property's value.</li>
                     <li>The Tenant is responsible for their own due diligence and negotiations.</li>
                 </ul>
             @endif

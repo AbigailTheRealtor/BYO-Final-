@@ -34,8 +34,9 @@
 <div class="form-group">
     <label class="fw-bold">Phone Number:<span class="text-danger">*</span></label>
     <div class="input-cover">
-        <input type="text" wire:model="phone_number" class="form-control has-icon" data-icon="fa-solid fa-phone"
-            placeholder="555-555-5555" id="phone_number_input" oninput="formatPhoneNumber(this)" required>
+        <input type="text" wire:model.defer="phone_number" class="form-control has-icon" data-icon="fa-solid fa-phone"
+            placeholder="(555) 555-5555" id="phone_number_input" inputmode="numeric" autocomplete="tel" maxlength="14"
+            oninput="formatPhoneNumber(this)" required>
     </div>
 </div>
 
@@ -170,4 +171,11 @@ function formatPhoneNumber(input) {
         input.value = '';
     }
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const phoneInput = document.getElementById('phone_number_input');
+    if (phoneInput && phoneInput.value) {
+        formatPhoneNumber(phoneInput);
+    }
+});
 </script>
