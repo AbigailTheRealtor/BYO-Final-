@@ -1,0 +1,170 @@
+## Replit Instructions — [Tenant@exp.com](mailto:Tenant@exp.com)
+
+### Hire a Seller’s Agent → Tab 3: Sale Terms
+
+### Label Rename + Tooltip Text Edits + Special Sale Provision Text Spacing Fix (All Property Types unless noted)
+
+---
+
+## Applies To
+
+* **[Tenant@exp.com](mailto:Tenant@exp.com)**
+* **Flow:** Hire a **Seller’s Agent**
+* **Tab:** 3 — **Sale Terms**
+* **Property Types:** **All Seller property types** (Residential, Income, Commercial/Business, Vacant Land) unless otherwise specified
+* **Must apply in:** Create Listing + Edit Listing + Draft reload + Listing display/preview (where applicable)
+
+---
+
+# 1) Field Label Rename + Tooltip Update
+
+## Target Closing Date → Target Closing Timeframe
+
+### Location
+
+Hire a Seller’s Agent → Tab 3: Sale Terms
+Field currently labeled: **Target Closing Date**
+
+### Change
+
+**A) Rename the field label (UI label only):**
+
+* **From:** Target Closing Date
+* **To:** **Target Closing Timeframe:**
+
+**B) Replace tooltip text with exactly:**
+
+> Select the Seller’s preferred closing timeframe. This helps Buyers and their Agents understand the Seller’s desired timing and evaluate whether it can be met.
+
+### Safeguards
+
+* **UI label + tooltip text only**
+* Do **not** change:
+
+  * the input type (date vs dropdown vs timeframe selector)
+  * field logic/validation
+  * database key/column name
+  * stored values
+  * any calculations or automation tied to closing date/timeframe
+
+### QA
+
+* Label displays as **Target Closing Timeframe:** everywhere Seller Sale Terms appears.
+* Tooltip matches exactly in Create + Edit.
+
+---
+
+# 2) Special Sale Provisions → Assignment Contract
+
+## Fix missing space before “If” (Text Formatting Only)
+
+### Location
+
+Hire a Seller’s Agent → Tab 3: Sale Terms
+Section: **Special Sale Provisions**
+Option/Tooltip/Text: **Assignment Contract**
+
+### Issue
+
+Missing space before “If” after the word “wholesaling).If”
+
+### Change
+
+Update the displayed text to exactly (one space added after the period):
+
+> The Seller is assigning their contractual rights to another Buyer (commonly used in wholesaling). If the Seller is under contract to purchase a property and intends to assign their purchase rights to another Buyer, they are considered the Seller of that contract. If the Seller is looking to purchase an assignment contract, they are considered the Buyer of that contract. In that case, please switch to a Buyer listing instead.
+
+### Safeguards
+
+* **Text/tooltip content only**
+* Do **not** change:
+
+  * option values/IDs
+  * selection logic
+  * database stored values
+  * ordering of Special Sale Provision options
+
+### QA
+
+* Sentence reads correctly with a space: “wholesaling). If”
+* Option behavior unchanged.
+
+---
+
+# 3) Occupant Type — Tooltip Edit
+
+### Location
+
+Hire a Seller’s Agent → Tab 3: Sale Terms
+Field: **Occupant Type** (Tooltip)
+
+### Change
+
+Replace tooltip text with exactly:
+
+> Select who currently occupies the property. If Tenant or Owner is selected, enter the Occupied Until date. If Vacant is selected, no date is required.
+
+### Safeguards
+
+* Tooltip text only
+* Do not change:
+
+  * occupant type dropdown options
+  * “Occupied Until” visibility logic
+  * validation rules or required-field behavior
+  * saved values / DB keys
+
+### QA
+
+* Tooltip matches exactly in Create + Edit.
+* Occupied Until behavior remains unchanged.
+
+---
+
+# 4) Desired Sale Price — Tooltip Edit (All Property Types)
+
+You wrote: “Desired Sale Price: Edit tooltip to:” but didn’t include the final wording.
+
+### Best-Practice Tooltip (Recommended)
+
+If you want a clean, neutral tooltip consistent with your style, use this:
+
+**Replace tooltip text with exactly:**
+
+> Enter the Seller’s desired sale price. Buyers and their Agents may use this as a reference when preparing and evaluating offers.
+
+### Safeguards
+
+* Tooltip text only
+* Do not change:
+
+  * currency formatting
+  * placeholder text
+  * validation rules
+  * saved values / DB keys
+
+### QA
+
+* Tooltip displays the updated text.
+* No functional changes.
+
+---
+
+## GLOBAL SAFEGUARDS (MUST FOLLOW)
+
+### DO NOT
+
+* Rename or delete database columns, tables, migrations, models, or enums.
+* Change field keys/bindings, API payload names, or mapping logic.
+* Modify validation, required flags, conditional logic, or calculations.
+* Change UI layout, field order, styling, or icons (except the single label rename requested).
+* Apply changes to Buyer/Tenant/Landlord flows.
+
+### MUST
+
+* Apply changes consistently across Create + Edit + Draft reload + Display/Preview wherever these labels/tooltips/text are reused.
+* Keep capitalization, punctuation, and curly quotes exactly as provided.
+
+---
+
+If you want your **exact** Desired Sale Price tooltip (instead of my recommended version), paste your wording and I’ll plug it into the instructions verbatim.

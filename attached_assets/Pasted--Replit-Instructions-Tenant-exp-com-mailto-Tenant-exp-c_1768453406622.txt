@@ -1,0 +1,258 @@
+## Replit Instructions — [Tenant@exp.com](mailto:Tenant@exp.com)
+
+### Hire a Seller’s Agent — Sale Terms → Offered Financing/Currency
+
+### Tooltip Text Edits + UI Label Removal + Data Persistence Bug Fix (All Property Types)
+
+---
+
+## Applies To
+
+* **[Tenant@exp.com](mailto:Tenant@exp.com)**
+* **Flow:** Hire a **Seller’s Agent**
+* **Tab:** **Sale Terms**
+* **Section:** **Offered Financing/Currency**
+* **Property Types:** **All Seller property types** (Residential, Income, Commercial/Business, Vacant Land)
+* **Must apply in:** Create Listing + Edit Listing + Draft reload + Listing Display/Preview (where applicable)
+
+---
+
+# A) Tooltip Text Edit — Assumable → Monthly Escrow / Impounds (Informational Only)
+
+## Location
+
+Hire a Seller’s Agent → Sale Terms → Offered Financing/Currency → **Assumable**
+Field: **Monthly Escrow / Impounds (Not Assumable, Informational Only)** (Tooltip)
+
+## Change
+
+**Tooltip text only.** Capitalize **Seller’s** exactly as shown.
+
+### Replace tooltip text with exactly:
+
+> Enter the Seller’s current monthly escrow amount for property taxes and homeowners insurance. Buyer’s escrow will be recalculated after closing and may differ significantly. This field is provided for reference only and is not part of the assumable loan terms.
+
+## Safeguards
+
+* **Tooltip text only**
+* Do **not** change logic, validation, or calculations
+* Do **not** rename any keys/fields
+
+## QA
+
+* Confirm tooltip displays with **Seller’s** capitalized.
+* Confirm no behavior changes to the input.
+
+---
+
+# B) Tooltip Text Edit — Assumable → Down Payment to Cover Gap Between Price and Loan
+
+## Location
+
+Hire a Seller’s Agent → Sale Terms → Offered Financing/Currency → **Assumable**
+Field: **Down Payment to Cover Gap Between Price and Loan** (Tooltip)
+
+## Change
+
+**Replace the existing tooltip text with exactly:**
+
+> Enter the amount the Buyer would need to pay to cover the difference between the purchase price and the loan amount.
+
+## Safeguards
+
+* Tooltip text only
+* Do not change field logic, validation, calculations, or visibility triggers
+
+## QA
+
+* Tooltip matches exactly in Create + Edit.
+
+---
+
+# C) UI Display Change Only — Remove “Exchange Items” Label + Tooltip (Seller)
+
+## Location
+
+Hire a Seller’s Agent → Sale Terms → Offered Financing/Currency → **Exchange/Trade**
+Trigger: **Acceptable Exchange Item = Other**
+Target: Label + tooltip shown **above** the “Other” text input (currently labeled “Exchange Items”)
+
+## Required Result
+
+When “Other” is selected:
+
+* Show **only a blank text input box**
+* **No label text**
+* **No tooltip icon** above that input
+
+## Implementation Notes (UI-only)
+
+* Remove/hide only the **label + tooltip UI** for this conditional “Other” input.
+* The input itself must remain present, functional, and bound to the same saved value/key.
+
+## Safeguards (Critical)
+
+* **UI text/display change only**
+* Do **not** remove the input field
+* Do **not** change field logic, validation, required status, or saved values
+* Do **not** rename field keys/bindings
+* Do **not** affect Buyer/Tenant/Landlord flows
+
+## QA
+
+* Select Exchange/Trade → Acceptable Exchange Item = Other
+* Confirm: only a blank input appears (no label, no tooltip icon)
+* Save Draft → reload → input value persists
+* Submit listing still works normally
+
+---
+
+# D) Tooltip Text Edit — Assumable → Type of Loan
+
+## Location
+
+Hire a Seller’s Agent → Sale Terms → Offered Financing/Currency → **Assumable**
+Field: **Type of Loan** (Tooltip)
+
+## Change
+
+Replace tooltip text with exactly:
+
+> Select the loan type associated with the existing assumable loan.
+
+## Safeguards
+
+* Tooltip text only
+* Do not change dropdown options, logic, required status, or validation
+* Do not affect Buyer-side tooltips (Seller flow only)
+
+## QA
+
+* Tooltip updated in Create + Edit
+* Dropdown options unchanged
+
+---
+
+# E) Tooltip Text Edit — Exchange/Trade → Liens / Encumbrances Disclosure
+
+## Location
+
+Hire a Seller’s Agent → Sale Terms → Offered Financing/Currency → **Exchange/Trade**
+Field: **Liens / Encumbrances Disclosure** (Tooltip)
+
+## Change
+
+Update tooltip text to exactly:
+
+> Indicate whether the exchange or trade item has any liens or encumbrances that would need to be resolved before closing.
+
+## Safeguards
+
+* Tooltip text only
+* Do not remove the field
+* Do not change logic, validation, or saved values
+
+## QA
+
+* Tooltip displays updated wording
+* No impact to saving/editing/submitting
+
+---
+
+# F) BUG FIX — Seller Financing → Loan Duration input clears when moving to next tab
+
+## Issue
+
+Hire a Seller’s Agent → Offered Financing/Currency
+When user selects **Seller Financing** and enters **Loan Duration**, the Loan Duration value **deletes/clears** after navigating to the next tab.
+
+## Expected Behavior
+
+* Loan Duration value must **persist** when:
+
+  * moving between tabs
+  * saving draft
+  * editing
+  * reloading the page
+* The value must remain visible and stored until the user changes or clears it.
+
+## Likely Cause (For Replit)
+
+This usually happens when:
+
+* tab navigation re-mounts the component and state isn’t re-hydrated from the draft/model
+* conditional rendering resets the bound variable
+* `updated()` / `hydrate()` / `mount()` logic overwrites the field with null
+* the field isn’t included in the saved payload for drafts/submissions
+
+## Required Fix (Implementation Requirements)
+
+### 1) State Persistence Across Tabs
+
+* Ensure **Loan Duration** is bound to a **stable form state property** that is not reinitialized to null when changing tabs.
+* On tab change / component re-render:
+
+  * re-load the form state from the saved draft/model values
+  * do not overwrite existing entered values with defaults
+
+### 2) Conditional Rendering Must Not Reset Value
+
+* If Loan Duration is shown only when Seller Financing is selected:
+
+  * hiding/showing the field must **not** clear its value automatically
+  * only clear the value if the user explicitly changes Offered Financing away from Seller Financing **and** you intentionally clear dependent fields (if you do this, it must be consistent and deliberate)
+
+### 3) Draft + Submit Payload Must Include Loan Duration
+
+* Confirm Loan Duration is included in:
+
+  * save draft payload
+  * submit payload
+  * edit payload (update)
+* Confirm backend stores it in the correct column/key and returns it on load.
+
+### 4) Form Load / Edit Load
+
+* When editing an existing listing or reloading a draft:
+
+  * if Seller Financing is selected, Loan Duration must repopulate from stored data.
+
+## Safeguards (Critical)
+
+* Do **not** change database schema (no renames/drops)
+* Do **not** change the meaning of Loan Duration or its units
+* Do **not** change validation rules unless required to stop unintended clearing
+* Do **not** alter other financing options or fields
+* Do **not** affect Buyer/Tenant/Landlord flows
+* Fix must be limited to: **Seller → Offered Financing/Currency → Seller Financing → Loan Duration persistence**
+
+## QA (Must Pass)
+
+1. Create Seller listing → select Seller Financing → enter Loan Duration → go to next tab → return
+   ✅ Value still present
+2. Save Draft → reload page → return to Sale Terms
+   ✅ Value still present
+3. Submit listing → open listing display and edit
+   ✅ Value stored and still present
+4. Switch away from Seller Financing and back again (if allowed)
+   ✅ Value behavior matches intended rules (should not vanish unexpectedly)
+
+---
+
+# GLOBAL SAFEGUARDS (Applies to everything above)
+
+### DO NOT
+
+* Rename field keys, bindings, component props, route names, or API payload keys
+* Change UI layout, styling (except the specific “Exchange Items” label removal request), or field order
+* Modify any unrelated tooltips or other flows
+* Delete any inputs or stored values
+
+### MUST
+
+* Changes must apply to Create + Edit + Draft reload wherever those tooltips/fields appear in the Seller flow
+* Tooltip text must match **exactly** (including punctuation and curly quotes)
+
+---
+
+If you want, paste (or screenshot) the exact Seller Financing section showing **Loan Duration** and the tab system you’re using (Livewire tabs vs. stepper vs. conditional components). I can then tighten the bug-fix section even further into “change these exact lifecycle hooks / bindings” instructions without guessing.
