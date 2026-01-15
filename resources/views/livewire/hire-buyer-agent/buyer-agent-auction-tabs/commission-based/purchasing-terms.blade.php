@@ -798,7 +798,7 @@
                 <input type="text" step="any" wire:model.lazy="gap_payment_amount" class="form-control"
                     placeholder="{{ $gap_payment_type === '%'
                         ? 'Enter down payment percentage to bridge gap (e.g., 10)'
-                        : 'Enter down payment amount to bridge gap (e.g., 50,000)' }}"
+                        : 'Enter down payment amount to bridge gap (e.g., 50000)' }}"
                          data-error-id="gap_payment_amount_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)" required>
 
