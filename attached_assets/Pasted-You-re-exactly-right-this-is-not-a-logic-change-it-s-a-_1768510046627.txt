@@ -1,0 +1,122 @@
+You’re exactly right — this is **not a logic change**, it’s a **format + consistency change** so **Listing Type** visually and behavior-wise matches **all other required dropdowns** (like *Meeting Preference*).
+
+Below are **clean, copy-paste Replit instructions with safeguards**.
+
+---
+
+## Replit Instructions — Add “Select” Placeholder to **Listing Type**
+
+### Purpose
+
+Standardize **Listing Type** to match the required-field dropdown format used across the platform (e.g., Meeting Preference), where the user must intentionally choose an option.
+
+This is a **UI consistency update only**.
+
+---
+
+## Applies To
+
+All listing flows where **Listing Type** appears:
+
+* Hire a Tenant’s Agent
+* Hire a Buyer’s Agent
+* Hire a Seller’s Agent
+* Hire a Landlord’s Agent
+
+Field:
+
+* **Listing Type** (Bidding Period / Traditional)
+
+---
+
+## SAFEGUARDS (Must Follow)
+
+1. **Do NOT rename** the field, Livewire property, or database column.
+2. **Do NOT change** Listing Type business logic (bidding vs traditional behavior).
+3. **Do NOT set a default value** (no auto-selecting Bidding Period or Traditional).
+4. This change must **not affect existing saved listings**.
+5. This is **display + required selection enforcement only**.
+
+---
+
+## Required Dropdown Format (Match “Meeting Preference” Exactly)
+
+### Dropdown Options (Final)
+
+```
+Select                    ← placeholder
+Bidding Period
+Traditional
+```
+
+### Placeholder Rules
+
+* Label: **Select**
+* `value=""` (empty string)
+* `disabled`
+* `selected` by default
+* Cannot be submitted
+
+---
+
+## Implementation Instructions (Replit)
+
+### Step 1 — Update Listing Type Select Options
+
+In the Listing Type `<select>` element, add a disabled placeholder option **above** the real choices.
+
+**Conceptual example (do not change variable names):**
+
+* First option: `Select` (disabled, empty value)
+* Followed by existing options
+
+⚠️ Do **not** remove or reorder “Bidding Period” or “Traditional”.
+
+---
+
+### Step 2 — Ensure Required Validation Respects Placeholder
+
+Confirm Listing Type validation:
+
+* Fails if value is `""` / `null`
+* Passes only if value is `bidding_period` or `traditional` (or your existing values)
+
+**Do NOT add new validation rules** — just ensure the placeholder is not treated as valid.
+
+---
+
+### Step 3 — Edit Mode / Draft Safeguard
+
+When editing an existing listing:
+
+* If Listing Type already has a value → show that value selected
+* **Do NOT revert to “Select”** for saved listings
+
+---
+
+## Visual Consistency Check
+
+After update, Listing Type should:
+
+* Look identical to **Meeting Preference**
+* Show “Select” before user chooses
+* Display required asterisk behavior consistently
+* Prevent submission until a real option is chosen
+
+---
+
+## Acceptance Checklist (Replit Must Confirm)
+
+* [ ] Listing Type shows **Select** placeholder
+* [ ] User must choose Bidding Period or Traditional
+* [ ] Existing listings are unaffected
+* [ ] Draft/save/submit still works
+* [ ] No logic changes to bidding workflows
+
+---
+
+### Final Confirmation Rule (Save This)
+
+> **Any required dropdown that represents a meaningful decision must include a disabled “Select” placeholder — even if there are only two options.**
+
+If you want, I can convert this into a **global dropdown standard** you can reuse for every future required select field so this doesn’t keep coming up.
