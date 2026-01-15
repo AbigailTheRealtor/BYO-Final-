@@ -98,10 +98,10 @@ if (!function_exists('db_time')) {
                 => "Send listing alerts from real estate platforms that match the Buyer's purchase criteria",
             // Buyer Business Opportunity - Business Search service text update
             "Send alerts for businesses that match the Buyer's acquisition criteria from MLS, BizBuySell, or other listing platforms"
-                => "Send alerts for businesses that match the Buyer's acquisition criteria from available business listing sources.",
+                => "Send alerts for businesses that match the Buyer's acquisition criteria from available business listing sources",
             // Buyer Vacant Land - Property Search service text update
             "Send property alerts for land listings that match the Buyer's goals from MLS and land-specific platforms"
-                => "Send property alerts for land listings that match the Buyer's goals from relevant real estate and land-specific platforms.",
+                => "Send property alerts for land listings that match the Buyer's goals from relevant real estate and land-specific platforms",
         ];
         
         // Check if the service matches any old text (case-insensitive normalized comparison)
