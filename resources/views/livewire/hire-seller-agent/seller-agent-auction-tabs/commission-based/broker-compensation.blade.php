@@ -128,7 +128,7 @@
         Buyer's Broker Commission Structure:
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select how the Buyer's Broker will be compensated — either from the Seller's Broker commission, directly by the Seller, or not at all.">
+            title="Select how the Buyer's Broker will be compensated. Options include compensation from the Seller's Broker commission, the Seller paying the Buyer's Broker separately, or offering no compensation to the Buyer's Broker.">
             <i class="fa-solid fa-circle-info"></i>
 
         </span>
@@ -155,7 +155,7 @@
         <label class="fw-bold d-flex align-items-center">
             Buyer's Broker Commission Fee:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the amount offered to the Buyer's Broker. This can be a percentage of the purchase price, a flat fee, or select “Other” to define a custom compensation amount.">
+                title="Enter the amount offered to the Buyer's Broker. This can be a percentage of the purchase price, a flat fee, or a custom amount if &quot;Other&quot; is selected. Enter the appropriate amount based on your selection.">
                 <i class="fa-solid fa-circle-info"></i>
 
             </span>
