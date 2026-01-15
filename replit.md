@@ -56,6 +56,14 @@ The Buyer view (buyerAgentAuctionDetail.blade.php) includes property-type-aware 
 - Flat amounts show "$X,XXX" currency format
 - Consistent labels: "Compensation (When Option Is Created)" and "Compensation (If Purchase Option Is Exercised)"
 
+**Lease-Option Form Normalization (Jan 2026)**: All 4 agent form views (Tenant, Buyer, Seller, Landlord) use identical Lease-Option section structure:
+- `$safeKey` helper function at top of file for generating safe wire:key values (uses `strtolower` and regex `/[^a-z0-9\-]/`)
+- `wire:key="{{ $safeKey('lease-option-section', $interested_lease_option_agreement) }}"` for Livewire re-rendering stability
+- `<label class="fw-bold">` headers instead of `<h5 class="compensation_tab">` (no blue styling)
+- Conditional currency symbol display: `$` prefix only when `$lease_type === 'flat'`, `%` suffix only when `$lease_type === 'percent'` (prevents double "$" bug)
+- Conditional input handlers: `oninput="{{ $lease_type === 'flat' ? 'formatWithCommas(this)' : 'validateInput(this)' }}"` for proper comma formatting
+- Removed extra "Compensation Amount" labels from Landlord form
+
 **Text Normalization**: Removed "the" from broker compensation phrases across all views:
 - "of Total Purchase Price" (not "of the Total Purchase Price")
 - "of Gross Lease Value" (not "of the Gross Lease Value")
