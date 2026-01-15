@@ -1,0 +1,189 @@
+Got it — **do NOT copy Seller**. Make **Buyer + Landlord + Seller** match the **Tenant** format exactly under **Broker Compensation & Agency Agreement Terms**, with:
+
+* **No blue highlight styling**
+* **No duplicate “$”** (right now it shows a second `$` even when the user selects `$`)
+
+Below are **copy-paste Replit instructions with safeguards**.
+
+---
+
+## Replit Instructions — Match Tenant Lease-Option Format (No Blue + No Double “$”)
+
+### Applies To
+
+All forms under **Broker Compensation & Agency Agreement Terms**:
+
+* Hire a **Buyer’s Agent**
+* Hire a **Seller’s Agent**
+* Hire a **Landlord’s Agent**
+
+### Scope
+
+**UI/formatting only** (layout + input group rendering).
+**Do not change tooltips, field labels, database columns, or validation rules.**
+
+---
+
+## SAFEGUARDS (Must Follow)
+
+1. **Do NOT delete or rename** any existing fields, Livewire properties, DB columns, IDs, or validation rules.
+2. **Do NOT modify Tenant** (Tenant is the “gold standard” reference).
+3. **Do NOT create new Lease-Option fields.** Only change formatting/rendering.
+4. Implement changes by **reusing Tenant components/partials** or matching Tenant markup, not by “re-styling Seller.”
+5. After changes, confirm: **draft save, tab navigation, submit** still work.
+
+---
+
+## Goal (What “Done” Means)
+
+When **Interested in a Lease-Option Agreement = Yes**, the Lease-Option fee fields in **Buyer/Seller/Landlord** should look **exactly like Tenant**:
+
+* Same spacing, borders, font, icons, and input group layout
+* **No blue format**
+* **Only ONE currency symbol** displayed (never `$$`)
+
+---
+
+# Part A — Force Buyer/Seller/Landlord to Use the Same Tenant Markup
+
+## Step 1 — Find the Tenant Lease-Option Section (Source of Truth)
+
+Locate the Tenant version of this section in your views/components:
+Search repo for the label string (or Livewire property):
+
+* `"Interested in a Lease-Option Agreement"`
+* `"Compensation for Creating the Lease-Option Agreement"`
+* `"Compensation if Purchase Option is Exercised"`
+
+**Identify exactly which Blade partial/component Tenant uses** to render:
+
+* the **Interested** dropdown
+* the **currency selector + amount input** rows
+
+✅ Tenant’s markup/component is the reference.
+
+---
+
+## Step 2 — Reuse Tenant’s Component/Partial in Buyer/Seller/Landlord
+
+In Buyer/Seller/Landlord Broker Compensation views, replace only the Lease-Option section markup with the same include/component used by Tenant.
+
+**Preferred approach (most reliable):**
+
+* Extract Tenant’s Lease-Option section into a shared partial/component if it isn’t already, e.g.:
+
+  * `resources/views/components/broker-comp/lease-option.blade.php`
+  * OR keep existing Tenant component and call it from the other roles
+
+**Pass through the SAME Livewire props** those roles already use (do not rename):
+
+* the Yes/No field (boolean / select)
+* `compensation_for_creating_lease_option` (or your exact variable)
+* `compensation_if_purchase_option_exercised` (or your exact variable)
+* currency type / symbol field (if applicable)
+
+**Safeguard:** If Buyer/Seller/Landlord use different Livewire property names, map them in the include call (do NOT rename backend variables).
+
+---
+
+# Part B — Fix the “Double $” Bug (Root Cause + Correct Fix)
+
+## What’s Happening
+
+The UI is rendering **two prefixes**:
+
+1. a **currency dropdown** that shows `$`
+   AND
+2. a **hardcoded `$` prefix span** (or a second “prepend” element)
+
+So when `$` is selected, it becomes: `$$ [input]`
+
+---
+
+## Step 3 — Match Tenant’s Currency Input Group EXACTLY
+
+In Tenant, the correct pattern is typically one of these (only one prefix source):
+
+### ✅ Correct Pattern (Dropdown provides symbol)
+
+* Left: currency dropdown (shows `$`)
+* Right: amount input
+* **NO extra static `$` span/prepend**
+
+### ✅ Alternate Correct Pattern (Static prefix, no dropdown)
+
+* Static `$` prepend
+* Amount input
+* **NO dropdown**
+
+**Your requirement:** “no second $ if user selects $ symbol”
+So the correct implementation is: **dropdown only (no static `$` prepend)** — exactly like Tenant.
+
+---
+
+## Step 4 — Remove the Extra Static Currency Prefix ONLY in Buyer/Seller/Landlord (or wherever duplicated)
+
+Search in Buyer/Seller/Landlord Lease-Option fee rows for any of these:
+
+* a literal `$`
+* `input-group-text` containing `$`
+* `prepend` / `span` / `div` used as a currency prefix
+* a Blade include that adds a prefix automatically
+
+Example things to remove (conceptually):
+
+* `<span class="input-group-text">$</span>`
+* Any second prepend block that prints the selected symbol again
+
+✅ After change, the only `$` displayed should come from the dropdown.
+
+**Safeguard:** Do not remove the dropdown itself, only the redundant static prefix.
+
+---
+
+# Part C — Standardize “No Blue Color” to Match Tenant
+
+## Step 5 — Remove Role-Specific “Lease Option Active” Highlighting
+
+In Buyer/Seller/Landlord views, remove any conditional classes that change colors when Lease-Option = Yes (blue borders, blue backgrounds, etc.).
+
+**Do not alter visibility logic.**
+Only remove the extra styling so it matches Tenant’s neutral design.
+
+---
+
+# Part D — Required QA / Regression Testing (Must Do)
+
+## Step 6 — Visual & Behavior Checklist
+
+For **Buyer, Seller, Landlord**:
+
+1. Set **Interested in Lease-Option = No**
+
+   * Lease-Option fee fields hidden (or same behavior as Tenant)
+2. Set **Interested in Lease-Option = Yes**
+
+   * Lease-Option fee fields appear
+   * Layout matches Tenant
+   * **No blue styling**
+3. Currency dropdown:
+
+   * Select `$` → only ONE `$` displays (no `$$`)
+   * If other currency options exist → still only ONE symbol displays
+4. Data persistence:
+
+   * Enter amounts → Save draft → reload → values persist
+   * Navigate tabs → values persist
+5. Submit:
+
+   * Submit enabled/works exactly as before (no new validation issues)
+
+---
+
+## Completion Definition
+
+✅ Buyer/Seller/Landlord Lease-Option section under Broker Compensation is **pixel-consistent with Tenant** and **cannot display double “$”**.
+
+---
+
+If you want this even more “Replit-proof,” paste the **component/Blade file path** where Tenant’s Lease-Option section lives (just the filenames), and I’ll rewrite this as **exact file-by-file edits** (still with the same safeguards).

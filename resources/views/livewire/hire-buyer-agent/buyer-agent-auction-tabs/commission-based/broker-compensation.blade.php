@@ -1,3 +1,11 @@
+@php
+$safeKey = function(...$parts) {
+    return implode('-', array_map(function($p) {
+        if (!is_scalar($p) || $p === '' || $p === null) return 'none';
+        return preg_replace('/[^a-z0-9\-]/', '', strtolower((string)$p));
+    }, $parts));
+};
+@endphp
 <h3>Broker Compensation & Agency Agreement Terms</h3>
 <div class="alert alert-info bg-light-info border-info mb-4">
     <div class="d-flex align-items-center">
@@ -332,20 +340,18 @@
         </div>
     </div> --}}
 
-    <!-- TAB 1 -->
-    <div id="tab1" class="tab-content">
-        <h5 class="compensation_tab">
-            Compensation for Creating the Lease-Option Agreement:
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Specify how the Broker will be compensated at the time the lease-option agreement is created. This may include a flat fee or a percentage of the option consideration paid by the party granting the option. This compensation is typically paid upfront and is separate from any commission that may be owed if the purchase option is later exercised.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-        </h5>
-
+    <div id="tab1" class="tab-content mt-3" wire:key="{{ $safeKey('lease-option-section', $interested_lease_option_agreement) }}">
         <div class="form-group">
-            <div class="input-group" x-data="moneyInput()">
-                <!-- Select for type -->
-                <select wire:model="lease_type" wire:change="setType('lease', $event.target.value)"  class="form-select" style="max-width: 100px;">
+            <label class="fw-bold">
+                Compensation for Creating the Lease-Option Agreement:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    title="Specify how the Broker will be compensated at the time the lease-option agreement is created. This may include a flat fee or a percentage of the option consideration paid by the party granting the option. This compensation is typically paid upfront and is separate from any commission that may be owed if the purchase option is later exercised.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+
+            <div class="input-group mt-2">
+                <select wire:model="lease_type" wire:change="setType('lease', $event.target.value)" class="form-select" style="max-width: 100px;">
                     <option value="percent">%</option>
                     <option value="flat">$</option>
                 </select>
@@ -354,35 +360,35 @@
                     <span class="input-group-text">$</span>
                 @endif
 
-                <!-- Single input -->
-                <input type="text" wire:model.lazy="lease_value" class="form-control"
+                <input type="text" step="any" wire:model.lazy="lease_value" class="form-control"
                     placeholder="{{ $lease_type === 'percent'
                         ? 'Enter percentage of option consideration (e.g., 5)'
                         : 'Enter flat fee amount (e.g., 1,500)' }}"
-                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                    data-error-id="lease_value_error"
+                    oninput="{{ $lease_type === 'flat' ? 'formatWithCommas(this)' : 'validateInput(this)' }}"
+                    onblur="{{ $lease_type === 'flat' ? 'formatWithCommas(this)' : 'reformatNumber(this)' }}"
+                    onpaste="handlePaste(event)">
 
                 @if ($lease_type === 'percent')
                     <span class="input-group-text">%</span>
                 @endif
             </div>
-
+            <span class="error mt-2" id="lease_value_error"></span>
         </div>
     </div>
 
-    <!-- TAB 2 -->
-    <div id="tab2" class="tab-content">
-        <h5 class="compensation_tab">
-            Compensation if Purchase Option is Exercised:
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="If the purchase option is exercised, the Broker may be entitled to additional compensation. Enter how the Broker will be compensated at that time, such as a flat fee or a percentage of the total purchase price. Any compensation already received under the lease-option agreement may be credited toward the final amount due, depending on the terms of the agreement.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-        </h5>
-
+    <div id="tab2" class="tab-content mt-3">
         <div class="form-group">
-            <div class="input-group" x-data="moneyInput()">
-                <!-- Select for type -->
-                <select wire:model="purchase_type"  wire:change="setType('purchase', $event.target.value)" class="form-select" style="max-width: 100px;">
+            <label class="fw-bold">
+                Compensation if Purchase Option is Exercised:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    title="If the purchase option is exercised, the Broker may be entitled to additional compensation. Enter how the Broker will be compensated at that time, such as a flat fee or a percentage of the total purchase price. Any compensation already received under the lease-option agreement may be credited toward the final amount due, depending on the terms of the agreement.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+
+            <div class="input-group mt-2">
+                <select wire:model="purchase_type" wire:change="setType('purchase', $event.target.value)" class="form-select" style="max-width: 100px;">
                     <option value="percent">%</option>
                     <option value="flat">$</option>
                 </select>
@@ -391,22 +397,22 @@
                     <span class="input-group-text">$</span>
                 @endif
 
-                <!-- Single input -->
-                <input type="text" wire:model.lazy="purchase_value" class="form-control"
+                <input type="text" step="any" wire:model.lazy="purchase_value" class="form-control"
                     placeholder="{{ $purchase_type === 'percent'
                         ? 'Enter percentage of the total purchase price (e.g., 6)'
                         : 'Enter flat fee amount (e.g., 5,000)' }}"
-                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                    data-error-id="purchase_value_error"
+                    oninput="{{ $purchase_type === 'flat' ? 'formatWithCommas(this)' : 'validateInput(this)' }}"
+                    onblur="{{ $purchase_type === 'flat' ? 'formatWithCommas(this)' : 'reformatNumber(this)' }}"
+                    onpaste="handlePaste(event)">
 
                 @if ($purchase_type === 'percent')
                     <span class="input-group-text">%</span>
                 @endif
             </div>
-
+            <span class="error mt-2" id="purchase_value_error"></span>
         </div>
-
     </div>
-
 @endif
 
 <!-- Protection Period Timeframe -->
