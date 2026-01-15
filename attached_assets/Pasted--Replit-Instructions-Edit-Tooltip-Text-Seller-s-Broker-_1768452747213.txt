@@ -1,0 +1,87 @@
+
+Replit Instructions — Edit Tooltip Text (Seller’s Broker Lease Fee)  (Commercial & Business Only) 
+Location:
+Hire a Seller’s Agent → Broker Compensation & Agency Agreement Terms
+→ Seller’s Broker Lease Fee (tooltip)
+________________________________________
+Change (Tooltip Text Only)
+In the tooltip text, replace the phrase:
+“a percentage of one month’s rent”
+with:
+“a percentage of the month’s rent.”
+Do not change any other wording in the tooltip.
+________________________________________
+Example (Contextual Fix)
+Before:
+“…a percentage of the net aggregate rent, a percentage of the gross rent, a percentage of one month’s rent, a flat fee…”
+After:
+“…a percentage of the net aggregate rent, a percentage of the gross rent, a percentage of the month’s rent, a flat fee…”
+________________________________________
+🛡️ Safeguards (MUST FOLLOW)
+•	Tooltip text only
+•	Do NOT change dropdown options, labels, calculations, or logic
+•	Do NOT affect Buyer, Tenant, or Landlord flows
+•	Do NOT modify database fields or validation
+________________________________________
+✅ Expected Result
+•	Tooltip correctly reflects percentage-based lease fee structure
+•	No implication of a flat “one month’s rent”
+•	All save, counter, and submit flows remain unchange
+
+
+Replit Instructions — Edit Tooltip Text (Seller’s Broker Lease Fee)  (Commercial & Business Only) 
+Location:
+Hire a Seller’s Agent → Broker Compensation & Agency Agreement Terms
+→ Seller’s Broker Lease Fee (tooltip)
+________________________________________
+Change (Tooltip Text Only)
+In the tooltip text, replace the phrase:
+“a percentage of one month’s rent”
+with:
+“a percentage of the month’s rent.”
+Do not change any other wording in the tooltip.
+________________________________________
+Example (Contextual Fix)
+Before:
+“…a percentage of the net aggregate rent, a percentage of the gross rent, a percentage of one month’s rent, a flat fee…”
+After:
+“…a percentage of the net aggregate rent, a percentage of the gross rent, a percentage of the month’s rent, a flat fee…”
+________________________________________
+🛡️ Safeguards (MUST FOLLOW)
+•	Tooltip text only
+•	Do NOT change dropdown options, labels, calculations, or logic
+•	Do NOT affect Buyer, Tenant, or Landlord flows
+•	Do NOT modify database fields or validation
+________________________________________
+✅ Expected Result
+•	Tooltip correctly reflects percentage-based lease fee structure
+•	No implication of a flat “one month’s rent”
+•	All save, counter, and submit flows remain unchange
+
+Replit Instructions — Remove “Commercial Property” Wording (Buyer’s Broker Lease Fee Tooltip)
+Location:
+Hire a Seller’s Agent → Broker Compensation & Agency Agreement Terms → Buyer’s Broker Lease Fee (tooltip) (Commercial & Business Property only) 
+________________________________________
+Change (Tooltip Text Only)
+In the tooltip text, remove the phrase “if a commercial property is leased” and replace it with:
+“if a property is leased”
+Do not change any other wording in the tooltip.
+________________________________________
+Example (Exact Edit)
+Before:
+“Choose how the Tenant’s Broker will be compensated if a commercial property is leased…”
+After:
+“Choose how the Tenant’s Broker will be compensated if a property is leased…”
+(Keep the rest of the tooltip exactly the same.)
+________________________________________
+🛡️ Safeguards
+•	Tooltip text only
+•	Do NOT change dropdown options, labels, calculations, validation, or logic
+•	Do NOT modify database fields
+•	Do NOT affect Seller, Tenant, or Landlord flows
+________________________________________
+✅ Expected Outcome
+•	Tooltip no longer references “commercial property”
+•	Buyer’s Broker Lease Fee tooltip remains otherwise unchanged
+•	No impact to saving, editing, countering, or submitting listings
+

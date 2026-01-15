@@ -1514,7 +1514,7 @@
         @endforeach
 
         <div class="form-group mt-3">
-            <button type="button" class="btn btn-primary" wire:click="addUnitType">
+            <button type="button" class="btn btn-primary" wire:click="addUnitType" style="background-color: #0d6efd !important; border-color: #0d6efd !important; color: #fff !important;">
                 <i class="fa-solid fa-plus me-2"></i>Add Another Unit Type
             </button>
         </div>
