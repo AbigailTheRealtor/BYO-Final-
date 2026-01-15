@@ -1190,7 +1190,7 @@ this agreement ends.">
 
             @if ($brokerage_relationship === 'Transaction Broker Representation')
                 <h6 class="fw-bold">• Transaction Broker Representation:</h6>
-                <ul class="mb-2 ps-3">
+                <ul class="mb-2 ps-3" style="list-style-type: disc;">
                     <li>Default brokerage relationship in Florida unless otherwise specified by law.</li>
                     <li>The Broker provides limited representation to both parties without full fiduciary duties.</li>
                     <li>The Broker must act honestly, fairly, and with skill, care, and diligence.</li>
@@ -1198,25 +1198,23 @@ this agreement ends.">
                 </ul>
             @elseif ($brokerage_relationship === 'Single Agent Representation')
                 <h6 class="fw-bold">• Single Agent Representation:</h6>
-                <ul class="mb-2 ps-3">
-                    <li>The Broker acts as a fiduciary, providing the highest level of loyalty, confidentiality,
-                        obedience, and full disclosure.</li>
+                <ul class="mb-2 ps-3" style="list-style-type: disc;">
+                    <li>The Broker acts as a fiduciary, providing the highest level of loyalty, confidentiality, obedience, and full disclosure.</li>
                     <li>The Broker must always act in the Landlord’s best interest.</li>
                     <li>Requires written consent from both parties.</li>
                     <li>If required by state law, a Single Agent Notice will be provided by the Broker and signed by the appropriate party.</li>
                 </ul>
             @elseif ($brokerage_relationship === 'Dual Agency Representation')
                 <h6 class="fw-bold">• Dual Agency Representation:</h6>
-                <ul class="mb-2 ps-3">
+                <ul class="mb-2 ps-3" style="list-style-type: disc;">
                     <li>The Broker represents both the Landlord and the Tenant in the same transaction.</li>
                     <li>The Broker must remain neutral and may not disclose confidential information from either party.</li>
                     <li>Requires written consent from both parties.</li>
-                    <li>This brokerage relationship may not be permitted in certain states, including Alaska, Colorado, Florida, Kansas, Maryland, Oklahoma, Texas, Vermont, and
-                        Wyoming.</li>
+                    <li>This brokerage relationship may not be permitted in certain states, including Alaska, Colorado, Florida, Kansas, Maryland, Oklahoma, Texas, Vermont, and Wyoming.</li>
                 </ul>
             @elseif ($brokerage_relationship === 'No Brokerage Relationship')
                 <h6 class="fw-bold">• No Brokerage Relationship:</h6>
-                <ul class="mb-2 ps-3">
+                <ul class="mb-2 ps-3" style="list-style-type: disc;">
                     <li>The Broker does not represent the Landlord and has no fiduciary duties.</li>
                     <li>The Broker must still act honestly and disclose all known material facts that materially affect the
                         property’s value.</li>
@@ -1225,10 +1223,7 @@ this agreement ends.">
             @endif
 
             <div class="alert alert-warning mt-3 p-2 small">
-                <strong>⚠️ Legal Notice:</strong> Certain brokerage relationships are not permitted in all states. If
-                your selection is not allowed, the Broker will establish a permitted legal alternative. Real estate laws
-                change frequently. Both the Broker and Landlord are responsible for complying with all current local,
-                state, and federal laws.
+                <strong>⚠️ Legal Notice:</strong> Certain brokerage relationships are not permitted in all states. If your selection is not allowed, the Broker will establish a permitted legal alternative. Real estate laws change frequently. Both the Broker and Landlord are responsible for complying with all current local, state, and federal laws.
             </div>
         </div>
     @endif
