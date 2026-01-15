@@ -1,0 +1,96 @@
+Got it — you’re right. This applies to **Assignment Contract**, not Bank Owned / REO.
+Below is the **corrected, copy-paste-ready Replit instruction** with **proper safeguards**, changing **only the option reference** and nothing else.
+
+---
+
+## Replit Instructions — [Tenant@exp.com](mailto:Tenant@exp.com)
+
+## Hire a Buyer’s Agent (All Property Types)
+
+## Tab 3: Purchasing Terms → Acceptable Special Sale Provisions
+
+## ✅ Tooltip Spacing Fix Only (Assignment Contract)
+
+---
+
+### Applies To
+
+[Tenant@exp.com](mailto:Tenant@exp.com)
+→ **Hire a Buyer’s Agent**
+Property Types: **All** (Residential, Income, Commercial, Business Opportunity, Vacant Land)
+Tab: **Purchasing Terms (Tab 3)**
+Field: **Acceptable Special Sale Provisions**
+**Option Tooltip: Assignment Contract**
+
+---
+
+## Issue
+
+In the **Assignment Contract** tooltip text, there is **missing spacing** after the word **“contract.”**
+
+It currently displays as:
+
+> …the Seller of that contract.If the Seller…
+
+This must be corrected to:
+
+> …the Seller of that contract. If the Seller…
+
+---
+
+## ✅ Change Required (Tooltip Text Only)
+
+### Location
+
+Hire a Buyer’s Agent
+→ Tab 3: Purchasing Terms
+→ Acceptable Special Sale Provisions
+→ **Assignment Contract** option tooltip
+
+### Fix (Exact Edit)
+
+Replace the substring **exactly** as follows:
+
+* **Before:** `contract.If`
+* **After:** `contract. If`
+
+⚠️ **Do NOT** change any other wording, punctuation, capitalization, spacing elsewhere, or line breaks in the tooltip.
+
+---
+
+## 🛡️ SAFEGUARDS (MUST FOLLOW — DO NOT VIOLATE)
+
+Tooltip text edit **only** (spacing fix only).
+
+Do **NOT**:
+
+* change dropdown options, option labels, or option order
+* change logic, validations, conditional behavior, or required fields
+* modify database schema, migrations, models, or stored values
+* affect Seller, Tenant, or Landlord flows
+* change UI layout, spacing, icons, styling, or formatting
+
+---
+
+## ✅ Expected Outcome
+
+* **Assignment Contract** tooltip now reads correctly with a space after “contract.”
+* No other tooltip wording changes
+* No impact to saving drafts, editing, countering, or submitting listings
+
+---
+
+## 🧪 Testing Required Before Completion
+
+1. Login as **[Tenant@exp.com](mailto:Tenant@exp.com)**
+2. Create **Hire a Buyer’s Agent** listing (any property type)
+3. Go to **Tab 3: Purchasing Terms**
+4. Open **Acceptable Special Sale Provisions**
+5. Hover/click the tooltip for **Assignment Contract**
+6. Confirm tooltip now shows: `contract. If` (with the space)
+7. Save draft → reload → confirm tooltip still displays correctly
+8. Submit listing → confirm no errors
+
+---
+
+✔️ This version is now **accurate, scoped correctly, and safe to implement**.
