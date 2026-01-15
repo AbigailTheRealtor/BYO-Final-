@@ -46,7 +46,7 @@
         @endif
         @if ($property_type === 'Commercial Property')
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Choose how the Tenant’s Broker will be compensated if a commercial property is leased. Options include a flat fee, a percentage of the net aggregate rent, a combination of flat fee and percentage, or select “Other” to define a custom structure. Then, enter the appropriate amount(s) based on your selection.">
+                title="Choose how the Tenant’s Broker will be compensated if a property is leased. Options include a flat fee, a percentage of the net aggregate rent, a combination of flat fee and percentage, or select “Other” to define a custom structure. Then, enter the appropriate amount(s) based on your selection.">
                 <i class="fa-solid fa-circle-info"></i>
 
             </span>
