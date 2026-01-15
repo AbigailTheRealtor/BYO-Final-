@@ -526,6 +526,9 @@
                     <i class="fa-solid fa-chevron-down listing-type-arrow"></i>
                 </div>
                 <div class="listing-type-options">
+                    <div class="listing-type-option listing-type-placeholder" data-value="" aria-disabled="true">
+                        <span>Select</span>
+                    </div>
                     <div class="listing-type-option" data-value="Bidding Period">
                         <span>Bidding Period</span>
                         <div class="listing-type-option-tooltip">
@@ -798,6 +801,16 @@
 
     .listing-type-option.selected {
         background-color: #e7f1ff;
+    }
+
+    .listing-type-option.listing-type-placeholder {
+        color: #6c757d;
+        cursor: default;
+        pointer-events: none;
+    }
+
+    .listing-type-option.listing-type-placeholder:hover {
+        background-color: transparent;
     }
 
     .listing-type-option-tooltip {
