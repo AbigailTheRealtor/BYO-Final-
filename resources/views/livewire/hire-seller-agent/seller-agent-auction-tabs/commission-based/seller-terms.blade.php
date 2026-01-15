@@ -416,7 +416,7 @@ This amount represents the portion of the purchase price that the Seller will fi
     </div>
 
     <div class="form-group">
-        <label class="fw-bold"> Loan Duration:</label>
+        <label class="fw-bold"> Loan Duration (Years):</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the term of the loan in years.">
