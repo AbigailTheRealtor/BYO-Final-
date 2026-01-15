@@ -2460,5 +2460,33 @@
             event.target.value = decPart ? `${intPart}.${decPart}` : intPart;
             event.target.dispatchEvent(new Event('input', { bubbles: true }));
         }
+
+        // Re-initialize money formatting after Livewire updates
+        function initializeMoneyInputs() {
+            // Format lease_value input if it's a $ (flat) type
+            const leaseInput = document.querySelector('[wire\\:key^="lease-value-input-flat"]');
+            if (leaseInput && leaseInput.value) {
+                formatWithCommas(leaseInput);
+            }
+            // Format purchase_value input if it's a $ (flat) type  
+            const purchaseInput = document.querySelector('[wire\\:key^="purchase-value-input-flat"]');
+            if (purchaseInput && purchaseInput.value) {
+                formatWithCommas(purchaseInput);
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeMoneyInputs();
+        });
+
+        // Re-initialize after Livewire updates (Livewire v2)
+        if (typeof Livewire !== 'undefined') {
+            document.addEventListener('livewire:load', function() {
+                Livewire.hook('message.processed', function() {
+                    initializeMoneyInputs();
+                });
+            });
+        }
     </script>
 @endpush

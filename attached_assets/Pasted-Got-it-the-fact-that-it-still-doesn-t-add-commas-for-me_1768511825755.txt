@@ -1,0 +1,147 @@
+Got it — the fact that it **still doesn’t add commas for `$`** means Replit likely fixed only the **% branch** again, or they added formatting that’s **not initializing on these `$` inputs** (very common when the inputs render dynamically after a dropdown change, or Livewire re-renders them).
+
+Here are **stronger, more specific Replit instructions** that force the fix and include the two most common root causes:
+
+1. **The $ inputs are not using the same “money mask” class/component as Desired Rental Amount**
+2. **The mask is not being re-initialized after Livewire updates** (so it never attaches)
+
+---
+
+## Replit Instructions — Fix Commas for `$` Lease-Option Inputs (Must Work After Livewire Re-Render)
+
+### Applies To
+
+Tenant / Buyer / Seller / Landlord
+**Broker Compensation & Agency Agreement Terms**
+Fields:
+
+* **Compensation for Creating the Lease-Option Agreement**
+* **Compensation if Purchase Option is Exercised**
+
+### Requirement
+
+When symbol = `$`, typing `6666666` must display as `6,666,666` (same as Desired Rental Amount).
+
+---
+
+## SAFEGUARDS (Non-Negotiable)
+
+1. **Do NOT rename** any `wire:model`, field keys, validation, or DB columns.
+2. **Do NOT store commas** in DB.
+3. **Do NOT change** the dropdown options or fee logic.
+4. **Match Desired Rental Amount behavior exactly** (same masking approach + same sanitizer).
+5. Fix must work for:
+
+   * first load
+   * switching `% ↔ $`
+   * navigating tabs
+   * save draft + reload
+   * editing an existing listing
+
+---
+
+# ✅ Root Cause to Address (Tell Replit This Exactly)
+
+### The currency mask is not being applied to the `$` amount inputs because:
+
+* the `$` branch input is missing the mask hook **OR**
+* Livewire re-renders the input and the JS mask is **not re-initialized**, so formatting never attaches.
+
+Therefore the fix must include **both**:
+
+1. Ensure the `$` amount `<input>` has the **same mask class/component** as Desired Rental Amount
+2. Ensure the mask is **re-initialized after Livewire updates**.
+
+---
+
+# Step 1 — Make Both `$` Lease-Option Amount Inputs Use the SAME Mask Hook as Desired Rental Amount
+
+### Instruction
+
+Find the working Desired Rental Amount input and identify exactly how commas are added (class/component).
+
+Then ensure BOTH lease-option amount inputs (for both fields) use the same method.
+
+✅ If Desired Rental Amount uses a class like:
+
+* `class="money-input"` / `class="currency-input"` / `data-money="true"`
+  Then add that exact class/attribute to the Lease-Option **$ amount inputs**.
+
+✅ If Desired Rental Amount uses a Blade component:
+
+* Replace the Lease-Option `$` branch plain input with that same component (keep wire:model).
+
+**Important:** The formatter must be attached to the AMOUNT input itself, not only the `%` version.
+
+---
+
+# Step 2 — Re-Initialize the Input Mask After Livewire DOM Updates (This Is Usually the Missing Piece)
+
+If you’re using Livewire, inputs often get re-rendered and lose JS formatting.
+
+### Instruction
+
+Wherever the JS mask is initialized for Desired Rental Amount, add re-init logic for Livewire updates so it also applies to these Lease-Option inputs.
+
+✅ Add a Livewire hook (v2 or v3 depending on your project) that re-runs the formatter after DOM updates.
+
+**Implementation requirement (high level):**
+
+* On page load: initialize money mask on all matching inputs
+* After any Livewire update: re-initialize money mask on all matching inputs again
+
+**Safeguard:** The initializer must be idempotent (should not double-bind events). If the library supports “destroy” then “init,” do that.
+
+---
+
+# Step 3 — Ensure Sanitization Runs for BOTH `$` and `%` Paths
+
+Because commas will exist in UI, server must strip them before validation/save.
+
+### Instruction
+
+Apply the same numeric sanitization used for Desired Rental Amount to BOTH Lease-Option amount fields:
+
+* remove commas before validation
+* store as numeric-only
+
+---
+
+# Step 4 — Force Consistent Rendering (Avoid Two Different Inputs)
+
+Right now it’s acting like `%` and `$` are different inputs.
+
+### Instruction
+
+Refactor so the amount input is always the same formatted input regardless of symbol selection. Only the symbol display changes.
+
+✅ This prevents “% works, $ doesn’t” permanently.
+
+---
+
+## QA Checklist (Replit Must Record Results)
+
+Test on Tenant + Buyer + Seller + Landlord:
+
+1. Select Lease-Option = Yes
+2. Select `$` for **Creating Lease-Option** → type `6666666` → must show `6,666,666`
+3. Select `$` for **Purchase Option Exercised** → type `45345435` → must show `45,345,435`
+4. Switch `$ → % → $` and confirm formatting remains
+5. Save draft, reload: values still display formatted
+6. Submit: database stores clean numeric values (no commas)
+
+---
+
+## Completion Definition
+
+✅ Comma formatting works for `$` and `%` for both Lease-Option compensation inputs across all roles, including after Livewire rerenders.
+
+---
+
+### If you want to make Replit stop missing it:
+
+Send them this one-liner at the top:
+
+> **“This is a Livewire re-render issue: the money-mask must be applied to the $ inputs AND re-initialized after every Livewire update, same as Desired Rental Amount.”**
+
+If you paste (or screenshot) the code for **Desired Rental Amount** input + the Lease-Option `$` input, I can point to exactly what’s missing (class vs Livewire hook) in one pass.
