@@ -460,42 +460,18 @@
 
      <div class="form-group">
         <label class="fw-bold">Listing Type:<span class="text-danger">*</span>
-
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select how Agents submit bids for this listing. &lt;br&gt;&lt;br&gt;&lt;strong&gt;Bidding Period:&lt;/strong&gt; Agents may submit bids until the bidding timer ends. During the bidding period, bids cannot be accepted or finalized. Once the timer ends, all Agent bids are revealed for review and comparison. &lt;br&gt;&lt;br&gt;&lt;strong&gt;Traditional:&lt;/strong&gt; Agents may submit bids at any time. Bids are visible as received and may be reviewed, accepted, countered, or rejected immediately.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
         </label>
-       <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select how Agents submit bids for this listing. This choice controls timing, bid visibility, and how Agent bids are reviewed.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-
         <div class="input-cover">
-            <input type="hidden" wire:model="auction_type" id="auction_type_hidden" required>
-            <div class="listing-type-custom-dropdown" id="listing_type_dropdown_buyer">
-                <div class="listing-type-selected" tabindex="0">
-                    <i class="fa-solid fa-file-alt listing-type-icon"></i>
-                    <span class="listing-type-text">{{ $auction_type ?: 'Select' }}</span>
-                    <i class="fa-solid fa-chevron-down listing-type-arrow"></i>
-                </div>
-                <div class="listing-type-options">
-                    <div class="listing-type-option" data-value="">
-                        <span>Select</span>
-                    </div>
-                    <div class="listing-type-option" data-value="Bidding Period">
-                        <span>Bidding Period</span>
-                        <div class="listing-type-option-tooltip">
-                            Agents may submit bids until the bidding timer ends.<br><br>
-                            During the bidding period, bids cannot be accepted or finalized. Once the timer ends, all Agent bids are revealed for review and comparison, including Services Offered, Broker Compensation & Agency Agreement Terms, and Match Scores.<br><br>
-                            After the bidding period closes, the listing continues in Traditional mode for reviewing, countering, and accepting bids.
-                        </div>
-                    </div>
-                    <div class="listing-type-option" data-value="Traditional">
-                        <span>Traditional</span>
-                        <div class="listing-type-option-tooltip">
-                            Agents may submit bids at any time.<br><br>
-                            Agent bids are visible as they are received and may be reviewed, accepted, countered, or rejected immediately. There is no bidding timer, and bids are handled on a rolling basis.
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <select wire:model="auction_type" id="auction_type" class="form-control has-icon"
+                data-icon="fa-solid fa-file-alt" required>
+                <option value="">Select</option>
+                <option value="Bidding Period">Bidding Period</option>
+                <option value="Traditional">Traditional</option>
+            </select>
         </div>
         <span class="error mt-2" id="auction_type_error"></span>
     </div>
