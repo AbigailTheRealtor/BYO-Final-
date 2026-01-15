@@ -253,7 +253,7 @@
             @endif
             @if (in_array($property_type, ['Commercial', 'Business']))
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Choose how the Seller's Broker will be compensated if the property is leased. Options include a percentage of the net aggregate rent, a percentage of the gross rent, a percentage of one month's rent, a flat fee, or select “Other” to define a custom payment structure. Then enter the appropriate amount based on your selection.">
+                    title="Choose how the Seller's Broker will be compensated if the property is leased. Options include a percentage of the net aggregate rent, a percentage of the gross rent, a percentage of the month's rent, a flat fee, or select “Other” to define a custom payment structure. Then enter the appropriate amount based on your selection.">
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
             @endif
