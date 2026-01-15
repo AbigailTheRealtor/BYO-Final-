@@ -54,7 +54,7 @@
     <div class="form-group mt-3">
         <label class="fw-bold">Seller Under Contract for Assignment:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="The Seller is assigning their contractual rights to another Buyer (commonly used in wholesaling).">
+            title="The Seller is assigning their contractual rights to another Buyer (commonly used in wholesaling). If the Seller is under contract to purchase a property and intends to assign their purchase rights to another Buyer, they are considered the Seller of that contract. If the Seller is looking to purchase an assignment contract, they are considered the Buyer of that contract. In that case, please switch to a Buyer listing instead.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
@@ -153,10 +153,10 @@
 @endif
 
 <div class="form-group mt-4">
-    <label class="fw-bold">Target Closing Date:<span class="text-danger">*</span></label>
+    <label class="fw-bold">Target Closing Timeframe:<span class="text-danger">*</span></label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Select the Seller’s ideal closing timeframe.">
+        title="Select the Seller’s preferred closing timeframe. This helps Buyers and their Agents understand the Seller’s desired timing and evaluate whether it can be met.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
 
@@ -186,7 +186,7 @@
     <div class="form-group">
         <label class="fw-bold">Occupant Type:<span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Indicate whether the property is currently occupied by the Owner, a Tenant, or is Vacant.">
+            title="Select who currently occupies the property. If Tenant or Owner is selected, enter the Occupied Until date. If Vacant is selected, no date is required.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
@@ -215,7 +215,7 @@
     <div class="form-group">
         <label class="fw-bold">Desired Sale Price:<span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the amount the Seller would like to receive for the property.">
+            title="Enter the Seller’s desired sale price. Buyers and their Agents may use this as a reference when preparing and evaluating offers.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
 
@@ -602,7 +602,7 @@ This amount represents the portion of the purchase price that the Seller will fi
     <div class="form-group mt-3">
         <label class="fw-bold">Type of Loan:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Assumable loans allow a buyer to take over the seller's existing financing. FHA, VA, and USDA loans are the most common types that may be assumed, but lender approval is usually required. Conventional loans almost always have a due-on-sale clause and are not assumable.">
+                title="Select the loan type associated with the existing assumable loan.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -651,7 +651,7 @@ This amount represents the portion of the purchase price that the Seller will fi
     <div class="form-group mt-3">
         <label class="fw-bold">Monthly Escrow / Impounds: (Not Assumable, Informational Only)
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the seller's current monthly escrow amount for property taxes and homeowner's insurance. Buyer's escrow will be recalculated after closing and may differ significantly. This field is provided for reference only and is not part of the assumable loan terms.">
+                title="Enter the Seller's current monthly escrow amount for property taxes and homeowners insurance. Buyer's escrow will be recalculated after closing and may differ significantly. This field is provided for reference only and is not part of the assumable loan terms.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -682,7 +682,12 @@ This amount represents the portion of the purchase price that the Seller will fi
     </div>
 
     <div class="form-group mt-3">
-        <label class="fw-bold">Down Payment to Cover the Gap Between Price and Loan:</label>
+        <label class="fw-bold">Down Payment to Cover the Gap Between Price and Loan:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter the amount the Buyer would need to pay to cover the difference between the purchase price and the loan amount.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
         <div class="input-group">
             <select wire:model="gap_payment_type" class="form-select" style="max-width: 100px;">
                 <option value="flat">$</option>
@@ -822,13 +827,6 @@ This amount represents the portion of the purchase price that the Seller will fi
 
     @if ($exchange_item === 'Other')
         <div class="form-group">
-            <label class="fw-bold"> Exchange Item:</label>
-
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Buyer is using an alternative financing method not listed above. Specify in the additional details field.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-
             <div class="input-cover">
                 <input type="text" wire:model="other_exchange_item" class="form-control has-icon"
                     data-icon="fa-solid fa-exchange-alt"
@@ -934,7 +932,7 @@ This amount represents the portion of the purchase price that the Seller will fi
     <div class="form-group mt-3">
         <label class="fw-bold">Liens / Encumbrances Disclosure:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Indicate if the exchange/trade item has any liens or encumbrances (such as loans, leases, or legal claims). Buyers and sellers should resolve these before closing.">
+                title="Indicate whether the exchange or trade item has any liens or encumbrances that would need to be resolved before closing.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>

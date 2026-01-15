@@ -577,34 +577,127 @@ class SellerAgentAuction extends Component
 
     public function updatedOfferedFinancing()
     {
-        // Reset all dependent fields when financing type changes
-        $this->reset([
-            'other_financing',
-            'cash_budget',
-            'pre_approved',
-            'pre_approval_amount',
-            'purchase_price',
-            'down_payment_amount',
-            'seller_financing_amount',
-            'interest_rate',
-            'loan_duration',
-            'prepayment_penalty',
-            'prepayment_penalty_amount',
-            'balloon_payment_amount',
-            'balloon_payment_date',
-            'assumable_terms',
-            'max_assumable_rate',
-            'assumable_monthly_escrow',
-            'assumable_loan_term_remaining',
-            'assumable_loan_origination_date',
-            'assumable_loan_servicer',
-            'assumable_fee_type',
-            'assumable_fee_amount',
-            'assumable_occupancy_requirement',
-            'assumable_occupancy_other',
-            'max_monthly_payment',
-            'gap_payment_amount'
-        ]);
+        // Only reset fields when their corresponding financing option is deselected
+        $financing = $this->offered_financing ?? [];
+
+        // Reset Other financing fields if "Other" is no longer selected
+        if (!in_array('Other', $financing)) {
+            $this->reset(['other_financing']);
+        }
+
+        // Reset Cash fields only if "Cash" is no longer selected
+        if (!in_array('Cash', $financing)) {
+            $this->reset(['cash_budget']);
+        }
+
+        // Reset Conventional loan fields only if "Conventional" is no longer selected
+        if (!in_array('Conventional', $financing)) {
+            $this->reset([
+                'pre_approved',
+                'pre_approval_amount',
+                'purchase_price',
+                'down_payment_type',
+                'down_payment_amount'
+            ]);
+        }
+
+        // Reset Seller Financing fields only if "Seller Financing" is no longer selected
+        if (!in_array('Seller Financing', $financing)) {
+            $this->reset([
+                'seller_financing_type',
+                'seller_financing_amount',
+                'seller_down_payment_amount',
+                'interest_rate',
+                'loan_duration',
+                'prepayment_penalty',
+                'prepayment_penalty_amount',
+                'balloon_payment_amount',
+                'balloon_payment_date',
+                'seller_late_fee_amount'
+            ]);
+        }
+
+        // Reset Assumable fields only if "Assumable" is no longer selected
+        if (!in_array('Assumable', $financing)) {
+            $this->reset([
+                'assumable_terms',
+                'assumable_loan_type',
+                'max_assumable_rate',
+                'assumable_monthly_escrow',
+                'assumable_loan_term_remaining',
+                'assumable_loan_origination_date',
+                'assumable_loan_servicer',
+                'assumable_fee_type',
+                'assumable_fee_amount',
+                'assumable_occupancy_requirement',
+                'assumable_occupancy_other',
+                'max_monthly_payment',
+                'gap_payment_type',
+                'gap_payment_amount',
+                'outstanding_balance',
+                'lender_approval_required'
+            ]);
+        }
+
+        // Reset Exchange/Trade fields only if "Exchange/Trade" is no longer selected
+        if (!in_array('Exchange/Trade', $financing)) {
+            $this->reset([
+                'exchange_item',
+                'other_exchange_item',
+                'exchange_item_value',
+                'exchange_item_condition',
+                'additional_cash',
+                'value_determination',
+                'exchange_transfer_method',
+                'exchange_liens',
+                'exchange_liens_details',
+                'exchange_inspection_rights'
+            ]);
+        }
+
+        // Reset Lease Option fields only if "Lease Option" is no longer selected
+        if (!in_array('Lease Option', $financing)) {
+            $this->reset([
+                'lease_option_price',
+                'lease_option_terms',
+                'lease_option_duration',
+                'lease_option_payment',
+                'lease_option_conditions',
+                'has_option_fee',
+                'option_fee_amount',
+                'seller_lease_option_fee_credit',
+                'seller_lease_option_fee_credit_percent',
+                'seller_lease_option_maintenance',
+                'seller_lease_option_extension_terms'
+            ]);
+        }
+
+        // Reset Lease Purchase fields only if "Lease Purchase" is no longer selected
+        if (!in_array('Lease Purchase', $financing)) {
+            $this->reset([
+                'lease_purchase_price',
+                'lease_purchase_terms',
+                'lease_purchase_duration',
+                'lease_purchase_payment',
+                'lease_purchase_rent_credit'
+            ]);
+        }
+
+        // Reset Cryptocurrency fields only if "Cryptocurrency" is no longer selected
+        if (!in_array('Cryptocurrency', $financing)) {
+            $this->reset([
+                'cryptocurrency_type',
+                'crypto_percentage'
+            ]);
+        }
+
+        // Reset NFT fields only if "Non-Fungible Token (NFT)" is no longer selected
+        if (!in_array('Non-Fungible Token (NFT)', $financing)) {
+            $this->reset([
+                'nft_description',
+                'nft_percentage'
+            ]);
+        }
     }
     // Methods/ Methods
     public function setAssignmentFeeType($type)
