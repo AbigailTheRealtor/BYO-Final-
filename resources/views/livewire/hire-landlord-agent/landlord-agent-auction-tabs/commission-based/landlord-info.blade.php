@@ -250,16 +250,26 @@ function initLandlordPhoneFormatting() {
         if (phoneInput.value) {
             formatLandlordPhone(phoneInput);
         }
-        phoneInput.removeEventListener('paste', handleLandlordPhonePaste);
-        phoneInput.addEventListener('paste', handleLandlordPhonePaste);
+        if (!phoneInput.hasAttribute('data-paste-init')) {
+            phoneInput.addEventListener('paste', handleLandlordPhonePaste);
+            phoneInput.setAttribute('data-paste-init', 'true');
+        }
     }
 }
 
+// Initialize immediately since Livewire may have already loaded
+initLandlordPhoneFormatting();
+
+// Also initialize on DOMContentLoaded in case script runs before DOM is ready
 document.addEventListener('DOMContentLoaded', initLandlordPhoneFormatting);
 
-if (typeof Livewire !== 'undefined') {
-    document.addEventListener('livewire:load', function() {
-        Livewire.hook('message.processed', initLandlordPhoneFormatting);
-    });
-}
+// Re-initialize after any Livewire update
+document.addEventListener('livewire:load', function() {
+    Livewire.hook('message.processed', initLandlordPhoneFormatting);
+});
+
+// For Livewire v3 compatibility
+document.addEventListener('livewire:init', function() {
+    Livewire.hook('morph.updated', initLandlordPhoneFormatting);
+});
 </script>
