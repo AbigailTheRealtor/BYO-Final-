@@ -831,7 +831,7 @@
             <div class="form-group">
                 <label class="fw-bold">Number of Pets Allowed:</label>
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Enter the maximum number of pets permitted under the lease.">
+                    title="Enter the maximum number of pets the Landlord will allow for this property (e.g., 2).">
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
                 <div class="input-cover">
@@ -845,7 +845,7 @@
             <div class="form-group">
                 <label class="fw-bold">Acceptable Pet Types:</label>
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="List the types of pets allowed (e.g., dogs, cats).">
+                    title="Enter the types of pets the Landlord will allow (e.g., Dog, Cat).">
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
                 <div class="input-cover">
@@ -893,7 +893,7 @@
             <div class="form-group">
                 <label class="fw-bold">Maximum Weight Per Pet (lbs):</label>
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Enter the maximum weight allowed for each individual pet, in pounds. Leave blank if there is no weight restriction.">
+                    title="Enter the maximum allowed weight for each individual pet, in pounds. Leave blank if there is no weight restriction.">
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
                 <div class="input-cover">
@@ -905,7 +905,7 @@
             <div class="form-group">
                 <label class="fw-bold">Pet Restrictions</label>
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Include any additional pet-related restrictions, such as breed limitations, age requirements, vaccination rules, or pet deposits.">
+                    title="Enter any pet restrictions the Landlord requires. Include any HOA or insurance-related restrictions if applicable.">
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
                 <div class="input-cover">

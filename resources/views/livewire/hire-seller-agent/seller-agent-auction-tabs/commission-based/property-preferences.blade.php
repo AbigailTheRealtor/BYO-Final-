@@ -990,7 +990,7 @@
         </label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select whether pets are allowed. If so, provide details on pet types, number, weight limits, and any restrictions.">
+            title="Select whether pets are allowed at the property. If &quot;Yes&quot; is selected, provide details including the number of pets allowed, acceptable pet types, maximum weight per pet, and any applicable pet restrictions.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
 
@@ -1009,6 +1009,10 @@
         <!-- Number of Pet(s) -->
         <div class="form-group">
             <label class="fw-bold">Number of Pets Allowed:</label>
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter the maximum number of pets the Seller will allow for this property (e.g., 2).">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
             <div class="input-cover">
                 <input type="number" wire:model="number_of_pets" class="form-control has-icon"
                     data-icon="fa-solid fa-hashtag" placeholder="Enter number of pets allowed (e.g., 2)">
@@ -1018,6 +1022,10 @@
         <!-- Type of Pet(s) -->
         <div class="form-group">
             <label class="fw-bold">Acceptable Pet Types:</label>
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter the types of pets the Seller will allow (e.g., Dog, Cat).">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
             <div class="input-cover">
                 <input type="text" wire:model="type_of_pets" class="form-control has-icon"
                     data-icon="fa-solid fa-cat" placeholder="Enter acceptable pet types (e.g., Dog, Cat)">
@@ -1037,6 +1045,10 @@
         <!-- Weight of Pet(s) -->
         <div class="form-group">
             <label class="fw-bold">Maximum Weight Per Pet (lbs):</label>
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter the maximum allowed weight for each individual pet, in pounds. Leave blank if there is no weight restriction.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
             <div class="input-cover">
                 <input type="number" wire:model="weight_of_pets" class="form-control has-icon"
                     data-icon="fa-solid fa-weight" placeholder="Enter maximum weight per pet (e.g., 45)">
@@ -1046,7 +1058,10 @@
 
         <div class="form-group">
             <label class="fw-bold">Pet Restrictions</label>
-
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter any pet restrictions the Seller requires. Include any HOA or insurance-related restrictions if applicable.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
             <div class="input-cover">
                 <input type="text" wire:model="breed_restrictions" class="form-control has-icon"
                     data-icon="fa-solid fa-shield-dog" placeholder="Enter pet restrictions (e.g., No Pit Bulls)">
