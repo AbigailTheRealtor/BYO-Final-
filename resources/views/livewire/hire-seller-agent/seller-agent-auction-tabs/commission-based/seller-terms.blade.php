@@ -902,7 +902,7 @@ This amount represents the portion of the purchase price that the Seller will fi
         <label class="fw-bold">Value of Exchange/Trade Item Determined:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Explain how the trade item’s value will be verified (e.g., licensed appraisal, online valuation, mutual agreement).">
+            title="Describe how the value of the exchange or trade item will be determined.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
 
@@ -999,7 +999,7 @@ This amount represents the portion of the purchase price that the Seller will fi
     <div class="form-group mt-3">
         <label class="fw-bold">Monthly Payment the Seller Will Accept:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the monthly lease payment the Seller will accept.">
+            title="Enter the monthly lease payment during the lease term before the purchase option may be exercised.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
@@ -1118,7 +1118,7 @@ This amount represents the portion of the purchase price that the Seller will fi
     <div class="form-group mt-3">
         <label class="fw-bold">Maintenance / Repair Responsibility:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select who is responsible for property maintenance and repairs during the lease option term.">
+                title="Select who is responsible for property maintenance and repairs during the lease-option term.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -1161,7 +1161,7 @@ This amount represents the portion of the purchase price that the Seller will fi
     <div class="form-group mt-3">
         <label class="fw-bold">Seller's Desired Offering Price for Lease Purchase:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the price the Seller is offering if the Buyer completes the purchase at the end of the lease term.">
+            title="Enter the price the Seller is willing to accept if the Buyer completes the purchase at the end of the lease term.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
 
@@ -1182,7 +1182,7 @@ This amount represents the portion of the purchase price that the Seller will fi
     <div class="form-group mt-3">
         <label class="fw-bold">Monthly Payment the Seller Will Accept:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the monthly lease amount the Seller will accept.">
+            title="Enter the monthly lease payment during the lease-purchase term before the purchase is completed.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
@@ -1211,7 +1211,7 @@ This amount represents the portion of the purchase price that the Seller will fi
     <div class="form-group mt-3">
         <label class="fw-bold">Rent Credit Toward Purchase Price:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select whether any portion of monthly rent will be credited toward the purchase price.">
+                title="Select whether any portion of the monthly rent will be credited toward the purchase price, and if yes, enter the amount.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -1228,14 +1228,10 @@ This amount represents the portion of the purchase price that the Seller will fi
 
     @if (($lease_purchase_rent_credit ?? '') === 'Yes' || ($lease_purchase_rent_credit ?? '') === 'Partial')
     <div class="form-group mt-2">
-        <label class="fw-bold">Rent Credit Amount Toward Purchase Price:</label>
-        <div class="input-group">
-            <select wire:model="lease_purchase_rent_credit_amount_type" class="form-select" style="max-width: 80px;">
-                <option value="$">$</option>
-                <option value="%">%</option>
-            </select>
-            <input type="text" wire:model="lease_purchase_rent_credit_amount" class="form-control"
-                placeholder="{{ ($lease_purchase_rent_credit_amount_type ?? '$') === '%' ? 'Enter rent credit percentage (e.g., 25)' : 'Enter rent credit dollar amount (e.g., 500)' }}"
+        <div class="input-cover">
+            <span class="input-group-text-seller">$</span>
+            <input type="text" wire:model="lease_purchase_rent_credit_amount" class="form-control has-icon"
+                placeholder="Enter rent credit dollar amount (e.g., 500)"
                 data-error-id="lease_purchase_rent_credit_amount_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
         </div>
@@ -1292,7 +1288,7 @@ This amount represents the portion of the purchase price that the Seller will fi
     <div class="form-group mt-3">
         <label class="fw-bold">Maintenance / Repair Responsibility:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select who is responsible for property maintenance and repairs during the lease purchase term.">
+                title="Select who is responsible for property maintenance and repairs during the lease-purchase term.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>

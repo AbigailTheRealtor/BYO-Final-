@@ -919,7 +919,7 @@
         <label class="fw-bold">Value of Exchange/Trade Item Determined:<span class="text-danger">*</span></label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter how the trade item’s value will be verified (e.g., licensed appraisal, online valuation, mutual agreement).">
+            title="Describe how the value of the exchange or trade item will be determined.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
@@ -1017,7 +1017,7 @@
     <div class="form-group mt-3">
         <label class="fw-bold">Monthly Payment Buyer is Offering:<span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the monthly lease payment the Buyer is offering.">
+            title="Enter the monthly lease payment during the lease term before the purchase option may be exercised.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
@@ -1048,7 +1048,7 @@
     <div class="form-group mt-3">
         <label class="fw-bold">Offered Option Fee:<span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the non-refundable fee the Buyer is offering for the option, if applicable.">
+            title="Indicate whether the Buyer is offering a non-refundable option fee, and if so, enter the amount.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
@@ -1063,7 +1063,6 @@
 
     @if ($has_option_fee === 'Yes')
         <div class="form-group mt-2">
-            <label class="fw-bold">Offered Option Fee Amount:</label>
             <div class="input-cover">
                 <span class="input-group-text-seller">$</span>
                 <input type="text" wire:model="option_fee_amount" class="form-control has-icon"
@@ -1137,7 +1136,7 @@
     <div class="form-group mt-3">
         <label class="fw-bold">Maintenance / Repair Responsibility:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select who is responsible for property maintenance and repairs during the lease option term.">
+                title="Select who is responsible for property maintenance and repairs during the lease-option term.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -1199,7 +1198,7 @@
     <div class="form-group mt-3">
         <label class="fw-bold">Monthly Payment Buyer is Offering:<span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the monthly lease amount the Buyer is offering.">
+            title="Enter the monthly lease payment during the lease-purchase term before the purchase is completed.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
@@ -1230,7 +1229,7 @@
     <div class="form-group mt-3">
         <label class="fw-bold">Rent Credit Toward Purchase Price:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select whether any portion of the monthly rent will be credited toward the purchase price.">
+                title="Select whether any portion of the monthly rent will be credited toward the purchase price, and if yes, enter the amount.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -1247,14 +1246,10 @@
 
     @if (($lease_purchase_rent_credit ?? '') === 'Yes' || ($lease_purchase_rent_credit ?? '') === 'Partial')
     <div class="form-group mt-2">
-        <label class="fw-bold">Rent Credit Amount Toward Purchase Price:</label>
-        <div class="input-group">
-            <select wire:model="lease_purchase_rent_credit_amount_type" class="form-select" style="max-width: 80px;">
-                <option value="$">$</option>
-                <option value="%">%</option>
-            </select>
-            <input type="text" wire:model="lease_purchase_rent_credit_amount" class="form-control"
-                placeholder="{{ ($lease_purchase_rent_credit_amount_type ?? '$') === '%' ? 'Enter rent credit percentage (e.g., 25)' : 'Enter rent credit dollar amount (e.g., 500)' }}"
+        <div class="input-cover">
+            <span class="input-group-text-seller">$</span>
+            <input type="text" wire:model="lease_purchase_rent_credit_amount" class="form-control has-icon"
+                placeholder="Enter rent credit dollar amount (e.g., 500)"
                 data-error-id="lease_purchase_rent_credit_amount_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
         </div>
@@ -1313,7 +1308,7 @@
     <div class="form-group mt-3">
         <label class="fw-bold">Maintenance / Repair Responsibility:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select who is responsible for property maintenance and repairs during the lease purchase term.">
+                title="Select who is responsible for property maintenance and repairs during the lease-purchase term.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>

@@ -1,0 +1,135 @@
+
+
+Replit Instructions — Update Tooltip (Buyer & Seller)
+Location:
+•	Hire a Buyer’s Agent → Tab: Purchasing Terms → Offered Financing/Currency → Exchange/Trade
+•	Hire a Seller’s Agent → Tab: Sale Terms → Offered Financing/Currency → Exchange/Trade
+Change:
+Update the tooltip text for Value of Exchange / Trade Item Determined to:
+Describe how the value of the exchange or trade item will be determined.
+Safeguards:
+•	Tooltip text only
+•	Do not change field behavior, logic, or validation
+•	Do not affect other Exchange/Trade fields
+Expected Result:
+•	Tooltip displays the updated text for both Buyer and Seller
+•	No impact to saving, editing, or submitting listings
+
+
+
+Replit Instructions — Buyer Lease-Option Tooltip + Remove Label Above Amount
+Location:
+Hire a Buyer’s Agent → Tab: Purchasing Terms → Offered Financing/Currency → Lease-Option
+________________________________________
+Change 1 — Update Tooltip Text
+Field: Offered Option Fee
+Update the tooltip text to:
+Indicate whether the Buyer is offering a non-refundable option fee, and if so, enter the amount.
+________________________________________
+Change 2 — Remove Label Above Amount Field (When Yes)
+Condition: If Offered Option Fee = Yes
+Change:
+Remove the text label “Offered Option Fee Amount:” that appears above the dollar input box.
+Result:
+•	Show only the dollar input box
+•	No label text above it
+________________________________________
+Safeguards
+•	Tooltip + UI text/display changes only
+•	Do not change field logic, validation, calculations, or stored values
+•	Do not affect Seller-side fields or behavior
+________________________________________
+Expected Outcome
+•	Buyer tooltip matches Seller wording
+•	Option fee amount input displays cleanly with no extra label
+•	Save Draft / Next / Submit continue to work normally
+
+
+Location:
+•	Hire a Buyer’s Agent → Offered Financing/Currency → Lease-Option
+•	Hire a Seller’s Agent → Offered Financing/Currency → Lease-Option
+Change:
+Update the tooltip text for Desired Offering Price for Lease Purchase to the wording above (role-specific).
+
+🔹 Buyer — Desired Offering Price for Lease Purchase
+Buyer’s Desired Offering Price for Lease Purchase:
+Enter the price the Buyer is offering if the purchase is completed at the end of the lease term.
+________________________________________
+🔹 Seller — Desired Offering Price for Lease Purchase
+Seller’s Desired Offering Price for Lease Purchase:
+Enter the price the Seller is willing to accept if the Buyer completes the purchase at the end of the lease term.
+
+Safeguard:
+•	Tooltip text only
+•	Do not change field logic, validation, or calculation
+
+Location — Buyer & Seller
+•	Lease-Purchase
+o	Hire a Buyer’s Agent → Purchasing Terms → Offered Financing/Currency → Lease-Purchase
+o	Hire a Seller’s Agent → Sale Terms → Offered Financing/Currency → Lease-Purchase
+•	Lease-Option
+o	Hire a Buyer’s Agent → Purchasing Terms → Offered Financing/Currency → Lease-Option
+o	Hire a Seller’s Agent → Sale Terms → Offered Financing/Currency → Lease-Option
+________________________________________
+Changes
+1.	Lease-Purchase → Monthly Payment edit tooltip
+ Enter the monthly lease payment during the lease-purchase term before the purchase is completed.
+•  Lease-Option → Monthly Payment  edit tooltip
+Enter the monthly lease payment during the lease term before the purchase option may be exercised.
+
+________________________________________
+Safeguards
+•	Tooltip text only
+•	Do not change field labels, values, calculations, or validation
+•	Do not merge Lease-Purchase and Lease-Option logic
+________________________________________
+Replit Instructions — Update Tooltip (Buyer & Seller | Lease-Option + Lease-Purchase)
+Location:
+•	Hire a Buyer’s Agent → Offered Financing/Currency → Lease-Option → Maintenance / Repair Responsibility
+•	Hire a Seller’s Agent → Offered Financing/Currency → Lease-Option → Maintenance / Repair Responsibility
+•	Hire a Buyer’s Agent → Offered Financing/Currency → Lease-Purchase → Maintenance / Repair Responsibility
+•	Hire a Seller’s Agent → Offered Financing/Currency → Lease-Purchase → Maintenance / Repair Responsibility
+________________________________________
+Change:
+Update the tooltip text as follows:
+•	Lease-Option tooltip:
+Select who is responsible for property maintenance and repairs during the lease-option term.
+•	Lease-Purchase tooltip:
+Select who is responsible for property maintenance and repairs during the lease-purchase term.
+________________________________________
+Safeguards:
+•	Tooltip text only
+•	Do not change field options, logic, validation, or calculations
+•	Do not affect any other sections or fields
+________________________________________
+Expected Outcome:
+•	Clear distinction between lease-option and lease-purchase
+•	Consistent wording for Buyer and Seller
+•	No impact to save, edit, or submit flows
+
+🔧 Replit Instructions — Update Tooltip + Use $ Only (Lease-Purchase)
+Location:
+•	Hire a Buyer’s Agent → Offered Financing/Currency → Lease-Purchase → Rent Credit Toward Purchase Price
+•	Hire a Seller’s Agent → Offered Financing/Currency → Lease-Purchase → Rent Credit Toward Purchase Price
+________________________________________
+Change 1 — Update Tooltip Text
+Update the tooltip for Rent Credit Toward Purchase Price to:
+Select whether any portion of the monthly rent will be credited toward the purchase price, and if yes, enter the amount.
+________________________________________
+Change 2 — Dollar Amount Only (Lease-Purchase)
+For Lease-Purchase:
+•	Remove the percentage (%) option
+•	Display a dollar ($) input only for Rent Credit Amount Toward Purchase Price
+________________________________________
+Safeguards
+•	Tooltip + UI display changes only
+•	Do not change field names, logic, validation, or calculations
+•	Do not affect Lease-Option fields
+•	Apply to both Buyer and Seller
+________________________________________
+Expected Outcome
+•	Tooltip clearly explains the Yes/Amount flow
+•	Lease-Purchase rent credit uses $ only
+•	Buyer and Seller views are consistent
+•	Save, edit, and submit continue to work normally
+
