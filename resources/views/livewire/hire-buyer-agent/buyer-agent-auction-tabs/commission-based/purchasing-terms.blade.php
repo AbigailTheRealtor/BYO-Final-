@@ -300,7 +300,7 @@
         <label class="fw-bold">Desired Purchase Price:<span class="text-danger">*</span></label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the total price the Buyer is offering to purchase a property.">
+            title="Enter the purchase price the Buyer is willing to offer for a property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
