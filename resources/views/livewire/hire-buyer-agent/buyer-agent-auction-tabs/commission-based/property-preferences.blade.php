@@ -994,14 +994,13 @@
         </div>
     </div>
 
-    {{-- b) Acceptable Unit Sizes --}}
+    {{-- b) Acceptable Number of Units --}}
     <div class="form-group">
         <label class="fw-bold">Acceptable Number of Units:
-
-                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                        title="Select the unit types or layouts that would be acceptable to the Buyer, such as studios, lofts, or multi-bedroom configurations.">
-                        <i class="fa-solid fa-circle-info"></i>
-                    </span>
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select the acceptable unit count range for the investment property (e.g., 1–4 units, 5–10 units, 10+ units). If "Other" is selected, enter a custom unit count or range.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
         </label>
 
         <div class="input-cover">

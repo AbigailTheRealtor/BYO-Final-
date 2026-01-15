@@ -1,0 +1,106 @@
+## Replit Instructions — [Tenant@exp.com](mailto:Tenant@exp.com)
+
+## Remove Trailing Periods in Services Text (Buyer Commercial + Tenant Commercial)
+
+## ✅ Text Edit Only
+
+---
+
+### Applies To
+
+[Tenant@exp.com](mailto:Tenant@exp.com)
+
+* **Hire a Buyer’s Agent → Commercial Property**
+* **Hire a Tenant’s Agent → Commercial Property**
+  Tab: **Services**
+  Section: **Property Search, Alerts & Matching**
+  Item: Alerts line text
+
+---
+
+# 1️⃣ Buyer Commercial — Remove Period at End of Alerts Line
+
+### Location
+
+Hire a Buyer’s Agent
+→ Commercial Property
+→ Services
+→ Property Search, Alerts & Matching
+→ “Send listing alerts…” line
+
+### ✅ Replace Text Exactly
+
+**Before:**
+Send listing alerts from real estate platforms that match the Buyer’s purchase criteria.
+
+**After:**
+**Send listing alerts from real estate platforms that match the Buyer’s purchase criteria**
+
+---
+
+# 2️⃣ Tenant Commercial — Remove Period at End of Alerts Line
+
+### Location
+
+Hire a Tenant’s Agent
+→ Commercial Property
+→ Services
+→ Property Search, Alerts & Matching
+→ “Send listing alerts…” line
+
+### ✅ Replace Text Exactly
+
+**Before:**
+Send listing alerts from real estate platforms that match the Tenant’s leasing criteria.
+
+**After:**
+**Send listing alerts from real estate platforms that match the Tenant’s leasing criteria**
+
+---
+
+## 🛡️ SAFEGUARDS (MUST FOLLOW — DO NOT VIOLATE)
+
+**Text edit only (remove trailing period).** Do NOT:
+
+* change service checkbox structure, ordering, icons, section titles, or field labels
+* change any tooltips, placeholders, dropdowns, validations, required fields, or logic
+* modify database schema, migrations, models, or stored values
+* affect Residential or other property types beyond these exact Commercial service lines
+* change UI layout, spacing, styling, or formatting
+* refactor shared components unless scoped only to these exact two service labels
+
+---
+
+## ⚠️ CRITICAL — WHERE THIS MUST UPDATE
+
+These updated service texts must appear consistently everywhere these service labels are rendered, including:
+
+* Listing creation UI
+* Saved listing edit view
+* Draft preview / review screens
+* Agent-facing listing details (read-only)
+* Agent bids
+* Agent counter-bids
+* Accepted bid summaries
+* Negotiation history views
+* Document / PDF summaries (if services are printed there)
+
+❌ Do NOT mass-update database rows.
+✅ This is a display-layer label/text update only (update source-of-truth rendering).
+
+---
+
+## 🧪 Testing Required Before Completion
+
+1. Login as **[Tenant@exp.com](mailto:Tenant@exp.com)**
+2. Create **Hire a Buyer’s Agent → Commercial** listing
+
+   * Confirm the Buyer alerts line displays **without** a trailing period
+3. Save draft → reload → confirm it still displays correctly
+4. Preview/review screen → confirm it displays correctly
+5. Agent-facing read-only listing details → confirm it displays correctly
+6. Repeat steps 2–5 for **Hire a Tenant’s Agent → Commercial**
+7. Create an agent bid + counter-bid for each (if available) and confirm the line renders correctly there too
+8. Submit listing(s) → confirm no errors
+
+---
