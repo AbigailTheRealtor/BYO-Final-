@@ -730,9 +730,9 @@ class LandlordAgentAuctionCounterTerm extends Component
         // ===== Lease-Option Agreement =====
         $counterTerm->saveMeta('interested_lease_option_agreement', $this->interested_lease_option_agreement);
         $counterTerm->saveMeta('lease_type', $this->lease_type);
-        $counterTerm->saveMeta('lease_value', $this->lease_value);
+        $counterTerm->saveMeta('lease_value', str_replace(',', '', $this->lease_value ?? ''));
         $counterTerm->saveMeta('purchase_type', $this->purchase_type);
-        $counterTerm->saveMeta('purchase_value', $this->purchase_value);
+        $counterTerm->saveMeta('purchase_value', str_replace(',', '', $this->purchase_value ?? ''));
 
         // ===== Interested in Selling =====
         $counterTerm->saveMeta('interested_in_selling', $this->interested_in_selling);

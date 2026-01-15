@@ -603,9 +603,9 @@ class TenantAgentAuctionBidCounter extends Component
         $counterBid->saveMeta('lease_option_fee_percentage', $this->lease_option_fee_percentage);
         $counterBid->saveMeta('lease_option_fee_other', $this->lease_option_fee_other);
         $counterBid->saveMeta('lease_type', $this->lease_type);
-        $counterBid->saveMeta('lease_value', $this->lease_value);
+        $counterBid->saveMeta('lease_value', str_replace(',', '', $this->lease_value ?? ''));
         $counterBid->saveMeta('purchase_type', $this->purchase_type);
-        $counterBid->saveMeta('purchase_value', $this->purchase_value);
+        $counterBid->saveMeta('purchase_value', str_replace(',', '', $this->purchase_value ?? ''));
 
         // Broker Terms & Agreements
         $counterBid->saveMeta('protection_period', $this->protection_period);

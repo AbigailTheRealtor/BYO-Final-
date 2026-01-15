@@ -265,9 +265,9 @@ public $additional_details_broker = '';
                 // Lease-Option Agreement Compensation (only if interested_lease_option_agreement is 'Yes')
                 if ($this->interested_lease_option_agreement === 'Yes') {
                     $counterBid->saveMeta('lease_type', $this->lease_type);
-                    $counterBid->saveMeta('lease_value', $this->lease_value);
+                    $counterBid->saveMeta('lease_value', str_replace(',', '', $this->lease_value ?? ''));
                     $counterBid->saveMeta('purchase_type', $this->purchase_type);
-                    $counterBid->saveMeta('purchase_value', $this->purchase_value);
+                    $counterBid->saveMeta('purchase_value', str_replace(',', '', $this->purchase_value ?? ''));
                 }
 
             // Other Broker Terms

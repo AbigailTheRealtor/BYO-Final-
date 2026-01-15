@@ -2420,6 +2420,13 @@
             return errorId ? document.getElementById(errorId) : null;
         }
 
+        function formatWithCommas(input) {
+            let value = input.value.replace(/[^\d.]/g, '');
+            let parts = value.split('.');
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            input.value = parts.length > 1 ? parts[0] + '.' + parts[1].substring(0, 2) : parts[0];
+        }
+
         function validateInput(input) {
             let v = input.value;
             v = v.replace(/[^0-9.,]/g, '');

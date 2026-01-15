@@ -2405,4 +2405,60 @@
 
         });
     </script>
+
+    <script>
+        // Global money input helper functions for comma-formatted currency inputs
+        function getErrorEl(input) {
+            const errorId = input.getAttribute('data-error-id');
+            return errorId ? document.getElementById(errorId) : null;
+        }
+
+        function formatWithCommas(input) {
+            let value = input.value.replace(/[^\d.]/g, '');
+            let parts = value.split('.');
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            input.value = parts.length > 1 ? parts[0] + '.' + parts[1].substring(0, 2) : parts[0];
+        }
+
+        function validateInput(input) {
+            let v = input.value;
+            v = v.replace(/[^0-9.,]/g, '');
+            const firstDot = v.indexOf('.');
+            if (firstDot !== -1) {
+                v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g, '');
+            }
+            input.value = v;
+        }
+
+        function reformatNumber(input) {
+            const errorEl = getErrorEl(input);
+            let v = input.value.replace(/,/g, '');
+            const parts = v.split('.');
+            let intPart = parts[0] || '';
+            let decPart = parts[1] || '';
+
+            if (decPart) decPart = decPart.slice(0, 2);
+
+            intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            input.value = decPart ? `${intPart}.${decPart}` : intPart;
+
+            errorEl && (errorEl.innerText = "");
+        }
+
+        function handlePaste(event) {
+            event.preventDefault();
+            const paste = (event.clipboardData || window.clipboardData).getData('text');
+            let clean = paste.replace(/[^0-9.]/g, '');
+            const parts = clean.split('.');
+            if (parts.length > 2) {
+                clean = parts[0] + '.' + parts.slice(1).join('');
+            }
+            let intPart = parts[0] || '';
+            let decPart = parts[1] || '';
+            if (decPart) decPart = decPart.slice(0, 2);
+            intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            event.target.value = decPart ? `${intPart}.${decPart}` : intPart;
+            event.target.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    </script>
 @endpush

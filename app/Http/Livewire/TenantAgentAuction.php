@@ -3337,9 +3337,9 @@ class TenantAgentAuction extends Component
         $auction->saveMeta('landlord_broker_flate_fee_type', $this->landlord_broker_flate_fee_type);
 
         $auction->saveMeta('lease_type', $this->lease_type);
-        $auction->saveMeta('lease_value', $this->lease_value);
+        $auction->saveMeta('lease_value', str_replace(',', '', $this->lease_value ?? ''));
         $auction->saveMeta('purchase_type', $this->purchase_type);
-        $auction->saveMeta('purchase_value', $this->purchase_value);
+        $auction->saveMeta('purchase_value', str_replace(',', '', $this->purchase_value ?? ''));
 
         // Lease-Option Fee
         $auction->saveMeta('lease_option_fee_type', $this->lease_option_fee_type);
