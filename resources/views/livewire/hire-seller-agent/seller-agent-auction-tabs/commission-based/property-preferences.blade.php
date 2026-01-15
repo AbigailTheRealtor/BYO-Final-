@@ -1144,7 +1144,7 @@
         <label class="fw-bold">Total Number of Units:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the total number of rental or income-generating units on the property.">
+            title="Enter the total number of units.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
