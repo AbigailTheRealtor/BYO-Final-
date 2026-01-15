@@ -1,0 +1,102 @@
+________________________________________
+Replit Instructions — Tenant@exp.com
+Hire a Buyer’s Agent (Business Opportunity)
+Services Text Edit Only
+________________________________________
+Applies To
+Tenant@exp.com → Hire a Buyer’s Agent
+Property Type: Business Opportunity
+Tab: Services
+Item: Business Search, Alerts & Matching → Alerts line (Business)
+________________________________________
+✅ Change Required (Text Only) — Business Alerts Line
+Location
+Hire a Buyer’s Agent
+→ Business Opportunity
+→ Services
+→ Business Search, Alerts & Matching
+→ “Send alerts for businesses…” line
+Replace Text Exactly
+Before:
+Send alerts for businesses that match the Buyer’s acquisition criteria from available business listing sources.
+
+Remove the period after sources
+After:
+Send alerts for businesses that match the Buyer’s acquisition criteria from available business listing sources
+________________________________________
+🛡️ SAFEGUARDS (MUST FOLLOW — DO NOT VIOLATE)
+Text edit only.
+Do NOT:
+•	change service checkbox structure, ordering, icons, section titles, or field labels
+•	change any tooltips, placeholders, dropdowns, validations, required fields, or logic
+•	modify database schema, migrations, models, or stored values
+•	affect Residential, Income, or other Buyer flows beyond the Business Opportunity service line specified
+•	change UI layout, spacing, styling, or formatting
+•	refactor shared components unless scoped only to this exact service label/text
+________________________________________
+🧪 Testing Required Before Completion
+1.	Login as Tenant@exp.com
+2.	Create a Hire a Buyer’s Agent → Business Opportunity listing
+3.	Confirm the updated line displays exactly as written
+4.	Save draft → reload → confirm text persists and renders correctly
+5.	Preview/review screen → confirm updated text
+6.	Agent-facing read-only listing details → confirm updated text
+7.	Submit listing → confirm no errors
+________________________________________
+⚠️ CRITICAL — WHERE THIS MUST UPDATE
+This updated service text must appear consistently everywhere this field is rendered, including:
+•	Listing creation UI
+•	Saved listing edit view
+•	Preview / review screens
+•	Agent-facing listing details (read-only)
+Do NOT mass-update database rows.
+This is display-layer only.
+
+Replit Instructions — Tenant@exp.com
+Hire a Buyer’s Agent → Vacant Land Property
+Services Tab — Property Search, Alerts & Matching
+✅ Change Required (Text Only)
+________________________________________
+Location
+Hire a Buyer’s Agent
+→ Vacant Land
+→ Services
+→ Property Search, Alerts & Matching
+→ “Send property alerts for land listings…” service line
+________________________________________
+Replace Text Exactly
+Before:
+Send property alerts for land listings that match the Buyer’s goals from relevant real estate and land-specific platforms.
+Remove period after platforms
+After:
+Send property alerts for land listings that match the Buyer’s goals from relevant real estate and land-specific platforms
+________________________________________
+🛡️ SAFEGUARDS (MUST FOLLOW — DO NOT VIOLATE)
+Text edit only.
+Do NOT:
+•	change service checkbox structure, ordering, icons, section titles, or field labels
+•	change any tooltips, placeholders, dropdowns, validations, required fields, or logic
+•	modify database schema, migrations, models, or stored values
+•	affect Residential, Income, Commercial, or Business Opportunity Buyer flows
+•	change UI layout, spacing, styling, or formatting
+•	refactor shared components unless scoped only to this exact Vacant Land service label
+________________________________________
+🧪 Testing Required Before Completion
+1.	Login as Tenant@exp.com
+2.	Create Hire a Buyer’s Agent → Vacant Land listing
+3.	Navigate to Services → Property Search, Alerts & Matching
+4.	Confirm the updated line displays exactly as written
+5.	Save draft → reload → confirm text persists
+6.	Preview / review screen → confirm updated text
+7.	Agent-facing read-only listing details → confirm updated text
+8.	Submit listing → confirm no errors
+________________________________________
+⚠️ CRITICAL — WHERE THIS MUST UPDATE
+This updated service text must appear consistently everywhere this field is rendered, including but not limited to:
+•	Listing creation UI
+•	Saved listing edit view
+•	Preview / review screens
+•	Agent-facing listing details (read-only)
+•	Any summaries or confirmation views that display selected services
+❌ Do NOT mass-update database rows.
+✅ This is a display-layer text update only.

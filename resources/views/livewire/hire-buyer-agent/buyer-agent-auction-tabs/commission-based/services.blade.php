@@ -307,7 +307,7 @@
     <h5 class="section-header bg-info text-white p-2 mb-3">🔍 Property Search, Alerts & Matching</h5>
     <div class="service-options">
         @foreach ([
-            'Send listing alerts from real estate platforms that match the Buyer’s purchase criteria.',
+            'Send listing alerts from real estate platforms that match the Buyer’s purchase criteria',
             'Search for off-market, pre-market, distressed, withdrawn, canceled, or expired listings that meet the Buyer’s criteria',
             'Communicate with the Seller’s Agent or Seller to confirm availability, purchase terms, and showing instructions',
             'Analyze building class, property zoning, income potential, and redevelopment opportunities'

@@ -210,7 +210,7 @@
     <h5 class="section-header bg-info text-white p-2 mb-3">🔍 Property Search, Alerts & Matching</h5>
     <div class="service-options">
         @foreach ([
-            'Send listing alerts from real estate platforms that match the Tenant's leasing criteria.',
+            'Send listing alerts from real estate platforms that match the Tenant's leasing criteria',
             'Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant’s rental criteria',
             'Communicate with the Landlord’s Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions',
             'Evaluate properties for layout efficiency, building specs, logistics, zoning fit, and operational alignment'
