@@ -723,7 +723,9 @@
     .listing-type-selected {
         display: flex;
         align-items: center;
-        padding: 0.375rem 0.75rem;
+        padding: 0.625rem 0.75rem;
+        padding-left: 2.5rem;
+        min-height: calc(1.5em + 1.25rem + 2px);
         font-size: 1rem;
         font-weight: 400;
         line-height: 1.5;
@@ -743,7 +745,9 @@
 
     .listing-type-icon {
         color: #11b7cf;
-        margin-right: 10px;
+        position: absolute;
+        left: 0.75rem;
+        pointer-events: none;
     }
 
     .listing-type-text {
@@ -846,21 +850,28 @@
 </style>
 <script>
     (function() {
-        // Custom Listing Type Dropdown
+        // Custom Listing Type Dropdown - use event delegation for reliability
         function initListingTypeDropdown() {
             const dropdowns = document.querySelectorAll('.listing-type-custom-dropdown');
             
             dropdowns.forEach(dropdown => {
-                if (dropdown.dataset.initialized) return;
-                dropdown.dataset.initialized = 'true';
+                // Remove old initialized flag to re-attach handlers after Livewire updates
+                delete dropdown.dataset.initialized;
                 
                 const selected = dropdown.querySelector('.listing-type-selected');
                 const options = dropdown.querySelectorAll('.listing-type-option');
                 const textSpan = dropdown.querySelector('.listing-type-text');
-                const hiddenInput = dropdown.closest('.input-cover').querySelector('input[type="hidden"]');
+                const hiddenInput = dropdown.closest('.input-cover')?.querySelector('input[type="hidden"]');
                 
-                // Toggle dropdown
-                selected.addEventListener('click', function(e) {
+                if (!selected || !textSpan) return;
+                
+                // Clone and replace to remove old event listeners
+                const newSelected = selected.cloneNode(true);
+                selected.parentNode.replaceChild(newSelected, selected);
+                
+                // Toggle dropdown on click
+                newSelected.addEventListener('click', function(e) {
+                    e.preventDefault();
                     e.stopPropagation();
                     const wasOpen = dropdown.classList.contains('open');
                     document.querySelectorAll('.listing-type-custom-dropdown.open').forEach(d => d.classList.remove('open'));
@@ -870,21 +881,33 @@
                 });
 
                 // Handle keyboard navigation
-                selected.addEventListener('keydown', function(e) {
+                newSelected.addEventListener('keydown', function(e) {
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        selected.click();
+                        e.stopPropagation();
+                        const wasOpen = dropdown.classList.contains('open');
+                        document.querySelectorAll('.listing-type-custom-dropdown.open').forEach(d => d.classList.remove('open'));
+                        if (!wasOpen) {
+                            dropdown.classList.add('open');
+                        }
                     }
                 });
 
-                // Option selection
+                // Option selection - clone and replace each option
                 options.forEach(option => {
-                    option.addEventListener('click', function(e) {
+                    const newOption = option.cloneNode(true);
+                    option.parentNode.replaceChild(newOption, option);
+                    
+                    newOption.addEventListener('click', function(e) {
+                        e.preventDefault();
                         e.stopPropagation();
                         const value = this.dataset.value;
-                        textSpan.textContent = value;
+                        const currentTextSpan = dropdown.querySelector('.listing-type-text');
+                        if (currentTextSpan) {
+                            currentTextSpan.textContent = value;
+                        }
                         
-                        options.forEach(o => o.classList.remove('selected'));
+                        dropdown.querySelectorAll('.listing-type-option').forEach(o => o.classList.remove('selected'));
                         this.classList.add('selected');
                         
                         if (hiddenInput) {
@@ -896,19 +919,22 @@
                         
                         // Trigger Livewire update
                         if (window.Livewire) {
-                            const component = Livewire.find(dropdown.closest('[wire\\:id]')?.getAttribute('wire:id'));
-                            if (component) {
-                                component.set('auction_type', value);
+                            const componentEl = dropdown.closest('[wire\\:id]');
+                            if (componentEl) {
+                                const component = Livewire.find(componentEl.getAttribute('wire:id'));
+                                if (component) {
+                                    component.set('auction_type', value);
+                                }
                             }
                         }
                     });
                 });
 
                 // Mark currently selected option
-                const currentValue = hiddenInput?.value || textSpan.textContent;
-                options.forEach(option => {
-                    if (option.dataset.value === currentValue) {
-                        option.classList.add('selected');
+                const currentValue = hiddenInput?.value || dropdown.querySelector('.listing-type-text')?.textContent;
+                dropdown.querySelectorAll('.listing-type-option').forEach(opt => {
+                    if (opt.dataset.value === currentValue) {
+                        opt.classList.add('selected');
                     }
                 });
             });
@@ -939,30 +965,33 @@
             });
         }
 
-        // Initialize immediately (for when partial loads after livewire:load already fired)
-        initListingTypeDropdown();
-        syncDropdownDisplay();
+        // Robust initialization with delay for Livewire DOM updates
+        function safeInit() {
+            setTimeout(function() {
+                initListingTypeDropdown();
+                syncDropdownDisplay();
+            }, 50);
+        }
+
+        // Initialize immediately
+        safeInit();
 
         // Also initialize on DOMContentLoaded if not ready yet
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', function() {
-                initListingTypeDropdown();
-                syncDropdownDisplay();
-            });
+            document.addEventListener('DOMContentLoaded', safeInit);
         }
 
         // Initialize on Livewire load event
         document.addEventListener('livewire:load', function() {
-            initListingTypeDropdown();
-            syncDropdownDisplay();
+            safeInit();
             
             if (window.Livewire) {
-                Livewire.hook('message.processed', () => {
-                    initListingTypeDropdown();
-                    syncDropdownDisplay();
-                });
+                Livewire.hook('message.processed', safeInit);
             }
         });
+        
+        // Also listen for Livewire updated events
+        window.addEventListener('livewire:updated', safeInit);
 
         // Function to toggle "auction time" input field
         function toggleAuctionTime1(selectElement1) {
