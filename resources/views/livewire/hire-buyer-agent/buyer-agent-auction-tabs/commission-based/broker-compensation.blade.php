@@ -350,6 +350,10 @@
                     <option value="flat">$</option>
                 </select>
 
+                @if ($lease_type === 'flat')
+                    <span class="input-group-text">$</span>
+                @endif
+
                 <!-- Single input -->
                 <input type="text" wire:model.lazy="lease_value" class="form-control"
                     placeholder="{{ $lease_type === 'percent'
@@ -357,10 +361,9 @@
                         : 'Enter flat fee amount (e.g., 1,500)' }}"
                     oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
 
-                <!-- Suffix -->
-                <span class="input-group-text">
-                    {{ $lease_type === 'percent' ? '%' : '$' }}
-                </span>
+                @if ($lease_type === 'percent')
+                    <span class="input-group-text">%</span>
+                @endif
             </div>
 
         </div>
@@ -384,6 +387,10 @@
                     <option value="flat">$</option>
                 </select>
 
+                @if ($purchase_type === 'flat')
+                    <span class="input-group-text">$</span>
+                @endif
+
                 <!-- Single input -->
                 <input type="text" wire:model.lazy="purchase_value" class="form-control"
                     placeholder="{{ $purchase_type === 'percent'
@@ -391,10 +398,9 @@
                         : 'Enter flat fee amount (e.g., 5,000)' }}"
                     oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
 
-                <!-- Suffix -->
-                <span class="input-group-text">
-                    {{ $purchase_type === 'percent' ? '%' : '$' }}
-                </span>
+                @if ($purchase_type === 'percent')
+                    <span class="input-group-text">%</span>
+                @endif
             </div>
 
         </div>

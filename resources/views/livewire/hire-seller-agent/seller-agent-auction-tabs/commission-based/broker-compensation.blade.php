@@ -534,19 +534,20 @@
                     <option value="flat">$</option>
                 </select>
 
+                @if ($lease_type === 'flat')
+                    <span class="input-group-text">$</span>
+                @endif
+
                 <!-- Single input -->
                 <input type="text" step="any" wire:model.lazy="lease_value" class="form-control"
                     placeholder="{{ $lease_type === 'percent'
                         ? 'Enter percentage of option consideration (e.g., 5)'
                         : 'Enter flat fee amount (e.g., 1500)' }}"
+                    data-error-id="lease_value_error"
+                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
 
-                        data-error-id="lease_value_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
-                        >
-
-                <!-- Suffix - only show % when percent type is selected -->
                 @if ($lease_type === 'percent')
-                <span class="input-group-text">%</span>
+                    <span class="input-group-text">%</span>
                 @endif
             </div>
                         <span class="error mt-2" id="lease_value_error"></span>
@@ -574,18 +575,20 @@
                     <option value="flat">$</option>
                 </select>
 
+                @if ($purchase_type === 'flat')
+                    <span class="input-group-text">$</span>
+                @endif
+
                 <!-- Single input -->
                 <input type="text" step="any" wire:model.lazy="purchase_value" class="form-control"
                     placeholder="{{ $purchase_type === 'percent'
                         ? 'Enter percentage of the total purchase price (e.g., 6)'
                         : 'Enter flat fee amount (e.g., 5000)' }}"
-                         data-error-id="purchase_value_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
-                >
+                    data-error-id="purchase_value_error"
+                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
 
-                <!-- Suffix - only show % when percent type is selected -->
                 @if ($purchase_type === 'percent')
-                <span class="input-group-text">%</span>
+                    <span class="input-group-text">%</span>
                 @endif
             </div>
                         <span class="error mt-2" id="purchase_value_error"></span>

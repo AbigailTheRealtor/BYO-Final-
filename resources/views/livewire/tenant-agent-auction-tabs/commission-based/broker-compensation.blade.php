@@ -375,6 +375,10 @@ $safeKey = function(...$parts) {
                     <option value="flat">$</option>
                 </select>
 
+                @if ($lease_type === 'flat')
+                    <span class="input-group-text">$</span>
+                @endif
+
                 <input type="text" step="any" wire:model.lazy="lease_value" class="form-control"
                     placeholder="{{ $lease_type === 'percent'
                         ? 'Enter percentage of option consideration (e.g., 5)'
@@ -384,9 +388,9 @@ $safeKey = function(...$parts) {
                     onblur="{{ $lease_type === 'flat' ? 'formatWithCommas(this)' : 'reformatNumber(this)' }}"
                     onpaste="handlePaste(event)">
 
-                <span class="input-group-text">
-                    {{ $lease_type === 'percent' ? '%' : '$' }}
-                </span>
+                @if ($lease_type === 'percent')
+                    <span class="input-group-text">%</span>
+                @endif
             </div>
             <span class="error mt-2" id="lease_value_error"></span>
         </div>
@@ -409,6 +413,10 @@ $safeKey = function(...$parts) {
                     <option value="flat">$</option>
                 </select>
 
+                @if ($purchase_type === 'flat')
+                    <span class="input-group-text">$</span>
+                @endif
+
                 <input type="text" step="any" wire:model.lazy="purchase_value" class="form-control"
                     placeholder="{{ $purchase_type === 'percent'
                         ? 'Enter percentage of the total purchase price (e.g., 6)'
@@ -418,9 +426,9 @@ $safeKey = function(...$parts) {
                     onblur="{{ $purchase_type === 'flat' ? 'formatWithCommas(this)' : 'reformatNumber(this)' }}"
                     onpaste="handlePaste(event)">
 
-                <span class="input-group-text">
-                    {{ $purchase_type === 'percent' ? '%' : '$' }}
-                </span>
+                @if ($purchase_type === 'percent')
+                    <span class="input-group-text">%</span>
+                @endif
             </div>
             <span class="error mt-2" id="purchase_value_error"></span>
         </div>

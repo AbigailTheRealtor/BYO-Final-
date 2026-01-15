@@ -859,6 +859,10 @@
                     <option value="flat">$</option>
                 </select>
 
+                @if ($lease_type === 'flat')
+                    <span class="input-group-text">$</span>
+                @endif
+
                 <!-- Single input -->
                 <input type="text" step="any" wire:model.lazy="lease_value" class="form-control"
                     placeholder="{{ $lease_type === 'percent'
@@ -867,10 +871,9 @@
                     data-error-id="lease_value_error" oninput="validateInput(this)" onblur="reformatNumber(this)"
                     onpaste="handlePaste(event)">
 
-                <!-- Suffix -->
-                <span class="input-group-text">
-                    {{ $lease_type === 'percent' ? '%' : '$' }}
-                </span>
+                @if ($lease_type === 'percent')
+                    <span class="input-group-text">%</span>
+                @endif
             </div>
             <span class="error mt-2" id="lease_value_error"></span>
 
@@ -898,6 +901,10 @@
                     <option value="flat">$</option>
                 </select>
 
+                @if ($purchase_type === 'flat')
+                    <span class="input-group-text">$</span>
+                @endif
+
                 <!-- Single input -->
                 <input type="text" step="any" wire:model.lazy="purchase_value" class="form-control"
                     placeholder="{{ $purchase_type === 'percent'
@@ -906,10 +913,9 @@
                     data-error-id="purchase_value_error" oninput="validateInput(this)" onblur="reformatNumber(this)"
                     onpaste="handlePaste(event)">
 
-                <!-- Suffix -->
-                <span class="input-group-text">
-                    {{ $purchase_type === 'percent' ? '%' : '$' }}
-                </span>
+                @if ($purchase_type === 'percent')
+                    <span class="input-group-text">%</span>
+                @endif
             </div>
             <span class="error mt-2" id="purchase_value_error"></span>
         </div>

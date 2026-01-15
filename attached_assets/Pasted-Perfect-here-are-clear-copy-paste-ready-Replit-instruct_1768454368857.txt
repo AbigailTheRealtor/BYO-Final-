@@ -1,0 +1,124 @@
+Perfect — here are **clear, copy-paste-ready Replit instructions with strict safeguards** to change **Loan Duration (Years)** to a **regular text input**, scoped exactly to what you asked.
+
+---
+
+## Replit Instructions — [Tenant@exp.com](mailto:Tenant@exp.com)
+
+### Hire a Seller’s Agent → Sale Terms → Offered Financing/Currency
+
+### Seller Financing → Loan Duration (Years)
+
+### Input Type Change (UI-Only, No Logic Changes)
+
+---
+
+## Applies To
+
+* **Flow:** Hire a **Seller’s Agent**
+* **Tab:** Sale Terms
+* **Section:** Offered Financing / Currency
+* **Financing Type:** **Seller Financing**
+* **Property Types:** **All Seller property types**
+* **Field:** **Loan Duration (Years)**
+* **Change Type:** **Input type change (number → text)**
+
+---
+
+## Required Change
+
+### Input Control Update
+
+Change the **Loan Duration (Years)** input from a **numeric input** to a **standard text input**.
+
+**Resulting behavior:**
+
+* User can enter flexible values such as:
+
+  * `30`
+  * `30 years`
+  * `25–30`
+  * `15 with balloon`
+* No spinner controls (up/down arrows)
+* Cursor behaves like a normal text field
+
+> ⚠️ The label **must remain**:
+> **Loan Duration (Years):**
+
+> ⚠️ The placeholder **must remain**:
+> *Enter loan duration in years (e.g., 30)*
+
+---
+
+## What Must NOT Change
+
+* Tooltip text
+* Field label text (already updated)
+* Field visibility conditions (still only shown when **Seller Financing** is selected)
+* Validation rules (unless currently hard-typed to numeric only)
+* Stored value key / database column
+* Draft/save/submit behavior
+* Any calculations or assumptions elsewhere in the platform
+
+---
+
+## Implementation Notes (For Replit)
+
+* Replace `type="number"` (or numeric component) with a standard text input:
+
+  * Example: `type="text"`
+* Remove any numeric-only constraints (min/max/step) **only if they block text entry**.
+* Do **not** introduce new validation or formatting rules.
+
+---
+
+## SAFEGUARDS (MUST FOLLOW — CRITICAL)
+
+### 🚫 DO NOT
+
+* Rename the field key, model property, or database column
+* Convert or transform existing saved values
+* Add parsing, normalization, or backend logic
+* Change required/optional status
+* Change placeholder or tooltip text
+* Affect Buyer, Tenant, or Landlord flows
+* Apply this change globally to other “duration” fields
+
+### ✅ MUST
+
+* Scope change strictly to:
+
+  * Seller → Offered Financing/Currency
+  * Seller Financing → Loan Duration (Years)
+* Ensure backward compatibility:
+
+  * Previously saved numeric values must still display correctly
+* Ensure persistence:
+
+  * Value must remain when switching tabs
+  * Value must persist on draft save, reload, edit, and submit
+
+---
+
+## QA Checklist
+
+1. Select **Seller Financing**
+2. Verify **Loan Duration (Years)** shows a **text input** (no spinner arrows)
+3. Placeholder remains unchanged
+4. Enter text (e.g., `30 years`) → switch tabs → return
+   ✅ Value persists
+5. Save draft → reload → value persists
+6. Submit → edit listing → value still present
+
+---
+
+## Why This Is a Smart Change
+
+* Seller financing terms often aren’t strictly numeric
+* Supports balloons, ranges, and notes without adding extra fields
+* Aligns with how real agents actually describe terms
+* Zero legal or technical risk when scoped correctly
+
+If you want, I can now:
+
+* 🔍 Audit **other numeric inputs** that should be text (balloon terms, interest-only notes), or
+* 📦 Bundle this with the **Loan Duration persistence fix** as a single Seller Financing change set for Replit.

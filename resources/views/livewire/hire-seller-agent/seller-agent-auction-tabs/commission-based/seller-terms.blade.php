@@ -424,7 +424,7 @@ This amount represents the portion of the purchase price that the Seller will fi
         </span>
 
         <div class="input-cover">
-            <input type="number" wire:model="loan_duration" class="form-control has-icon"
+            <input type="text" wire:model="loan_duration" class="form-control has-icon"
                 data-icon="fa-regular fa-calendar-days" placeholder="Enter loan duration in years (e.g., 30)">
         </div>
     </div>
