@@ -1,0 +1,196 @@
+## Replit Instructions — [Tenant@exp.com](mailto:Tenant@exp.com)
+
+### Hire a Seller’s Agent (Listing Creation + Listing Display)
+
+### Fix “Bathrooms → Other” conditional + Replace “Appliances Included” options (Residential/Income + Commercial/Business)
+
+---
+
+## Applies To
+
+* **[Tenant@exp.com](mailto:Tenant@exp.com)**
+* **Flow:** Hire a Seller’s Agent
+* **Areas:**
+
+  1. **Listing Creation** (form UI + validation + saving)
+  2. **Listing Display** (public/preview/listing detail views + edit screens)
+* **Property Types:**
+
+  * Residential + Income (4 units or fewer / Income type as you’ve implemented)
+  * Commercial + Business
+
+---
+
+# 1) Bug Fix — “Bathrooms: Other” text box shows even when user did NOT select “Other”
+
+### Issue
+
+In **Hire a Seller’s Agent → Property Details**, the **custom text input** for Bathrooms (“Other – specify”) is appearing automatically on load / by default, even though the user did not select **Other**.
+
+### Expected Behavior
+
+* The “Other” Bathrooms text box **must only appear** when the user selects **Bathrooms = Other**.
+* If Bathrooms is changed away from Other, the “Other” text box must **hide**.
+* If it hides, the system must **not keep stale Other text** unless Bathrooms = Other.
+
+### Implementation Requirements
+
+**A) Listing Creation (New Listing)**
+
+1. Ensure Bathrooms has a clear default value that is **not** “Other” (ex: blank/null).
+2. Render the **Bathrooms Other Text** input **only** when:
+
+   * `bathrooms_selection == "Other"` (match the exact option value stored/used)
+3. On initial form load:
+
+   * If Bathrooms is null/blank/standard value → **Other textbox hidden**
+4. When user selects Other:
+
+   * Show the textbox immediately.
+5. When user switches away from Other:
+
+   * Hide textbox
+   * Clear the “Other” textbox value in state (recommended) **OR** prevent saving it unless Bathrooms is Other (required at minimum).
+
+**B) Listing Edit (Draft or Published Listing)**
+
+1. When loading an existing listing:
+
+   * If Bathrooms == Other → show textbox and populate it with saved value
+   * If Bathrooms != Other → hide textbox (and ensure it does not “flash” visible on load)
+
+**C) Saving + Display**
+
+1. Saving rules:
+
+   * Save `bathrooms_other_text` **only if** Bathrooms == Other
+   * If Bathrooms != Other, store `bathrooms_other_text` as null/empty (or ignore in write logic)
+2. Display rules:
+
+   * If Bathrooms == Other and other_text exists → display the other_text
+   * Otherwise display the selected Bathrooms option value as normal
+
+### Acceptance Tests
+
+* New listing → Bathrooms untouched → “Other” textbox never shows.
+* Select Bathrooms = Other → textbox appears.
+* Type text → save draft → reload → textbox shows and text persists.
+* Change Bathrooms from Other to “2” (or any standard value) → textbox hides; save → reload → textbox remains hidden and “other” text is not displayed anywhere.
+
+---
+
+# 2) Replace “Appliances Included” options — Residential & Income (Seller flow)
+
+### Issue
+
+**Hire a Seller’s Agent → Appliances Included** is missing options for **Residential & Income** property types.
+
+### Required Change
+
+Replace the **entire existing Appliances Included list** for **Seller (Residential & Income)** with **the exact same list AND the exact same order** used in:
+
+* **Hire a Landlord’s Agent → Residential → Appliances Included**
+
+### Implementation Requirements
+
+**A) Single source of truth (recommended)**
+
+* Reuse the same options array/config/enum used by Landlord Residential Appliances Included.
+* Seller Residential/Income must point to that same source so the lists can’t drift.
+
+**B) Apply to creation + display**
+
+* Listing Creation: dropdown/checkbox list must match Landlord Residential list + order.
+* Listing Display: selected appliances must render correctly (no “unknown value” labels).
+* Listing Edit: previously saved selections must remain intact if they exist in the new list.
+
+**C) Data compatibility**
+
+* Do **not** delete stored values.
+* If any legacy appliance values exist that are not in the new list:
+
+  * Continue displaying them as “(Legacy)” OR keep them visible without breaking the UI.
+  * Do not auto-delete them from records.
+
+### Acceptance Tests
+
+* Compare side-by-side: Seller Residential/Income Appliances list == Landlord Residential Appliances list (same order).
+* Save a Seller listing with multiple appliances → listing display shows them correctly.
+* Edit listing later → selections persist and remain selectable.
+
+---
+
+# 3) Replace “Appliances Included” options — Commercial & Business (Seller flow)
+
+### Issue
+
+**Hire a Seller’s Agent → Appliances Included** is missing options for **Commercial & Business** property types.
+
+### Required Change
+
+Replace the **entire existing Appliances Included list** for **Seller (Commercial & Business)** with **the exact same list AND the exact same order** used in:
+
+* **Hire a Landlord’s Agent → Commercial → Appliances Included**
+
+### Implementation Requirements
+
+Same approach as #2:
+
+* Seller Commercial/Business must reuse the Landlord Commercial appliance options source.
+* Must apply to:
+
+  * listing creation form
+  * listing display
+  * listing edit
+* Preserve legacy values if any.
+
+### Acceptance Tests
+
+* Compare side-by-side: Seller Commercial/Business Appliances list == Landlord Commercial Appliances list (same order).
+* Create listing → save → display → edit → all consistent.
+
+---
+
+## SAFEGUARDS (MUST FOLLOW — DO NOT SKIP)
+
+### DO NOT
+
+* Delete, rename, or drop any database columns, tables, models, or migrations.
+* Change field keys/names used by the UI or backend for:
+
+  * Bathrooms
+  * Bathrooms “Other” text
+  * Appliances Included
+* Modify unrelated flows (Tenant / Buyer / Landlord) except to **reuse** their existing appliance option sources.
+* Change UI layout, styling, icons, placeholder text, tooltips, or required-field coloring as part of this task.
+* Replace appliances with a “new custom list” — you must **copy/reuse the exact Landlord lists and order**.
+
+### MUST
+
+* Make the Bathrooms “Other” textbox **strictly conditional** (no default open state).
+* Ensure the appliance option replacement applies in **all relevant places**:
+
+  * create
+  * edit
+  * display
+  * preview / summary cards (if present)
+* Keep backwards compatibility for any previously saved appliance values.
+
+---
+
+## Dev Notes (So Replit doesn’t miss the hidden cause)
+
+* The Bathrooms “Other” textbox usually appears incorrectly because:
+
+  * the conditional checks the wrong variable, or
+  * “Other” is being set as the default value, or
+  * Livewire/React state initializes `showOther=true` before `bathrooms` loads.
+* Fix by making `showOther = (bathrooms === 'Other')` computed from the Bathrooms value (not independently toggled), and ensuring the initial bathrooms value is null/blank unless explicitly set.
+
+---
+
+If you want, paste screenshots of:
+
+1. Seller “Bathrooms” field + the “Other” textbox showing when it shouldn’t, and
+2. Landlord Residential + Landlord Commercial “Appliances Included” lists,
+   and I’ll format the exact option arrays in the same order for Replit to copy directly (but the instructions above already tell them to reuse the existing Landlord sources, which is the safest/fastest fix).

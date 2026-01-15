@@ -1,22 +1,45 @@
 @php
+    // Appliances list matching Landlord Agent (same order) with legacy options for backwards compatibility
     $applianceOptions = [
-        ['name' => 'Refrigerator'],
-        ['name' => 'Stove/Range'],
-        ['name' => 'Oven'],
-        ['name' => 'Microwave'],
-        ['name' => 'Dishwasher'],
-        ['name' => 'Garbage Disposal'],
-        ['name' => 'Washer'],
-        ['name' => 'Dryer'],
-        ['name' => 'Washer/Dryer Combo'],
-        ['name' => 'Freezer'],
-        ['name' => 'Wine Cooler'],
-        ['name' => 'Ice Maker'],
-        ['name' => 'Trash Compactor'],
-        ['name' => 'Range Hood'],
+        ['name' => 'Bar Fridge'],
+        ['name' => 'Built-In Oven'],
         ['name' => 'Central Vacuum'],
-        ['name' => 'Water Softener'],
+        ['name' => 'Convection Oven'],
+        ['name' => 'Cooktop'],
+        ['name' => 'Dishwasher'],
+        ['name' => 'Disposal'],
+        ['name' => 'Dryer'],
+        ['name' => 'Electric Water Heater'],
+        ['name' => 'Exhaust Fan'],
+        ['name' => 'Freezer'],
+        ['name' => 'Garbage Disposal'],
+        ['name' => 'Gas Water Heater'],
+        ['name' => 'Ice Maker'],
+        ['name' => 'Indoor Grill'],
+        ['name' => 'Kitchen Reverse Osmosis System'],
+        ['name' => 'Microwave'],
+        ['name' => 'Oven'],
+        ['name' => 'Range Electric'],
+        ['name' => 'Range Gas'],
+        ['name' => 'Range Hood'],
+        ['name' => 'Refrigerator'],
+        ['name' => 'Solar Hot Water'],
+        ['name' => 'Solar Hot Water Owned'],
+        ['name' => 'Solar Hot Water Rented'],
+        ['name' => 'Stove/Range'],
+        ['name' => 'Tankless Water Heater'],
+        ['name' => 'Touchless Faucet'],
+        ['name' => 'Trash Compactor'],
+        ['name' => 'Washer'],
+        ['name' => 'Washer/Dryer Combo'],
+        ['name' => 'Water Filtration System'],
         ['name' => 'Water Heater'],
+        ['name' => 'Water Purifier'],
+        ['name' => 'Water Softener'],
+        ['name' => 'Whole House R.O. System'],
+        ['name' => 'Wine Cooler'],
+        ['name' => 'Wine Refrigerator'],
+        ['name' => 'None'],
         ['name' => 'Other'],
     ];
 @endphp
@@ -495,22 +518,23 @@
             <select wire:model="bathrooms" id="bathrooms" class="form-control has-icon" data-icon="fa-solid fa-bath"
                 required>
                 <option value="">Select</option>
-                @foreach ($bathrooms as $row_pt)
+                @foreach ($bathroomOptions as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach
             </select>
         </div>
         <span class="error mt-2" id="bathrooms_error"></span>
     </div>
-    <!-- Other Bathrooms Input (Hidden by Default) -->
-    <div class="form-group other_bathrooms d-none">
-        {{-- <label class="fw-bold">Minimum Bathrooms Needed:</label> --}}
-        <div class="input-cover">
-            <input type="number" wire:model="other_bathrooms" class="form-control has-icon"
-                data-icon="fa-solid fa-bath" placeholder="Enter number of bathrooms (e.g., 11)">
+    <!-- Other Bathrooms Input (Shows only when Other is selected) -->
+    @if ($bathrooms === 'Other')
+        <div class="form-group">
+            <div class="input-cover">
+                <input type="number" wire:model="other_bathrooms" class="form-control has-icon"
+                    data-icon="fa-solid fa-bath" placeholder="Enter number of bathrooms (e.g., 11)">
+            </div>
+            <span class="error mt-2" id="other_bathrooms_error"></span>
         </div>
-        <span class="error mt-2" id="other_bathrooms_error"></span>
-    </div>
+    @endif
 @endif
 
 <!-- Minimum Heated SqFt Needed -->

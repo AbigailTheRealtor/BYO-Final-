@@ -312,7 +312,7 @@
         ['name' => 'Other'],
     ];
 
-    $bathrooms = [
+    $bathroomOptions = [
         ['name' => '1'],
         ['name' => '1.5'],
         ['name' => '2'],
