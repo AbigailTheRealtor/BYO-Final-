@@ -753,6 +753,9 @@
         padding: 10px 15px;
         cursor: pointer;
         transition: background-color 0.15s ease;
+        font-size: 1rem;
+        font-weight: 400;
+        color: #212529;
     }
 
     .listing-type-option:hover {
