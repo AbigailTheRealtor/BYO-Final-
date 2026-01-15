@@ -1,3 +1,7 @@
+@php
+    // Ensure offered_financing is always an array to prevent in_array() errors
+    $offered_financing = is_array($offered_financing ?? []) ? ($offered_financing ?? []) : (array)($offered_financing ?? []);
+@endphp
 <!-- Section Heading -->
 <h3>Purchasing Terms</h3>
 <div class="alert alert-info bg-light-info border-info mb-4">
@@ -222,10 +226,8 @@
     </div> --}}
 
     <div class="input-cover">
-        <select wire:model="offered_financing" class="form-control has-icon" data-icon="fa-solid fa-money-bill-wave"
-            required>
-            <option value="">Select</option>
-
+        <select wire:model="offered_financing" id="offered_financing" class="form-control has-icon select2-multiple"
+            data-icon="fa-solid fa-money-bill-wave input-icon2" multiple required>
             @foreach ($financing_options as $option)
                 <option value="{{ $option['name'] }}" title="{{ $option['description'] }}">
                     {{ $option['name'] }}
@@ -233,11 +235,11 @@
             @endforeach
         </select>
     </div>
-    <span class="error mt-2" id="number_of_unit_error"></span>
+    <span class="error mt-2" id="offered_financing_error"></span>
 
 </div>
 
-@if ($offered_financing === 'Other')
+@if (in_array('Other', $offered_financing))
     <div>
         <div class="form-group">
             <div class="input-cover">
@@ -252,7 +254,7 @@
 <!-- Cash Option - No additional fields needed per requirements -->
 
 <!-- Conventional, FHA, Jumbo, VA, No-Doc, Non-QM, USDA -->
-@if (in_array($offered_financing, ['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA']))
+@if (in_array('Conventional', $offered_financing) || in_array('FHA', $offered_financing) || in_array('Jumbo', $offered_financing) || in_array('VA', $offered_financing) || in_array('No-Doc', $offered_financing) || in_array('Non-QM', $offered_financing) || in_array('USDA', $offered_financing))
     <div class="form-group mt-3">
         <label class="fw-bold">Buyer Pre-Approved for a Loan:<span class="text-danger">*</span></label>
 
@@ -293,7 +295,7 @@
 @endif
 
 <!-- Seller Financing -->
-@if ($offered_financing === 'Seller Financing')
+@if (in_array('Seller Financing', $offered_financing))
     <div class="form-group">
         <label class="fw-bold">Desired Purchase Price:<span class="text-danger">*</span></label>
 
@@ -651,7 +653,7 @@
 @endif
 
 <!-- Assumable Financing -->
-@if ($offered_financing === 'Assumable')
+@if (in_array('Assumable', $offered_financing))
     <div class="form-group">
         <label class="fw-bold">Offered Assumable Terms:<span class="text-danger">*</span></label>
 
@@ -815,7 +817,7 @@
 
 @endif
 <!-- Exchange/Trade Option -->
-@if ($offered_financing === 'Exchange/Trade')
+@if (in_array('Exchange/Trade', $offered_financing))
     <div class="form-group mt-3">
         <label class="fw-bold">Acceptable Exchange Item:<span class="text-danger">*</span></label>
 
@@ -993,7 +995,7 @@
 @endif
 
 <!-- Lease Option -->
-@if ($offered_financing === 'Lease Option')
+@if (in_array('Lease Option', $offered_financing))
     <!-- 1. Buyer's Desired Offering Price for Lease Option -->
     <div class="form-group">
         <label class="fw-bold">Buyer's Desired Offering Price for Lease Option:<span
@@ -1168,7 +1170,7 @@
 @endif
 
 <!-- Lease Purchase -->
-@if ($offered_financing === 'Lease Purchase')
+@if (in_array('Lease Purchase', $offered_financing))
 
     <div class="alert alert-warning mt-3 p-2 small">
         <strong>Note:</strong> 📌 If this transaction is structured as a Lease-Purchase, the Buyer's Broker Purchase Fee
@@ -1344,7 +1346,7 @@
 @endif
 
 <!-- Cryptocurrency Option -->
-@if ($offered_financing === 'Cryptocurrency')
+@if (in_array('Cryptocurrency', $offered_financing))
     <div class="form-group">
         <label class="fw-bold">Offered Cryptocurrency:<span class="text-danger">*</span></label>
 
@@ -1484,7 +1486,7 @@
 @endif
 
 <!-- NFT Option -->
-@if ($offered_financing === 'Non-Fungible Token (NFT)')
+@if (in_array('Non-Fungible Token (NFT)', $offered_financing))
     <div class="form-group mt-3">
         <label class="fw-bold">Offered Non-Fungible Token (NFT):<span class="text-danger">*</span></label>
 

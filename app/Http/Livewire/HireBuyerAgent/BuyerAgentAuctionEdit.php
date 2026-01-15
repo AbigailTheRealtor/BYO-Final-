@@ -65,7 +65,7 @@ class BuyerAgentAuctionEdit extends Component
 
     // Properties
     public $maximum_budget = '';
-    public $offered_financing = '';
+    public $offered_financing = [];
     public $other_financing = '';
     public $cash_budget = '';
     public $pre_approved = '';
