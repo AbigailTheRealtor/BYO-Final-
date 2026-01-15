@@ -1,0 +1,149 @@
+Understood — right now the comma formatting is only being applied to the **%** path (likely because that input uses a different component/mask than the **$** path). You need **the exact same thousands-separator formatting to apply when the user selects `$` too**, for both Lease-Option compensation fields, across **Tenant/Buyer/Seller/Landlord**.
+
+Here are **copy-paste Replit instructions with safeguards**.
+
+---
+
+## Replit Instructions — Comma Formatting Must Apply to **$ AND %** for Lease-Option Compensation Inputs
+
+### Applies To
+
+All roles under **Broker Compensation & Agency Agreement Terms**:
+
+* Tenant, Buyer, Seller, Landlord
+
+### Trigger
+
+When **Interested in (Offering/Interested in) a Lease-Option Agreement = Yes** and the user enters numbers in:
+
+1. **Compensation for Creating the Lease-Option Agreement**
+2. **Compensation if Purchase Option is Exercised**
+
+### Problem
+
+Comma formatting currently works only when the user selects **%**, but not when selecting **$**.
+
+### Requirement
+
+Thousands separators (commas) must apply to **both symbol selections**:
+
+* `%` → already works (keep it)
+* `$` → must also work (fix it)
+
+Example:
+
+* `55555` displays as `55,555` for **both** `%` and `$`
+
+---
+
+## SAFEGUARDS (Must Follow)
+
+1. **Do NOT rename** any Livewire properties, keys, database columns, or validation rules.
+2. **Do NOT change** fee calculations or business logic.
+3. **Do NOT store commas** in DB — store clean numeric values only.
+4. **Do NOT introduce a new formatting library** if one already exists (reuse the same approach used for Desired Rental Amount).
+5. Ensure **draft/save/edit/submit** behavior remains unchanged.
+
+---
+
+# Step 1 — Find Where the Input Splits into “% UI” vs “$ UI”
+
+In the Lease-Option section views/components, there is likely conditional rendering like:
+
+* if symbol is `%` → render Input A (has formatting)
+* if symbol is `$` → render Input B (missing formatting)
+
+**Developer task:** Locate the conditional branch that renders the amount input based on selected symbol for each of the two fields.
+
+---
+
+# Step 2 — Apply the Same Formatting Hook to the **$ Branch**
+
+Whatever is enabling commas for the **%** branch must also be applied to the **$** branch.
+
+### Expected cause
+
+The **% branch** amount input has one of these:
+
+* a shared component used by “Desired Rental Amount”
+* a class like `currency-input`, `money-mask`, `thousands-separator`
+* an Alpine directive like `x-mask:dynamic`
+* a JS initializer (AutoNumeric/Inputmask/Cleave) bound by class or `data-*`
+
+But the **$ branch** input is missing that same hook.
+
+✅ Fix: Add the same hook to the **$ branch** input.
+
+---
+
+# Step 3 — Ensure Both Lease-Option Fields Use the Same Formatting (for $ and %)
+
+Apply the fix to BOTH fields:
+
+### Field A
+
+**Compensation for Creating the Lease-Option Agreement**
+
+* % branch → already formatted (leave)
+* $ branch → add same formatting hook
+
+### Field B
+
+**Compensation if Purchase Option is Exercised**
+
+* % branch (if exists) → formatted or make consistent
+* $ branch → add same formatting hook
+
+---
+
+# Step 4 — If “$ branch” Uses a Different Component, Replace It with the Tenant/Desired Rental Amount Component
+
+If the $ branch is using a plain `<input type="number">` or a different component, replace only that input rendering with the same component used by Desired Rental Amount (or the % branch).
+
+✅ Goal: **Both symbol branches must render the same formatted amount input**, only the symbol UI changes.
+
+**Safeguard:** Keep the existing `wire:model` exactly the same.
+
+---
+
+# Step 5 — Ensure Sanitization Works for BOTH Paths
+
+Since you now format commas in both cases, make sure the backend sanitization runs regardless of symbol selection:
+
+* UI may display: `55,555`
+* Stored value must be: `55555`
+
+Ensure the same “strip commas” sanitation used elsewhere (Desired Rental Amount) is also applied to:
+
+* `lease_option_create_comp_amount` (whatever your actual key is)
+* `lease_option_purchase_exercised_comp_amount` (whatever your actual key is)
+
+**Important:** sanitize on save/submit (and ideally on updated hook), not only in the % branch.
+
+---
+
+## QA / Acceptance Testing (Replit Must Confirm)
+
+For **Tenant, Buyer, Seller, Landlord**:
+
+1. Set Lease-Option = **Yes**
+2. For “Creating Lease-Option Agreement”:
+
+   * select `%` → type `55555` → shows `55,555`
+   * select `$` → type `55555` → shows `55,555` ✅ (this is the fix)
+3. For “Purchase Option is Exercised”:
+
+   * select `%` (if available) → `55,555`
+   * select `$` → `55,555` ✅
+4. Save draft, reload → values display formatted
+5. Submit listing → values stored as clean numerics (no commas)
+
+---
+
+## Completion Definition
+
+✅ Comma formatting works identically for **$ and %** selections on both Lease-Option compensation fields across all four roles, without changing existing field names, validations, or save/submit logic.
+
+---
+
+If you want to make this impossible for Replit to mis-implement: tell them **“Do not conditionally apply the formatter by symbol; the formatter must attach to the amount input in both branches.”**

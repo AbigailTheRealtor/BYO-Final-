@@ -380,6 +380,7 @@ $safeKey = function(...$parts) {
                 @endif
 
                 <input type="text" step="any" wire:model.lazy="lease_value" class="form-control"
+                    wire:key="lease-value-input-{{ $lease_type }}"
                     placeholder="{{ $lease_type === 'percent'
                         ? 'Enter percentage of option consideration (e.g., 5)'
                         : 'Enter flat fee amount (e.g., 1,500)' }}"
@@ -418,6 +419,7 @@ $safeKey = function(...$parts) {
                 @endif
 
                 <input type="text" step="any" wire:model.lazy="purchase_value" class="form-control"
+                    wire:key="purchase-value-input-{{ $purchase_type }}"
                     placeholder="{{ $purchase_type === 'percent'
                         ? 'Enter percentage of the total purchase price (e.g., 6)'
                         : 'Enter flat fee amount (e.g., 5,000)' }}"
