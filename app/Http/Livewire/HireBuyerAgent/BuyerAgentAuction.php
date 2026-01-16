@@ -1546,6 +1546,8 @@ class BuyerAgentAuction extends Component
 
     protected function saveAllMetadata($auction)
     {
+        \Log::info('[saveAllMetadata CALLED]', ['auction_id' => $auction->id]);
+        
         $auction->saveMeta('service_type', $this->service_type);
         $auction->saveMeta('user_type', $this->user_type);
         $auction->saveMeta('listing_status', $this->listing_status);
@@ -1618,7 +1620,24 @@ class BuyerAgentAuction extends Component
         $auction->saveMeta('gap_payment_type', $this->gap_payment_type);
         $auction->saveMeta('gap_payment_amount', $this->stripCommas($this->gap_payment_amount));
         
-        // Seller Financing Additional Fields
+        // Seller Financing Additional Fields - DEBUG LOG
+        \Log::info('[FINANCING FOLLOWUPS - VALUES AT SAVE TIME]', [
+            'auction_id' => $auction->id,
+            'offered_financing' => $this->offered_financing,
+            'seller_amortization_type' => $this->seller_amortization_type,
+            'seller_payment_frequency' => $this->seller_payment_frequency,
+            'seller_late_fee_amount' => $this->seller_late_fee_amount,
+            'exchange_transfer_method' => $this->exchange_transfer_method,
+            'exchange_liens' => $this->exchange_liens,
+            'exchange_inspection_rights' => $this->exchange_inspection_rights,
+            'crypto_exchange_method' => $this->crypto_exchange_method,
+            'crypto_custodian_wallet' => $this->crypto_custodian_wallet,
+            'crypto_transaction_fees' => $this->crypto_transaction_fees,
+            'nft_valuation_method' => $this->nft_valuation_method,
+            'nft_transfer_method' => $this->nft_transfer_method,
+            'nft_gas_fees' => $this->nft_gas_fees,
+        ]);
+        
         $auction->saveMeta('seller_amortization_type', $this->seller_amortization_type);
         $auction->saveMeta('seller_amortization_other', $this->seller_amortization_other);
         $auction->saveMeta('seller_payment_frequency', $this->seller_payment_frequency);
