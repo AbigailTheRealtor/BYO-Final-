@@ -2833,6 +2833,7 @@ class TenantAgentAuction extends Component
             $this->phone_number = $auction->get->phone_number;
             $this->email = $auction->get->email;
             $this->video_link = $auction->get->video_link;
+            $this->photo = $auction->get->photo ?? null;
             $this->current_status = $auction->get->current_status;
 
             // Location and meeting details

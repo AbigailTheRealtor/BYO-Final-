@@ -30,6 +30,86 @@
         ['name' => '10'],
         ['name' => 'Other'],
     ];
+
+    $property_items_buyer = [
+        // Residential (alphabetical order)
+        ['name' => '½ Duplex', 'class' => 'residential-length'],
+        ['name' => 'Condo-Hotel', 'class' => 'residential-length'],
+        ['name' => 'Condominium', 'class' => 'residential-length'],
+        ['name' => 'Dock-Rackominium', 'class' => 'residential-length'],
+        ['name' => 'Farm', 'class' => 'residential-length'],
+        ['name' => 'Garage Condo', 'class' => 'residential-length'],
+        ['name' => 'Manufactured Home- Post 1977', 'class' => 'residential-length'],
+        ['name' => 'Mobile Home- Pre 1976', 'class' => 'residential-length'],
+        ['name' => 'Modular Home', 'class' => 'residential-length'],
+        ['name' => 'Single Family Residence', 'class' => 'residential-length'],
+        ['name' => 'Townhouse', 'class' => 'residential-length'],
+        ['name' => 'Villa', 'class' => 'residential-length'],
+
+        // Income (alphabetical order)
+        ['name' => 'Duplex', 'class' => 'income-length'],
+        ['name' => 'Five or More', 'class' => 'income-length'],
+        ['name' => 'Quadplex', 'class' => 'income-length'],
+        ['name' => 'Triplex', 'class' => 'income-length'],
+
+        // Business (alphabetical order)
+        ['name' => 'Agriculture', 'class' => 'business-length'],
+        ['name' => 'Assembly Building', 'class' => 'business-length'],
+        ['name' => 'Business', 'class' => 'business-length'],
+        ['name' => 'Five or More', 'class' => 'business-length'],
+        ['name' => 'Hotel/Motel', 'class' => 'business-length'],
+        ['name' => 'Industrial', 'class' => 'business-length'],
+        ['name' => 'Mixed Use', 'class' => 'business-length'],
+        ['name' => 'Office', 'class' => 'business-length'],
+        ['name' => 'Restaurant', 'class' => 'business-length'],
+        ['name' => 'Retail', 'class' => 'business-length'],
+        ['name' => 'Warehouse', 'class' => 'business-length'],
+
+        // Vacant Land
+        ['name' => 'Agricultural', 'class' => 'vacant-land-length'],
+        ['name' => 'Billboard Site', 'class' => 'vacant-land-length'],
+        ['name' => 'Business', 'class' => 'vacant-land-length'],
+        ['name' => 'Cattle', 'class' => 'vacant-land-length'],
+        ['name' => 'Commercial', 'class' => 'vacant-land-length'],
+        ['name' => 'Farm', 'class' => 'vacant-land-length'],
+        ['name' => 'Fisher', 'class' => 'vacant-land-length'],
+        ['name' => 'Highway Frontage', 'class' => 'vacant-land-length'],
+        ['name' => 'Horses', 'class' => 'vacant-land-length'],
+        ['name' => 'Industrial', 'class' => 'vacant-land-length'],
+        ['name' => 'Land Fill', 'class' => 'vacant-land-length'],
+        ['name' => 'Livestock', 'class' => 'vacant-land-length'],
+        ['name' => 'Mixed Use', 'class' => 'vacant-land-length'],
+        ['name' => 'Multi Family', 'class' => 'vacant-land-length'],
+        ['name' => 'Nursery Orchard', 'class' => 'vacant-land-length'],
+        ['name' => 'Pasture', 'class' => 'vacant-land-length'],
+        ['name' => 'Poultry', 'class' => 'vacant-land-length'],
+        ['name' => 'Ranch', 'class' => 'vacant-land-length'],
+        ['name' => 'Residential', 'class' => 'vacant-land-length'],
+        ['name' => 'Retail', 'class' => 'vacant-land-length'],
+        ['name' => 'Row Crops', 'class' => 'vacant-land-length'],
+        ['name' => 'Sod Farm', 'class' => 'vacant-land-length'],
+        ['name' => 'Subdivision', 'class' => 'vacant-land-length'],
+        ['name' => 'Timber', 'class' => 'vacant-land-length'],
+        ['name' => 'Tracts', 'class' => 'vacant-land-length'],
+        ['name' => 'Trans/Cell Tower', 'class' => 'vacant-land-length'],
+        ['name' => 'Tree Farm', 'class' => 'vacant-land-length'],
+        ['name' => 'Unimproved Land', 'class' => 'vacant-land-length'],
+        ['name' => 'Well Field', 'class' => 'vacant-land-length'],
+        ['name' => 'Other', 'class' => 'vacant-land-length', 'id' => 'vacant-land-length-other'],
+
+        // Commercial
+        ['name' => 'Agriculture', 'class' => 'commercial-length'],
+        ['name' => 'Assembly Building', 'class' => 'commercial-length'],
+        ['name' => 'Business', 'class' => 'commercial-length'],
+        ['name' => 'Five or More', 'class' => 'commercial-length'],
+        ['name' => 'Hotel/Motel', 'class' => 'commercial-length'],
+        ['name' => 'Industrial', 'class' => 'commercial-length'],
+        ['name' => 'Mixed Use', 'class' => 'commercial-length'],
+        ['name' => 'Office', 'class' => 'commercial-length'],
+        ['name' => 'Restaurant', 'class' => 'commercial-length'],
+        ['name' => 'Retail', 'class' => 'commercial-length'],
+        ['name' => 'Warehouse', 'class' => 'commercial-length'],
+    ];
 @endphp
 
 <style>

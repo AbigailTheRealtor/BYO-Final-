@@ -1274,7 +1274,7 @@ class LandLordAgentAuction extends Component
 
             // Budget & Financing
             $this->maximum_budget = $auction->get->maximum_budget;
-            $this->offered_financing = $auction->get->offered_financing;
+            $this->offered_financing = is_string($auction->get->offered_financing) ? json_decode($auction->get->offered_financing, true) ?? [] : (array)($auction->get->offered_financing ?? []);
             $this->other_financing = $auction->get->other_financing;
             $this->cash_budget = $auction->get->cash_budget;
             $this->pre_approved = $auction->get->pre_approved;
@@ -1459,6 +1459,7 @@ class LandLordAgentAuction extends Component
             $this->phone_number = $this->formatPhoneForDisplay($auction->get->phone_number);
             $this->email = $auction->get->email;
             $this->video_link = $auction->get->video_link;
+            $this->photo = $auction->get->photo ?? null;
 
             // Location and meeting details
             $this->person_meeting = $auction->get->person_meeting;
@@ -1667,7 +1668,7 @@ class LandLordAgentAuction extends Component
 
         // Budget & Financing
         $auction->saveMeta('maximum_budget', $this->maximum_budget);
-        $auction->saveMeta('offered_financing', $this->offered_financing);
+        $auction->saveMeta('offered_financing', json_encode($this->offered_financing));
         $auction->saveMeta('other_financing', $this->other_financing);
         $auction->saveMeta('cash_budget', $this->cash_budget);
         $auction->saveMeta('pre_approved', $this->pre_approved);
