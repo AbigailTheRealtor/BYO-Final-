@@ -2547,390 +2547,396 @@ class TenantAgentAuction extends Component
             $this->occupancy_status = $auction->get->occupancy_status ?? '';
 
             // Lease terms
+            $leaseForRaw = $auction->get->lease_for ?? null;
+            $this->lease_for = $leaseForRaw ? (is_string($leaseForRaw) ? json_decode($leaseForRaw, true) ?? [] : (array)$leaseForRaw) : [];
 
-            $this->lease_for = is_string($auction->get->lease_for) ? json_decode($auction->get->lease_for, true) ?? [] : (array)$auction->get->lease_for;
 
-
-            $this->other_lease_for = $auction->get->other_lease_for;
-            $this->lease_by = $auction->get->lease_by;
-            $this->lease_date = $auction->get->lease_date;
+            $this->other_lease_for = $auction->get->other_lease_for ?? '';
+            $this->lease_by = $auction->get->lease_by ?? '';
+            $this->lease_date = $auction->get->lease_date ?? '';
 
             // Tenant information
-            $this->pets = $auction->get->pets;
-            $this->number_of_pets = $auction->get->number_of_pets;
-            $this->breed_of_pets = $auction->get->breed_of_pets;
-            $this->type_of_pets = $auction->get->type_of_pets;
-            $this->weight_of_pets = $auction->get->weight_of_pets;
-            $this->service_animal = $auction->get->service_animal;
-            $this->other_services_enabled = $auction->get->other_services_enabled;
-            $this->support_animal = $auction->get->support_animal;
-            $this->emotional_support_animal = $auction->get->emotional_support_animal;
-            $this->has_breed_restrictions  = $auction->get->has_breed_restrictions;
-            $this->breed_restrictions  = $auction->get->breed_restrictions;
-            $this->minimum_annual_net_income  = $auction->get->minimum_annual_net_income;
-            $this->minimum_cap_rate  = $auction->get->minimum_cap_rate;
+            $this->pets = $auction->get->pets ?? '';
+            $this->number_of_pets = $auction->get->number_of_pets ?? '';
+            $this->breed_of_pets = $auction->get->breed_of_pets ?? '';
+            $this->type_of_pets = $auction->get->type_of_pets ?? '';
+            $this->weight_of_pets = $auction->get->weight_of_pets ?? '';
+            $this->service_animal = $auction->get->service_animal ?? '';
+            $this->other_services_enabled = $auction->get->other_services_enabled ?? '';
+            $this->support_animal = $auction->get->support_animal ?? '';
+            $this->emotional_support_animal = $auction->get->emotional_support_animal ?? '';
+            $this->has_breed_restrictions = $auction->get->has_breed_restrictions ?? '';
+            $this->breed_restrictions = $auction->get->breed_restrictions ?? '';
+            $this->minimum_annual_net_income = $auction->get->minimum_annual_net_income ?? '';
+            $this->minimum_cap_rate = $auction->get->minimum_cap_rate ?? '';
 
-            $this->number_of_unit_type = is_string($auction->get->number_of_unit_type) ? json_decode($auction->get->number_of_unit_type, true) ?? [] : (array)$auction->get->number_of_unit_type;
-
-
-
-            $this->screening_concerns  = $auction->get->screening_concerns;
-            $this->screening_concerns_explanation  = $auction->get->screening_concerns_explanation;
+            $numUnitTypeRaw = $auction->get->number_of_unit_type ?? null;
+            $this->number_of_unit_type = $numUnitTypeRaw ? (is_string($numUnitTypeRaw) ? json_decode($numUnitTypeRaw, true) ?? [] : (array)$numUnitTypeRaw) : [];
 
 
-            $this->credit_scroe_rating = is_string($auction->get->credit_scroe_rating) ? json_decode($auction->get->credit_scroe_rating, true) ?? [] : (array)$auction->get->credit_scroe_rating;
-            $this->preferance_details  = $auction->get->preferance_details;
+
+            $this->screening_concerns = $auction->get->screening_concerns ?? '';
+            $this->screening_concerns_explanation = $auction->get->screening_concerns_explanation ?? '';
+
+            $creditRaw = $auction->get->credit_scroe_rating ?? null;
+            $this->credit_scroe_rating = $creditRaw ? (is_string($creditRaw) ? json_decode($creditRaw, true) ?? [] : (array)$creditRaw) : [];
+            $this->preferance_details = $auction->get->preferance_details ?? '';
 
 
             ///////// Buyer purchasing terms
-            $this->sale_provision = is_string($auction->get->sale_provision) ? json_decode($auction->get->sale_provision, true) ?? [] : (array)$auction->get->sale_provision;
-            $this->sale_provision_other  = $auction->get->sale_provision_other;
-            $this->sale_provision_assignment  = $auction->get->sale_provision_assignment;
-            $this->assignment_fee_type  = $auction->get->assignment_fee_type;
-            $this->assignment_fee_amount  = $auction->get->assignment_fee_amount;
-            $this->occupant_status  = $auction->get->occupant_status;
-            $this->leasing_spaces  = $auction->get->leasing_spaces;
-            $this->occupant_tenant  = $auction->get->occupant_tenant;
-            $this->desired_rental_amount  = $auction->get->desired_rental_amount;
-            $this->lease_amount_frequency  = $auction->get->lease_amount_frequency;
-            $this->target_closing_date  = $auction->get->target_closing_date;
-            $this->maximum_budget  = $auction->get->maximum_budget;
-            $this->offered_financing = is_string($auction->get->offered_financing) ? json_decode($auction->get->offered_financing, true) ?? [] : (array)$auction->get->offered_financing;
-            $this->other_financing  = $auction->get->other_financing;
-            $this->cash_budget  = $auction->get->cash_budget;
-            $this->pre_approved  = $auction->get->pre_approved;
-            $this->pre_approval_amount  = $auction->get->pre_approval_amount;
-            $this->purchase_price  = $auction->get->purchase_price;
-            $this->down_payment_type  = $auction->get->down_payment_type;
-            $this->down_payment_amount  = $auction->get->down_payment_amount;
-            $this->seller_down_payment_amount  = $auction->get->seller_down_payment_amount;
-            $this->seller_financing_type  = $auction->get->seller_financing_type;
-            $this->seller_financing_amount  = $auction->get->seller_financing_amount;
-            $this->interest_rate  = $auction->get->interest_rate;
-            $this->loan_duration  = $auction->get->loan_duration;
-            $this->prepayment_penalty  = $auction->get->prepayment_penalty;
-            $this->prepayment_penalty_amount  = $auction->get->prepayment_penalty_amount;
-            $this->balloon_payment  = $auction->get->balloon_payment;
-            $this->balloon_payment_amount  = $auction->get->balloon_payment_amount;
-            $this->balloon_payment_date  = $auction->get->balloon_payment_date;
-            $this->assumable_terms  = $auction->get->assumable_terms;
-            $this->max_assumable_rate  = $auction->get->max_assumable_rate;
-            $this->max_monthly_payment  = $auction->get->max_monthly_payment;
-            $this->outstanding_balance  = $auction->get->outstanding_balance;
-            $this->gap_payment_type  = $auction->get->gap_payment_type;
-            $this->gap_payment_amount  = $auction->get->gap_payment_amount;
-            $this->exchange_item  = $auction->get->exchange_item;
-            $this->other_exchange_item  = $auction->get->other_exchange_item;
-            $this->exchange_item_value  = $auction->get->exchange_item_value;
-            $this->exchange_item_condition  = $auction->get->exchange_item_condition;
-            $this->additional_cash  = $auction->get->additional_cash;
-            $this->value_determination  = $auction->get->value_determination;
-            $this->lease_option_price  = $auction->get->lease_option_price;
-            $this->lease_option_terms  = $auction->get->lease_option_terms;
-            $this->lease_option_duration  = $auction->get->lease_option_duration;
-            $this->lease_option_payment  = $auction->get->lease_option_payment;
-            $this->lease_option_conditions  = $auction->get->lease_option_conditions;
-            $this->has_option_fee  = $auction->get->has_option_fee;
-            $this->option_fee_amount  = $auction->get->option_fee_amount;
-            $this->lease_purchase_price  = $auction->get->lease_purchase_price;
-            $this->lease_purchase_terms  = $auction->get->lease_purchase_terms;
-            $this->lease_purchase_duration  = $auction->get->lease_purchase_duration;
-            $this->lease_purchase_payment  = $auction->get->lease_purchase_payment;
-            $this->lease_purchase_conditions  = $auction->get->lease_purchase_conditions;
-            $this->lease_purchase_option_fee  = $auction->get->lease_purchase_option_fee;
-            $this->lease_purchase_option_fee_amount  = $auction->get->lease_purchase_option_fee_amount;
-            $this->cryptocurrency_type  = $auction->get->cryptocurrency_type;
-            $this->crypto_percentage  = $auction->get->crypto_percentage;
-            $this->cash_percentage_crypto  = $auction->get->cash_percentage_crypto;
-            $this->nft_description  = $auction->get->nft_description;
-            $this->nft_percentage  = $auction->get->nft_percentage;
-            $this->cash_percentage_nft  = $auction->get->cash_percentage_nft;
+            $saleProvisionRaw = $auction->get->sale_provision ?? null;
+            $this->sale_provision = $saleProvisionRaw ? (is_string($saleProvisionRaw) ? json_decode($saleProvisionRaw, true) ?? [] : (array)$saleProvisionRaw) : [];
+            $this->sale_provision_other = $auction->get->sale_provision_other ?? '';
+            $this->sale_provision_assignment = $auction->get->sale_provision_assignment ?? '';
+            $this->assignment_fee_type = $auction->get->assignment_fee_type ?? '';
+            $this->assignment_fee_amount = $auction->get->assignment_fee_amount ?? '';
+            $this->occupant_status = $auction->get->occupant_status ?? '';
+            $this->leasing_spaces = $auction->get->leasing_spaces ?? '';
+            $this->occupant_tenant = $auction->get->occupant_tenant ?? '';
+            $this->desired_rental_amount = $auction->get->desired_rental_amount ?? '';
+            $this->lease_amount_frequency = $auction->get->lease_amount_frequency ?? '';
+            $this->target_closing_date = $auction->get->target_closing_date ?? '';
+            $this->maximum_budget = $auction->get->maximum_budget ?? '';
+            $offeredFinancingRaw = $auction->get->offered_financing ?? null;
+            $this->offered_financing = $offeredFinancingRaw ? (is_string($offeredFinancingRaw) ? json_decode($offeredFinancingRaw, true) ?? [] : (array)$offeredFinancingRaw) : [];
+            $this->other_financing = $auction->get->other_financing ?? '';
+            $this->cash_budget = $auction->get->cash_budget ?? '';
+            $this->pre_approved = $auction->get->pre_approved ?? '';
+            $this->pre_approval_amount = $auction->get->pre_approval_amount ?? '';
+            $this->purchase_price = $auction->get->purchase_price ?? '';
+            $this->down_payment_type = $auction->get->down_payment_type ?? '';
+            $this->down_payment_amount = $auction->get->down_payment_amount ?? '';
+            $this->seller_down_payment_amount = $auction->get->seller_down_payment_amount ?? '';
+            $this->seller_financing_type = $auction->get->seller_financing_type ?? '';
+            $this->seller_financing_amount = $auction->get->seller_financing_amount ?? '';
+            $this->interest_rate = $auction->get->interest_rate ?? '';
+            $this->loan_duration = $auction->get->loan_duration ?? '';
+            $this->prepayment_penalty = $auction->get->prepayment_penalty ?? '';
+            $this->prepayment_penalty_amount = $auction->get->prepayment_penalty_amount ?? '';
+            $this->balloon_payment = $auction->get->balloon_payment ?? '';
+            $this->balloon_payment_amount = $auction->get->balloon_payment_amount ?? '';
+            $this->balloon_payment_date = $auction->get->balloon_payment_date ?? '';
+            $this->assumable_terms = $auction->get->assumable_terms ?? '';
+            $this->max_assumable_rate = $auction->get->max_assumable_rate ?? '';
+            $this->max_monthly_payment = $auction->get->max_monthly_payment ?? '';
+            $this->outstanding_balance = $auction->get->outstanding_balance ?? '';
+            $this->gap_payment_type = $auction->get->gap_payment_type ?? '';
+            $this->gap_payment_amount = $auction->get->gap_payment_amount ?? '';
+            $this->exchange_item = $auction->get->exchange_item ?? '';
+            $this->other_exchange_item = $auction->get->other_exchange_item ?? '';
+            $this->exchange_item_value = $auction->get->exchange_item_value ?? '';
+            $this->exchange_item_condition = $auction->get->exchange_item_condition ?? '';
+            $this->additional_cash = $auction->get->additional_cash ?? '';
+            $this->value_determination = $auction->get->value_determination ?? '';
+            $this->lease_option_price = $auction->get->lease_option_price ?? '';
+            $this->lease_option_terms = $auction->get->lease_option_terms ?? '';
+            $this->lease_option_duration = $auction->get->lease_option_duration ?? '';
+            $this->lease_option_payment = $auction->get->lease_option_payment ?? '';
+            $this->lease_option_conditions = $auction->get->lease_option_conditions ?? '';
+            $this->has_option_fee = $auction->get->has_option_fee ?? '';
+            $this->option_fee_amount = $auction->get->option_fee_amount ?? '';
+            $this->lease_purchase_price = $auction->get->lease_purchase_price ?? '';
+            $this->lease_purchase_terms = $auction->get->lease_purchase_terms ?? '';
+            $this->lease_purchase_duration = $auction->get->lease_purchase_duration ?? '';
+            $this->lease_purchase_payment = $auction->get->lease_purchase_payment ?? '';
+            $this->lease_purchase_conditions = $auction->get->lease_purchase_conditions ?? '';
+            $this->lease_purchase_option_fee = $auction->get->lease_purchase_option_fee ?? '';
+            $this->lease_purchase_option_fee_amount = $auction->get->lease_purchase_option_fee_amount ?? '';
+            $this->cryptocurrency_type = $auction->get->cryptocurrency_type ?? '';
+            $this->crypto_percentage = $auction->get->crypto_percentage ?? '';
+            $this->cash_percentage_crypto = $auction->get->cash_percentage_crypto ?? '';
+            $this->nft_description = $auction->get->nft_description ?? '';
+            $this->nft_percentage = $auction->get->nft_percentage ?? '';
+            $this->cash_percentage_nft = $auction->get->cash_percentage_nft ?? '';
 
             ///////////////// Buyer purchasing terms end
 
 
 
-            $this->prior_eviction = $auction->get->prior_eviction;
-            $this->eviction_explanation = $auction->get->eviction_explanation;
-            $this->prior_felony = $auction->get->prior_felony;
-            $this->prior_felony_explanation = $auction->get->prior_felony_explanation;
-            $this->monthly_income = $auction->get->monthly_income;
-            $this->number_occupant = $auction->get->number_occupant;
+            $this->prior_eviction = $auction->get->prior_eviction ?? '';
+            $this->eviction_explanation = $auction->get->eviction_explanation ?? '';
+            $this->prior_felony = $auction->get->prior_felony ?? '';
+            $this->prior_felony_explanation = $auction->get->prior_felony_explanation ?? '';
+            $this->monthly_income = $auction->get->monthly_income ?? '';
+            $this->number_occupant = $auction->get->number_occupant ?? '';
 
             // Services
-
-            $this->services = is_string($auction->get->services) ? json_decode($auction->get->services, true) ?? [] : (array)$auction->get->services;
-            $this->other_services = is_string($auction->get->other_services) ? json_decode($auction->get->other_services, true) ?? [] : (array)$auction->get->other_services;
+            $servicesRaw = $auction->get->services ?? null;
+            $this->services = $servicesRaw ? (is_string($servicesRaw) ? json_decode($servicesRaw, true) ?? [] : (array)$servicesRaw) : [];
+            $otherServicesRaw = $auction->get->other_services ?? null;
+            $this->other_services = $otherServicesRaw ? (is_string($otherServicesRaw) ? json_decode($otherServicesRaw, true) ?? [] : (array)$otherServicesRaw) : [];
 
 
             // $this->other_services = $auction->get->other_services;
 
 
-            $this->flat_fee_services = is_string($auction->get->flat_fee_services) ? json_decode($auction->get->flat_fee_services, true) ?? [] : (array)$auction->get->flat_fee_services;
-            $this->additional_details = $auction->get->additional_details;
+            $flatFeeServicesRaw = $auction->get->flat_fee_services ?? null;
+            $this->flat_fee_services = $flatFeeServicesRaw ? (is_string($flatFeeServicesRaw) ? json_decode($flatFeeServicesRaw, true) ?? [] : (array)$flatFeeServicesRaw) : [];
+            $this->additional_details = $auction->get->additional_details ?? '';
 
             // Broker compensation
-            $this->commission_structure = $auction->get->commission_structure;
+            $this->commission_structure = $auction->get->commission_structure ?? '';
 
 
-            $this->commission_structure_type = $auction->get->commission_structure_type;
+            $this->commission_structure_type = $auction->get->commission_structure_type ?? '';
 
-            $this->commission_structure_type_fee_flat = $auction->get->commission_structure_type_fee_flat;
-            $this->commission_structure_type_fee_percentage = $auction->get->commission_structure_type_fee_percentage;
-            $this->commission_structure_type_fee_percentage_combo = $auction->get->commission_structure_type_fee_percentage_combo;
-            $this->commission_structure_type_fee_flat_combo = $auction->get->commission_structure_type_fee_flat_combo;
-            $this->commission_structure_type_fee_other = $auction->get->commission_structure_type_fee_other;
-            $this->lease_fee_type = $auction->get->lease_fee_type;
-            $this->lease_fee_flat_type = $auction->get->lease_fee_flat_type;
-            $this->lease_fee_flat = $auction->get->lease_fee_flat;
-            $this->lease_fee_percentage = $auction->get->lease_fee_percentage;
-            $this->lease_fee_months = $auction->get->lease_fee_months;
-            $this->lease_fee_percentage_monthly_rent = $auction->get->lease_fee_percentage_monthly_rent;
-            $this->lease_fee_percentage_monthly_number = $auction->get->lease_fee_percentage_monthly_number;
-            $this->lease_fee_percentage_net = $auction->get->lease_fee_percentage_net;
-            $this->lease_fee_flat_combo_net = $auction->get->lease_fee_flat_combo_net;
-            $this->lease_fee_percentage_combo_net = $auction->get->lease_fee_percentage_combo_net;
-            $this->lease_fee_flat_combo = $auction->get->lease_fee_flat_combo;
-            $this->lease_fee_percentage_combo = $auction->get->lease_fee_percentage_combo;
-            $this->lease_fee_other = $auction->get->lease_fee_other;
-            $this->interested_purchase_fee_type = $auction->get->interested_purchase_fee_type;
+            $this->commission_structure_type_fee_flat = $auction->get->commission_structure_type_fee_flat ?? '';
+            $this->commission_structure_type_fee_percentage = $auction->get->commission_structure_type_fee_percentage ?? '';
+            $this->commission_structure_type_fee_percentage_combo = $auction->get->commission_structure_type_fee_percentage_combo ?? '';
+            $this->commission_structure_type_fee_flat_combo = $auction->get->commission_structure_type_fee_flat_combo ?? '';
+            $this->commission_structure_type_fee_other = $auction->get->commission_structure_type_fee_other ?? '';
+            $this->lease_fee_type = $auction->get->lease_fee_type ?? '';
+            $this->lease_fee_flat_type = $auction->get->lease_fee_flat_type ?? '';
+            $this->lease_fee_flat = $auction->get->lease_fee_flat ?? '';
+            $this->lease_fee_percentage = $auction->get->lease_fee_percentage ?? '';
+            $this->lease_fee_months = $auction->get->lease_fee_months ?? '';
+            $this->lease_fee_percentage_monthly_rent = $auction->get->lease_fee_percentage_monthly_rent ?? '';
+            $this->lease_fee_percentage_monthly_number = $auction->get->lease_fee_percentage_monthly_number ?? '';
+            $this->lease_fee_percentage_net = $auction->get->lease_fee_percentage_net ?? '';
+            $this->lease_fee_flat_combo_net = $auction->get->lease_fee_flat_combo_net ?? '';
+            $this->lease_fee_percentage_combo_net = $auction->get->lease_fee_percentage_combo_net ?? '';
+            $this->lease_fee_flat_combo = $auction->get->lease_fee_flat_combo ?? '';
+            $this->lease_fee_percentage_combo = $auction->get->lease_fee_percentage_combo ?? '';
+            $this->lease_fee_other = $auction->get->lease_fee_other ?? '';
+            $this->interested_purchase_fee_type = $auction->get->interested_purchase_fee_type ?? '';
 
             $this->purchase_fee_flat_commercial = $auction->get->purchase_fee_flat_commercial ?? '';
 
 
-            $this->seller_leasing_fee_type = $auction->get->seller_leasing_fee_type;
-            $this->seller_leasing_gross = $auction->get->seller_leasing_gross;
-            $this->seller_leasing_gross_month_rent = $auction->get->seller_leasing_gross_month_rent;
-            $this->seller_leasing_gross_rental = $auction->get->seller_leasing_gross_rental;
-            $this->seller_broker_leasing_fee = $auction->get->seller_broker_leasing_fee;
-            $this->seller_leasing_each_rental = $auction->get->seller_leasing_each_rental;
-            $this->seller_leasing_gross_no_of_months = $auction->get->seller_leasing_gross_no_of_months;
+            $this->seller_leasing_fee_type = $auction->get->seller_leasing_fee_type ?? '';
+            $this->seller_leasing_gross = $auction->get->seller_leasing_gross ?? '';
+            $this->seller_leasing_gross_month_rent = $auction->get->seller_leasing_gross_month_rent ?? '';
+            $this->seller_leasing_gross_rental = $auction->get->seller_leasing_gross_rental ?? '';
+            $this->seller_broker_leasing_fee = $auction->get->seller_broker_leasing_fee ?? '';
+            $this->seller_leasing_each_rental = $auction->get->seller_leasing_each_rental ?? '';
+            $this->seller_leasing_gross_no_of_months = $auction->get->seller_leasing_gross_no_of_months ?? '';
 
 
-            $this->seller_leasing_gross_flat_combo = $auction->get->seller_leasing_gross_flat_combo;
-            $this->seller_leasing_gross_percentage_combo = $auction->get->seller_leasing_gross_percentage_combo;
-            $this->seller_leasing_gross_flat_net_combo = $auction->get->seller_leasing_gross_flat_net_combo;
-            $this->seller_leasing_gross_percentage_net_combo = $auction->get->seller_leasing_gross_percentage_net_combo;
+            $this->seller_leasing_gross_flat_combo = $auction->get->seller_leasing_gross_flat_combo ?? '';
+            $this->seller_leasing_gross_percentage_combo = $auction->get->seller_leasing_gross_percentage_combo ?? '';
+            $this->seller_leasing_gross_flat_net_combo = $auction->get->seller_leasing_gross_flat_net_combo ?? '';
+            $this->seller_leasing_gross_percentage_net_combo = $auction->get->seller_leasing_gross_percentage_net_combo ?? '';
 
             // Interested in Selling
-            $this->interested_in_selling = $auction->get->interested_in_selling;
-            $this->interested_in_selling_type = $auction->get->interested_in_selling_type;
-            $this->landlord_broker_purchase_price = $auction->get->landlord_broker_purchase_price;
-            $this->landlord_broker_percentage_price = $auction->get->landlord_broker_percentage_price;
-            $this->landlord_broker_dollar_price = $auction->get->landlord_broker_dollar_price;
-            $this->landlord_broker_flate_fee = $auction->get->landlord_broker_flate_fee;
-            $this->landlord_broker_other = $auction->get->landlord_broker_other;
+            $this->interested_in_selling = $auction->get->interested_in_selling ?? '';
+            $this->interested_in_selling_type = $auction->get->interested_in_selling_type ?? '';
+            $this->landlord_broker_purchase_price = $auction->get->landlord_broker_purchase_price ?? '';
+            $this->landlord_broker_percentage_price = $auction->get->landlord_broker_percentage_price ?? '';
+            $this->landlord_broker_dollar_price = $auction->get->landlord_broker_dollar_price ?? '';
+            $this->landlord_broker_flate_fee = $auction->get->landlord_broker_flate_fee ?? '';
+            $this->landlord_broker_other = $auction->get->landlord_broker_other ?? '';
 
 
             //  Payment Timing for Broker Fees:
 
-            $this->broker_fee_timing = $auction->get->broker_fee_timing;
-            $this->broker_fee_days_from_rent = $auction->get->broker_fee_days_from_rent;
-            $this->broker_fee_days_after_lease = $auction->get->broker_fee_days_after_lease;
-            $this->broker_fee_days_after_rent = $auction->get->broker_fee_days_after_rent;
-            $this->split_payment_due = $auction->get->split_payment_due;
-            $this->split_payment_due_other = $auction->get->split_payment_due_other;
-            $this->broker_fee_days_after_due_event = $auction->get->broker_fee_days_after_due_event;
-            $this->broker_fee_timing_other = $auction->get->broker_fee_timing_other;
+            $this->broker_fee_timing = $auction->get->broker_fee_timing ?? '';
+            $this->broker_fee_days_from_rent = $auction->get->broker_fee_days_from_rent ?? '';
+            $this->broker_fee_days_after_lease = $auction->get->broker_fee_days_after_lease ?? '';
+            $this->broker_fee_days_after_rent = $auction->get->broker_fee_days_after_rent ?? '';
+            $this->split_payment_due = $auction->get->split_payment_due ?? '';
+            $this->split_payment_due_other = $auction->get->split_payment_due_other ?? '';
+            $this->broker_fee_days_after_due_event = $auction->get->broker_fee_days_after_due_event ?? '';
+            $this->broker_fee_timing_other = $auction->get->broker_fee_timing_other ?? '';
 
 
 
 
             // Lease Renewal/Extension Fee:
 
-            $this->renewal_fee_type = $auction->get->renewal_fee_type;
-            $this->renewal_fee_percentage = $auction->get->renewal_fee_percentage;
-            $this->renewal_fee_lease_value = $auction->get->renewal_fee_lease_value;
-            $this->renewal_fee_first_month = $auction->get->renewal_fee_first_month;
-            $this->renewal_fee_flat_free = $auction->get->renewal_fee_flat_free;
-            $this->renewal_fee_custom = $auction->get->renewal_fee_custom;
+            $this->renewal_fee_type = $auction->get->renewal_fee_type ?? '';
+            $this->renewal_fee_percentage = $auction->get->renewal_fee_percentage ?? '';
+            $this->renewal_fee_lease_value = $auction->get->renewal_fee_lease_value ?? '';
+            $this->renewal_fee_first_month = $auction->get->renewal_fee_first_month ?? '';
+            $this->renewal_fee_flat_free = $auction->get->renewal_fee_flat_free ?? '';
+            $this->renewal_fee_custom = $auction->get->renewal_fee_custom ?? '';
 
-            $this->renewal_fee_sales_tax_lease_value = $auction->get->renewal_fee_sales_tax_lease_value;
-            $this->renewal_fee_sales_tax_flat_fee = $auction->get->renewal_fee_sales_tax_flat_fee;
-            $this->renewal_fee_sales_tax_first_month = $auction->get->renewal_fee_sales_tax_first_month;
-            $this->renewal_fee_no_of_months = $auction->get->renewal_fee_no_of_months;
-            $this->expansion_commission_percentage = $auction->get->expansion_commission_percentage;
-
-
-            $this->tenant_broker_commission_structure = $auction->get->tenant_broker_commission_structure;
-            $this->tenant_broker_fee_structure = $auction->get->tenant_broker_fee_structure;
-
-            $this->tenant_broker_percentage = $auction->get->tenant_broker_percentage;
-            $this->tenant_broker_gross_lease = $auction->get->tenant_broker_gross_lease;
-            $this->tenant_broker_first_month_rent = $auction->get->tenant_broker_first_month_rent;
-            $this->tenant_broker_flat_fee = $auction->get->tenant_broker_flat_fee;
-            $this->tenant_broker_other = $auction->get->tenant_broker_other;
-
-            $this->seller_leasing_gross_sales_tax_option_gross = $auction->get->seller_leasing_gross_sales_tax_option_gross;
-            $this->seller_leasing_gross_ross_percentage_rent = $auction->get->seller_leasing_gross_ross_percentage_rent;
-            $this->seller_leasing_gross_sales_tax_flat_free_gross = $auction->get->seller_leasing_gross_sales_tax_flat_free_gross;
-            $this->seller_leasing_gross_sales_tax_first_month = $auction->get->seller_leasing_gross_sales_tax_first_month;
-            $this->seller_leasing_gross_percentage_no_of_months = $auction->get->seller_leasing_gross_percentage_no_of_months;
-            $this->seller_leasing_gross_purchase_fee_flat_amount = $auction->get->seller_leasing_gross_purchase_fee_flat_amount;
-            $this->seller_leasing_gross_purchase_fee_other = $auction->get->seller_leasing_gross_purchase_fee_other;
-            $this->seller_leasing_gross_other = $auction->get->seller_leasing_gross_other;
+            $this->renewal_fee_sales_tax_lease_value = $auction->get->renewal_fee_sales_tax_lease_value ?? '';
+            $this->renewal_fee_sales_tax_flat_fee = $auction->get->renewal_fee_sales_tax_flat_fee ?? '';
+            $this->renewal_fee_sales_tax_first_month = $auction->get->renewal_fee_sales_tax_first_month ?? '';
+            $this->renewal_fee_no_of_months = $auction->get->renewal_fee_no_of_months ?? '';
+            $this->expansion_commission_percentage = $auction->get->expansion_commission_percentage ?? '';
 
 
+            $this->tenant_broker_commission_structure = $auction->get->tenant_broker_commission_structure ?? '';
+            $this->tenant_broker_fee_structure = $auction->get->tenant_broker_fee_structure ?? '';
 
-            $this->interested_in_property_management = $auction->get->interested_in_property_management;
-            $this->interested_in_property_management_fee = $auction->get->interested_in_property_management_fee;
-            $this->interested_in_property_management_fee_gross_lease = $auction->get->interested_in_property_management_fee_gross_lease;
-            $this->interested_in_property_management_fee_rental_periord = $auction->get->interested_in_property_management_fee_rental_periord;
-            $this->interested_in_property_management_fee_flate_free = $auction->get->interested_in_property_management_fee_flate_free;
-            $this->interested_in_property_management_fee_other = $auction->get->interested_in_property_management_fee_other;
+            $this->tenant_broker_percentage = $auction->get->tenant_broker_percentage ?? '';
+            $this->tenant_broker_gross_lease = $auction->get->tenant_broker_gross_lease ?? '';
+            $this->tenant_broker_first_month_rent = $auction->get->tenant_broker_first_month_rent ?? '';
+            $this->tenant_broker_flat_fee = $auction->get->tenant_broker_flat_fee ?? '';
+            $this->tenant_broker_other = $auction->get->tenant_broker_other ?? '';
+
+            $this->seller_leasing_gross_sales_tax_option_gross = $auction->get->seller_leasing_gross_sales_tax_option_gross ?? '';
+            $this->seller_leasing_gross_ross_percentage_rent = $auction->get->seller_leasing_gross_ross_percentage_rent ?? '';
+            $this->seller_leasing_gross_sales_tax_flat_free_gross = $auction->get->seller_leasing_gross_sales_tax_flat_free_gross ?? '';
+            $this->seller_leasing_gross_sales_tax_first_month = $auction->get->seller_leasing_gross_sales_tax_first_month ?? '';
+            $this->seller_leasing_gross_percentage_no_of_months = $auction->get->seller_leasing_gross_percentage_no_of_months ?? '';
+            $this->seller_leasing_gross_purchase_fee_flat_amount = $auction->get->seller_leasing_gross_purchase_fee_flat_amount ?? '';
+            $this->seller_leasing_gross_purchase_fee_other = $auction->get->seller_leasing_gross_purchase_fee_other ?? '';
+            $this->seller_leasing_gross_other = $auction->get->seller_leasing_gross_other ?? '';
 
 
 
-            $this->purchase_fee_type = $auction->get->purchase_fee_type;
-            $this->purchase_fee_gross_rent = $auction->get->purchase_fee_gross_rent;
-            $this->sales_tax_option_gross = $auction->get->sales_tax_option_gross;
+            $this->interested_in_property_management = $auction->get->interested_in_property_management ?? '';
+            $this->interested_in_property_management_fee = $auction->get->interested_in_property_management_fee ?? '';
+            $this->interested_in_property_management_fee_gross_lease = $auction->get->interested_in_property_management_fee_gross_lease ?? '';
+            $this->interested_in_property_management_fee_rental_periord = $auction->get->interested_in_property_management_fee_rental_periord ?? '';
+            $this->interested_in_property_management_fee_flate_free = $auction->get->interested_in_property_management_fee_flate_free ?? '';
+            $this->interested_in_property_management_fee_other = $auction->get->interested_in_property_management_fee_other ?? '';
+
+
+
+            $this->purchase_fee_type = $auction->get->purchase_fee_type ?? '';
+            $this->purchase_fee_gross_rent = $auction->get->purchase_fee_gross_rent ?? '';
+            $this->sales_tax_option_gross = $auction->get->sales_tax_option_gross ?? '';
             $this->sales_tax_option_flat = $auction->get->sales_tax_option_flat ?? '';
 
-            $this->purchase_fee_net_aggregate = $auction->get->purchase_fee_net_aggregate;
-            $this->purchase_fee_monthly_percentage = $auction->get->purchase_fee_monthly_percentage;
-            $this->purchase_fee_months = $auction->get->purchase_fee_months;
-            $this->purchase_fee_percentage = $auction->get->purchase_fee_percentage;
-            $this->purchase_fee_flat = $auction->get->purchase_fee_flat;
-            $this->purchase_fee_flat_type = $auction->get->purchase_fee_flat_type;
-            $this->purchase_fee_percentage_combo = $auction->get->purchase_fee_percentage_combo;
-            $this->purchase_fee_flat_combo = $auction->get->purchase_fee_flat_combo;
-            $this->purchase_fee_other = $auction->get->purchase_fee_other;
-            $this->nominal = $auction->get->nominal;
+            $this->purchase_fee_net_aggregate = $auction->get->purchase_fee_net_aggregate ?? '';
+            $this->purchase_fee_monthly_percentage = $auction->get->purchase_fee_monthly_percentage ?? '';
+            $this->purchase_fee_months = $auction->get->purchase_fee_months ?? '';
+            $this->purchase_fee_percentage = $auction->get->purchase_fee_percentage ?? '';
+            $this->purchase_fee_flat = $auction->get->purchase_fee_flat ?? '';
+            $this->purchase_fee_flat_type = $auction->get->purchase_fee_flat_type ?? '';
+            $this->purchase_fee_percentage_combo = $auction->get->purchase_fee_percentage_combo ?? '';
+            $this->purchase_fee_flat_combo = $auction->get->purchase_fee_flat_combo ?? '';
+            $this->purchase_fee_other = $auction->get->purchase_fee_other ?? '';
+            $this->nominal = $auction->get->nominal ?? '';
 
 
-            $this->landlord_broker_flate_fee_type = $auction->get->landlord_broker_flate_fee_type;
+            $this->landlord_broker_flate_fee_type = $auction->get->landlord_broker_flate_fee_type ?? '';
 
 
-            $this->lease_type = $auction->get->lease_type ?: 'percent';
-            $this->lease_value = $auction->get->lease_value;
-            $this->purchase_type = $auction->get->purchase_type ?: 'percent';
-            $this->purchase_value = $auction->get->purchase_value;
+            $this->lease_type = $auction->get->lease_type ?? 'percent';
+            $this->lease_value = $auction->get->lease_value ?? '';
+            $this->purchase_type = $auction->get->purchase_type ?? 'percent';
+            $this->purchase_value = $auction->get->purchase_value ?? '';
 
 
 
 
-            $this->interested_lease_option = $auction->get->interested_lease_option;
-            $this->interested_lease_option_agreement = $auction->get->interested_lease_option_agreement;
-            $this->lease_option_fee_type = $auction->get->lease_option_fee_type;
-            $this->lease_option_fee_flat = $auction->get->lease_option_fee_flat;
-            $this->lease_option_fee_percentage = $auction->get->lease_option_fee_percentage;
-            $this->lease_option_fee_other = $auction->get->lease_option_fee_other;
-            $this->protection_period = $auction->get->protection_period;
-            $this->early_termination_fee_option = $auction->get->early_termination_fee_option;
-            $this->early_termination_fee_amount = $auction->get->early_termination_fee_amount;
-            $this->retainer_fee_option = $auction->get->retainer_fee_option;
-            $this->retainer_fee_amount = $auction->get->retainer_fee_amount;
-            $this->retainer_fee_application = $auction->get->retainer_fee_application;
-            $this->agency_agreement_timeframe = $auction->get->agency_agreement_timeframe;
-            $this->retained_deposits = $auction->get->retained_deposits;
-            $this->agency_agreement_custom = $auction->get->agency_agreement_custom;
-            $this->brokerage_relationship = $auction->get->brokerage_relationship;
-            $this->additional_details_broker = $auction->get->additional_details_broker;
+            $this->interested_lease_option = $auction->get->interested_lease_option ?? '';
+            $this->interested_lease_option_agreement = $auction->get->interested_lease_option_agreement ?? '';
+            $this->lease_option_fee_type = $auction->get->lease_option_fee_type ?? '';
+            $this->lease_option_fee_flat = $auction->get->lease_option_fee_flat ?? '';
+            $this->lease_option_fee_percentage = $auction->get->lease_option_fee_percentage ?? '';
+            $this->lease_option_fee_other = $auction->get->lease_option_fee_other ?? '';
+            $this->protection_period = $auction->get->protection_period ?? '';
+            $this->early_termination_fee_option = $auction->get->early_termination_fee_option ?? '';
+            $this->early_termination_fee_amount = $auction->get->early_termination_fee_amount ?? '';
+            $this->retainer_fee_option = $auction->get->retainer_fee_option ?? '';
+            $this->retainer_fee_amount = $auction->get->retainer_fee_amount ?? '';
+            $this->retainer_fee_application = $auction->get->retainer_fee_application ?? '';
+            $this->agency_agreement_timeframe = $auction->get->agency_agreement_timeframe ?? '';
+            $this->retained_deposits = $auction->get->retained_deposits ?? '';
+            $this->agency_agreement_custom = $auction->get->agency_agreement_custom ?? '';
+            $this->brokerage_relationship = $auction->get->brokerage_relationship ?? '';
+            $this->additional_details_broker = $auction->get->additional_details_broker ?? '';
 
             // Personal information
-            $this->first_name = $auction->get->first_name;
-            $this->last_name = $auction->get->last_name;
-            $this->phone_number = $auction->get->phone_number;
-            $this->email = $auction->get->email;
-            $this->video_link = $auction->get->video_link;
+            $this->first_name = $auction->get->first_name ?? '';
+            $this->last_name = $auction->get->last_name ?? '';
+            $this->phone_number = $auction->get->phone_number ?? '';
+            $this->email = $auction->get->email ?? '';
+            $this->video_link = $auction->get->video_link ?? '';
             $this->photo = $auction->get->photo ?? null;
-            $this->current_status = $auction->get->current_status;
+            $this->current_status = $auction->get->current_status ?? '';
 
             // Location and meeting details
-            $this->person_meeting = $auction->get->person_meeting;
-            $this->meeting_details_first_name = $auction->get->meeting_details_first_name;
-            $this->meeting_details_last_name = $auction->get->meeting_details_last_name;
-            $this->meeting_details_phone = $auction->get->meeting_details_phone;
-            $this->meeting_details_email = $auction->get->meeting_details_email;
-            $this->address = $auction->get->address;
-            $this->meeting_details_meeting_time = $auction->get->meeting_details_meeting_time;
-            $this->meeting_details_time_zone = $auction->get->meeting_details_time_zone;
-            $this->meeting_details_meeting_date = $auction->get->meeting_details_meeting_date;
-            $this->meeting_details_instructions = $auction->get->meeting_details_instructions;
-            $this->meeting_details_additional_details = $auction->get->meeting_details_additional_details;
-            $this->service_completion_date = $auction->get->service_completion_date;
-            $this->service_completion_time = $auction->get->service_completion_time;
-            $this->service_time_zone = $auction->get->service_time_zone;
+            $this->person_meeting = $auction->get->person_meeting ?? '';
+            $this->meeting_details_first_name = $auction->get->meeting_details_first_name ?? '';
+            $this->meeting_details_last_name = $auction->get->meeting_details_last_name ?? '';
+            $this->meeting_details_phone = $auction->get->meeting_details_phone ?? '';
+            $this->meeting_details_email = $auction->get->meeting_details_email ?? '';
+            $this->address = $auction->get->address ?? '';
+            $this->meeting_details_meeting_time = $auction->get->meeting_details_meeting_time ?? '';
+            $this->meeting_details_time_zone = $auction->get->meeting_details_time_zone ?? '';
+            $this->meeting_details_meeting_date = $auction->get->meeting_details_meeting_date ?? '';
+            $this->meeting_details_instructions = $auction->get->meeting_details_instructions ?? '';
+            $this->meeting_details_additional_details = $auction->get->meeting_details_additional_details ?? '';
+            $this->service_completion_date = $auction->get->service_completion_date ?? '';
+            $this->service_completion_time = $auction->get->service_completion_time ?? '';
+            $this->service_time_zone = $auction->get->service_time_zone ?? '';
 
             // Marketing services
-            $this->list_criteria = (bool)$auction->get->list_criteria;
-            $this->list_criteria_fee = $auction->get->list_criteria_fee;
-            $this->market_groups = (bool)$auction->get->market_groups;
-            $this->market_groups_fee = $auction->get->market_groups_fee;
-            $this->promote_social = (bool)$auction->get->promote_social;
-            $this->promote_social_fee = $auction->get->promote_social_fee;
-            $this->launch_ads = (bool)$auction->get->launch_ads;
-            $this->launch_ads_fee = $auction->get->launch_ads_fee;
-            $this->include_marketing_fee = (bool)$auction->get->include_marketing_fee;
-            $this->marketing_materials_fee = $auction->get->marketing_materials_fee;
-            $this->email_notifications_fee = $auction->get->email_notifications_fee;
-            $this->off_market_search_fee = $auction->get->off_market_search_fee;
-            $this->mls_filter_fee = $auction->get->mls_filter_fee;
-            $this->email_marketing_fee = $auction->get->email_marketing_fee;
+            $this->list_criteria = (bool)($auction->get->list_criteria ?? false);
+            $this->list_criteria_fee = $auction->get->list_criteria_fee ?? '';
+            $this->market_groups = (bool)($auction->get->market_groups ?? false);
+            $this->market_groups_fee = $auction->get->market_groups_fee ?? '';
+            $this->promote_social = (bool)($auction->get->promote_social ?? false);
+            $this->promote_social_fee = $auction->get->promote_social_fee ?? '';
+            $this->launch_ads = (bool)($auction->get->launch_ads ?? false);
+            $this->launch_ads_fee = $auction->get->launch_ads_fee ?? '';
+            $this->include_marketing_fee = (bool)($auction->get->include_marketing_fee ?? false);
+            $this->marketing_materials_fee = $auction->get->marketing_materials_fee ?? '';
+            $this->email_notifications_fee = $auction->get->email_notifications_fee ?? '';
+            $this->off_market_search_fee = $auction->get->off_market_search_fee ?? '';
+            $this->mls_filter_fee = $auction->get->mls_filter_fee ?? '';
+            $this->email_marketing_fee = $auction->get->email_marketing_fee ?? '';
 
             // Property showings
-            $this->schedule_showings = (bool)$auction->get->schedule_showings;
-            $this->number_of_showings_to_schedule = $auction->get->number_of_showings_to_schedule;
-            $this->schedule_showings_fee = $auction->get->schedule_showings_fee;
-            $this->attend_showings = (bool)$auction->get->attend_showings;
-            $this->number_of_showings_to_attend = $auction->get->number_of_showings_to_attend;
-            $this->attend_showings_fee = $auction->get->attend_showings_fee;
-            $this->provide_virtual_tours = (bool)$auction->get->provide_virtual_tours;
-            $this->number_of_virtual_tours = $auction->get->number_of_virtual_tours;
-            $this->virtual_tours_fee = $auction->get->virtual_tours_fee;
+            $this->schedule_showings = (bool)($auction->get->schedule_showings ?? false);
+            $this->number_of_showings_to_schedule = $auction->get->number_of_showings_to_schedule ?? '';
+            $this->schedule_showings_fee = $auction->get->schedule_showings_fee ?? '';
+            $this->attend_showings = (bool)($auction->get->attend_showings ?? false);
+            $this->number_of_showings_to_attend = $auction->get->number_of_showings_to_attend ?? '';
+            $this->attend_showings_fee = $auction->get->attend_showings_fee ?? '';
+            $this->provide_virtual_tours = (bool)($auction->get->provide_virtual_tours ?? false);
+            $this->number_of_virtual_tours = $auction->get->number_of_virtual_tours ?? '';
+            $this->virtual_tours_fee = $auction->get->virtual_tours_fee ?? '';
 
             // Application & lease support
-            $this->assist_application = (bool)$auction->get->assist_application;
-            $this->assist_application_fee = $auction->get->assist_application_fee;
-            $this->collect_documents = (bool)$auction->get->collect_documents;
-            $this->collect_documents_fee = $auction->get->collect_documents_fee;
-            $this->submit_application = (bool)$auction->get->submit_application;
-            $this->submit_application_fee = $auction->get->submit_application_fee;
-            $this->review_lease = (bool)$auction->get->review_lease;
-            $this->review_lease_fee = $auction->get->review_lease_fee;
-            $this->provide_lease_form = (bool)$auction->get->provide_lease_form;
-            $this->provide_lease_form_fee = $auction->get->provide_lease_form_fee;
-            $this->coordinate_signing = (bool)$auction->get->coordinate_signing;
-            $this->coordinate_signing_fee = $auction->get->coordinate_signing_fee;
-            $this->prepare_application_fee = $auction->get->prepare_application_fee;
+            $this->assist_application = (bool)($auction->get->assist_application ?? false);
+            $this->assist_application_fee = $auction->get->assist_application_fee ?? '';
+            $this->collect_documents = (bool)($auction->get->collect_documents ?? false);
+            $this->collect_documents_fee = $auction->get->collect_documents_fee ?? '';
+            $this->submit_application = (bool)($auction->get->submit_application ?? false);
+            $this->submit_application_fee = $auction->get->submit_application_fee ?? '';
+            $this->review_lease = (bool)($auction->get->review_lease ?? false);
+            $this->review_lease_fee = $auction->get->review_lease_fee ?? '';
+            $this->provide_lease_form = (bool)($auction->get->provide_lease_form ?? false);
+            $this->provide_lease_form_fee = $auction->get->provide_lease_form_fee ?? '';
+            $this->coordinate_signing = (bool)($auction->get->coordinate_signing ?? false);
+            $this->coordinate_signing_fee = $auction->get->coordinate_signing_fee ?? '';
+            $this->prepare_application_fee = $auction->get->prepare_application_fee ?? '';
 
             // Move services
-            $this->move_in_inspection_fee = $auction->get->move_in_inspection_fee;
-            $this->moving_resources_fee = $auction->get->moving_resources_fee;
-            $this->short_term_housing_fee = $auction->get->short_term_housing_fee;
+            $this->move_in_inspection_fee = $auction->get->move_in_inspection_fee ?? '';
+            $this->moving_resources_fee = $auction->get->moving_resources_fee ?? '';
+            $this->short_term_housing_fee = $auction->get->short_term_housing_fee ?? '';
 
             // Advisory services
-            $this->rental_rights_fee = $auction->get->rental_rights_fee;
-            $this->lease_advice_fee = $auction->get->lease_advice_fee;
+            $this->rental_rights_fee = $auction->get->rental_rights_fee ?? '';
+            $this->lease_advice_fee = $auction->get->lease_advice_fee ?? '';
 
             // Neighborhood marketing
-            $this->neighborhood_insights_fee = $auction->get->neighborhood_insights_fee;
-            $this->neighborhood_marketing_fee = $auction->get->neighborhood_marketing_fee;
-            $this->neighborhood_materials_fee = $auction->get->neighborhood_materials_fee;
+            $this->neighborhood_insights_fee = $auction->get->neighborhood_insights_fee ?? '';
+            $this->neighborhood_marketing_fee = $auction->get->neighborhood_marketing_fee ?? '';
+            $this->neighborhood_materials_fee = $auction->get->neighborhood_materials_fee ?? '';
 
             // Custom services
+            $customServicesRaw = $auction->get->custom_services ?? null;
+            $this->custom_services = $customServicesRaw ? (is_string($customServicesRaw) ? json_decode($customServicesRaw, true) ?? [] : (array)$customServicesRaw) : [];
 
-            $this->custom_services = is_string($auction->get->custom_services) ? json_decode($auction->get->custom_services, true) ?? [] : (array)$auction->get->custom_services;
-
-            $this->total_marketing_fee = $auction->get->total_marketing_fee;
-            $this->total_flat_fee = $auction->get->total_flat_fee;
+            $this->total_marketing_fee = $auction->get->total_marketing_fee ?? '';
+            $this->total_flat_fee = $auction->get->total_flat_fee ?? '';
 
             // Flat fee agent (limited service) tenant
+            $feesRaw = $auction->get->fees ?? null;
+            $this->fees = $feesRaw ? (is_string($feesRaw) ? json_decode($feesRaw, true) ?? [] : (array)$feesRaw) : [];
+            $enableRaw = $auction->get->enable ?? null;
+            $this->enable = $enableRaw ? (is_string($enableRaw) ? json_decode($enableRaw, true) ?? [] : (array)$enableRaw) : [];
 
-            $this->fees = is_string($auction->get->fees) ? json_decode($auction->get->fees, true) ?? [] : (array)$auction->get->fees;
-            $this->enable = is_string($auction->get->enable) ? json_decode($auction->get->enable, true) ?? [] : (array)$auction->get->enable;
-
-            $this->showings_count = $auction->get->showings_count;
-            $this->attend_showings_count = $auction->get->attend_showings_count;
-            $this->virtual_tours_count = $auction->get->virtual_tours_count;
-            $this->understand_terms = (bool)$auction->get->understand_terms;
+            $this->showings_count = $auction->get->showings_count ?? '';
+            $this->attend_showings_count = $auction->get->attend_showings_count ?? '';
+            $this->virtual_tours_count = $auction->get->virtual_tours_count ?? '';
+            $this->understand_terms = (bool)($auction->get->understand_terms ?? false);
 
             // Seller
-            $this->staging_duration = $auction->get->staging_duration;
-            $this->open_house_count = $auction->get->open_house_count;
+            $this->staging_duration = $auction->get->staging_duration ?? '';
+            $this->open_house_count = $auction->get->open_house_count ?? '';
 
             // Landlord
-            $this->virtual_showings_count = $auction->get->virtual_showings_count;
+            $this->virtual_showings_count = $auction->get->virtual_showings_count ?? '';
 
             // Load enable checkboxes
             // $enableFields = json_decode($auction->get->enable);
