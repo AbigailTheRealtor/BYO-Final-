@@ -2536,15 +2536,15 @@ class TenantAgentAuction extends Component
             $this->non_negotiable_amenities = is_string($auction->get->non_negotiable_amenities) ? json_decode($auction->get->non_negotiable_amenities, true) ?? [] : (array)$auction->get->non_negotiable_amenities;
 
             $this->other_non_negotiable_amenities = $auction->get->other_non_negotiable_amenities;
-            $this->real_estate_purchase = $auction->get->real_estate_purchase;
-            $this->assets = $auction->get->assets;
-            $this->assets_other = $auction->get->assets_other;
-            $this->property_criteria = $auction->get->property_criteria;
-            $this->unit_size = $auction->get->unit_size;
-            $this->unit_size_other = $auction->get->unit_size_other;
-            $this->budget = $auction->get->budget;
-            $this->occupied_until = $auction->get->occupied_until;
-            $this->occupancy_status = $auction->get->occupancy_status;
+            $this->real_estate_purchase = $auction->get->real_estate_purchase ?? '';
+            $this->assets = $auction->get->assets ?? '';
+            $this->assets_other = $auction->get->assets_other ?? '';
+            $this->property_criteria = $auction->get->property_criteria ?? '';
+            $this->unit_size = $auction->get->unit_size ?? '';
+            $this->unit_size_other = $auction->get->unit_size_other ?? '';
+            $this->budget = $auction->get->budget ?? '';
+            $this->occupied_until = $auction->get->occupied_until ?? '';
+            $this->occupancy_status = $auction->get->occupancy_status ?? '';
 
             // Lease terms
 
