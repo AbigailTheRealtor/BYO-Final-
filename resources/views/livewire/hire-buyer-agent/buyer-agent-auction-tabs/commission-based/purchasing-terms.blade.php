@@ -312,6 +312,7 @@
 
 <!-- Seller Financing -->
 @if (in_array('Seller Financing', $offered_financing))
+<div wire:key="seller-financing-section">
     <div class="form-group">
         <label class="fw-bold">Desired Purchase Price:<span class="text-danger">*</span></label>
 
@@ -666,6 +667,7 @@
                 placeholder="Enter late fee and when it applies (e.g., $100 after 10 days late, or 5% of payment after 15 days)">
         </div>
     </div>
+</div>
 @endif
 
 <!-- Assumable Financing -->
@@ -834,6 +836,7 @@
 @endif
 <!-- Exchange/Trade Option -->
 @if (in_array('Exchange/Trade', $offered_financing))
+<div wire:key="exchange-trade-section">
     <div class="form-group mt-3">
         <label class="fw-bold">Acceptable Exchange Item:<span class="text-danger">*</span></label>
 
@@ -1007,6 +1010,7 @@
             </select>
         </div>
     </div>
+</div>
 @endif
 
 <!-- Lease Option -->
@@ -1357,6 +1361,7 @@
 
 <!-- Cryptocurrency Option -->
 @if (in_array('Cryptocurrency', $offered_financing))
+<div wire:key="cryptocurrency-section">
     <div class="form-group">
         <label class="fw-bold">Offered Cryptocurrency:<span class="text-danger">*</span></label>
 
@@ -1493,10 +1498,12 @@
         </div>
     </div>
     @endif
+</div>
 @endif
 
 <!-- NFT Option -->
 @if (in_array('Non-Fungible Token (NFT)', $offered_financing))
+<div wire:key="nft-section">
     <div class="form-group mt-3">
         <label class="fw-bold">Offered Non-Fungible Token (NFT):<span class="text-danger">*</span></label>
 
@@ -1597,4 +1604,5 @@
             </select>
         </div>
     </div>
+</div>
 @endif
