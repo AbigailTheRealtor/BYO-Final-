@@ -110,6 +110,10 @@ class BuyerAgentAuction extends Component
     public $lease_option_conditions = '';
     public $has_option_fee = '';
     public $option_fee_amount = '';
+    public $lease_option_fee_credit = '';
+    public $lease_option_fee_credit_percentage = '';
+    public $lease_option_maintenance = '';
+    public $lease_option_extension_terms = '';
 
     // Lease Purchase Properties
     public $lease_purchase_price = '';
@@ -117,9 +121,10 @@ class BuyerAgentAuction extends Component
     public $lease_purchase_duration = '';
     public $lease_purchase_payment = '';
     public $lease_purchase_conditions = '';
-
     public $lease_purchase_option_fee = '';
     public $lease_purchase_option_fee_amount = '';
+    public $lease_purchase_maintenance = '';
+    public $lease_purchase_extension_terms = '';
 
     // Cryptocurrency Properties
     public $cryptocurrency_type = '';
@@ -127,11 +132,17 @@ class BuyerAgentAuction extends Component
     public $cash_percentage_crypto = '';
     public $crypto_transfer_timing = '';
     public $crypto_transfer_timing_other = '';
+    public $crypto_exchange_method = '';
+    public $crypto_custodian_wallet = '';
+    public $crypto_transaction_fees = '';
 
     // NFT Properties
     public $nft_description = '';
     public $nft_percentage = '';
     public $cash_percentage_nft = '';
+    public $nft_valuation_method = '';
+    public $nft_transfer_method = '';
+    public $nft_gas_fees = '';
 
     public $garage_needed = '';
     public $other_garage_needed = '';
@@ -1209,6 +1220,10 @@ class BuyerAgentAuction extends Component
             $this->lease_option_conditions = $auction->get->lease_option_conditions ?? '';
             $this->has_option_fee = $auction->get->has_option_fee ?? '';
             $this->option_fee_amount = $auction->get->option_fee_amount ?? '';
+            $this->lease_option_fee_credit = $auction->get->lease_option_fee_credit ?? '';
+            $this->lease_option_fee_credit_percentage = $auction->get->lease_option_fee_credit_percentage ?? '';
+            $this->lease_option_maintenance = $auction->get->lease_option_maintenance ?? '';
+            $this->lease_option_extension_terms = $auction->get->lease_option_extension_terms ?? '';
 
             // Lease Purchase
             $this->lease_purchase_price = $auction->get->lease_purchase_price ?? '';
@@ -1218,6 +1233,8 @@ class BuyerAgentAuction extends Component
             $this->lease_purchase_conditions = $auction->get->lease_purchase_conditions ?? '';
             $this->lease_purchase_option_fee = $auction->get->lease_purchase_option_fee ?? '';
             $this->lease_purchase_option_fee_amount = $auction->get->lease_purchase_option_fee_amount ?? '';
+            $this->lease_purchase_maintenance = $auction->get->lease_purchase_maintenance ?? '';
+            $this->lease_purchase_extension_terms = $auction->get->lease_purchase_extension_terms ?? '';
 
             // Cryptocurrency
             $this->cryptocurrency_type = $auction->get->cryptocurrency_type ?? '';
@@ -1225,11 +1242,17 @@ class BuyerAgentAuction extends Component
             $this->cash_percentage_crypto = $auction->get->cash_percentage_crypto ?? '';
             $this->crypto_transfer_timing = $auction->get->crypto_transfer_timing ?? '';
             $this->crypto_transfer_timing_other = $auction->get->crypto_transfer_timing_other ?? '';
+            $this->crypto_exchange_method = $auction->get->crypto_exchange_method ?? '';
+            $this->crypto_custodian_wallet = $auction->get->crypto_custodian_wallet ?? '';
+            $this->crypto_transaction_fees = $auction->get->crypto_transaction_fees ?? '';
 
             // NFT
             $this->nft_description = $auction->get->nft_description ?? '';
             $this->nft_percentage = $auction->get->nft_percentage ?? '';
             $this->cash_percentage_nft = $auction->get->cash_percentage_nft ?? '';
+            $this->nft_valuation_method = $auction->get->nft_valuation_method ?? '';
+            $this->nft_transfer_method = $auction->get->nft_transfer_method ?? '';
+            $this->nft_gas_fees = $auction->get->nft_gas_fees ?? '';
 
             // Amenities and features
             $tenantRequireRaw = $auction->get->tenant_require ?? null;
@@ -1561,6 +1584,10 @@ class BuyerAgentAuction extends Component
         $auction->saveMeta('lease_option_conditions', $this->lease_option_conditions);
         $auction->saveMeta('has_option_fee', $this->has_option_fee);
         $auction->saveMeta('option_fee_amount', $this->stripCommas($this->option_fee_amount));
+        $auction->saveMeta('lease_option_fee_credit', $this->lease_option_fee_credit);
+        $auction->saveMeta('lease_option_fee_credit_percentage', $this->stripCommas($this->lease_option_fee_credit_percentage));
+        $auction->saveMeta('lease_option_maintenance', $this->lease_option_maintenance);
+        $auction->saveMeta('lease_option_extension_terms', $this->lease_option_extension_terms);
 
         // Lease Purchase
         $auction->saveMeta('lease_purchase_price', $this->stripCommas($this->lease_purchase_price));
@@ -1570,6 +1597,8 @@ class BuyerAgentAuction extends Component
         $auction->saveMeta('lease_purchase_conditions', $this->lease_purchase_conditions);
         $auction->saveMeta('lease_purchase_option_fee', $this->lease_purchase_option_fee);
         $auction->saveMeta('lease_purchase_option_fee_amount', $this->stripCommas($this->lease_purchase_option_fee_amount));
+        $auction->saveMeta('lease_purchase_maintenance', $this->lease_purchase_maintenance);
+        $auction->saveMeta('lease_purchase_extension_terms', $this->lease_purchase_extension_terms);
 
         // Cryptocurrency
         $auction->saveMeta('cryptocurrency_type', $this->cryptocurrency_type);
@@ -1577,11 +1606,17 @@ class BuyerAgentAuction extends Component
         $auction->saveMeta('cash_percentage_crypto', $this->stripCommas($this->cash_percentage_crypto));
         $auction->saveMeta('crypto_transfer_timing', $this->crypto_transfer_timing);
         $auction->saveMeta('crypto_transfer_timing_other', $this->crypto_transfer_timing_other);
+        $auction->saveMeta('crypto_exchange_method', $this->crypto_exchange_method);
+        $auction->saveMeta('crypto_custodian_wallet', $this->crypto_custodian_wallet);
+        $auction->saveMeta('crypto_transaction_fees', $this->crypto_transaction_fees);
 
         // NFT
         $auction->saveMeta('nft_description', $this->nft_description);
         $auction->saveMeta('nft_percentage', $this->stripCommas($this->nft_percentage));
         $auction->saveMeta('cash_percentage_nft', $this->stripCommas($this->cash_percentage_nft));
+        $auction->saveMeta('nft_valuation_method', $this->nft_valuation_method);
+        $auction->saveMeta('nft_transfer_method', $this->nft_transfer_method);
+        $auction->saveMeta('nft_gas_fees', $this->nft_gas_fees);
 
         // Amenities and Features
         $auction->saveMeta('tenant_require', json_encode($this->tenant_require));
