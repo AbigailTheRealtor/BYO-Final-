@@ -232,6 +232,7 @@ class BuyerAgentAuctionEdit extends Component
     public $phone_number = '';
     public $email = '';
     public $video_link = '';
+    public $embedUrl;
 
 
 
@@ -869,6 +870,43 @@ class BuyerAgentAuctionEdit extends Component
     public function setActiveTab($index)
     {
         $this->activeTab = $index;
+    }
+
+    public function updatedVideoLink($value)
+    {
+        $this->embedUrl = $this->getEmbedUrl($value);
+    }
+
+    public function previewVideo()
+    {
+        $this->embedUrl = $this->getEmbedUrl($this->video_link);
+    }
+
+    public function getEmbedUrl($url)
+    {
+        if (str_contains($url, 'youtube.com') || str_contains($url, 'youtu.be')) {
+            preg_match('/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{6,})/i', $url, $m);
+            $videoId = $m[1] ?? null;
+            return $videoId
+                ? "https://www.youtube.com/embed/{$videoId}?autoplay=1&mute=1&playsinline=1"
+                : null;
+        }
+
+        if (str_contains($url, 'vimeo.com')) {
+            preg_match('/vimeo\.com\/(?:.*\/)?(\d+)(?:[\/?#]|$)/i', $url, $m);
+            $videoId = $m[1] ?? null;
+
+            if (!$videoId && str_contains($url, 'player.vimeo.com')) {
+                preg_match('/player\.vimeo\.com\/video\/(\d+)/i', $url, $m2);
+                $videoId = $m2[1] ?? null;
+            }
+
+            return $videoId
+                ? "https://player.vimeo.com/video/{$videoId}?autoplay=1&muted=1&playsinline=1"
+                : null;
+        }
+
+        return null;
     }
 
    
