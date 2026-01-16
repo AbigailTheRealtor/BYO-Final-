@@ -102,8 +102,17 @@ class BuyerAgentAuction extends Model
             }
             $data[$row->meta_key] = $value;
         }
-        $collection = new Collection();
-        $collection->push((object) $data);
-        return $collection->first();
+        return new class($data) {
+            private $data;
+            public function __construct($data) {
+                $this->data = $data;
+            }
+            public function __get($name) {
+                return $this->data[$name] ?? null;
+            }
+            public function __isset($name) {
+                return isset($this->data[$name]);
+            }
+        };
     }
 }

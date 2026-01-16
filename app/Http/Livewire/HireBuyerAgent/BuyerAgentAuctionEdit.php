@@ -1035,12 +1035,12 @@ class BuyerAgentAuctionEdit extends Component
 
 
 
-            $this->other_preferences = $auction->get->other_preferences;
-            $this->real_estate_purchase = $auction->get->real_estate_purchase;
-            $this->number_of_unit = $auction->get->number_of_unit;
-            $this->number_of_unit_other = $auction->get->number_of_unit_other;
-            $this->minimum_annual_net_income = $auction->get->minimum_annual_net_income;
-            $this->leasing_55_plus = $auction->get->leasing_55_plus;
+            $this->other_preferences = $auction->get->other_preferences ?? null;
+            $this->real_estate_purchase = $auction->get->real_estate_purchase ?? null;
+            $this->number_of_unit = $auction->get->number_of_unit ?? null;
+            $this->number_of_unit_other = $auction->get->number_of_unit_other ?? null;
+            $this->minimum_annual_net_income = $auction->get->minimum_annual_net_income ?? null;
+            $this->leasing_55_plus = $auction->get->leasing_55_plus ?? null;
 
             $this->non_negotiable_amenities = is_string($auction->get->non_negotiable_amenities) ? json_decode($auction->get->non_negotiable_amenities, true) ?? [] : (array)$auction->get->non_negotiable_amenities;
 
