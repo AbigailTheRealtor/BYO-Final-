@@ -22,6 +22,7 @@ class BuyerAgentAuctionEdit extends Component
 
     public $listingId = null; // To track existing listings
     public $isDraft = false; // To track draft status
+    public $isLoadingData = false; // Flag to prevent reset during draft/edit load
     public $service_type = 'full_service'; // 'full_service' or 'limited_service'
     public $listing_status = 'Active'; // 'Active', 'Pending', or 'Hired Agent'
 
@@ -67,6 +68,7 @@ class BuyerAgentAuctionEdit extends Component
     // Properties
     public $maximum_budget = '';
     public $offered_financing = [];
+    public $previousOfferedFinancing = []; // Track previous financing types for smart reset
     public $other_financing = '';
     public $cash_budget = '';
     public $pre_approved = '';
@@ -514,28 +516,98 @@ class BuyerAgentAuctionEdit extends Component
         $this->gap_payment_amount = '';
     }
 
-    public function updatedOfferedFinancing()
+    public function updatedOfferedFinancing($value)
     {
-        // Reset all dependent fields when financing type changes
-        $this->reset([
-            'other_financing',
-            'cash_budget',
-            'pre_approved',
-            'pre_approval_amount',
-            'purchase_price',
-            'down_payment_amount',
-            'seller_financing_amount',
-            'interest_rate',
-            'loan_duration',
-            'prepayment_penalty',
-            'prepayment_penalty_amount',
-            'balloon_payment_amount',
-            'balloon_payment_date',
-            'assumable_terms',
-            'max_assumable_rate',
-            'max_monthly_payment',
-            'gap_payment_amount'
-        ]);
+        // Get current financing types as array
+        $currentTypes = is_array($this->offered_financing) ? $this->offered_financing : [];
+        $previousTypes = $this->previousOfferedFinancing ?? [];
+        
+        // Skip reset during draft/edit load to preserve loaded data
+        // Use one-shot mechanism: flag stays true until this method clears it
+        if ($this->isLoadingData) {
+            $this->isLoadingData = false; // Clear flag after first call
+            // Still update the previous snapshot before returning so subsequent comparisons work
+            $this->previousOfferedFinancing = $currentTypes;
+            return;
+        }
+        
+        // Track the new value for next comparison
+        $this->previousOfferedFinancing = $currentTypes;
+        
+        // If values are the same (re-sync), don't reset anything
+        $currentSorted = $currentTypes;
+        $previousSorted = $previousTypes;
+        sort($currentSorted);
+        sort($previousSorted);
+        if ($currentSorted === $previousSorted) {
+            return; // No actual change, skip reset
+        }
+        
+        // Find which financing types were REMOVED (no longer selected)
+        $removedTypes = array_diff($previousTypes, $currentTypes);
+        
+        // Only reset fields for financing types that were removed
+        $fieldsToReset = [];
+        
+        // Map financing types to their dependent fields (using exact property names)
+        $financingFieldMap = [
+            'Other' => ['other_financing'],
+            'Cash' => ['cash_budget', 'pre_approved', 'pre_approval_amount'],
+            'Seller Financing' => [
+                'purchase_price', 'down_payment_amount', 'down_payment_type',
+                'seller_financing_amount', 'seller_financing_type',
+                'interest_rate', 'loan_duration', 'prepayment_penalty', 
+                'prepayment_penalty_amount', 'balloon_payment', 'balloon_payment_amount', 'balloon_payment_date',
+                'seller_amortization_type', 'seller_amortization_other',
+                'seller_payment_frequency', 'seller_payment_frequency_other',
+                'seller_late_fee_amount'
+            ],
+            'Assumable' => ['assumable_terms', 'max_assumable_rate', 'max_monthly_payment'],
+            'Bridge Loan' => ['gap_payment_amount', 'gap_payment_type'],
+            'Exchange/Trade' => [
+                'exchange_item', 'other_exchange_item', 'exchange_item_value', 
+                'exchange_item_condition', 'additional_cash', 'value_determination',
+                'exchange_transfer_method', 'exchange_liens', 'exchange_liens_details', 
+                'exchange_inspection_rights'
+            ],
+            'Cryptocurrency' => [
+                'cryptocurrency_type', 'crypto_percentage', 'cash_percentage_crypto',
+                'crypto_transfer_timing', 'crypto_transfer_timing_other',
+                'crypto_exchange_method', 'crypto_custodian_wallet', 'crypto_transaction_fees'
+            ],
+            'NFT' => [
+                'nft_description', 'nft_percentage', 'cash_percentage_nft',
+                'nft_valuation_method', 'nft_transfer_method', 'nft_gas_fees'
+            ],
+            'Lease Option' => [
+                'interested_lease_option', 'interested_lease_option_agreement',
+                'lease_option_price', 'lease_option_terms', 'lease_option_duration',
+                'lease_option_payment', 'lease_option_conditions', 'lease_option_consideration',
+                'has_option_fee', 'option_fee_amount',
+                'lease_option_fee_credit', 'lease_option_fee_credit_percentage',
+                'lease_option_maintenance', 'lease_option_extension_terms',
+                'lease_option_fee_type', 'lease_option_fee_flat', 'lease_option_fee_percentage',
+                'lease_option_fee_other', 'lease_option_fee_flat_combo', 'lease_option_fee_percentage_combo'
+            ],
+            'Lease Purchase' => [
+                'lease_purchase_price', 'lease_purchase_terms', 'lease_purchase_duration',
+                'lease_purchase_payment', 'lease_purchase_conditions', 'lease_purchase_option_fee',
+                'lease_purchase_option_fee_amount', 'lease_purchase_maintenance',
+                'lease_purchase_extension_terms', 'lease_purchase_rent_credit',
+                'lease_purchase_rent_credit_amount', 'lease_purchase_deposit'
+            ],
+        ];
+        
+        foreach ($removedTypes as $type) {
+            if (isset($financingFieldMap[$type])) {
+                $fieldsToReset = array_merge($fieldsToReset, $financingFieldMap[$type]);
+            }
+        }
+        
+        // Reset only the fields for removed financing types
+        if (!empty($fieldsToReset)) {
+            $this->reset(array_unique($fieldsToReset));
+        }
     }
     // Methods/ Methods
     public function setAssignmentFeeType($type)
@@ -998,6 +1070,8 @@ class BuyerAgentAuctionEdit extends Component
             ->where('user_id', Auth::id())
             ->first();
         if ($auction) {
+            // Set flag to prevent updatedOfferedFinancing() from resetting loaded data
+            $this->isLoadingData = true;
 
             // Load all metadata fields
             $this->listing_title = $auction->title ?? '';
@@ -1058,6 +1132,7 @@ class BuyerAgentAuctionEdit extends Component
             $this->maximum_budget = $auction->get->maximum_budget ?? '';
             $offeredFinancingRaw = $auction->get->offered_financing ?? null;
             $this->offered_financing = $offeredFinancingRaw ? (is_string($offeredFinancingRaw) ? json_decode($offeredFinancingRaw, true) ?? [] : (array)$offeredFinancingRaw) : [];
+            $this->previousOfferedFinancing = $this->offered_financing; // Initialize for smart reset comparison
             $this->other_financing = $auction->get->other_financing ?? '';
             $this->cash_budget = $auction->get->cash_budget ?? '';
             $this->pre_approved = $auction->get->pre_approved ?? '';
@@ -1380,6 +1455,9 @@ class BuyerAgentAuctionEdit extends Component
                 'lease_for' => $this->lease_for,
                 'credit_scroe_rating' => $this->credit_scroe_rating,
             ]);
+            
+            // Note: isLoadingData flag will be cleared by updatedOfferedFinancing() 
+            // when the Select2 sync triggers @this.set()
 
             // Load enable checkboxes
             // $enableFields = json_decode($auction->get->enable);

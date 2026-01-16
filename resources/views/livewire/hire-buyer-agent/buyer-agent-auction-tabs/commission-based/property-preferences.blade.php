@@ -1370,7 +1370,10 @@
     window.addEventListener('buyer-agent-select2-sync', function(event) {
         const data = event.detail;
         
-        // Helper function to sync Select2 values (supports both class and ID selectors)
+        // Set global flag to prevent Livewire sync during Select2 hydration
+        window.financingSyncInProgress = true;
+        
+        // Helper function to sync Select2 values 
         function syncSelect2(selector, values) {
             const $select = $(selector);
             if ($select.length && values && Array.isArray(values)) {
@@ -1378,7 +1381,7 @@
             }
         }
         
-        // Sync all Select2 multiselects with draft data (using ID selectors)
+        // Sync all Select2 multiselects with draft data
         syncSelect2('#view_preference', data.view_preference);
         syncSelect2('#non_negotiable_amenities', data.non_negotiable_amenities);
         syncSelect2('.pool_type', data.pool_type);
@@ -1388,6 +1391,11 @@
         syncSelect2('#credit_scroe_rating', data.credit_scroe_rating);
         syncSelect2('#flat_fee_services', data.flat_fee_services);
         syncSelect2('.number_of_unit_type', data.number_of_unit_type);
+        
+        // Clear flag after a short delay to allow all change events to complete
+        setTimeout(function() {
+            window.financingSyncInProgress = false;
+        }, 100);
         
         // Update visibility of "Other" text fields based on synced values
         if (data.view_preference && data.view_preference.includes('Other')) {

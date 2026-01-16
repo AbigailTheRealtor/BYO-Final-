@@ -16,7 +16,15 @@ Built on Laravel 8.x with PHP 8.2.23 and PostgreSQL, the platform uses Node.js v
 
 **View Preference "Other" Visibility**: All four agent types (Buyer, Seller, Landlord, Tenant) use Livewire computed properties (`getIsOtherVisibleProperty()`, `getIsOtherNonNegotiableVisibleProperty()`) to automatically toggle visibility of "Other" text fields based on array values. This ensures consistent behavior across draft save/load cycles without manual state management. Blade files reference `$this->is_other_visible` which invokes the computed getter.
 
-**Select2 Draft Sync**: Buyer forms emit a `buyer-agent-select2-sync` browser event during draft load containing all Select2 multiselect array values (view_preference, non_negotiable_amenities, offered_financing, services, etc.). JavaScript listeners hydrate the Select2 elements with `.val([...]).trigger('change')` to sync DOM state with Livewire.
+**Select2 Draft Sync**: Buyer forms emit a `buyer-agent-select2-sync` browser event during draft load containing all Select2 multiselect array values (view_preference, non_negotiable_amenities, offered_financing, services, etc.). JavaScript listeners hydrate the Select2 elements with `.val([...]).trigger('change')` to sync DOM state with Livewire. A global `window.financingSyncInProgress` flag prevents Livewire sync during Select2 hydration to avoid triggering the `updatedOfferedFinancing()` reset logic.
+
+**Financing Follow-Up Field Persistence**: The `updatedOfferedFinancing()` method in both Create and Edit Livewire components uses a smart selective reset mechanism:
+1. `$previousOfferedFinancing` property tracks the previous financing type selections
+2. When financing types change, only fields for REMOVED types are reset (using `financingFieldMap`)
+3. A `$isLoadingData` one-shot flag prevents reset during initial draft/edit load (updates snapshot before returning)
+4. The `financingFieldMap` maps each financing type to its dependent fields (70+ fields across 9 financing types)
+5. If financing values are unchanged (re-sync), no reset occurs
+This ensures follow-up fields (amortization type, payment frequency, cryptocurrency wallet, NFT transfer method, etc.) persist correctly across all 5 property types during create → draft → reload → edit → publish flows.
 
 **Meta Field Parity**: Create and Edit Livewire components must maintain identical field lists for both saving (saveAllMetadata) and loading (loadDraftData/loadAuctionData). When adding new meta fields, ensure they are: (1) defined as public properties in both components, (2) saved via saveMeta() in both components, (3) loaded with defensive null-guarded hydration patterns in both components. Example pattern for array fields: `$raw = $auction->get->field ?? null; $this->field = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];`
 

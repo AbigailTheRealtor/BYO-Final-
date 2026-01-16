@@ -1414,11 +1414,18 @@
                 @this.set('sale_provision', selectedValues);
             });
 
+            // Global flag to prevent Livewire sync during draft/edit load
+            window.financingSyncInProgress = false;
+            
             // Initialize Select2 for offered_financing (Purchasing Terms tab)
             $('#offered_financing').select2({
                 placeholder: "Select",
                 allowClear: true,
             }).on('change', function() {
+                // Skip Livewire sync if we're loading draft data (prevents updatedOfferedFinancing reset)
+                if (window.financingSyncInProgress) {
+                    return;
+                }
                 let selectedValues = $(this).val() || [];
                 @this.set('offered_financing', selectedValues);
             });
@@ -1442,6 +1449,10 @@
                         placeholder: "Select",
                         allowClear: true,
                     }).on('change', function() {
+                        // Skip Livewire sync if we're loading draft data
+                        if (window.financingSyncInProgress) {
+                            return;
+                        }
                         let selectedValues = $(this).val() || [];
                         @this.set('offered_financing', selectedValues);
                     });
