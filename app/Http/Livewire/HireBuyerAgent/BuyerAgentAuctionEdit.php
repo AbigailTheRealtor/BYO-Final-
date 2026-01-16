@@ -98,6 +98,8 @@ class BuyerAgentAuctionEdit extends Component
     public $value_determination = '';
 
     // Lease Option Properties
+    public $interested_lease_option = '';
+    public $interested_lease_option_agreement = '';
     public $lease_option_price = '';
     public $lease_option_terms = '';
     public $lease_option_duration = '';
@@ -181,6 +183,8 @@ class BuyerAgentAuctionEdit extends Component
 
     // Broker compensation
     public $commission_structure = '';
+    public $lease_type = '';
+    public $lease_type_other = '';
     public $lease_fee_type = '';
     public $lease_fee_flat = '';
     public $lease_fee_percentage = '';
@@ -189,6 +193,17 @@ class BuyerAgentAuctionEdit extends Component
     public $lease_fee_flat_combo = '';
     public $lease_fee_percentage_combo = '';
     public $lease_fee_other = '';
+    public $lease_value = '';
+    public $lease_fee_flat_combo_net = '';
+    public $lease_fee_percentage_combo_net = '';
+    public $lease_fee_percentage_monthly_number = '';
+    public $lease_fee_percentage_net = '';
+    public $lease_option_consideration = '';
+    public $purchase_type = '';
+    public $purchase_value = '';
+    public $purchase_pice_commercial = '';
+    public $purchase_fee_flat_exercised = '';
+    public $additional_details_broker = '';
     public $purchase_fee_type = '';
     public $purchase_fee_percentage = '';
     public $purchase_fee_flat = '';
@@ -199,6 +214,8 @@ class BuyerAgentAuctionEdit extends Component
     public $lease_option_fee_flat = '';
     public $lease_option_fee_percentage = '';
     public $lease_option_fee_other = '';
+    public $lease_option_fee_flat_combo = '';
+    public $lease_option_fee_percentage_combo = '';
     public $protection_period = '';
     public $early_termination_fee_option = '';
     public $early_termination_fee_amount = '';
@@ -1002,6 +1019,8 @@ class BuyerAgentAuctionEdit extends Component
             $this->value_determination = $auction->get->value_determination;
 
             // Lease Option
+            $this->interested_lease_option = $auction->get->interested_lease_option ?? '';
+            $this->interested_lease_option_agreement = $auction->get->interested_lease_option_agreement ?? '';
             $this->lease_option_price = $auction->get->lease_option_price;
             $this->lease_option_terms = $auction->get->lease_option_terms;
             $this->lease_option_duration = $auction->get->lease_option_duration;
@@ -1105,6 +1124,9 @@ class BuyerAgentAuctionEdit extends Component
 
             // Broker compensation
             $this->commission_structure = $auction->get->commission_structure;
+            $this->lease_type = $auction->get->lease_type ?? '';
+            $this->lease_type_other = $auction->get->lease_type_other ?? '';
+            $this->lease_value = $auction->get->lease_value ?? '';
             $this->lease_fee_type = $auction->get->lease_fee_type;
             $this->lease_fee_flat = $auction->get->lease_fee_flat;
             $this->lease_fee_percentage = $auction->get->lease_fee_percentage;
@@ -1113,6 +1135,16 @@ class BuyerAgentAuctionEdit extends Component
             $this->lease_fee_flat_combo = $auction->get->lease_fee_flat_combo;
             $this->lease_fee_percentage_combo = $auction->get->lease_fee_percentage_combo;
             $this->lease_fee_other = $auction->get->lease_fee_other;
+            $this->lease_fee_flat_combo_net = $auction->get->lease_fee_flat_combo_net ?? '';
+            $this->lease_fee_percentage_combo_net = $auction->get->lease_fee_percentage_combo_net ?? '';
+            $this->lease_fee_percentage_monthly_number = $auction->get->lease_fee_percentage_monthly_number ?? '';
+            $this->lease_fee_percentage_net = $auction->get->lease_fee_percentage_net ?? '';
+            $this->lease_option_consideration = $auction->get->lease_option_consideration ?? '';
+            $this->additional_details_broker = $auction->get->additional_details_broker ?? '';
+            $this->purchase_type = $auction->get->purchase_type ?? '';
+            $this->purchase_value = $auction->get->purchase_value ?? '';
+            $this->purchase_pice_commercial = $auction->get->purchase_pice_commercial ?? '';
+            $this->purchase_fee_flat_exercised = $auction->get->purchase_fee_flat_exercised ?? '';
             $this->purchase_fee_type = $auction->get->purchase_fee_type;
             $this->purchase_fee_percentage = $auction->get->purchase_fee_percentage;
             $this->purchase_fee_flat = $auction->get->purchase_fee_flat;
@@ -1123,6 +1155,8 @@ class BuyerAgentAuctionEdit extends Component
             $this->lease_option_fee_flat = $auction->get->lease_option_fee_flat;
             $this->lease_option_fee_percentage = $auction->get->lease_option_fee_percentage;
             $this->lease_option_fee_other = $auction->get->lease_option_fee_other;
+            $this->lease_option_fee_flat_combo = $auction->get->lease_option_fee_flat_combo ?? '';
+            $this->lease_option_fee_percentage_combo = $auction->get->lease_option_fee_percentage_combo ?? '';
             $this->protection_period = $auction->get->protection_period;
             $this->early_termination_fee_option = $auction->get->early_termination_fee_option;
             $this->early_termination_fee_amount = $auction->get->early_termination_fee_amount;
@@ -1333,6 +1367,8 @@ class BuyerAgentAuctionEdit extends Component
         $auction->saveMeta('value_determination', $this->value_determination);
 
         // Lease Option
+        $auction->saveMeta('interested_lease_option', $this->interested_lease_option);
+        $auction->saveMeta('interested_lease_option_agreement', $this->interested_lease_option_agreement);
         $auction->saveMeta('lease_option_price', $this->lease_option_price);
         $auction->saveMeta('lease_option_terms', $this->lease_option_terms);
         $auction->saveMeta('lease_option_duration', $this->lease_option_duration);
@@ -1414,6 +1450,9 @@ class BuyerAgentAuctionEdit extends Component
 
         // Broker Compensation
         $auction->saveMeta('commission_structure', $this->commission_structure);
+        $auction->saveMeta('lease_type', $this->lease_type);
+        $auction->saveMeta('lease_type_other', $this->lease_type_other);
+        $auction->saveMeta('lease_value', $this->lease_value);
 
         // Lease Fee
         $auction->saveMeta('lease_fee_type', $this->lease_fee_type);
@@ -1424,8 +1463,18 @@ class BuyerAgentAuctionEdit extends Component
         $auction->saveMeta('lease_fee_flat_combo', $this->lease_fee_flat_combo);
         $auction->saveMeta('lease_fee_percentage_combo', $this->lease_fee_percentage_combo);
         $auction->saveMeta('lease_fee_other', $this->lease_fee_other);
+        $auction->saveMeta('lease_fee_flat_combo_net', $this->lease_fee_flat_combo_net);
+        $auction->saveMeta('lease_fee_percentage_combo_net', $this->lease_fee_percentage_combo_net);
+        $auction->saveMeta('lease_fee_percentage_monthly_number', $this->lease_fee_percentage_monthly_number);
+        $auction->saveMeta('lease_fee_percentage_net', $this->lease_fee_percentage_net);
+        $auction->saveMeta('lease_option_consideration', $this->lease_option_consideration);
+        $auction->saveMeta('additional_details_broker', $this->additional_details_broker);
 
         // Purchase Fee
+        $auction->saveMeta('purchase_type', $this->purchase_type);
+        $auction->saveMeta('purchase_value', $this->purchase_value);
+        $auction->saveMeta('purchase_pice_commercial', $this->purchase_pice_commercial);
+        $auction->saveMeta('purchase_fee_flat_exercised', $this->purchase_fee_flat_exercised);
         $auction->saveMeta('purchase_fee_type', $this->purchase_fee_type);
         $auction->saveMeta('purchase_fee_percentage', $this->purchase_fee_percentage);
         $auction->saveMeta('purchase_fee_flat', $this->purchase_fee_flat);
@@ -1438,6 +1487,8 @@ class BuyerAgentAuctionEdit extends Component
         $auction->saveMeta('lease_option_fee_flat', $this->lease_option_fee_flat);
         $auction->saveMeta('lease_option_fee_percentage', $this->lease_option_fee_percentage);
         $auction->saveMeta('lease_option_fee_other', $this->lease_option_fee_other);
+        $auction->saveMeta('lease_option_fee_flat_combo', $this->lease_option_fee_flat_combo);
+        $auction->saveMeta('lease_option_fee_percentage_combo', $this->lease_option_fee_percentage_combo);
 
         // Other Broker Terms
         $auction->saveMeta('protection_period', $this->protection_period);
