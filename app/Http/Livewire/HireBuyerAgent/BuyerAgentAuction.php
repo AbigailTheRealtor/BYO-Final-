@@ -45,6 +45,7 @@ class BuyerAgentAuction extends Component
     public $property_items = [];
     public $other_property_items = '';
     public $condition_prop = '';
+    public $condition_prop_buyer = [];
     public $leasing_space = '';
     public $other_property_condition = '';
     public $bathrooms = '';
@@ -1074,6 +1075,7 @@ class BuyerAgentAuction extends Component
 
             $this->other_property_items = $auction->get->other_property_items;
             $this->condition_prop = $auction->get->condition_prop;
+            $this->condition_prop_buyer = is_string($auction->get->condition_prop_buyer) ? json_decode($auction->get->condition_prop_buyer, true) ?? [] : (array)($auction->get->condition_prop_buyer ?? []);
             $this->leasing_space = $auction->get->leasing_space;
             $this->other_property_condition = $auction->get->other_property_condition;
             $this->bathrooms = $auction->get->bathrooms;
@@ -1417,6 +1419,7 @@ class BuyerAgentAuction extends Component
         $auction->saveMeta('leasing_space', $this->leasing_space);
         $auction->saveMeta('other_property_items', $this->other_property_items);
         $auction->saveMeta('condition_prop', $this->condition_prop);
+        $auction->saveMeta('condition_prop_buyer', json_encode($this->condition_prop_buyer));
         $auction->saveMeta('other_property_condition', $this->other_property_condition);
         $auction->saveMeta('bathrooms', $this->bathrooms);
         $auction->saveMeta('other_bathrooms', $this->other_bathrooms);

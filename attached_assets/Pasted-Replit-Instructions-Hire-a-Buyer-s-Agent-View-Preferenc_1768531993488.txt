@@ -1,0 +1,140 @@
+Replit Instructions — Hire a Buyer’s Agent
+View Preference Needed → “Other” UX Cleanup (Buyer Flow Only)
+🎯 Goal
+
+When a user selects “Other” under View Preference Needed, remove the label text
+
+❌ “Other View Preference:”
+and show only the input box (with placeholder), so the UI is clean and non-redundant.
+
+⚠️ CRITICAL SCOPE & SAFEGUARDS
+
+✅ Apply ONLY to Hire a Buyer’s Agent
+
+❌ Do NOT affect Seller, Landlord, or Tenant flows
+
+❌ Do NOT change database structure
+
+❌ Do NOT change saved data behavior
+
+✅ This is a display-layer / conditional rendering change only
+
+✅ “Other” value must still save + reload correctly in drafts
+
+📍 WHERE THIS MUST UPDATE
+
+Flow: Hire a Buyer’s Agent
+Section: Property Preferences
+Field: View Preference Needed
+Conditional Field: Other View Preference input
+
+This change must apply everywhere this field appears:
+
+Create listing
+
+Edit saved draft
+
+Review / Preview screen
+
+Agent-facing read-only view (if applicable)
+
+🔧 REQUIRED UI LOGIC CHANGE
+Current Behavior (❌)
+
+When “Other” is selected:
+
+Other View Preference:
+[ Enter view preference (e.g., Lake, Desert, Courtyard) ]
+
+Required Behavior (✅)
+
+When “Other” is selected:
+
+[ Enter view preference (e.g., Lake, Desert, Courtyard) ]
+
+
+➡️ No label text above the input
+
+🧠 IMPLEMENTATION DETAILS (Livewire / Blade)
+A) Conditional rendering logic
+
+Wrap the label and input separately so they can behave differently.
+
+Rule:
+
+The input box shows when Other is selected
+
+The label text does NOT render at all
+
+Example logic (conceptual — adapt to your component names):
+
+Condition:
+if (view_preferences includes "Other")
+
+DO:
+
+Render the input field only
+
+DO NOT:
+
+Render a <label> or heading like “Other View Preference”
+
+B) Keep placeholder (important)
+
+The placeholder text must remain, since it replaces the removed label:
+
+Enter view preference (e.g., Lake, Desert, Courtyard)
+
+
+This ensures usability and clarity without redundancy.
+
+🧩 DATA SAFEGUARDS (DO NOT BREAK)
+
+Input must still bind to the same Livewire property (example):
+
+wire:model.defer="view_preferences_other"
+
+Do NOT rename the field
+
+Do NOT clear the value if user navigates tabs or saves draft
+
+Value must:
+
+Save on Save Draft
+
+Reload when reopening draft
+
+Display correctly without the label
+
+✅ TESTING CHECKLIST (tenant@exp.com
+)
+
+Login as tenant@exp.com
+
+Click Hire a Buyer’s Agent
+
+Go to View Preference Needed
+
+Select Other
+
+✅ Only the input box appears (no “Other View Preference” text)
+
+Enter text (e.g., “Lake”)
+
+Click Save Draft
+
+Leave page → reopen draft
+
+✅ Input value is still there
+
+✅ Label text is still hidden
+
+🚫 DO NOT DO
+
+❌ Do not hide the entire field
+
+❌ Do not replace label text with “Other”
+
+❌ Do not add helper text above the field
+
+❌ Do not duplicate the placeholder elsewhere
