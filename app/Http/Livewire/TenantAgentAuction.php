@@ -3480,7 +3480,8 @@ class TenantAgentAuction extends Component
         $auction->saveMeta('current_status', $this->current_status);
         $auction->saveMeta('video_link', $this->video_link);
 
-        if ($this->photo) {
+        // Save photo - only process if it's a new upload (UploadedFile), not an existing string path
+        if ($this->photo && !is_string($this->photo)) {
             $extensionPhoto = $this->photo->getClientOriginalExtension(); // Get file extension
             $uuid = (string) Str::uuid(); // Generate a unique UUID
             $photoName = $uuid . '.' . $extensionPhoto; // Create a unique file name
@@ -3492,8 +3493,8 @@ class TenantAgentAuction extends Component
             $auction->saveMeta('photo', $photoName);
         }
 
-        // Save video
-        if ($this->video) {
+        // Save video - only process if it's a new upload (UploadedFile), not an existing string path
+        if ($this->video && !is_string($this->video)) {
             $extensionVideo = $this->video->getClientOriginalExtension(); // Get file extension
             $uuid = (string) Str::uuid(); // Generate a unique UUID
             $videoName = $uuid . '.' . $extensionVideo; // Create a unique file name
