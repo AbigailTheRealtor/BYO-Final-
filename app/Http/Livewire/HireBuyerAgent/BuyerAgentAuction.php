@@ -1119,6 +1119,30 @@ class BuyerAgentAuction extends Component
                 'is_draft' => $auction->is_draft,
                 'is_approved' => $auction->is_approved,
             ]);
+            
+            // Debug logging for financing follow-up fields
+            \Log::info('BUYER DRAFT SAVE — financing followups', [
+                'auction_id' => $auction->id ?? null,
+                'offered_financing' => $this->offered_financing ?? null,
+                'seller_amortization_type' => $this->seller_amortization_type ?? null,
+                'seller_payment_frequency' => $this->seller_payment_frequency ?? null,
+                'seller_late_fee_amount' => $this->seller_late_fee_amount ?? null,
+                'exchange_transfer_method' => $this->exchange_transfer_method ?? null,
+                'exchange_liens' => $this->exchange_liens ?? null,
+                'exchange_inspection_rights' => $this->exchange_inspection_rights ?? null,
+                'lease_option_maintenance' => $this->lease_option_maintenance ?? null,
+                'lease_option_extension_terms' => $this->lease_option_extension_terms ?? null,
+                'lease_purchase_rent_credit' => $this->lease_purchase_rent_credit ?? null,
+                'lease_purchase_rent_credit_amount' => $this->lease_purchase_rent_credit_amount ?? null,
+                'lease_purchase_deposit' => $this->lease_purchase_deposit ?? null,
+                'crypto_exchange_method' => $this->crypto_exchange_method ?? null,
+                'crypto_custodian_wallet' => $this->crypto_custodian_wallet ?? null,
+                'crypto_transaction_fees' => $this->crypto_transaction_fees ?? null,
+                'crypto_transfer_timing' => $this->crypto_transfer_timing ?? null,
+                'nft_valuation_method' => $this->nft_valuation_method ?? null,
+                'nft_transfer_method' => $this->nft_transfer_method ?? null,
+                'nft_gas_fees' => $this->nft_gas_fees ?? null,
+            ]);
 
             $displayId = $auction->listing_id ?? $auction->id;
             session()->flash('success', "Draft saved (Listing ID: {$displayId}). You can return later to complete your listing.");
