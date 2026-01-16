@@ -120,6 +120,8 @@ class BuyerAgentAuctionEdit extends Component
     public $cryptocurrency_type = '';
     public $crypto_percentage = '';
     public $cash_percentage_crypto = '';
+    public $crypto_transfer_timing = '';
+    public $crypto_transfer_timing_other = '';
 
     // NFT Properties
     public $nft_description = '';
@@ -1021,6 +1023,8 @@ class BuyerAgentAuctionEdit extends Component
             $this->cryptocurrency_type = $auction->get->cryptocurrency_type;
             $this->crypto_percentage = $auction->get->crypto_percentage;
             $this->cash_percentage_crypto = $auction->get->cash_percentage_crypto;
+            $this->crypto_transfer_timing = $auction->get->crypto_transfer_timing ?? '';
+            $this->crypto_transfer_timing_other = $auction->get->crypto_transfer_timing_other ?? '';
 
             // NFT
             $this->nft_description = $auction->get->nft_description;
@@ -1350,6 +1354,8 @@ class BuyerAgentAuctionEdit extends Component
         $auction->saveMeta('cryptocurrency_type', $this->cryptocurrency_type);
         $auction->saveMeta('crypto_percentage', $this->crypto_percentage);
         $auction->saveMeta('cash_percentage_crypto', $this->cash_percentage_crypto);
+        $auction->saveMeta('crypto_transfer_timing', $this->crypto_transfer_timing);
+        $auction->saveMeta('crypto_transfer_timing_other', $this->crypto_transfer_timing_other);
 
         // NFT
         $auction->saveMeta('nft_description', $this->nft_description);
