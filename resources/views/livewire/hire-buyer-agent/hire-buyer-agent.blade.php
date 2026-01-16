@@ -1404,6 +1404,50 @@
                     $('#other_preferences').hide();
                 }
             });
+
+            // Initialize Select2 for sale_provision (Purchasing Terms tab)
+            $('#sale_provision').select2({
+                placeholder: "Select",
+                allowClear: true,
+            }).on('change', function() {
+                let selectedValues = $(this).val() || [];
+                @this.set('sale_provision', selectedValues);
+            });
+
+            // Initialize Select2 for offered_financing (Purchasing Terms tab)
+            $('#offered_financing').select2({
+                placeholder: "Select",
+                allowClear: true,
+            }).on('change', function() {
+                let selectedValues = $(this).val() || [];
+                @this.set('offered_financing', selectedValues);
+            });
+
+            // Reinitialize sale_provision and offered_financing after Livewire updates
+            Livewire.hook('message.processed', () => {
+                // Reinitialize sale_provision Select2
+                if ($('#sale_provision').length && !$('#sale_provision').hasClass('select2-hidden-accessible')) {
+                    $('#sale_provision').select2({
+                        placeholder: "Select",
+                        allowClear: true,
+                    }).on('change', function() {
+                        let selectedValues = $(this).val() || [];
+                        @this.set('sale_provision', selectedValues);
+                    });
+                }
+
+                // Reinitialize offered_financing Select2
+                if ($('#offered_financing').length && !$('#offered_financing').hasClass('select2-hidden-accessible')) {
+                    $('#offered_financing').select2({
+                        placeholder: "Select",
+                        allowClear: true,
+                    }).on('change', function() {
+                        let selectedValues = $(this).val() || [];
+                        @this.set('offered_financing', selectedValues);
+                    });
+                }
+            });
+
             // Function to toggle Non-Negotiable Amenities and Property Features:" input field
 
             function toggleOtherAmenities(selectElement) {
