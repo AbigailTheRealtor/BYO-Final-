@@ -944,6 +944,33 @@
                                         </div>
                                     @endif
                                 @endif
+
+                                @if (@$auction->get->seller_amortization_type)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Amortization Type:
+                                        <span class="removeBold badge bg-secondary">{{ @$auction->get->seller_amortization_type }}</span>
+                                        @if (@$auction->get->seller_amortization_type === 'Other' && @$auction->get->seller_amortization_other)
+                                            <span class="removeBold">({{ @$auction->get->seller_amortization_other }})</span>
+                                        @endif
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->seller_payment_frequency)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Payment Frequency:
+                                        <span class="removeBold badge bg-secondary">{{ @$auction->get->seller_payment_frequency }}</span>
+                                        @if (@$auction->get->seller_payment_frequency === 'Other' && @$auction->get->seller_payment_frequency_other)
+                                            <span class="removeBold">({{ @$auction->get->seller_payment_frequency_other }})</span>
+                                        @endif
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->seller_late_fee_amount)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Late Payment Fee:
+                                        <span class="removeBold">{{ @$auction->get->seller_late_fee_amount }}</span>
+                                    </div>
+                                @endif
                             @endif
 
                             <!-- Assumable Financing Details - ONLY SHOW IF offered_financing IS "Assumable" -->
@@ -1027,6 +1054,30 @@
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Value of Exchange/Trade Item Determined By:
                                         <span class="removeBold">{{ $displayValueDetermination }}</span>
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->exchange_transfer_method)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Transfer Method / Logistics:
+                                        <span class="removeBold">{{ @$auction->get->exchange_transfer_method }}</span>
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->exchange_liens)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Liens / Encumbrances Disclosure:
+                                        <span class="removeBold badge bg-secondary">{{ @$auction->get->exchange_liens }}</span>
+                                        @if (@$auction->get->exchange_liens === 'Yes' && @$auction->get->exchange_liens_details)
+                                            <span class="removeBold">({{ @$auction->get->exchange_liens_details }})</span>
+                                        @endif
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->exchange_inspection_rights)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Inspection / Verification Rights:
+                                        <span class="removeBold badge bg-secondary">{{ @$auction->get->exchange_inspection_rights }}</span>
                                     </div>
                                 @endif
                             @endif
@@ -1206,6 +1257,23 @@
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Extension Terms:
                                         <span class="removeBold">{{ $displayLPExtension }}</span>
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->lease_purchase_rent_credit)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Rent Credit Toward Purchase Price:
+                                        <span class="removeBold badge bg-secondary">{{ @$auction->get->lease_purchase_rent_credit }}</span>
+                                        @if (in_array(@$auction->get->lease_purchase_rent_credit, ['Yes', 'Partial']) && @$auction->get->lease_purchase_rent_credit_amount)
+                                            <span class="removeBold">${{ @$auction->get->lease_purchase_rent_credit_amount }}</span>
+                                        @endif
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->lease_purchase_deposit)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Non-Refundable Deposit / Purchase Deposit:
+                                        <span class="removeBold">${{ @$auction->get->lease_purchase_deposit }}</span>
                                     </div>
                                 @endif
                             @endif
