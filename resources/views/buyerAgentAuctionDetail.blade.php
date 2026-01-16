@@ -651,7 +651,7 @@
                         @if (@$auction->get->minimum_annual_net_income != null)
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Minimum Annual Net Income Needed:
-                                <span class="removeBold">${{ number_format(@$auction->get->minimum_annual_net_income) }}</span>
+                                <span class="removeBold">{{ \App\Support\Format::money(@$auction->get->minimum_annual_net_income) }}</span>
                             </div>
                         @endif
 
@@ -1789,7 +1789,7 @@
                                     @if (@$auction->get->lease_type === 'percent')
                                         {{ @$auction->get->lease_value }}% of Total Purchase Price
                                     @else
-                                        ${{ number_format((float)str_replace(',', '', @$auction->get->lease_value), 0) }}
+                                        {{ \App\Support\Format::money(@$auction->get->lease_value) }}
                                     @endif
                                 </span>
                             </div>
@@ -1802,7 +1802,7 @@
                                     @if (@$auction->get->purchase_type === 'percent')
                                         {{ @$auction->get->purchase_value }}% of Total Purchase Price
                                     @else
-                                        ${{ number_format((float)str_replace(',', '', @$auction->get->purchase_value), 0) }}
+                                        {{ \App\Support\Format::money(@$auction->get->purchase_value) }}
                                     @endif
                                 </span>
                             </div>
@@ -1829,7 +1829,7 @@
                         @if (in_array(strtolower(@$auction->get->early_termination_fee_option), ['yes']) && @$auction->get->early_termination_fee_amount)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Termination Fee Amount:
-                            <span class="removeBold">${{ number_format((float)str_replace(',', '', @$auction->get->early_termination_fee_amount), 0) }}</span>
+                            <span class="removeBold">{{ \App\Support\Format::money(@$auction->get->early_termination_fee_amount) }}</span>
                         </div>
                         @endif
                         @endif
@@ -1843,7 +1843,7 @@
                             @if (@$auction->get->retainer_fee_amount)
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Retainer Fee Amount:
-                                <span class="removeBold">${{ number_format((float)str_replace(',', '', @$auction->get->retainer_fee_amount), 0) }}</span>
+                                <span class="removeBold">{{ \App\Support\Format::money(@$auction->get->retainer_fee_amount) }}</span>
                             </div>
                             @endif
                             @if (@$auction->get->retainer_fee_application)
@@ -2633,7 +2633,7 @@
                     @if (data_get($bid, 'get.lease_type') === 'percent')
                         {{ data_get($bid, 'get.lease_value') }}%
                     @else
-                        ${{ number_format((float)str_replace(',', '', data_get($bid, 'get.lease_value')), 0) }}
+                        {{ \App\Support\Format::money(data_get($bid, 'get.lease_value')) }}
                     @endif
                 </span>
             </div>
@@ -2645,7 +2645,7 @@
                     @if (data_get($bid, 'get.purchase_type') === 'percent')
                         {{ data_get($bid, 'get.purchase_value') }}%
                     @else
-                        ${{ number_format((float)str_replace(',', '', data_get($bid, 'get.purchase_value')), 0) }}
+                        {{ \App\Support\Format::money(data_get($bid, 'get.purchase_value')) }}
                     @endif
                 </span>
             </div>
@@ -3463,17 +3463,23 @@
         @php
             $ctrPurchaseVal = '—';
             $cpType = $allMeta['purchase_fee_type'];
+            $safeNumber = function($v, $decimals = 2) {
+                if ($v === null || $v === '') return null;
+                $clean = str_replace([',', '$', ' '], '', (string)$v);
+                if ($clean === '' || !is_numeric($clean)) return null;
+                return number_format((float)$clean, $decimals);
+            };
             if ($cpType === 'Flat Fee' && !empty($allMeta['purchase_fee_flat'])) {
-                $ctrPurchaseVal = '$' . number_format($allMeta['purchase_fee_flat'], 2);
+                $formatted = $safeNumber($allMeta['purchase_fee_flat']);
+                $ctrPurchaseVal = $formatted ? ('$' . $formatted) : '—';
             } elseif ($cpType === 'Percentage of the Total Purchase Price' && !empty($allMeta['purchase_fee_percentage'])) {
-                $ctrPurchaseVal = rtrim(rtrim(number_format($allMeta['purchase_fee_percentage'], 2), '0'), '.') . '% of Total Purchase Price';
+                $formatted = $safeNumber($allMeta['purchase_fee_percentage']);
+                $ctrPurchaseVal = $formatted ? (rtrim(rtrim($formatted, '0'), '.') . '% of Total Purchase Price') : '—';
             } elseif ($cpType === 'Percentage of the Total Purchase Price + Flat Fee') {
-                $pctPart = !empty($allMeta['purchase_fee_percentage_combo']) 
-                    ? rtrim(rtrim(number_format($allMeta['purchase_fee_percentage_combo'], 2), '0'), '.') . '% of Total Purchase Price'
-                    : null;
-                $flatPart = !empty($allMeta['purchase_fee_flat_combo'])
-                    ? '$' . number_format($allMeta['purchase_fee_flat_combo'], 2) . ' flat'
-                    : null;
+                $pctFormatted = $safeNumber($allMeta['purchase_fee_percentage_combo'] ?? null);
+                $pctPart = $pctFormatted ? (rtrim(rtrim($pctFormatted, '0'), '.') . '% of Total Purchase Price') : null;
+                $flatFormatted = $safeNumber($allMeta['purchase_fee_flat_combo'] ?? null);
+                $flatPart = $flatFormatted ? ('$' . $flatFormatted . ' flat') : null;
                 $ctrPurchaseVal = $pctPart && $flatPart ? "$pctPart + $flatPart" : ($pctPart ?? $flatPart ?? '—');
             } elseif ($cpType === 'other' && !empty($allMeta['purchase_fee_other'])) {
                 $ctrPurchaseVal = $allMeta['purchase_fee_other'];
@@ -3501,8 +3507,15 @@
         @php
             $ctrLeaseVal = '—';
             $lfType = $allMeta['lease_fee_type'];
+            $safeNumberLease = function($v, $decimals = 2) {
+                if ($v === null || $v === '') return null;
+                $clean = str_replace([',', '$', ' '], '', (string)$v);
+                if ($clean === '' || !is_numeric($clean)) return null;
+                return number_format((float)$clean, $decimals);
+            };
             if ($lfType === 'flat' && !empty($allMeta['lease_fee_flat'])) {
-                $ctrLeaseVal = '$' . number_format($allMeta['lease_fee_flat'], 2);
+                $formatted = $safeNumberLease($allMeta['lease_fee_flat']);
+                $ctrLeaseVal = $formatted ? ('$' . $formatted) : '—';
             } elseif ($lfType === 'Percentage of the Gross Lease Value' && !empty($allMeta['lease_fee_percentage'])) {
                 $ctrLeaseVal = $allMeta['lease_fee_percentage'] . '% of Gross Lease Value';
             } elseif ($lfType === 'Percentage of Monthly Rent' && !empty($allMeta['lease_fee_percentage_monthly_rent'])) {
@@ -3511,7 +3524,8 @@
                     $ctrLeaseVal .= ' x ' . $allMeta['lease_fee_percentage_monthly_number'] . ' Months';
                 }
             } elseif ($lfType === 'Flat Fee + Percentage of the Gross Lease Value') {
-                $flatPart = !empty($allMeta['lease_fee_flat_combo']) ? '$' . number_format($allMeta['lease_fee_flat_combo'], 2) : null;
+                $flatFormatted = $safeNumberLease($allMeta['lease_fee_flat_combo'] ?? null);
+                $flatPart = $flatFormatted ? ('$' . $flatFormatted) : null;
                 $pctPart = !empty($allMeta['lease_fee_percentage_combo']) ? ($allMeta['lease_fee_percentage_combo'] . '% of Gross Lease Value') : null;
                 $ctrLeaseVal = $flatPart && $pctPart ? "$flatPart + $pctPart" : ($flatPart ?? $pctPart ?? '—');
             } elseif ($lfType === 'Percentage of the Net Aggregate Rent' && !empty($allMeta['lease_fee_percentage_net'])) {
@@ -3546,7 +3560,7 @@
                     @if (($allMeta['lease_type'] ?? '') === 'percent')
                         {{ $allMeta['lease_value'] }}%
                     @else
-                        ${{ number_format((float)str_replace(',', '', $allMeta['lease_value']), 0) }}
+                        {{ \App\Support\Format::money($allMeta['lease_value']) }}
                     @endif
                 </span>
             </div>
@@ -3558,7 +3572,7 @@
                     @if (($allMeta['purchase_type'] ?? '') === 'percent')
                         {{ $allMeta['purchase_value'] }}%
                     @else
-                        ${{ number_format((float)str_replace(',', '', $allMeta['purchase_value']), 0) }}
+                        {{ \App\Support\Format::money($allMeta['purchase_value']) }}
                     @endif
                 </span>
             </div>
@@ -3585,7 +3599,7 @@
         @if (in_array(strtolower($allMeta['early_termination_fee_option']), ['yes']) && !empty($allMeta['early_termination_fee_amount']))
         <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px;">
             Termination Fee Amount:
-            <span class="removeBold">${{ number_format((float)str_replace(',', '', $allMeta['early_termination_fee_amount']), 0) }}</span>
+            <span class="removeBold">{{ \App\Support\Format::money($allMeta['early_termination_fee_amount']) }}</span>
         </div>
         @endif
         @endif
@@ -3599,7 +3613,7 @@
             @if (!empty($allMeta['retainer_fee_amount']))
             <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px;">
                 Retainer Fee Amount:
-                <span class="removeBold">${{ number_format((float)str_replace(',', '', $allMeta['retainer_fee_amount']), 0) }}</span>
+                <span class="removeBold">{{ \App\Support\Format::money($allMeta['retainer_fee_amount']) }}</span>
             </div>
             @endif
             @if (!empty($allMeta['retainer_fee_application']))
