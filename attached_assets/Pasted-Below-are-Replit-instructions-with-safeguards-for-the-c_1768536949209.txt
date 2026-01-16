@@ -1,0 +1,182 @@
+Below are **Replit instructions with safeguards** for the complete **Hire a Buyer’s Agent edits** list from your doc, including: **missing fields on listing view**, **draft-save not persisting conditional financing fields**, **“All” causing duplicate “Other”**, **comma formatting**, and **photo upload not saving**. 
+
+---
+
+## Replit Instructions — [tenant@exp.com](mailto:tenant@exp.com)
+
+### Hire a Buyer’s Agent — Edits + Safeguards (Create / Save Draft / Edit / Public Listing View)
+
+## ⚠️ CRITICAL SAFEGUARDS (Must Follow)
+
+* **Scope:** Apply changes **ONLY** to **Hire a Buyer’s Agent** (Buyer flow).
+* **No DB mass updates:** **Do NOT** run any scripts to modify existing rows.
+* **No destructive defaults:** Do **NOT** overwrite saved values with empty defaults on mount/render.
+* **One UI source of truth:** **Edit Listing** must render using the **same Blade partials/components** as **Create Listing** (no duplicate “edit-only” markup).
+* **Consistency:** Updates must appear everywhere the Buyer listing is rendered:
+
+  * Create UI
+  * Edit Draft UI
+  * Edit Listing UI
+  * Preview/Review screens
+  * Public/Share listing page (auction page)
+
+---
+
+# A) Fix: “Fields do not show up on the actual listing” (Public Listing / Share Page)
+
+**Issue:** Buyer listing page shows section headers but missing the filled values. 
+
+### Required Fix
+
+1. Locate the **Buyer listing details renderer** (public/share/auction page) — search for headings like:
+
+   * “Purchasing Terms”
+   * “Broker Compensation & Agency Agreement Terms”
+2. Ensure the listing query loads **all columns/JSON needed** (do not narrow-select only a few columns).
+3. Replace any property-type conditional logic that **accidentally excludes Income** or other Buyer types from rendering those rows.
+4. Render values using **“show-if-filled”** rules:
+
+   * If a field has a value → display it
+   * If empty → hide the row (don’t show blank lines)
+
+✅ **Done when:** A fully completed Buyer listing displays all populated rows on the public listing page.
+
+---
+
+# B) Fix: Save Draft doesn’t persist conditional “Offered Financing/Currency” sub-fields
+
+Your doc calls out that these were filled, but after saving draft they are blank again. 
+
+## Applies to these financing types (ALL must persist):
+
+* Seller Financing 
+* Exchange/Trade 
+* Lease Option 
+* Lease Purchase 
+* Cryptocurrency 
+* NFT 
+
+### Required Fix (Implementation Rules)
+
+1. **Do not store conditional inputs only in Livewire temporary state.**
+   They must be persisted in DB (typically JSON “details” object OR dedicated columns).
+2. In the Buyer form Livewire component:
+
+   * Each conditional input must be bound to a stable property (ex: `wire:model.defer="financing_details.seller_financing.loan_duration_years"`).
+3. In `saveDraft()` (Buyer):
+
+   * Save BOTH:
+
+     * the **selected financing types** array/list
+     * the **financing_details** object (nested fields)
+   * Use **merge** logic so saving one subsection doesn’t wipe other subsections.
+4. In `mount()` / `loadDraft()`:
+
+   * Rehydrate BOTH:
+
+     * selected financing types
+     * financing_details
+   * Rehydration must occur **before render** so the UI conditions are triggered and the correct sections appear.
+
+✅ **Done when:** After Save Draft → reopen draft → all conditional sub-fields are still filled.
+
+---
+
+# C) Fix: “All” creates duplicate “Other” + only first 3 saved
+
+> “I selected All but then had Other filled out twice only the first 3 saved in draft” 
+
+### Required Selection Rules (Recommended)
+
+* If user selects **All**:
+
+  * selections must become exactly: `["All"]`
+  * all other selections cleared
+* Prevent duplication always:
+
+  * enforce `array_unique` before save
+* “Other” must be represented as:
+
+  * a single selection value `"Other"` (only if user chose it)
+  * AND a separate `other_text` field (string)
+  * **Do not** embed other_text inside the selections array (that causes duplicates on reload)
+
+✅ **Done when:** Selecting All never duplicates Other and draft saves all expected values.
+
+---
+
+# D) Fix: Add comma formatting (thousands separators)
+
+> “There needs to be , format for this” 
+
+### Safest Implementation
+
+* Store **raw numeric values** in DB (no commas)
+* Display formatted values in UI via:
+
+  * JS input mask (recommended) OR
+  * Livewire display formatting + hidden raw field
+* On save:
+
+  * strip commas before persisting
+
+✅ **Done when:** User typing `7999` displays `7,999` but DB stores `7999`.
+
+---
+
+# E) Fix: Photo upload didn’t save after returning to draft
+
+> “Also photo upload didn’t save when I went back to listing from saved draft” 
+
+### Required Fix (Non-negotiable)
+
+1. Photos must be stored to **permanent storage** immediately (not Livewire temp paths).
+2. Persist file references in DB using either:
+
+   * a `buyer_listing_photos` table (recommended), OR
+   * a `photos` JSON column containing stored paths
+3. Draft save must **not wipe** photos:
+
+   * merge previous + new photos
+   * prevent duplicates
+4. On draft reload:
+
+   * rehydrate stored photo paths/records
+   * render thumbnails/links
+
+✅ **Done when:** Upload → Save Draft → reopen draft → photos still show.
+
+---
+
+# F) Fix: Edit Listing format must match Create Listing + show filled values
+
+You asked earlier: Edit Listing layout is “off” and fields aren’t showing.
+
+### Required Fix
+
+* Make Edit Listing reuse the **same component + same Blade partials** as Create Listing.
+* On edit mount, hydrate ALL form properties (including financing_details + photos) **before** render.
+
+✅ **Done when:** Edit Listing looks identical to Create Listing and all values populate.
+
+---
+
+## QA Test Script ([tenant@exp.com](mailto:tenant@exp.com))
+
+1. Login `tenant@exp.com`
+2. Create Buyer listing (Income) and fill:
+
+   * Seller financing + Exchange + Lease Option + Lease Purchase + Crypto + NFT sub-fields
+   * add photos
+   * values needing commas
+3. Save Draft → reopen draft → verify everything persists
+4. Publish/list → open public/share listing page → verify all values display
+5. Click Edit Listing → verify layout parity + all values loaded
+
+---
+
+If you want this in your exact “⚠️ CRITICAL — WHERE THIS MUST UPDATE” style with file names/paths, paste **one** of these and I’ll convert it into exact step-by-step patch instructions:
+
+* the **route** for the Buyer public listing page, or
+* the **Livewire component name** used for Buyer listing details, or
+* the filename containing the heading “Broker Compensation & Agency Agreement Terms” in the Buyer listing view.
