@@ -241,11 +241,12 @@
         </select>
     </div> --}}
 
-    <div class="input-cover">
-        <select wire:model="offered_financing" id="offered_financing" class="form-control has-icon select2-multiple"
+    <div class="input-cover" wire:ignore>
+        <select id="offered_financing" class="form-control has-icon select2-multiple"
             data-icon="fa-solid fa-money-bill-wave input-icon2" multiple required>
             @foreach ($financing_options as $option)
-                <option value="{{ $option['name'] }}" title="{{ $option['description'] }}">
+                <option value="{{ $option['name'] }}" title="{{ $option['description'] }}"
+                    {{ in_array($option['name'], $offered_financing ?? []) ? 'selected' : '' }}>
                     {{ $option['name'] }}
                 </option>
             @endforeach
