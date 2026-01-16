@@ -1,0 +1,267 @@
+Below are **copy-paste ready Replit instructions (with safeguards)** for the **Hire a Buyer’s Agent** flow, using **[tenant@exp.com](mailto:tenant@exp.com)** as the test login, focused on the exact issues you listed in your doc: draft-save not persisting “Other” inputs, Offered Financing/Currency sub-fields not reloading, “All” causing duplicate “Other,” missing comma formatting, and Additional Details not saving. 
+
+---
+
+## Replit Instructions — [tenant@exp.com](mailto:tenant@exp.com)
+
+### Hire a Buyer’s Agent → Draft Save Persistence + Input Formatting Fixes (Buyer Flow)
+
+## ✅ Test Login + Repro Steps (must pass after fixes)
+
+**Login:** `tenant@exp.com`
+**Path:** Click **Hire a Buyer’s Agent** → create a new Buyer listing → fill fields → click **Save Draft** → leave page → return to edit draft.
+
+Confirm these are fixed:
+
+1. **View Preferences Needed → Other** text **still present** after Save Draft + reload. 
+2. **Offered Financing/Currency → Seller Financing** sub-fields **still filled** after Save Draft + reload. 
+3. Same persistence for **Exchange/Trade, Lease Option, Lease Purchase, Cryptocurrency, NFT** sub-fields. 
+4. Selecting **All** does **not** create **duplicate Other** values, and all intended selections persist. 
+5. Fields requiring **comma formatting** display properly (ex: 10000 → 10,000). 
+6. **Additional Details** text persists after Save Draft + reload. 
+
+---
+
+# 1) ⚠️ CRITICAL SAFEGUARDS (DO NOT SKIP)
+
+**Scope control**
+
+* Apply changes **ONLY** to **Hire a Buyer’s Agent** components/models (do not touch Tenant/Seller/Landlord unless the same bug exists there).
+* **Do NOT mass-update database rows.** This is a **save/load logic** fix, not a data migration.
+
+**Rendering consistency**
+
+* The same saved values must appear in **all Buyer renders**:
+
+  * Create listing UI
+  * Edit Draft UI
+  * Review/Preview screen
+  * Agent-facing read-only view (if applicable)
+
+**Data protection**
+
+* If financing details are stored in JSON, use **merge updates**, not overwrites, so saving one section doesn’t wipe another.
+
+---
+
+# 2) Fix “Other” Text Disappears (View Preferences Needed → Other)
+
+### Likely cause
+
+The UI shows an “Other” textbox, but the value is not actually bound to a persisted field (or it’s being reset on re-render / tab switch). 
+
+### Required implementation (Livewire pattern)
+
+**A. Add a dedicated persisted field for the “Other” text**
+
+* If you store View Preferences as an array/JSON:
+
+  * `view_preferences` (array)
+  * `view_preferences_other` (string)  ✅ **must exist and be saved**
+
+**B. Livewire component**
+
+* Ensure the textbox uses something like:
+
+  * `wire:model.defer="view_preferences_other"`
+
+**C. saveDraft() must explicitly save it**
+
+* In the Buyer “Save Draft” action, assign:
+
+  * `$model->view_preferences_other = $this->view_preferences_other;`
+
+**D. mount()/loadDraft() must reload it**
+
+* When loading an existing draft:
+
+  * `$this->view_preferences_other = $model->view_preferences_other;`
+
+**E. Prevent “Other” from being wiped when unchecked**
+
+* Only clear `view_preferences_other` if the user unselects “Other” AND you intentionally want to clear it.
+* Otherwise, keep it stored.
+
+---
+
+# 3) Fix Offered Financing/Currency Sub-Fields Not Saving/Reloading
+
+This applies to:
+
+* Seller Financing 
+* Exchange/Trade 
+* Lease Option 
+* Lease Purchase 
+* Cryptocurrency 
+* NFT 
+
+### Likely cause
+
+Checkbox/toggle is saved, but the **conditional child inputs** are either:
+
+* not bound with `wire:model`, or
+* not included in `saveDraft()`, or
+* are being overwritten by a single JSON assignment that drops nested keys.
+
+### Required implementation (recommended structure)
+
+**A. Store financing as a single JSON object with stable keys**
+Example shape (conceptual):
+
+* `offered_financing = { selected: [...], details: { seller_financing: {...}, exchange_trade: {...}, lease_option: {...}, ... } }`
+
+**B. Each conditional textbox must bind to a stable Livewire property**
+Example (conceptual):
+
+* `wire:model.defer="financing_details.seller_financing.loan_duration_years"`
+* `wire:model.defer="financing_details.exchange_trade.notes"`
+* etc.
+
+**C. saveDraft() must persist BOTH**
+
+1. the selected financing types array
+2. the nested details object
+
+**D. mount()/loadDraft() must rehydrate BOTH**
+
+* Reload selected types
+* Reload nested details so the form repopulates
+
+**E. Merge safeguard**
+If you update one financing type, do not overwrite the entire JSON blindly.
+
+* Merge existing stored JSON + updated keys so other sections aren’t wiped.
+
+---
+
+# 4) Fix “All” Causing Duplicate “Other” + Partial Draft Save
+
+> “I selected All but then had Other filled out twice only the first 3 saved in draft” 
+
+### Required behavior rule (pick one and enforce it)
+
+**Rule (recommended):**
+
+* If **All** is selected, it becomes the single value in the array:
+
+  * `selections = ["All"]`
+* All other selections are cleared (including “Other” checkbox), BUT:
+
+  * **Do not delete** `other_text` unless you intentionally want to.
+
+### Implementation requirements
+
+**A. On update of the multi-select**
+
+* If `All` is selected:
+
+  * Replace selection array with `["All"]`
+  * Ensure no duplicate items (`array_unique`)
+* If `All` is not selected:
+
+  * Normal multi-select behavior, but still `array_unique`
+
+**B. Only one “Other” text field**
+
+* “Other” should be represented as:
+
+  * checkbox in the selection array (one entry)
+  * separate `other_text` string (single field)
+* Never store “Other text” inside the selection array itself (that often causes duplication on save/load).
+
+---
+
+# 5) Add Comma Formatting (Thousands Separator)
+
+> “There needs to be , format for this” 
+
+### Safest approach (no data loss)
+
+* **Store raw numeric value** in DB (no commas)
+* **Display formatted value** in the UI via an input mask
+
+### Implementation options (choose 1)
+
+**Option A (recommended): JS input mask (Cleave.js or similar)**
+
+* Apply mask to the specific Buyer fields that represent money/amounts (whatever field you meant here).
+* On submit/saveDraft, strip commas before saving.
+
+**Option B: Livewire formatting hook**
+
+* Use Livewire updated() handler to:
+
+  * display formatted string
+  * maintain a hidden raw numeric value for saving
+
+**Safeguard**
+
+* Do not apply commas to fields that can be non-numeric (like “25 years” text). Only apply to currency/amount fields.
+
+---
+
+# 6) Fix “Additional Details” Not Saving on Save Draft
+
+> “Text in additional details didn’t save when I clicked save draft” 
+
+### Likely cause
+
+* Textarea is missing `wire:model.defer`, or
+* saveDraft() does not include that field, or
+* the textarea is inside a conditional block that unmounts and resets before save occurs.
+
+### Required fix
+
+**A. Ensure binding**
+
+* `wire:model.defer="additional_details"` (or your exact property name)
+
+**B. Ensure saveDraft() assigns it**
+
+* `$model->additional_details = $this->additional_details;`
+
+**C. Ensure loadDraft() hydrates it**
+
+* `$this->additional_details = $model->additional_details;`
+
+**D. If it’s inside conditional UI**
+
+* Add a stable `wire:key` to prevent Livewire from re-creating the textarea and losing state.
+
+---
+
+# 7) “Got this error when I clicked…” (Click → Hire Buyer Agent)
+
+Your doc notes an error on click but doesn’t include the exact message. 
+So implement these **non-breaking safeguards** (they prevent the most common click errors without changing your flow):
+
+**A. Guard missing listing/draft IDs**
+
+* If route expects an ID, validate it exists before mount.
+* If not found: redirect to dashboard with a non-fatal message (do not white-screen).
+
+**B. Null relationship guards**
+
+* Any `->something->something` on optional relationships must be null-safe.
+
+**C. Log the exact exception**
+
+* Ensure Replit logs show:
+
+  * user_id, listing_id (if any), component name, stack trace
+
+---
+
+## ✅ Definition of Done (must verify before closing ticket)
+
+Using `tenant@exp.com`:
+
+* Fill “Other” fields + financing detail fields + Additional Details
+* Save Draft
+* Refresh + reopen draft
+* Everything persists and renders correctly
+* “All” selection does not duplicate “Other”
+* Comma formatting works on intended numeric fields
+* No click errors entering Hire Buyer Agent
+
+If you paste the **exact error text / screenshot** from the “Got this error when I clicked” part, I’ll convert that into a precise “change X line in Y component” patch instruction too (still with your safeguards).

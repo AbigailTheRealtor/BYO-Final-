@@ -158,7 +158,6 @@ class SellerAgentAuction extends Component
     public $pool_type = [];
     public $view_preference = [];
     public $other_preferences = '';
-    public $is_other_visible = false;
     public $appliances = [];
     public $other_appliances = '';
     public $showOtherAppliances = false;
@@ -556,6 +555,17 @@ class SellerAgentAuction extends Component
 
     ];
 
+    // Computed Properties
+    public function getIsOtherVisibleProperty()
+    {
+        return is_array($this->view_preference) && in_array('Other', $this->view_preference);
+    }
+
+    public function getIsOtherNonNegotiableVisibleProperty()
+    {
+        return is_array($this->non_negotiable_amenities) && in_array('Other', $this->non_negotiable_amenities);
+    }
+
     // Methods
     public function setDownPaymentType($type)
     {
@@ -729,7 +739,11 @@ class SellerAgentAuction extends Component
 
     public function updatedViewPreference()
     {
-        $this->is_other_visible = in_array('Other', $this->view_preference ?? []);
+        // Visibility is handled by computed property getIsOtherVisibleProperty()
+        // Clear the other_preferences field if "Other" is not selected
+        if (!in_array('Other', $this->view_preference ?? [])) {
+            $this->other_preferences = '';
+        }
     }
 
     public function updatedAppliances()
@@ -1536,7 +1550,6 @@ class SellerAgentAuction extends Component
 
 
             $this->view_preference = is_string($auction->get->view_preference) ? json_decode($auction->get->view_preference, true) ?? [] : (array)$auction->get->view_preference;
-            $this->is_other_visible = in_array('Other', $this->view_preference ?? []);
             $this->other_preferences = $auction->get->other_preferences;
             
             $this->appliances = is_string($auction->get->appliances) ? json_decode($auction->get->appliances, true) ?? [] : (array)$auction->get->appliances;

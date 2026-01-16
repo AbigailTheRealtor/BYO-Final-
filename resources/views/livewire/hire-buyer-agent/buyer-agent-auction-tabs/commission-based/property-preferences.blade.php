@@ -690,7 +690,8 @@
 </div>
 
 <!-- Other Preferences Input (Hidden or Visible based on Livewire state) -->
-<div class="form-group" id="other_preferences" style="display: {{ $is_other_visible ? 'block' : 'none' }}">
+<div class="form-group" id="other_preferences" style="display: {{ $this->is_other_visible ? 'block' : 'none' }}">
+    <label class="fw-bold">Other View Preference:</label>
     <div class="input-cover">
         <input type="text" wire:model="other_preferences" class="form-control has-icon"
             data-icon="fa-solid fa-tree" placeholder="Enter view preference (e.g., Lake, Desert, Courtyard)">
@@ -1284,5 +1285,52 @@
                 option.text = originalOptions[option.value];
             }
         });
+    });
+
+    // Listen for Select2 sync event from draft load
+    window.addEventListener('buyer-agent-select2-sync', function(event) {
+        const data = event.detail;
+        
+        // Helper function to sync Select2 values (supports both class and ID selectors)
+        function syncSelect2(selector, values) {
+            const $select = $(selector);
+            if ($select.length && values && Array.isArray(values)) {
+                $select.val(values).trigger('change');
+            }
+        }
+        
+        // Sync all Select2 multiselects with draft data (using ID selectors)
+        syncSelect2('#view_preference', data.view_preference);
+        syncSelect2('#non_negotiable_amenities', data.non_negotiable_amenities);
+        syncSelect2('.pool_type', data.pool_type);
+        syncSelect2('#offered_financing', data.offered_financing);
+        syncSelect2('#services', data.services);
+        syncSelect2('#lease_for', data.lease_for);
+        syncSelect2('#credit_scroe_rating', data.credit_scroe_rating);
+        syncSelect2('#flat_fee_services', data.flat_fee_services);
+        syncSelect2('.number_of_unit_type', data.number_of_unit_type);
+        
+        // Update visibility of "Other" text fields based on synced values
+        if (data.view_preference && data.view_preference.includes('Other')) {
+            $('#other_preferences').show();
+        }
+        if (data.non_negotiable_amenities && data.non_negotiable_amenities.includes('Other')) {
+            $('#other_non_negotiable_amenities_wrapper').show();
+        }
+        
+        // Trigger financing visibility updates
+        if (data.offered_financing) {
+            // Show relevant financing sections
+            data.offered_financing.forEach(function(type) {
+                if (type === 'Cash') $('#cash_section').show();
+                if (type === 'Seller Financing') $('#seller_financing_section').show();
+                if (type === 'Assumable') $('#assumable_section').show();
+                if (type === 'Exchange/Trade') $('#exchange_trade_section').show();
+                if (type === 'Lease Option') $('#lease_option_section').show();
+                if (type === 'Lease Purchase') $('#lease_purchase_section').show();
+                if (type === 'Cryptocurrency') $('#cryptocurrency_section').show();
+                if (type === 'NFT') $('#nft_section').show();
+            });
+        }
     });
 </script>

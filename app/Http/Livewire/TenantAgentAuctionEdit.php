@@ -690,12 +690,22 @@ class TenantAgentAuctionEdit extends Component
     public $showOtherAppliances = false;
     public $showOtherAppliancesSeller = false;
 
-    public $is_other_visible = false;  // Track visibility of "Other" field
     public $is_other_owner_pays_visible = false;
     public $is_other_tenant_pay_visible = false;
     public $is_rent_include_visible = false;
     public $is_update_lease_term_option_visible = false;
     public $assets_visible = false;
+
+    // Computed Properties
+    public function getIsOtherVisibleProperty()
+    {
+        return is_array($this->view_preference) && in_array('Other', $this->view_preference);
+    }
+
+    public function getIsOtherNonNegotiableVisibleProperty()
+    {
+        return is_array($this->non_negotiable_amenities) && in_array('Other', $this->non_negotiable_amenities);
+    }
 
     protected $listeners = [
         'refreshComponent' => '$refresh',
@@ -1009,12 +1019,10 @@ class TenantAgentAuctionEdit extends Component
     {
         $this->view_preference = $selectedValues;
 
-        // If "Other" is not selected, hide the "Other" input
-        if (in_array('Other', $selectedValues)) {
-            $this->is_other_visible = true;
-        } else {
-            $this->is_other_visible = false;
-            $this->other_preferences = '';  // Clear the "Other" field if not selected
+        // Visibility is handled by computed property getIsOtherVisibleProperty()
+        // Clear the other_preferences field if "Other" is not selected
+        if (!in_array('Other', $selectedValues)) {
+            $this->other_preferences = '';
         }
     }
 

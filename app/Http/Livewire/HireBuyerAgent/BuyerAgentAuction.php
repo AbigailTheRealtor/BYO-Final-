@@ -448,6 +448,17 @@ class BuyerAgentAuction extends Component
 
     ];
 
+    // Computed Properties
+    public function getIsOtherVisibleProperty()
+    {
+        return is_array($this->view_preference) && in_array('Other', $this->view_preference);
+    }
+
+    public function getIsOtherNonNegotiableVisibleProperty()
+    {
+        return is_array($this->non_negotiable_amenities) && in_array('Other', $this->non_negotiable_amenities);
+    }
+
     // Methods
     public function setDownPaymentType($type)
     {
@@ -1365,7 +1376,17 @@ class BuyerAgentAuction extends Component
             // }
             
             // Dispatch browser event to sync select values after draft loads
-            $this->dispatchBrowserEvent('draftLoaded');
+            $this->dispatchBrowserEvent('buyer-agent-select2-sync', [
+                'view_preference' => $this->view_preference,
+                'non_negotiable_amenities' => $this->non_negotiable_amenities,
+                'pool_type' => $this->pool_type,
+                'offered_financing' => $this->offered_financing,
+                'services' => $this->services,
+                'lease_for' => $this->lease_for,
+                'credit_scroe_rating' => $this->credit_scroe_rating,
+                'flat_fee_services' => $this->flat_fee_services,
+                'number_of_unit_type' => $this->number_of_unit_type,
+            ]);
         }
     }
 

@@ -705,10 +705,11 @@
 </div>
 
 <!-- Other Preferences Input (Hidden or Visible based on Livewire state) -->
-<div class="form-group" id="other_preferences" style="display: {{ $is_other_visible ? 'block' : 'none' }}">
+<div class="form-group" id="other_preferences" style="display: {{ $this->is_other_visible ? 'block' : 'none' }}">
+    <label class="fw-bold">Other View Preference:</label>
     <div class="input-cover">
         <input type="text" wire:model="other_preferences" class="form-control has-icon"
-            data-icon="fa-solid fa-tree" placeholder="Enter view preference (e.g., Lake, Desert, Courtyard)" >
+            data-icon="fa-solid fa-tree" placeholder="Enter view preference (e.g., Lake, Desert, Courtyard)">
     </div>
     <span class="error mt-2" id="other_preferences_error"></span>
 </div>

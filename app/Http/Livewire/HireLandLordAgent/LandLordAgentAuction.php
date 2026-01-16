@@ -525,6 +525,17 @@ class LandLordAgentAuction extends Component
 
     ];
 
+    // Computed Properties
+    public function getIsOtherVisibleProperty()
+    {
+        return is_array($this->view_preference) && in_array('Other', $this->view_preference);
+    }
+
+    public function getIsOtherNonNegotiableVisibleProperty()
+    {
+        return is_array($this->non_negotiable_amenities) && in_array('Other', $this->non_negotiable_amenities);
+    }
+
     // Methods
 
     /**
