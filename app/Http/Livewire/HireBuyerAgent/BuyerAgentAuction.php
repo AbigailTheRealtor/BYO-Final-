@@ -83,6 +83,7 @@ class BuyerAgentAuction extends Component
     public $loan_duration = '';
     public $prepayment_penalty = '';
     public $prepayment_penalty_amount = '';
+    public $balloon_payment = '';
     public $balloon_payment_amount = '';
     public $balloon_payment_date = '';
     public $assumable_terms = '';
@@ -1119,6 +1120,7 @@ class BuyerAgentAuction extends Component
             $this->loan_duration = $auction->get->loan_duration;
             $this->prepayment_penalty = $auction->get->prepayment_penalty;
             $this->prepayment_penalty_amount = $auction->get->prepayment_penalty_amount;
+            $this->balloon_payment = $auction->get->balloon_payment ?? '';
             $this->balloon_payment_amount = $auction->get->balloon_payment_amount;
             $this->balloon_payment_date = $auction->get->balloon_payment_date;
             $this->assumable_terms = $auction->get->assumable_terms;
@@ -1461,6 +1463,7 @@ class BuyerAgentAuction extends Component
         $auction->saveMeta('loan_duration', $this->loan_duration);
         $auction->saveMeta('prepayment_penalty', $this->prepayment_penalty);
         $auction->saveMeta('prepayment_penalty_amount', $this->prepayment_penalty_amount);
+        $auction->saveMeta('balloon_payment', $this->balloon_payment);
         $auction->saveMeta('balloon_payment_amount', $this->balloon_payment_amount);
         $auction->saveMeta('balloon_payment_date', $this->balloon_payment_date);
         $auction->saveMeta('assumable_terms', $this->assumable_terms);
