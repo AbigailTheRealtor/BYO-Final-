@@ -797,21 +797,31 @@
                             <!-- Offered Financing -->
                             @if (@$auction->get->offered_financing != null)
                                 @php
-                                    $displayFinancing = str_replace('"', '', @$auction->get->offered_financing);
-                                    $displayOtherFinancing = str_replace('"', '', @$auction->get->other_financing);
+                                    $financingRaw = @$auction->get->offered_financing;
+                                    $financingItems = is_array($financingRaw) ? $financingRaw : (is_string($financingRaw) ? json_decode($financingRaw, true) ?? [$financingRaw] : [$financingRaw]);
+                                    $displayOtherFinancing = str_replace('"', '', @$auction->get->other_financing ?? '');
                                 @endphp
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Offered Financing/Currency:
-                                    @if ($displayFinancing != 'Other')
-                                        <span class="removeBold badge bg-secondary">{{ $displayFinancing }}</span>
-                                    @elseif (@$auction->get->other_financing)
+                                    @foreach ($financingItems as $financingItem)
+                                        @if ($financingItem != 'Other')
+                                            <span class="removeBold badge bg-secondary">{{ str_replace('"', '', $financingItem) }}</span>
+                                        @endif
+                                    @endforeach
+                                    @if (in_array('Other', $financingItems) && @$auction->get->other_financing)
                                         <span class="removeBold badge bg-secondary">{{ $displayOtherFinancing }}</span>
                                     @endif
                                 </div>
                             @endif
 
+                            @php
+                                // Prepare financing items array for conditional checks
+                                $financingForChecks = @$auction->get->offered_financing;
+                                $financingArray = is_array($financingForChecks) ? $financingForChecks : (is_string($financingForChecks) ? json_decode($financingForChecks, true) ?? [$financingForChecks] : []);
+                            @endphp
+
                             <!-- Cash Financing Details -->
-                            @if (str_replace('"', '', @$auction->get->offered_financing) === 'Cash' && @$auction->get->cash_budget)
+                            @if (in_array('Cash', $financingArray) && @$auction->get->cash_budget)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Offered Cash Amount:
                                     <span class="removeBold">${{ @$auction->get->cash_budget }}</span>
@@ -819,7 +829,7 @@
                             @endif
 
                             <!-- Loan Pre-Approval Details -->
-                            @if (in_array(str_replace('"', '', @$auction->get->offered_financing), ['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA']))
+                            @if (count(array_intersect($financingArray, ['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'])) > 0)
                                 @if (@$auction->get->pre_approved)
                                     @php
                                         $displayPreApproved = str_replace('"', '', @$auction->get->pre_approved);
@@ -839,7 +849,7 @@
                             @endif
 
                             <!-- Seller Financing Details -->
-                            @if (str_replace('"', '', @$auction->get->offered_financing) === 'Seller Financing')
+                            @if (in_array('Seller Financing', $financingArray))
                                 @if (@$auction->get->purchase_price)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Desired Purchase Price:
@@ -926,7 +936,7 @@
                             @endif
 
                             <!-- Assumable Financing Details - ONLY SHOW IF offered_financing IS "Assumable" -->
-                            @if (str_replace('"', '', @$auction->get->offered_financing) === 'Assumable')
+                            @if (in_array('Assumable', $financingArray))
                                 @if (@$auction->get->assumable_terms)
                                     @php
                                         $displayAssumableTerms = str_replace('"', '', @$auction->get->assumable_terms);
@@ -960,7 +970,7 @@
                             @endif
 
                             <!-- Exchange/Trade Details - ONLY SHOW IF offered_financing IS "Exchange/Trade" -->
-                            @if (str_replace('"', '', @$auction->get->offered_financing) === 'Exchange/Trade')
+                            @if (in_array('Exchange/Trade', $financingArray))
                                 @if (@$auction->get->exchange_item)
                                     @php
                                         $displayExchangeItem = str_replace('"', '', @$auction->get->exchange_item);
@@ -1011,7 +1021,7 @@
                             @endif
 
                             <!-- Lease Option Details - ONLY SHOW IF offered_financing IS "Lease Option" -->
-                            @if (str_replace('"', '', @$auction->get->offered_financing) === 'Lease Option')
+                            @if (in_array('Lease Option', $financingArray))
                                 @if (@$auction->get->lease_option_price)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Buyer’s Desired Offering Price for Lease Option:
@@ -1072,7 +1082,7 @@
                             @endif
 
                             <!-- Lease Purchase Details - ONLY SHOW IF offered_financing IS "Lease Purchase" -->
-                            @if (str_replace('"', '', @$auction->get->offered_financing) === 'Lease Purchase')
+                            @if (in_array('Lease Purchase', $financingArray))
                                 @if (@$auction->get->lease_purchase_price)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Buyer’s Desired Offering Price for Lease Purchase:
@@ -1133,7 +1143,7 @@
                             @endif
 
                             <!-- Cryptocurrency Details - ONLY SHOW IF offered_financing IS "Cryptocurrency" -->
-                            @if (str_replace('"', '', @$auction->get->offered_financing) === 'Cryptocurrency')
+                            @if (in_array('Cryptocurrency', $financingArray))
                                 @if (@$auction->get->cryptocurrency_type)
                                     @php
                                         $displayCryptoType = str_replace('"', '', @$auction->get->cryptocurrency_type);
@@ -1160,7 +1170,7 @@
                             @endif
 
                             <!-- NFT Details - ONLY SHOW IF offered_financing IS "Non-Fungible Token (NFT)" -->
-                            @if (str_replace('"', '', @$auction->get->offered_financing) === 'Non-Fungible Token (NFT)')
+                            @if (in_array('Non-Fungible Token (NFT)', $financingArray))
                                 @if (@$auction->get->nft_description)
                                     @php
                                         $displayNFTDescription = str_replace('"', '', @$auction->get->nft_description);
