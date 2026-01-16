@@ -142,6 +142,8 @@ class BuyerAgentAuctionEdit extends Component
     public $real_estate_purchase = '';
     public $number_of_unit = '';
     public $number_of_unit_other = '';
+    public $number_of_unit_type = [];
+    public $number_of_unit_type_other = '';
     public $minimum_annual_net_income = '';
     public $minimum_cap_rate = '';
     public $assets = '';
@@ -1117,6 +1119,9 @@ class BuyerAgentAuctionEdit extends Component
             $this->real_estate_purchase = $auction->get->real_estate_purchase ?? null;
             $this->number_of_unit = $auction->get->number_of_unit ?? null;
             $this->number_of_unit_other = $auction->get->number_of_unit_other ?? null;
+            $numberUnitTypeRaw = $auction->get->number_of_unit_type ?? null;
+            $this->number_of_unit_type = $numberUnitTypeRaw ? (is_string($numberUnitTypeRaw) ? json_decode($numberUnitTypeRaw, true) ?? [] : (array)$numberUnitTypeRaw) : [];
+            $this->number_of_unit_type_other = $auction->get->number_of_unit_type_other ?? '';
             $this->minimum_annual_net_income = $auction->get->minimum_annual_net_income ?? null;
             $this->leasing_55_plus = $auction->get->leasing_55_plus ?? null;
 
@@ -1467,6 +1472,8 @@ class BuyerAgentAuctionEdit extends Component
         $auction->saveMeta('real_estate_purchase', $this->real_estate_purchase);
         $auction->saveMeta('number_of_unit', $this->number_of_unit);
         $auction->saveMeta('number_of_unit_other', $this->number_of_unit_other);
+        $auction->saveMeta('number_of_unit_type', json_encode($this->number_of_unit_type));
+        $auction->saveMeta('number_of_unit_type_other', $this->number_of_unit_type_other);
         $auction->saveMeta('minimum_annual_net_income', $this->minimum_annual_net_income);
         $auction->saveMeta('leasing_55_plus', $this->leasing_55_plus);
 
