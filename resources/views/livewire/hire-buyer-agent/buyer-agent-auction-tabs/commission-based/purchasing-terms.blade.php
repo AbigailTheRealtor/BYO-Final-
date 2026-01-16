@@ -1,6 +1,22 @@
 @php
-    // Ensure offered_financing is always an array to prevent in_array() errors
-    $offered_financing = is_array($offered_financing ?? []) ? ($offered_financing ?? []) : (array)($offered_financing ?? []);
+    // Ensure multiselect fields are always arrays to prevent in_array() errors
+    // Handles: arrays (pass through), JSON strings (decode), plain strings (wrap in array), null/empty (default to [])
+    if (!is_array($offered_financing ?? null)) {
+        if (is_string($offered_financing) && !empty($offered_financing)) {
+            $decoded = json_decode($offered_financing, true);
+            $offered_financing = (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) ? $decoded : [$offered_financing];
+        } else {
+            $offered_financing = [];
+        }
+    }
+    if (!is_array($sale_provision ?? null)) {
+        if (is_string($sale_provision) && !empty($sale_provision)) {
+            $decoded = json_decode($sale_provision, true);
+            $sale_provision = (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) ? $decoded : [$sale_provision];
+        } else {
+            $sale_provision = [];
+        }
+    }
 @endphp
 <!-- Section Heading -->
 <h3>Purchasing Terms</h3>

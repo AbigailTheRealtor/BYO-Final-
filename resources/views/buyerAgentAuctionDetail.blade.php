@@ -729,10 +729,21 @@
                             </div>
 
                             <!-- Special Sale Provisions -->
-                            @if (@$auction->get->sale_provision != null && count(@$auction->get->sale_provision) > 0)
+                            @php
+                                $saleProvisionRaw = @$auction->get->sale_provision;
+                                if (is_array($saleProvisionRaw)) {
+                                    $saleProvisionArray = $saleProvisionRaw;
+                                } elseif (is_string($saleProvisionRaw) && !empty($saleProvisionRaw)) {
+                                    $decoded = json_decode($saleProvisionRaw, true);
+                                    $saleProvisionArray = (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) ? $decoded : [$saleProvisionRaw];
+                                } else {
+                                    $saleProvisionArray = [];
+                                }
+                            @endphp
+                            @if (!empty($saleProvisionArray) && count($saleProvisionArray) > 0)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Acceptable Special Sale Provisions:
-                                    @foreach (@$auction->get->sale_provision as $sale)
+                                    @foreach ($saleProvisionArray as $sale)
                                         @if ($sale != 'Other')
                                             @php $displaySale = str_replace('"', '', $sale); @endphp
                                             <span class="removeBold badge bg-secondary">{{ $displaySale }}</span>
@@ -744,7 +755,7 @@
                             @endif
 
                             <!-- Assignment Contract Details -->
-                            @if (in_array('Assignment Contract', @$auction->get->sale_provision ?? []))
+                            @if (in_array('Assignment Contract', $saleProvisionArray))
                                 @if (@$auction->get->sale_provision_assignment)
                                     @php
                                         $displayAssignment = str_replace('"', '', @$auction->get->sale_provision_assignment);
