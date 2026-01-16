@@ -88,6 +88,13 @@ class BuyerAgentAuctionEdit extends Component
     public $max_monthly_payment = '';
     public $gap_payment_type = '$';
     public $gap_payment_amount = '';
+    
+    // Seller Financing Additional Properties
+    public $seller_amortization_type = '';
+    public $seller_amortization_other = '';
+    public $seller_payment_frequency = '';
+    public $seller_payment_frequency_other = '';
+    public $seller_late_fee_amount = '';
 
     // Exchange/Trade Properties
     public $exchange_item = '';
@@ -96,6 +103,10 @@ class BuyerAgentAuctionEdit extends Component
     public $exchange_item_condition = '';
     public $additional_cash = '';
     public $value_determination = '';
+    public $exchange_transfer_method = '';
+    public $exchange_liens = '';
+    public $exchange_liens_details = '';
+    public $exchange_inspection_rights = '';
 
     // Lease Option Properties
     public $interested_lease_option = '';
@@ -122,6 +133,9 @@ class BuyerAgentAuctionEdit extends Component
     public $lease_purchase_option_fee_amount = '';
     public $lease_purchase_maintenance = '';
     public $lease_purchase_extension_terms = '';
+    public $lease_purchase_rent_credit = '';
+    public $lease_purchase_rent_credit_amount = '';
+    public $lease_purchase_deposit = '';
 
     // Cryptocurrency Properties
     public $cryptocurrency_type = '';
@@ -1065,6 +1079,13 @@ class BuyerAgentAuctionEdit extends Component
             $this->max_monthly_payment = $auction->get->max_monthly_payment ?? '';
             $this->gap_payment_type = $auction->get->gap_payment_type ?? '$';
             $this->gap_payment_amount = $auction->get->gap_payment_amount ?? '';
+            
+            // Seller Financing Additional Fields
+            $this->seller_amortization_type = $auction->get->seller_amortization_type ?? '';
+            $this->seller_amortization_other = $auction->get->seller_amortization_other ?? '';
+            $this->seller_payment_frequency = $auction->get->seller_payment_frequency ?? '';
+            $this->seller_payment_frequency_other = $auction->get->seller_payment_frequency_other ?? '';
+            $this->seller_late_fee_amount = $auction->get->seller_late_fee_amount ?? '';
 
             // Exchange/Trade
             $this->exchange_item = $auction->get->exchange_item ?? '';
@@ -1073,6 +1094,10 @@ class BuyerAgentAuctionEdit extends Component
             $this->exchange_item_condition = $auction->get->exchange_item_condition ?? '';
             $this->additional_cash = $auction->get->additional_cash ?? '';
             $this->value_determination = $auction->get->value_determination ?? '';
+            $this->exchange_transfer_method = $auction->get->exchange_transfer_method ?? '';
+            $this->exchange_liens = $auction->get->exchange_liens ?? '';
+            $this->exchange_liens_details = $auction->get->exchange_liens_details ?? '';
+            $this->exchange_inspection_rights = $auction->get->exchange_inspection_rights ?? '';
 
             // Lease Option
             $this->interested_lease_option = $auction->get->interested_lease_option ?? '';
@@ -1099,6 +1124,9 @@ class BuyerAgentAuctionEdit extends Component
             $this->lease_purchase_option_fee_amount = $auction->get->lease_purchase_option_fee_amount ?? '';
             $this->lease_purchase_maintenance = $auction->get->lease_purchase_maintenance ?? '';
             $this->lease_purchase_extension_terms = $auction->get->lease_purchase_extension_terms ?? '';
+            $this->lease_purchase_rent_credit = $auction->get->lease_purchase_rent_credit ?? '';
+            $this->lease_purchase_rent_credit_amount = $auction->get->lease_purchase_rent_credit_amount ?? '';
+            $this->lease_purchase_deposit = $auction->get->lease_purchase_deposit ?? '';
 
             // Cryptocurrency
             $this->cryptocurrency_type = $auction->get->cryptocurrency_type ?? '';
@@ -1444,6 +1472,13 @@ class BuyerAgentAuctionEdit extends Component
         $auction->saveMeta('max_monthly_payment', $this->stripCommas($this->max_monthly_payment));
         $auction->saveMeta('gap_payment_type', $this->gap_payment_type);
         $auction->saveMeta('gap_payment_amount', $this->stripCommas($this->gap_payment_amount));
+        
+        // Seller Financing Additional Fields
+        $auction->saveMeta('seller_amortization_type', $this->seller_amortization_type);
+        $auction->saveMeta('seller_amortization_other', $this->seller_amortization_other);
+        $auction->saveMeta('seller_payment_frequency', $this->seller_payment_frequency);
+        $auction->saveMeta('seller_payment_frequency_other', $this->seller_payment_frequency_other);
+        $auction->saveMeta('seller_late_fee_amount', $this->seller_late_fee_amount);
 
         // Exchange / Trade
         $auction->saveMeta('exchange_item', $this->exchange_item);
@@ -1452,6 +1487,10 @@ class BuyerAgentAuctionEdit extends Component
         $auction->saveMeta('exchange_item_condition', $this->exchange_item_condition);
         $auction->saveMeta('additional_cash', $this->stripCommas($this->additional_cash));
         $auction->saveMeta('value_determination', $this->value_determination);
+        $auction->saveMeta('exchange_transfer_method', $this->exchange_transfer_method);
+        $auction->saveMeta('exchange_liens', $this->exchange_liens);
+        $auction->saveMeta('exchange_liens_details', $this->exchange_liens_details);
+        $auction->saveMeta('exchange_inspection_rights', $this->exchange_inspection_rights);
 
         // Lease Option
         $auction->saveMeta('interested_lease_option', $this->interested_lease_option);
@@ -1478,6 +1517,9 @@ class BuyerAgentAuctionEdit extends Component
         $auction->saveMeta('lease_purchase_option_fee_amount', $this->stripCommas($this->lease_purchase_option_fee_amount));
         $auction->saveMeta('lease_purchase_maintenance', $this->lease_purchase_maintenance);
         $auction->saveMeta('lease_purchase_extension_terms', $this->lease_purchase_extension_terms);
+        $auction->saveMeta('lease_purchase_rent_credit', $this->lease_purchase_rent_credit);
+        $auction->saveMeta('lease_purchase_rent_credit_amount', $this->stripCommas($this->lease_purchase_rent_credit_amount));
+        $auction->saveMeta('lease_purchase_deposit', $this->stripCommas($this->lease_purchase_deposit));
 
         // Cryptocurrency
         $auction->saveMeta('cryptocurrency_type', $this->cryptocurrency_type);
