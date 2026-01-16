@@ -1128,7 +1128,17 @@
 
             // Update Livewire property on change
             $('#property_items').on('change', function(e) {
-                let selectedValues = $(this).val();
+                let selectedValues = $(this).val() || [];
+                
+                // Handle "All" selection - if "All" is selected, clear other selections
+                if (selectedValues.includes('All') && selectedValues.length > 1) {
+                    selectedValues = ['All'];
+                    $(this).val(selectedValues).trigger('change.select2');
+                }
+                
+                // Remove duplicates
+                selectedValues = [...new Set(selectedValues)];
+                
                 @this.set('property_items', selectedValues);
             });
 
@@ -1156,7 +1166,17 @@
 
             // Update Livewire property on change
             $('#non_negotiable_amenities').on('change', function(e) {
-                let selectedValues = $(this).val();
+                let selectedValues = $(this).val() || [];
+                
+                // Handle "All" selection - if "All" is selected, clear other selections
+                if (selectedValues.includes('All') && selectedValues.length > 1) {
+                    selectedValues = ['All'];
+                    $(this).val(selectedValues).trigger('change.select2');
+                }
+                
+                // Remove duplicates
+                selectedValues = [...new Set(selectedValues)];
+                
                 @this.set('non_negotiable_amenities', selectedValues);
             });
 
@@ -1347,7 +1367,18 @@
 
             // Listen for changes on the dropdown and update Livewire
             $('#view_preference').on('change', function() {
-                let selectedValues = $(this).val(); // Get selected values as an array
+                let selectedValues = $(this).val() || []; // Get selected values as an array
+                
+                // Handle "All" selection - if "All" is selected, clear other selections
+                if (selectedValues.includes('All') && selectedValues.length > 1) {
+                    // User just selected "All" - keep only "All"
+                    selectedValues = ['All'];
+                    $(this).val(selectedValues).trigger('change.select2');
+                }
+                
+                // Remove duplicates using array_unique pattern
+                selectedValues = [...new Set(selectedValues)];
+                
                 Livewire.emit('updatePreference', selectedValues); // Send to Livewire
 
                 // Check if "Other" is in the selected values
