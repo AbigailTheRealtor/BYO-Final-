@@ -1599,7 +1599,7 @@ class BuyerAgentAuction extends Component
         $auction->saveMeta('seller_amortization_other', $this->seller_amortization_other);
         $auction->saveMeta('seller_payment_frequency', $this->seller_payment_frequency);
         $auction->saveMeta('seller_payment_frequency_other', $this->seller_payment_frequency_other);
-        $auction->saveMeta('seller_late_fee_amount', $this->seller_late_fee_amount);
+        $auction->saveMeta('seller_late_fee_amount', $this->stripCommas($this->seller_late_fee_amount));
 
         // Exchange / Trade
         $auction->saveMeta('exchange_item', $this->exchange_item);
