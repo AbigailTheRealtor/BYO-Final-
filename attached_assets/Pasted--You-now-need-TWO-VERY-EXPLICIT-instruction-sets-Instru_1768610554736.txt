@@ -1,0 +1,143 @@
+🚨 You now need TWO VERY EXPLICIT instruction sets
+❗ Instruction Set A — FIX LISTING RENDERING (NON-NEGOTIABLE)
+
+Send this exactly to Replit:
+
+🔴 BLOCKER: Buyer listing is NOT rendering saved financing follow-up fields
+
+Context:
+These fields are confirmed saved in buyer_agent_auction_metas but do NOT appear on the public listing or edit view.
+
+Affected file:
+resources/views/buyerAgentAuctionDetail.blade.php
+
+REQUIRED CHANGES — DISPLAY LAYER
+Seller Financing
+
+Add explicit display rows for:
+
+Late Payment Fee
+
+@if($auction->get->seller_late_fee_amount !== null && $auction->get->seller_late_fee_amount !== '')
+<div>Late Payment Fee: {{ $auction->get->seller_late_fee_amount }}</div>
+@endif
+
+
+⚠️ Do NOT rely on truthy checks only.
+
+Exchange / Trade
+
+Add display rows for ALL of the following:
+
+@if($auction->get->exchange_transfer_method !== null)
+<div>Transfer Method / Logistics: {{ $auction->get->exchange_transfer_method }}</div>
+@endif
+
+@if($auction->get->exchange_liens !== null)
+<div>Liens / Encumbrances Disclosure: {{ $auction->get->exchange_liens }}</div>
+@endif
+
+@if($auction->get->exchange_inspection_rights !== null)
+<div>Inspection / Verification Rights: {{ $auction->get->exchange_inspection_rights }}</div>
+@endif
+
+Cryptocurrency
+
+Add display rows for:
+
+@if($auction->get->crypto_exchange_method !== null)
+<div>Exchange / Conversion Method: {{ $auction->get->crypto_exchange_method }}</div>
+@endif
+
+@if($auction->get->crypto_custodian_wallet !== null)
+<div>Custodian / Wallet for Transfer: {{ $auction->get->crypto_custodian_wallet }}</div>
+@endif
+
+@if($auction->get->crypto_transaction_fees !== null)
+<div>Transaction Fees Responsibility: {{ $auction->get->crypto_transaction_fees }}</div>
+@endif
+
+@if($auction->get->crypto_timing_of_transfer !== null)
+<div>Timing of Transfer: {{ $auction->get->crypto_timing_of_transfer }}</div>
+@endif
+
+NFT
+
+Add display rows for:
+
+@if($auction->get->nft_valuation_method !== null)
+<div>NFT Valuation Method: {{ $auction->get->nft_valuation_method }}</div>
+@endif
+
+@if($auction->get->nft_transfer_method !== null)
+<div>NFT Transfer Method: {{ $auction->get->nft_transfer_method }}</div>
+@endif
+
+@if($auction->get->nft_gas_fees !== null)
+<div>Transaction Fees Responsibility (Gas Fees): {{ $auction->get->nft_gas_fees }}</div>
+@endif
+
+❗ ACCEPTANCE CRITERIA
+
+These fields must show on existing listings where DB already has values
+
+Must not require re-saving listings
+
+❗ Instruction Set B — FIX DRAFT / EDIT HYDRATION (SECOND BLOCKER)
+
+This is why inputs are blank when editing.
+
+Required fix (simple, not theoretical)
+
+In both components:
+
+BuyerAgentAuction.php
+BuyerAgentAuctionEdit.php
+
+
+Inside loadDraft() and loadAuctionData():
+
+➡️ Add assignments for EVERY follow-up field that is rendered on the listing
+
+Example:
+
+$this->exchange_transfer_method = $auction->get->exchange_transfer_method ?? '';
+$this->exchange_liens = $auction->get->exchange_liens ?? '';
+$this->exchange_inspection_rights = $auction->get->exchange_inspection_rights ?? '';
+
+$this->crypto_exchange_method = $auction->get->crypto_exchange_method ?? '';
+$this->crypto_custodian_wallet = $auction->get->crypto_custodian_wallet ?? '';
+$this->crypto_transaction_fees = $auction->get->crypto_transaction_fees ?? '';
+$this->crypto_timing_of_transfer = $auction->get->crypto_timing_of_transfer ?? '';
+
+$this->nft_valuation_method = $auction->get->nft_valuation_method ?? '';
+$this->nft_transfer_method = $auction->get->nft_transfer_method ?? '';
+$this->nft_gas_fees = $auction->get->nft_gas_fees ?? '';
+
+
+⚠️ If it renders on the listing, it MUST hydrate in Edit.
+No exceptions.
+
+🧠 Why things “keep disappearing”
+
+Every time they:
+
+add reset logic
+
+tighten conditionals
+
+refactor financing maps
+
+…they accidentally remove render coverage, not persistence.
+
+This is now a pure view-layer completion task, not a Livewire mystery.
+
+What I recommend you do next (calm + effective)
+
+Send Instruction Set A first
+
+Require screenshots of the listing after fix
+
+Then apply Instruction Set B
+
+Only after both pass → stop touching financing logic
