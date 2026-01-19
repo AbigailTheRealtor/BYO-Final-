@@ -54,7 +54,7 @@
 </div>
 
 <!-- Other Special Sale Provision Input -->
-@if (in_array('Other', $sale_provision))
+@if (is_array($sale_provision) && in_array('Other', $sale_provision))
     <div class="form-group mt-3">
         {{-- Label removed to match Seller flow --}}
         <div class="input-cover">
@@ -66,7 +66,7 @@
 @endif
 
 <!-- Assignment Contract Flow -->
-@if (in_array('Assignment Contract', $sale_provision))
+@if (is_array($sale_provision) && in_array('Assignment Contract', $sale_provision))
     <!-- Buyer Under Contract Question -->
     <div class="form-group mt-3">
         <label class="fw-bold">Buyer Open to Purchasing an Assignment Contract:</label>
