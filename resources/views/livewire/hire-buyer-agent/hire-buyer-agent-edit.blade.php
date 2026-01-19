@@ -889,10 +889,10 @@
                         <!-- Navigation Buttons -->
                         <div class="d-flex justify-content-between form-group mt-4">
                             <div>
-                                <button type="button" class="btn btn-secondary wizard-step-back">Back</button>
+                                <button type="button" class="btn btn-secondary wizard-step-back" data-wizard-back>Back</button>
                             </div>
                             <div>
-                                <button type="button" class="btn btn-primary wizard-step-next">Next</button>
+                                <button type="button" class="btn btn-primary wizard-step-next" data-wizard-next>Next</button>
 
                                 <button type="submit" class="btn btn-success wizard-step-finish disabled"
                                     id="save-button" wire:loading.attr="disabled" wire:target="store">
@@ -914,7 +914,186 @@
     <script>
         let currentServiceType = null;
 
+        // ========== DELEGATED EVENT HANDLER (survives Livewire re-renders) ==========
+        function attachWizardDelegatedHandlers() {
+            if (window.__buyerEditWizardDelegatedHandlersAttached) return;
+            window.__buyerEditWizardDelegatedHandlersAttached = true;
+
+            document.addEventListener('click', function(e) {
+                const nextBtn = e.target.closest('[data-wizard-next]');
+                const backBtn = e.target.closest('[data-wizard-back]');
+
+                if (nextBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.buyerEditWizardNextStep?.();
+                    return;
+                }
+
+                if (backBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.buyerEditWizardPrevStep?.();
+                    return;
+                }
+            }, true);
+        }
+
+        // Global next step function
+        window.buyerEditWizardNextStep = function() {
+            const currentTab = document.querySelector('.nav-tabs .nav-link.active');
+            if (!currentTab) return;
+
+            const currentTabContent = document.querySelector(currentTab.getAttribute('data-bs-target'));
+            if (!currentTabContent) return;
+
+            let isValid = true;
+
+            // Validate all required fields in the current tab
+            const requiredFields = currentTabContent.querySelectorAll(
+                'input[required], select[required], textarea[required]');
+            if (requiredFields) {
+                requiredFields.forEach(function(input) {
+                    // Skip hidden or disabled fields
+                    if (input.type === 'hidden' || input.disabled || !isElementVisibleGlobal(input)) {
+                        return;
+                    }
+                    
+                    if (!input.value) {
+                        isValid = false;
+                        input.classList.add('is-invalid');
+
+                        const formGroup = input.closest('.form-group');
+                        if (formGroup) {
+                            const errorMessageContainer = formGroup.querySelector('.error');
+                            if (!errorMessageContainer) {
+                                const errorMessage = document.createElement('div');
+                                errorMessage.className = 'error mt-2';
+                                errorMessage.textContent = 'This field is required.';
+                                formGroup.appendChild(errorMessage);
+                            } else {
+                                errorMessageContainer.textContent = 'This field is required.';
+                            }
+                        }
+                    } else {
+                        input.classList.remove('is-invalid');
+                        const formGroup = input.closest('.form-group');
+                        if (formGroup) {
+                            const errorMessageContainer = formGroup.querySelector('.error');
+                            if (errorMessageContainer) {
+                                errorMessageContainer.remove();
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Validate services tab if on it
+            if (currentTabContent.id === 'services') {
+                if (!validateServicesTabGlobal(currentTabContent)) {
+                    isValid = false;
+                }
+            }
+
+            if (!isValid) return;
+
+            // Go to next tab
+            const nextTab = currentTab.parentElement.nextElementSibling?.querySelector('.nav-link');
+            if (nextTab) {
+                const allTabs = Array.from(document.querySelectorAll('.nav-link'));
+                Livewire.emit('setActiveTab', allTabs.indexOf(nextTab));
+                nextTab.click();
+            }
+
+            // Update form validity
+            if (typeof checkFormValidity === 'function') {
+                checkFormValidity();
+            }
+
+            // Enable save button if on last tab
+            const saveButton = document.querySelector('.wizard-step-finish');
+            if (saveButton && !nextTab) {
+                saveButton.disabled = false;
+            }
+        };
+
+        // Global prev step function
+        window.buyerEditWizardPrevStep = function() {
+            const currentTab = document.querySelector('.nav-tabs .nav-link.active');
+            const prevTab = currentTab?.parentElement.previousElementSibling?.querySelector('.nav-link');
+            if (prevTab) {
+                Livewire.emit('setActiveTab', Array.from(document.querySelectorAll('.nav-link'))
+                    .indexOf(prevTab));
+                prevTab.click();
+            }
+        };
+
+        // Global helper to check element visibility
+        function isElementVisibleGlobal(element) {
+            if (!element) return false;
+            if (element.disabled) return false;
+            if (element.type === 'hidden') return false;
+            
+            let el = element;
+            while (el && el !== document.body) {
+                if (el.classList && (
+                    el.classList.contains('d-none') || 
+                    el.classList.contains('hidden') ||
+                    (el.classList.contains('collapse') && !el.classList.contains('show'))
+                )) {
+                    return false;
+                }
+                
+                const style = window.getComputedStyle(el);
+                if (style.display === 'none' || style.visibility === 'hidden') {
+                    return false;
+                }
+                
+                el = el.parentElement;
+            }
+            return true;
+        }
+
+        // Global services tab validation
+        function validateServicesTabGlobal(tabContent) {
+            if (!tabContent || tabContent.id !== 'services') return true;
+
+            let isValid = true;
+
+            // Check "Other Services" if enabled
+            const otherCheckbox = tabContent.querySelector('#other-services-checkbox');
+            const otherTextarea = tabContent.querySelector('#other-services-input');
+            const hasOtherDescription = otherTextarea && otherTextarea.value.trim() !== '';
+
+            // Clear previous errors
+            const existingErrors = tabContent.querySelectorAll('.service-error');
+            if (existingErrors) {
+                existingErrors.forEach(el => el.remove());
+            }
+            if (otherTextarea) otherTextarea.classList.remove('is-invalid');
+
+            if (otherCheckbox && otherCheckbox.checked && (!otherTextarea || !hasOtherDescription)) {
+                isValid = false;
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'service-error error mt-2';
+                errorDiv.textContent = 'Please describe the additional services you require.';
+
+                if (otherTextarea) {
+                    otherTextarea.classList.add('is-invalid');
+                    const container = otherTextarea.closest('.mb-3') || otherTextarea.parentNode;
+                    if (container) {
+                        container.appendChild(errorDiv);
+                    }
+                }
+            }
+
+            return isValid;
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
+            // Attach delegated handlers ONCE (survives all re-renders)
+            attachWizardDelegatedHandlers();
+
             // Detect which service is preselected on load
             if (document.getElementById('fullService')?.checked) {
                 currentServiceType = 'full_service';
@@ -2171,6 +2350,9 @@
         }
 
         Livewire.hook('message.processed', () => {
+            // Ensure delegated handlers are attached (guarded, safe to call multiple times)
+            attachWizardDelegatedHandlers();
+            
             addIconsToInputs();
             checkRepresentationStatus();
 
@@ -2192,6 +2374,8 @@
                 currentServiceType = newServiceType;
             }
 
+            // Note: removeWizardEventListeners() clones buttons but our delegated handlers
+            // at document level still work. Keep for legacy button cleanup.
             removeWizardEventListeners();
 
             if (currentServiceType === 'full_service') {
