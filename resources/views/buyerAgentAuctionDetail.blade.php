@@ -872,7 +872,7 @@
                                 </div>
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Offered Cash Amount:
-                                    <span class="removeBold">${{ @$auction->get->cash_budget }}</span>
+                                    <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->cash_budget)) }}</span>
                                 </div>
                             @endif
 
@@ -899,7 +899,7 @@
                                 @if (@$auction->get->pre_approved === 'Yes' && @$auction->get->pre_approval_amount)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Buyer Pre-Approval Amount:
-                                        <span class="removeBold">${{ @$auction->get->pre_approval_amount }}</span>
+                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->pre_approval_amount)) }}</span>
                                     </div>
                                 @endif
                             @endif
@@ -912,7 +912,7 @@
                                 @if (@$auction->get->purchase_price)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Desired Purchase Price:
-                                        <span class="removeBold">${{ @$auction->get->purchase_price }}</span>
+                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->purchase_price)) }}</span>
                                     </div>
                                 @endif
 
@@ -960,7 +960,7 @@
                                 @if (@$auction->get->prepayment_penalty === 'Yes' && @$auction->get->prepayment_penalty_amount)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Prepayment Penalty Amount:
-                                        <span class="removeBold">${{ @$auction->get->prepayment_penalty_amount }}</span>
+                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->prepayment_penalty_amount)) }}</span>
                                     </div>
                                 @endif
 
@@ -978,7 +978,7 @@
                                     @if (@$auction->get->balloon_payment_amount)
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
                                             Balloon Payment Amount:
-                                            <span class="removeBold">${{ @$auction->get->balloon_payment_amount }}</span>
+                                            <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->balloon_payment_amount)) }}</span>
                                         </div>
                                     @endif
 
@@ -1046,14 +1046,14 @@
                                 @if (@$auction->get->max_monthly_payment)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Maximum Monthly Payment (Principal & Interest):
-                                        <span class="removeBold">${{ @$auction->get->max_monthly_payment }}</span>
+                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->max_monthly_payment)) }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->gap_payment_amount)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Down Payment to Bridge the Gap:
-                                        <span class="removeBold">{{ @$auction->get->gap_payment_amount }}</span>
+                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->gap_payment_amount)) }}</span>
                                     </div>
                                 @endif
                             @endif
@@ -1080,7 +1080,7 @@
                                 @if (@$auction->get->exchange_item_value)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Estimated Value of Exchange/Trade Item:
-                                        <span class="removeBold">${{ @$auction->get->exchange_item_value }}</span>
+                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->exchange_item_value)) }}</span>
                                     </div>
                                 @endif
 
@@ -1097,7 +1097,7 @@
                                 @if (@$auction->get->additional_cash)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Additional Cash Buyer Will Offer:
-                                        <span class="removeBold">${{ @$auction->get->additional_cash }}</span>
+                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->additional_cash)) }}</span>
                                     </div>
                                 @endif
 
@@ -1144,7 +1144,7 @@
                                 @if (@$auction->get->lease_option_price)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Buyer’s Desired Offering Price for Lease Option:
-                                        <span class="removeBold">${{ @$auction->get->lease_option_price }}</span>
+                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->lease_option_price)) }}</span>
                                     </div>
                                 @endif
 
@@ -1168,7 +1168,7 @@
                                 @if (@$auction->get->lease_option_payment)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Monthly Payment Buyer is Offering:
-                                        <span class="removeBold">${{ @$auction->get->lease_option_payment }}</span>
+                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->lease_option_payment)) }}</span>
                                     </div>
                                 @endif
 
@@ -1195,7 +1195,7 @@
                                 @if (@$auction->get->has_option_fee === 'Yes' && @$auction->get->option_fee_amount)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Option Fee Amount:
-                                        <span class="removeBold">${{ @$auction->get->option_fee_amount }}</span>
+                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->option_fee_amount)) }}</span>
                                     </div>
                                 @endif
 
@@ -1245,7 +1245,7 @@
                                 @if (@$auction->get->lease_purchase_price)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Buyer’s Desired Offering Price for Lease Purchase:
-                                        <span class="removeBold">${{ @$auction->get->lease_purchase_price }}</span>
+                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->lease_purchase_price)) }}</span>
                                     </div>
                                 @endif
 
@@ -1269,7 +1269,7 @@
                                 @if (@$auction->get->lease_purchase_payment)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Monthly Payment Buyer is Offering:
-                                        <span class="removeBold">${{ @$auction->get->lease_purchase_payment }}</span>
+                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->lease_purchase_payment)) }}</span>
                                     </div>
                                 @endif
 
@@ -1296,7 +1296,7 @@
                                 @if (@$auction->get->lease_purchase_option_fee === 'Yes' && @$auction->get->lease_purchase_option_fee_amount)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Option Fee Amount:
-                                        <span class="removeBold">${{ @$auction->get->lease_purchase_option_fee_amount }}</span>
+                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->lease_purchase_option_fee_amount)) }}</span>
                                     </div>
                                 @endif
 
@@ -1325,7 +1325,7 @@
                                         Rent Credit Toward Purchase Price:
                                         <span class="removeBold badge bg-secondary">{{ @$auction->get->lease_purchase_rent_credit }}</span>
                                         @if (in_array(@$auction->get->lease_purchase_rent_credit, ['Yes', 'Partial']) && @$auction->get->lease_purchase_rent_credit_amount)
-                                            <span class="removeBold">${{ @$auction->get->lease_purchase_rent_credit_amount }}</span>
+                                            <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->lease_purchase_rent_credit_amount)) }}</span>
                                         @endif
                                     </div>
                                 @endif
@@ -1333,7 +1333,7 @@
                                 @if (@$auction->get->lease_purchase_deposit)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Non-Refundable Deposit / Purchase Deposit:
-                                        <span class="removeBold">${{ @$auction->get->lease_purchase_deposit }}</span>
+                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->lease_purchase_deposit)) }}</span>
                                     </div>
                                 @endif
                             @endif
