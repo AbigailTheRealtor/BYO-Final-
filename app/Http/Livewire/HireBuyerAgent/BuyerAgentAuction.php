@@ -629,6 +629,11 @@ class BuyerAgentAuction extends Component
 
     public function updatedSaleProvision()
     {
+        // Skip reset during draft/edit loading to preserve loaded values
+        if ($this->isLoadingData) {
+            return;
+        }
+        
         // Reset all dependent fields when main selection changes
         $this->reset([
             'sale_provision_other',
@@ -640,6 +645,11 @@ class BuyerAgentAuction extends Component
 
     public function updatedSaleProvisionAssignment()
     {
+        // Skip reset during draft/edit loading to preserve loaded values
+        if ($this->isLoadingData) {
+            return;
+        }
+        
         $this->reset(['assignment_fee_amount', 'buyer_sell_contract']);
     }
 
@@ -1577,8 +1587,9 @@ class BuyerAgentAuction extends Component
                 'number_of_unit_type' => $this->number_of_unit_type,
             ]);
             
-            // Note: isLoadingData flag will be cleared by updatedOfferedFinancing() 
-            // when the Select2 sync triggers @this.set()
+            // Clear the loading flag after all data is loaded
+            // This ensures updated* hooks will function normally after initial load
+            $this->isLoadingData = false;
         }
     }
 
