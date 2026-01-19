@@ -556,7 +556,7 @@
             left: 12px;
             top: 50%;
             transform: translateY(-50%);
-            color: #6c757d;
+            color: #049399;
             z-index: 4;
             pointer-events: none;
         }
