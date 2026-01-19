@@ -914,39 +914,10 @@
     <script>
         let currentServiceType = null;
 
-        // ========== DELEGATED EVENT HANDLER (survives Livewire re-renders) ==========
+        // ========== DELEGATED EVENT HANDLER (disabled - using direct listeners in initializeFullService) ==========
         function attachWizardDelegatedHandlers() {
-            console.log('[WIZARD] attachWizardDelegatedHandlers called, guard:', window.__buyerEditWizardDelegatedHandlersAttached);
-            if (window.__buyerEditWizardDelegatedHandlersAttached) return;
-            window.__buyerEditWizardDelegatedHandlersAttached = true;
-            console.log('[WIZARD] Attaching delegated click handler to document');
-
-            document.addEventListener('click', function(e) {
-                const nextBtn = e.target.closest('[data-wizard-next]');
-                const backBtn = e.target.closest('[data-wizard-back]');
-
-                if (nextBtn) {
-                    console.log('[WIZARD] Next clicked', { target: e.target, nextBtn });
-                    console.log('[WIZARD] buyerEditWizardNextStep exists?', typeof window.buyerEditWizardNextStep);
-                    e.preventDefault();
-                    e.stopPropagation();
-                    try {
-                        window.buyerEditWizardNextStep?.();
-                        console.log('[WIZARD] buyerEditWizardNextStep invoked');
-                    } catch (err) {
-                        console.error('[WIZARD] buyerEditWizardNextStep error', err);
-                    }
-                    return;
-                }
-
-                if (backBtn) {
-                    console.log('[WIZARD] Back clicked', { target: e.target, backBtn });
-                    e.preventDefault();
-                    e.stopPropagation();
-                    window.buyerEditWizardPrevStep?.();
-                    return;
-                }
-            }, true);
+            // Direct event listeners are now added in initializeFullService() and initializeLimitedService()
+            // This function is kept as a no-op for backwards compatibility
         }
 
         // Global next step function
@@ -1993,11 +1964,85 @@
                 return isValid;
             }
 
-            // NOTE: Next/Back button handlers removed from here - now using delegated handlers
-            // defined in attachWizardDelegatedHandlers() which survive Livewire re-renders
+            // Add Next/Back button event listeners (matching Create form approach)
+            document.querySelector('.wizard-step-next')?.addEventListener('click', function() {
+                const currentTab = document.querySelector('.nav-tabs .nav-link.active');
+                if (!currentTab) return;
+
+                const currentTabContent = document.querySelector(currentTab.getAttribute('data-bs-target'));
+                if (!currentTabContent) return;
+
+                let isValid = true;
+
+                // Validate all required fields in the current tab
+                const requiredFields = currentTabContent.querySelectorAll(
+                    'input[required], select[required], textarea[required]');
+                if (requiredFields) {
+                    requiredFields.forEach(function(input) {
+                        // Skip hidden or disabled fields
+                        if (input.type === 'hidden' || input.disabled || !isElementVisible(input)) {
+                            return;
+                        }
+                        
+                        if (!input.value) {
+                            isValid = false;
+                            input.classList.add('is-invalid');
+
+                            const formGroup = input.closest('.form-group');
+                            if (formGroup) {
+                                const errorMessageContainer = formGroup.querySelector('.error');
+                                if (!errorMessageContainer) {
+                                    const errorMessage = document.createElement('div');
+                                    errorMessage.className = 'error mt-2';
+                                    errorMessage.textContent = 'This field is required.';
+                                    formGroup.appendChild(errorMessage);
+                                }
+                            }
+                        } else {
+                            input.classList.remove('is-invalid');
+                            const formGroup = input.closest('.form-group');
+                            if (formGroup) {
+                                const errorMessageContainer = formGroup.querySelector('.error');
+                                if (errorMessageContainer) {
+                                    errorMessageContainer.remove();
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // Validate services tab if it's the current tab
+                if (currentTabContent.id === 'services') {
+                    isValid = isValid && validateServicesTab(currentTabContent);
+                }
+
+                // If valid, proceed to next tab
+                if (isValid) {
+                    const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector('.nav-link');
+                    if (nextTab) {
+                        const tabs = document.querySelectorAll('.nav-link');
+                        const tabIndex = Array.from(tabs).indexOf(nextTab);
+                        if (tabIndex !== -1) {
+                            Livewire.emit('setActiveTab', tabIndex);
+                            nextTab.click();
+                        }
+                    }
+                }
+
+                checkFormValidity();
+            });
+
+            // Back button handler
+            document.querySelector('.wizard-step-back')?.addEventListener('click', function() {
+                const currentTab = document.querySelector('.nav-tabs .nav-link.active');
+                const prevTab = currentTab?.parentElement?.previousElementSibling?.querySelector('.nav-link');
+                if (prevTab) {
+                    Livewire.emit('setActiveTab', Array.from(document.querySelectorAll('.nav-link')).indexOf(prevTab));
+                    prevTab.click();
+                }
+            });
 
             // Add event listeners to update save button state when fields change
-            // Run immediately since DOMContentLoaded has already fired when initializeFullService() is called
             // Initial check
             checkFormValidity();
 
