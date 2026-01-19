@@ -354,12 +354,17 @@
         ['name' => 'Unfurnished'],
     ];
     $preferences = [
-        ['name' => 'Furniture, Fixtures, and Equipment (as per attached inventory)'],
-        ['name' => 'Advertising Materials'],
-        ['name' => 'Contract Rights'],
-        ['name' => 'Leases'],
-        ['name' => 'Licenses'],
-        ['name' => 'Rights under any Agreement for Interests'],
+        ['name' => 'Beach'],
+        ['name' => 'City'],
+        ['name' => 'Garden'],
+        ['name' => 'Golf Course'],
+        ['name' => 'Greenbelt'],
+        ['name' => 'Mountain(s)'],
+        ['name' => 'Park'],
+        ['name' => 'Pool'],
+        ['name' => 'Tennis Court'],
+        ['name' => 'Trees/Woods'],
+        ['name' => 'Water'],
         ['name' => 'Other'],
     ];
 
