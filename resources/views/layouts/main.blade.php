@@ -494,6 +494,81 @@
         });
     </script>
 
+    {{-- Has-icon handler: Inject Font Awesome icons into form controls --}}
+    <script>
+        (function() {
+            function initHasIconElements() {
+                document.querySelectorAll('.has-icon[data-icon]').forEach(function(el) {
+                    // Skip if already processed
+                    if (el.dataset.iconProcessed === 'true') return;
+                    
+                    var iconClass = el.dataset.icon;
+                    if (!iconClass) return;
+                    
+                    // Find the parent input-cover wrapper
+                    var wrapper = el.closest('.input-cover');
+                    if (!wrapper) return;
+                    
+                    // Check if icon already exists in wrapper
+                    if (wrapper.querySelector('.input-icon-fa')) return;
+                    
+                    // Create icon element
+                    var iconSpan = document.createElement('span');
+                    iconSpan.className = 'input-icon-fa';
+                    iconSpan.innerHTML = '<i class="' + iconClass + '"></i>';
+                    
+                    // Insert icon at the beginning of wrapper
+                    wrapper.insertBefore(iconSpan, wrapper.firstChild);
+                    
+                    // Mark as processed
+                    el.dataset.iconProcessed = 'true';
+                });
+            }
+            
+            // Run on DOM ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initHasIconElements);
+            } else {
+                initHasIconElements();
+            }
+            
+            // Run after Livewire updates
+            if (typeof Livewire !== 'undefined') {
+                document.addEventListener('livewire:load', function() {
+                    Livewire.hook('message.processed', function() {
+                        setTimeout(initHasIconElements, 50);
+                    });
+                });
+            }
+            
+            // Also run on window load for any late-loading elements
+            window.addEventListener('load', initHasIconElements);
+        })();
+    </script>
+
+    <style>
+        /* Input icon styling for has-icon elements */
+        .input-cover {
+            position: relative;
+        }
+        .input-icon-fa {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+            z-index: 4;
+            pointer-events: none;
+        }
+        .input-cover .has-icon {
+            padding-left: 38px;
+        }
+        /* Handle Select2 multi-selects */
+        .input-cover .select2-container .select2-selection--multiple {
+            padding-left: 38px;
+        }
+    </style>
+
     @stack('scripts')
 
 
