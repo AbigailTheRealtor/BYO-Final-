@@ -1,0 +1,146 @@
+Understood — don’t worry about naming the fields. Here are **Replit instructions with safeguards** that tell Replit to use **your attached screenshots + the exact error messages** to identify the missing fields and fix the **Edit not populating + validation errors** problem.
+
+Copy/paste this into Replit AI:
+
+---
+
+## Replit Instructions (WITH SAFEGUARDS)
+
+### Fix: Hire a Buyer’s Agent — Edit Screen Not Populating Saved Inputs + Shows Validation Errors
+
+**Login:** `tenant@exp.com`
+**Flow:** Hire a Buyer’s Agent → create listing → Save Draft / Submit → click Edit → fields are blank + errors show (see attached screenshots/errors)
+**Goal:** Any field that was entered and saved must repopulate on Edit and must not trigger errors.
+
+---
+
+### ⚠️ CRITICAL SAFEGUARDS
+
+* **DO NOT rename** DB columns, meta keys, array keys, or form input names.
+* **DO NOT delete** or refactor existing fields, tooltips, or working logic.
+* **DO NOT mass-update** database rows.
+* **DO NOT change** field labels, placeholders, or UI copy.
+* **DO NOT reset/clear** any saved values when sections are hidden (visibility must not wipe data).
+* Changes must be **additive + minimal** and apply only to **Hire a Buyer’s Agent**.
+
+---
+
+## ✅ What you must do (use the screenshots/errors to drive the fix)
+
+### Step 1 — Reproduce the bug exactly (as shown in screenshots)
+
+1. Login as `tenant@exp.com`
+2. Open the affected Hire a Buyer’s Agent listing (the one shown in screenshots)
+3. Confirm the public listing view shows certain values
+4. Click **Edit**
+5. Confirm the fields shown in screenshots do **not** populate and the same validation errors appear
+
+---
+
+### Step 2 — Identify the exact fields that fail to populate (no guessing)
+
+Using the screenshots + the validation error messages:
+
+✅ Make a list of:
+
+* Each field that shows on the listing view OR was previously entered
+* The corresponding Edit screen input that is blank
+* The exact validation error message tied to it (required/format/etc.)
+* The Livewire property bound to it (`wire:model...`)
+* The meta key / DB field used to store it (`saveMeta(...)` or model column)
+
+**Output this mapping as a table for verification.**
+
+---
+
+### Step 3 — Determine which layer is broken (must confirm with evidence)
+
+For each missing field, verify these 3 are consistent:
+
+1. **Edit input binding:** the `wire:model` property
+2. **Save layer:** `saveDraft()` / `save()` stores the value under the same key
+3. **Edit hydration:** `mount()` (or load method) loads it back into the same Livewire property
+
+✅ Add temporary logging (remove after fix):
+
+```php
+logger()->info('BUYER EDIT HYDRATION DEBUG', [
+  'auction_id' => $auction->id,
+  'meta' => $auction->meta ?? null,
+]);
+```
+
+Then confirm:
+
+* The values are present in DB/meta after Save Draft
+* But are missing from Livewire state on Edit
+
+---
+
+### Step 4 — Fix Edit hydration (root cause)
+
+In the **Hire a Buyer’s Agent EDIT Livewire component**, update `mount()` (or the method that loads the listing) so it explicitly hydrates **every field** that is blank on Edit but was saved.
+
+✅ Requirement:
+
+* Use the **exact same meta keys** that `saveDraft()/save()` uses
+* Hydrate into the **exact same Livewire properties** that the Edit inputs bind to
+
+🔒 Safeguard: Do NOT use broad `$this->fill(...)` if meta is stored separately; explicitly assign only the missing fields.
+
+---
+
+### Step 5 — Fix validation errors firing when fields are not loaded / hidden
+
+The errors shown in screenshots must not appear immediately on Edit.
+
+✅ Confirm and fix:
+
+* Validation is not running in `mount()` or `render()` or tab-change
+* Validation rules for conditional sections are conditional (only required if that section is selected/visible)
+* Hidden sections do NOT validate on Edit load
+
+🔒 Safeguard: Only adjust rules for the specific failing fields in Hire a Buyer.
+
+---
+
+### Step 6 — Verify Save Draft does not drop values
+
+Confirm the Save Draft action:
+
+* is not a `type="submit"` button
+* calls the correct Livewire method
+* persists the same keys used by submit
+
+✅ Fix if needed:
+
+* Set Save Draft button to `type="button"`
+* Ensure Save Draft and Submit both call the same mapping function or save the same keys
+
+---
+
+### Step 7 — Final verification checklist (must pass)
+
+1. Create a listing and fill fields (including the ones shown in screenshots)
+2. Click Save Draft
+3. Refresh
+4. Click Edit
+5. ✅ All fields repopulate
+6. ✅ No validation errors show on load
+7. Submit
+8. ✅ Listing view matches saved inputs
+
+---
+
+## ✅ Output Requirements
+
+Return:
+
+* Exact file paths edited
+* Exact fields fixed (from screenshots/errors list)
+* Exact code changes (hydration + validation + saveDraft behavior)
+* Confirmation of successful end-to-end test
+
+---
+
+If you paste **just the error text** (copy/paste from the UI) I can also rewrite the above so it explicitly tells Replit which validations must be conditional (without guessing).
