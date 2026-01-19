@@ -2183,6 +2183,9 @@
                 newServiceType = 'full_service';
             } else if (limitedServiceChecked) {
                 newServiceType = 'limited_service';
+            } else {
+                // Default to full service if no service type radio buttons found
+                newServiceType = 'full_service';
             }
 
             if (newServiceType !== currentServiceType) {
