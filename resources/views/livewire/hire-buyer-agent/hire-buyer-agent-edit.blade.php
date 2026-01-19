@@ -353,19 +353,7 @@
         ['name' => 'Turnkey'],
         ['name' => 'Unfurnished'],
     ];
-    $preferencesResidential = [
-        ['name' => 'All'],
-        ['name' => 'Mountain'],
-        ['name' => 'Ocean/Water'],
-        ['name' => 'City'],
-        ['name' => 'Park/Nature'],
-        ['name' => 'Golf Course'],
-        ['name' => 'Pool'],
-        ['name' => 'Garden/Courtyard'],
-        ['name' => 'Skyline'],
-        ['name' => 'Other'],
-    ];
-    $preferencesBusiness = [
+    $preferences = [
         ['name' => 'Furniture, Fixtures, and Equipment (as per attached inventory)'],
         ['name' => 'Advertising Materials'],
         ['name' => 'Contract Rights'],
@@ -374,23 +362,6 @@
         ['name' => 'Rights under any Agreement for Interests'],
         ['name' => 'Other'],
     ];
-    $preferencesVacantLand = [
-        ['name' => 'All'],
-        ['name' => 'Mountain'],
-        ['name' => 'Valley'],
-        ['name' => 'Desert'],
-        ['name' => 'Ocean/Water'],
-        ['name' => 'Rural'],
-        ['name' => 'Wooded'],
-        ['name' => 'Open Land'],
-        ['name' => 'Other'],
-    ];
-    $preferences = match($property_type) {
-        'Residential', 'Income' => $preferencesResidential,
-        'Commercial', 'Business' => $preferencesBusiness,
-        'Vacant Land' => $preferencesVacantLand,
-        default => $preferencesResidential,
-    };
 
     $non_negotialble_terms = [
         ['name' => '55 and Over Community', 'class' => 'residential-length'],
