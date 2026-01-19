@@ -1819,20 +1819,19 @@
             });
 
             // Add event listeners to update save button state when fields change
-            document.addEventListener('DOMContentLoaded', function() {
-                // Initial check
-                checkFormValidity();
+            // Run immediately since DOMContentLoaded has already fired when initializeFullService() is called
+            // Initial check
+            checkFormValidity();
 
-                // Update on any input change
-                document.querySelectorAll('input, select, textarea').forEach(field => {
-                    field.addEventListener('change', checkFormValidity);
-                    field.addEventListener('keyup', checkFormValidity);
-                });
+            // Update on any input change
+            document.querySelectorAll('input, select, textarea').forEach(field => {
+                field.addEventListener('change', checkFormValidity);
+                field.addEventListener('keyup', checkFormValidity);
+            });
 
-                // Special handling for Livewire-updated fields
-                document.addEventListener('livewire:update', function() {
-                    setTimeout(checkFormValidity, 100);
-                });
+            // Special handling for Livewire-updated fields
+            document.addEventListener('livewire:update', function() {
+                setTimeout(checkFormValidity, 100);
             });
 
 
@@ -2072,20 +2071,19 @@
             });
 
             // Add event listeners to update save button state when fields change
-            document.addEventListener('DOMContentLoaded', function() {
-                // Initial check
-                checkFormValidity();
+            // Run immediately since DOMContentLoaded has already fired when initializeLimitedService() is called
+            // Initial check
+            checkFormValidity();
 
-                // Update on any input change
-                document.querySelectorAll('input, select, textarea').forEach(field => {
-                    field.addEventListener('change', checkFormValidity);
-                    field.addEventListener('keyup', checkFormValidity);
-                });
+            // Update on any input change
+            document.querySelectorAll('input, select, textarea').forEach(field => {
+                field.addEventListener('change', checkFormValidity);
+                field.addEventListener('keyup', checkFormValidity);
+            });
 
-                // Special handling for Livewire-updated fields
-                document.addEventListener('livewire:update', function() {
-                    setTimeout(checkFormValidity, 100);
-                });
+            // Special handling for Livewire-updated fields
+            document.addEventListener('livewire:update', function() {
+                setTimeout(checkFormValidity, 100);
             });
         }
 

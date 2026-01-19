@@ -1,0 +1,287 @@
+Got it — for **[tenant@exp.com](mailto:tenant@exp.com)**, your **Hire a Buyer’s Agent EDITS are routed/handled under `tenant.php`**, and right now the bigger issue is: **Edit can’t be submitted** (so even if fields load perfectly, it’s unusable). Below are **Replit instructions with safeguards** to fix submit + eliminate field errors, while keeping Edit formatted exactly like Create.
+
+---
+
+## Replit Instructions (Safeguards + Fix Edit Submit)
+
+### Scope (ONLY)
+
+* **[tenant@exp.com](mailto:tenant@exp.com)**
+* **Hire a Buyer’s Agent**
+* **Edit Listing**
+* Routes are under: **`routes/tenant.php`**
+
+**DO NOT**
+
+* Rename DB columns
+* Remove fields/tooltips
+* Change other roles/flows
+* Mass-update DB records
+
+---
+
+# Phase 1 — Fix “Edit Won’t Submit” (Most Common Causes)
+
+## 1) Confirm the Edit route exists in `routes/tenant.php`
+
+**File:** `routes/tenant.php`
+
+Make sure you have **both**:
+
+* the **GET** route for the edit page
+* the **POST/PATCH** route OR Livewire handles submit in-component (no separate POST route needed)
+
+### If using Livewire page/component for edit:
+
+You’ll typically have something like:
+
+```php
+Route::get('/buyer-agent/{id}/edit', EditBuyerAgentListing::class)->name('tenant.buyer-agent.edit');
+```
+
+✅ **Safeguard:** Don’t duplicate route names in `web.php` or `landlord.php` or you’ll get weird behavior.
+
+### If using controller update route:
+
+Make sure update route exists and matches the form method:
+
+```php
+Route::patch('/buyer-agent/{id}', [BuyerAgentController::class, 'update'])->name('tenant.buyer-agent.update');
+```
+
+---
+
+## 2) Verify the Edit Blade actually submits to something
+
+If it’s Livewire, your form must have:
+
+✅ **Required**
+
+```html
+<form wire:submit.prevent="update">
+```
+
+🚫 **Bad (common mistake)**
+
+* `wire:submit="update"` (can cause full reload / double submit issues)
+* missing `.prevent`
+* button is not type submit
+
+✅ The button must be:
+
+```html
+<button type="submit">Save Changes</button>
+```
+
+---
+
+## 3) Confirm the `update()` method exists and is reachable
+
+**File:** your Edit Livewire component (whatever edits the Buyer listing)
+
+Must contain:
+
+```php
+public function update()
+{
+    // validate
+    // update record
+    // redirect/flash
+}
+```
+
+### Add a temporary “tripwire” to confirm the method is firing
+
+At the top of `update()` add:
+
+```php
+logger()->info('EDIT SUBMIT FIRED', ['id' => $this->listing_id ?? null]);
+```
+
+Then attempt submit and check logs.
+
+✅ If the log never appears, the form isn’t wired correctly (Step 2) or a JS error is stopping Livewire.
+
+---
+
+## 4) Check browser console for Livewire/JS errors (this blocks submit)
+
+When Livewire breaks, submit often “does nothing”.
+
+### Fix these common causes:
+
+* Duplicate element IDs in your form
+* Alpine errors
+* Missing Livewire scripts on the page
+* A nested `<form>` tag (forms inside forms break submit)
+
+✅ Quick check in the Edit blade/layout:
+Make sure you have:
+
+```html
+@livewireStyles
+@livewireScripts
+```
+
+And **no duplicate** includes.
+
+---
+
+# Phase 2 — Fix Validation Errors That Prevent Submit
+
+## 5) Prevent “required on create” fields from blocking edit
+
+This is a huge reason edits won’t submit: rules that are valid for Create can block Edit if some fields are hidden by logic.
+
+### Safeguard strategy (recommended):
+
+**Use two rule sets:**
+
+* `rulesForCreate()`
+* `rulesForEdit()`
+
+Where `rulesForEdit()` only requires what is visible/needed on edit.
+
+Example structure:
+
+```php
+protected function rulesForEdit(): array
+{
+    return [
+        'title' => 'required|string',
+        // only require conditional fields if their toggle is ON:
+        'lease_option_terms' => $this->interested_in_lease_option ? 'required|string' : 'nullable|string',
+    ];
+}
+```
+
+✅ **Critical:** Do NOT require hidden conditional fields.
+
+---
+
+## 6) Stop type mismatches (arrays/JSON) that throw errors on validation
+
+If you validate `array` but the model returns JSON string, Livewire may fail.
+
+✅ Fix with casts on the model:
+
+```php
+protected $casts = [
+  'acceptable_special_sale_provisions' => 'array',
+  'financing_types' => 'array',
+];
+```
+
+Or decode in mount (only if you cannot cast).
+
+---
+
+## 7) Ensure the Edit component loads all properties before validating
+
+If your `mount()` is missing fields, validation sees them as null and fails.
+
+✅ In Edit `mount($id)`:
+
+* set toggles first
+* then dependent fields
+* ensure array fields become arrays, not strings
+
+---
+
+# Phase 3 — Make Edit and Create Use the Exact Same UI (So No Field Drift)
+
+## 8) Use a shared form partial (Edit = Create)
+
+Create:
+
+* `resources/views/livewire/buyer-agent/_form.blade.php`
+
+Then include in both:
+
+* create blade
+* edit blade
+
+✅ **Safeguard:** Only move markup; keep `wire:model` names untouched.
+
+---
+
+# Phase 4 — Confirm Tenant Route/Middleware isn’t blocking PATCH/Livewire requests
+
+## 9) Tenant middleware / guard check (very likely in tenant.php)
+
+In `routes/tenant.php` you probably have something like:
+
+```php
+Route::middleware(['auth', 'tenant'])->group(function () {
+   ...
+});
+```
+
+If your Edit submit triggers a 403/419/redirect, check:
+
+### 419 Page Expired (CSRF)
+
+Usually from non-Livewire POST forms missing:
+
+```html
+@csrf
+@method('PATCH')
+```
+
+Livewire forms don’t need those, but controller forms do.
+
+### 403 Forbidden (policy/ownership)
+
+Make sure your Edit query uses `findOrFail` with tenant ownership scope:
+
+```php
+$listing = BuyerAgentListing::where('tenant_id', auth()->id())->findOrFail($id);
+```
+
+✅ This also prevents random edits by other users.
+
+---
+
+# Phase 5 — Make Sure Updates Actually Save (and don’t null out fields)
+
+## 10) Update only the fields you actually manage
+
+If a field doesn’t exist as a property in Edit, don’t set it to null accidentally.
+
+✅ Best practice:
+
+```php
+$data = $this->only([
+  'field_one',
+  'field_two',
+  // ...
+]);
+
+$this->listing->update($data);
+```
+
+---
+
+# Minimum “Submit Works” Test Plan (Must Pass)
+
+1. Open an existing Buyer listing → click Edit
+2. Change 1 small field → Save
+3. Confirm:
+
+* no console errors
+* log shows “EDIT SUBMIT FIRED”
+* DB updates
+* redirect/flash works
+* listing page reflects update
+
+---
+
+## If you want the fastest pinpoint fix
+
+Paste these 3 things (no screenshots needed if you can copy text):
+
+1. The **Edit blade form opening tag** (the `<form ...>` line)
+2. Your **Edit Livewire component `update()`** method
+3. Any error you see in console/network (even one line)
+
+And I’ll tell you **exactly** why submit is failing and the **exact edit** to make—without changing any of your existing fields/tooltips.
