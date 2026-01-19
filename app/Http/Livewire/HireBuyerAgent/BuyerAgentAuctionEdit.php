@@ -979,6 +979,25 @@ class BuyerAgentAuctionEdit extends Component
         $this->activeTab = $index;
     }
 
+    // Navigate to next tab
+    public function nextTab()
+    {
+        // Determine max tabs based on service type
+        $maxTabs = $this->service_type === 'full_service' ? 6 : 3;
+        
+        if ($this->activeTab < $maxTabs) {
+            $this->activeTab++;
+        }
+    }
+
+    // Navigate to previous tab
+    public function prevTab()
+    {
+        if ($this->activeTab > 0) {
+            $this->activeTab--;
+        }
+    }
+
     public function updatedVideoLink($value)
     {
         $this->embedUrl = $this->getEmbedUrl($value);

@@ -889,10 +889,10 @@
                         <!-- Navigation Buttons -->
                         <div class="d-flex justify-content-between form-group mt-4">
                             <div>
-                                <button type="button" class="btn btn-secondary wizard-step-back" data-wizard-back>Back</button>
+                                <button type="button" class="btn btn-secondary wizard-step-back" wire:click="prevTab">Back</button>
                             </div>
                             <div>
-                                <button type="button" class="btn btn-primary wizard-step-next" data-wizard-next>Next</button>
+                                <button type="button" class="btn btn-primary wizard-step-next" wire:click="nextTab">Next</button>
 
                                 <button type="submit" class="btn btn-success wizard-step-finish disabled"
                                     id="save-button" wire:loading.attr="disabled" wire:target="store">
