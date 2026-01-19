@@ -494,29 +494,6 @@
         });
     </script>
 
-    <style>
-        /* Input icon styling for has-icon elements */
-        .input-cover {
-            position: relative;
-        }
-        .input-icon-fa {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #049399;
-            z-index: 4;
-            pointer-events: none;
-        }
-        .input-cover .has-icon {
-            padding-left: 38px;
-        }
-        /* Handle Select2 multi-selects */
-        .input-cover .select2-container .select2-selection--multiple {
-            padding-left: 38px;
-        }
-    </style>
-
     @stack('scripts')
 
 
