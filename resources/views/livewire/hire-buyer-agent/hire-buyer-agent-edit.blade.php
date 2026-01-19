@@ -1166,39 +1166,14 @@
         }
 
         // Global services tab validation
+        // Services are optional - this validation only checks if "Other" is enabled but empty
         function validateServicesTabGlobal(tabContent) {
             if (!tabContent || tabContent.id !== 'services') return true;
 
-            let isValid = true;
-
-            // Check "Other Services" if enabled
-            const otherCheckbox = tabContent.querySelector('#other-services-checkbox');
-            const otherTextarea = tabContent.querySelector('#other-services-input');
-            const hasOtherDescription = otherTextarea && otherTextarea.value.trim() !== '';
-
-            // Clear previous errors
-            const existingErrors = tabContent.querySelectorAll('.service-error');
-            if (existingErrors) {
-                existingErrors.forEach(el => el.remove());
-            }
-            if (otherTextarea) otherTextarea.classList.remove('is-invalid');
-
-            if (otherCheckbox && otherCheckbox.checked && (!otherTextarea || !hasOtherDescription)) {
-                isValid = false;
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'service-error error mt-2';
-                errorDiv.textContent = 'Please describe the additional services you require.';
-
-                if (otherTextarea) {
-                    otherTextarea.classList.add('is-invalid');
-                    const container = otherTextarea.closest('.mb-3') || otherTextarea.parentNode;
-                    if (container) {
-                        container.appendChild(errorDiv);
-                    }
-                }
-            }
-
-            return isValid;
+            // Services validation is now optional - always return true
+            // User can proceed without selecting any services
+            // The "Other Services" field is also optional
+            return true;
         }
 
         document.addEventListener('DOMContentLoaded', () => {
