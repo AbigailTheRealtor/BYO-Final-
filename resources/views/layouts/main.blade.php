@@ -499,9 +499,6 @@
         (function() {
             function initHasIconElements() {
                 document.querySelectorAll('.has-icon[data-icon]').forEach(function(el) {
-                    // Skip if already processed
-                    if (el.dataset.iconProcessed === 'true') return;
-                    
                     var iconClass = el.dataset.icon;
                     if (!iconClass) return;
                     
@@ -509,8 +506,11 @@
                     var wrapper = el.closest('.input-cover');
                     if (!wrapper) return;
                     
-                    // Check if icon already exists in wrapper
-                    if (wrapper.querySelector('.input-icon-fa')) return;
+                    // Remove any existing icons first to prevent duplicates
+                    var existingIcons = wrapper.querySelectorAll('.input-icon-fa');
+                    existingIcons.forEach(function(icon) {
+                        icon.remove();
+                    });
                     
                     // Create icon element
                     var iconSpan = document.createElement('span');
@@ -519,9 +519,6 @@
                     
                     // Insert icon at the beginning of wrapper
                     wrapper.insertBefore(iconSpan, wrapper.firstChild);
-                    
-                    // Mark as processed
-                    el.dataset.iconProcessed = 'true';
                 });
             }
             
