@@ -1304,6 +1304,7 @@ class BuyerAgentAuctionEdit extends Component
             $this->services = $servicesRaw ? (is_string($servicesRaw) ? json_decode($servicesRaw, true) ?? [] : (array)$servicesRaw) : [];
 
             $this->other_services = $auction->get->other_services ?? '';
+            $this->other_services_enabled = (bool)($auction->get->other_services_enabled ?? false);
 
             $flatFeeServicesRaw = $auction->get->flat_fee_services ?? null;
             $this->flat_fee_services = $flatFeeServicesRaw ? (is_string($flatFeeServicesRaw) ? json_decode($flatFeeServicesRaw, true) ?? [] : (array)$flatFeeServicesRaw) : [];
@@ -1690,6 +1691,7 @@ class BuyerAgentAuctionEdit extends Component
         // Services
         $auction->saveMeta('services', json_encode($this->services));
         $auction->saveMeta('other_services', $this->other_services);
+        $auction->saveMeta('other_services_enabled', $this->other_services_enabled);
         $auction->saveMeta('flat_fee_services', json_encode($this->flat_fee_services));
         $auction->saveMeta('additional_details', $this->additional_details);
 
