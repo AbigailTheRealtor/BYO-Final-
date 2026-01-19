@@ -1,3 +1,4 @@
+<!-- TENANT BUYER EDIT MARKER - PROOF OF CORRECT FILE -->
 @push('styles')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bbbootstrap/libraries@main/choices.min.css">
 
