@@ -25,6 +25,7 @@ class BuyerAgentAuctionEdit extends Component
     public $isLoadingData = false; // Flag to prevent reset during draft/edit load
     public $service_type = 'full_service'; // 'full_service' or 'limited_service'
     public $listing_status = 'Active'; // 'Active', 'Pending', or 'Hired Agent'
+    public $meeting_Preference = ''; // Meeting preference field
 
     public $user_type = 'buyer'; // Default to tenant or whatever makes sense
     public $auction_type = '';
@@ -1085,6 +1086,7 @@ class BuyerAgentAuctionEdit extends Component
             $this->service_type = $auction->get->service_type ?? 'full_service';
             $this->user_type = $auction->get->user_type ?? 'buyer';
             $this->listing_status = $auction->get->listing_status ?? 'Active';
+            $this->meeting_Preference = $auction->get->meeting_Preference ?? '';
             $this->auction_type = $auction->get->auction_type ?? '';
             $this->working_with_agent = $auction->get->working_with_agent ?? '';
             $this->listing_date = $auction->get->listing_date ?? '';
@@ -1496,6 +1498,7 @@ class BuyerAgentAuctionEdit extends Component
         $auction->saveMeta('service_type', $this->service_type);
         $auction->saveMeta('user_type', $this->user_type);
         $auction->saveMeta('listing_status', $this->listing_status);
+        $auction->saveMeta('meeting_Preference', $this->meeting_Preference);
         $auction->saveMeta('auction_type', $this->auction_type);
         $auction->saveMeta('working_with_agent', $this->working_with_agent);
         $auction->saveMeta('listing_date', $this->listing_date);
