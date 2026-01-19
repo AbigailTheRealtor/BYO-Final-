@@ -781,7 +781,8 @@
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             wire:click="setActiveTab({{ $index }})"
-                                            id="{{ str_replace(' ', '-', strtolower($tab)) }}-tab"
+                                            id="{{ str_replace(' ', '-', strtolower($tab)) }}-tab" data-bs-toggle="tab"
+                                            data-bs-target="#{{ str_replace(' ', '-', strtolower($tab)) }}"
                                             type="button" role="tab"
                                             aria-controls="{{ str_replace(' ', '-', strtolower($tab)) }}"
                                             aria-selected="{{ $activeTab === $index ? 'true' : 'false' }}">
@@ -796,7 +797,8 @@
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             wire:click="setActiveTab({{ $index }})"
-                                            id="{{ str_replace(' ', '-', strtolower($tab)) }}-tab"
+                                            id="{{ str_replace(' ', '-', strtolower($tab)) }}-tab" data-bs-toggle="tab"
+                                            data-bs-target="#{{ str_replace(' ', '-', strtolower($tab)) }}"
                                             type="button" role="tab"
                                             aria-controls="{{ str_replace(' ', '-', strtolower($tab)) }}"
                                             aria-selected="{{ $activeTab === $index ? 'true' : 'false' }}">
@@ -808,8 +810,8 @@
                                 <!-- Dynamic Information Tab Based on User Type -->
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(4)" id="information-tab"
-                                        type="button" role="tab"
+                                        wire:click="setActiveTab(4)" id="information-tab" data-bs-toggle="tab"
+                                        data-bs-target="#information" type="button" role="tab"
                                         aria-controls="information"
                                         aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
                                         @if ($user_type === 'tenant')
@@ -831,22 +833,22 @@
                         <div class="tab-content" id="myTabContent">
 
                             <!-- Listing Details Tab -->
-                            <div class="tab-pane {{ $activeTab === 0 ? 'show active' : '' }}" id="listing-details"
-                                role="tabpanel" aria-labelledby="listing-details-tab" style="{{ $activeTab === 0 ? '' : 'display: none;' }}">
+                            <div class="tab-pane fade {{ $activeTab === 0 ? 'show active' : '' }}" id="listing-details"
+                                role="tabpanel" aria-labelledby="listing-details-tab">
                                 @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.listing-details')
 
                             </div>
                             @if ($service_type === 'full_service')
-                                <div class="tab-pane {{ $activeTab === 1 ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === 1 ? 'show active' : '' }}"
                                     id="property-preferences" role="tabpanel"
-                                    aria-labelledby="property-preferences-tab" style="{{ $activeTab === 1 ? '' : 'display: none;' }}">
+                                    aria-labelledby="property-preferences-tab">
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.property-preferences')
 
                                 </div>
 
                                 <!-- Leasing Terms Tab -->
-                                <div class="tab-pane {{ $activeTab === 2 ? 'show active' : '' }}"
-                                    id="purchasing-terms" role="tabpanel" aria-labelledby="purchasing-terms-tab" style="{{ $activeTab === 2 ? '' : 'display: none;' }}">
+                                <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
+                                    id="purchasing-terms" role="tabpanel" aria-labelledby="purchasing-terms-tab">
 
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.purchasing-terms')
                                 </div>
@@ -854,30 +856,30 @@
 
 
                                 <!-- Services Tab -->
-                                <div class="tab-pane {{ $activeTab === 3 ? 'show active' : '' }}" id="services"
-                                    role="tabpanel" aria-labelledby="services-tab" style="{{ $activeTab === 3 ? '' : 'display: none;' }}">
+                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}" id="services"
+                                    role="tabpanel" aria-labelledby="services-tab">
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.services')
                                 </div>
                                 <!-- Additional Details Tab -->
-                                <div class="tab-pane {{ $activeTab === 4 ? 'show active' : '' }}"
-                                    id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab" style="{{ $activeTab === 4 ? '' : 'display: none;' }}">
+                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
+                                    id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
 
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.additional-details')
 
                                 </div>
 
                                 <!-- Broker Compensation Tab -->
-                                <div class="tab-pane {{ $activeTab === 5 ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
                                     id="broker-compensation" role="tabpanel"
-                                    aria-labelledby="broker-compensation-tab" style="{{ $activeTab === 5 ? '' : 'display: none;' }}">
+                                    aria-labelledby="broker-compensation-tab">
 
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.broker-compensation')
 
                                 </div>
 
                                 <!-- Tenant Info Tab -->
-                                <div class="tab-pane {{ $activeTab === 6 ? 'show active' : '' }}"
-                                    id="tenant-info" role="tabpanel" aria-labelledby="tenant-info-tab" style="{{ $activeTab === 6 ? '' : 'display: none;' }}">
+                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
+                                    id="tenant-info" role="tabpanel" aria-labelledby="tenant-info-tab">
                                     @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.buyer-info')
                                 </div>
                             @elseif($service_type === 'limited_service')
@@ -887,10 +889,10 @@
                         <!-- Navigation Buttons -->
                         <div class="d-flex justify-content-between form-group mt-4">
                             <div>
-                                <button type="button" class="btn btn-secondary wizard-step-back" wire:click="prevTab">Back</button>
+                                <button type="button" class="btn btn-secondary wizard-step-back" data-wizard-back>Back</button>
                             </div>
                             <div>
-                                <button type="button" class="btn btn-primary wizard-step-next" wire:click="nextTab">Next</button>
+                                <button type="button" class="btn btn-primary wizard-step-next" data-wizard-next>Next</button>
 
                                 <button type="submit" class="btn btn-success wizard-step-finish disabled"
                                     id="save-button" wire:loading.attr="disabled" wire:target="store">
