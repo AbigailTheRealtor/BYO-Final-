@@ -1209,10 +1209,7 @@
             const activeCard = document.querySelector(`input[value="${serviceType}"]`)?.closest('.service-option-card');
             if (activeCard) activeCard.classList.add('active-service');
 
-            // Clear old event listeners
-            removeWizardEventListeners();
-
-            // Initialize new service logic
+            // Initialize new service logic (no button cloning - delegated handlers survive)
             if (serviceType === 'full_service') {
                 initializeFullService();
             } else if (serviceType === 'limited_service') {
@@ -1222,16 +1219,8 @@
             Livewire.emit('serviceTypeChanged', serviceType);
         }
 
-        function removeWizardEventListeners() {
-            const nextBtn = document.querySelector('.wizard-step-next');
-            const backBtn = document.querySelector('.wizard-step-back');
-
-            const nextClone = nextBtn?.cloneNode(true);
-            const backClone = backBtn?.cloneNode(true);
-
-            if (nextBtn && nextClone) nextBtn.parentNode.replaceChild(nextClone, nextBtn);
-            if (backBtn && backClone) backBtn.parentNode.replaceChild(backClone, backBtn);
-        }
+        // removeWizardEventListeners() DELETED - was causing buttons to be replaced
+        // and breaking the delegated click handlers
 
         function initializeFullService() {
 
@@ -2248,9 +2237,7 @@
                 currentServiceType = newServiceType;
             }
 
-            // Note: removeWizardEventListeners() clones buttons but our delegated handlers
-            // at document level still work. Keep for legacy button cleanup.
-            removeWizardEventListeners();
+            // No button cloning needed - delegated handlers at document level survive Livewire updates
 
             if (currentServiceType === 'full_service') {
                 initializeFullService();
