@@ -3629,35 +3629,6 @@ class TenantAgentAuction extends Component
                 'is_approved' => $auction->is_approved ?? 'N/A',
             ]);
 
-            // Debug logging for financing follow-up fields on SUBMIT
-            \Log::info('TENANT FORM SUBMIT — financing followups (Livewire values)', [
-                'auction_id' => $auction->id ?? null,
-                'user_type' => $this->user_type,
-                'offered_financing' => $this->offered_financing ?? null,
-                'seller_amortization_type' => $this->seller_amortization_type ?? null,
-                'seller_payment_frequency' => $this->seller_payment_frequency ?? null,
-                'seller_late_fee_amount' => $this->seller_late_fee_amount ?? null,
-                'exchange_transfer_method' => $this->exchange_transfer_method ?? null,
-                'exchange_liens' => $this->exchange_liens ?? null,
-                'exchange_inspection_rights' => $this->exchange_inspection_rights ?? null,
-                'lease_option_maintenance' => $this->lease_option_maintenance ?? null,
-                'lease_option_extension_terms' => $this->lease_option_extension_terms ?? null,
-                'lease_purchase_maintenance' => $this->lease_purchase_maintenance ?? null,
-                'lease_purchase_extension_terms' => $this->lease_purchase_extension_terms ?? null,
-                'lease_purchase_rent_credit' => $this->lease_purchase_rent_credit ?? null,
-                'lease_purchase_rent_credit_amount' => $this->lease_purchase_rent_credit_amount ?? null,
-                'lease_purchase_deposit' => $this->lease_purchase_deposit ?? null,
-                'crypto_exchange_method' => $this->crypto_exchange_method ?? null,
-                'crypto_custodian_wallet' => $this->crypto_custodian_wallet ?? null,
-                'crypto_transaction_fees' => $this->crypto_transaction_fees ?? null,
-                'crypto_transfer_timing' => $this->crypto_transfer_timing ?? null,
-                'nft_valuation_method' => $this->nft_valuation_method ?? null,
-                'nft_transfer_method' => $this->nft_transfer_method ?? null,
-                'nft_gas_fees' => $this->nft_gas_fees ?? null,
-            ]);
-
-            // DB verification logging removed - getMeta() not available on all models
-
             session()->flash('success', 'Listing submitted successfully!');
 
             // Redirect to the correct detail page based on user_type

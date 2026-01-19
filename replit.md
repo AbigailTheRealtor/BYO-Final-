@@ -12,7 +12,21 @@ I prefer detailed explanations. Ask before making major changes.
 The platform utilizes Laravel Mix with TailwindCSS and AlpineJS for a responsive and dynamic user interface. Livewire is central to handling dynamic content, enabling real-time UI updates and auto-population. Tab navigation is managed using Bootstrap, featuring safe slug generation for tab IDs. Location autofill leverages a cost-effective, U.S. Census-based local database. Listing displays feature unique IDs as badges and pill badges for actions. A "Broker Compensation & Agency Agreement Terms" form serves as the canonical UI source for all Agent workflows, ensuring consistency in field structure, input types, conditional logic, and formatting.
 
 ### Technical Implementations
-Built on Laravel 8.x with PHP 8.2.23 and PostgreSQL, the platform uses Node.js v20 for asset compilation. Unique listing IDs are generated via a `HasListingId` trait. Location data is sourced from U.S. Census databases. Dynamic forms are managed by Livewire components, handling conditional rendering, financing options, and property preferences with standardized input fields, required indicators, phone auto-formatting, and dynamic visibility. Fee displays are formatted for presentation without altering storage. Defensive guards are implemented in Livewire methods. Bid behavior differentiates between "Traditional" and "Bidding Period" listings, affecting timers and bid visibility. Agent bid fields are auto-filled, and agent information is preserved during edits. The system supports cross-profile listing for all agent types (Tenant, Seller, Buyer, Landlord), with dedicated tables and models for each. Draft functionality is supported across all agent types. Owner-specific visibility ensures listing owners can view their unapproved listings.
+Built on Laravel 8.x with PHP 8.2.23 and PostgreSQL, the platform uses Node.js v20 for asset compilation.
+
+**CRITICAL - Shared Livewire Component Architecture**: The `TenantAgentAuction.php` component (`app/Http/Livewire/TenantAgentAuction.php`) is the **primary shared component** that processes form submissions for **ALL agent types**: Buyer, Seller, Landlord, and Tenant. This component handles:
+- Form submission via `store()` method
+- Draft saving via `saveDraft()` method  
+- Metadata persistence via `saveAllMetadata()` method
+- The `user_type` property determines which model/table is used (HireBuyerAgentAuction, HireSellerAgentAuction, HireLandLordAgentAuction, HireTenantAgentAuction)
+
+**When adding new fields for ANY agent type**, you MUST add:
+1. Public property declaration in `TenantAgentAuction.php`
+2. `saveMeta()` call in `saveAllMetadata()` method of `TenantAgentAuction.php`
+3. Field loading in `loadDraftData()` method of `TenantAgentAuction.php`
+4. Wire:model binding in the Blade view
+
+The standalone `BuyerAgentAuction.php` and other agent-specific files in `app/Http/Livewire/HireBuyerAgent/` etc. are **NOT used for form submission** - they may exist for legacy or alternative purposes but `TenantAgentAuction.php` is the active component. Unique listing IDs are generated via a `HasListingId` trait. Location data is sourced from U.S. Census databases. Dynamic forms are managed by Livewire components, handling conditional rendering, financing options, and property preferences with standardized input fields, required indicators, phone auto-formatting, and dynamic visibility. Fee displays are formatted for presentation without altering storage. Defensive guards are implemented in Livewire methods. Bid behavior differentiates between "Traditional" and "Bidding Period" listings, affecting timers and bid visibility. Agent bid fields are auto-filled, and agent information is preserved during edits. The system supports cross-profile listing for all agent types (Tenant, Seller, Buyer, Landlord), with dedicated tables and models for each. Draft functionality is supported across all agent types. Owner-specific visibility ensures listing owners can view their unapproved listings.
 
 **View Preference "Other" Visibility**: All four agent types (Buyer, Seller, Landlord, Tenant) use Livewire computed properties (`getIsOtherVisibleProperty()`, `getIsOtherNonNegotiableVisibleProperty()`) to automatically toggle visibility of "Other" text fields based on array values. This ensures consistent behavior across draft save/load cycles without manual state management. Blade files reference `$this->is_other_visible` which invokes the computed getter.
 
