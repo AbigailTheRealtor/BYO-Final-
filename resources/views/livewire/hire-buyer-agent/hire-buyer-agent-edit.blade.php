@@ -277,6 +277,16 @@
                 font-size: 1rem;
             }
         }
+
+        /* Agent type selection button text styling */
+        .user-selected {
+            color: #0ce7ef;
+            font-weight: 500;
+        }
+
+        .user-type-icon {
+            color: #0ce7ef;
+        }
     </style>
 @endpush
 
@@ -1271,29 +1281,42 @@
             });
 
             // Function to toggle Non-Negotiable Amenities and Property Features:" input field
-
-            function toggleOtherAmenities(selectElement) {
+            // This is a multi-select (Select2), so we need to check if "Other" is in the array
+            function toggleOtherAmenities() {
                 const otherAmenitiesDiv = document.querySelector('.other_non_negotiable_amenities');
+                const selectElement = document.getElementById('non_negotiable_amenities');
 
-                if (!otherAmenitiesDiv) {
+                if (!otherAmenitiesDiv || !selectElement) {
                     return;
                 }
-                if (selectElement.value === 'Other') {
+                
+                // Get selected values from Select2 (returns array for multi-select)
+                let selectedValues = [];
+                if ($(selectElement).hasClass('select2-hidden-accessible')) {
+                    selectedValues = $(selectElement).val() || [];
+                } else {
+                    // Fallback for non-Select2
+                    selectedValues = Array.from(selectElement.selectedOptions).map(opt => opt.value);
+                }
+                
+                if (selectedValues.includes('Other')) {
                     otherAmenitiesDiv.classList.remove('d-none'); // Show the "Other" input field
                 } else {
                     otherAmenitiesDiv.classList.add('d-none'); // Hide the "Other" input field
                 }
             }
-            // Function to attach the event listener to the bathrooms dropdown
+            
+            // Function to attach the event listener to the non_negotiable_amenities Select2
             function attachAmenitiesDropdownListener() {
-                const bathroomsDropdown = document.getElementById('non_negotiable_amenities');
-                if (bathroomsDropdown) {
-                    bathroomsDropdown.addEventListener('change', function() {
-                        toggleOtherAmenities(this);
+                const selectElement = document.getElementById('non_negotiable_amenities');
+                if (selectElement) {
+                    // Attach change handler for Select2
+                    $(selectElement).off('change.otherAmenities').on('change.otherAmenities', function() {
+                        toggleOtherAmenities();
                     });
 
-                    // Manually trigger the toggle function on page load or after Livewire re-renders
-                    toggleOtherAmenities(bathroomsDropdown);
+                    // Manually trigger the toggle function on page load
+                    setTimeout(toggleOtherAmenities, 200);
                 }
             }
 
@@ -1302,7 +1325,7 @@
 
             // Re-attach the event listener after Livewire re-renders the DOM
             Livewire.hook('message.processed', () => {
-                attachAmenitiesDropdownListener();
+                setTimeout(attachAmenitiesDropdownListener, 100);
             });
 
             // Function to toggle "Other Bedrooms" input field

@@ -277,6 +277,16 @@
                 font-size: 1rem;
             }
         }
+
+        /* Agent type selection button text styling */
+        .user-selected {
+            color: #0ce7ef;
+            font-weight: 500;
+        }
+
+        .user-type-icon {
+            color: #0ce7ef;
+        }
     </style>
 @endpush
 
