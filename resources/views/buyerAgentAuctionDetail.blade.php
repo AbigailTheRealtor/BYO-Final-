@@ -538,10 +538,11 @@
                                 }
                                 $poolTypeRaw = is_array($poolTypeRaw) ? $poolTypeRaw : [];
 
-                                // Keep only truthy entries and join their keys
+                                // Keep only truthy entries and join their keys (capitalized)
                                 $poolTypeList = collect($poolTypeRaw)
                                     ->filter(fn($v) => $v === true || $v === 1 || $v === '1' || $v === 'true')
                                     ->keys()
+                                    ->map(fn($key) => ucfirst($key))
                                     ->implode(', ');
                             @endphp
 
@@ -801,7 +802,7 @@
                             @if (@$auction->get->maximum_budget != null)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Maximum Budget:
-                                    <span class="removeBold">${{ @$auction->get->maximum_budget }}</span>
+                                    <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->maximum_budget)) }}</span>
                                 </div>
                             @endif
 
@@ -918,14 +919,14 @@
                                 @if (@$auction->get->down_payment_amount)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Desired Down Payment:
-                                        <span class="removeBold">{{ @$auction->get->down_payment_amount }}{{ @$auction->get->down_payment_type }}</span>
+                                        <span class="removeBold">{{ @$auction->get->down_payment_type === '%' ? '' : '$' }}{{ number_format((float) str_replace(',', '', @$auction->get->down_payment_amount)) }}{{ @$auction->get->down_payment_type === '%' ? '%' : '' }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->seller_financing_amount)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Desired Seller Financing Amount:
-                                        <span class="removeBold">{{ @$auction->get->seller_financing_amount }}{{ @$auction->get->seller_financing_type }}</span>
+                                        <span class="removeBold">{{ @$auction->get->seller_financing_type === '%' ? '' : '$' }}{{ number_format((float) str_replace(',', '', @$auction->get->seller_financing_amount)) }}{{ @$auction->get->seller_financing_type === '%' ? '%' : '' }}</span>
                                     </div>
                                 @endif
 
