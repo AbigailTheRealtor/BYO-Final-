@@ -494,55 +494,6 @@
         });
     </script>
 
-    {{-- Has-icon handler: Inject Font Awesome icons into form controls --}}
-    <script>
-        (function() {
-            function initHasIconElements() {
-                document.querySelectorAll('.has-icon[data-icon]').forEach(function(el) {
-                    var iconClass = el.dataset.icon;
-                    if (!iconClass) return;
-                    
-                    // Find the parent input-cover wrapper
-                    var wrapper = el.closest('.input-cover');
-                    if (!wrapper) return;
-                    
-                    // Remove any existing icons first to prevent duplicates
-                    var existingIcons = wrapper.querySelectorAll('.input-icon-fa');
-                    existingIcons.forEach(function(icon) {
-                        icon.remove();
-                    });
-                    
-                    // Create icon element
-                    var iconSpan = document.createElement('span');
-                    iconSpan.className = 'input-icon-fa';
-                    iconSpan.innerHTML = '<i class="' + iconClass + '"></i>';
-                    
-                    // Insert icon at the beginning of wrapper
-                    wrapper.insertBefore(iconSpan, wrapper.firstChild);
-                });
-            }
-            
-            // Run on DOM ready
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initHasIconElements);
-            } else {
-                initHasIconElements();
-            }
-            
-            // Run after Livewire updates
-            if (typeof Livewire !== 'undefined') {
-                document.addEventListener('livewire:load', function() {
-                    Livewire.hook('message.processed', function() {
-                        setTimeout(initHasIconElements, 50);
-                    });
-                });
-            }
-            
-            // Also run on window load for any late-loading elements
-            window.addEventListener('load', initHasIconElements);
-        })();
-    </script>
-
     <style>
         /* Input icon styling for has-icon elements */
         .input-cover {

@@ -42,8 +42,9 @@
 
 
     <div class="input-cover">
+        <span class="input-icon-fa"><i class="fa-solid fa-screwdriver-wrench"></i></span>
         <select wire:model="sale_provision" id="sale_provision" class="form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-screwdriver-wrench" multiple>
+            multiple>
             @foreach ($seller_property as $row_pt)
                 <option value="{{ $row_pt['name'] }}" title="{{ $row_pt['description'] }}">{{ $row_pt['name'] }}
                 </option>
@@ -58,8 +59,8 @@
     <div class="form-group mt-3">
         {{-- Label removed to match Seller flow --}}
         <div class="input-cover">
+            <span class="input-icon-fa"><i class="fa-solid fa-screwdriver-wrench"></i></span>
             <input type="text" wire:model="sale_provision_other" class="form-control has-icon"
-                data-icon="fa-solid fa-screwdriver-wrench"
                 placeholder="Enter special sale provision (e.g., Divorce Sale, Third-Party Approval)">
         </div>
     </div>
@@ -71,8 +72,8 @@
     <div class="form-group mt-3">
         <label class="fw-bold">Buyer Open to Purchasing an Assignment Contract:</label>
         <div class="input-cover">
-            <select wire:model="sale_provision_assignment" class="form-control has-icon"
-                data-icon="fa-solid fa-file-contract">
+            <span class="input-icon-fa"><i class="fa-solid fa-file-contract"></i></span>
+            <select wire:model="sale_provision_assignment" class="form-control has-icon">
                 <option value="">Select</option>
                 <option value="Yes">Yes</option>
                 <option value="No">No</option>
@@ -90,8 +91,8 @@
                 </span>
             </label>
             <div class="input-cover mt-2">
-                <select wire:model="assignment_fee_type" class="form-control has-icon"
-                    data-icon="fa-solid fa-file-invoice-dollar">
+                <span class="input-icon-fa"><i class="fa-solid fa-file-invoice-dollar"></i></span>
+                <select wire:model="assignment_fee_type" class="form-control has-icon">
                     <option value="">Select</option>
                     <option value="$">Flat Fee</option>
                     <option value="%">Percentage of Contract Assignment Value</option>
@@ -175,8 +176,8 @@
 
 
     <div class="input-cover">
-        <select wire:model="target_closing_date" id="target_closing_date" class="form-control has-icon"
-            data-icon="fa-regular fa-calendar-days" required>
+        <span class="input-icon-fa"><i class="fa-regular fa-calendar-days"></i></span>
+        <select wire:model="target_closing_date" id="target_closing_date" class="form-control has-icon" required>
             <option value="">Select</option>
             <option value="ASAP (Ready Now)">ASAP (Ready Now)</option>
             <option value="Within 1 Month">Within 1 Month</option>
@@ -242,8 +243,8 @@
     </div> --}}
 
     <div class="input-cover" wire:ignore>
-        <select id="offered_financing" class="form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-money-bill-wave" multiple required>
+        <span class="input-icon-fa"><i class="fa-solid fa-money-bill-wave"></i></span>
+        <select id="offered_financing" class="form-control has-icon select2-multiple" multiple required>
             @foreach ($financing_options as $option)
                 <option value="{{ $option['name'] }}" title="{{ $option['description'] }}"
                     {{ in_array($option['name'], $offered_financing ?? []) ? 'selected' : '' }}>
@@ -260,8 +261,8 @@
     <div>
         <div class="form-group">
             <div class="input-cover">
+                <span class="input-icon-fa"><i class="fa-solid fa-money-bill-wave"></i></span>
                 <input type="text" wire:model="other_financing" class="form-control has-icon"
-                    data-icon="fa-solid fa-money-bill-wave"
                     placeholder="Enter type of financing or currency offered">
             </div>
         </div>
@@ -280,7 +281,8 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <select wire:model="pre_approved" class="form-control has-icon" data-icon="fa-solid fa-file-signature">
+            <span class="input-icon-fa"><i class="fa-solid fa-file-signature"></i></span>
+            <select wire:model="pre_approved" class="form-control has-icon">
                 <option value="">Select</option>
                 <option value="Yes">Yes</option>
                 <option value="No">No</option>
