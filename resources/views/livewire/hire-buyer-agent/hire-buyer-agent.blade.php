@@ -1107,6 +1107,7 @@
             console.log('[DraftLoaded] Event received - syncing select values');
             setTimeout(function() {
                 syncSelectValues();
+                addIconsToInputs(); // Re-add icons after draft data loads
                 if (typeof window.updateSaveButton === 'function') {
                     window.updateSaveButton();
                 }
