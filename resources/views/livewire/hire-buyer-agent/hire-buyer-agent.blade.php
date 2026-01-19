@@ -287,6 +287,30 @@
         .user-type-icon {
             color: #0ce7ef;
         }
+
+        /* Dollar sign prefix styling for currency inputs */
+        .input-group-text-seller {
+            display: flex;
+            align-items: center;
+            padding: 0.7rem 0.75rem;
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #212529;
+            text-align: center;
+            white-space: nowrap;
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: .375rem;
+        }
+
+        .input-group-text-seller+input.form-control {
+            padding-left: 8px;
+        }
+
+        .percentage-value-set {
+            padding-left: 9px !important;
+        }
     </style>
 @endpush
 

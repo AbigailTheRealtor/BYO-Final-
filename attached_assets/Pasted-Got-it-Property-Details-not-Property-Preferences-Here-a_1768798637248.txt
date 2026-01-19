@@ -1,0 +1,162 @@
+Got it — **Property Details** (not Property Preferences). Here are the corrected **Replit instructions with safeguards** with that change applied everywhere.
+
+---
+
+## Replit Instructions (WITH SAFEGUARDS)
+
+### Fix: Hire a Buyer’s Agent — Edit Listing UI/UX Parity with Create Listing ([tenant@exp.com](mailto:tenant@exp.com))
+
+**Login:** `tenant@exp.com`
+**Flow:** Hire a Buyer’s Agent → Open an existing listing → Click **Edit**
+**Tabs affected:** **Property Details** tab, **Services** tab, and bottom action buttons (Next / Hire Agent)
+
+---
+
+# ⚠️ CRITICAL SAFEGUARDS
+
+* **DO NOT rename** any database columns, meta keys, or Livewire property names.
+* **DO NOT remove or rewrite** existing fields/tooltips/labels.
+* **DO NOT change** Create Listing UI behavior. Create is the “gold standard.”
+* **DO NOT mass-update** any database rows.
+* Only make **additive, minimal edits** to ensure the **Edit Listing UI renders identically** to Create.
+* Any formatting changes must be applied **only in the Edit listing views/components** unless parity requires shared partials.
+
+---
+
+# ✅ GOALS (Must match Create exactly)
+
+When editing a Hire a Buyer’s Agent listing:
+
+1. **Services tab “Next” button works** exactly like Create Listing.
+2. **Hire Agent button** (text weight/bold, spacing, font size, alignment) matches Create Listing exactly.
+3. **All numeric + currency inputs** on the **Property Details** tab match Create Listing:
+
+   * No extra spacing/padding differences
+   * Dollar sign formatting identical (same placement, same input-group styling)
+   * The “$ inside/outside the box” look must match Create
+
+---
+
+# ✅ STEP 1 — Locate the Create vs Edit files and confirm they differ
+
+Identify the exact Blade/Livewire used for:
+
+* **Create listing** (Hire a Buyer)
+* **Edit listing** (Hire a Buyer)
+
+**Requirement:** Output file paths for:
+
+* Create **Property Details** view
+* Edit **Property Details** view
+* Create Services view
+* Edit Services view
+* Create bottom action buttons (Previous/Next/Hire Agent)
+* Edit bottom action buttons (Previous/Next/Hire Agent)
+
+---
+
+# ✅ STEP 2 — Fix “Next” button on Services tab not working (Edit only)
+
+### Diagnose
+
+In Edit mode, inspect the Services tab “Next” button:
+
+* Missing `wire:click` handler?
+* Wrong method name?
+* `type="submit"` causing validation block?
+* Button inside wrong form?
+* Step state not updating in Edit component?
+
+### Required Fix
+
+Compare the Create Services “Next” button implementation and make Edit identical:
+
+* same `wire:click="..."` (or same action)
+* same button `type` (`button` vs `submit`)
+* same disabled/loading behavior
+* same step increment logic
+
+🔒 Safeguard: Do not change Create logic; only bring Edit into parity.
+
+---
+
+# ✅ STEP 3 — Make “Hire Agent” button identical (Edit vs Create)
+
+### Issue
+
+Hire Agent button text formatting differs (bold vs not bold) in Edit.
+
+### Required Fix
+
+Compare Create vs Edit markup/classes and make Edit match exactly:
+
+* same component (`<x-button>`, `<x-primary-button>`, etc.)
+* same wrapper tags (`<strong>`, `<span>`)
+* same classes (font weight, padding, border radius, alignment)
+* same icon markup if used
+
+---
+
+# ✅ STEP 4 — Fix numeric + currency input formatting on **Property Details** (Edit)
+
+### Symptoms (from screenshots)
+
+* Extra spacing/padding around numeric inputs in Edit
+* Dollar sign `$` appears in a different position/style (outside input vs inside input-group)
+* Input-group markup differs between Create and Edit
+
+### Required Fix
+
+On **Property Details** tab in Edit:
+
+1. For currency fields:
+
+* Copy the exact Create input-group structure (prefix `$` placement, wrapper divs, spans, classes)
+* Ensure Edit uses the same input classes + height + padding
+
+2. Remove any Edit-only spacing classes that Create does not use
+
+* Look for extra `mt-*`, `mb-*`, `py-*`, `px-*`, `gap-*`, `space-y-*`, `w-*` differences
+
+3. Confirm the rendered DOM structure matches Create
+
+* `$` prefix alignment and input height match exactly
+
+🔒 Safeguard: This is display-only. Do not change any binding keys or save logic.
+
+---
+
+# ✅ STEP 5 — Prevent drift (optional but recommended)
+
+If Create and Edit are duplicated markup:
+
+* Extract shared partials ONLY if safe (no binding breakage)
+* Otherwise do direct Edit parity edits only
+
+---
+
+# ✅ STEP 6 — Verification checklist (must pass)
+
+1. Login `tenant@exp.com`
+2. Create listing → Services tab → Next works ✅
+3. Edit existing listing → Services tab → Next works ✅
+4. Hire Agent button: Edit matches Create exactly ✅
+5. Property Details numeric/currency inputs: Edit matches Create exactly (including `$` formatting) ✅
+
+---
+
+# ✅ Required Output from Replit
+
+Return:
+
+* Exact file paths edited
+* Before/after diff snippets for:
+
+  1. Services tab Next button (Edit)
+  2. Hire Agent button markup/classes (Edit)
+  3. Property Details numeric/currency input markup (Edit)
+* Confirmation tests completed
+
+---
+
+If you paste one screenshot showing the **Services tab Next button area** + one showing the **Property Details $ formatting difference**, I can tighten this even more by describing exactly what DOM structure to mirror (input-group prepend vs inline prefix span, etc.).
