@@ -1,0 +1,192 @@
+Copy/paste these **Replit instructions with safeguards**. They’re written so Replit uses your **attached screenshots** to match the **Edit** experience to the **Create** experience exactly (same formatting, spacing, numeric masks, etc.) for **Hire a Buyer’s Agent**.
+
+---
+
+## Replit Instructions (WITH SAFEGUARDS)
+
+### Fix: Hire a Buyer’s Agent — Edit Listing UI Must Match Create Listing UI (Exact Formatting)
+
+**Login:** `tenant@exp.com`
+**Flow:** Hire a Buyer’s Agent → Create Listing (correct format) vs Edit Listing (format differs)
+**Goal:** The **Edit** form must look and behave **identically** to **Create** for every field shown in the screenshots (spacing, input types, numeric formatting, masking, dropdown style, chips, etc.).
+
+---
+
+# ⚠️ CRITICAL SAFEGUARDS
+
+* **DO NOT rename** any DB columns or meta keys.
+* **DO NOT change** save logic, validation rules, or field meanings unless required to fix formatting.
+* **DO NOT remove** any fields, tooltips, labels, or conditional logic.
+* **DO NOT refactor** unrelated flows (Seller/Landlord/Tenant). Buyer only.
+* Changes must be **display/UI-layer only** unless a specific formatting bug requires a minimal code fix.
+* Reuse existing shared components/partials if they already exist—do not duplicate logic.
+
+---
+
+# ✅ STEP 1 — Identify the exact cause (must be proven, not guessed)
+
+Using the attached screenshots, compare:
+
+* **Create view file(s)** for Hire a Buyer’s Agent
+* **Edit view file(s)** for Hire a Buyer’s Agent
+
+Locate every field where Edit differs from Create in:
+
+1. spacing / layout
+2. input type (text vs number vs select)
+3. prefix/suffix formatting ($, %, commas)
+4. placeholder behavior
+5. phone masks / numeric masks
+6. chip/multi-select rendering
+7. conditional sections (show/hide triggers)
+8. default selected values
+
+**Deliverable:** Produce a list of the differing fields/components and the file locations responsible.
+
+---
+
+# ✅ STEP 2 — Enforce a single “source of truth” for the form UI
+
+## Requirement
+
+Edit and Create must use the **same Blade partial(s)** or the **same Livewire view component** for the Purchasing Terms / Property Preferences section.
+
+### Actions
+
+* If Create uses a partial like:
+
+  * `resources/views/livewire/buyer-auction/partials/purchasing-terms.blade.php`
+  * or a shared component
+* Then Edit must include that same partial instead of having its own markup.
+
+✅ **Fix approach:**
+
+* Extract any duplicated markup into a shared partial if it doesn’t already exist.
+* Then include that shared partial in both Create and Edit.
+
+🔒 Safeguard: Do not change the data keys—only unify the UI rendering.
+
+---
+
+# ✅ STEP 3 — Make Edit input definitions identical to Create
+
+For every field shown in screenshots, Edit must match Create on:
+
+### A) Input types
+
+* If Create uses `<input type="text">` with currency formatting, Edit must also.
+* If Create uses `<input type="number">`, Edit must also.
+* If Create uses `<select>`, Edit must also.
+
+### B) Wire binding modifiers
+
+Match exactly:
+
+* `wire:model.defer` vs `wire:model.lazy` vs `wire:model`
+  If Create uses `defer`, Edit must use `defer`.
+
+### C) Numeric formatting / masks
+
+If Create applies:
+
+* `$` prefix display
+* comma formatting
+* percent suffix
+* min/max/step
+* inputmode numeric
+* JS mask (like Cleave/IMask)
+  Then Edit must apply the same initializer.
+
+**Important:** If masks are initialized only on page load, you must also initialize them on Livewire updates for Edit.
+
+✅ Add (if needed) a shared JS init hook:
+
+* Ensure the mask runs on:
+
+  * `livewire:load`
+  * `message.processed` (Livewire v2) or `Livewire.hook('message.processed', ...)`
+
+🔒 Safeguard: Do not introduce new libraries; reuse what Create already uses.
+
+---
+
+# ✅ STEP 4 — Fix “Edit uses a different component” problems
+
+Common cause: Edit uses a different Livewire view file than Create.
+
+### Required:
+
+* Confirm Create and Edit both render the same Blade file(s).
+* If Create uses `create.blade.php` and Edit uses `edit.blade.php`, ensure:
+
+  * they include the same shared partial(s)
+  * and use the same Tailwind/Bootstrap classes
+
+---
+
+# ✅ STEP 5 — Confirm identical spacing / layout classes
+
+For each section shown in screenshots (Property Preferences, Purchasing Terms, etc.):
+
+* Match the same wrapper divs
+* Match same `mt-`, `mb-`, `gap-`, grid columns
+* Match same label font classes, badge styling classes, input heights
+
+🔒 Safeguard: Do not restyle globally—only within the Buyer Create/Edit forms.
+
+---
+
+# ✅ STEP 6 — Verify “Edit hydration” isn’t breaking formatting
+
+Sometimes Edit looks different because the values are loaded as the wrong type:
+
+* numbers loaded as strings
+* arrays loaded as null
+* booleans loaded as “0/1” but select expects “Yes/No”
+
+### Required:
+
+* Ensure Edit loads values into the same types Create expects:
+
+  * multi-select arrays always `(array)`
+  * dropdown values exactly match option values
+  * currency fields store raw numeric values (no $ sign stored)
+
+🔒 Safeguard: Do not change DB values; only cast/format at UI level.
+
+---
+
+# ✅ STEP 7 — Acceptance Criteria (must pass)
+
+Replit must verify with screenshots:
+
+1. Create a Hire a Buyer listing → confirm formatting
+2. Save Draft
+3. Open Edit
+4. ✅ Every field looks identical to Create:
+
+   * same spacing
+   * same input types
+   * same numeric/currency formatting
+   * same chips/multi-select appearance
+   * same conditional show/hide behavior
+
+---
+
+# ✅ Output Required
+
+Return:
+
+* exact file paths edited
+* which partials/components are shared now
+* exact fields fixed
+* proof screenshots of Create vs Edit matching
+
+---
+
+## If you want this to go even faster
+
+Tell Replit: **“Use the Create form markup as the source of truth and make Edit include it.”**
+That’s the cleanest way to force identical UI forever.
+
+If you paste the **file paths** for the Create and Edit Buyer forms (or your Livewire component names), I can tailor the instructions to your exact structure so Replit can’t wander.

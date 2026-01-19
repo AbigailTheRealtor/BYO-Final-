@@ -2267,66 +2267,87 @@
     </script>
 
     <script>
-        // Money input helper functions for comma-formatted currency inputs
-        function cleanMoneyInput(raw) {
-            if (!raw) return '';
-            // Remove all characters except digits and decimal point
-            let clean = String(raw).replace(/[^0-9.]/g, '');
-            // Ensure only one decimal point
+        // Global money input helper functions for comma-formatted currency inputs
+        function getErrorEl(input) {
+            const errorId = input.getAttribute('data-error-id');
+            return errorId ? document.getElementById(errorId) : null;
+        }
+
+        function formatWithCommas(input) {
+            let value = input.value.replace(/[^\d.]/g, '');
+            let parts = value.split('.');
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            input.value = parts.length > 1 ? parts[0] + '.' + parts[1].substring(0, 2) : parts[0];
+        }
+
+        function validateInput(input) {
+            let v = input.value;
+            v = v.replace(/[^0-9.,]/g, '');
+            const firstDot = v.indexOf('.');
+            if (firstDot !== -1) {
+                v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g, '');
+            }
+            input.value = v;
+        }
+
+        function reformatNumber(input) {
+            const errorEl = getErrorEl(input);
+            let v = input.value.replace(/,/g, '');
+            const parts = v.split('.');
+            let intPart = parts[0] || '';
+            let decPart = parts[1] || '';
+
+            if (decPart) decPart = decPart.slice(0, 2);
+
+            intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            input.value = decPart ? `${intPart}.${decPart}` : intPart;
+
+            errorEl && (errorEl.innerText = "");
+        }
+
+        function handlePaste(event) {
+            event.preventDefault();
+            const paste = (event.clipboardData || window.clipboardData).getData('text');
+            let clean = paste.replace(/[^0-9.]/g, '');
             const parts = clean.split('.');
             if (parts.length > 2) {
                 clean = parts[0] + '.' + parts.slice(1).join('');
             }
-            return clean;
+            let intPart = parts[0] || '';
+            let decPart = parts[1] || '';
+            if (decPart) decPart = decPart.slice(0, 2);
+            intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            event.target.value = decPart ? `${intPart}.${decPart}` : intPart;
+            event.target.dispatchEvent(new Event('input', { bubbles: true }));
         }
 
-        function formatMoneyDisplay(clean) {
-            if (!clean) return '';
-            const parts = String(clean).split('.');
-            // Add commas to the integer part
-            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-            return parts.join('.');
-        }
-
-        function validateMoneyInput(input) {
-            // Allow typing without clearing - just remove invalid characters
-            let value = input.value;
-            // Keep digits, commas, and one decimal point
-            value = value.replace(/[^0-9.,]/g, '');
-            // Remove duplicate decimal points
-            const firstDot = value.indexOf('.');
-            if (firstDot !== -1) {
-                value = value.slice(0, firstDot + 1) + value.slice(firstDot + 1).replace(/\./g, '');
-            }
-            input.value = value;
-        }
-
-        function formatMoneyOnBlur(input) {
-            // On blur, clean and format the value
-            const clean = cleanMoneyInput(input.value);
-            if (clean) {
-                input.value = formatMoneyDisplay(clean);
-                // Update Livewire with the clean numeric value
-                if (input.hasAttribute('wire:model')) {
-                    const modelName = input.getAttribute('wire:model');
-                    if (window.Livewire) {
-                        const component = Livewire.find(input.closest('[wire\\:id]').getAttribute('wire:id'));
-                        if (component) {
-                            component.set(modelName, clean);
-                        }
+        // Format all numeric inputs on page load
+        function formatAllNumericInputs() {
+            // Select all inputs that use reformatNumber on blur
+            const numericInputs = document.querySelectorAll('input[onblur*="reformatNumber"]');
+            numericInputs.forEach(input => {
+                if (input.value && input.value.trim() !== '') {
+                    // Only format if there's a value and it doesn't already have commas
+                    if (!input.value.includes(',')) {
+                        reformatNumber(input);
                     }
                 }
-            }
+            });
         }
 
-        function handleMoneyPaste(event) {
-            event.preventDefault();
-            const paste = (event.clipboardData || window.clipboardData).getData('text');
-            const clean = cleanMoneyInput(paste);
-            const input = event.target;
-            input.value = formatMoneyDisplay(clean);
-            // Trigger Livewire update
-            input.dispatchEvent(new Event('input', { bubbles: true }));
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(formatAllNumericInputs, 100);
+        });
+
+        // Re-initialize after Livewire updates (Livewire v2)
+        if (typeof Livewire !== 'undefined') {
+            document.addEventListener('livewire:load', function() {
+                setTimeout(formatAllNumericInputs, 100);
+                Livewire.hook('message.processed', function() {
+                    setTimeout(formatAllNumericInputs, 100);
+                });
+            });
         }
     </script>
 @endpush
