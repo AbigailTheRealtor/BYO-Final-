@@ -934,11 +934,22 @@
             });
 
             function handleNextClick() {
+                console.log('[DEBUG] handleNextClick called');
                 const currentTab = document.querySelector('.nav-tabs .nav-link.active');
-                if (!currentTab) return;
+                console.log('[DEBUG] currentTab:', currentTab);
+                if (!currentTab) {
+                    console.log('[DEBUG] No active tab found, returning');
+                    return;
+                }
 
-                const currentTabContent = document.querySelector(currentTab.getAttribute('data-bs-target'));
-                if (!currentTabContent) return;
+                const targetSelector = currentTab.getAttribute('data-bs-target');
+                console.log('[DEBUG] data-bs-target:', targetSelector);
+                const currentTabContent = document.querySelector(targetSelector);
+                console.log('[DEBUG] currentTabContent:', currentTabContent);
+                if (!currentTabContent) {
+                    console.log('[DEBUG] No tab content found for selector:', targetSelector);
+                    return;
+                }
 
                 let isValid = true;
 
