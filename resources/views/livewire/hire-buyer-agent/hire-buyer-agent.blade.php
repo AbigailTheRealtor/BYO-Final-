@@ -281,7 +281,7 @@
         /* Agent type selection button text styling */
         .user-selected {
             color: #0ce7ef;
-            font-weight: 500;
+            font-weight: 600;
         }
 
         .user-type-icon {

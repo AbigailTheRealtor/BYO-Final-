@@ -281,7 +281,7 @@
         /* Agent type selection button text styling */
         .user-selected {
             color: #0ce7ef;
-            font-weight: 500;
+            font-weight: 600;
         }
 
         .user-type-icon {
@@ -934,22 +934,12 @@
             });
 
             function handleNextClick() {
-                console.log('[DEBUG] handleNextClick called');
                 const currentTab = document.querySelector('.nav-tabs .nav-link.active');
-                console.log('[DEBUG] currentTab:', currentTab);
-                if (!currentTab) {
-                    console.log('[DEBUG] No active tab found, returning');
-                    return;
-                }
+                if (!currentTab) return;
 
                 const targetSelector = currentTab.getAttribute('data-bs-target');
-                console.log('[DEBUG] data-bs-target:', targetSelector);
                 const currentTabContent = document.querySelector(targetSelector);
-                console.log('[DEBUG] currentTabContent:', currentTabContent);
-                if (!currentTabContent) {
-                    console.log('[DEBUG] No tab content found for selector:', targetSelector);
-                    return;
-                }
+                if (!currentTabContent) return;
 
                 let isValid = true;
 
@@ -980,34 +970,19 @@
 
                 // Validate services tab
                 if (currentTabContent.id === 'services') {
-                    console.log('[DEBUG] On services tab, running validation');
-                    const servicesValid = validateServicesTabGlobal(currentTabContent);
-                    console.log('[DEBUG] Services validation result:', servicesValid);
-                    isValid = isValid && servicesValid;
+                    isValid = isValid && validateServicesTabGlobal(currentTabContent);
                 }
 
-                console.log('[DEBUG] Final isValid:', isValid);
                 if (isValid) {
-                    const parentLi = currentTab.parentElement;
-                    console.log('[DEBUG] Parent li:', parentLi);
-                    const nextLi = parentLi?.nextElementSibling;
-                    console.log('[DEBUG] Next li:', nextLi);
-                    const nextTab = nextLi?.querySelector('.nav-link');
-                    console.log('[DEBUG] Next tab button:', nextTab);
+                    const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector('.nav-link');
                     if (nextTab) {
                         const tabs = document.querySelectorAll('.nav-link');
                         const tabIndex = Array.from(tabs).indexOf(nextTab);
-                        console.log('[DEBUG] Tab index:', tabIndex);
                         if (tabIndex !== -1) {
-                            console.log('[DEBUG] Emitting setActiveTab and clicking next tab');
                             Livewire.emit('setActiveTab', tabIndex);
                             nextTab.click();
                         }
-                    } else {
-                        console.log('[DEBUG] No next tab found!');
                     }
-                } else {
-                    console.log('[DEBUG] Validation failed, not advancing');
                 }
             }
 
