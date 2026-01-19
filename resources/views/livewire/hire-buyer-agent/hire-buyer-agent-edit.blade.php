@@ -916,21 +916,31 @@
 
         // ========== DELEGATED EVENT HANDLER (survives Livewire re-renders) ==========
         function attachWizardDelegatedHandlers() {
+            console.log('[WIZARD] attachWizardDelegatedHandlers called, guard:', window.__buyerEditWizardDelegatedHandlersAttached);
             if (window.__buyerEditWizardDelegatedHandlersAttached) return;
             window.__buyerEditWizardDelegatedHandlersAttached = true;
+            console.log('[WIZARD] Attaching delegated click handler to document');
 
             document.addEventListener('click', function(e) {
                 const nextBtn = e.target.closest('[data-wizard-next]');
                 const backBtn = e.target.closest('[data-wizard-back]');
 
                 if (nextBtn) {
+                    console.log('[WIZARD] Next clicked', { target: e.target, nextBtn });
+                    console.log('[WIZARD] buyerEditWizardNextStep exists?', typeof window.buyerEditWizardNextStep);
                     e.preventDefault();
                     e.stopPropagation();
-                    window.buyerEditWizardNextStep?.();
+                    try {
+                        window.buyerEditWizardNextStep?.();
+                        console.log('[WIZARD] buyerEditWizardNextStep invoked');
+                    } catch (err) {
+                        console.error('[WIZARD] buyerEditWizardNextStep error', err);
+                    }
                     return;
                 }
 
                 if (backBtn) {
+                    console.log('[WIZARD] Back clicked', { target: e.target, backBtn });
                     e.preventDefault();
                     e.stopPropagation();
                     window.buyerEditWizardPrevStep?.();
@@ -941,17 +951,28 @@
 
         // Global next step function
         window.buyerEditWizardNextStep = function() {
+            console.log('[WIZARD] NextStep start');
             const currentTab = document.querySelector('.nav-tabs .nav-link.active');
-            if (!currentTab) return;
+            console.log('[WIZARD] currentTab:', currentTab?.textContent?.trim());
+            if (!currentTab) {
+                console.warn('[WIZARD] No active tab found, returning');
+                return;
+            }
 
             const currentTabContent = document.querySelector(currentTab.getAttribute('data-bs-target'));
-            if (!currentTabContent) return;
+            console.log('[WIZARD] currentTabContent id:', currentTabContent?.id);
+            if (!currentTabContent) {
+                console.warn('[WIZARD] No tab content found, returning');
+                return;
+            }
 
             let isValid = true;
+            let invalidFields = [];
 
             // Validate all required fields in the current tab
             const requiredFields = currentTabContent.querySelectorAll(
                 'input[required], select[required], textarea[required]');
+            console.log('[WIZARD] Required fields count:', requiredFields.length);
             if (requiredFields) {
                 requiredFields.forEach(function(input) {
                     // Skip hidden or disabled fields
@@ -961,6 +982,7 @@
                     
                     if (!input.value) {
                         isValid = false;
+                        invalidFields.push(input.name || input.id || 'unknown');
                         input.classList.add('is-invalid');
 
                         const formGroup = input.closest('.form-group');
@@ -988,21 +1010,37 @@
                 });
             }
 
+            if (invalidFields.length > 0) {
+                console.warn('[WIZARD] Invalid fields:', invalidFields);
+            }
+
             // Validate services tab if on it
             if (currentTabContent.id === 'services') {
-                if (!validateServicesTabGlobal(currentTabContent)) {
+                const servicesValid = validateServicesTabGlobal(currentTabContent);
+                console.log('[WIZARD] validateServicesTabGlobal result:', servicesValid);
+                if (!servicesValid) {
                     isValid = false;
                 }
             }
 
-            if (!isValid) return;
+            if (!isValid) {
+                console.warn('[WIZARD] Validation failed, not advancing');
+                return;
+            }
+            console.log('[WIZARD] Validation passed, proceeding to next tab');
 
             // Go to next tab
             const nextTab = currentTab.parentElement.nextElementSibling?.querySelector('.nav-link');
+            console.log('[WIZARD] nextTab found:', nextTab?.textContent?.trim());
             if (nextTab) {
                 const allTabs = Array.from(document.querySelectorAll('.nav-link'));
-                Livewire.emit('setActiveTab', allTabs.indexOf(nextTab));
+                const nextIndex = allTabs.indexOf(nextTab);
+                console.log('[WIZARD] Emitting setActiveTab with index:', nextIndex);
+                Livewire.emit('setActiveTab', nextIndex);
+                console.log('[WIZARD] Clicking nextTab');
                 nextTab.click();
+            } else {
+                console.log('[WIZARD] No next tab found (last tab)');
             }
 
             // Update form validity
@@ -1015,6 +1053,7 @@
             if (saveButton && !nextTab) {
                 saveButton.disabled = false;
             }
+            console.log('[WIZARD] NextStep complete');
         };
 
         // Global prev step function
