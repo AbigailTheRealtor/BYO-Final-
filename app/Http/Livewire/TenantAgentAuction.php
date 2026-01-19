@@ -2649,6 +2649,43 @@ class TenantAgentAuction extends Component
             $this->nft_percentage = $auction->get->nft_percentage ?? '';
             $this->cash_percentage_nft = $auction->get->cash_percentage_nft ?? '';
 
+            // Seller Financing follow-up fields
+            $this->seller_amortization_type = $auction->get->seller_amortization_type ?? '';
+            $this->seller_amortization_other = $auction->get->seller_amortization_other ?? '';
+            $this->seller_payment_frequency = $auction->get->seller_payment_frequency ?? '';
+            $this->seller_payment_frequency_other = $auction->get->seller_payment_frequency_other ?? '';
+            $this->seller_late_fee_amount = $auction->get->seller_late_fee_amount ?? '';
+
+            // Lease Option follow-up fields
+            $this->lease_option_maintenance = $auction->get->lease_option_maintenance ?? '';
+            $this->lease_option_extension_terms = $auction->get->lease_option_extension_terms ?? '';
+            $this->lease_option_fee_credit = $auction->get->lease_option_fee_credit ?? '';
+            $this->lease_option_fee_credit_percentage = $auction->get->lease_option_fee_credit_percentage ?? '';
+
+            // Lease Purchase follow-up fields
+            $this->lease_purchase_maintenance = $auction->get->lease_purchase_maintenance ?? '';
+            $this->lease_purchase_extension_terms = $auction->get->lease_purchase_extension_terms ?? '';
+            $this->lease_purchase_rent_credit = $auction->get->lease_purchase_rent_credit ?? '';
+            $this->lease_purchase_rent_credit_amount = $auction->get->lease_purchase_rent_credit_amount ?? '';
+            $this->lease_purchase_deposit = $auction->get->lease_purchase_deposit ?? '';
+
+            // Cryptocurrency follow-up fields
+            $this->crypto_exchange_method = $auction->get->crypto_exchange_method ?? '';
+            $this->crypto_custodian_wallet = $auction->get->crypto_custodian_wallet ?? '';
+            $this->crypto_transaction_fees = $auction->get->crypto_transaction_fees ?? '';
+            $this->crypto_transfer_timing = $auction->get->crypto_transfer_timing ?? '';
+            $this->crypto_transfer_timing_other = $auction->get->crypto_transfer_timing_other ?? '';
+
+            // NFT follow-up fields
+            $this->nft_valuation_method = $auction->get->nft_valuation_method ?? '';
+            $this->nft_transfer_method = $auction->get->nft_transfer_method ?? '';
+            $this->nft_gas_fees = $auction->get->nft_gas_fees ?? '';
+
+            // Exchange/Trade follow-up fields
+            $this->exchange_transfer_method = $auction->get->exchange_transfer_method ?? '';
+            $this->exchange_liens = $auction->get->exchange_liens ?? '';
+            $this->exchange_inspection_rights = $auction->get->exchange_inspection_rights ?? '';
+
             ///////////////// Buyer purchasing terms end
 
 
@@ -3215,6 +3252,8 @@ class TenantAgentAuction extends Component
         // Lease Option follow-up fields
         $auction->saveMeta('lease_option_maintenance', $this->lease_option_maintenance);
         $auction->saveMeta('lease_option_extension_terms', $this->lease_option_extension_terms);
+        $auction->saveMeta('lease_option_fee_credit', $this->lease_option_fee_credit);
+        $auction->saveMeta('lease_option_fee_credit_percentage', $this->lease_option_fee_credit_percentage);
 
         // Lease Purchase follow-up fields
         $auction->saveMeta('lease_purchase_maintenance', $this->lease_purchase_maintenance);
