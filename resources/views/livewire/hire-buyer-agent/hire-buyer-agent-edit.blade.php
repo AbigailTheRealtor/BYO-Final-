@@ -980,19 +980,34 @@
 
                 // Validate services tab
                 if (currentTabContent.id === 'services') {
-                    isValid = isValid && validateServicesTabGlobal(currentTabContent);
+                    console.log('[DEBUG] On services tab, running validation');
+                    const servicesValid = validateServicesTabGlobal(currentTabContent);
+                    console.log('[DEBUG] Services validation result:', servicesValid);
+                    isValid = isValid && servicesValid;
                 }
 
+                console.log('[DEBUG] Final isValid:', isValid);
                 if (isValid) {
-                    const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector('.nav-link');
+                    const parentLi = currentTab.parentElement;
+                    console.log('[DEBUG] Parent li:', parentLi);
+                    const nextLi = parentLi?.nextElementSibling;
+                    console.log('[DEBUG] Next li:', nextLi);
+                    const nextTab = nextLi?.querySelector('.nav-link');
+                    console.log('[DEBUG] Next tab button:', nextTab);
                     if (nextTab) {
                         const tabs = document.querySelectorAll('.nav-link');
                         const tabIndex = Array.from(tabs).indexOf(nextTab);
+                        console.log('[DEBUG] Tab index:', tabIndex);
                         if (tabIndex !== -1) {
+                            console.log('[DEBUG] Emitting setActiveTab and clicking next tab');
                             Livewire.emit('setActiveTab', tabIndex);
                             nextTab.click();
                         }
+                    } else {
+                        console.log('[DEBUG] No next tab found!');
                     }
+                } else {
+                    console.log('[DEBUG] Validation failed, not advancing');
                 }
             }
 
