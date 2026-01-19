@@ -1112,6 +1112,10 @@
                     window.updateSaveButton();
                 }
             }, 100);
+            // Additional delayed call to ensure FontAwesome has fully loaded
+            setTimeout(function() {
+                addIconsToInputs();
+            }, 500);
         });
 
         // Listen for force-redirect event to ensure redirect works after submit

@@ -71,6 +71,7 @@
     <div class="form-group mt-3">
         <label class="fw-bold">Buyer Open to Purchasing an Assignment Contract:</label>
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-file-contract"></i>
             <select wire:model="sale_provision_assignment" class="form-control has-icon"
                 data-icon="fa-solid fa-file-contract">
                 <option value="">Select</option>
