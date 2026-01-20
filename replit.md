@@ -17,8 +17,23 @@ Built on Laravel 8.x with PHP 8.2.23 and PostgreSQL, the platform uses Node.js v
 **CRITICAL - Shared Livewire Component Architecture**: The `TenantAgentAuction.php` component (`app/Http/Livewire/TenantAgentAuction.php`) is the **primary shared component** that processes form submissions for **ALL agent types**: Buyer, Seller, Landlord, and Tenant. This component handles:
 - Form submission via `store()` method
 - Draft saving via `saveDraft()` method  
+- Draft loading via `loadDraft()` method (with fallback to search all models)
 - Metadata persistence via `saveAllMetadata()` method
 - The `user_type` property determines which model/table is used (HireBuyerAgentAuction, HireSellerAgentAuction, HireLandLordAgentAuction, HireTenantAgentAuction)
+
+**CRITICAL - Mount Parameter Order**: The `mount($user_type = null, $listingId = null)` method receives `user_type` as the FIRST parameter because Livewire maps route parameters positionally. The route `/hire/agent/auction/{user_type?}` passes user_type as the first segment, so it must be the first mount parameter. Changing this order will break draft discovery for non-tenant agent types.
+
+**Model Resolution Pattern**: All methods that interact with auction models (store, saveDraft, loadDraft, hasDrafts, getDrafts) use a consistent match statement to resolve the correct model class based on user_type:
+```php
+$modelClass = match ($this->user_type) {
+    'tenant'   => HireTenantAgentAuction::class,
+    'landlord' => HireLandLordAgentAuction::class,
+    'buyer'    => HireBuyerAgentAuction::class,
+    'seller'   => HireSellerAgentAuction::class,
+    default    => HireTenantAgentAuction::class,
+};
+```
+The loadDraft() method includes a fallback that searches all models if the draft isn't found in the primary table, ensuring backward compatibility for legacy drafts.
 
 **When adding new fields for ANY agent type** (including Buyer), you MUST add:
 1. Public property declaration in `TenantAgentAuction.php`
