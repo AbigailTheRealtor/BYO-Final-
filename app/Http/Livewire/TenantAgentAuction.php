@@ -2737,6 +2737,7 @@ class TenantAgentAuction extends Component
             // Exchange/Trade follow-up fields
             $this->exchange_transfer_method = $auction->get->exchange_transfer_method ?? '';
             $this->exchange_liens = $auction->get->exchange_liens ?? '';
+            $this->exchange_liens_details = $auction->get->exchange_liens_details ?? '';
             $this->exchange_inspection_rights = $auction->get->exchange_inspection_rights ?? '';
 
             ///////////////// Buyer purchasing terms end
@@ -3353,6 +3354,7 @@ class TenantAgentAuction extends Component
         // Exchange/Trade follow-up fields
         $auction->saveMeta('exchange_transfer_method', $this->exchange_transfer_method);
         $auction->saveMeta('exchange_liens', $this->exchange_liens);
+        $auction->saveMeta('exchange_liens_details', $this->exchange_liens_details);
         $auction->saveMeta('exchange_inspection_rights', $this->exchange_inspection_rights);
 
         /// Buyer purchasing terms end
