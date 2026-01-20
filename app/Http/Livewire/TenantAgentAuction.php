@@ -1454,7 +1454,7 @@ class TenantAgentAuction extends Component
         }
     }
     // Methods
-    public function mount($listingId = null, $user_type = null)
+    public function mount($user_type = null, $listingId = null)
     {
         $this->unit_type_configurations = [
             [
@@ -1473,27 +1473,21 @@ class TenantAgentAuction extends Component
 
         $this->listing_date = now()->format('Y-m-d');
 
-
-        // $this->user_type = Auth::check()
-        //     ? Auth::user()->user_type   // e.g. "tenant", "landlord", etc.
-        //     : 'buyer';
-
-
-        if (Auth::check()) {
-            $userType = Auth::user()->user_type;
-
-            // If user_type is agent, override to tenant
-            // $this->user_type = ($userType === 'agent') ? 'tenant' : $userType;
-            $this->user_type = ($user_type == null) ? 'tenant' : $user_type;
-        } else {
-            $this->user_type = 'tenant';
-        }
+        // Set user_type from route parameter, or default to 'tenant'
+        $this->user_type = ($user_type !== null) ? $user_type : 'tenant';
 
         $this->initializeFeeStructure();
         $this->addService();
 
-        // Check for existing drafts
-        $this->hasDrafts = HireTenantAgentAuction::where('user_id', Auth::id())
+        // Check for existing drafts based on user_type
+        $draftModelClass = match ($this->user_type) {
+            'tenant'   => HireTenantAgentAuction::class,
+            'landlord' => HireLandLordAgentAuction::class,
+            'buyer'    => HireBuyerAgentAuction::class,
+            'seller'   => HireSellerAgentAuction::class,
+            default    => HireTenantAgentAuction::class,
+        };
+        $this->hasDrafts = $draftModelClass::where('user_id', Auth::id())
             ->where('is_draft', true)
             ->exists();
 
@@ -1516,7 +1510,15 @@ class TenantAgentAuction extends Component
     }
     public function getDrafts()
     {
-        return HireTenantAgentAuction::where('user_id', Auth::id())
+        // Return drafts from the correct model based on user_type
+        $draftModelClass = match ($this->user_type) {
+            'tenant'   => HireTenantAgentAuction::class,
+            'landlord' => HireLandLordAgentAuction::class,
+            'buyer'    => HireBuyerAgentAuction::class,
+            'seller'   => HireSellerAgentAuction::class,
+            default    => HireTenantAgentAuction::class,
+        };
+        return $draftModelClass::where('user_id', Auth::id())
             ->where('is_draft', true)
             ->latest()
             ->get();
@@ -2339,16 +2341,50 @@ class TenantAgentAuction extends Component
     public function saveDraft()
     {
         try {
-
-
             $this->isDraft = true;
             $this->validateOnlyFilledFields();
+
+            // Map user_type to model class (same as store())
+            $auctionClass = match ($this->user_type) {
+                'tenant'   => HireTenantAgentAuction::class,
+                'landlord' => HireLandLordAgentAuction::class,
+                'buyer'    => HireBuyerAgentAuction::class,
+                'seller'   => HireSellerAgentAuction::class,
+                default    => null,
+            };
+
+            if (!$auctionClass) {
+                throw new \Exception("Invalid user_type: {$this->user_type}");
+            }
+
             $auction = $this->listingId
-                ? HireTenantAgentAuction::find($this->listingId)
-                : new HireTenantAgentAuction();
+                ? $auctionClass::find($this->listingId)
+                : null;
+
+            // If listingId was set but record not found, create new instance
+            if (!$auction) {
+                $auction = new $auctionClass();
+            }
+
             $auction->user_id = Auth::id();
             $auction->title = $this->listing_title;
             $auction->is_draft = true;
+
+            // Set required fields with defaults for buyer/seller types that have NOT NULL constraints
+            if ($this->user_type === 'buyer' || $this->user_type === 'seller') {
+                $auction->address = $this->address ?? 'N/A';
+                // Use string 'true'/'false' to match existing query patterns
+                if (!$auction->exists || $auction->is_approved === null) {
+                    $auction->is_approved = 'false';
+                }
+                if (!$auction->exists || $auction->is_sold === null) {
+                    $auction->is_sold = 'false';
+                }
+                if (!$auction->exists || $auction->is_paid === null) {
+                    $auction->is_paid = 'false';
+                }
+            }
+
             $auction->save();
 
             $this->listingId = $auction->id;
@@ -2364,31 +2400,47 @@ class TenantAgentAuction extends Component
 
     public function loadDraft($listingId)
     {
-        $auction = HireTenantAgentAuction::where('id', $listingId)
-            ->where('user_id', Auth::id())
-            ->first();
+        // All model classes to search
+        $modelClasses = [
+            'tenant'   => HireTenantAgentAuction::class,
+            'landlord' => HireLandLordAgentAuction::class,
+            'buyer'    => HireBuyerAgentAuction::class,
+            'seller'   => HireSellerAgentAuction::class,
+        ];
 
+        $auction = null;
+        $foundUserType = null;
 
-        // // 3. Determine the Eloquent Model class based on the user_type stored in the draft
-        // $modelClass = match ($this->user_type) {
-        //     'tenant'   => HireTenantAgentAuction::class,
-        //     'landlord' => HireLandLordAgentAuction::class,
-        //     'buyer'    => HireBuyerAgentAuction::class,
-        //     'seller'   => HireSellerAgentAuction::class,
-        //     default    => null,
-        // };
+        // If user_type is set, try that model first
+        if ($this->user_type && isset($modelClasses[$this->user_type])) {
+            $modelClass = $modelClasses[$this->user_type];
+            $auction = $modelClass::where('id', $listingId)
+                ->where('user_id', Auth::id())
+                ->first();
+            if ($auction) {
+                $foundUserType = $this->user_type;
+            }
+        }
 
-        // // If the user_type is invalid, handle the error
-        // if ($modelClass === null) {
-        //     abort(500, 'Invalid listing type.');
-        // }
-
-        // // 4. Now use the correct model to find the full listing data
-        // // We query the actual listings table, using the draft's 'listing_id'
-        // $auction = $modelClass::where('id', $listingId)
-        //     ->where('user_id', Auth::id())->first();
+        // If not found, try all other models (fallback for drafts saved before fix)
+        if (!$auction) {
+            foreach ($modelClasses as $userType => $modelClass) {
+                if ($userType === $this->user_type) continue; // Already tried
+                $auction = $modelClass::where('id', $listingId)
+                    ->where('user_id', Auth::id())
+                    ->first();
+                if ($auction) {
+                    $foundUserType = $userType;
+                    break;
+                }
+            }
+        }
 
         if ($auction) {
+            // Update user_type if found in a different table
+            if ($foundUserType && $foundUserType !== $this->user_type) {
+                $this->user_type = $foundUserType;
+            }
 
             // Load all metadata fields
             $this->listing_title = $auction->title;
