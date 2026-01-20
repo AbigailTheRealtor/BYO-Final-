@@ -1664,6 +1664,58 @@
                             ],
                         ];
 
+                        // Buyer Business service categories (uses regular apostrophes - normalize for matching)
+                        $businessCategories = [
+                            "📣 Buyer Criteria Marketing & Promotion" => [
+                                "Create a branded flyer summarizing the Buyer's purchase criteria",
+                                "Post the Buyer's purchase criteria on Craigslist under \"Business for Sale\" or \"Real Estate Wanted - Commercial\"",
+                                "Promote the Buyer's purchase criteria on Facebook in Business Opportunity or Franchise Groups",
+                                "Share the Buyer's purchase criteria on Instagram using posts, stories, or reels",
+                                "Promote the Buyer's purchase criteria on LinkedIn in Business, Commercial, or Startup Groups",
+                                "Upload a TikTok video summarizing the Buyer's purchase criteria",
+                                "Upload a YouTube video summarizing the Buyer's purchase criteria",
+                                "Launch a mass email campaign promoting the Buyer's purchase criteria",
+                                "Distribute branded postcards or flyers in the Buyer's preferred neighborhoods",
+                                "Launch hyperlocal digital ads targeting the Buyer's preferred purchase areas",
+                            ],
+                            "🔍 Business Search, Alerts & Matching" => [
+                                "Send alerts for businesses that match the Buyer's acquisition criteria from available business listing sources",
+                                "Search for off-market, pre-market, distressed, or recently closed businesses that meet the Buyer's criteria",
+                                "Communicate with the Seller's Broker or Seller to confirm pricing, lease terms, licensing status, and showing availability",
+                                "Analyze financials, lease assignments, business licensing requirements, and overall market positioning",
+                            ],
+                            "🏢 Property Showings & Virtual Tours" => [
+                                "Schedule and attend property or business showings with the Buyer",
+                                "Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs",
+                                "Preview properties or business locations on behalf of the Buyer upon request",
+                                "Provide insights on foot traffic, customer base, operational setup, competitive advantages, and location dynamics",
+                            ],
+                            "📝 Offer & Contract Management" => [
+                                "Draft and submit offers using appropriate business purchase or asset sale forms",
+                                "Provide the Buyer with required disclosures, financial summaries, and documentation made available by the Seller",
+                                "Negotiate terms such as purchase price, deposit structure, inventory inclusions, non-compete agreements, and contingencies",
+                                "Draft and deliver counteroffers and manage revisions to the purchase agreement",
+                                "Manage communication with the Seller's Broker or Seller",
+                                "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
+                                "Assist with due diligence coordination, Buyer-requested repairs, and adjustment negotiations",
+                                "Monitor contingency periods, financing milestones, and deal approval timelines",
+                                "Provide referrals to Business Attorneys, CPAs, Escrow Officers, or Lenders (referrals only - no endorsement or warranty is made)",
+                            ],
+                            "📋 Closing Coordination & Transaction Management" => [
+                                "Coordinate inspections, licensing verifications, lease assignments, and inventory counts",
+                                "Coordinate with Lenders, Attorneys, Escrow Officers, Title Companies, CPAs, and other involved parties to prepare for Closing",
+                                "Review the Settlement Statement or Closing Worksheet for accuracy and coordinate with all parties if corrections are needed",
+                                "Confirm delivery of final executed documents, wire instructions, and business transition materials",
+                                "Schedule and confirm the Final Walkthrough",
+                                "Schedule and confirm the Closing Appointment",
+                            ],
+                            "💡 Buying Strategy & Guidance" => [
+                                "Provide a Comparative Market Review based on similar business sales, financial performance, and industry benchmarks",
+                                "Provide general guidance on licensing, zoning, SBA financing, registration steps, and transition timing",
+                                "Provide general guidance on due diligence preparation, key documents to review, and red flags during the acquisition process",
+                            ],
+                        ];
+
                         // Buyer Vacant Land service categories (uses regular apostrophes - normalize for matching)
                         $landCategories = [
                             "📣 Buyer Criteria Marketing & Promotion" => [
@@ -1730,7 +1782,9 @@
                         // Select categories based on property type
                         if ($isIncome) {
                             $categories = $incomeCategories;
-                        } elseif ($isCommercial || $isBusiness) {
+                        } elseif ($isBusiness) {
+                            $categories = $businessCategories;
+                        } elseif ($isCommercial) {
                             $categories = $commercialCategories;
                         } elseif ($isLand) {
                             $categories = $landCategories;
