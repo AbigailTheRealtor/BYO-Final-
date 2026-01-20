@@ -2188,6 +2188,17 @@ class TenantAgentAuctionEdit extends Component
 
         // Property Details
         $this->property_type = $auction->info('property_type');
+        
+        // Business-specific fields
+        $this->business_type_selected = $auction->info('business_type_selected') ?? '';
+        $this->real_estate_purchase = $auction->info('real_estate_purchase') ?? '';
+        $rawAssets = $auction->info('assets');
+        $this->assets = $rawAssets ? (is_string($rawAssets) ? json_decode($rawAssets, true) ?? [] : (array)$rawAssets) : [];
+        $this->assets_other = $auction->info('assets_other') ?? '';
+        $this->assets_visible = is_array($this->assets) && in_array('Other', $this->assets);
+        $this->minimum_annual_net_income = $auction->info('minimum_annual_net_income') ?? '';
+        $this->minimum_cap_rate = $auction->info('minimum_cap_rate') ?? '';
+        
         $this->zip_code = $auction->info('zip_code');
         $this->leasing_space = $auction->info('leasing_space');
         $this->restrictions = $auction->info('restrictions');
