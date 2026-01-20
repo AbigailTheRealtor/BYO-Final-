@@ -79,6 +79,9 @@ class TenantAgentAuction extends Model
 
     public function saveMeta($key, $val)
     {
+        if (is_array($val) || is_object($val)) {
+            $val = json_encode($val);
+        }
         return $this->meta()->updateOrCreate(["meta_key" => $key], ["meta_value" => $val]);
     }
     
@@ -101,8 +104,9 @@ class TenantAgentAuction extends Model
         $data = [];
         $metas = TenantAgentAuctionMeta::where('tenant_agent_auction_id', $this->id)->get();
         foreach ($metas as $row) {
-            if (gettype(json_decode($row->meta_value)) == 'array') {
-                $value = json_decode($row->meta_value);
+            $decoded = json_decode($row->meta_value, true);
+            if (json_last_error() === JSON_ERROR_NONE && (is_array($decoded) || is_object($decoded))) {
+                $value = $decoded;
             } else {
                 $value = $row->meta_value;
             }
