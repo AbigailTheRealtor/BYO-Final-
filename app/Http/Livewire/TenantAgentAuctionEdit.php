@@ -676,6 +676,46 @@ class TenantAgentAuctionEdit extends Component
     public $other_lease_term = null;
     public $unit_type_configurations = [];
 
+    // Financing follow-up fields (Seller Financing)
+    public $seller_amortization_type = '';
+    public $seller_amortization_other = '';
+    public $seller_payment_frequency = '';
+    public $seller_payment_frequency_other = '';
+    public $seller_late_fee_type = '$';
+    public $seller_late_fee_amount = '';
+
+    // Financing follow-up fields (Cryptocurrency)
+    public $crypto_exchange_method = '';
+    public $crypto_custodian_wallet = '';
+    public $crypto_transaction_fees = '';
+    public $crypto_transfer_timing = '';
+    public $crypto_transfer_timing_other = '';
+
+    // Financing follow-up fields (Exchange/Trade)
+    public $exchange_transfer_method = '';
+    public $exchange_liens = '';
+    public $exchange_liens_details = '';
+    public $exchange_inspection_rights = '';
+
+    // Financing follow-up fields (NFT)
+    public $nft_valuation_method = '';
+    public $nft_transfer_method = '';
+    public $nft_gas_fees = '';
+
+    // Financing follow-up fields (Lease Option)
+    public $lease_option_fee_credit = '';
+    public $lease_option_fee_credit_percentage = '';
+    public $lease_option_maintenance = '';
+    public $lease_option_extension_terms = '';
+
+    // Financing follow-up fields (Lease Purchase)
+    public $lease_purchase_rent_credit = '';
+    public $lease_purchase_rent_credit_amount_type = '$';
+    public $lease_purchase_rent_credit_amount = '';
+    public $lease_purchase_deposit = '';
+    public $lease_purchase_maintenance = '';
+    public $lease_purchase_extension_terms = '';
+
     protected $rules = [
         'auction_type' => 'required',
         'appliances' => 'array',
@@ -2153,17 +2193,17 @@ class TenantAgentAuctionEdit extends Component
             $this->property_items = $auction->info('property_items');
         } else {
             // Otherwise, treat $this->property_items as JSON and decode it
-            $this->property_items = json_decode($auction->info('property_items'), true);
+            $this->property_items = json_decode($auction->info('property_items'), true) ?? [];
         }
-        $this->condition_prop_buyer = json_decode($auction->info('condition_prop_buyer'), true);
-        $this->tenant_pays = json_decode($auction->info('tenant_pays'), true);
+        $this->condition_prop_buyer = json_decode($auction->info('condition_prop_buyer'), true) ?? [];
+        $this->tenant_pays = json_decode($auction->info('tenant_pays'), true) ?? [];
         $this->other_tenant_pays = $auction->info('other_tenant_pays');
 
-        $this->owner_pays = json_decode($auction->info('owner_pays'), true);
+        $this->owner_pays = json_decode($auction->info('owner_pays'), true) ?? [];
         $this->other_owner_pays = $auction->info('other_owner_pays');
         $this->purchase_fee_rental_period = $auction->info('purchase_fee_rental_period');
 
-        $this->terms_of_lease = json_decode($auction->info('terms_of_lease'), true);
+        $this->terms_of_lease = json_decode($auction->info('terms_of_lease'), true) ?? [];
         $this->custom_lease_term = $auction->info('custom_lease_term');
         $this->owner_pays_other = $auction->info('owner_pays_other');
 
@@ -2171,7 +2211,7 @@ class TenantAgentAuctionEdit extends Component
         $this->minimum_leaseable = $auction->info('minimum_leaseable');
         $this->min_acreage = $auction->info('min_acreage');
         $this->total_acreage = $auction->info('total_acreage');
-        $this->tenant_require = json_decode($auction->info('tenant_require'), true);
+        $this->tenant_require = json_decode($auction->info('tenant_require'), true) ?? [];
         $this->carport_needed = $auction->info('carport_needed');
         $this->other_carport_needed = $auction->info('other_carport_needed');
         $this->garage_needed = $auction->info('garage_needed');
@@ -2181,19 +2221,19 @@ class TenantAgentAuctionEdit extends Component
 
         $this->other_garage_needed = $auction->info('other_garage_needed');
         $this->garage_parking_spaces = $auction->info('garage_parking_spaces');
-        $this->garage_parking_spaces_option = json_decode($auction->info('garage_parking_spaces_option'), true);
+        $this->garage_parking_spaces_option = json_decode($auction->info('garage_parking_spaces_option'), true) ?? [];
         $this->other_parking_space_wrapper = $auction->info('other_parking_space_wrapper');
         $this->pool_needed = $auction->info('pool_needed');
-        $this->pool_type = json_decode($auction->info('pool_type'), true);
-        $this->view_preference = json_decode($auction->info('view_preference'), true);
+        $this->pool_type = json_decode($auction->info('pool_type'), true) ?? [];
+        $this->view_preference = json_decode($auction->info('view_preference'), true) ?? [];
         $this->other_preferences = $auction->info('other_preferences');
-        $this->appliances = json_decode($auction->info('appliances'), true);
+        $this->appliances = json_decode($auction->info('appliances'), true) ?? [];
         $this->other_appliances = $auction->info('other_appliances');
         $this->leasing_55_plus = $auction->info('leasing_55_plus');
-        $this->non_negotiable_amenities = json_decode($auction->info('non_negotiable_amenities'), true);
+        $this->non_negotiable_amenities = json_decode($auction->info('non_negotiable_amenities'), true) ?? [];
         $this->other_non_negotiable_amenities = $auction->info('other_non_negotiable_amenities');
         $this->budget = $auction->info('budget');
-        $this->lease_for = json_decode($auction->info('lease_for'), true);
+        $this->lease_for = json_decode($auction->info('lease_for'), true) ?? [];
         $this->other_lease_for = $auction->info('other_lease_for');
         $this->lease_by = $auction->info('lease_by');
         $this->other_bedrooms = $auction->info('other_bedrooms');
@@ -2212,10 +2252,10 @@ class TenantAgentAuctionEdit extends Component
         $this->sale_provision_other = $auction->info('sale_provision_other');
         $this->has_breed_restrictions  = $auction->info('has_breed_restrictions ');
         $this->breed_restrictions = $auction->info('breed_restrictions');
-        $this->credit_scroe_rating = json_decode($auction->info('credit_scroe_rating'), true);
-        $this->sale_provision = json_decode($auction->info('sale_provision'), true);
-        $this->offered_financing = json_decode($auction->info('offered_financing'), true);
-        $this->leasing_spaces_tenant = json_decode($auction->info('leasing_spaces_tenant'), true);
+        $this->credit_scroe_rating = json_decode($auction->info('credit_scroe_rating'), true) ?? [];
+        $this->sale_provision = json_decode($auction->info('sale_provision'), true) ?? [];
+        $this->offered_financing = json_decode($auction->info('offered_financing'), true) ?? [];
+        $this->leasing_spaces_tenant = json_decode($auction->info('leasing_spaces_tenant'), true) ?? [];
         $this->prior_eviction = $auction->info('prior_eviction');
         $this->eviction_explanation = $auction->info('eviction_explanation');
         $this->prior_felony_explanation = $auction->info('prior_felony_explanation');
@@ -2282,15 +2322,53 @@ class TenantAgentAuctionEdit extends Component
         $this->nft_description = $auction->info('nft_description');
         $this->cash_percentage_nft = $auction->info('cash_percentage_nft');
 
+        // Financing follow-up fields (Seller Financing)
+        $this->seller_amortization_type = $auction->info('seller_amortization_type') ?? '';
+        $this->seller_amortization_other = $auction->info('seller_amortization_other') ?? '';
+        $this->seller_payment_frequency = $auction->info('seller_payment_frequency') ?? '';
+        $this->seller_payment_frequency_other = $auction->info('seller_payment_frequency_other') ?? '';
+        $this->seller_late_fee_type = $auction->info('seller_late_fee_type') ?: '$';
+        $this->seller_late_fee_amount = $auction->info('seller_late_fee_amount') ?? '';
 
+        // Financing follow-up fields (Cryptocurrency)
+        $this->crypto_exchange_method = $auction->info('crypto_exchange_method') ?? '';
+        $this->crypto_custodian_wallet = $auction->info('crypto_custodian_wallet') ?? '';
+        $this->crypto_transaction_fees = $auction->info('crypto_transaction_fees') ?? '';
+        $this->crypto_transfer_timing = $auction->info('crypto_transfer_timing') ?? '';
+        $this->crypto_transfer_timing_other = $auction->info('crypto_transfer_timing_other') ?? '';
+
+        // Financing follow-up fields (Exchange/Trade)
+        $this->exchange_transfer_method = $auction->info('exchange_transfer_method') ?? '';
+        $this->exchange_liens = $auction->info('exchange_liens') ?? '';
+        $this->exchange_liens_details = $auction->info('exchange_liens_details') ?? '';
+        $this->exchange_inspection_rights = $auction->info('exchange_inspection_rights') ?? '';
+
+        // Financing follow-up fields (NFT)
+        $this->nft_valuation_method = $auction->info('nft_valuation_method') ?? '';
+        $this->nft_transfer_method = $auction->info('nft_transfer_method') ?? '';
+        $this->nft_gas_fees = $auction->info('nft_gas_fees') ?? '';
+
+        // Financing follow-up fields (Lease Option)
+        $this->lease_option_fee_credit = $auction->info('lease_option_fee_credit') ?? '';
+        $this->lease_option_fee_credit_percentage = $auction->info('lease_option_fee_credit_percentage') ?? '';
+        $this->lease_option_maintenance = $auction->info('lease_option_maintenance') ?? '';
+        $this->lease_option_extension_terms = $auction->info('lease_option_extension_terms') ?? '';
+
+        // Financing follow-up fields (Lease Purchase)
+        $this->lease_purchase_rent_credit = $auction->info('lease_purchase_rent_credit') ?? '';
+        $this->lease_purchase_rent_credit_amount_type = $auction->info('lease_purchase_rent_credit_amount_type') ?: '$';
+        $this->lease_purchase_rent_credit_amount = $auction->info('lease_purchase_rent_credit_amount') ?? '';
+        $this->lease_purchase_deposit = $auction->info('lease_purchase_deposit') ?? '';
+        $this->lease_purchase_maintenance = $auction->info('lease_purchase_maintenance') ?? '';
+        $this->lease_purchase_extension_terms = $auction->info('lease_purchase_extension_terms') ?? '';
 
         $this->services = is_string($auction->get->services) ? json_decode($auction->get->services, true) ?? [] : (array)$auction->get->services;
         $this->other_services = is_string($auction->get->other_services) ? json_decode($auction->get->other_services, true) ?? [] : (array)$auction->get->other_services;
 
-        $this->desired_lease_length = json_decode($auction->info('desired_lease_length'), true);
+        $this->desired_lease_length = json_decode($auction->info('desired_lease_length'), true) ?? [];
         $this->other_lease_term = $auction->info('other_lease_term');
 
-        $this->rent_includes = json_decode($auction->info('rent_includes'), true);
+        $this->rent_includes = json_decode($auction->info('rent_includes'), true) ?? [];
         $this->other_rent_include = $auction->info('other_rent_include');
 
         $this->interested_in_selling = $auction->info('interested_in_selling');
@@ -2350,7 +2428,7 @@ class TenantAgentAuctionEdit extends Component
 
 
 
-        $this->flat_fee_services = json_decode($auction->info('flat_fee_services'), true);
+        $this->flat_fee_services = json_decode($auction->info('flat_fee_services'), true) ?? [];
         $this->additional_details = $auction->info('additional_details');
         $this->commission_structure = $auction->info('commission_structure');
         $this->commission_structure_type = $auction->info('commission_structure_type');
@@ -2478,11 +2556,11 @@ class TenantAgentAuctionEdit extends Component
         $this->neighborhood_insights_fee = $auction->info('neighborhood_insights_fee');
         $this->neighborhood_marketing_fee = $auction->info('neighborhood_marketing_fee');
         $this->neighborhood_materials_fee = $auction->info('neighborhood_materials_fee');
-        $this->custom_services = json_decode($auction->info('custom_services'), true);
+        $this->custom_services = json_decode($auction->info('custom_services'), true) ?? [];
         $this->total_marketing_fee = $auction->info('total_marketing_fee');
         $this->total_flat_fee = $auction->info('total_flat_fee');
-        $this->fees = json_decode($auction->info('fees'), true);
-        $this->enable = json_decode($auction->info('enable'), true);
+        $this->fees = json_decode($auction->info('fees'), true) ?? [];
+        $this->enable = json_decode($auction->info('enable'), true) ?? [];
         $this->showings_count = $auction->info('showings_count');
         $this->attend_showings_count = $auction->info('attend_showings_count');
         $this->virtual_tours_count = $auction->info('virtual_tours_count');
@@ -2749,6 +2827,46 @@ class TenantAgentAuctionEdit extends Component
             $auction->saveMeta('nft_description', $this->nft_description);
             $auction->saveMeta('nft_percentage', $this->nft_percentage);
             $auction->saveMeta('cash_percentage_nft', $this->cash_percentage_nft);
+
+            // Financing follow-up fields (Seller Financing)
+            $auction->saveMeta('seller_amortization_type', $this->seller_amortization_type);
+            $auction->saveMeta('seller_amortization_other', $this->seller_amortization_other);
+            $auction->saveMeta('seller_payment_frequency', $this->seller_payment_frequency);
+            $auction->saveMeta('seller_payment_frequency_other', $this->seller_payment_frequency_other);
+            $auction->saveMeta('seller_late_fee_type', $this->seller_late_fee_type);
+            $auction->saveMeta('seller_late_fee_amount', $this->seller_late_fee_amount);
+
+            // Financing follow-up fields (Cryptocurrency)
+            $auction->saveMeta('crypto_exchange_method', $this->crypto_exchange_method);
+            $auction->saveMeta('crypto_custodian_wallet', $this->crypto_custodian_wallet);
+            $auction->saveMeta('crypto_transaction_fees', $this->crypto_transaction_fees);
+            $auction->saveMeta('crypto_transfer_timing', $this->crypto_transfer_timing);
+            $auction->saveMeta('crypto_transfer_timing_other', $this->crypto_transfer_timing_other);
+
+            // Financing follow-up fields (Exchange/Trade)
+            $auction->saveMeta('exchange_transfer_method', $this->exchange_transfer_method);
+            $auction->saveMeta('exchange_liens', $this->exchange_liens);
+            $auction->saveMeta('exchange_liens_details', $this->exchange_liens_details);
+            $auction->saveMeta('exchange_inspection_rights', $this->exchange_inspection_rights);
+
+            // Financing follow-up fields (NFT)
+            $auction->saveMeta('nft_valuation_method', $this->nft_valuation_method);
+            $auction->saveMeta('nft_transfer_method', $this->nft_transfer_method);
+            $auction->saveMeta('nft_gas_fees', $this->nft_gas_fees);
+
+            // Financing follow-up fields (Lease Option)
+            $auction->saveMeta('lease_option_fee_credit', $this->lease_option_fee_credit);
+            $auction->saveMeta('lease_option_fee_credit_percentage', $this->lease_option_fee_credit_percentage);
+            $auction->saveMeta('lease_option_maintenance', $this->lease_option_maintenance);
+            $auction->saveMeta('lease_option_extension_terms', $this->lease_option_extension_terms);
+
+            // Financing follow-up fields (Lease Purchase)
+            $auction->saveMeta('lease_purchase_rent_credit', $this->lease_purchase_rent_credit);
+            $auction->saveMeta('lease_purchase_rent_credit_amount_type', $this->lease_purchase_rent_credit_amount_type);
+            $auction->saveMeta('lease_purchase_rent_credit_amount', $this->lease_purchase_rent_credit_amount);
+            $auction->saveMeta('lease_purchase_deposit', $this->lease_purchase_deposit);
+            $auction->saveMeta('lease_purchase_maintenance', $this->lease_purchase_maintenance);
+            $auction->saveMeta('lease_purchase_extension_terms', $this->lease_purchase_extension_terms);
 
             /// Buyer purchasing terms end
             $auction->saveMeta('prior_eviction', $this->prior_eviction);
