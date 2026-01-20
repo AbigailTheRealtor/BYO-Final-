@@ -67,6 +67,7 @@ class TenantAgentAuctionEdit extends Component
 
     public $leasing_spaces_tenant = [];
     public $business_type = '';
+    public $business_type_selected = '';
     public $other_business_type = '';
     public $other_property_condition = '';
     public $bathrooms = '';
