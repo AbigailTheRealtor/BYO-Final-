@@ -2434,9 +2434,10 @@ class TenantAgentAuction extends Component
                 $this->property_items = is_string($auction->get->property_items) ? json_decode($auction->get->property_items, true) ?? [] : (array)$auction->get->property_items;
             }
             $this->other_property_items = $auction->get->other_property_items;
-            $this->condition_prop_buyer = is_string($auction->get->condition_prop_buyer) ? json_decode($auction->get->condition_prop_buyer, true) ?? [] : (array)$auction->get->condition_prop_buyer;
+            $rawConditionPropBuyer = is_string($auction->get->condition_prop_buyer) ? json_decode($auction->get->condition_prop_buyer, true) ?? [] : (array)$auction->get->condition_prop_buyer;
+            $this->condition_prop_buyer = $this->mapLegacyPropertyConditions($rawConditionPropBuyer);
 
-            $this->condition_prop = $auction->get->condition_prop;
+            $this->condition_prop = $this->mapLegacyPropertyConditions($auction->get->condition_prop);
             $this->business_type = $auction->get->business_type;
             $this->other_business_type = $auction->get->other_business_type;
             $this->leasing_space = $auction->get->leasing_space;
@@ -3016,6 +3017,29 @@ class TenantAgentAuction extends Component
         } else {
             $this->validate($rules);
         }
+    }
+
+    protected function mapLegacyPropertyConditions($conditions)
+    {
+        $legacyMap = [
+            'Completely Updated: No updates needed' => 'No updates needed: Completely updated',
+            'Not Updated: Requires a complete update' => 'Not updated: Requires a complete update',
+            'Currently Being Built' => 'Currently being built',
+        ];
+        
+        // Handle single value (string)
+        if (is_string($conditions) && !empty($conditions)) {
+            return $legacyMap[$conditions] ?? $conditions;
+        }
+        
+        // Handle array of values
+        if (!is_array($conditions)) {
+            return $conditions;
+        }
+        
+        return array_map(function($condition) use ($legacyMap) {
+            return $legacyMap[$condition] ?? $condition;
+        }, $conditions);
     }
 
     protected function saveAllMetadata($auction)

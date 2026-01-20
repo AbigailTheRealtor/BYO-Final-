@@ -1651,6 +1651,29 @@ class TenantAgentAuctionEdit extends Component
 
 
 
+    protected function mapLegacyPropertyConditions($conditions)
+    {
+        $legacyMap = [
+            'Completely Updated: No updates needed' => 'No updates needed: Completely updated',
+            'Not Updated: Requires a complete update' => 'Not updated: Requires a complete update',
+            'Currently Being Built' => 'Currently being built',
+        ];
+        
+        // Handle single value (string)
+        if (is_string($conditions) && !empty($conditions)) {
+            return $legacyMap[$conditions] ?? $conditions;
+        }
+        
+        // Handle array of values
+        if (!is_array($conditions)) {
+            return $conditions;
+        }
+        
+        return array_map(function($condition) use ($legacyMap) {
+            return $legacyMap[$condition] ?? $condition;
+        }, $conditions);
+    }
+
     protected function getPlaceSuggestions($input, $type = null)
     {
         if ($type === 'state') {
@@ -2184,7 +2207,7 @@ class TenantAgentAuctionEdit extends Component
         $this->space_features = $auction->info('space_features');
         $this->neighboring_tenants = $auction->info('neighboring_tenants');
         $this->guests_allowed = $auction->info('guests_allowed');
-        $this->condition_prop = $auction->info('condition_prop');
+        $this->condition_prop = $this->mapLegacyPropertyConditions($auction->info('condition_prop'));
         $this->other_property_condition = $auction->info('other_property_condition');
         $this->bedrooms = $auction->info('bedrooms');
         $this->bathrooms = $auction->info('bathrooms');
@@ -2195,7 +2218,8 @@ class TenantAgentAuctionEdit extends Component
             // Otherwise, treat $this->property_items as JSON and decode it
             $this->property_items = json_decode($auction->info('property_items'), true) ?? [];
         }
-        $this->condition_prop_buyer = json_decode($auction->info('condition_prop_buyer'), true) ?? [];
+        $rawConditionPropBuyer = json_decode($auction->info('condition_prop_buyer'), true) ?? [];
+        $this->condition_prop_buyer = $this->mapLegacyPropertyConditions($rawConditionPropBuyer);
         $this->tenant_pays = json_decode($auction->info('tenant_pays'), true) ?? [];
         $this->other_tenant_pays = $auction->info('other_tenant_pays');
 
