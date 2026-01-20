@@ -3404,195 +3404,33 @@
 
                 return isValid;
             }
-            // MODIFY your existing next button click handler like this:
-            document.querySelector('.wizard-step-next')?.addEventListener('click', function() {
-                const currentTab = document.querySelector('.nav-tabs .nav-link.active');
-                if (!currentTab) return;
-
-                const currentTabContent = document.querySelector(currentTab.getAttribute('data-bs-target'));
-                if (!currentTabContent) return;
-
-                let isValid = true;
-
-                // Validate all required fields in the current tab (your existing code)
-                const requiredFields = currentTabContent.querySelectorAll(
-                    'input[required], select[required], textarea[required]');
-                if (requiredFields) {
-                    requiredFields.forEach(function(input) {
-                        if (!input.value) {
-                            isValid = false;
-                            input.classList.add('is-invalid');
-
-                            const formGroup = input.closest('.form-group');
-                            if (formGroup) {
-                                const errorMessageContainer = formGroup.querySelector('.error');
-                                if (!errorMessageContainer) {
-                                    const errorMessage = document.createElement('div');
-                                    errorMessage.className = 'error mt-2';
-                                    errorMessage.textContent = 'This field is required.';
-                                    formGroup.appendChild(errorMessage);
-                                } else {
-                                    errorMessageContainer.textContent = 'This field is required.';
-                                }
-                            }
-                        } else {
-                            input.classList.remove('is-invalid');
-                            const formGroup = input.closest('.form-group');
-                            if (formGroup) {
-                                const errorMessageContainer = formGroup.querySelector('.error');
-                                if (errorMessageContainer) {
-                                    errorMessageContainer.remove();
-                                }
-                            }
-                        }
-                    });
-                }
-
-                // Validation matrix: Cities optional for buyer/tenant, Counties required for all
-                const citiesOptionalFor = ['buyer', 'tenant'];
-                
-                // Validate cities array - SKIP for buyer and tenant (cities optional)
-                const citiesContainer = currentTabContent.querySelector('.cities-container');
-                if (citiesContainer) {
-                    const cityBadges = citiesContainer.querySelectorAll('.badge');
-                    // For buyer/tenant user types, cities are OPTIONAL - skip validation
-                    if (!citiesOptionalFor.includes(CURRENT_USER_TYPE)) {
-                        if (!cityBadges || cityBadges.length === 0) {
-                            isValid = false;
-                            const existingError = citiesContainer.parentNode.querySelector('.error');
-                            if (!existingError) {
-                                const citiesError = document.createElement('div');
-                                citiesError.className = 'error';
-                                citiesError.textContent = 'At least one city is required.';
-                                citiesContainer.parentNode.insertBefore(citiesError, citiesContainer
-                                    .nextSibling);
-                            }
-                        } else {
-                            const existingError = citiesContainer.parentNode.querySelector('.error');
-                            if (existingError) {
-                                existingError.remove();
-                            }
-                        }
-                    } else {
-                        // For buyer/tenant, always remove any existing city error
-                        const existingError = citiesContainer.parentNode.querySelector('.error');
-                        if (existingError && existingError.textContent.includes('city')) {
-                            existingError.remove();
-                        }
-                    }
-                }
-
-                // Validate counties array - REQUIRED for ALL user types
-                const countiesContainer = currentTabContent.querySelector('.counties-container');
-                const countiesErrorSpan = currentTabContent.querySelector('#counties_error');
-                if (countiesContainer) {
-                    const countyBadges = countiesContainer.querySelectorAll('.badge');
-                    if (!countyBadges || countyBadges.length === 0) {
-                        isValid = false;
-                        if (countiesErrorSpan) {
-                            countiesErrorSpan.textContent = 'This field is required.';
-                        }
-                    } else {
-                        if (countiesErrorSpan) {
-                            countiesErrorSpan.textContent = '';
-                        }
-                    }
-                }
-
-                // ADD THIS: Validate services tab if it's the current tab
-                if (currentTabContent.id === 'services') {
-                    isValid = isValid && validateServicesTab(currentTabContent);
-                }
-
-                // If all fields are valid, proceed to the next tab (your existing code)
-                if (isValid) {
-                    const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector(
-                        '.nav-link');
-                    if (nextTab) {
-                        const tabs = document.querySelectorAll('.nav-link');
-                        if (tabs) {
-                            const tabIndex = Array.from(tabs).indexOf(nextTab);
-                            if (tabIndex !== -1) {
-                                Livewire.emit('setActiveTab', tabIndex);
-                                nextTab.click();
-                            }
-                        }
-                    }
-                }
-
-                // No longer disable button - let Livewire handle server-side validation
-                // const saveButton = document.querySelector('.wizard-step-finish');
-                // if (saveButton) {
-                //     saveButton.disabled = !isValid;
-                // }
-            });
-
-            // Handle back button click (new implementation that works with your code)
-            document.querySelector('.wizard-step-back')?.addEventListener('click', function() {
-                const currentTab = document.querySelector('.nav-tabs .nav-link.active');
-                const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
-                if (prevTab) {
-                    Livewire.emit('setActiveTab', Array.from(document.querySelectorAll('.nav-link'))
-                        .indexOf(prevTab));
-                    prevTab.click();
-                }
-            });
-
-            // Add event listeners to update save button state when fields change
-            document.addEventListener('DOMContentLoaded', function() {
-                // Initial check
-                checkFormValidity();
-
-                // Update on any input change
-                document.querySelectorAll('input, select, textarea').forEach(field => {
-                    field.addEventListener('change', checkFormValidity);
-                    field.addEventListener('keyup', checkFormValidity);
-                });
-
-                // Special handling for Livewire-updated fields
-                document.addEventListener('livewire:update', function() {
-                    setTimeout(checkFormValidity, 100);
-                });
-            });
-
+            // Initialize shared wizard navigation (removes old handlers first)
+            initializeWizardNavigation();
 
         }
 
         function initializeLimitedService() {
+            // Initialize shared wizard navigation (removes old handlers first)
+            initializeWizardNavigation();
+        }
 
-            // Function to check if all required fields are filled
-            function checkFormValidity() {
-                let allValid = true;
 
-                // Check all tabs for required fields
-                document.querySelectorAll('.tab-pane').forEach(tabPane => {
-                    tabPane.querySelectorAll('[required]').forEach(field => {
-                        if (!field.value) {
-                            allValid = false;
-                        }
-                    });
-                });
 
-                // No longer disable button - let Livewire handle server-side validation
-                // const saveButton = document.querySelector('.wizard-step-finish');
-                // if (saveButton) {
-                //     saveButton.disabled = !allValid;
-                // }
-
-                return allValid;
-            }
-
-            // MODIFY your existing next button click handler like this:
-            document.querySelector('.wizard-step-next')?.addEventListener('click', function() {
-                const currentTab = document.querySelector('.nav-tabs .nav-link.active');
-                if (!currentTab) return;
-
-                const currentTabContent = document.querySelector(currentTab.getAttribute('data-bs-target'));
-                if (!currentTabContent) return;
-
+        // Shared wizard navigation handler - called once on load and avoids duplicate handlers
+        let wizardNavigationInitialized = false;
+        
+        function initializeWizardNavigation() {
+            // Always remove old handlers first to prevent duplicates
+            removeWizardEventListeners();
+            
+            // Mark as initialized
+            wizardNavigationInitialized = true;
+            
+            // Shared validation function
+            function validateCurrentTab(currentTabContent) {
                 let isValid = true;
-
-                // Validate all required fields in the current tab (your existing code)
+                
+                // Validate all required fields in the current tab
                 const requiredFields = currentTabContent.querySelectorAll(
                     'input[required], select[required], textarea[required]');
                 if (requiredFields) {
@@ -3633,7 +3471,6 @@
                 const citiesContainer = currentTabContent.querySelector('.cities-container');
                 if (citiesContainer) {
                     const cityBadges = citiesContainer.querySelectorAll('.badge');
-                    // For buyer/tenant user types, cities are OPTIONAL - skip validation
                     if (!citiesOptionalFor.includes(CURRENT_USER_TYPE)) {
                         if (!cityBadges || cityBadges.length === 0) {
                             isValid = false;
@@ -3642,8 +3479,7 @@
                                 const citiesError = document.createElement('div');
                                 citiesError.className = 'error';
                                 citiesError.textContent = 'At least one city is required.';
-                                citiesContainer.parentNode.insertBefore(citiesError, citiesContainer
-                                    .nextSibling);
+                                citiesContainer.parentNode.insertBefore(citiesError, citiesContainer.nextSibling);
                             }
                         } else {
                             const existingError = citiesContainer.parentNode.querySelector('.error');
@@ -3652,7 +3488,6 @@
                             }
                         }
                     } else {
-                        // For buyer/tenant, always remove any existing city error
                         const existingError = citiesContainer.parentNode.querySelector('.error');
                         if (existingError && existingError.textContent.includes('city')) {
                             existingError.remove();
@@ -3676,6 +3511,13 @@
                         }
                     }
                 }
+
+                // Validate services tab
+                if (currentTabContent.id === 'services') {
+                    isValid = isValid && validateServicesTab(currentTabContent);
+                }
+                
+                // Validate limited service terms checkbox
                 if (currentTabContent.id === 'service-selection-and-pricing') {
                     const understandTerms = currentTabContent.querySelector('#understandTerms');
                     if (understandTerms && !understandTerms.checked) {
@@ -3687,22 +3529,36 @@
                             termsError.textContent = 'You must accept the terms to continue';
                             understandTerms.parentNode.appendChild(termsError);
                         }
-                    } else {
+                    } else if (understandTerms) {
                         const existingError = understandTerms.parentNode.querySelector('.error');
                         if (existingError) {
                             existingError.remove();
                         }
                     }
                 }
+                
+                return isValid;
+            }
+            
+            // Shared services tab validation
+            function validateServicesTab(tabContent) {
+                if (!tabContent || tabContent.id !== 'services') return true;
+                return true; // Services validation is optional per previous code
+            }
+            
+            // Next button handler
+            document.querySelector('.wizard-step-next')?.addEventListener('click', function(e) {
+                const currentTab = document.querySelector('.nav-tabs .nav-link.active');
+                if (!currentTab) return;
 
-                // In your validation function
+                const currentTabContent = document.querySelector(currentTab.getAttribute('data-bs-target'));
+                if (!currentTabContent) return;
 
+                const isValid = validateCurrentTab(currentTabContent);
 
-
-                // If all fields are valid, proceed to the next tab (your existing code)
+                // If all fields are valid, proceed to the next tab
                 if (isValid) {
-                    const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector(
-                        '.nav-link');
+                    const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector('.nav-link');
                     if (nextTab) {
                         const tabs = document.querySelectorAll('.nav-link');
                         if (tabs) {
@@ -3714,47 +3570,19 @@
                         }
                     }
                 }
-
-                // No longer disable button - let Livewire handle server-side validation
-                // const saveButton = document.querySelector('.wizard-step-finish');
-                // if (saveButton) {
-                //     saveButton.disabled = !isValid;
-                // }
             });
 
-            // Handle back button click (new implementation that works with your code)
+            // Back button handler
             document.querySelector('.wizard-step-back')?.addEventListener('click', function() {
                 const currentTab = document.querySelector('.nav-tabs .nav-link.active');
-                const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
+                const prevTab = currentTab?.parentElement?.previousElementSibling?.querySelector('.nav-link');
                 if (prevTab) {
-                    Livewire.emit('setActiveTab', Array.from(document.querySelectorAll('.nav-link'))
-                        .indexOf(prevTab));
+                    Livewire.emit('setActiveTab', Array.from(document.querySelectorAll('.nav-link')).indexOf(prevTab));
                     prevTab.click();
                 }
             });
-
-
-
-            // Add event listeners to update save button state when fields change
-            document.addEventListener('DOMContentLoaded', function() {
-                // Initial check
-                checkFormValidity();
-
-                // Update on any input change
-                document.querySelectorAll('input, select, textarea').forEach(field => {
-                    field.addEventListener('change', checkFormValidity);
-                    field.addEventListener('keyup', checkFormValidity);
-                });
-
-                // Special handling for Livewire-updated fields
-                document.addEventListener('livewire:update', function() {
-                    setTimeout(checkFormValidity, 100);
-                });
-            });
         }
-
-
-
+        
         function addIconsToInputs() {
             document.querySelectorAll('.has-icon').forEach(input => {
                 const iconClass = input.getAttribute('data-icon');
