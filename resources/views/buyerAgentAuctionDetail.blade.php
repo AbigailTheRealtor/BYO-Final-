@@ -1664,59 +1664,68 @@
                             ],
                         ];
 
-                        // Buyer Vacant Land service categories (exact strings from form - uses smart quotes)
+                        // Buyer Vacant Land service categories (uses regular apostrophes - normalize for matching)
                         $landCategories = [
                             "📣 Buyer Criteria Marketing & Promotion" => [
-                                'Create a branded flyer summarizing the Buyer's purchase criteria',
-                                'Post the Buyer's criteria on Craigslist under "Real Estate Wanted – Land"',
-                                'Share the Buyer's criteria on Nextdoor in Neighborhood or Rural Groups',
-                                'Promote the Buyer's criteria on Facebook in Land Buyers, Developers, or Homesteader Groups',
-                                'Share the Buyer's criteria on Instagram using posts, stories, or reels',
-                                'Promote the Buyer's criteria on LinkedIn in Land Acquisition or Investment Groups',
-                                'Upload a TikTok video summarizing the Buyer's purchase criteria',
-                                'Upload a YouTube video summarizing the Buyer's purchase criteria',
-                                'Launch a mass email campaign promoting the Buyer's purchase criteria',
-                                'Distribute branded postcards or flyers in the Buyer's preferred neighborhoods',
-                                'Launch hyperlocal digital ads targeting the Buyer's preferred purchase areas',
+                                "Create a branded flyer summarizing the Buyer's purchase criteria",
+                                "Post the Buyer's criteria on Craigslist under \"Real Estate Wanted - Land\"",
+                                "Share the Buyer's criteria on Nextdoor in Neighborhood or Rural Groups",
+                                "Promote the Buyer's criteria on Facebook in Land Buyers, Developers, or Homesteader Groups",
+                                "Share the Buyer's criteria on Instagram using posts, stories, or reels",
+                                "Promote the Buyer's criteria on LinkedIn in Land Acquisition or Investment Groups",
+                                "Upload a TikTok video summarizing the Buyer's purchase criteria",
+                                "Upload a YouTube video summarizing the Buyer's purchase criteria",
+                                "Launch a mass email campaign promoting the Buyer's purchase criteria",
+                                "Distribute branded postcards or flyers in the Buyer's preferred neighborhoods",
+                                "Launch hyperlocal digital ads targeting the Buyer's preferred purchase areas",
                             ],
                             "🔍 Property Search, Alerts & Matching" => [
-                                'Send property alerts for land listings that match the Buyer's goals from relevant real estate and land-specific platforms',
-                                'Search for off-market, pre-market, distressed, withdrawn, canceled, or expired properties that meet the Buyer's purchase criteria',
-                                'Communicate with the Seller's Agent or Seller to confirm zoning, access, utilities, and pricing',
-                                'Evaluate development feasibility, land use restrictions, and agricultural potential with the Buyer',
+                                "Send property alerts for land listings that match the Buyer's goals from relevant real estate and land-specific platforms",
+                                "Search for off-market, pre-market, distressed, withdrawn, canceled, or expired properties that meet the Buyer's purchase criteria",
+                                "Communicate with the Seller's Agent or Seller to confirm zoning, access, utilities, and pricing",
+                                "Evaluate development feasibility, land use restrictions, and agricultural potential with the Buyer",
                             ],
                             "🏡 Property Showings & Virtual Tours" => [
-                                'Schedule and attend land visits with the Buyer',
-                                'Coordinate or conduct virtual walkthroughs using maps, aerials, and site photos',
-                                'Preview parcels on behalf of the Buyer upon request',
-                                'Provide observations on topography, road frontage, and surrounding land uses',
+                                "Schedule and attend land visits with the Buyer",
+                                "Coordinate or conduct virtual walkthroughs using maps, aerials, and site photos",
+                                "Preview parcels on behalf of the Buyer upon request",
+                                "Provide observations on topography, road frontage, and surrounding land uses",
                             ],
                             "📜 Offer & Contract Management" => [
-                                'Draft and submit offers using state-approved purchase forms',
-                                'Provide the Buyer with required state or local disclosure forms',
-                                'Draft and deliver counteroffers and manage revisions to the purchase agreement',
+                                "Draft and submit offers using state-approved purchase forms",
+                                "Provide the Buyer with required state or local disclosure forms",
+                                "Draft and deliver counteroffers and manage revisions to the purchase agreement",
                                 "Negotiate price, deposits, and contingencies with the Seller's Agent or Seller",
                                 "Manage communication with the Seller's Agent or Seller",
-                                'Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed documents to all parties',
-                                'Assist with due diligence coordination, including survey review, soil testing, zoning checks, and permit verification',
-                                'Monitor contract milestones, contingency deadlines, and financing timelines',
-                                'Provide referrals to Attorneys, Title Companies, Escrow Officers, Surveyors, or Land Use Consultants (referrals only — no endorsement or warranty is made)',
+                                "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed documents to all parties",
+                                "Assist with due diligence coordination, including survey review, soil testing, zoning checks, and permit verification",
+                                "Monitor contract milestones, contingency deadlines, and financing timelines",
+                                "Provide referrals to Attorneys, Title Companies, Escrow Officers, Surveyors, or Land Use Consultants (referrals only - no endorsement or warranty is made)",
                             ],
                             "📋 Closing Coordination & Transaction Management" => [
-                                'Coordinate surveys, appraisals, inspections, and environmental assessments',
-                                'Coordinate with the Lender, Title Company, Escrow Officer, and/or Attorney to prepare for Closing',
-                                'Review the Settlement Statement for accuracy and coordinate with all parties if corrections are needed ',
-                                'Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties',
-                                'Schedule and confirm the Final Walkthrough',
-                                'Schedule and confirm the Closing Appointment',
+                                "Coordinate surveys, appraisals, inspections, and environmental assessments",
+                                "Coordinate with the Lender, Title Company, Escrow Officer, and/or Attorney to prepare for Closing",
+                                "Review the Settlement Statement for accuracy and coordinate with all parties if corrections are needed",
+                                "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
+                                "Schedule and confirm the Final Walkthrough",
+                                "Schedule and confirm the Closing Appointment",
                             ],
                             "💡 Buying Strategy & Guidance" => [
-                                'Provide a Comparative Market Analysis (CMA) with acreage comps, recent land sales, and price-per-acre benchmarks',
-                                'Provide general guidance on zoning, utilities, development potential, and environmental constraints',
-                                'Provide factual data on flood zones, wetlands, and land use maps using third-party sources',
-                                'Provide general guidance on feasibility timelines, inspection steps, and rural financing considerations',
+                                "Provide a Comparative Market Analysis (CMA) with acreage comps, recent land sales, and price-per-acre benchmarks",
+                                "Provide general guidance on zoning, utilities, development potential, and environmental constraints",
+                                "Provide factual data on flood zones, wetlands, and land use maps using third-party sources",
+                                "Provide general guidance on feasibility timelines, inspection steps, and rural financing considerations",
                             ],
                         ];
+
+                        // Helper function to normalize strings for comparison (handles smart quotes)
+                        $normalizeString = function($str) {
+                            return str_replace(
+                                ["\u{2019}", "\u{2018}", "\u{201C}", "\u{201D}", "\u{2013}", "\u{2014}"],
+                                ["'", "'", '"', '"', '-', '-'],
+                                $str
+                            );
+                        };
 
                         // Select categories based on property type
                         if ($isIncome) {
@@ -1731,10 +1740,11 @@
                         $allServices = is_array(@$auction->get->services) ? $auction->get->services : [];
                         $otherServices = is_array(@$auction->get->other_services) ? $auction->get->other_services : [];
 
-                        // Check if we have any services that match categories
+                        // Check if we have any services that match categories (using normalized comparison)
                         $hasMatchedServices = false;
                         foreach ($categories as $categoryServices) {
-                            $matched = array_filter($allServices, fn($s) => in_array($s, $categoryServices));
+                            $normalizedCategoryServices = array_map($normalizeString, $categoryServices);
+                            $matched = array_filter($allServices, fn($s) => in_array($normalizeString($s), $normalizedCategoryServices));
                             if (!empty($matched)) {
                                 $hasMatchedServices = true;
                                 break;
@@ -1746,8 +1756,9 @@
                             @if ($hasMatchedServices)
                                 @foreach ($categories as $categoryName => $categoryServices)
                                     @php
-                                        $matchedServices = array_filter($allServices, function($service) use ($categoryServices) {
-                                            return in_array($service, $categoryServices);
+                                        $normalizedCategoryServices = array_map($normalizeString, $categoryServices);
+                                        $matchedServices = array_filter($allServices, function($service) use ($normalizeString, $normalizedCategoryServices) {
+                                            return in_array($normalizeString($service), $normalizedCategoryServices);
                                         });
                                     @endphp
                                     @if (!empty($matchedServices))
