@@ -768,6 +768,11 @@ class TenantAgentAuction extends Component
         return is_array($this->non_negotiable_amenities) && in_array('Other', $this->non_negotiable_amenities);
     }
 
+    public function getIsPropertyItemsOtherVisibleProperty()
+    {
+        return is_array($this->property_items) && in_array('Other', $this->property_items);
+    }
+
     protected $listeners = [
         'refreshComponent' => '$refresh',
         'updateAppliances',

@@ -370,7 +370,7 @@
 </div>
 
 <!-- Other Property Style Input (shown when "Other" is selected) -->
-@if (is_array($property_items) && in_array('Other', $property_items))
+@if ($this->is_property_items_other_visible)
 <div class="form-group" wire:key="other-property-items-wrapper">
     <div class="input-cover">
         <input type="text" wire:model="other_property_items" class="form-control has-icon"
