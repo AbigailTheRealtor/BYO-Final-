@@ -421,7 +421,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('buyer')->name('buyer.')->group(function () {
 
         Route::get('/add-auction', liverBuyerAgentAuction::class)->name('add-auction');
-        Route::get('/agent/auction/edit/{auctionId}', BuyerAgentAuctionEdit::class)->name('edit-auction');
+        Route::get('/agent/auction/edit/{auctionId}/{user_type?}', TenantAgentAuctionEdit::class)->defaults('user_type', 'buyer')->name('edit-auction');
 
 
         // Route::get('/add-auction', [BuyerAgentAuctionController::class, 'addAuction'])->name('add-auction');
