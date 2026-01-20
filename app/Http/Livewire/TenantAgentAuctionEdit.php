@@ -2687,6 +2687,7 @@ class TenantAgentAuctionEdit extends Component
             $auction->saveMeta('maintenance_by', $this->maintenance_by);
             $auction->saveMeta('condition_prop', $this->condition_prop);
             $auction->saveMeta('business_type', $this->business_type);
+            $auction->saveMeta('business_type_selected', $this->business_type_selected);
             $auction->saveMeta('other_business_type', $this->other_business_type);
             $auction->saveMeta('other_property_condition', $this->other_property_condition);
             $auction->saveMeta('bathrooms', $this->bathrooms);

@@ -2491,6 +2491,7 @@ class TenantAgentAuction extends Component
 
             $this->condition_prop = $this->mapLegacyPropertyConditions($auction->get->condition_prop);
             $this->business_type = $auction->get->business_type;
+            $this->business_type_selected = $auction->get->business_type_selected ?? '';
             $this->other_business_type = $auction->get->other_business_type;
             $this->leasing_space = $auction->get->leasing_space;
             $this->restrictions = $auction->get->restrictions;
@@ -3168,6 +3169,7 @@ class TenantAgentAuction extends Component
         $auction->saveMeta('guests_allowed', $this->guests_allowed);
         $auction->saveMeta('condition_prop', $this->condition_prop);
         $auction->saveMeta('business_type', $this->business_type);
+        $auction->saveMeta('business_type_selected', $this->business_type_selected);
         $auction->saveMeta('other_business_type', $this->other_business_type);
         $auction->saveMeta('other_property_condition', $this->other_property_condition);
         $auction->saveMeta('bathrooms', $this->bathrooms);
