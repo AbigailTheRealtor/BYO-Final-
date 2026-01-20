@@ -35,12 +35,12 @@ The standalone `BuyerAgentAuction.php` and other agent-specific files in `app/Ht
 **Financing Follow-Up Field Persistence**: The `updatedOfferedFinancing()` method in both Create and Edit Livewire components uses a smart selective reset mechanism:
 1. `$previousOfferedFinancing` property tracks the previous financing type selections
 2. When financing types change, only fields for REMOVED types are reset (using `financingFieldMap`)
-3. A `$isLoadingData` one-shot flag prevents reset during initial draft/edit load (updates snapshot before returning)
+3. The `$isLoadingData` flag prevents reset during initial draft/edit load (updates snapshot before returning)
 4. The `financingFieldMap` maps each financing type to its dependent fields (70+ fields across 9 financing types)
 5. If financing values are unchanged (re-sync), no reset occurs
 This ensures follow-up fields (amortization type, payment frequency, cryptocurrency wallet, NFT transfer method, etc.) persist correctly across all 5 property types during create → draft → reload → edit → publish flows.
 
-**Draft Load Protection Pattern**: The `$isLoadingData` flag in BuyerAgentAuction.php protects dependent field values from being reset during draft loading. All Livewire `updated*` hooks that reset dependent fields (e.g., `updatedSaleProvision()`, `updatedSaleProvisionAssignment()`, `updatedOfferedFinancing()`) must check this flag and return early if true. The flag is set at the start of `loadDraft()` and cleared at the end, ensuring hooks function normally for user interactions after loading completes.
+**Draft Load Protection Pattern**: The `$isLoadingData` flag in BuyerAgentAuction.php protects dependent field values from being reset during draft loading. All Livewire `updated*` hooks that reset dependent fields must check this flag and return early if true. Protected hooks include: `updatedSaleProvision()`, `updatedSaleProvisionAssignment()`, `updatedBuyerSellContract()`, `updatedPurchaseFeeType()`, `updatedLeaseFeeType()`, and `updatedOfferedFinancing()`. The flag is set at the start of `loadDraft()` and cleared at the end, ensuring hooks function normally for user interactions after loading completes.
 
 **Meta Field Parity**: Create and Edit Livewire components must maintain identical field lists for both saving (saveAllMetadata) and loading (loadDraftData/loadAuctionData). When adding new meta fields, ensure they are: (1) defined as public properties in both components, (2) saved via saveMeta() in both components, (3) loaded with defensive null-guarded hydration patterns in both components. Example pattern for array fields: `$raw = $auction->get->field ?? null; $this->field = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];`
 

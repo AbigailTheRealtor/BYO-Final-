@@ -534,9 +534,8 @@ class BuyerAgentAuction extends Component
         $previousTypes = $this->previousOfferedFinancing ?? [];
         
         // Skip reset during draft/edit load to preserve loaded data
-        // Use one-shot mechanism: flag stays true until this method clears it
+        // Flag is cleared at the end of loadDraft() - do NOT clear it here
         if ($this->isLoadingData) {
-            $this->isLoadingData = false; // Clear flag after first call
             // Still update the previous snapshot before returning so subsequent comparisons work
             $this->previousOfferedFinancing = $currentTypes;
             return;
@@ -655,11 +654,21 @@ class BuyerAgentAuction extends Component
 
     public function updatedBuyerSellContract()
     {
+        // Skip reset during draft/edit loading to preserve loaded values
+        if ($this->isLoadingData) {
+            return;
+        }
+        
         $this->reset(['assignment_fee_amount']);
     }
 
     public function updatedPurchaseFeeType()
     {
+        // Skip reset during draft/edit loading to preserve loaded values
+        if ($this->isLoadingData) {
+            return;
+        }
+        
         $this->reset([
             'purchase_fee_flat',
             'purchase_fee_percentage',
@@ -671,6 +680,11 @@ class BuyerAgentAuction extends Component
 
     public function updatedLeaseFeeType()
     {
+        // Skip reset during draft/edit loading to preserve loaded values
+        if ($this->isLoadingData) {
+            return;
+        }
+        
         $this->reset([
             'lease_fee_flat',
             'lease_fee_percentage',
