@@ -2403,8 +2403,25 @@ class TenantAgentAuctionEdit extends Component
         $this->lease_purchase_maintenance = $auction->info('lease_purchase_maintenance') ?? '';
         $this->lease_purchase_extension_terms = $auction->info('lease_purchase_extension_terms') ?? '';
 
-        $this->services = is_string($auction->get->services) ? json_decode($auction->get->services, true) ?? [] : (array)$auction->get->services;
-        $this->other_services = is_string($auction->get->other_services) ? json_decode($auction->get->other_services, true) ?? [] : (array)$auction->get->other_services;
+        // Load services - handle both JSON string and already-decoded array from get accessor
+        $rawServices = $auction->get->services;
+        if (is_array($rawServices)) {
+            $this->services = $rawServices;
+        } elseif (is_string($rawServices) && !empty($rawServices)) {
+            $this->services = json_decode($rawServices, true) ?? [];
+        } else {
+            $this->services = [];
+        }
+        
+        // Load other_services
+        $rawOtherServices = $auction->get->other_services;
+        if (is_array($rawOtherServices)) {
+            $this->other_services = $rawOtherServices;
+        } elseif (is_string($rawOtherServices) && !empty($rawOtherServices)) {
+            $this->other_services = json_decode($rawOtherServices, true) ?? [];
+        } else {
+            $this->other_services = [];
+        }
 
         $this->desired_lease_length = json_decode($auction->info('desired_lease_length'), true) ?? [];
         $this->other_lease_term = $auction->info('other_lease_term');
