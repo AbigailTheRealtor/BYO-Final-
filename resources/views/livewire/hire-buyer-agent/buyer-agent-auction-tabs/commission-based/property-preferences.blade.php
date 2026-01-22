@@ -1159,7 +1159,8 @@
     </div>
 @endif
 
-@if ($pets === 'Yes')
+{{-- Pet details for Residential only - Income has its own complete Pets section above --}}
+@if ($pets === 'Yes' && $property_type === 'Residential')
     <div id="pet-details">
         {{-- Number of Pets --}}
         <div class="form-group">

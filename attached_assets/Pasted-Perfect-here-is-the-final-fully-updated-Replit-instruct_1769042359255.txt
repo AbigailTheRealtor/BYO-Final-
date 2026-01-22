@@ -1,0 +1,149 @@
+Perfect — here is the **final, fully updated Replit instruction set**, with **explicit placement requirements added**.
+
+---
+
+## Replit Instructions (WITH SAFEGUARDS)
+
+### Fix Duplicate “Pets” Questions — **Hire a Buyer’s Agent (Drafts & Edits ONLY)**
+
+---
+
+### Applies To (VERY IMPORTANT)
+
+* **[Tenant@exp.com](mailto:Tenant@exp.com)**
+* **Hire a Buyer’s Agent**
+* **Create Listing**
+* **Save Draft**
+* **Edit Draft / Edit Listing**
+* **Issue occurs when:** Property Type = **Income**
+
+⚠️ **This fix applies specifically to Hire a Buyer’s Agent Draft and Edit flows only.**
+⚠️ **Do NOT apply this fix to Seller, Landlord, or Tenant Hire flows.**
+
+---
+
+## Issue Summary
+
+When a user selects **Income Property** in **Hire a Buyer’s Agent**, the **Pets** section (Pets, Number of Pets, Type, Breed, Weight, Service Animal, Emotional Support Animal) is rendered **twice** in the **Draft and Edit views**, causing duplicate questions and user confusion.
+
+---
+
+## ✅ SAFEGUARDS (DO NOT VIOLATE)
+
+1. **DO NOT rename, add, or remove any database columns**
+2. **DO NOT change save logic, validation, or wire:model bindings**
+3. **DO NOT modify field labels, tooltips, placeholders, or icons**
+4. **DO NOT change the internal field order within the Pets section**
+5. **DO NOT remove Pets questions entirely**
+6. This is a **UI rendering fix only**
+7. Must preserve:
+
+   * Draft save
+   * Draft reload
+   * Edit listing
+   * Value persistence
+8. **Hire a Buyer’s Agent only** — no global/shared changes
+
+---
+
+## ✅ Correct Placement Requirement (MANDATORY)
+
+After this fix:
+
+🔹 The **Pets section must appear exactly once**
+🔹 The **Pets section must be positioned immediately after**:
+
+**“Non-Negotiable Amenities and Property Features”**
+
+⚠️ Pets must **not** appear:
+
+* Above this section
+* Inside Income-only blocks
+* In multiple locations
+
+---
+
+## Step 1 — Locate Duplicate Pets Rendering (Hire Buyer Only)
+
+Search within **Hire a Buyer’s Agent Create and Edit blades**:
+
+```bash
+rg -n "Pets\?" resources/views
+rg -n "Number of Pets" resources/views
+rg -n "Service Animal" resources/views
+rg -n "Emotional Support Animal" resources/views
+```
+
+Confirm that the Pets block is currently rendered **twice** when `property_type = Income`.
+
+---
+
+## Step 2 — Identify Source of Duplication
+
+The duplication typically occurs because:
+
+* Pets fields are rendered once in the **general Buyer section**, and
+* Rendered again inside an **Income property conditional block**
+
+---
+
+## Step 3 — Apply Rendering Fix (Preferred Approach)
+
+Ensure the **Pets section renders only once** and **only in the correct location**.
+
+### ✅ Required Fix
+
+* Keep **one Pets section** rendered **immediately after**
+  **“Non-Negotiable Amenities and Property Features”**
+* Remove or guard **any additional Pets renders**, especially inside Income conditionals
+
+✔ Pets must remain globally visible for Hire a Buyer’s Agent
+❌ Pets must NOT be re-rendered inside Income-specific sections
+
+---
+
+## Step 4 — Apply Fix to BOTH Draft + Edit Views
+
+Apply the same fix in **both** files:
+
+### 1️⃣ Hire a Buyer’s Agent — Create / Draft View
+
+(example filenames)
+
+* `buyer-agent-auction.blade.php`
+* `hire-buyer-agent.blade.php`
+
+### 2️⃣ Hire a Buyer’s Agent — Edit View
+
+(example filenames)
+
+* `buyer-agent-auction-edit.blade.php`
+* `hire-buyer-agent-edit.blade.php`
+
+⚠️ Create and Edit **must match exactly** in structure and placement.
+
+---
+
+## Step 5 — Mandatory QA Checklist (Must Pass)
+
+✔ Create Hire a Buyer’s Agent → Income → Pets appears **once**
+✔ Pets appears **immediately after Non-Negotiable Amenities and Property Features**
+✔ Save Draft
+✔ Reload Draft → Pets still appears once and correctly placed
+✔ Edit Listing → Pets still appears once and correctly placed
+✔ All pet values persist correctly
+✔ Switching property types does not reintroduce duplicates
+
+---
+
+## Final Acceptance Criteria
+
+* Pets section renders **exactly once**
+* Correct placement **after Non-Negotiable Amenities and Property Features**
+* Applies only to **Hire a Buyer’s Agent Draft & Edit**
+* No database, save, validation, or copy changes
+* No impact to other hire flows
+
+---
+
+If you want, send me the **exact blade file names and section headings** used for “Non-Negotiable Amenities and Property Features,” and I’ll convert this into **precise line-level Replit instructions** (e.g., “move this include to line X, remove this block at line Y”).
