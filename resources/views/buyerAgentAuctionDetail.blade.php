@@ -596,6 +596,58 @@
                             </div>
                         @endif
 
+                        <!-- Pets Information for Income Property (immediately after Non-Negotiable Amenities) -->
+                        @if (@$auction->get->property_type == 'Income' && @$auction->get->pets != null)
+                            <div class="col-md-12 col-12 pt-2 fw-bold">
+                                Pets:
+                                <span class="removeBold badge bg-secondary">{{ @$auction->get->pets }}</span>
+                            </div>
+
+                            @if (@$auction->get->pets == 'Yes')
+                                @if (@$auction->get->number_of_pets)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Number of Pets:
+                                        <span class="removeBold">{{ @$auction->get->number_of_pets }}</span>
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->type_of_pets)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Type of Pets:
+                                        <span class="removeBold">{{ @$auction->get->type_of_pets }}</span>
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->breed_of_pets)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Breed of Pets:
+                                        <span class="removeBold">{{ @$auction->get->breed_of_pets }}</span>
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->weight_of_pets)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Weight of Pets:
+                                        <span class="removeBold">{{ @$auction->get->weight_of_pets }}</span>
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->service_animal)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Service Animal:
+                                        <span class="removeBold">{{ @$auction->get->service_animal }}</span>
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->emotional_support_animal)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Emotional Support Animal:
+                                        <span class="removeBold">{{ @$auction->get->emotional_support_animal }}</span>
+                                    </div>
+                                @endif
+                            @endif
+                        @endif
+
                         <!-- Business Specific Fields -->
                         @if (@$auction->get->real_estate_purchase != null)
                             <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -663,8 +715,9 @@
                             </div>
                         @endif
 
-                        <!-- Pets Information -->
-                        @if (@$auction->get->pets != null)
+                        <!-- Pets Information for Non-Income Property Types (Residential, etc.) -->
+                        <!-- Note: Income property type has Pets displayed immediately after Non-Negotiable Amenities above -->
+                        @if (@$auction->get->property_type != 'Income' && @$auction->get->pets != null)
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Pets:
                                 <span class="removeBold badge bg-secondary">{{ @$auction->get->pets }}</span>

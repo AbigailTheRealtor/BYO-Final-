@@ -1,0 +1,84 @@
+Got it — here is the **clean, copy-and-paste version written exactly how it should appear on the actual listing task/spec**, with clear language that confirms placement is **already correct on listing creation** and must be mirrored:
+
+---
+
+## GOAL (LISTING DISPLAY BEHAVIOR)
+
+This applies to the **Hire a Buyer’s Agent** listing.
+
+When a user is signed in (example test account: **[tenant@exp.com](mailto:tenant@exp.com)**) and selects:
+
+**Hire a Buyer’s Agent → Property Type = Income**
+
+The following **Pets** questions must appear **directly underneath** the section:
+
+**“Non-Negotiable Amenities and Property Features.”**
+
+⚠️ **Important:**
+This placement is **already correct on the listing creation view**. The same placement and behavior must be preserved on the listing **wherever it is displayed or edited** (view, edit, draft, review, counter, or summary screens).
+**Do not change the existing placement on listing creation.**
+
+---
+
+## FIELDS TO DISPLAY (EXACT ORDER)
+
+**Pets: (Yes / No)***
+**Number of Pets:**
+**Type of Pets:**
+**Breed of Pets:**
+**Weight of Pets (lbs):**
+**Service Animal:**
+**Emotional Support Animal:**
+
+---
+
+## REQUIRED BEHAVIOR
+
+* The Pets section must:
+
+  * Render **immediately after** the final field within **“Non-Negotiable Amenities and Property Features.”**
+  * Appear **only** when **Property Type = Income**.
+* **Pets (Yes/No) is required** for Income listings.
+* The following fields display **only when Pets = Yes**:
+
+  * Number of Pets
+  * Type of Pets
+  * Breed of Pets
+  * Weight of Pets (lbs)
+  * Service Animal
+  * Emotional Support Animal
+* When **Pets = No**, all sub-fields must:
+
+  * Hide immediately
+  * Clear/reset to prevent stale data from saving
+
+---
+
+## SAFEGUARDS
+
+* **Do not modify** the existing listing creation placement — it is already correct.
+* **Mirror the same placement and logic** anywhere the listing is rendered after creation.
+* **Do not move** the Pets section to a different tab or below another section.
+* **Do not affect** other Buyer property types or any other role (Tenant, Seller, Landlord).
+* **Non-destructive changes only**:
+
+  * No renaming or deleting existing fields, tables, models, or components.
+* Ensure Pets fields:
+
+  * Save correctly
+  * Reload correctly on edit
+  * Persist through draft, submit, review, and counter flows
+* Match existing UI exactly (labels, required asterisk, spacing, Yes/No casing, tooltips if present).
+
+---
+
+## ACCEPTANCE CHECK
+
+* Listing creation: **No change** to current correct placement ✅
+* Listing display/edit/review: Pets appears **in the same position** as creation ✅
+* Buyer → Income only ✅
+* Conditional logic and persistence work correctly ✅
+
+---
+
+If you want, I can also condense this into a **one-paragraph dev ticket version** or a **PR acceptance criteria block**—just say the word.
