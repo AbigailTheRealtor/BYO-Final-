@@ -514,12 +514,19 @@
                                     @if (@$auction->get->garage_parking_spaces != null)
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
                                             Garage Parking Features Needed:
-                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->garage_parking_spaces }}</span>
+                                            {{-- Skip "Other" in main value when custom text exists --}}
+                                            @if (!(@$auction->get->garage_parking_spaces === 'Other' && @$auction->get->other_parking_space_wrapper))
+                                                <span class="removeBold badge bg-secondary">{{ @$auction->get->garage_parking_spaces }}</span>
+                                            @endif
                                             @if (@$auction->get->garage_parking_spaces_option && count(@$auction->get->garage_parking_spaces_option) > 0)
                                                 @foreach (@$auction->get->garage_parking_spaces_option as $item)
-                                                    <span class="removeBold badge bg-secondary">{{ $item }}</span>
+                                                    {{-- Skip "Other" when custom text exists --}}
+                                                    @if (!($item === 'Other' && @$auction->get->other_parking_space_wrapper))
+                                                        <span class="removeBold badge bg-secondary">{{ $item }}</span>
+                                                    @endif
                                                 @endforeach
                                             @endif
+                                            {{-- Show the custom "Other" text without the word "Other" --}}
                                             @if (@$auction->get->other_parking_space_wrapper)
                                                 <span class="removeBold badge bg-secondary">{{ @$auction->get->other_parking_space_wrapper }}</span>
                                             @endif
@@ -771,7 +778,7 @@
 
 
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Additional Details:<span class="removeBold">
+                                Additional Details: <span class="removeBold">
                                     {{ $auction->get->preferance_details ?? '' }}</span>
                             </div>
                         @endif
@@ -1049,9 +1056,10 @@
                                 @if (@$auction->get->seller_amortization_type)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Amortization Type:
-                                        <span class="removeBold badge bg-secondary">{{ @$auction->get->seller_amortization_type }}</span>
                                         @if (@$auction->get->seller_amortization_type === 'Other' && @$auction->get->seller_amortization_other)
-                                            <span class="removeBold">({{ @$auction->get->seller_amortization_other }})</span>
+                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->seller_amortization_other }}</span>
+                                        @else
+                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->seller_amortization_type }}</span>
                                         @endif
                                     </div>
                                 @endif
@@ -1059,9 +1067,10 @@
                                 @if (@$auction->get->seller_payment_frequency)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Payment Frequency:
-                                        <span class="removeBold badge bg-secondary">{{ @$auction->get->seller_payment_frequency }}</span>
                                         @if (@$auction->get->seller_payment_frequency === 'Other' && @$auction->get->seller_payment_frequency_other)
-                                            <span class="removeBold">({{ @$auction->get->seller_payment_frequency_other }})</span>
+                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->seller_payment_frequency_other }}</span>
+                                        @else
+                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->seller_payment_frequency }}</span>
                                         @endif
                                     </div>
                                 @endif
@@ -1098,15 +1107,23 @@
 
                                 @if (@$auction->get->max_monthly_payment)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Maximum Monthly Payment (Principal & Interest):
+                                        Maximum Monthly Payment (Principal & Interest) for Assumable Loan:
                                         <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->max_monthly_payment)) }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->gap_payment_amount)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Down Payment to Bridge the Gap:
-                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->gap_payment_amount)) }}</span>
+                                        Down Payment Buyer Can Afford to Bridge the Gap:
+                                        @php
+                                            $gapType = @$auction->get->gap_payment_type ?? '$';
+                                            $gapValue = str_replace(',', '', @$auction->get->gap_payment_amount);
+                                        @endphp
+                                        @if ($gapType === '%')
+                                            <span class="removeBold">{{ $gapValue }}%</span>
+                                        @else
+                                            <span class="removeBold">${{ number_format((float) $gapValue) }}</span>
+                                        @endif
                                     </div>
                                 @endif
                             @endif
@@ -1123,9 +1140,10 @@
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Acceptable Exchange Item:
-                                        <span class="removeBold badge bg-secondary">{{ $displayExchangeItem }}</span>
                                         @if (@$auction->get->exchange_item === 'Other' && @$auction->get->other_exchange_item)
                                             <span class="removeBold badge bg-secondary">{{ $displayOtherExchange }}</span>
+                                        @else
+                                            <span class="removeBold badge bg-secondary">{{ $displayExchangeItem }}</span>
                                         @endif
                                     </div>
                                 @endif
@@ -1213,8 +1231,8 @@
 
                                 @if (@$auction->get->lease_option_duration)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Proposed Duration of Lease:
-                                        <span class="removeBold">{{ @$auction->get->lease_option_duration }} Months</span>
+                                        Proposed Duration of Lease (Months):
+                                        <span class="removeBold">{{ @$auction->get->lease_option_duration }}</span>
                                     </div>
                                 @endif
 
@@ -1314,8 +1332,8 @@
 
                                 @if (@$auction->get->lease_purchase_duration)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Proposed Duration of Lease:
-                                        <span class="removeBold">{{ @$auction->get->lease_purchase_duration }} Months</span>
+                                        Proposed Duration of Lease (Months):
+                                        <span class="removeBold">{{ @$auction->get->lease_purchase_duration }}</span>
                                     </div>
                                 @endif
 
@@ -1408,14 +1426,14 @@
 
                                 @if (@$auction->get->crypto_percentage)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Percentage to be Paid with Cryptocurrency:
+                                        Percentage of Purchase Price to be Paid with Cryptocurrency:
                                         <span class="removeBold">{{ @$auction->get->crypto_percentage }}%</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->cash_percentage_crypto)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Percentage to be Paid with Cash:
+                                        Percentage of Purchase Price to be Paid with Cash:
                                         <span class="removeBold">{{ @$auction->get->cash_percentage_crypto }}%</span>
                                     </div>
                                 @endif
@@ -1483,14 +1501,14 @@
 
                                 @if (@$auction->get->nft_percentage)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Percentage to be Paid with NFT:
+                                        Percentage of Purchase Price to be Paid with NFT:
                                         <span class="removeBold">{{ @$auction->get->nft_percentage }}%</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->cash_percentage_nft)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Percentage to be Paid with Cash:
+                                        Percentage of Purchase Price to be Paid with Cash:
                                         <span class="removeBold">{{ @$auction->get->cash_percentage_nft }}%</span>
                                     </div>
                                 @endif
@@ -1912,7 +1930,7 @@
                             </div>
 
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Additional Details:<span
+                                Additional Details: <span
                                     class="removeBold">{{ $auction->get->additional_details ?? '' }}</span>
                             </div>
                         @endif
@@ -2024,7 +2042,7 @@
                         @if (@$auction->get->interested_lease_option_agreement === 'Yes')
                             @if (@$auction->get->lease_value != null)
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Compensation (When Option Is Created):
+                                Compensation for Creating the Lease-Option Agreement:
                                 <span class="removeBold">
                                     @if (@$auction->get->lease_type === 'percent')
                                         {{ @$auction->get->lease_value }}% of Total Purchase Price
@@ -2037,7 +2055,7 @@
 
                             @if (@$auction->get->purchase_value != null)
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Compensation (If Purchase Option Is Exercised):
+                                Compensation if Purchase Option is Exercised:
                                 <span class="removeBold">
                                     @if (@$auction->get->purchase_type === 'percent')
                                         {{ @$auction->get->purchase_value }}% of Total Purchase Price
@@ -2138,6 +2156,13 @@
                                 <span class="removeBold">
                                     {{ $auction->get->first_name }}
                                 </span>
+                            </div>
+                        @endif
+
+                        @if (!empty($auction->get->current_status))
+                            <div class="col-md-12 col-12 pt-2 fw-bold">
+                                Buyer's Current Status:
+                                <span class="removeBold">{{ $auction->get->current_status }}</span>
                             </div>
                         @endif
 
@@ -2868,7 +2893,7 @@
         @if (data_get($bid, 'get.interested_lease_option_agreement') === 'Yes')
             @if (data_get($bid, 'get.lease_value'))
             <div class="col-md-12 col-12 pt-2 fw-bold">
-                Compensation (When Option Is Created):
+                Compensation for Creating the Lease-Option Agreement:
                 <span class="removeBold">
                     @if (data_get($bid, 'get.lease_type') === 'percent')
                         {{ data_get($bid, 'get.lease_value') }}%
@@ -2880,7 +2905,7 @@
             @endif
             @if (data_get($bid, 'get.purchase_value'))
             <div class="col-md-12 col-12 pt-2 fw-bold">
-                Compensation (If Purchase Option Is Exercised):
+                Compensation if Purchase Option is Exercised:
                 <span class="removeBold">
                     @if (data_get($bid, 'get.purchase_type') === 'percent')
                         {{ data_get($bid, 'get.purchase_value') }}%
@@ -3795,7 +3820,7 @@
         @if (!empty($allMeta['interested_lease_option_agreement']) && $allMeta['interested_lease_option_agreement'] === 'Yes')
             @if (!empty($allMeta['lease_value']))
             <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px;">
-                Compensation (When Option Is Created):
+                Compensation for Creating the Lease-Option Agreement:
                 <span class="removeBold">
                     @if (($allMeta['lease_type'] ?? '') === 'percent')
                         {{ $allMeta['lease_value'] }}%
@@ -3807,7 +3832,7 @@
             @endif
             @if (!empty($allMeta['purchase_value']))
             <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px;">
-                Compensation (If Purchase Option Is Exercised):
+                Compensation if Purchase Option is Exercised:
                 <span class="removeBold">
                     @if (($allMeta['purchase_type'] ?? '') === 'percent')
                         {{ $allMeta['purchase_value'] }}%
