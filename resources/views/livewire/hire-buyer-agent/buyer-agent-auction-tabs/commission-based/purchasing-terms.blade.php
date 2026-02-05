@@ -256,7 +256,6 @@
     </div> --}}
 
     <div class="input-cover" wire:ignore>
-        <i class="input-icon fa-solid fa-money-bill-wave input-icon2"></i>
         <select id="offered_financing" class="form-control select2-multiple" multiple required>
             @foreach ($financing_options as $option)
                 <option value="{{ $option['name'] }}" title="{{ $option['description'] }}"
