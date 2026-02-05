@@ -2226,9 +2226,11 @@ class TenantAgentAuctionEdit extends Component
 
             $this->loadAuctionData($auctionId, $user_type); // Load auction data if auctionId is provided
             
-            // Enforce ADU removal for Commercial properties after load
+            // Enforce Residential-only field cleanup for Commercial properties after load
             if ($this->property_type === 'Commercial Property') {
                 $this->removeAduFromLeasingSpaceSelection();
+                $this->pool_needed = '';
+                $this->pool_type = [];
             }
         }
     }
@@ -2833,8 +2835,13 @@ class TenantAgentAuctionEdit extends Component
             $auction->saveMeta('garage_parking_spaces', $this->garage_parking_spaces);
             $auction->saveMeta('garage_parking_spaces_option',  json_encode($this->garage_parking_spaces_option));
             $auction->saveMeta('other_parking_space_wrapper', $this->other_parking_space_wrapper);
-            $auction->saveMeta('pool_needed', $this->pool_needed);
-            $auction->saveMeta('pool_type', json_encode($this->pool_type));
+            if (($this->property_type ?? '') === 'Residential Property') {
+                $auction->saveMeta('pool_needed', $this->pool_needed);
+                $auction->saveMeta('pool_type', json_encode($this->pool_type));
+            } else {
+                $auction->saveMeta('pool_needed', null);
+                $auction->saveMeta('pool_type', json_encode([]));
+            }
             $auction->saveMeta('view_preference', json_encode($this->view_preference));
             $auction->saveMeta('other_preferences', $this->other_preferences);
             $auction->saveMeta('appliances', json_encode($this->appliances));

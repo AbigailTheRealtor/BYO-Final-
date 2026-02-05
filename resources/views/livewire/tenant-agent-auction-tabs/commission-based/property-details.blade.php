@@ -663,8 +663,8 @@
     </div>
 @endif
 
-@if ($pool_needed === 'Yes')
-    <!-- Pool Type Selection (Shows only if "Yes" is selected) -->
+@if ($property_type === 'Residential Property' && $pool_needed === 'Yes')
+    <!-- Pool Type Selection (Shows only for Residential and if "Yes" is selected) -->
     <div class="form-group" id="pool_type_wrapper">
         <label class="fw-bold">Select Pool Type:</label>
         <div class="form-check">
@@ -676,7 +676,6 @@
             <label class="form-check-label" for="pool_community">Community</label>
         </div>
     </div>
-
 @endif
 <!-- View Preference Needed -->
 

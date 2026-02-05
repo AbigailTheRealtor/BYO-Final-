@@ -3746,6 +3746,7 @@
         <div class="wizard-step" data-step='30'>
             
             <div class="form-group ">
+                @if (optional($auction->get)->property_type === 'Residential Property')
                 <div class="form-group">
                     @php
                         $poolOpt = [
@@ -3786,6 +3787,7 @@
                         </select>
                     </div>
                 </div>
+                @endif
                 <div class="form-group ">
                     @php
                         $viewOption = [
