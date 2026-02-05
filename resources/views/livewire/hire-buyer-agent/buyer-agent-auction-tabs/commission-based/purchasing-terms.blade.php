@@ -11,6 +11,21 @@
     .input-cover .select2 .selection .select2-selection--multiple input {
         font-size: 1rem !important;
     }
+
+    /* CSS-only icon for Offered Financing - prevents DOM manipulation issues */
+    .input-cover.financing-icon-cover::before {
+        content: "\f3d1";
+        font-family: "Font Awesome 6 Free";
+        font-weight: 900;
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 25px;
+        color: #11b7cf;
+        z-index: 2;
+        pointer-events: none;
+    }
 </style>
 @php
     // Ensure multiselect fields are always arrays to prevent in_array() errors
@@ -255,7 +270,7 @@
         </select>
     </div> --}}
 
-    <div class="input-cover" wire:ignore>
+    <div class="input-cover financing-icon-cover" wire:ignore>
         <select id="offered_financing" class="form-control select2-multiple" multiple required>
             @foreach ($financing_options as $option)
                 <option value="{{ $option['name'] }}" title="{{ $option['description'] }}"
