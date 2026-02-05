@@ -3414,13 +3414,82 @@
 
         // Shared wizard navigation handler - called once on load and avoids duplicate handlers
         let wizardNavigationInitialized = false;
-        
+
+        // Derive tab order from visible nav-link elements in the DOM
+        let EDIT_TAB_ORDER = null;
+        function getEditTabOrder() {
+            const tabLinks = document.querySelectorAll('.nav-tabs .nav-link');
+            const order = [];
+            tabLinks.forEach(link => {
+                const target = link.getAttribute('data-bs-target');
+                if (target) {
+                    order.push(target.replace('#', ''));
+                }
+            });
+            return order;
+        }
+        function ensureEditTabOrder() {
+            if (!EDIT_TAB_ORDER || EDIT_TAB_ORDER.length === 0) {
+                EDIT_TAB_ORDER = getEditTabOrder();
+            }
+            return EDIT_TAB_ORDER;
+        }
+
+        // Navigation guard to prevent double-firing
+        let isEditNavigating = false;
+
+        function goToNextEditTab() {
+            if (isEditNavigating) return false;
+            isEditNavigating = true;
+
+            const tabOrder = ensureEditTabOrder();
+            const activeTab = document.querySelector('.nav-link.active');
+            if (!activeTab) { isEditNavigating = false; return false; }
+
+            const currentTarget = activeTab.getAttribute('data-bs-target')?.replace('#', '');
+            const currentIndex = tabOrder.indexOf(currentTarget);
+            if (currentIndex === -1) { isEditNavigating = false; return false; }
+
+            const nextTabId = tabOrder[currentIndex + 1];
+            if (!nextTabId) { isEditNavigating = false; return false; }
+
+            const nextTabEl = document.querySelector(`[data-bs-target="#${nextTabId}"]`);
+            if (!nextTabEl) { isEditNavigating = false; return false; }
+
+            bootstrap.Tab.getOrCreateInstance(nextTabEl).show();
+            Livewire.emit('setActiveTab', currentIndex + 1);
+
+            setTimeout(() => { isEditNavigating = false; }, 100);
+            return true;
+        }
+
+        function goToPrevEditTab() {
+            const tabOrder = ensureEditTabOrder();
+            const activeTab = document.querySelector('.nav-link.active');
+            if (!activeTab) return false;
+
+            const currentTarget = activeTab.getAttribute('data-bs-target')?.replace('#', '');
+            const currentIndex = tabOrder.indexOf(currentTarget);
+            if (currentIndex === -1 || currentIndex === 0) return false;
+
+            const prevTabId = tabOrder[currentIndex - 1];
+            const prevTabEl = document.querySelector(`[data-bs-target="#${prevTabId}"]`);
+            if (!prevTabEl) return false;
+
+            bootstrap.Tab.getOrCreateInstance(prevTabEl).show();
+            Livewire.emit('setActiveTab', currentIndex - 1);
+            return true;
+        }
+
         function initializeWizardNavigation() {
             // Always remove old handlers first to prevent duplicates
             removeWizardEventListeners();
             
             // Mark as initialized
             wizardNavigationInitialized = true;
+
+            // Re-derive tab order after DOM changes (service type switch, etc.)
+            EDIT_TAB_ORDER = getEditTabOrder();
             
             // Shared validation function
             function validateCurrentTab(currentTabContent) {
@@ -3542,40 +3611,24 @@
                 return true; // Services validation is optional per previous code
             }
             
-            // Next button handler
+            // Next button handler — uses ID-based tab order + navigation guard (no .click())
             document.querySelector('.wizard-step-next')?.addEventListener('click', function(e) {
-                const currentTab = document.querySelector('.nav-tabs .nav-link.active');
-                if (!currentTab) return;
+                const activeTab = document.querySelector('.nav-link.active');
+                if (!activeTab) return;
 
-                const currentTabContent = document.querySelector(currentTab.getAttribute('data-bs-target'));
+                const currentTabContent = document.querySelector(activeTab.getAttribute('data-bs-target'));
                 if (!currentTabContent) return;
 
                 const isValid = validateCurrentTab(currentTabContent);
 
-                // If all fields are valid, proceed to the next tab
                 if (isValid) {
-                    const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector('.nav-link');
-                    if (nextTab) {
-                        const tabs = document.querySelectorAll('.nav-link');
-                        if (tabs) {
-                            const tabIndex = Array.from(tabs).indexOf(nextTab);
-                            if (tabIndex !== -1) {
-                                Livewire.emit('setActiveTab', tabIndex);
-                                nextTab.click();
-                            }
-                        }
-                    }
+                    goToNextEditTab();
                 }
             });
 
-            // Back button handler
+            // Back button handler — uses ID-based tab order (no .click())
             document.querySelector('.wizard-step-back')?.addEventListener('click', function() {
-                const currentTab = document.querySelector('.nav-tabs .nav-link.active');
-                const prevTab = currentTab?.parentElement?.previousElementSibling?.querySelector('.nav-link');
-                if (prevTab) {
-                    Livewire.emit('setActiveTab', Array.from(document.querySelectorAll('.nav-link')).indexOf(prevTab));
-                    prevTab.click();
-                }
+                goToPrevEditTab();
             });
         }
         
