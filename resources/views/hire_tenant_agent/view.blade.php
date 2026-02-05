@@ -828,22 +828,22 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 // Residential service categories (exact match with listing creation form)
                 $residentialCategories = [
                     '📢 Tenant Criteria Marketing & Promotion' => [
-                        'Create a branded flyer summarizing the Tenant's rental criteria',
-                        'Post the Tenant's rental criteria on Craigslist under the "Real Estate Wanted" section',
-                        'Share the Tenant's rental criteria on Nextdoor in Neighborhood or Community Groups',
-                        'Promote the Tenant's rental criteria on Facebook in Rental or Housing Groups',
-                        'Share the Tenant's rental criteria on Instagram using posts, stories, or reels',
-                        'Promote the Tenant's rental criteria on LinkedIn in Real Estate or Housing Groups',
-                        'Upload a TikTok video summarizing the Tenant's rental criteria',
-                        'Upload a YouTube video summarizing the Tenant's rental criteria',
-                        'Launch a mass email campaign promoting the Tenant's rental criteria',
-                        'Distribute branded postcards or flyers in the Tenant's preferred neighborhoods',
-                        'Launch hyperlocal digital ads targeting the Tenant's preferred rental areas',
+                        'Create a branded flyer summarizing the Tenant\'s rental criteria',
+                        'Post the Tenant\'s rental criteria on Craigslist under the "Real Estate Wanted" section',
+                        'Share the Tenant\'s rental criteria on Nextdoor in Neighborhood or Community Groups',
+                        'Promote the Tenant\'s rental criteria on Facebook in Rental or Housing Groups',
+                        'Share the Tenant\'s rental criteria on Instagram using posts, stories, or reels',
+                        'Promote the Tenant\'s rental criteria on LinkedIn in Real Estate or Housing Groups',
+                        'Upload a TikTok video summarizing the Tenant\'s rental criteria',
+                        'Upload a YouTube video summarizing the Tenant\'s rental criteria',
+                        'Launch a mass email campaign promoting the Tenant\'s rental criteria',
+                        'Distribute branded postcards or flyers in the Tenant\'s preferred neighborhoods',
+                        'Launch hyperlocal digital ads targeting the Tenant\'s preferred rental areas',
                     ],
                     '🔍 Property Search, Alerts & Matching' => [
-                        'Send email alerts with new listings from the MLS that match the Tenant's rental criteria',
-                        'Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant's rental criteria',
-                        'Communicate with the Landlord's Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions',
+                        'Send email alerts with new listings from the MLS that match the Tenant\'s rental criteria',
+                        'Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant\'s rental criteria',
+                        'Communicate with the Landlord\'s Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions',
                         'Evaluate properties with the Tenant and provide insights on pricing, lease terms, and overall fit',
                     ],
                     '🏡 Property Showings & Virtual Tours' => [
@@ -855,17 +855,17 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     '📝 Tenant Application Support' => [
                         'Provide the Tenant with application instructions or links to an online rental application platform',
                         'Gather and organize required supporting documents (e.g., identification, income verification, reference letters)',
-                        'Submit complete and organized application packages to the Landlord's Agent, Landlord, or Property Manager for review',
+                        'Submit complete and organized application packages to the Landlord\'s Agent, Landlord, or Property Manager for review',
                         'Answer questions about the application process, screening timelines, and required documentation',
                     ],
                     '📃 Lease Preparation & Execution' => [
                         'Review lease offers and assist the Tenant in preparing questions or requested changes',
-                        'Coordinate lease negotiation with the Landlord's Agent, Landlord, or Property Manager',
+                        'Coordinate lease negotiation with the Landlord\'s Agent, Landlord, or Property Manager',
                         'Assist with completing required lease disclosures and reviewing key lease terms',
                         'Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties',
                     ],
                     '🚚 Move-In Support & Coordination' => [
-                        'Coordinate move-in date and key handoff logistics with the Landlord's Agent, Landlord or Property Manager',
+                        'Coordinate move-in date and key handoff logistics with the Landlord\'s Agent, Landlord or Property Manager',
                         'Confirm completion of any agreed-upon pre-move-in cleaning or repairs',
                         'Provide a utility setup checklist and local provider resources',
                         'Share a move-in checklist for documentation and property condition review',
@@ -882,21 +882,21 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 // Commercial service categories (exact match with listing creation form)
                 $commercialCategories = [
                     '📢 Tenant Criteria Marketing & Promotion' => [
-                        'Create a branded flyer summarizing the Tenant's leasing criteria',
-                        'Post the Tenant's leasing criteria on Craigslist under the "Office/Commercial" or "Retail" section',
-                        'Promote the Tenant's leasing criteria on Facebook in Commercial Leasing or Business Groups',
-                        'Share the Tenant's leasing criteria on Instagram using posts, stories, or reels',
-                        'Promote the Tenant's leasing criteria on LinkedIn in Professional, Real Estate, or Commercial Investment Groups',
-                        'Upload a TikTok video summarizing the Tenant's leasing criteria',
-                        'Upload a YouTube video summarizing the Tenant's leasing criteria',
-                        'Launch a mass email campaign promoting the Tenant's leasing criteria',
-                        'Distribute branded postcards or flyers in the Tenant's preferred neighborhoods',
-                        'Launch hyperlocal digital ads targeting the Tenant's preferred leasing areas',
+                        'Create a branded flyer summarizing the Tenant\'s leasing criteria',
+                        'Post the Tenant\'s leasing criteria on Craigslist under the "Office/Commercial" or "Retail" section',
+                        'Promote the Tenant\'s leasing criteria on Facebook in Commercial Leasing or Business Groups',
+                        'Share the Tenant\'s leasing criteria on Instagram using posts, stories, or reels',
+                        'Promote the Tenant\'s leasing criteria on LinkedIn in Professional, Real Estate, or Commercial Investment Groups',
+                        'Upload a TikTok video summarizing the Tenant\'s leasing criteria',
+                        'Upload a YouTube video summarizing the Tenant\'s leasing criteria',
+                        'Launch a mass email campaign promoting the Tenant\'s leasing criteria',
+                        'Distribute branded postcards or flyers in the Tenant\'s preferred neighborhoods',
+                        'Launch hyperlocal digital ads targeting the Tenant\'s preferred leasing areas',
                     ],
                     '🔍 Property Search, Alerts & Matching' => [
-                        'Send listing alerts from real estate platforms that match the Tenant's leasing criteria.',
-                        'Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant's rental criteria',
-                        'Communicate with the Landlord's Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions',
+                        'Send listing alerts from real estate platforms that match the Tenant\'s leasing criteria.',
+                        'Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant\'s rental criteria',
+                        'Communicate with the Landlord\'s Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions',
                         'Evaluate properties for layout efficiency, building specs, logistics, zoning fit, and operational alignment',
                     ],
                     '🏢 Property Showings & Virtual Tours' => [
@@ -908,18 +908,18 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     '📝 Tenant Application Support' => [
                         'Provide the Tenant with application instructions or links to online platforms',
                         'Gather and organize required supporting documents (e.g., business licenses, financials, references)',
-                        'Submit complete and organized application packages to the Landlord's Agent, Landlord, or Property Manager',
+                        'Submit complete and organized application packages to the Landlord\'s Agent, Landlord, or Property Manager',
                     ],
                     '📃 Lease Preparation, LOI & Execution' => [
-                        'Draft or assist with preparing a Letter of Intent (LOI) summarizing the Tenant's business needs and proposed terms',
+                        'Draft or assist with preparing a Letter of Intent (LOI) summarizing the Tenant\'s business needs and proposed terms',
                         'Assist with negotiating rent, CAM, lease term, TI allowance, exclusivity clauses, renewal options, and other provisions (as permitted under the agency agreement)',
-                        'Coordinate with the Landlord's Agent, Landlord or Property Manager to finalize lease terms',
+                        'Coordinate with the Landlord\'s Agent, Landlord or Property Manager to finalize lease terms',
                         'Review lease drafts and coordinate revisions through appropriate channels',
                         'Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties',
                         'Track required deposits, rent commencement, and key lease dates to ensure move-in readiness',
                     ],
                     '🚚 Move-In Support & Coordination' => [
-                        'Coordinate move-in date and key handoff logistics with the Landlord, Landlord's Agent, or Property Manager',
+                        'Coordinate move-in date and key handoff logistics with the Landlord, Landlord\'s Agent, or Property Manager',
                         'Confirm completion of any agreed-upon pre-move-in repairs, cleaning, or buildout',
                         'Provide a utility setup checklist and local provider resources',
                         'Share a move-in checklist for documentation and property condition review',
@@ -986,13 +986,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     <h4 class="section-title">Broker Compensation & Agency Agreement Terms</h4>
                 </div>
 
-                <!-- Tenant's Broker Compensation Sub-section -->
-                <h5 class="mt-3 mb-2"><strong>Tenant's Broker Compensation:</strong></h5>
+                <!-- Tenant\'s Broker Compensation Sub-section -->
+                <h5 class="mt-3 mb-2"><strong>Tenant\'s Broker Compensation:</strong></h5>
                 <div class="broker-compensation-section">
 
                 @if (@$auction->get->commission_structure != null)
                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Tenant's Broker Commission Structure:
+                    Tenant\'s Broker Commission Structure:
                     <span class="removeBold">
                         @php
                             $commissionDisplay = @$auction->get->commission_structure;
@@ -1009,7 +1009,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
 @if (@$auction->get->lease_fee_type != null)
                 @php
-                    // Build combined Tenant's Broker Commission Fee display for listing
+                    // Build combined Tenant\'s Broker Commission Fee display for listing
                     $listingLeaseFeeType = @$auction->get->lease_fee_type ?? '';
                     $listingLeaseFeeCombined = '-';
                     
@@ -1042,7 +1042,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     }
                 @endphp
                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Tenant's Broker Commission Fee:
+                    Tenant\'s Broker Commission Fee:
                     <span class="removeBold">{{ $listingLeaseFeeCombined }}</span>
                 </div>
                 @endif
@@ -1230,7 +1230,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </div> <!-- end broker-compensation-section -->
                 <hr />
                 <div class="card-header section-header">
-                    <h4 class="section-title">Tenant's Info </h4>
+                    <h4 class="section-title">Tenant\'s Info </h4>
                 </div>
                 @if (!empty($auction->get->first_name))
                 <div class="col-md-12 col-12 pt-2 fw-bold"> First
@@ -1588,7 +1588,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             foreach ($bidsByOrder as $index => $orderedBid) {
                 $agentNumberMap[$orderedBid->id] = $index + 1;
             }
-            // Find the last bidder's anonymous number
+            // Find the last bidder\'s anonymous number
             $lastBidderNumber = null;
             if ($lowest_bidder) {
                 $lastBidderNumber = $agentNumberMap[$lowest_bidder->id] ?? null;
@@ -1844,7 +1844,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             $baselineData = [];
                             $baselineLabel = '';
                             
-                            // Get the listing owner's user ID for filtering
+                            // Get the listing owner\'s user ID for filtering
                             $listingOwnerUserId = $auction->user_id;
                             
                             // Get the latest counter from tenant (listing owner) ONLY
@@ -1863,7 +1863,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 // Tenant has countered - use their latest counter terms
                                 $tenantBaselineData = $latestTenantCounter->getAllMeta();
                                 $tenantBaselineLabelForTenant = 'Your Latest Counter';
-                                $tenantBaselineLabelForAgent = "Tenant's Counter Terms";
+                                $tenantBaselineLabelForAgent = "Tenant\'s Counter Terms";
                             } else {
                                 // Use original listing Broker Compensation fields (includes all fee amount fields)
                                 $tenantBaselineData = [
@@ -1912,12 +1912,12 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     'purchase_percent_value' => data_get($auction, 'get.purchase_percent_value'),
                                 ];
                                 $tenantBaselineLabelForTenant = 'Your Original Terms';
-                                $tenantBaselineLabelForAgent = "Tenant's Original Terms";
+                                $tenantBaselineLabelForAgent = "Tenant\'s Original Terms";
                             }
                             
                             // === BASELINE SELECTION BASED ON VIEWER ROLE ===
                             if ($isListingOwner) {
-                                // Tenant viewing Agent's bid - compare to tenant's terms
+                                // Tenant viewing Agent\'s bid - compare to tenant's terms
                                 $baselineData = $tenantBaselineData;
                                 $baselineLabel = $tenantBaselineLabelForTenant;
                             } elseif ($isBidOwner) {
@@ -1925,7 +1925,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 $baselineData = $tenantBaselineData;
                                 $baselineLabel = $tenantBaselineLabelForAgent;
                             } elseif ($isBiddingPeriodListing && $isAgentViewer && $userHasBid) {
-                                // Agent viewing ANOTHER agent's bid in Bidding Period - compare to viewer's own bid
+                                // Agent viewing ANOTHER agent\'s bid in Bidding Period - compare to viewer\'s own bid
                                 $viewerBid = $auction->bids->where('user_id', $auth_id)->first();
                                 if ($viewerBid) {
                                     $baselineData = (array) data_get($viewerBid, 'get', []);
@@ -2135,14 +2135,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 
                                 <div class="mb-2">
                                     <p class="mb-1" style="font-size: 1rem; color: #333;">
-                                        <span style="font-weight: 600;">Tenant's Broker Commission Structure:</span>
+                                        <span style="font-weight: 600;">Tenant\'s Broker Commission Structure:</span>
                                     </p>
                                     <p class="mb-0" style="font-size: 1rem; color: #555;">{{ $commissionStructure }}</p>
                                 </div>
                                 
                                 <div class="mb-3">
                                     <p class="mb-1" style="font-size: 1rem; color: #333;">
-                                        <span style="font-weight: 600;">Tenant's Broker Commission Fee:</span>
+                                        <span style="font-weight: 600;">Tenant\'s Broker Commission Fee:</span>
                                     </p>
                                     <p class="mb-0" style="font-size: 1rem; color: #555;">{{ $commissionFeeDisplay }}</p>
                                 </div>
@@ -2166,7 +2166,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 </a>
                                 @endif
                                 @elseif ($isBiddingPeriodListing && $isAgentViewer && !$isBidOwner)
-                                {{-- Bidding Period: Agent viewing another agent's bid - show limited view button --}}
+                                {{-- Bidding Period: Agent viewing another agent\'s bid - show limited view button --}}
                                 <a href="#" data-bs-toggle="modal" data-bs-target="#limitedBidModal{{ data_get($bid, 'id') }}"
                                    style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
                                     View Full Services & Broker Compensation Terms
@@ -2489,16 +2489,16 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         $mismatchBadge = '<span class="badge bg-danger ms-2" style="font-size: 0.7rem; vertical-align: middle;">Mismatch</span>';
                                                         @endphp
                                                         
-                                                        <!-- A) Tenant's Broker Compensation -->
+                                                        <!-- A) Tenant\'s Broker Compensation -->
                                                         @if (data_get($bid, 'get.commission_structure') || data_get($bid, 'get.lease_fee_type') || data_get($bid, 'get.payment_timing') || data_get($bid, 'get.days_to_pay'))
                                                         <div class="mb-4">
-                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Tenant's Broker Compensation</h6>
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Tenant\'s Broker Compensation</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 @if (data_get($bid, 'get.commission_structure'))
-                                                                <li class="mb-1" style="{{ isset($brokerMismatches['commission_structure']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Structure:</span> {{ data_get($bid, 'get.commission_structure') }}{!! isset($brokerMismatches['commission_structure']) ? $mismatchBadge : '' !!}</li>
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['commission_structure']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Tenant\'s Broker Commission Structure:</span> {{ data_get($bid, 'get.commission_structure') }}{!! isset($brokerMismatches['commission_structure']) ? $mismatchBadge : '' !!}</li>
                                                                 @endif
                                                                 @if (data_get($bid, 'get.lease_fee_type'))
-                                                                <li class="mb-1" style="{{ isset($brokerMismatches['lease_fee_type']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $commissionFeeDisplay }}{!! isset($brokerMismatches['lease_fee_type']) ? $mismatchBadge : '' !!}</li>
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['lease_fee_type']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Tenant\'s Broker Commission Fee:</span> {{ $commissionFeeDisplay }}{!! isset($brokerMismatches['lease_fee_type']) ? $mismatchBadge : '' !!}</li>
                                                                 @endif
                                                                 @if (data_get($bid, 'get.payment_timing'))
                                                                 <li class="mb-1" style="{{ isset($brokerMismatches['payment_timing']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Payment Timing for Broker Fees:</span> {{ data_get($bid, 'get.payment_timing') }}{!! isset($brokerMismatches['payment_timing']) ? $mismatchBadge : '' !!}</li>
@@ -2625,22 +2625,22 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     // This is the single source of truth - same arrays used by the listing display
                                                     $bidResidentialCategories = [
                                                     '📢 Tenant Criteria Marketing & Promotion' => [
-                                                        'Create a branded flyer summarizing the Tenant's rental criteria',
-                                                        'Post the Tenant's rental criteria on Craigslist under the "Real Estate Wanted" section',
-                                                        'Share the Tenant's rental criteria on Nextdoor in Neighborhood or Community Groups',
-                                                        'Promote the Tenant's rental criteria on Facebook in Rental or Housing Groups',
-                                                        'Share the Tenant's rental criteria on Instagram using posts, stories, or reels',
-                                                        'Promote the Tenant's rental criteria on LinkedIn in Real Estate or Housing Groups',
-                                                        'Upload a TikTok video summarizing the Tenant's rental criteria',
-                                                        'Upload a YouTube video summarizing the Tenant's rental criteria',
-                                                        'Launch a mass email campaign promoting the Tenant's rental criteria',
-                                                        'Distribute branded postcards or flyers in the Tenant's preferred neighborhoods',
-                                                        'Launch hyperlocal digital ads targeting the Tenant's preferred rental areas',
+                                                        'Create a branded flyer summarizing the Tenant\'s rental criteria',
+                                                        'Post the Tenant\'s rental criteria on Craigslist under the "Real Estate Wanted" section',
+                                                        'Share the Tenant\'s rental criteria on Nextdoor in Neighborhood or Community Groups',
+                                                        'Promote the Tenant\'s rental criteria on Facebook in Rental or Housing Groups',
+                                                        'Share the Tenant\'s rental criteria on Instagram using posts, stories, or reels',
+                                                        'Promote the Tenant\'s rental criteria on LinkedIn in Real Estate or Housing Groups',
+                                                        'Upload a TikTok video summarizing the Tenant\'s rental criteria',
+                                                        'Upload a YouTube video summarizing the Tenant\'s rental criteria',
+                                                        'Launch a mass email campaign promoting the Tenant\'s rental criteria',
+                                                        'Distribute branded postcards or flyers in the Tenant\'s preferred neighborhoods',
+                                                        'Launch hyperlocal digital ads targeting the Tenant\'s preferred rental areas',
                                                     ],
                                                     '🔍 Property Search, Alerts & Matching' => [
-                                                        'Send email alerts with new listings from the MLS that match the Tenant's rental criteria',
-                                                        'Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant's rental criteria',
-                                                        'Communicate with the Landlord's Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions',
+                                                        'Send email alerts with new listings from the MLS that match the Tenant\'s rental criteria',
+                                                        'Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant\'s rental criteria',
+                                                        'Communicate with the Landlord\'s Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions',
                                                         'Evaluate properties with the Tenant and provide insights on pricing, lease terms, and overall fit',
                                                     ],
                                                     '🏡 Property Showings & Virtual Tours' => [
@@ -2652,17 +2652,17 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     '📝 Tenant Application Support' => [
                                                         'Provide the Tenant with application instructions or links to an online rental application platform',
                                                         'Gather and organize required supporting documents (e.g., identification, income verification, reference letters)',
-                                                        'Submit complete and organized application packages to the Landlord's Agent, Landlord, or Property Manager for review',
+                                                        'Submit complete and organized application packages to the Landlord\'s Agent, Landlord, or Property Manager for review',
                                                         'Answer questions about the application process, screening timelines, and required documentation',
                                                     ],
                                                     '📃 Lease Preparation & Execution' => [
                                                         'Review lease offers and assist the Tenant in preparing questions or requested changes',
-                                                        'Coordinate lease negotiation with the Landlord's Agent, Landlord, or Property Manager',
+                                                        'Coordinate lease negotiation with the Landlord\'s Agent, Landlord, or Property Manager',
                                                         'Assist with completing required lease disclosures and reviewing key lease terms',
                                                         'Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties',
                                                     ],
                                                     '🚚 Move-In Support & Coordination' => [
-                                                        'Coordinate move-in date and key handoff logistics with the Landlord's Agent, Landlord or Property Manager',
+                                                        'Coordinate move-in date and key handoff logistics with the Landlord\'s Agent, Landlord or Property Manager',
                                                         'Confirm completion of any agreed-upon pre-move-in cleaning or repairs',
                                                         'Provide a utility setup checklist and local provider resources',
                                                         'Share a move-in checklist for documentation and property condition review',
@@ -2678,21 +2678,21 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                                                     $bidCommercialCategories = [
                                                     '📢 Tenant Criteria Marketing & Promotion' => [
-                                                        'Create a branded flyer summarizing the Tenant's leasing criteria',
-                                                        'Post the Tenant's leasing criteria on Craigslist under the "Office/Commercial" or "Retail" section',
-                                                        'Promote the Tenant's leasing criteria on Facebook in Commercial Leasing or Business Groups',
-                                                        'Share the Tenant's leasing criteria on Instagram using posts, stories, or reels',
-                                                        'Promote the Tenant's leasing criteria on LinkedIn in Professional, Real Estate, or Commercial Investment Groups',
-                                                        'Upload a TikTok video summarizing the Tenant's leasing criteria',
-                                                        'Upload a YouTube video summarizing the Tenant's leasing criteria',
-                                                        'Launch a mass email campaign promoting the Tenant's leasing criteria',
-                                                        'Distribute branded postcards or flyers in the Tenant's preferred neighborhoods',
-                                                        'Launch hyperlocal digital ads targeting the Tenant's preferred leasing areas',
+                                                        'Create a branded flyer summarizing the Tenant\'s leasing criteria',
+                                                        'Post the Tenant\'s leasing criteria on Craigslist under the "Office/Commercial" or "Retail" section',
+                                                        'Promote the Tenant\'s leasing criteria on Facebook in Commercial Leasing or Business Groups',
+                                                        'Share the Tenant\'s leasing criteria on Instagram using posts, stories, or reels',
+                                                        'Promote the Tenant\'s leasing criteria on LinkedIn in Professional, Real Estate, or Commercial Investment Groups',
+                                                        'Upload a TikTok video summarizing the Tenant\'s leasing criteria',
+                                                        'Upload a YouTube video summarizing the Tenant\'s leasing criteria',
+                                                        'Launch a mass email campaign promoting the Tenant\'s leasing criteria',
+                                                        'Distribute branded postcards or flyers in the Tenant\'s preferred neighborhoods',
+                                                        'Launch hyperlocal digital ads targeting the Tenant\'s preferred leasing areas',
                                                     ],
                                                     '🔍 Property Search, Alerts & Matching' => [
-                                                        'Send listing alerts from real estate platforms that match the Tenant's leasing criteria.',
-                                                        'Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant's rental criteria',
-                                                        'Communicate with the Landlord's Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions',
+                                                        'Send listing alerts from real estate platforms that match the Tenant\'s leasing criteria.',
+                                                        'Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant\'s rental criteria',
+                                                        'Communicate with the Landlord\'s Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions',
                                                         'Evaluate properties for layout efficiency, building specs, logistics, zoning fit, and operational alignment',
                                                     ],
                                                     '🏢 Property Showings & Virtual Tours' => [
@@ -2704,18 +2704,18 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     '📝 Tenant Application Support' => [
                                                         'Provide the Tenant with application instructions or links to online platforms',
                                                         'Gather and organize required supporting documents (e.g., business licenses, financials, references)',
-                                                        'Submit complete and organized application packages to the Landlord's Agent, Landlord, or Property Manager',
+                                                        'Submit complete and organized application packages to the Landlord\'s Agent, Landlord, or Property Manager',
                                                     ],
                                                     '📃 Lease Preparation, LOI & Execution' => [
-                                                        'Draft or assist with preparing a Letter of Intent (LOI) summarizing the Tenant's business needs and proposed terms',
+                                                        'Draft or assist with preparing a Letter of Intent (LOI) summarizing the Tenant\'s business needs and proposed terms',
                                                         'Assist with negotiating rent, CAM, lease term, TI allowance, exclusivity clauses, renewal options, and other provisions (as permitted under the agency agreement)',
-                                                        'Coordinate with the Landlord's Agent, Landlord or Property Manager to finalize lease terms',
+                                                        'Coordinate with the Landlord\'s Agent, Landlord or Property Manager to finalize lease terms',
                                                         'Review lease drafts and coordinate revisions through appropriate channels',
                                                         'Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties',
                                                         'Track required deposits, rent commencement, and key lease dates to ensure move-in readiness',
                                                     ],
                                                     '🚚 Move-In Support & Coordination' => [
-                                                        'Coordinate move-in date and key handoff logistics with the Landlord, Landlord's Agent, or Property Manager',
+                                                        'Coordinate move-in date and key handoff logistics with the Landlord, Landlord\'s Agent, or Property Manager',
                                                         'Confirm completion of any agreed-upon pre-move-in repairs, cleaning, or buildout',
                                                         'Provide a utility setup checklist and local provider resources',
                                                         'Share a move-in checklist for documentation and property condition review',
@@ -3355,7 +3355,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     @endif
                                     @endif
 
-                                    {{-- Limited Modal for Bidding Period: Agent viewing another agent's bid (Anonymous) --}}
+                                    {{-- Limited Modal for Bidding Period: Agent viewing another agent\'s bid (Anonymous) --}}
                                     @if ($isBiddingPeriodListing && $isAgentViewer && !$isBidOwner && !$isListingOwner)
                                     <div class="modal fade"
                                         id="limitedBidModal{{ data_get($bid, 'id') }}"
@@ -3468,14 +3468,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             <i class="fa fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
                                                         </h6>
 
-                                                        {{-- A) Tenant's Broker Compensation --}}
+                                                        {{-- A) Tenant\'s Broker Compensation --}}
                                                         @if (data_get($bid, 'get.commission_structure') || data_get($bid, 'get.lease_fee_type') || data_get($bid, 'get.payment_timing') || data_get($bid, 'get.days_to_pay'))
                                                         <div class="mb-4">
-                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Tenant's Broker Compensation</h6>
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Tenant\'s Broker Compensation</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 @if (data_get($bid, 'get.commission_structure'))
                                                                 <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                    <span class="fw-semibold">Tenant's Broker Commission Structure:</span>
+                                                                    <span class="fw-semibold">Tenant\'s Broker Commission Structure:</span>
                                                                     <span style="{{ $isMismatch('commission_structure') ? $mismatchStyle : '' }}">
                                                                         {{ data_get($bid, 'get.commission_structure') }}
                                                                         @if($isMismatch('commission_structure')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
@@ -3484,7 +3484,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 @endif
                                                                 @if (data_get($bid, 'get.lease_fee_type'))
                                                                 <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                    <span class="fw-semibold">Tenant's Broker Commission Fee:</span>
+                                                                    <span class="fw-semibold">Tenant\'s Broker Commission Fee:</span>
                                                                     <span style="{{ $checkLeaseFeeFieldMismatch() ? $mismatchStyle : '' }}">
                                                                         {{ $commissionFeeDisplay }}
                                                                         @if($checkLeaseFeeFieldMismatch()) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
@@ -3684,22 +3684,22 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                                                     $limitedResidentialCategories = [
                                                         "📢 Tenant Criteria Marketing & Promotion" => [
-                                                            "Create a branded flyer summarizing the Tenant's rental criteria",
-                                                            "Post the Tenant's rental criteria on Craigslist under the \"Real Estate Wanted\" section",
-                                                            "Share the Tenant's rental criteria on Nextdoor in Neighborhood or Community Groups",
-                                                            "Promote the Tenant's rental criteria on Facebook in Rental or Housing Groups",
-                                                            "Share the Tenant's rental criteria on Instagram using posts, stories, or reels",
-                                                            "Promote the Tenant's rental criteria on LinkedIn in Real Estate or Housing Groups",
-                                                            "Upload a TikTok video summarizing the Tenant's rental criteria",
-                                                            "Upload a YouTube video summarizing the Tenant's rental criteria",
-                                                            "Launch a mass email campaign promoting the Tenant's rental criteria",
-                                                            "Distribute branded postcards or flyers in the Tenant's preferred neighborhoods",
-                                                            "Launch hyperlocal digital ads targeting the Tenant's preferred rental areas",
+                                                            "Create a branded flyer summarizing the Tenant\'s rental criteria",
+                                                            "Post the Tenant\'s rental criteria on Craigslist under the \"Real Estate Wanted\" section",
+                                                            "Share the Tenant\'s rental criteria on Nextdoor in Neighborhood or Community Groups",
+                                                            "Promote the Tenant\'s rental criteria on Facebook in Rental or Housing Groups",
+                                                            "Share the Tenant\'s rental criteria on Instagram using posts, stories, or reels",
+                                                            "Promote the Tenant\'s rental criteria on LinkedIn in Real Estate or Housing Groups",
+                                                            "Upload a TikTok video summarizing the Tenant\'s rental criteria",
+                                                            "Upload a YouTube video summarizing the Tenant\'s rental criteria",
+                                                            "Launch a mass email campaign promoting the Tenant\'s rental criteria",
+                                                            "Distribute branded postcards or flyers in the Tenant\'s preferred neighborhoods",
+                                                            "Launch hyperlocal digital ads targeting the Tenant\'s preferred rental areas",
                                                         ],
                                                         "🔍 Property Search, Alerts & Matching" => [
-                                                            "Send email alerts with new listings from the MLS that match the Tenant's rental criteria",
-                                                            "Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant's rental criteria",
-                                                            "Communicate with the Landlord's Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions",
+                                                            "Send email alerts with new listings from the MLS that match the Tenant\'s rental criteria",
+                                                            "Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant\'s rental criteria",
+                                                            "Communicate with the Landlord\'s Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions",
                                                             "Evaluate properties with the Tenant and provide insights on pricing, lease terms, and overall fit",
                                                         ],
                                                         "🏡 Property Showings & Virtual Tours" => [
@@ -3711,17 +3711,17 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         "📝 Tenant Application Support" => [
                                                             "Provide the Tenant with application instructions or links to an online rental application platform",
                                                             "Gather and organize required supporting documents (e.g., identification, income verification, reference letters)",
-                                                            "Submit complete and organized application packages to the Landlord's Agent, Landlord, or Property Manager for review",
+                                                            "Submit complete and organized application packages to the Landlord\'s Agent, Landlord, or Property Manager for review",
                                                             "Answer questions about the application process, screening timelines, and required documentation",
                                                         ],
                                                         "📃 Lease Preparation & Execution" => [
                                                             "Review lease offers and assist the Tenant in preparing questions or requested changes",
-                                                            "Coordinate lease negotiation with the Landlord's Agent, Landlord, or Property Manager",
+                                                            "Coordinate lease negotiation with the Landlord\'s Agent, Landlord, or Property Manager",
                                                             "Assist with completing required lease disclosures and reviewing key lease terms",
                                                             "Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties",
                                                         ],
                                                         "🚚 Move-In Support & Coordination" => [
-                                                            "Coordinate move-in date and key handoff logistics with the Landlord's Agent, Landlord or Property Manager",
+                                                            "Coordinate move-in date and key handoff logistics with the Landlord\'s Agent, Landlord or Property Manager",
                                                             "Confirm completion of any agreed-upon pre-move-in cleaning or repairs",
                                                             "Provide a utility setup checklist and local provider resources",
                                                             "Share a move-in checklist for documentation and property condition review",
@@ -3737,21 +3737,21 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                                                     $limitedCommercialCategories = [
                                                         "📢 Tenant Criteria Marketing & Promotion" => [
-                                                            "Create a branded flyer summarizing the Tenant's leasing criteria",
-                                                            "Post the Tenant's leasing criteria on Craigslist under the \"Office/Commercial\" or \"Retail\" section",
-                                                            "Promote the Tenant's leasing criteria on Facebook in Commercial Leasing or Business Groups",
-                                                            "Share the Tenant's leasing criteria on Instagram using posts, stories, or reels",
-                                                            "Promote the Tenant's leasing criteria on LinkedIn in Professional, Real Estate, or Commercial Investment Groups",
-                                                            "Upload a TikTok video summarizing the Tenant's leasing criteria",
-                                                            "Upload a YouTube video summarizing the Tenant's leasing criteria",
-                                                            "Launch a mass email campaign promoting the Tenant's leasing criteria",
-                                                            "Distribute branded postcards or flyers in the Tenant's preferred neighborhoods",
-                                                            "Launch hyperlocal digital ads targeting the Tenant's preferred leasing areas",
+                                                            "Create a branded flyer summarizing the Tenant\'s leasing criteria",
+                                                            "Post the Tenant\'s leasing criteria on Craigslist under the \"Office/Commercial\" or \"Retail\" section",
+                                                            "Promote the Tenant\'s leasing criteria on Facebook in Commercial Leasing or Business Groups",
+                                                            "Share the Tenant\'s leasing criteria on Instagram using posts, stories, or reels",
+                                                            "Promote the Tenant\'s leasing criteria on LinkedIn in Professional, Real Estate, or Commercial Investment Groups",
+                                                            "Upload a TikTok video summarizing the Tenant\'s leasing criteria",
+                                                            "Upload a YouTube video summarizing the Tenant\'s leasing criteria",
+                                                            "Launch a mass email campaign promoting the Tenant\'s leasing criteria",
+                                                            "Distribute branded postcards or flyers in the Tenant\'s preferred neighborhoods",
+                                                            "Launch hyperlocal digital ads targeting the Tenant\'s preferred leasing areas",
                                                         ],
                                                         "🔍 Property Search, Alerts & Matching" => [
-                                                            "Send listing alerts from real estate platforms that match the Tenant's leasing criteria.",
-                                                            "Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant's rental criteria",
-                                                            "Communicate with the Landlord's Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions",
+                                                            "Send listing alerts from real estate platforms that match the Tenant\'s leasing criteria.",
+                                                            "Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant\'s rental criteria",
+                                                            "Communicate with the Landlord\'s Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions",
                                                             "Evaluate properties for layout efficiency, building specs, logistics, zoning fit, and operational alignment",
                                                         ],
                                                         "🏢 Property Showings & Virtual Tours" => [
@@ -3763,18 +3763,18 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         "📝 Tenant Application Support" => [
                                                             "Provide the Tenant with application instructions or links to online platforms",
                                                             "Gather and organize required supporting documents (e.g., business licenses, financials, references)",
-                                                            "Submit complete and organized application packages to the Landlord's Agent, Landlord, or Property Manager",
+                                                            "Submit complete and organized application packages to the Landlord\'s Agent, Landlord, or Property Manager",
                                                         ],
                                                         "📃 Lease Preparation, LOI & Execution" => [
-                                                            "Draft or assist with preparing a Letter of Intent (LOI) summarizing the Tenant's business needs and proposed terms",
+                                                            "Draft or assist with preparing a Letter of Intent (LOI) summarizing the Tenant\'s business needs and proposed terms",
                                                             "Assist with negotiating rent, CAM, lease term, TI allowance, exclusivity clauses, renewal options, and other provisions (as permitted under the agency agreement)",
-                                                            "Coordinate with the Landlord's Agent, Landlord or Property Manager to finalize lease terms",
+                                                            "Coordinate with the Landlord\'s Agent, Landlord or Property Manager to finalize lease terms",
                                                             "Review lease drafts and coordinate revisions through appropriate channels",
                                                             "Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties",
                                                             "Track required deposits, rent commencement, and key lease dates to ensure move-in readiness",
                                                         ],
                                                         "🚚 Move-In Support & Coordination" => [
-                                                            "Coordinate move-in date and key handoff logistics with the Landlord, Landlord's Agent, or Property Manager",
+                                                            "Coordinate move-in date and key handoff logistics with the Landlord, Landlord\'s Agent, or Property Manager",
                                                             "Confirm completion of any agreed-upon pre-move-in repairs, cleaning, or buildout",
                                                             "Provide a utility setup checklist and local provider resources",
                                                             "Share a move-in checklist for documentation and property condition review",
@@ -4277,18 +4277,18 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             <i class="fa fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
                                                         </h6>
 
-                                                        <!-- A) Tenant's Broker Compensation -->
+                                                        <!-- A) Tenant\'s Broker Compensation -->
                                                         @if (!empty($allMeta['commission_structure']) || !empty($allMeta['lease_fee_type']) || !empty($allMeta['payment_timing']) || !empty($allMeta['days_to_pay']))
                                                         <div class="mb-4">
-                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Tenant's Broker Compensation</h6>
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Tenant\'s Broker Compensation</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 @if (!empty($allMeta['commission_structure']))
                                                                 @php $structChanged = $isChanged($allMeta['commission_structure'], 'commission_structure'); @endphp
-                                                                <li class="mb-1" style="{{ $structChanged ? $changedStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Structure:</span> {{ $allMeta['commission_structure'] }}{!! $structChanged ? $changedBadge : '' !!}</li>
+                                                                <li class="mb-1" style="{{ $structChanged ? $changedStyle : '' }}"><span class="fw-semibold">Tenant\'s Broker Commission Structure:</span> {{ $allMeta['commission_structure'] }}{!! $structChanged ? $changedBadge : '' !!}</li>
                                                                 @endif
                                                                 @if (!empty($allMeta['lease_fee_type']))
                                                                 @php $feeChanged = $isChanged($allMeta['lease_fee_type'], 'lease_fee_type'); @endphp
-                                                                <li class="mb-1" style="{{ $feeChanged ? $changedStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $counterCommissionFeeDisplay }}{!! $feeChanged ? $changedBadge : '' !!}</li>
+                                                                <li class="mb-1" style="{{ $feeChanged ? $changedStyle : '' }}"><span class="fw-semibold">Tenant\'s Broker Commission Fee:</span> {{ $counterCommissionFeeDisplay }}{!! $feeChanged ? $changedBadge : '' !!}</li>
                                                                 @endif
                                                                 @if (!empty($allMeta['payment_timing']))
                                                                 @php $timingChanged = $isChanged($allMeta['payment_timing'], 'payment_timing'); @endphp
@@ -4457,22 +4457,22 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                                                     $residentialServicesConfig = [
                                                         'Tenant Criteria Marketing & Promotion' => [
-                                                            "Create a branded flyer summarizing the Tenant's rental criteria",
-                                                            "Post the Tenant's rental criteria on Craigslist under the \"Real Estate Wanted\" section",
-                                                            "Share the Tenant's rental criteria on Nextdoor in Neighborhood or Community Groups",
-                                                            "Promote the Tenant's rental criteria on Facebook in Rental or Housing Groups",
-                                                            "Share the Tenant's rental criteria on Instagram using posts, stories, or reels",
-                                                            "Promote the Tenant's rental criteria on LinkedIn in Real Estate or Housing Groups",
-                                                            "Upload a TikTok video summarizing the Tenant's rental criteria",
-                                                            "Upload a YouTube video summarizing the Tenant's rental criteria",
-                                                            "Launch a mass email campaign promoting the Tenant's rental criteria",
-                                                            "Distribute branded postcards or flyers in the Tenant's preferred neighborhoods",
-                                                            "Launch hyperlocal digital ads targeting the Tenant's preferred rental areas"
+                                                            "Create a branded flyer summarizing the Tenant\'s rental criteria",
+                                                            "Post the Tenant\'s rental criteria on Craigslist under the \"Real Estate Wanted\" section",
+                                                            "Share the Tenant\'s rental criteria on Nextdoor in Neighborhood or Community Groups",
+                                                            "Promote the Tenant\'s rental criteria on Facebook in Rental or Housing Groups",
+                                                            "Share the Tenant\'s rental criteria on Instagram using posts, stories, or reels",
+                                                            "Promote the Tenant\'s rental criteria on LinkedIn in Real Estate or Housing Groups",
+                                                            "Upload a TikTok video summarizing the Tenant\'s rental criteria",
+                                                            "Upload a YouTube video summarizing the Tenant\'s rental criteria",
+                                                            "Launch a mass email campaign promoting the Tenant\'s rental criteria",
+                                                            "Distribute branded postcards or flyers in the Tenant\'s preferred neighborhoods",
+                                                            "Launch hyperlocal digital ads targeting the Tenant\'s preferred rental areas"
                                                         ],
                                                         'Property Search, Alerts & Matching' => [
-                                                            "Send email alerts with new listings from the MLS that match the Tenant's rental criteria",
-                                                            "Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant's rental criteria",
-                                                            "Communicate with the Landlord's Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions",
+                                                            "Send email alerts with new listings from the MLS that match the Tenant\'s rental criteria",
+                                                            "Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant\'s rental criteria",
+                                                            "Communicate with the Landlord\'s Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions",
                                                             "Evaluate properties with the Tenant and provide insights on pricing, lease terms, and overall fit"
                                                         ],
                                                         'Property Showings & Virtual Tours' => [
@@ -4484,17 +4484,17 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         'Tenant Application Support' => [
                                                             "Provide the Tenant with application instructions or links to an online rental application platform",
                                                             "Gather and organize required supporting documents (e.g., identification, income verification, reference letters)",
-                                                            "Submit complete and organized application packages to the Landlord's Agent, Landlord, or Property Manager for review",
+                                                            "Submit complete and organized application packages to the Landlord\'s Agent, Landlord, or Property Manager for review",
                                                             "Answer questions about the application process, screening timelines, and required documentation"
                                                         ],
                                                         'Lease Preparation & Execution' => [
                                                             "Review lease offers and assist the Tenant in preparing questions or requested changes",
-                                                            "Coordinate lease negotiation with the Landlord's Agent, Landlord, or Property Manager",
+                                                            "Coordinate lease negotiation with the Landlord\'s Agent, Landlord, or Property Manager",
                                                             "Assist with completing required lease disclosures and reviewing key lease terms",
                                                             "Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties"
                                                         ],
                                                         'Move-In Support & Coordination' => [
-                                                            "Coordinate move-in date and key handoff logistics with the Landlord's Agent, Landlord or Property Manager",
+                                                            "Coordinate move-in date and key handoff logistics with the Landlord\'s Agent, Landlord or Property Manager",
                                                             "Confirm completion of any agreed-upon pre-move-in cleaning or repairs",
                                                             "Provide a utility setup checklist and local provider resources",
                                                             "Share a move-in checklist for documentation and property condition review",
@@ -4510,21 +4510,21 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                                                     $commercialServicesConfig = [
                                                         'Tenant Criteria Marketing & Promotion' => [
-                                                            "Create a branded flyer summarizing the Tenant's leasing criteria",
-                                                            "Post the Tenant's leasing criteria on Craigslist under the \"Office/Commercial\" or \"Retail\" section",
-                                                            "Promote the Tenant's leasing criteria on Facebook in Commercial Leasing or Business Groups",
-                                                            "Share the Tenant's leasing criteria on Instagram using posts, stories, or reels",
-                                                            "Promote the Tenant's leasing criteria on LinkedIn in Professional, Real Estate, or Commercial Investment Groups",
-                                                            "Upload a TikTok video summarizing the Tenant's leasing criteria",
-                                                            "Upload a YouTube video summarizing the Tenant's leasing criteria",
-                                                            "Launch a mass email campaign promoting the Tenant's leasing criteria",
-                                                            "Distribute branded postcards or flyers in the Tenant's preferred neighborhoods",
-                                                            "Launch hyperlocal digital ads targeting the Tenant's preferred leasing areas"
+                                                            "Create a branded flyer summarizing the Tenant\'s leasing criteria",
+                                                            "Post the Tenant\'s leasing criteria on Craigslist under the \"Office/Commercial\" or \"Retail\" section",
+                                                            "Promote the Tenant\'s leasing criteria on Facebook in Commercial Leasing or Business Groups",
+                                                            "Share the Tenant\'s leasing criteria on Instagram using posts, stories, or reels",
+                                                            "Promote the Tenant\'s leasing criteria on LinkedIn in Professional, Real Estate, or Commercial Investment Groups",
+                                                            "Upload a TikTok video summarizing the Tenant\'s leasing criteria",
+                                                            "Upload a YouTube video summarizing the Tenant\'s leasing criteria",
+                                                            "Launch a mass email campaign promoting the Tenant\'s leasing criteria",
+                                                            "Distribute branded postcards or flyers in the Tenant\'s preferred neighborhoods",
+                                                            "Launch hyperlocal digital ads targeting the Tenant\'s preferred leasing areas"
                                                         ],
                                                         'Property Search, Alerts & Matching' => [
-                                                            "Send listing alerts from real estate platforms that match the Tenant's leasing criteria.",
-                                                            "Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant's rental criteria",
-                                                            "Communicate with the Landlord's Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions",
+                                                            "Send listing alerts from real estate platforms that match the Tenant\'s leasing criteria.",
+                                                            "Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant\'s rental criteria",
+                                                            "Communicate with the Landlord\'s Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions",
                                                             "Evaluate properties for layout efficiency, building specs, logistics, zoning fit, and operational alignment"
                                                         ],
                                                         'Property Showings & Virtual Tours' => [
@@ -4536,18 +4536,18 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         'Tenant Application Support' => [
                                                             "Provide the Tenant with application instructions or links to online platforms",
                                                             "Gather and organize required supporting documents (e.g., business licenses, financials, references)",
-                                                            "Submit complete and organized application packages to the Landlord's Agent, Landlord, or Property Manager"
+                                                            "Submit complete and organized application packages to the Landlord\'s Agent, Landlord, or Property Manager"
                                                         ],
                                                         'Lease Preparation, LOI & Execution' => [
-                                                            "Draft or assist with preparing a Letter of Intent (LOI) summarizing the Tenant's business needs and proposed terms",
+                                                            "Draft or assist with preparing a Letter of Intent (LOI) summarizing the Tenant\'s business needs and proposed terms",
                                                             "Assist with negotiating rent, CAM, lease term, TI allowance, exclusivity clauses, renewal options, and other provisions (as permitted under the agency agreement)",
-                                                            "Coordinate with the Landlord's Agent, Landlord or Property Manager to finalize lease terms",
+                                                            "Coordinate with the Landlord\'s Agent, Landlord or Property Manager to finalize lease terms",
                                                             "Review lease drafts and coordinate revisions through appropriate channels",
                                                             "Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties",
                                                             "Track required deposits, rent commencement, and key lease dates to ensure move-in readiness"
                                                         ],
                                                         'Move-In Support & Coordination' => [
-                                                            "Coordinate move-in date and key handoff logistics with the Landlord, Landlord's Agent, or Property Manager",
+                                                            "Coordinate move-in date and key handoff logistics with the Landlord, Landlord\'s Agent, or Property Manager",
                                                             "Confirm completion of any agreed-upon pre-move-in repairs, cleaning, or buildout",
                                                             "Provide a utility setup checklist and local provider resources",
                                                             "Share a move-in checklist for documentation and property condition review",
@@ -4659,7 +4659,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     @inject('carbon', 'Carbon\Carbon')
 
                                                     @php
-                                                    // Step 1: Get auction_time and check if it's not empty
+                                                    // Step 1: Get auction_time and check if it\'s not empty
                                                     $auctionTime = data_get($auction->get, 'auction_time');
 
                                                     // Step 2: Base date is $auction->created_at (not from get)

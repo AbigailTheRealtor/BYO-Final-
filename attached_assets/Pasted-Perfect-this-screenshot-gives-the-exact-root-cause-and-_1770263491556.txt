@@ -1,0 +1,136 @@
+Perfect — this screenshot gives the exact root cause and file/line. Here are **copy/paste-ready Replit instructions with safeguards** to fix it correctly and prevent it from happening again.
+
+---
+
+# Replit Instructions — Fix Tenant Listing “ParseError” on View Page (Hire a Tenant’s Agent)
+
+**Applies To:** Hire a Tenant’s Agent → **View Listing**
+**Error Seen:** `ParseError syntax error, unexpected identifier "s", expecting "]"`
+**Exact File + Line:** `resources/views/hire_tenant_agent/view.blade.php` **line ~842**
+**Failing URL Example:** `/tenant/hire/agent/auction/view/19`
+
+---
+
+## 1) SAFEGUARDS (NON-NEGOTIABLE)
+
+1. **Do NOT change database schema** (no migrations, no renames).
+2. **Do NOT change listing data** or “services” stored values.
+3. **Do NOT change** any field labels/tooltips/service text unless required to fix syntax.
+4. **Do NOT refactor** flows or routes. This is a **view-layer syntax fix** + safe improvement.
+5. Fix must be **backward compatible** and must not break Buyer/Seller/Landlord views.
+6. Do **not** duplicate long service arrays in Blade again—move configuration safely (see Step 4).
+
+---
+
+## 2) Root Cause (What’s Actually Broken)
+
+The Tenant listing view page is crashing because someone inserted a **large PHP array** (Residential service categories) directly into a Blade view and it contains a **syntax error** (missing bracket/comma/quote) near line ~842.
+
+The error message “unexpected identifier `s`, expecting `]`” strongly indicates:
+
+* a missing closing `]` or `)` **OR**
+* a missing comma between array items **OR**
+* an unescaped apostrophe in a string (e.g., `Tenant's`) breaking the string literal
+  *(this is very likely if any string uses single quotes around a phrase containing `Tenant’s`/`Tenant's`)*
+
+---
+
+## 3) Required Fix — Immediate (Unblock the Site)
+
+### Step A — Fix the syntax at line ~842 in:
+
+`resources/views/hire_tenant_agent/view.blade.php`
+
+**Action:**
+
+* Locate the `$residentialCategories = [` block
+* Carefully validate the bracket/quote/comma structure around the line shown in the screenshot (around the end of the first category list)
+
+**Must do:**
+
+* Ensure every category array uses:
+  `'Category Name' => [ 'item 1', 'item 2', ... ],`
+* Ensure every item line ends with a comma **except** the last item in that array
+* Ensure every array is properly closed: `]` and then parent list closed: `];`
+
+**Critical string safeguard:**
+
+* If these arrays use **single quotes** `'...'` and the text contains apostrophes like `Tenant's`, it will break.
+  ✅ Use **double quotes** for strings that contain apostrophes, or escape them:
+
+  * `"Tenant's rental criteria"` OR `'Tenant\'s rental criteria'`
+
+**Goal:** Tenant listing view must load without error immediately.
+
+---
+
+## 4) Required Fix — Prevent This From Ever Happening Again (Do This Right After)
+
+### Step B — Remove hardcoded service-category arrays from Blade views
+
+Do **NOT** keep large arrays inside Blade templates. This is what caused the crash.
+
+✅ Move the service order/category arrays into a single source of truth:
+
+* `config/services_order.php` **OR**
+* `app/Support/ServicesOrder.php`
+
+Then, in the Blade view, only call a helper/formatter:
+
+* `ServicesFormatter::orderSelectedServices($selectedServices, 'tenant_agent.residential')`
+* and `tenant_agent.commercial` when applicable
+
+**Safeguard:** This change is **structural only** (where the array lives). Do not change service text or order unless the source-of-truth is already defined elsewhere.
+
+---
+
+## 5) Confirm Correct Tenant View Uses Safe Rendering (No Fatal Errors)
+
+### Step C — Add null-safe guards for services render
+
+Even once the syntax is fixed, the view must not crash if services are missing.
+
+* If services array/json is null → treat as `[]`
+* If JSON decode fails → treat as `[]` and log debug (optional)
+
+---
+
+## 6) Testing Checklist (Required Proof)
+
+Replit must test and provide screenshots for:
+
+1. Login `tenant@exp.com`
+2. Open tenant listing view that was failing:
+
+   * `/tenant/hire/agent/auction/view/19` (or the specific listing ID in the report)
+3. Confirm **no ParseError** and page renders fully
+4. Confirm services still show correctly
+5. Confirm both:
+
+   * Residential Tenant listing view works
+   * Commercial Tenant listing view works (if supported)
+6. Regression:
+
+   * Buyer listing view still loads
+   * Landlord listing view still loads
+
+---
+
+## 7) Deliverables Required From Replit
+
+They must provide:
+
+* ✅ Root cause summary (what exact character/line caused parse error)
+* ✅ File paths changed
+* ✅ Before/after screenshot showing listing now loads
+* ✅ Confirmation arrays moved out of Blade OR written plan to move them next (but ideally complete it now)
+
+---
+
+### Quick note you can add (optional but helpful)
+
+**Priority:** This is a production-blocking crash. Fix syntax immediately to restore view access, then move arrays out of Blade to eliminate future crashes.
+
+---
+
+If you want, paste the contents of `resources/views/hire_tenant_agent/view.blade.php` around lines **820–860** and I’ll point out the exact missing bracket/comma/quote so Replit can fix it in seconds.
