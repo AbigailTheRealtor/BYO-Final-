@@ -1,0 +1,117 @@
+
+Replit Instructions — Fix “Bridge the Gap” Type Showing $ Instead of % (Hire a Buyer’s Agent → Offered Financing/Currency → Assumable)
+Issue: Under Hire a Buyer’s Agent → Offered Financing/Currency → Assumable, the field:
+Down Payment Buyer Can Afford to Bridge the Gap
+was selected as % during listing creation, but the actual listing is displaying it as $ (wrong symbol/type).
+Requirement: The display must match the user’s selection (% vs $) everywhere it appears:
+•	Actual listing view
+•	Agent bids
+•	Counter-bids
+•	Draft previews
+•	Edit screens / previews
+•	Summary pages
+•	PDFs / exports / Accepted Bid Summary
+•	Any “Compare” views
+________________________________________
+SAFEGUARDS (Non-Negotiable)
+1.	Do NOT rename DB columns/tables.
+2.	Do NOT mass update old records.
+3.	Do NOT change user-facing wording/labels.
+4.	Fix must be backward compatible with existing saved listings (handle null/legacy data safely).
+5.	Fix must apply only to Hire a Buyer’s Agent flows and the Assumable subsection.
+6.	Do not hardcode % or $ globally—must reflect the stored selection for each record (listing/bid/counter).
+________________________________________
+Step 1 — Identify How the Choice is Stored (Read-Only)
+Developer must inspect a listing that was set to % and confirm the raw stored values for BOTH:
+1.	The numeric value (example: bridge_gap_amount)
+2.	The type selector (example: bridge_gap_type = 'percent' or 'dollar', or '%' / '$', or 0/1)
+Common patterns:
+•	bridge_gap_value + bridge_gap_value_type
+•	assumable_bridge_gap + assumable_bridge_gap_type
+•	JSON blob like offered_financing.assumable.bridge_gap.type
+✅ Deliverable: Report the exact field path + raw values.
+________________________________________
+Step 2 — Fix the Root Cause (Most Likely Scenarios)
+Developer must determine which is happening:
+Case A — Saved correctly, but display uses the wrong variable
+Example:
+•	Display checks the wrong column (always defaults to $)
+✅ Fix listing render logic to read the correct stored “type” field.
+Case B — Value is saved, but type is NOT saved (or always saved as $)
+Example:
+•	Form always submits '$' due to incorrect radio/select values
+✅ Fix Create/Edit submission mapping only if Step 1 proves the DB is wrong at save-time.
+Case C — Percent is being overwritten during draft/bid/counter creation
+Example:
+•	Draft copies value but sets type default to $
+✅ Fix the “clone/copy” logic so it copies both value and type.
+________________________________________
+Step 3 — Create a Shared Formatter for Assumable “Bridge the Gap”
+To ensure it’s correct everywhere, implement one shared formatting function used in all views.
+Create (or reuse if you already have one):
+app/Support/FinancingFormatter.php
+Add:
+formatBridgeGap($value, $type): string
+Rules:
+1.	If value is empty/null → return blank (or “—”, match existing UI)
+2.	Normalize type:
+o	Accept: 'percent', '%', '%_of_price', 1 → treat as percent
+o	Accept: 'dollar', '$', 'amount', 0 → treat as dollar
+3.	Output:
+o	If percent → "{value}%"
+o	If dollar → "${value}" (formatting consistent with your platform)
+✅ IMPORTANT: If type is unknown but value exists, do not default to $. Instead:
+•	Prefer reading the raw type stored; if truly missing, display the value with no symbol or show “(type not set)” in dev logs only.
+________________________________________
+Step 4 — Replace All Render Points to Use the Formatter
+Search and update every place that renders this field:
+Search for:
+•	“Bridge the Gap”
+•	“Down Payment Buyer Can Afford to Bridge the Gap”
+•	the DB field names found in Step 1
+•	any code that hardcodes $ or % for this field
+Then update:
+•	Listing view: FinancingFormatter::formatBridgeGap($listingValue, $listingType)
+•	Bid view: FinancingFormatter::formatBridgeGap($bidValue, $bidType)
+•	Counter view: FinancingFormatter::formatBridgeGap($counterValue, $counterType)
+•	Draft/summary/PDF views: same pattern
+✅ This ensures consistent output everywhere.
+________________________________________
+Step 5 — Fix Draft/Bid/Counter “Copy Forward” Logic (If Applicable)
+If your system creates bids/counters/drafts by copying listing fields, ensure it copies BOTH:
+•	bridge_gap_value
+•	bridge_gap_type
+Common bug:
+•	Copies numeric but sets type default ($) → causes mismatch later.
+✅ Safeguard: Do not alter existing records; only fix the logic for new copies going forward.
+________________________________________
+Step 6 — Testing Checklist (Required Proof)
+Developer must test:
+Test 1 — Listing (%)
+•	Create Buyer listing → Assumable → Bridge the Gap type = % → value = 10
+✅ Actual listing shows: 10%
+✅ Summary shows: 10%
+✅ PDF shows: 10%
+Test 2 — Listing ($)
+•	Same field type = $ → value = 25000
+✅ Actual listing shows: $25,000 (or your platform format)
+Test 3 — Draft + Edit
+•	Save draft with %, reload, submit
+✅ Still shows % everywhere
+Test 4 — Bid + Counter
+•	Agent bid sets $, counter changes to %
+✅ Each view reflects the correct selection per record
+Regression
+•	Other financing fields (Cash, Conventional, FHA, etc.) unchanged
+•	Seller Financing / Lease Option unaffected
+________________________________________
+Optional (Recommended) Safeguard: Temporary Debug Logging
+During testing only, log:
+•	record type (listing/bid/counter/draft)
+•	raw stored type
+•	formatted output
+Remove after verification.
+________________________________________
+If you can paste a screenshot of the Assumable section on the actual listing (just that part) OR tell me the field names your dev uses for “bridge gap value” + “bridge gap type,” I’ll rewrite this with exact column references and even more “no-guess” instructions for Replit.
+
+

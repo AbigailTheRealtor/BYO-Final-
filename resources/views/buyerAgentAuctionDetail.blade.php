@@ -1572,8 +1572,6 @@
 
                         @php
                         // Use ServicesFormatter to order services according to canonical order
-                        use App\Support\ServicesFormatter;
-                        
                         $propertyType = @$auction->get->property_type ?? 'Residential';
                         
                         // Map property type to config key
@@ -1598,7 +1596,7 @@
                         $otherServices = is_array(@$auction->get->other_services) ? $auction->get->other_services : [];
                         
                         // Order services using the canonical order from config
-                        $orderedServices = ServicesFormatter::orderSelectedServices($allServices, $flowKey);
+                        $orderedServices = \App\Support\ServicesFormatter::orderSelectedServices($allServices, $flowKey);
                         @endphp
 
                         <div class="col-md-12 col-12 pt-2">
@@ -1821,10 +1819,13 @@
                             </div>
                             @endif
                             @if (@$auction->get->retainer_fee_application)
+                            @php $formattedRetainer = \App\Support\CompensationFormatter::formatRetainerFeeApplication(@$auction->get->retainer_fee_application); @endphp
+                            @if (!empty($formattedRetainer))
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Retainer Fee Application:
-                                <span class="removeBold">{{ @$auction->get->retainer_fee_application === 'applied' ? 'Applied toward final compensation' : 'Charged in addition to final compensation' }}</span>
+                                <span class="removeBold">{{ $formattedRetainer }}</span>
                             </div>
+                            @endif
                             @endif
                         @endif
                         @endif
@@ -2663,10 +2664,13 @@
             </div>
             @endif
             @if (data_get($bid, 'get.retainer_fee_application'))
+            @php $bidFormattedRetainer = \App\Support\CompensationFormatter::formatRetainerFeeApplication(data_get($bid, 'get.retainer_fee_application')); @endphp
+            @if (!empty($bidFormattedRetainer))
             <div class="col-md-12 col-12 pt-2 fw-bold">
                 Retainer Fee Application:
-                <span class="removeBold">{{ data_get($bid, 'get.retainer_fee_application') === 'applied' ? 'Applied toward final compensation' : 'Charged in addition to final compensation' }}</span>
+                <span class="removeBold">{{ $bidFormattedRetainer }}</span>
             </div>
+            @endif
             @endif
         @endif
         @endif
@@ -3590,10 +3594,13 @@
             </div>
             @endif
             @if (!empty($allMeta['retainer_fee_application']))
+            @php $counterFormattedRetainer = \App\Support\CompensationFormatter::formatRetainerFeeApplication($allMeta['retainer_fee_application']); @endphp
+            @if (!empty($counterFormattedRetainer))
             <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px;">
                 Retainer Fee Application:
-                <span class="removeBold">{{ $allMeta['retainer_fee_application'] === 'applied' ? 'Applied toward final compensation' : 'Charged in addition to final compensation' }}</span>
+                <span class="removeBold">{{ $counterFormattedRetainer }}</span>
             </div>
+            @endif
             @endif
         @endif
         @endif
