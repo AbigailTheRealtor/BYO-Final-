@@ -1771,7 +1771,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 // Tenant has countered - use their latest counter terms
                                 $tenantBaselineData = $latestTenantCounter->getAllMeta();
                                 $tenantBaselineLabelForTenant = 'Your Latest Counter';
-                                $tenantBaselineLabelForAgent = "Tenant\'s Counter Terms";
+                                $tenantBaselineLabelForAgent = "Tenant's Counter Terms";
                             } else {
                                 // Use original listing Broker Compensation fields (includes all fee amount fields)
                                 $tenantBaselineData = [
@@ -1820,7 +1820,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     'purchase_percent_value' => data_get($auction, 'get.purchase_percent_value'),
                                 ];
                                 $tenantBaselineLabelForTenant = 'Your Original Terms';
-                                $tenantBaselineLabelForAgent = "Tenant\'s Original Terms";
+                                $tenantBaselineLabelForAgent = "Tenant's Original Terms";
                             }
                             
                             // === BASELINE SELECTION BASED ON VIEWER ROLE ===
@@ -2043,14 +2043,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 
                                 <div class="mb-2">
                                     <p class="mb-1" style="font-size: 1rem; color: #333;">
-                                        <span style="font-weight: 600;">Tenant\'s Broker Commission Structure:</span>
+                                        <span style="font-weight: 600;">Tenant's Broker Commission Structure:</span>
                                     </p>
                                     <p class="mb-0" style="font-size: 1rem; color: #555;">{{ $commissionStructure }}</p>
                                 </div>
                                 
                                 <div class="mb-3">
                                     <p class="mb-1" style="font-size: 1rem; color: #333;">
-                                        <span style="font-weight: 600;">Tenant\'s Broker Commission Fee:</span>
+                                        <span style="font-weight: 600;">Tenant's Broker Commission Fee:</span>
                                     </p>
                                     <p class="mb-0" style="font-size: 1rem; color: #555;">{{ $commissionFeeDisplay }}</p>
                                 </div>
@@ -2397,16 +2397,16 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         $mismatchBadge = '<span class="badge bg-danger ms-2" style="font-size: 0.7rem; vertical-align: middle;">Mismatch</span>';
                                                         @endphp
                                                         
-                                                        <!-- A) Tenant\'s Broker Compensation -->
+                                                        <!-- A) Tenant's Broker Compensation -->
                                                         @if (data_get($bid, 'get.commission_structure') || data_get($bid, 'get.lease_fee_type') || data_get($bid, 'get.payment_timing') || data_get($bid, 'get.days_to_pay'))
                                                         <div class="mb-4">
-                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Tenant\'s Broker Compensation</h6>
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Tenant's Broker Compensation</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 @if (data_get($bid, 'get.commission_structure'))
-                                                                <li class="mb-1" style="{{ isset($brokerMismatches['commission_structure']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Tenant\'s Broker Commission Structure:</span> {{ data_get($bid, 'get.commission_structure') }}{!! isset($brokerMismatches['commission_structure']) ? $mismatchBadge : '' !!}</li>
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['commission_structure']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Structure:</span> {{ data_get($bid, 'get.commission_structure') }}{!! isset($brokerMismatches['commission_structure']) ? $mismatchBadge : '' !!}</li>
                                                                 @endif
                                                                 @if (data_get($bid, 'get.lease_fee_type'))
-                                                                <li class="mb-1" style="{{ isset($brokerMismatches['lease_fee_type']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Tenant\'s Broker Commission Fee:</span> {{ $commissionFeeDisplay }}{!! isset($brokerMismatches['lease_fee_type']) ? $mismatchBadge : '' !!}</li>
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['lease_fee_type']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $commissionFeeDisplay }}{!! isset($brokerMismatches['lease_fee_type']) ? $mismatchBadge : '' !!}</li>
                                                                 @endif
                                                                 @if (data_get($bid, 'get.payment_timing'))
                                                                 <li class="mb-1" style="{{ isset($brokerMismatches['payment_timing']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Payment Timing for Broker Fees:</span> {{ data_get($bid, 'get.payment_timing') }}{!! isset($brokerMismatches['payment_timing']) ? $mismatchBadge : '' !!}</li>
@@ -3379,11 +3379,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         {{-- A) Tenant\'s Broker Compensation --}}
                                                         @if (data_get($bid, 'get.commission_structure') || data_get($bid, 'get.lease_fee_type') || data_get($bid, 'get.payment_timing') || data_get($bid, 'get.days_to_pay'))
                                                         <div class="mb-4">
-                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Tenant\'s Broker Compensation</h6>
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Tenant's Broker Compensation</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 @if (data_get($bid, 'get.commission_structure'))
                                                                 <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                    <span class="fw-semibold">Tenant\'s Broker Commission Structure:</span>
+                                                                    <span class="fw-semibold">Tenant's Broker Commission Structure:</span>
                                                                     <span style="{{ $isMismatch('commission_structure') ? $mismatchStyle : '' }}">
                                                                         {{ data_get($bid, 'get.commission_structure') }}
                                                                         @if($isMismatch('commission_structure')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
@@ -3392,7 +3392,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 @endif
                                                                 @if (data_get($bid, 'get.lease_fee_type'))
                                                                 <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                    <span class="fw-semibold">Tenant\'s Broker Commission Fee:</span>
+                                                                    <span class="fw-semibold">Tenant's Broker Commission Fee:</span>
                                                                     <span style="{{ $checkLeaseFeeFieldMismatch() ? $mismatchStyle : '' }}">
                                                                         {{ $commissionFeeDisplay }}
                                                                         @if($checkLeaseFeeFieldMismatch()) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
@@ -4188,15 +4188,15 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         <!-- A) Tenant\'s Broker Compensation -->
                                                         @if (!empty($allMeta['commission_structure']) || !empty($allMeta['lease_fee_type']) || !empty($allMeta['payment_timing']) || !empty($allMeta['days_to_pay']))
                                                         <div class="mb-4">
-                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Tenant\'s Broker Compensation</h6>
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Tenant's Broker Compensation</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 @if (!empty($allMeta['commission_structure']))
                                                                 @php $structChanged = $isChanged($allMeta['commission_structure'], 'commission_structure'); @endphp
-                                                                <li class="mb-1" style="{{ $structChanged ? $changedStyle : '' }}"><span class="fw-semibold">Tenant\'s Broker Commission Structure:</span> {{ $allMeta['commission_structure'] }}{!! $structChanged ? $changedBadge : '' !!}</li>
+                                                                <li class="mb-1" style="{{ $structChanged ? $changedStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Structure:</span> {{ $allMeta['commission_structure'] }}{!! $structChanged ? $changedBadge : '' !!}</li>
                                                                 @endif
                                                                 @if (!empty($allMeta['lease_fee_type']))
                                                                 @php $feeChanged = $isChanged($allMeta['lease_fee_type'], 'lease_fee_type'); @endphp
-                                                                <li class="mb-1" style="{{ $feeChanged ? $changedStyle : '' }}"><span class="fw-semibold">Tenant\'s Broker Commission Fee:</span> {{ $counterCommissionFeeDisplay }}{!! $feeChanged ? $changedBadge : '' !!}</li>
+                                                                <li class="mb-1" style="{{ $feeChanged ? $changedStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $counterCommissionFeeDisplay }}{!! $feeChanged ? $changedBadge : '' !!}</li>
                                                                 @endif
                                                                 @if (!empty($allMeta['payment_timing']))
                                                                 @php $timingChanged = $isChanged($allMeta['payment_timing'], 'payment_timing'); @endphp

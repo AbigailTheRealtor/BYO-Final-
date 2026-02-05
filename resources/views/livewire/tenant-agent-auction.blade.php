@@ -3710,35 +3710,54 @@ $lease_types = [
             return isValid;
         }
 
+        // Navigation guard to prevent double-firing from multiple event listeners
+        let isNavigating = false;
+
         // GO TO NEXT TAB - Uses dynamically derived tab order (NO sibling logic)
         function goToNextTab() {
+            // Prevent double-fire from multiple event listeners
+            if (isNavigating) {
+                console.log('Navigation already in progress, skipping');
+                return false;
+            }
+            isNavigating = true;
+
             const tabOrder = ensureTabOrder();
             const activeTab = document.querySelector('.nav-link.active');
-            if (!activeTab) return false;
+            if (!activeTab) {
+                isNavigating = false;
+                return false;
+            }
 
             const currentTarget = activeTab.getAttribute('data-bs-target')?.replace('#', '');
             const currentIndex = tabOrder.indexOf(currentTarget);
 
             if (currentIndex === -1) {
                 console.log('Current tab not found in TAB_ORDER:', currentTarget, 'Available:', tabOrder);
+                isNavigating = false;
                 return false;
             }
 
             const nextTabId = tabOrder[currentIndex + 1];
             if (!nextTabId) {
                 console.log('Already on last tab');
+                isNavigating = false;
                 return false;
             }
 
             const nextTabEl = document.querySelector(`[data-bs-target="#${nextTabId}"]`);
             if (!nextTabEl) {
                 console.log('Next tab element not found for ID:', nextTabId);
+                isNavigating = false;
                 return false;
             }
 
             console.log('Navigating from', currentTarget, 'to', nextTabId);
             bootstrap.Tab.getOrCreateInstance(nextTabEl).show();
             Livewire.emit('setActiveTab', currentIndex + 1);
+            
+            // Release guard after a short delay to allow navigation to complete
+            setTimeout(() => { isNavigating = false; }, 100);
             return true;
         }
 

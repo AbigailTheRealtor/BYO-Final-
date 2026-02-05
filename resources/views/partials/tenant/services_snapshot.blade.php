@@ -8,6 +8,7 @@ $otherServices = is_array(@$auction->get->other_services) ? $auction->get->other
 
 $servicesGrouped = [];
 
+// Priority 1: Use saved snapshot (preserves exact order from creation)
 if (!empty($snapshotRaw)) {
     $snapshot = is_string($snapshotRaw) ? json_decode($snapshotRaw, true) : $snapshotRaw;
     if (is_array($snapshot)) {
@@ -15,12 +16,30 @@ if (!empty($snapshotRaw)) {
     }
 }
 
+// Priority 2: Fallback to catalog filtering with canonicalized matching
 if (empty($servicesGrouped) && !empty($allServices)) {
     $catalog = TenantServicesCatalog::forPropertyType($propertyType);
+    
+    // Canonicalization helper for matching (handles smart quotes vs straight quotes)
+    $canon = function(string $s): string {
+        $s = trim($s);
+        $s = str_replace(["'", "'", """, """], ["'", "'", "\"", "\""], $s);
+        $s = preg_replace('/\s+/', ' ', $s);
+        return $s;
+    };
+    
+    // Canonicalize all selected services for comparison
+    $allServicesCanon = array_map($canon, $allServices);
+    
     foreach ($catalog as $sectionName => $sectionItems) {
-        $matched = array_filter($sectionItems, fn($item) => in_array($item, $allServices, true));
+        $matched = [];
+        foreach ($sectionItems as $item) {
+            if (in_array($canon($item), $allServicesCanon, true)) {
+                $matched[] = $item;
+            }
+        }
         if (!empty($matched)) {
-            $servicesGrouped[$sectionName] = array_values($matched);
+            $servicesGrouped[$sectionName] = $matched;
         }
     }
 }
