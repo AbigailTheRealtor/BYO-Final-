@@ -913,6 +913,20 @@ class TenantAgentAuction extends Component
         }
     }
 
+    // Handle property type changes - clear pets fields when switching to Commercial
+    public function updatedPropertyType($value)
+    {
+        if ($value === 'Commercial Property') {
+            $this->pets = '';
+            $this->number_of_pets = '';
+            $this->type_of_pets = '';
+            $this->breed_of_pets = '';
+            $this->weight_of_pets = '';
+            $this->service_animal = '';
+            $this->support_animal = '';
+        }
+    }
+
     // Handle interested in selling type changes
     public function updatedInterestedInSellingType($value)
     {

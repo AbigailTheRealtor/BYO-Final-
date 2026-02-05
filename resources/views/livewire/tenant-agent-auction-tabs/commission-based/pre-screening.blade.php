@@ -26,7 +26,7 @@
     <span class="error mt-2" id="number_occupant_error"></span>
 </div>
 
-<!--2.	Total Monthly Net Household Income: -->
+<!--2.  Total Monthly Net Household Income: -->
 <div class="form-group">
     <label class="fw-bold">Estimated Monthly Net Household Income:<span class="text-danger">*</span>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -71,7 +71,7 @@
     </div>
 @endif
 
-@if ($pets === 'Yes')
+@if ($property_type === 'Residential Property' && $pets === 'Yes')
     <div id="pet-details">
         <!-- Number of Pets Allowed -->
         <div class="form-group">
