@@ -1567,342 +1567,52 @@
                         </div>
 
                         @php
-                        // Define buyer service categories based on property type
-                        $propertyType = @$auction->get->property_type;
-                        $isResidential = in_array($propertyType, ['Residential', 'Residential Property']);
-                        $isIncome = in_array($propertyType, ['Income', 'Income Property']);
-                        $isCommercial = in_array($propertyType, ['Commercial', 'Commercial Property']);
-                        $isBusiness = in_array($propertyType, ['Business', 'Business Opportunity']);
-                        $isLand = in_array($propertyType, ['Land', 'Land Property', 'Vacant Land']);
-
-                        // Buyer Residential service categories (exact strings from form)
-                        $residentialCategories = [
-                            "📣 Buyer Criteria Marketing & Promotion" => [
-                                "Create a branded flyer summarizing the Buyer’s purchase criteria",
-                                "Post the Buyer’s purchase criteria on Craigslist under the \"Real Estate Wanted\" section",
-                                "Share the Buyer’s purchase criteria on Nextdoor in Neighborhood or Community Groups",
-                                "Promote the Buyer’s purchase criteria on Facebook in Real Estate or Housing Groups",
-                                "Share the Buyer’s purchase criteria on Instagram using posts, stories, or reels",
-                                "Promote the Buyer’s purchase criteria on LinkedIn in Real Estate or Housing Groups",
-                                "Upload a TikTok video summarizing the Buyer’s purchase criteria",
-                                "Upload a YouTube video summarizing the Buyer’s purchase criteria",
-                                "Launch a mass email campaign promoting the Buyer’s purchase criteria",
-                                "Distribute branded postcards or flyers in the Buyer’s preferred neighborhoods",
-                                "Launch hyperlocal digital ads targeting the Buyer’s preferred purchase areas",
-                            ],
-                            "🔍 Property Search, Alerts & Matching" => [
-                                "Send email alerts with new listings from the MLS that match the Buyer’s purchase criteria",
-                                "Search for off-market, pre-market, distressed, withdrawn, canceled, or expired properties that meet the Buyer’s purchase criteria",
-                                "Communicate with the Seller’s Agent or Seller to confirm availability, purchase terms, and showing instructions",
-                                "Evaluate properties with the Buyer and provide insights on pricing, terms, potential, and overall fit",
-                            ],
-                            "🏡 Property Showings & Virtual Tours" => [
-                                "Schedule and attend property showings with the Buyer",
-                                "Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs",
-                                "Preview properties on behalf of the Buyer upon request",
-                                "Provide factual observations on property layout and condition",
-                            ],
-                            "📝 Offer & Contract Coordination" => [
-                                "Draft and submit offers using state-approved purchase forms",
-                                "Provide the Buyer with the necessary disclosure forms required by state or local law",
-                                "Draft and deliver counteroffers and manage revisions to the purchase agreement",
-                                "Negotiate price, deposits, and contingencies with the Seller’s Agent or Seller ",
-                                "Manage communications with the Seller’s Agent or Seller",
-                                "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
-                                "Assist with inspection-related negotiations and Buyer requests for repairs",
-                                "Monitor contract milestones, contingency periods, and financing deadlines",
-                                "Provide referrals to Attorneys, Title Companies, Escrow Professionals, or Lenders (referrals only — no endorsement or warranty is made)",
-                            ],
-                            "📋 Closing Coordination & Transaction Management" => [
-                                "Review and provide the Buyer with Seller-supplied due diligence documentation, including property disclosures, inspection reports, HOA documents, and utility summaries (as available)",
-                                "Coordinate scheduling for inspections, appraisals, and other requested evaluations",
-                                "Coordinate with the Lender, Title, Escrow, and/or Attorney to prepare for Closing",
-                                "Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed ",
-                                "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
-                                "Schedule and confirm the Final Walkthrough",
-                                "Schedule and confirm the Closing Appointment",
-                            ],
-                            "💡 Buying Strategy & Guidance" => [
-                                "Provide a Comparative Market Analysis (CMA) with pricing recommendations based on comparable sales, neighborhood trends, and current market conditions",
-                                "Provide general guidance on financing, loan options, property taxes, insurance, and escrow timelines",
-                                "Provide factual information about neighborhood characteristics, school zones, crime data, and local amenities using third-party sources",
-                                "Provide general guidance on inspection expectations, common repair requests, and contingency planning",
-                            ],
+                        // Use ServicesFormatter to order services according to canonical order
+                        use App\Support\ServicesFormatter;
+                        
+                        $propertyType = @$auction->get->property_type ?? 'Residential';
+                        
+                        // Map property type to config key
+                        $propTypeMap = [
+                            'Residential' => 'residential',
+                            'Residential Property' => 'residential',
+                            'Income' => 'income',
+                            'Income Property' => 'income',
+                            'Commercial' => 'commercial',
+                            'Commercial Property' => 'commercial',
+                            'Business' => 'business',
+                            'Business Opportunity' => 'business',
+                            'Land' => 'vacant_land',
+                            'Land Property' => 'vacant_land',
+                            'Vacant Land' => 'vacant_land',
                         ];
-
-                        // Buyer Income service categories (exact strings from form)
-                        $incomeCategories = [
-                            "📣 Buyer Criteria Marketing & Promotion" => [
-                                "Create a branded flyer summarizing the Buyer’s purchase criteria",
-                                "Post the Buyer’s purchase criteria on Craigslist under the \"Real Estate Wanted\" section",
-                                "Share the Buyer’s purchase criteria on Nextdoor in Neighborhood or Community Groups",
-                                "Promote the Buyer’s purchase criteria on Facebook in Real Estate Investor or Multifamily Groups",
-                                "Share the Buyer’s purchase criteria on Instagram using posts, stories, or reels",
-                                "Promote the Buyer’s purchase criteria on LinkedIn in Investment or Property Management Groups",
-                                "Upload a TikTok video summarizing the Buyer’s purchase criteria",
-                                "Upload a YouTube video summarizing the Buyer’s purchase criteria",
-                                "Launch a mass email campaign promoting the Buyer’s purchase criteria",
-                                "Distribute branded postcards or flyers in the Buyer’s preferred neighborhoods",
-                                "Launch hyperlocal digital ads targeting the Buyer’s preferred purchase areas",
-                            ],
-                            "🔍 Property Search, Alerts & Matching" => [
-                                "Send email alerts with new listings that match the Buyer’s purchase criteria",
-                                "Search for off-market, pre-market, distressed, withdrawn, canceled, or expired properties that meet the Buyer’s purchase criteria",
-                                "Communicate with the Seller’s Agent or Sellers to confirm pricing, rental income, expenses, and showing instructions",
-                                "Evaluate investment properties with the Buyer and provide insights on cash flow, cap rates, and value-add potential",
-                            ],
-                            "🏘 Property Showings & Virtual Tours" => [
-                                "Schedule and attend property showings with the Buyer",
-                                "Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs",
-                                "Preview properties on behalf of the Buyer upon request",
-                                "Provide observations on Tenant occupancy, building condition, and operating expenses",
-                            ],
-                            "📝 Offer & Contract Management" => [
-                                "Draft and submit offers using state-approved purchase forms",
-                                "Provide the Buyer with the necessary disclosure forms required by state or local law",
-                                "Draft and deliver counteroffers and manage revisions to the purchase agreement",
-                                "Negotiate price, deposits, and contingencies with the Seller’s Agent or Seller",
-                                "Manage communication with the Seller’s Agent or Seller",
-                                "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
-                                "Assist with inspection-related negotiations and Buyer requests for repairs",
-                                "Monitor contract milestones, contingency periods, and financing deadlines",
-                                "Provide referrals to Attorneys, Title Companies, Escrow Professionals, Lenders, or 1031 Exchange Intermediaries (referrals only — no endorsement or warranty is made)",
-                            ],
-                            "📋 Closing Coordination & Transaction Management" => [
-                                "Review and provide due diligence documents such as lease agreements, estoppel certificates, rent rolls, utility summaries, and operating expense breakdowns (as available)",
-                                "Coordinate with the Seller’s Agent, Buyer’s Lender, Title, Escrow, and/or Attorney to prepare for Closing",
-                                "Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed ",
-                                "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
-                                "Schedule and confirm the Final Walkthrough",
-                                "Schedule and confirm the Closing Appointment",
-                            ],
-                            "💡 Buying Strategy & Guidance" => [
-                                "Provide a Comparative Market Analysis (CMA) with pricing recommendations, rental comps, and Cap Rate estimates",
-                                "Provide general guidance on financing options, rent control, property taxes, and Landlord responsibilities",
-                                "Provide factual information on rental demand, turnover rates, and submarket conditions using third-party sources",
-                                "Provide general guidance on due diligence steps, lease audits, and estoppel reviews",
-                            ],
-                        ];
-
-                        // Buyer Commercial service categories (exact strings from form)
-                        $commercialCategories = [
-                            "📣 Buyer Criteria Marketing & Promotion" => [
-                                "Create a branded flyer summarizing the Buyer’s purchase criteria",
-                                "Post the Buyer’s criteria on Craigslist under \"Real Estate Wanted – Commercial\"",
-                                "Promote the Buyer’s criteria on Facebook in Commercial Real Estate or Investment Groups",
-                                "Share the Buyer’s criteria on Instagram using posts, stories, or reels",
-                                "Promote the Buyer’s criteria on LinkedIn in Commercial or Investment Groups",
-                                "Upload a TikTok video summarizing the Buyer’s purchase criteria",
-                                "Upload a YouTube video summarizing the Buyer’s purchase criteria",
-                                "Launch a mass email campaign promoting the Buyer’s purchase criteria",
-                                "Distribute branded postcards or flyers in the Buyer’s preferred purchase areas",
-                                "Launch hyperlocal or interest-based digital ad campaigns targeting desired commercial property types",
-                            ],
-                            "🔍 Property Search, Alerts & Matching" => [
-                                "Send property alerts that match the Buyer’s purchase criteria from the MLS or commercial listing platforms",
-                                "Search for off-market, pre-market, distressed, withdrawn, canceled, or expired listings that meet the Buyer’s criteria",
-                                "Communicate with the Seller’s Agent or Seller to confirm availability, purchase terms, and showing instructions",
-                                "Analyze building class, property zoning, income potential, and redevelopment opportunities",
-                            ],
-                            "🏢 Property Showings & Virtual Tours" => [
-                                "Schedule and attend property showings with the Buyer",
-                                "Coordinate or conduct virtual showings via live video or recorded walkthroughs",
-                                "Preview properties on behalf of the Buyer upon request",
-                                "Provide insights on layout, access, visibility, Tenant mix, and surrounding infrastructure",
-                            ],
-                            "📝 Offer & Contract Management" => [
-                                "Draft and submit offers using state-approved purchase agreements or Letters of Intent (LOIs)",
-                                "Provide the Buyer with the necessary disclosure forms required by state or local law",
-                                "Draft and deliver counteroffers and manage revisions to the purchase agreement",
-                                "Negotiate price, deposit structure, timelines, and contingencies with the Seller or Seller’s Agent",
-                                "Manage communication with the Seller’s Agent or Seller",
-                                "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
-                                "Assist with due diligence negotiations, including repair requests or credits",
-                                "Monitor contract contingencies, including financing, estoppel review, lease audits, and environmental reports",
-                                "Provide referrals to Attorneys, Title Companies, Escrow Officers, Commercial Lenders, or 1031 Exchange Intermediaries (referrals only — no endorsement or warranty is made)",
-                            ],
-                            "📋 Closing Coordination & Transaction Management" => [
-                                "Coordinate inspections, appraisals, environmental assessments, and estoppel certificate collection as needed",
-                                "Review and request due diligence documentation such as lease agreements, estoppel certificates, rent rolls, utility summaries, and operating expense breakdowns (as available)",
-                                "Coordinate with the Lender, Title Company, Escrow Officer, and/or Attorney to prepare for Closing",
-                                "Review the Settlement Statement for accuracy and coordinate with all parties if corrections are needed ",
-                                "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
-                                "Schedule and confirm the Final Walkthrough",
-                                "Schedule and confirm the Closing Appointment",
-                            ],
-                            "💡 Buying Strategy & Guidance" => [
-                                "Provide a Comparative Market Analysis (CMA) with recent sales comps, lease comps, and an estimated value range",
-                                "Provide general guidance on zoning regulations, permitted uses, and rental income potential",
-                                "Provide factual data on traffic counts, commercial market trends, and area demographics using third-party sources",
-                                "Provide general guidance on lease types, contingency timelines, due diligence, and environmental risks",
-                            ],
-                        ];
-
-                        // Buyer Business service categories (uses regular apostrophes - normalize for matching)
-                        $businessCategories = [
-                            "📣 Buyer Criteria Marketing & Promotion" => [
-                                "Create a branded flyer summarizing the Buyer's purchase criteria",
-                                "Post the Buyer's purchase criteria on Craigslist under \"Business for Sale\" or \"Real Estate Wanted - Commercial\"",
-                                "Promote the Buyer's purchase criteria on Facebook in Business Opportunity or Franchise Groups",
-                                "Share the Buyer's purchase criteria on Instagram using posts, stories, or reels",
-                                "Promote the Buyer's purchase criteria on LinkedIn in Business, Commercial, or Startup Groups",
-                                "Upload a TikTok video summarizing the Buyer's purchase criteria",
-                                "Upload a YouTube video summarizing the Buyer's purchase criteria",
-                                "Launch a mass email campaign promoting the Buyer's purchase criteria",
-                                "Distribute branded postcards or flyers in the Buyer's preferred neighborhoods",
-                                "Launch hyperlocal digital ads targeting the Buyer's preferred purchase areas",
-                            ],
-                            "🔍 Business Search, Alerts & Matching" => [
-                                "Send alerts for businesses that match the Buyer's acquisition criteria from available business listing sources",
-                                "Search for off-market, pre-market, distressed, or recently closed businesses that meet the Buyer's criteria",
-                                "Communicate with the Seller's Broker or Seller to confirm pricing, lease terms, licensing status, and showing availability",
-                                "Analyze financials, lease assignments, business licensing requirements, and overall market positioning",
-                            ],
-                            "🏢 Property Showings & Virtual Tours" => [
-                                "Schedule and attend property or business showings with the Buyer",
-                                "Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs",
-                                "Preview properties or business locations on behalf of the Buyer upon request",
-                                "Provide insights on foot traffic, customer base, operational setup, competitive advantages, and location dynamics",
-                            ],
-                            "📝 Offer & Contract Management" => [
-                                "Draft and submit offers using appropriate business purchase or asset sale forms",
-                                "Provide the Buyer with required disclosures, financial summaries, and documentation made available by the Seller",
-                                "Negotiate terms such as purchase price, deposit structure, inventory inclusions, non-compete agreements, and contingencies",
-                                "Draft and deliver counteroffers and manage revisions to the purchase agreement",
-                                "Manage communication with the Seller's Broker or Seller",
-                                "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
-                                "Assist with due diligence coordination, Buyer-requested repairs, and adjustment negotiations",
-                                "Monitor contingency periods, financing milestones, and deal approval timelines",
-                                "Provide referrals to Business Attorneys, CPAs, Escrow Officers, or Lenders (referrals only - no endorsement or warranty is made)",
-                            ],
-                            "📋 Closing Coordination & Transaction Management" => [
-                                "Coordinate inspections, licensing verifications, lease assignments, and inventory counts",
-                                "Coordinate with Lenders, Attorneys, Escrow Officers, Title Companies, CPAs, and other involved parties to prepare for Closing",
-                                "Review the Settlement Statement or Closing Worksheet for accuracy and coordinate with all parties if corrections are needed",
-                                "Confirm delivery of final executed documents, wire instructions, and business transition materials",
-                                "Schedule and confirm the Final Walkthrough",
-                                "Schedule and confirm the Closing Appointment",
-                            ],
-                            "💡 Buying Strategy & Guidance" => [
-                                "Provide a Comparative Market Review based on similar business sales, financial performance, and industry benchmarks",
-                                "Provide general guidance on licensing, zoning, SBA financing, registration steps, and transition timing",
-                                "Provide general guidance on due diligence preparation, key documents to review, and red flags during the acquisition process",
-                            ],
-                        ];
-
-                        // Buyer Vacant Land service categories (uses regular apostrophes - normalize for matching)
-                        $landCategories = [
-                            "📣 Buyer Criteria Marketing & Promotion" => [
-                                "Create a branded flyer summarizing the Buyer's purchase criteria",
-                                "Post the Buyer's criteria on Craigslist under \"Real Estate Wanted - Land\"",
-                                "Share the Buyer's criteria on Nextdoor in Neighborhood or Rural Groups",
-                                "Promote the Buyer's criteria on Facebook in Land Buyers, Developers, or Homesteader Groups",
-                                "Share the Buyer's criteria on Instagram using posts, stories, or reels",
-                                "Promote the Buyer's criteria on LinkedIn in Land Acquisition or Investment Groups",
-                                "Upload a TikTok video summarizing the Buyer's purchase criteria",
-                                "Upload a YouTube video summarizing the Buyer's purchase criteria",
-                                "Launch a mass email campaign promoting the Buyer's purchase criteria",
-                                "Distribute branded postcards or flyers in the Buyer's preferred neighborhoods",
-                                "Launch hyperlocal digital ads targeting the Buyer's preferred purchase areas",
-                            ],
-                            "🔍 Property Search, Alerts & Matching" => [
-                                "Send property alerts for land listings that match the Buyer's goals from relevant real estate and land-specific platforms",
-                                "Search for off-market, pre-market, distressed, withdrawn, canceled, or expired properties that meet the Buyer's purchase criteria",
-                                "Communicate with the Seller's Agent or Seller to confirm zoning, access, utilities, and pricing",
-                                "Evaluate development feasibility, land use restrictions, and agricultural potential with the Buyer",
-                            ],
-                            "🏡 Property Showings & Virtual Tours" => [
-                                "Schedule and attend land visits with the Buyer",
-                                "Coordinate or conduct virtual walkthroughs using maps, aerials, and site photos",
-                                "Preview parcels on behalf of the Buyer upon request",
-                                "Provide observations on topography, road frontage, and surrounding land uses",
-                            ],
-                            "📜 Offer & Contract Management" => [
-                                "Draft and submit offers using state-approved purchase forms",
-                                "Provide the Buyer with required state or local disclosure forms",
-                                "Draft and deliver counteroffers and manage revisions to the purchase agreement",
-                                "Negotiate price, deposits, and contingencies with the Seller's Agent or Seller",
-                                "Manage communication with the Seller's Agent or Seller",
-                                "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed documents to all parties",
-                                "Assist with due diligence coordination, including survey review, soil testing, zoning checks, and permit verification",
-                                "Monitor contract milestones, contingency deadlines, and financing timelines",
-                                "Provide referrals to Attorneys, Title Companies, Escrow Officers, Surveyors, or Land Use Consultants (referrals only - no endorsement or warranty is made)",
-                            ],
-                            "📋 Closing Coordination & Transaction Management" => [
-                                "Coordinate surveys, appraisals, inspections, and environmental assessments",
-                                "Coordinate with the Lender, Title Company, Escrow Officer, and/or Attorney to prepare for Closing",
-                                "Review the Settlement Statement for accuracy and coordinate with all parties if corrections are needed",
-                                "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
-                                "Schedule and confirm the Final Walkthrough",
-                                "Schedule and confirm the Closing Appointment",
-                            ],
-                            "💡 Buying Strategy & Guidance" => [
-                                "Provide a Comparative Market Analysis (CMA) with acreage comps, recent land sales, and price-per-acre benchmarks",
-                                "Provide general guidance on zoning, utilities, development potential, and environmental constraints",
-                                "Provide factual data on flood zones, wetlands, and land use maps using third-party sources",
-                                "Provide general guidance on feasibility timelines, inspection steps, and rural financing considerations",
-                            ],
-                        ];
-
-                        // Helper function to normalize strings for comparison (handles smart quotes)
-                        $normalizeString = function($str) {
-                            return str_replace(
-                                ["\u{2019}", "\u{2018}", "\u{201C}", "\u{201D}", "\u{2013}", "\u{2014}"],
-                                ["'", "'", '"', '"', '-', '-'],
-                                $str
-                            );
-                        };
-
-                        // Select categories based on property type
-                        if ($isIncome) {
-                            $categories = $incomeCategories;
-                        } elseif ($isBusiness) {
-                            $categories = $businessCategories;
-                        } elseif ($isCommercial) {
-                            $categories = $commercialCategories;
-                        } elseif ($isLand) {
-                            $categories = $landCategories;
-                        } else {
-                            $categories = $residentialCategories;
-                        }
+                        
+                        $configKey = $propTypeMap[$propertyType] ?? 'residential';
+                        $flowKey = 'buyer_agent.' . $configKey;
+                        
                         $allServices = is_array(@$auction->get->services) ? $auction->get->services : [];
                         $otherServices = is_array(@$auction->get->other_services) ? $auction->get->other_services : [];
-
-                        // Check if we have any services that match categories (using normalized comparison)
-                        $hasMatchedServices = false;
-                        foreach ($categories as $categoryServices) {
-                            $normalizedCategoryServices = array_map($normalizeString, $categoryServices);
-                            $matched = array_filter($allServices, fn($s) => in_array($normalizeString($s), $normalizedCategoryServices));
-                            if (!empty($matched)) {
-                                $hasMatchedServices = true;
-                                break;
-                            }
-                        }
+                        
+                        // Order services using the canonical order from config
+                        $orderedServices = ServicesFormatter::orderSelectedServices($allServices, $flowKey);
                         @endphp
 
                         <div class="col-md-12 col-12 pt-2">
-                            @if ($hasMatchedServices)
-                                @foreach ($categories as $categoryName => $categoryServices)
-                                    @php
-                                        $normalizedCategoryServices = array_map($normalizeString, $categoryServices);
-                                        $matchedServices = array_filter($allServices, function($service) use ($normalizeString, $normalizedCategoryServices) {
-                                            return in_array($normalizeString($service), $normalizedCategoryServices);
-                                        });
-                                    @endphp
-                                    @if (!empty($matchedServices))
+                            @if (!empty($orderedServices))
+                                @foreach ($orderedServices as $categoryName => $categoryServices)
+                                    @if (!empty($categoryServices))
                                     <div class="mt-3">
                                         <strong>{{ $categoryName }}</strong>
                                         <ul class="services">
-                                            @foreach ($matchedServices as $service)
+                                            @foreach ($categoryServices as $service)
                                             <li style="font-size: 16px;">{{ $service }}</li>
                                             @endforeach
                                         </ul>
                                     </div>
                                     @endif
                                 @endforeach
-                            @else
+                            @elseif (!empty($allServices))
                                 {{-- Fallback: show all services if none match categories --}}
-                                @if (!empty($allServices))
                                 <div class="mt-3">
                                     <strong>📋 Services Requested</strong>
                                     <ul class="services">
@@ -1911,7 +1621,6 @@
                                         @endforeach
                                     </ul>
                                 </div>
-                                @endif
                             @endif
 
                             @if (!empty($otherServices))
@@ -2561,32 +2270,24 @@
                                                         </span>
                                                     </p> --}}
 
-                                                    <!-- Services Offered (Categorized Display) -->
+                                                    <!-- Services Offered (Categorized Display using ServicesFormatter) -->
                                                     @php 
                                                         $bidServicesList = (array) data_get($bid,'get.services',[]);
-                                                        // Check if any services match categories
-                                                        $bidHasMatchedServices = false;
-                                                        if (!empty($bidServicesList)) {
-                                                            foreach ($categories as $catServices) {
-                                                                $matched = array_filter($bidServicesList, fn($s) => in_array($s, $catServices));
-                                                                if (!empty($matched)) { $bidHasMatchedServices = true; break; }
-                                                            }
-                                                        }
+                                                        $bidOrderedServices = !empty($bidServicesList) 
+                                                            ? \App\Support\ServicesFormatter::orderSelectedServices($bidServicesList, $flowKey)
+                                                            : [];
                                                     @endphp
                                                     @if (!empty($bidServicesList))
                                                         <div class="mt-3">
                                                             <label style="font-size: large; font-weight: 600; color: #049399;">
                                                                 Services Offered:</label>
-                                                            @if ($bidHasMatchedServices)
-                                                                @foreach ($categories as $catName => $catServices)
-                                                                    @php
-                                                                        $bidMatched = array_filter($bidServicesList, fn($s) => in_array($s, $catServices));
-                                                                    @endphp
-                                                                    @if (!empty($bidMatched))
+                                                            @if (!empty($bidOrderedServices))
+                                                                @foreach ($bidOrderedServices as $catName => $catServices)
+                                                                    @if (!empty($catServices))
                                                                         <div class="mt-2">
                                                                             <strong>{{ $catName }}</strong>
                                                                             <ul class="services services-offered">
-                                                                                @foreach ($bidMatched as $service)
+                                                                                @foreach ($catServices as $service)
                                                                                     <li style="font-size: 16px;">{{ $service }}</li>
                                                                                 @endforeach
                                                                             </ul>
@@ -3925,7 +3626,7 @@
         @endif
     </div>
 @endif
-                                                                            <!-- Services Offered (Categorized) -->
+                                                                            <!-- Services Offered (Categorized using ServicesFormatter) -->
                                                                             @php
                                                                                 $counterServices = is_string(
                                                                                     $allMeta['services'] ?? ''
@@ -3934,14 +3635,10 @@
                                                                                     : ($allMeta['services'] ?? []);
                                                                                 $counterServices = $counterServices ?: [];
                                                                                 
-                                                                                // Check if services match categories
-                                                                                $counterHasMatch = false;
-                                                                                foreach ($categories as $catSrvs) {
-                                                                                    if (!empty(array_filter($counterServices, fn($s) => in_array($s, $catSrvs)))) {
-                                                                                        $counterHasMatch = true;
-                                                                                        break;
-                                                                                    }
-                                                                                }
+                                                                                // Order services using ServicesFormatter
+                                                                                $counterOrderedServices = !empty($counterServices)
+                                                                                    ? \App\Support\ServicesFormatter::orderSelectedServices($counterServices, $flowKey)
+                                                                                    : [];
                                                                             @endphp
 
                                                                             @if (!empty($counterServices))
@@ -3949,14 +3646,13 @@
                                                                                     <label style="font-size: 15px; font-weight: 600; color: #049399; display: block; margin-bottom: 10px;">
                                                                                         Services Offered:
                                                                                     </label>
-                                                                                    @if ($counterHasMatch)
-                                                                                        @foreach ($categories as $catName => $catSrvs)
-                                                                                            @php $matched = array_filter($counterServices, fn($s) => in_array($s, $catSrvs)); @endphp
-                                                                                            @if (!empty($matched))
+                                                                                    @if (!empty($counterOrderedServices))
+                                                                                        @foreach ($counterOrderedServices as $catName => $catSrvs)
+                                                                                            @if (!empty($catSrvs))
                                                                                                 <div class="mb-2">
                                                                                                     <strong style="font-size: 13px;">{{ $catName }}</strong>
                                                                                                     <ul class="services services-offered" style="margin-top: 5px;">
-                                                                                                        @foreach ($matched as $svc)
+                                                                                                        @foreach ($catSrvs as $svc)
                                                                                                             <li style="font-size: 12px;">{{ $svc }}</li>
                                                                                                         @endforeach
                                                                                                     </ul>
