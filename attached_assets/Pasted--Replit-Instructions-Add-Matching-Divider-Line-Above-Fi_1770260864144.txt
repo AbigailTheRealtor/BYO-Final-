@@ -1,0 +1,108 @@
+## Replit Instructions — Add Matching Divider Line Above “Financing Details” (Hire a Buyer’s Agent → Actual Listing)
+
+**Applies To:** Hire a Buyer’s Agent → **Actual Listing Display** (all property types)
+**Goal:** “Financing Details” must have the **same matching divider line above it** that “Purchasing Terms” has, for consistent section styling.
+
+---
+
+# SAFEGUARDS (Non-Negotiable)
+
+1. **UI-only change** — do **not** change database, saved values, validation, or any business logic.
+2. **Do not change** any wording, labels, icons, chips, or field order.
+3. **Do not affect** Create Listing, Edit forms, tooltips, bids/counters, or PDFs (unless those views reuse the exact same listing display template—then scope styling to listing display only).
+4. **Do not globally change** all `<hr>` styling across the site. This must be scoped to the Buyer listing display component/section only.
+5. Must be **backward compatible** for existing listings.
+
+---
+
+# Issue
+
+On the Buyer listing display, “Purchasing Terms” has a **divider line above the header**, but “Financing Details” does not. This makes Financing Details look less like a major section.
+
+---
+
+# Required Change
+
+Add a **matching divider line above “Financing Details”** that looks **identical** to the divider line above “Purchasing Terms.”
+
+✅ “Financing Details” should visually match “Purchasing Terms” in this pattern:
+
+**Divider line**
+**Section Header**
+Divider line (if Purchasing Terms also uses one below—match exactly)
+
+---
+
+# Implementation Steps
+
+### Step 1 — Locate the Buyer Listing Display Template
+
+Find the **actual listing display** view/component for Hire a Buyer’s Agent where the “Purchasing Terms” and “Financing Details” headers are rendered.
+
+Search for:
+
+* `Purchasing Terms`
+* `Financing Details`
+
+---
+
+### Step 2 — Identify How “Purchasing Terms” Divider is Rendered
+
+It will be one of these:
+
+* an `<hr>` element
+* a `<div class="divider">`
+* a reusable component include
+* a border style applied to a wrapper container
+
+✅ Copy the same divider markup/style used above “Purchasing Terms.”
+
+---
+
+### Step 3 — Add the Same Divider Directly Above “Financing Details”
+
+Insert the identical divider immediately before the “Financing Details” header block.
+
+**Do not**:
+
+* add extra spacing that differs from Purchasing Terms
+* use a different color/height/opacity
+* add a colon to the header
+* change the header text
+
+---
+
+### Step 4 — Scope the Divider Change to Buyer Listing Display Only
+
+If the divider styling is controlled by a CSS class:
+
+* reuse the same class used for Purchasing Terms
+* if you must add a new class, scope it under the Buyer listing display wrapper (e.g., `.buyer-listing-display ...`) to avoid affecting other pages.
+
+---
+
+# Testing Checklist (Required)
+
+1. Open a Hire a Buyer’s Agent listing (any property type).
+2. Confirm:
+
+   * Purchasing Terms has divider line above (unchanged)
+   * Financing Details now also has a divider line above it
+   * The divider line style matches exactly (same thickness/color/spacing)
+3. Confirm no changes to:
+
+   * Create Listing screen
+   * Edit listing screen
+   * Bids/counters
+   * PDF/export (unless shared template)
+
+---
+
+# Deliverable
+
+* Provide file path(s) changed
+* Provide before/after screenshot showing Purchasing Terms and Financing Details both have matching divider lines
+
+---
+
+If you want, I can also write a short “UI standard” note for Replit: **all major sections (Purchasing Terms, Financing Details, etc.) must share the same header + divider pattern**, so you don’t keep chasing these one-by-one.

@@ -911,6 +911,7 @@
                             @endphp
 
                             @if($hasAnyFinancingDetails || @$auction->get->offered_financing != null)
+                                <hr>
                                 <div class="col-12">
                                     <div class="card-header section-header">
                                         <h4 class="section-title">Financing Details</h4>
