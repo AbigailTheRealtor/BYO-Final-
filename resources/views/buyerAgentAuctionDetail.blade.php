@@ -1120,10 +1120,12 @@
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Down Payment Buyer Can Afford to Bridge the Gap:
                                         @php
-                                            $gapType = @$auction->get->gap_payment_type ?? '$';
+                                            $rawGapType = @$auction->get->gap_payment_type;
+                                            $gapType = trim((string) $rawGapType);
                                             $gapValue = str_replace(',', '', @$auction->get->gap_payment_amount);
+                                            $isPercent = in_array($gapType, ['%', 'percent', 'percentage'], true);
                                         @endphp
-                                        @if ($gapType === '%')
+                                        @if ($isPercent)
                                             <span class="removeBold">{{ $gapValue }}%</span>
                                         @else
                                             <span class="removeBold">${{ number_format((float) $gapValue) }}</span>
