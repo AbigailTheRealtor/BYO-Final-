@@ -56,8 +56,7 @@
 
 
     <div class="input-cover">
-        <select wire:model="sale_provision" id="sale_provision" class="form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-screwdriver-wrench input-icon2" multiple>
+        <select wire:model="sale_provision" id="sale_provision" class="form-control select2-multiple" multiple>
             @foreach ($seller_property as $row_pt)
                 <option value="{{ $row_pt['name'] }}" title="{{ $row_pt['description'] }}">{{ $row_pt['name'] }}
                 </option>
@@ -256,8 +255,7 @@
     </div> --}}
 
     <div class="input-cover" wire:ignore>
-        <select id="offered_financing" class="form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-money-bill-wave input-icon2" multiple required>
+        <select id="offered_financing" class="form-control select2-multiple" multiple required>
             @foreach ($financing_options as $option)
                 <option value="{{ $option['name'] }}" title="{{ $option['description'] }}"
                     {{ in_array($option['name'], $offered_financing ?? []) ? 'selected' : '' }}>
