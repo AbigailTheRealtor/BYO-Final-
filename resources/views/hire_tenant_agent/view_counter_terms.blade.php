@@ -424,14 +424,14 @@
                                     @if ($counterData['interested_lease_option_agreement'] === 'Yes')
                                         @if (!empty($counterData['lease_value']))
                                         <li class="mb-2" style="{{ isset($brokerMismatches['lease_value']) ? $mismatchStyle : '' }}">
-                                            <span class="fw-semibold">Compensation (When Option Is Created):</span> 
+                                            <span class="fw-semibold">Compensation for Creating the Lease-Option Agreement:</span> 
                                             {{ ($counterData['lease_type'] ?? '') === 'percent' ? $fmtPercent($counterData['lease_value']) : $fmtMoney($counterData['lease_value']) }}
                                             {!! isset($brokerMismatches['lease_value']) ? $mismatchBadge : '' !!}
                                         </li>
                                         @endif
                                         @if (!empty($counterData['purchase_value']))
                                         <li class="mb-2" style="{{ isset($brokerMismatches['purchase_value']) ? $mismatchStyle : '' }}">
-                                            <span class="fw-semibold">Compensation (If Purchase Option Exercised):</span> 
+                                            <span class="fw-semibold">Compensation if Purchase Option is Exercised:</span> 
                                             {{ ($counterData['purchase_type'] ?? '') === 'percent' ? $fmtPercent($counterData['purchase_value']) : $fmtMoney($counterData['purchase_value']) }}
                                             {!! isset($brokerMismatches['purchase_value']) ? $mismatchBadge : '' !!}
                                         </li>

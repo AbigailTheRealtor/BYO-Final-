@@ -1156,7 +1156,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @if (@$auction->get->interested_lease_option_agreement === 'Yes')
                 @if (@$auction->get->lease_value != null)
                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Compensation (When Option Is Created):
+                    Compensation for Creating the Lease-Option Agreement:
                     <span class="removeBold">
                         @if (@$auction->get->lease_type === 'percent')
                             {{ $auction->get->lease_value }}% of Total Purchase Price
@@ -1169,7 +1169,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                 @if (@$auction->get->purchase_value != null)
                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Compensation (If Purchase Option Is Exercised):
+                    Compensation if Purchase Option is Exercised:
                     <span class="removeBold">
                         @if (@$auction->get->purchase_type === 'percent')
                             {{ $auction->get->purchase_value }}% of Total Purchase Price
@@ -2567,10 +2567,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 <li class="mb-1" style="{{ isset($brokerMismatches['interested_lease_option_agreement']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Interested in a Lease-Option Agreement:</span> {{ data_get($bid, 'get.interested_lease_option_agreement') }}{!! isset($brokerMismatches['interested_lease_option_agreement']) ? $mismatchBadge : '' !!}</li>
                                                                 @if (data_get($bid, 'get.interested_lease_option_agreement') === 'Yes')
                                                                     @if ($leaseOptionCreatedDisplay !== '-')
-                                                                    <li class="mb-1" style="{{ isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Compensation (When Option Is Created):</span> {{ $leaseOptionCreatedDisplay }}{!! isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value']) ? $mismatchBadge : '' !!}</li>
+                                                                    <li class="mb-1" style="{{ isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Compensation for Creating the Lease-Option Agreement:</span> {{ $leaseOptionCreatedDisplay }}{!! isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value']) ? $mismatchBadge : '' !!}</li>
                                                                     @endif
                                                                     @if ($leaseOptionExercisedDisplay !== '-')
-                                                                    <li class="mb-1" style="{{ isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Compensation (If Purchase Option Exercised):</span> {{ $leaseOptionExercisedDisplay }}{!! isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value']) ? $mismatchBadge : '' !!}</li>
+                                                                    <li class="mb-1" style="{{ isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Compensation if Purchase Option is Exercised:</span> {{ $leaseOptionExercisedDisplay }}{!! isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value']) ? $mismatchBadge : '' !!}</li>
                                                                     @endif
                                                                 @endif
                                                             </ul>
@@ -3589,7 +3589,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 @if (data_get($bid, 'get.interested_lease_option_agreement') === 'Yes')
                                                                     @if ($leaseOptionCreatedDisplay !== '-')
                                                                     <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                        <span class="fw-semibold">Compensation (When Option Is Created):</span>
+                                                                        <span class="fw-semibold">Compensation for Creating the Lease-Option Agreement:</span>
                                                                         <span style="{{ $isMismatch('lease_value') ? $mismatchStyle : '' }}">
                                                                             {{ $leaseOptionCreatedDisplay }}
                                                                             @if($isMismatch('lease_value')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
@@ -3598,7 +3598,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                     @endif
                                                                     @if ($leaseOptionExercisedDisplay !== '-')
                                                                     <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                        <span class="fw-semibold">Compensation (If Purchase Option Exercised):</span>
+                                                                        <span class="fw-semibold">Compensation if Purchase Option is Exercised:</span>
                                                                         <span style="{{ $isMismatch('purchase_value') ? $mismatchStyle : '' }}">
                                                                             {{ $leaseOptionExercisedDisplay }}
                                                                             @if($isMismatch('purchase_value')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
@@ -4363,11 +4363,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 @if ($allMeta['interested_lease_option_agreement'] === 'Yes')
                                                                     @if ($counterLeaseOptionCreatedDisplay !== '-')
                                                                     @php $leaseCreatedChanged = $isChanged($allMeta['lease_value'] ?? '', 'lease_value'); @endphp
-                                                                    <li class="mb-1" style="{{ $leaseCreatedChanged ? $changedStyle : '' }}"><span class="fw-semibold">Compensation (When Option Is Created):</span> {{ $counterLeaseOptionCreatedDisplay }}{!! $leaseCreatedChanged ? $changedBadge : '' !!}</li>
+                                                                    <li class="mb-1" style="{{ $leaseCreatedChanged ? $changedStyle : '' }}"><span class="fw-semibold">Compensation for Creating the Lease-Option Agreement:</span> {{ $counterLeaseOptionCreatedDisplay }}{!! $leaseCreatedChanged ? $changedBadge : '' !!}</li>
                                                                     @endif
                                                                     @if ($counterLeaseOptionExercisedDisplay !== '-')
                                                                     @php $leaseExercisedChanged = $isChanged($allMeta['purchase_value'] ?? '', 'purchase_value'); @endphp
-                                                                    <li class="mb-1" style="{{ $leaseExercisedChanged ? $changedStyle : '' }}"><span class="fw-semibold">Compensation (If Purchase Option Exercised):</span> {{ $counterLeaseOptionExercisedDisplay }}{!! $leaseExercisedChanged ? $changedBadge : '' !!}</li>
+                                                                    <li class="mb-1" style="{{ $leaseExercisedChanged ? $changedStyle : '' }}"><span class="fw-semibold">Compensation if Purchase Option is Exercised:</span> {{ $counterLeaseOptionExercisedDisplay }}{!! $leaseExercisedChanged ? $changedBadge : '' !!}</li>
                                                                     @endif
                                                                 @endif
                                                             </ul>
