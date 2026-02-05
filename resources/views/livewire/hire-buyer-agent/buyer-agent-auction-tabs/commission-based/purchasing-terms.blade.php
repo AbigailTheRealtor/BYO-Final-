@@ -4,12 +4,18 @@
     }
 
     .input-cover .select2 .selection .select2-selection--multiple {
-        padding-left: 10px !important;
+        padding-left: 44px !important;
         padding-bottom: 0 !important;
     }
 
     .input-cover .select2 .selection .select2-selection--multiple input {
         font-size: 1rem !important;
+    }
+
+    /* Ensure input-cover properly contains absolutely positioned icons */
+    #offered_financing_wrapper {
+        position: relative !important;
+        overflow: visible;
     }
 </style>
 @php
@@ -255,7 +261,8 @@
         </select>
     </div> --}}
 
-    <div class="input-cover" wire:ignore>
+    <div class="input-cover" id="offered_financing_wrapper" wire:ignore>
+        <i class="input-icon fa-solid fa-money-bill-wave input-icon2"></i>
         <select id="offered_financing" class="form-control select2-multiple" multiple required>
             @foreach ($financing_options as $option)
                 <option value="{{ $option['name'] }}" title="{{ $option['description'] }}"
