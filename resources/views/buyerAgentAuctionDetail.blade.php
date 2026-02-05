@@ -218,7 +218,6 @@
 
     .removeBold {
         font-weight: normal;
-        color: #4B5563;
     }
 
     /* Financing Details section - subsection headers (darker than text-secondary) */
@@ -878,26 +877,6 @@
                                 </div>
                             @endif
 
-                            <!-- Offered Financing -->
-                            @if (@$auction->get->offered_financing != null)
-                                @php
-                                    $financingRaw = @$auction->get->offered_financing;
-                                    $financingItems = is_array($financingRaw) ? $financingRaw : (is_string($financingRaw) ? json_decode($financingRaw, true) ?? [$financingRaw] : [$financingRaw]);
-                                    $displayOtherFinancing = str_replace('"', '', @$auction->get->other_financing ?? '');
-                                @endphp
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Offered Financing/Currency:
-                                    @foreach ($financingItems as $financingItem)
-                                        @if ($financingItem != 'Other')
-                                            <span class="removeBold badge bg-secondary">{{ str_replace('"', '', $financingItem) }}</span>
-                                        @endif
-                                    @endforeach
-                                    @if (in_array('Other', $financingItems) && @$auction->get->other_financing)
-                                        <span class="removeBold badge bg-secondary">{{ $displayOtherFinancing }}</span>
-                                    @endif
-                                </div>
-                            @endif
-
                             @php
                                 // Prepare financing items array for conditional checks
                                 $financingForChecks = @$auction->get->offered_financing;
@@ -931,11 +910,31 @@
                                     (count(array_intersect($financingArray, ['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'])) > 0 && (@$auction->get->pre_approved || @$auction->get->pre_approval_amount));
                             @endphp
 
-                            @if($hasAnyFinancingDetails)
+                            @if($hasAnyFinancingDetails || @$auction->get->offered_financing != null)
                                 <div class="col-12">
                                     <div class="card-header section-header">
                                         <h4 class="section-title">Financing Details</h4>
                                     </div>
+                                </div>
+                            @endif
+
+                            <!-- Offered Financing/Currency - Now inside Financing Details section -->
+                            @if (@$auction->get->offered_financing != null)
+                                @php
+                                    $financingRaw = @$auction->get->offered_financing;
+                                    $financingItems = is_array($financingRaw) ? $financingRaw : (is_string($financingRaw) ? json_decode($financingRaw, true) ?? [$financingRaw] : [$financingRaw]);
+                                    $displayOtherFinancing = str_replace('"', '', @$auction->get->other_financing ?? '');
+                                @endphp
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
+                                    Offered Financing/Currency:
+                                    @foreach ($financingItems as $financingItem)
+                                        @if ($financingItem != 'Other')
+                                            <span class="removeBold badge bg-secondary">{{ str_replace('"', '', $financingItem) }}</span>
+                                        @endif
+                                    @endforeach
+                                    @if (in_array('Other', $financingItems) && @$auction->get->other_financing)
+                                        <span class="removeBold badge bg-secondary">{{ $displayOtherFinancing }}</span>
+                                    @endif
                                 </div>
                             @endif
 
