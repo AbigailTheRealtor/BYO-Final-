@@ -421,14 +421,18 @@
                                         </div>
                                     @endif
 
-                                    <!-- Business Type (if applicable) -->
-                                    @if (@$auction->get->business_type != null)
+                                    <!-- Business Type (if applicable) - check both business_type and business_type_selected -->
+                                    @php
+                                        $businessTypeValue = @$auction->get->business_type_selected ?: @$auction->get->business_type;
+                                        $otherBusinessType = @$auction->get->other_business_type;
+                                    @endphp
+                                    @if (!empty($businessTypeValue))
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
                                             Business Type:
-                                            @if (@$auction->get->business_type != 'Other')
-                                                <span class="removeBold badge bg-secondary">{{ @$auction->get->business_type }}</span>
-                                            @elseif (@$auction->get->other_business_type)
-                                                <span class="removeBold badge bg-secondary">{{ @$auction->get->other_business_type }}</span>
+                                            @if ($businessTypeValue != 'Other')
+                                                <span class="removeBold badge bg-secondary">{{ $businessTypeValue }}</span>
+                                            @elseif (!empty($otherBusinessType))
+                                                <span class="removeBold badge bg-secondary">{{ $otherBusinessType }}</span>
                                             @endif
                                         </div>
                                     @endif
