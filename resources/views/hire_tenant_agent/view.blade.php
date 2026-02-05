@@ -977,8 +977,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 <div class="col-md-12 col-12 pt-2">
                     @foreach ($categories as $categoryName => $categoryServices)
                         @php
-                            $matchedServices = array_filter($allServices, function($service) use ($categoryServices) {
-                                return in_array($service, $categoryServices);
+                            $matchedServices = array_filter($categoryServices, function($service) use ($allServices) {
+                                return in_array($service, $allServices);
                             });
                         @endphp
                         @if (!empty($matchedServices))
