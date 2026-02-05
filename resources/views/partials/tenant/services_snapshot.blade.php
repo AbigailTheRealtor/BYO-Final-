@@ -23,7 +23,7 @@ if (empty($servicesGrouped) && !empty($allServices)) {
     // Canonicalization helper for matching (handles smart quotes vs straight quotes)
     $canon = function(string $s): string {
         $s = trim($s);
-        $s = str_replace(["'", "'", """, """], ["'", "'", "\"", "\""], $s);
+        $s = str_replace(["\xe2\x80\x98", "\xe2\x80\x99", "\xe2\x80\x9c", "\xe2\x80\x9d"], ["'", "'", '"', '"'], $s);
         $s = preg_replace('/\s+/', ' ', $s);
         return $s;
     };
