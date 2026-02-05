@@ -218,6 +218,14 @@
 
     .removeBold {
         font-weight: normal;
+        color: #4B5563;
+    }
+
+    /* Financing Details section - subsection headers (darker than text-secondary) */
+    .financing-subsection-header {
+        font-weight: 700 !important;
+        color: #374151 !important;
+        margin-bottom: 0;
     }
 
         /* Base button style */
@@ -924,15 +932,17 @@
                             @endphp
 
                             @if($hasAnyFinancingDetails)
-                                <div class="col-12 mt-4 mb-2">
-                                    <h5 class="fw-bold text-secondary">Financing Details</h5>
+                                <div class="col-12">
+                                    <div class="card-header section-header">
+                                        <h4 class="section-title">Financing Details</h4>
+                                    </div>
                                 </div>
                             @endif
 
                             <!-- Cash Financing Details -->
                             @if (in_array('Cash', $financingArray) && @$auction->get->cash_budget)
                                 <div class="col-12 mt-3 mb-1">
-                                    <h6 class="fw-bold text-secondary mb-0">Cash Terms</h6>
+                                    <h6 class="financing-subsection-header">Cash Terms</h6>
                                 </div>
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Offered Cash Amount:
@@ -948,7 +958,7 @@
                             @endphp
                             @if ($hasLoanData)
                                 <div class="col-12 mt-3 mb-1">
-                                    <h6 class="fw-bold text-secondary mb-0">Loan Pre-Approval Status</h6>
+                                    <h6 class="financing-subsection-header">Loan Pre-Approval Status</h6>
                                 </div>
                                 @if (@$auction->get->pre_approved)
                                     @php
@@ -971,7 +981,7 @@
                             <!-- Seller Financing Details -->
                             @if (in_array('Seller Financing', $financingArray) && $hasSellerFinancingData)
                                 <div class="col-12 mt-3 mb-1">
-                                    <h6 class="fw-bold text-secondary mb-0">Seller Financing Terms</h6>
+                                    <h6 class="financing-subsection-header">Seller Financing Terms</h6>
                                 </div>
                                 @if (@$auction->get->purchase_price)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -1090,7 +1100,7 @@
                             <!-- Assumable Financing Details - ONLY SHOW IF offered_financing IS "Assumable" -->
                             @if (in_array('Assumable', $financingArray) && $hasAssumableData)
                                 <div class="col-12 mt-3 mb-1">
-                                    <h6 class="fw-bold text-secondary mb-0">Assumable Terms</h6>
+                                    <h6 class="financing-subsection-header">Assumable Terms</h6>
                                 </div>
                                 @if (@$auction->get->assumable_terms)
                                     @php
@@ -1137,7 +1147,7 @@
                             <!-- Exchange/Trade Details - ONLY SHOW IF offered_financing IS "Exchange/Trade" -->
                             @if (in_array('Exchange/Trade', $financingArray) && $hasExchangeData)
                                 <div class="col-12 mt-3 mb-1">
-                                    <h6 class="fw-bold text-secondary mb-0">Exchange/Trade Terms</h6>
+                                    <h6 class="financing-subsection-header">Exchange/Trade Terms</h6>
                                 </div>
                                 @if (@$auction->get->exchange_item)
                                     @php
@@ -1216,7 +1226,7 @@
                             <!-- Lease Option Details - ONLY SHOW IF offered_financing IS "Lease Option" -->
                             @if (in_array('Lease Option', $financingArray) && $hasLeaseOptionData)
                                 <div class="col-12 mt-3 mb-1">
-                                    <h6 class="fw-bold text-secondary mb-0">Lease Option Terms</h6>
+                                    <h6 class="financing-subsection-header">Lease Option Terms</h6>
                                 </div>
                                 {{-- 1. Buyer's Desired Offering Price --}}
                                 @if (@$auction->get->lease_option_price)
@@ -1328,7 +1338,7 @@
                             <!-- Lease Purchase Details - ONLY SHOW IF offered_financing IS "Lease Purchase" -->
                             @if (in_array('Lease Purchase', $financingArray) && $hasLeasePurchaseData)
                                 <div class="col-12 mt-3 mb-1">
-                                    <h6 class="fw-bold text-secondary mb-0">Lease Purchase Terms</h6>
+                                    <h6 class="financing-subsection-header">Lease Purchase Terms</h6>
                                 </div>
                                 {{-- 1. Buyer's Desired Offering Price --}}
                                 @if (@$auction->get->lease_purchase_price)
@@ -1421,7 +1431,7 @@
                             <!-- Cryptocurrency Details - ONLY SHOW IF offered_financing IS "Cryptocurrency" -->
                             @if (in_array('Cryptocurrency', $financingArray) && $hasCryptoData)
                                 <div class="col-12 mt-3 mb-1">
-                                    <h6 class="fw-bold text-secondary mb-0">Cryptocurrency Terms</h6>
+                                    <h6 class="financing-subsection-header">Cryptocurrency Terms</h6>
                                 </div>
                                 @if (@$auction->get->cryptocurrency_type)
                                     @php
@@ -1496,7 +1506,7 @@
                             <!-- NFT Details - ONLY SHOW IF offered_financing IS "Non-Fungible Token (NFT)" -->
                             @if (in_array('Non-Fungible Token (NFT)', $financingArray) && $hasNftData)
                                 <div class="col-12 mt-3 mb-1">
-                                    <h6 class="fw-bold text-secondary mb-0">Non-Fungible Token (NFT) Terms</h6>
+                                    <h6 class="financing-subsection-header">Non-Fungible Token (NFT) Terms</h6>
                                 </div>
                                 @if (@$auction->get->nft_description)
                                     @php
