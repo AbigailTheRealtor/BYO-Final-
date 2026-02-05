@@ -1,0 +1,186 @@
+## Replit Instructions — [Tenant@exp.com](mailto:Tenant@exp.com)
+
+### Hire a Tenant’s Agent → Lease-Option Compensation Labels Must Match Listing Creation (Everywhere)
+
+### Issue
+
+Under **Broker Compensation & Agency Agreement Terms** → **Interested in a Lease Option**, when **Yes** is selected:
+
+**Listing creation shows:**
+
+* **Compensation for Creating the Lease-Option Agreement:**
+* **Compensation if Purchase Option is Exercised:**
+
+…but the **actual listing (and other places)** show:
+
+* **Compensation (When Option Is Created):**
+* **Compensation (If Purchase Option Is Exercised):**
+
+### Goal
+
+For **Hire a Tenant’s Agent** (both **Residential & Commercial**), the label text must match **exactly** the listing-creation wording **everywhere it appears**, including:
+
+* listing display page
+* edit screens
+* drafts
+* agent bids
+* counterbids
+* summaries / printable views
+* Accepted Bid Summary (if it includes these fields)
+
+---
+
+# SAFEGUARDS (MANDATORY)
+
+1. **Tenant-only:** Do not change Buyer/Seller/Landlord wording.
+2. **Text-only change:** Do not change logic, field names, validation rules, or DB columns.
+3. **Single source of truth:** Replace labels by referencing a shared constant/partial so the wording can’t diverge again.
+4. **No regressions:** If Lease Option = No, these fields remain hidden exactly as they are today.
+5. **Applies to Residential + Commercial:** same label text in both contexts.
+
+---
+
+# IMPLEMENTATION (DO THIS)
+
+## Step 1 — Define the canonical label text (Tenant-only)
+
+Create a Tenant-only config/constant so all pages pull from the same strings.
+
+### Option A (recommended): Config file
+
+Create:
+`config/tenant_labels.php`
+
+Add:
+
+```php
+<?php
+
+return [
+  'lease_option' => [
+    'comp_create' => 'Compensation for Creating the Lease-Option Agreement:',
+    'comp_exercised' => 'Compensation if Purchase Option is Exercised:',
+  ],
+];
+```
+
+**Safeguard:** This is additive and won’t affect other roles.
+
+---
+
+## Step 2 — Update ALL Tenant views/components to use the canonical labels
+
+Search the codebase for the *wrong* labels and replace them **only in Tenant contexts**.
+
+### Global search strings
+
+* `Compensation (When Option Is Created)`
+* `Compensation (If Purchase Option Is Exercised)`
+* `When Option Is Created`
+* `If Purchase Option Is Exercised`
+
+### Replace in Tenant-only templates/components with:
+
+```php
+{{ config('tenant_labels.lease_option.comp_create') }}
+{{ config('tenant_labels.lease_option.comp_exercised') }}
+```
+
+---
+
+## Step 3 — Where to apply (must update each occurrence)
+
+### A) Tenant Listing Creation + Edit (form labels)
+
+Files typically like:
+
+* `resources/views/livewire/tenant-agent-auction.blade.php`
+* `resources/views/livewire/tenant-agent-auction-edit.blade.php`
+
+Replace label text with config strings.
+
+### B) Tenant Listing “Show” / Public Listing Display
+
+Files typically like:
+
+* `resources/views/tenant-agent-auctions/show.blade.php`
+* or a shared Tenant listing card partial
+
+Replace the display labels there too.
+
+### C) Tenant Agent Bid / Counterbid Views
+
+Look for bid pages such as:
+
+* `resources/views/livewire/tenant-agent-bid*.blade.php`
+* `TenantAgentBid.php`, `TenantAgentCounterBid.php`, etc.
+
+Anywhere Lease-Option compensation is shown, replace the labels.
+
+### D) Summaries / PDFs / Accepted Bid Summary
+
+Search for a “Summary” view/template used for Tenant:
+
+* `...summary...tenant...`
+* `...accepted-bid-summary...`
+* any PDF generation template that prints these labels
+
+Replace there as well.
+
+**Safeguard:** Do not change Seller/Buyer summary templates.
+
+---
+
+## Step 4 — Ensure Residential + Commercial both pull from same labels
+
+If your Tenant flow has conditional blocks like:
+
+* `if ($propertyType === 'Residential') ... else Commercial ...`
+
+Make sure both branches use the **same** config label strings (do not hardcode either version).
+
+---
+
+# IMPORTANT: DO NOT CHANGE FIELD NAMES
+
+This is label-only. The underlying fields stay the same (whatever you currently store), for example:
+
+* `lease_option_comp_create`
+* `lease_option_comp_exercised`
+  (or your actual names)
+
+Only the UI text changes.
+
+---
+
+# QA TESTS (REQUIRED)
+
+## Residential
+
+1. Create Tenant listing → Interested in Lease Option = **Yes**
+2. Confirm the two labels display exactly:
+
+   * **Compensation for Creating the Lease-Option Agreement:**
+   * **Compensation if Purchase Option is Exercised:**
+3. Save Draft → reopen draft → labels still correct
+4. Submit → public listing page → labels still correct
+5. Create agent bid/counterbid → view bid details → labels still correct
+6. Open summary / accepted bid summary (if applicable) → labels still correct
+
+## Commercial
+
+Repeat the exact same checks.
+
+## Regression
+
+* If Interested in Lease Option = **No**, the fields remain hidden and nothing else changes.
+
+---
+
+# “DONE” DEFINITION
+
+There is **zero place** in the Tenant listing ecosystem (create/edit/draft/show/bid/counter/summary) where the Lease-Option compensation labels show the old wording. All instances match listing creation text exactly.
+
+---
+
+If you want, paste **one screenshot or code snippet** of the Tenant listing “actual listing” section where the wrong labels appear, and I’ll tell you the *exact* likely Blade/Livewire file path patterns to search first (Tenant-only, no guesswork).
