@@ -271,8 +271,16 @@
 
 <!-- Cash Option - No additional fields needed per requirements -->
 
-<!-- Conventional, FHA, Jumbo, VA, No-Doc, Non-QM, USDA -->
+<!-- Traditional Loan Types - Show header for each selected type -->
 @if (in_array('Conventional', $offered_financing) || in_array('FHA', $offered_financing) || in_array('Jumbo', $offered_financing) || in_array('VA', $offered_financing) || in_array('No-Doc', $offered_financing) || in_array('Non-QM', $offered_financing) || in_array('USDA', $offered_financing))
+    @php
+        $selectedTraditionalLoans = array_filter(['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'], fn($type) => in_array($type, $offered_financing));
+    @endphp
+    <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
+        <h5 class="fw-bold text-primary mb-0">
+            <i class="fa-solid fa-file-invoice-dollar me-2"></i>{{ implode(' / ', $selectedTraditionalLoans) }}
+        </h5>
+    </div>
     <div class="form-group mt-3">
         <label class="fw-bold">Buyer Pre-Approved for a Loan:<span class="text-danger">*</span></label>
 
@@ -315,6 +323,11 @@
 <!-- Seller Financing -->
 @if (in_array('Seller Financing', $offered_financing))
 <div wire:key="seller-financing-section">
+    <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
+        <h5 class="fw-bold text-primary mb-0">
+            <i class="fa-solid fa-handshake me-2"></i>Seller Financing
+        </h5>
+    </div>
     <div class="form-group">
         <label class="fw-bold">Desired Purchase Price:<span class="text-danger">*</span></label>
 
@@ -674,6 +687,11 @@
 
 <!-- Assumable Financing -->
 @if (in_array('Assumable', $offered_financing))
+    <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
+        <h5 class="fw-bold text-primary mb-0">
+            <i class="fa-solid fa-arrow-right-arrow-left me-2"></i>Assumable
+        </h5>
+    </div>
     <div class="form-group">
         <label class="fw-bold">Offered Assumable Terms:<span class="text-danger">*</span></label>
 
@@ -839,6 +857,11 @@
 <!-- Exchange/Trade Option -->
 @if (in_array('Exchange/Trade', $offered_financing))
 <div wire:key="exchange-trade-section">
+    <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
+        <h5 class="fw-bold text-primary mb-0">
+            <i class="fa-solid fa-exchange-alt me-2"></i>Exchange/Trade
+        </h5>
+    </div>
     <div class="form-group mt-3">
         <label class="fw-bold">Acceptable Exchange Item:<span class="text-danger">*</span></label>
 
@@ -1017,6 +1040,11 @@
 
 <!-- Lease Option -->
 @if (in_array('Lease Option', $offered_financing))
+    <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
+        <h5 class="fw-bold text-primary mb-0">
+            <i class="fa-solid fa-key me-2"></i>Lease Option
+        </h5>
+    </div>
     <!-- 1. Buyer's Desired Offering Price for Lease Option -->
     <div class="form-group">
         <label class="fw-bold">Buyer's Desired Offering Price for Lease Option:<span
@@ -1191,6 +1219,11 @@
 
 <!-- Lease Purchase -->
 @if (in_array('Lease Purchase', $offered_financing))
+    <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
+        <h5 class="fw-bold text-primary mb-0">
+            <i class="fa-solid fa-file-signature me-2"></i>Lease Purchase
+        </h5>
+    </div>
 
     <div class="alert alert-warning mt-3 p-2 small">
         <strong>Note:</strong> 📌 If this transaction is structured as a Lease-Purchase, the Buyer's Broker Purchase Fee
@@ -1364,6 +1397,11 @@
 <!-- Cryptocurrency Option -->
 @if (in_array('Cryptocurrency', $offered_financing))
 <div wire:key="cryptocurrency-section">
+    <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
+        <h5 class="fw-bold text-primary mb-0">
+            <i class="fa-brands fa-bitcoin me-2"></i>Cryptocurrency
+        </h5>
+    </div>
     <div class="form-group">
         <label class="fw-bold">Offered Cryptocurrency:<span class="text-danger">*</span></label>
 
@@ -1506,6 +1544,11 @@
 <!-- NFT Option -->
 @if (in_array('Non-Fungible Token (NFT)', $offered_financing))
 <div wire:key="nft-section">
+    <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
+        <h5 class="fw-bold text-primary mb-0">
+            <i class="fa-solid fa-image me-2"></i>Non-Fungible Token (NFT)
+        </h5>
+    </div>
     <div class="form-group mt-3">
         <label class="fw-bold">Offered Non-Fungible Token (NFT):<span class="text-danger">*</span></label>
 

@@ -1,0 +1,99 @@
+________________________________________
+SECTION GROUPING & LABELING REQUIREMENT
+Hire a Buyer’s Agent → Listing Creation → Offered Financing / Currency
+Problem
+On listing creation, when a user selects multiple Offered Financing / Currency options, the form currently displays a continuous list of questions with no visual separation, making it unclear which questions belong to which financing/currency type.
+This is especially problematic given the large number of selectable options.
+________________________________________
+SOURCE OF TRUTH: ACTUAL OPTIONS
+The following are the exact Offered Financing / Currency options available:
+•	Assumable
+•	Cash
+•	Conventional
+•	Cryptocurrency
+•	Exchange / Trade
+•	FHA
+•	Jumbo
+•	Lease Option
+•	Lease Purchase
+•	Non-Fungible Token (NFT)
+•	No-Doc
+•	Non-QM
+•	Seller Financing
+•	USDA
+•	VA
+•	Other
+These options must be used as-is for grouping headers (same wording, capitalization, and punctuation).
+________________________________________
+REQUIREMENT
+On listing creation, when one or more Offered Financing / Currency options are selected, the form must:
+1.	Display a clear section header for each selected option
+2.	Show that header before rendering the questions related to that option
+3.	Group only the relevant questions under each header
+4.	Prevent questions from different financing types from mixing together
+This must visually mirror how financing types are separated on the actual listing display, while applying it to listing creation.
+________________________________________
+REQUIRED HEADER BEHAVIOR
+For each selected option, render a header using the exact option label, for example:
+Assumable
+[Assumable-related questions]
+
+Seller Financing
+[Seller Financing-related questions]
+
+Lease Option
+[Lease Option-related questions]
+
+Exchange / Trade
+[Exchange / Trade-related questions]
+
+Cryptocurrency
+[Cryptocurrency-related questions]
+Rules
+•	Header text must match the selected option exactly
+•	Header must appear immediately before the first related question
+•	No explanatory or helper text should be added
+•	Styling should match existing section headers used elsewhere in the platform
+________________________________________
+MULTI-SELECTION BEHAVIOR
+•	If one option is selected → show one header and its questions
+•	If multiple options are selected → show multiple headers, each with its own grouped questions
+•	Financing sections must render in:
+o	Either the canonical platform order, or
+o	The order the options appear in the selector
+•	The order must remain consistent and predictable
+________________________________________
+SCOPE (IMPORTANT)
+This applies to Hire a Buyer’s Agent → Listing Creation only.
+It must not:
+•	Change actual listing display logic (already grouped correctly)
+•	Change saved data
+•	Change validation rules
+•	Affect other roles (Seller, Tenant, Landlord)
+•	Affect other listing types
+________________________________________
+SAFEGUARDS (MUST FOLLOW)
+•	Do not change option labels
+•	Do not change question wording
+•	Do not change database structure
+•	Do not alter validation
+•	Do not affect how values are stored
+•	This is a UI grouping / visual clarity enhancement only
+________________________________________
+ACCEPTANCE CHECK (MUST PASS)
+•	Each selected financing/currency option shows a clear header on listing creation ✅
+•	Questions appear only under their correct financing header ✅
+•	Multiple selections are visually separated and easy to understand ✅
+•	No regression to actual listing display or saved data ✅
+•	Works with all listed options, including Other, NFT, Crypto, and Exchange / Trade ✅
+________________________________________
+🔒 Why This Matters
+This ensures:
+•	Clear user experience, even with many selections
+•	Lower error rates during listing creation
+•	Parity between creation and display
+•	Scalable design as financing options expand
+________________________________________
+If you want next, I can:
+•	Produce a financing-to-questions mapping table (one source of truth for devs), or
+•	Write a reusable grouping component spec so this behavior can later be shared across Buyer, Seller, Tenant, and Landlord flows without duplication.
