@@ -90,35 +90,21 @@
 
     <!-- Display Uploaded Photo -->
     @if ($photo)
-        <!-- Validate that it's an image and less than 10MB -->
         <div class="col-md-6 col-6 pt-2 fw-bold" id="photo-preview"
             style="width: 100%; max-width: 300px; height: auto; border: 1px solid #ddd; border-radius: 4px; overflow: hidden;">
             Personal Photo:
             <span class="removeBold">
-                <!-- Display the temporary uploaded photo -->
                 @if (is_string($photo))
-                    <!-- If $photo is a string (existing file path) -->
+                    <!-- Existing file from storage -->
                     <img src="{{ asset('storage/auction/images/' . $photo) }}" style="width:100%;height:29vh;" />
-
-                    @if ($auctionId)
-                        <button wire:click="deletePhoto" wire:confirm="Are you sure you want to delete this photo?"
-                            class="btn btn-danger btn-sm mt-2">
-                            Delete Photo
-
-                        </button>
-                    @endif
                 @else
-                    <!-- If $photo is an UploadedFile object (newly uploaded file) -->
+                    <!-- Newly uploaded file (temporary) -->
                     <img src="{{ $photo->temporaryUrl() }}" style="width:100%;height:29vh;" />
-
-                    @if ($auctionId)
-                        <button wire:click="deletePhoto" wire:confirm="Are you sure you want to delete this photo?"
-                            class="btn btn-danger btn-sm mt-2">
-                            Delete Photo
-
-                        </button>
-                    @endif
                 @endif
+                <button wire:click="deletePhoto" wire:confirm="Are you sure you want to delete this photo?"
+                    class="btn btn-danger btn-sm mt-2">
+                    Delete Photo
+                </button>
             </span>
         </div>
     @endif

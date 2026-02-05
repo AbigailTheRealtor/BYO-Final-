@@ -607,6 +607,8 @@ class TenantAgentAuction extends Component
     public $video;
     public $photoError = null;
     public $videoError = null;
+    public $photoDeleted = false;
+    public $videoDeleted = false;
 
     // Tab management
     public $activeTab = 0;
@@ -3696,30 +3698,30 @@ class TenantAgentAuction extends Component
         $auction->saveMeta('current_status', $this->current_status);
         $auction->saveMeta('video_link', $this->video_link);
 
-        // Save photo - only process if it's a new upload (UploadedFile), not an existing string path
-        if ($this->photo && !is_string($this->photo)) {
-            $extensionPhoto = $this->photo->getClientOriginalExtension(); // Get file extension
-            $uuid = (string) Str::uuid(); // Generate a unique UUID
-            $photoName = $uuid . '.' . $extensionPhoto; // Create a unique file name
-
-            // Save file to public/auction/images using Livewire's store method
+        // Save photo - handle new uploads, existing paths, and deletions
+        if ($this->photoDeleted) {
+            $auction->deleteMeta('photo');
+            $this->photoDeleted = false;
+        } elseif ($this->photo && !is_string($this->photo)) {
+            $extensionPhoto = $this->photo->getClientOriginalExtension();
+            $uuid = (string) Str::uuid();
+            $photoName = $uuid . '.' . $extensionPhoto;
             $photoPath = $this->photo->storeAs('auction/images', $photoName, 'public');
-
-            // Save file name to database
             $auction->saveMeta('photo', $photoName);
+            $this->photo = $photoName;
         }
 
-        // Save video - only process if it's a new upload (UploadedFile), not an existing string path
-        if ($this->video && !is_string($this->video)) {
-            $extensionVideo = $this->video->getClientOriginalExtension(); // Get file extension
-            $uuid = (string) Str::uuid(); // Generate a unique UUID
-            $videoName = $uuid . '.' . $extensionVideo; // Create a unique file name
-
-            // Save file to public/auction/videos using Livewire's store method
+        // Save video - handle new uploads, existing paths, and deletions
+        if ($this->videoDeleted) {
+            $auction->deleteMeta('video');
+            $this->videoDeleted = false;
+        } elseif ($this->video && !is_string($this->video)) {
+            $extensionVideo = $this->video->getClientOriginalExtension();
+            $uuid = (string) Str::uuid();
+            $videoName = $uuid . '.' . $extensionVideo;
             $videoPath = $this->video->storeAs('auction/videos', $videoName, 'public');
-
-            // Save file name to database
             $auction->saveMeta('video', $videoName);
+            $this->video = $videoName;
         }
     }
 
@@ -3898,20 +3900,58 @@ class TenantAgentAuction extends Component
     public function deletePhoto()
     {
         try {
+            $auctionClass = match ($this->user_type) {
+                'tenant'   => HireTenantAgentAuction::class,
+                'landlord' => HireLandLordAgentAuction::class,
+                'buyer'    => HireBuyerAgentAuction::class,
+                'seller'   => HireSellerAgentAuction::class,
+                default    => null,
+            };
+
+            if ($this->listingId && $auctionClass) {
+                $auction = $auctionClass::find($this->listingId);
+                if ($auction) {
+                    if ($this->photo && is_string($this->photo)) {
+                        Storage::disk('public')->delete('auction/images/' . $this->photo);
+                    }
+                    $auction->deleteMeta('photo');
+                }
+            }
+
             $this->photo = null;
+            $this->photoDeleted = true;
             session()->flash('message', 'Photo deleted successfully.');
         } catch (\Exception $e) {
-            session()->flash('error', 'Error deleting draft: ' . $e->getMessage());
+            session()->flash('error', 'Error deleting photo: ' . $e->getMessage());
         }
     }
+
     public function deleteVideo()
     {
-
         try {
+            $auctionClass = match ($this->user_type) {
+                'tenant'   => HireTenantAgentAuction::class,
+                'landlord' => HireLandLordAgentAuction::class,
+                'buyer'    => HireBuyerAgentAuction::class,
+                'seller'   => HireSellerAgentAuction::class,
+                default    => null,
+            };
+
+            if ($this->listingId && $auctionClass) {
+                $auction = $auctionClass::find($this->listingId);
+                if ($auction) {
+                    if ($this->video && is_string($this->video)) {
+                        Storage::disk('public')->delete('auction/videos/' . $this->video);
+                    }
+                    $auction->deleteMeta('video');
+                }
+            }
+
             $this->video = null;
+            $this->videoDeleted = true;
             session()->flash('message', 'Video deleted successfully.');
         } catch (\Exception $e) {
-            session()->flash('error', 'Error deleting draft: ' . $e->getMessage());
+            session()->flash('error', 'Error deleting video: ' . $e->getMessage());
         }
     }
 }
