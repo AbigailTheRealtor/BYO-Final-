@@ -1212,30 +1212,15 @@
                                 <div class="col-12 mt-3 mb-1">
                                     <h6 class="fw-bold text-secondary mb-0">Lease Option Terms</h6>
                                 </div>
+                                {{-- 1. Buyer's Desired Offering Price --}}
                                 @if (@$auction->get->lease_option_price)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Buyer’s Desired Offering Price for Lease Option:
+                                        Buyer's Desired Offering Price for Lease Option:
                                         <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->lease_option_price)) }}</span>
                                     </div>
                                 @endif
 
-                                @if (@$auction->get->lease_option_terms)
-                                    @php
-                                        $displayLeaseTerms = str_replace('"', '', @$auction->get->lease_option_terms);
-                                    @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Specific Terms Proposed for Lease Option:
-                                        <span class="removeBold">{{ $displayLeaseTerms }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->lease_option_duration)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Proposed Duration of Lease (Months):
-                                        <span class="removeBold">{{ @$auction->get->lease_option_duration }}</span>
-                                    </div>
-                                @endif
-
+                                {{-- 2. Monthly Payment --}}
                                 @if (@$auction->get->lease_option_payment)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Monthly Payment Buyer is Offering:
@@ -1243,16 +1228,15 @@
                                     </div>
                                 @endif
 
-                                @if (@$auction->get->lease_option_conditions)
-                                    @php
-                                        $displayLeaseConditions = str_replace('"', '', @$auction->get->lease_option_conditions);
-                                    @endphp
+                                {{-- 3. Proposed Duration --}}
+                                @if (@$auction->get->lease_option_duration)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Conditions or Requirements for Lease Option:
-                                        <span class="removeBold">{{ $displayLeaseConditions }}</span>
+                                        Proposed Duration of Lease (Months):
+                                        <span class="removeBold">{{ @$auction->get->lease_option_duration }}</span>
                                     </div>
                                 @endif
 
+                                {{-- 4. Offered Option Fee --}}
                                 @if (@$auction->get->has_option_fee)
                                     @php
                                         $displayOptionFee = str_replace('"', '', @$auction->get->has_option_fee);
@@ -1263,6 +1247,7 @@
                                     </div>
                                 @endif
 
+                                {{-- 4a. Option Fee Amount (conditional) --}}
                                 @if (@$auction->get->has_option_fee === 'Yes' && @$auction->get->option_fee_amount)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Option Fee Amount:
@@ -1270,6 +1255,7 @@
                                     </div>
                                 @endif
 
+                                {{-- 5. Option Fee Credit --}}
                                 @if (@$auction->get->lease_option_fee_credit)
                                     @php
                                         $displayFeeCredit = str_replace('"', '', @$auction->get->lease_option_fee_credit);
@@ -1280,6 +1266,7 @@
                                     </div>
                                 @endif
 
+                                {{-- 5a. Percentage of Option Fee Credited (conditional) --}}
                                 @if (@$auction->get->lease_option_fee_credit === 'Partial' && @$auction->get->lease_option_fee_credit_percentage)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Percentage of Option Fee Credited:
@@ -1287,6 +1274,29 @@
                                     </div>
                                 @endif
 
+                                {{-- 6. Conditions or Requirements --}}
+                                @if (@$auction->get->lease_option_conditions)
+                                    @php
+                                        $displayLeaseConditions = str_replace('"', '', @$auction->get->lease_option_conditions);
+                                    @endphp
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Conditions or Requirements for Lease Option:
+                                        <span class="removeBold">{{ $displayLeaseConditions }}</span>
+                                    </div>
+                                @endif
+
+                                {{-- 7. Specific Terms Proposed --}}
+                                @if (@$auction->get->lease_option_terms)
+                                    @php
+                                        $displayLeaseTerms = str_replace('"', '', @$auction->get->lease_option_terms);
+                                    @endphp
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Specific Terms Proposed for Lease Option:
+                                        <span class="removeBold">{{ $displayLeaseTerms }}</span>
+                                    </div>
+                                @endif
+
+                                {{-- 8. Maintenance / Repair Responsibility --}}
                                 @if (@$auction->get->lease_option_maintenance)
                                     @php
                                         $displayMaintenance = str_replace('"', '', @$auction->get->lease_option_maintenance);
@@ -1297,6 +1307,7 @@
                                     </div>
                                 @endif
 
+                                {{-- 9. Extension Terms --}}
                                 @if (@$auction->get->lease_option_extension_terms)
                                     @php
                                         $displayExtension = str_replace('"', '', @$auction->get->lease_option_extension_terms);
@@ -1313,30 +1324,15 @@
                                 <div class="col-12 mt-3 mb-1">
                                     <h6 class="fw-bold text-secondary mb-0">Lease Purchase Terms</h6>
                                 </div>
+                                {{-- 1. Buyer's Desired Offering Price --}}
                                 @if (@$auction->get->lease_purchase_price)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Buyer’s Desired Offering Price for Lease Purchase:
+                                        Buyer's Desired Offering Price for Lease Purchase:
                                         <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->lease_purchase_price)) }}</span>
                                     </div>
                                 @endif
 
-                                @if (@$auction->get->lease_purchase_terms)
-                                    @php
-                                        $displayLeasePurchaseTerms = str_replace('"', '', @$auction->get->lease_purchase_terms);
-                                    @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Specific Terms Proposed for Lease Purchase:
-                                        <span class="removeBold">{{ $displayLeasePurchaseTerms }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->lease_purchase_duration)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Proposed Duration of Lease (Months):
-                                        <span class="removeBold">{{ @$auction->get->lease_purchase_duration }}</span>
-                                    </div>
-                                @endif
-
+                                {{-- 2. Monthly Payment --}}
                                 @if (@$auction->get->lease_purchase_payment)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Monthly Payment Buyer is Offering:
@@ -1344,53 +1340,15 @@
                                     </div>
                                 @endif
 
-                                @if (@$auction->get->lease_purchase_conditions)
-                                    @php
-                                        $displayLeasePurchaseConditions = str_replace('"', '', @$auction->get->lease_purchase_conditions);
-                                    @endphp
+                                {{-- 3. Proposed Duration --}}
+                                @if (@$auction->get->lease_purchase_duration)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Conditions or Requirements for Lease Purchase:
-                                        <span class="removeBold">{{ $displayLeasePurchaseConditions }}</span>
+                                        Proposed Duration of Lease (Months):
+                                        <span class="removeBold">{{ @$auction->get->lease_purchase_duration }}</span>
                                     </div>
                                 @endif
 
-                                @if (@$auction->get->lease_purchase_option_fee)
-                                    @php
-                                        $displayLeasePurchaseOptionFee = str_replace('"', '', @$auction->get->lease_purchase_option_fee);
-                                    @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Offered Option Fee:
-                                        <span class="removeBold badge bg-secondary">{{ $displayLeasePurchaseOptionFee }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->lease_purchase_option_fee === 'Yes' && @$auction->get->lease_purchase_option_fee_amount)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Option Fee Amount:
-                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->lease_purchase_option_fee_amount)) }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->lease_purchase_maintenance)
-                                    @php
-                                        $displayLPMaintenance = str_replace('"', '', @$auction->get->lease_purchase_maintenance);
-                                    @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Maintenance / Repair Responsibility:
-                                        <span class="removeBold badge bg-secondary">{{ $displayLPMaintenance }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->lease_purchase_extension_terms)
-                                    @php
-                                        $displayLPExtension = str_replace('"', '', @$auction->get->lease_purchase_extension_terms);
-                                    @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Extension Terms:
-                                        <span class="removeBold">{{ $displayLPExtension }}</span>
-                                    </div>
-                                @endif
-
+                                {{-- 4. Rent Credit Toward Purchase Price --}}
                                 @if (@$auction->get->lease_purchase_rent_credit)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Rent Credit Toward Purchase Price:
@@ -1401,10 +1359,55 @@
                                     </div>
                                 @endif
 
+                                {{-- 5. Non-Refundable Deposit --}}
                                 @if (@$auction->get->lease_purchase_deposit)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Non-Refundable Deposit / Purchase Deposit:
                                         <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->lease_purchase_deposit)) }}</span>
+                                    </div>
+                                @endif
+
+                                {{-- 6. Conditions or Requirements --}}
+                                @if (@$auction->get->lease_purchase_conditions)
+                                    @php
+                                        $displayLeasePurchaseConditions = str_replace('"', '', @$auction->get->lease_purchase_conditions);
+                                    @endphp
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Conditions or Requirements for Lease Purchase:
+                                        <span class="removeBold">{{ $displayLeasePurchaseConditions }}</span>
+                                    </div>
+                                @endif
+
+                                {{-- 7. Specific Terms Proposed --}}
+                                @if (@$auction->get->lease_purchase_terms)
+                                    @php
+                                        $displayLeasePurchaseTerms = str_replace('"', '', @$auction->get->lease_purchase_terms);
+                                    @endphp
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Specific Terms Proposed for Lease Purchase:
+                                        <span class="removeBold">{{ $displayLeasePurchaseTerms }}</span>
+                                    </div>
+                                @endif
+
+                                {{-- 8. Maintenance / Repair Responsibility --}}
+                                @if (@$auction->get->lease_purchase_maintenance)
+                                    @php
+                                        $displayLPMaintenance = str_replace('"', '', @$auction->get->lease_purchase_maintenance);
+                                    @endphp
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Maintenance / Repair Responsibility:
+                                        <span class="removeBold badge bg-secondary">{{ $displayLPMaintenance }}</span>
+                                    </div>
+                                @endif
+
+                                {{-- 9. Extension Terms --}}
+                                @if (@$auction->get->lease_purchase_extension_terms)
+                                    @php
+                                        $displayLPExtension = str_replace('"', '', @$auction->get->lease_purchase_extension_terms);
+                                    @endphp
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Extension Terms:
+                                        <span class="removeBold">{{ $displayLPExtension }}</span>
                                     </div>
                                 @endif
                             @endif
