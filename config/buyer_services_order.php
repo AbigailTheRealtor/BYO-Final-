@@ -37,7 +37,7 @@ return [
                 "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
                 "Assist with inspection-related negotiations and Buyer requests for repairs",
                 "Monitor contract milestones, contingency periods, and financing deadlines",
-                "Provide referrals to Attorneys, Title Companies, Escrow Professionals, or Lenders (referrals only — no endorsement or warranty is made)",
+                "Provide referrals to Attorneys, Title Companies, Escrow Professionals, or Lenders (referrals only - no endorsement or warranty is made)",
             ],
             '📋 Closing Coordination & Transaction Management' => [
                 "Review and provide the Buyer with Seller-supplied due diligence documentation, including property disclosures, inspection reports, HOA documents, and utility summaries (as available)",
@@ -92,7 +92,7 @@ return [
                 "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
                 "Assist with inspection-related negotiations and Buyer requests for repairs",
                 "Monitor contract milestones, contingency periods, and financing deadlines",
-                "Provide referrals to Attorneys, Title Companies, Escrow Professionals, Lenders, or 1031 Exchange Intermediaries (referrals only — no endorsement or warranty is made)",
+                "Provide referrals to Attorneys, Title Companies, Escrow Professionals, Lenders, or 1031 Exchange Intermediaries (referrals only - no endorsement or warranty is made)",
             ],
             '📋 Closing Coordination & Transaction Management' => [
                 "Review and provide due diligence documents such as lease agreements, estoppel certificates, rent rolls, utility summaries, and operating expense breakdowns (as available)",
@@ -114,7 +114,7 @@ return [
         'commercial' => [
             '📣 Buyer Criteria Marketing & Promotion' => [
                 "Create a branded flyer summarizing the Buyer's purchase criteria",
-                "Post the Buyer's criteria on Craigslist under \"Real Estate Wanted – Commercial\"",
+                "Post the Buyer's criteria on Craigslist under \"Real Estate Wanted - Commercial\"",
                 "Promote the Buyer's criteria on Facebook in Commercial Real Estate or Investment Groups",
                 "Share the Buyer's criteria on Instagram using posts, stories, or reels",
                 "Promote the Buyer's criteria on LinkedIn in Commercial or Investment Groups",
@@ -145,7 +145,7 @@ return [
                 "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
                 "Assist with due diligence negotiations, including repair requests or credits",
                 "Monitor contract contingencies, including financing, estoppel review, lease audits, and environmental reports",
-                "Provide referrals to Attorneys, Title Companies, Escrow Officers, Commercial Lenders, or 1031 Exchange Intermediaries (referrals only — no endorsement or warranty is made)",
+                "Provide referrals to Attorneys, Title Companies, Escrow Officers, Commercial Lenders, or 1031 Exchange Intermediaries (referrals only - no endorsement or warranty is made)",
             ],
             '📋 Closing Coordination & Transaction Management' => [
                 "Coordinate inspections, appraisals, environmental assessments, and estoppel certificate collection as needed",
@@ -168,7 +168,7 @@ return [
         'business' => [
             '📣 Buyer Criteria Marketing & Promotion' => [
                 "Create a branded flyer summarizing the Buyer's purchase criteria",
-                "Post the Buyer's purchase criteria on Craigslist under \"Business for Sale\" or \"Real Estate Wanted – Commercial\"",
+                "Post the Buyer's purchase criteria on Craigslist under \"Business for Sale\" or \"Real Estate Wanted - Commercial\"",
                 "Promote the Buyer's purchase criteria on Facebook in Business Opportunity or Franchise Groups",
                 "Share the Buyer's purchase criteria on Instagram using posts, stories, or reels",
                 "Promote the Buyer's purchase criteria on LinkedIn in Business, Commercial, or Startup Groups",
@@ -199,7 +199,7 @@ return [
                 "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
                 "Assist with due diligence coordination, Buyer-requested repairs, and adjustment negotiations",
                 "Monitor contingency periods, financing milestones, and deal approval timelines",
-                "Provide referrals to Business Attorneys, CPAs, Escrow Officers, or Lenders (referrals only — no endorsement or warranty is made)",
+                "Provide referrals to Business Attorneys, CPAs, Escrow Officers, or Lenders (referrals only - no endorsement or warranty is made)",
             ],
             '📋 Closing Coordination & Transaction Management' => [
                 "Coordinate inspections, licensing verifications, lease assignments, and inventory counts",
@@ -220,7 +220,7 @@ return [
         'vacant_land' => [
             '📣 Buyer Criteria Marketing & Promotion' => [
                 "Create a branded flyer summarizing the Buyer's purchase criteria",
-                "Post the Buyer's criteria on Craigslist under \"Real Estate Wanted – Land\"",
+                "Post the Buyer's criteria on Craigslist under \"Real Estate Wanted - Land\"",
                 "Share the Buyer's criteria on Nextdoor in Neighborhood or Rural Groups",
                 "Promote the Buyer's criteria on Facebook in Land Buyers, Developers, or Homesteader Groups",
                 "Share the Buyer's criteria on Instagram using posts, stories, or reels",
@@ -252,7 +252,7 @@ return [
                 "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed documents to all parties",
                 "Assist with due diligence coordination, including survey review, soil testing, zoning checks, and permit verification",
                 "Monitor contract milestones, contingency deadlines, and financing timelines",
-                "Provide referrals to Attorneys, Title Companies, Escrow Officers, Surveyors, or Land Use Consultants (referrals only — no endorsement or warranty is made)",
+                "Provide referrals to Attorneys, Title Companies, Escrow Officers, Surveyors, or Land Use Consultants (referrals only - no endorsement or warranty is made)",
             ],
             '📋 Closing Coordination & Transaction Management' => [
                 "Coordinate surveys, appraisals, inspections, and environmental assessments",
