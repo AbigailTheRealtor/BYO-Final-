@@ -17,6 +17,7 @@ use Livewire\TemporaryUploadedFile;
 use App\Models\UsState;
 use App\Models\UsCounty;
 use App\Models\UsCity;
+use App\Support\TenantServicesCatalog;
 
 
 class TenantAgentAuctionEdit extends Component
@@ -3019,8 +3020,14 @@ class TenantAgentAuctionEdit extends Component
             // Services
             $auction->saveMeta('services', json_encode($this->services));
             $auction->saveMeta('other_services', json_encode($this->other_services));
-            // $auction->saveMeta('other_services', $this->other_services);
             $auction->saveMeta('flat_fee_services', json_encode($this->flat_fee_services));
+            
+            // Build and save services snapshot for ordered display
+            $servicesSnapshot = TenantServicesCatalog::buildSnapshot(
+                is_array($this->services) ? $this->services : [],
+                $this->property_type ?? 'Residential Property'
+            );
+            $auction->saveMeta('services_snapshot', json_encode($servicesSnapshot));
             $auction->saveMeta('additional_details', $this->additional_details);
             $auction->saveMeta('desired_lease_length', json_encode($this->desired_lease_length));
             $auction->saveMeta('other_lease_term', $this->other_lease_term);
