@@ -1,0 +1,323 @@
+Yes — you should have **ONE consolidated instruction set** for **all Residential-only fields** (including Pets) so your Replit dev can implement **one safe rule engine** instead of patching field-by-field.
+
+Below is a **single copy/paste “master instruction”** (with safeguards) that covers EVERYTHING you listed:
+
+* Pool Type
+* Carport Needed + Carport Spaces
+* Leasing Space option: **Accessory Unit / Guest Suite (ADU)**
+* **Pets questions + all pet answers**
+  …and it applies across **Create / Draft / Edit / Actual Listing / Bids / Counterbids / Summaries**.
+
+---
+
+## Replit Instructions — [Tenant@exp.com](mailto:Tenant@exp.com) (MASTER FIX)
+
+### Hire a Tenant’s Agent → When Switching Residential → Commercial, Residential-Only Fields Must Hide + Clear + Never Display
+
+---
+
+# Applies To
+
+* **Login:** [tenant@exp.com](mailto:tenant@exp.com)
+* **Flow:** Hire a Tenant’s Agent
+* **Property Type switch:** Residential ↔ Commercial
+* **Scope:** Must apply everywhere (create, drafts, edits, listing display, bids, counterbids, summaries/PDFs)
+
+---
+
+# Goal
+
+If user switches **Residential → Commercial**, then **ALL Residential-only fields must:**
+
+1. **Disappear immediately** in the UI
+2. Be **cleared from Livewire state**
+3. Be **persisted as NULL/empty in DB**
+4. **Never display** anywhere for Commercial, even if old data exists
+
+If user switches back **Commercial → Residential**, fields can reappear **blank**.
+
+---
+
+# Residential-Only Fields to Enforce (Tenant Flow)
+
+## A) Pool
+
+* **Select Pool Type**
+
+## B) Carport
+
+* **Carport Needed**
+* **Number of Carport Spaces Needed**
+
+## C) Leasing Space (Residential-only option)
+
+* Remove/disable selection: **Accessory Unit / Guest Suite (ADU)** when Commercial
+
+## D) Pets (Residential-only; must not show for Commercial)
+
+* Pets (Yes/No)
+* Number of Pets
+* Type of Pets
+* Breed of Pets
+* Weight of Pets (lbs)
+* Service Animal (Yes/No)
+* Emotional Support Animal (Yes/No) *(and any related fields)*
+
+✅ On Commercial listings, none of the above “Pets” questions OR answers may show on the actual listing.
+
+---
+
+# SAFEGUARDS (MANDATORY)
+
+1. **Tenant-only.** Do not change Buyer/Seller/Landlord.
+2. **No destructive DB migrations.** No deleting/renaming columns.
+3. **Clear ONLY these Residential-only fields** when switching to Commercial.
+4. **Do not clear valid Commercial fields** (parking, leasing space commercial options, etc.).
+5. Must be enforced in 3 layers:
+
+   * UI rendering
+   * Livewire state cleanup
+   * Save/display filtering
+6. Backward compatible: older Commercial listings with bad Residential values must be hidden on display.
+
+---
+
+# IMPLEMENTATION (DO EXACTLY THIS)
+
+## Step 1 — Create a single helper: isResidentialTenantListing()
+
+### Location
+
+Tenant Livewire components:
+
+* `app/Http/Livewire/TenantAgentAuction.php`
+* `app/Http/Livewire/TenantAgentAuctionEdit.php`
+
+Add:
+
+```php
+private function isResidential(): bool
+{
+    return ($this->property_type ?? null) === 'Residential';
+}
+```
+
+---
+
+## Step 2 — UI: Wrap Residential-only field blocks
+
+### Location
+
+Tenant create/edit Blade:
+
+* `resources/views/livewire/tenant-agent-auction.blade.php`
+* `resources/views/livewire/tenant-agent-auction-edit.blade.php`
+
+Wrap ALL Residential-only blocks:
+
+```php
+@if($property_type === 'Residential')
+   {{-- Pool Type --}}
+   {{-- Carport Needed + Carport Spaces --}}
+   {{-- Pets fields --}}
+@endif
+```
+
+For Leasing Space, do NOT wrap the whole field (commercial uses it too).
+Instead: **conditionally render the ADU option only in Residential**.
+
+---
+
+## Step 3 — Livewire: One watcher that clears Residential-only fields on switch
+
+Add/update the property type watcher:
+
+```php
+public function updatedProperty_type($value)
+{
+    $this->handleResidentialOnlyTenantFields($value);
+}
+```
+
+(or `updatedPropertyType` if that’s your property name)
+
+Add handler:
+
+```php
+private function handleResidentialOnlyTenantFields($value): void
+{
+    if ($value !== 'Residential') {
+
+        // A) Pool
+        $this->pool_type = null;
+
+        // B) Carport
+        $this->carport_needed = null;
+        $this->carport_spaces_needed = null;
+
+        // C) Leasing Space: remove ADU only (do not clear valid commercial values)
+        $this->removeAduFromLeasingSpaceSelection();
+
+        // D) Pets (clear all)
+        $this->pets = null; // yes/no (or your actual field)
+        $this->number_of_pets = null;
+        $this->type_of_pets = null;
+        $this->breed_of_pets = null;
+        $this->weight_of_pets_lbs = null;
+        $this->service_animal = null;
+        $this->emotional_support_animal = null;
+
+        // If you have any other pet-related fields (notes, restrictions, etc.), clear them too.
+        $this->pet_notes = null; // only if exists
+    }
+}
+```
+
+### Helper to remove ADU only
+
+```php
+private function removeAduFromLeasingSpaceSelection(): void
+{
+    $aduLabel = 'Accessory Unit / Guest Suite (ADU)';
+
+    if (is_string($this->leasing_space ?? null)) {
+        if ($this->leasing_space === $aduLabel) {
+            $this->leasing_space = null;
+        }
+        return;
+    }
+
+    if (is_array($this->leasing_space ?? null)) {
+        $this->leasing_space = array_values(array_filter(
+            $this->leasing_space,
+            fn($v) => $v !== $aduLabel
+        ));
+    }
+}
+```
+
+✅ **Safeguard:** Doesn’t wipe commercial leasing space values—only removes ADU.
+
+---
+
+## Step 4 — Save Draft / Submit / Update: Never persist Residential-only fields for Commercial
+
+In ALL save paths (draft + submit + edit update), enforce:
+
+```php
+if ($this->isResidential()) {
+    $auction->pool_type = $this->pool_type;
+    $auction->carport_needed = $this->carport_needed;
+    $auction->carport_spaces_needed = $this->carport_spaces_needed;
+
+    $auction->pets = $this->pets;
+    $auction->number_of_pets = $this->number_of_pets;
+    $auction->type_of_pets = $this->type_of_pets;
+    $auction->breed_of_pets = $this->breed_of_pets;
+    $auction->weight_of_pets_lbs = $this->weight_of_pets_lbs;
+    $auction->service_animal = $this->service_animal;
+    $auction->emotional_support_animal = $this->emotional_support_animal;
+    $auction->pet_notes = $this->pet_notes ?? null; // only if exists
+} else {
+    $auction->pool_type = null;
+    $auction->carport_needed = null;
+    $auction->carport_spaces_needed = null;
+
+    $auction->pets = null;
+    $auction->number_of_pets = null;
+    $auction->type_of_pets = null;
+    $auction->breed_of_pets = null;
+    $auction->weight_of_pets_lbs = null;
+    $auction->service_animal = null;
+    $auction->emotional_support_animal = null;
+    $auction->pet_notes = null; // only if exists
+}
+```
+
+Also enforce ADU removal before save (commercial only):
+
+```php
+if (!$this->isResidential()) {
+    $this->removeAduFromLeasingSpaceSelection();
+}
+$auction->leasing_space = $this->leasing_space;
+```
+
+---
+
+## Step 5 — Display Layer: Do NOT show these fields for Commercial anywhere
+
+### Locations (Tenant-only)
+
+* listing show page
+* previews
+* bid/counterbid views
+* summary templates / PDFs
+
+Wrap display sections:
+
+```php
+@if($auction->property_type === 'Residential')
+   {{-- show Pool --}}
+   {{-- show Carport --}}
+   {{-- show Pets block + answers --}}
+@endif
+```
+
+For Leasing Space display, filter out ADU if Commercial (same logic as earlier).
+
+✅ **This is required** even if the DB contains bad data.
+
+---
+
+## Step 6 — Mount Safety (Draft reopen / Edit)
+
+In `mount()` of create/edit components:
+
+```php
+public function mount(...)
+{
+    ...
+    if (!$this->isResidential()) {
+        $this->pool_type = null;
+        $this->carport_needed = null;
+        $this->carport_spaces_needed = null;
+
+        $this->pets = null;
+        $this->number_of_pets = null;
+        $this->type_of_pets = null;
+        $this->breed_of_pets = null;
+        $this->weight_of_pets_lbs = null;
+        $this->service_animal = null;
+        $this->emotional_support_animal = null;
+        $this->pet_notes = null;
+
+        $this->removeAduFromLeasingSpaceSelection();
+    }
+}
+```
+
+---
+
+# QA TESTS (REQUIRED)
+
+1. Start Residential → fill Pool, Carport, Pets, select ADU → switch to Commercial
+   ✅ All those fields disappear and clear immediately.
+2. Save Draft as Commercial → reopen draft
+   ✅ none of those fields show, none of the values remain.
+3. Submit Commercial → actual listing
+   ✅ no Pool, no Carport, no Pets block/answers, no ADU.
+4. Switch back to Residential
+   ✅ fields reappear blank.
+5. Old Commercial listing with previously saved pets/pool/carport
+   ✅ must not display those values anywhere.
+
+---
+
+# “DONE” DEFINITION
+
+Commercial Tenant listings never show **Pool**, **Carport**, **ADU**, or **Pets (questions or answers)** after switching from Residential—across create/draft/edit/show/bid/counter/summary.
+
+---
+
+If you want, paste the **exact field names** used in your Tenant Livewire component for pets (because your DB naming may differ), and I’ll rewrite the handler + save block using your exact property names so you can paste it into Replit without any guessing.

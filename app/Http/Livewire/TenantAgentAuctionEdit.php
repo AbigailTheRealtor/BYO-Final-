@@ -875,6 +875,50 @@ class TenantAgentAuctionEdit extends Component
         }
     }
 
+    // Handle property type changes - clear Residential-only fields when switching to Commercial
+    public function updatedPropertyType($value)
+    {
+        if ($value === 'Commercial Property') {
+            // A) Pool (Residential-only)
+            $this->pool_needed = '';
+            $this->pool_type = [];
+
+            // B) Carport (Residential-only)
+            $this->carport_needed = '';
+            $this->carport_spaces = '';
+
+            // C) Leasing Space: remove ADU option only (valid for Residential only)
+            $this->removeAduFromLeasingSpaceSelection();
+
+            // D) Pets (Residential-only - clear all pet fields)
+            $this->pets = '';
+            $this->number_of_pets = '';
+            $this->type_of_pets = '';
+            $this->breed_of_pets = '';
+            $this->weight_of_pets = '';
+            $this->service_animal = '';
+            $this->support_animal = '';
+            $this->emotional_support_animal = '';
+            $this->breed_restrictions = '';
+        }
+    }
+
+    /**
+     * Remove ADU option from leasing_spaces_tenant when switching to Commercial
+     * ADU (Accessory Unit / Guest Suite) is only valid for Residential properties
+     */
+    private function removeAduFromLeasingSpaceSelection(): void
+    {
+        $aduLabel = 'Accessory Unit / Guest Suite (ADU)';
+
+        if (is_array($this->leasing_spaces_tenant ?? null)) {
+            $this->leasing_spaces_tenant = array_values(array_filter(
+                $this->leasing_spaces_tenant,
+                fn($v) => $v !== $aduLabel
+            ));
+        }
+    }
+
     // Handle interested in selling type changes
     public function updatedInterestedInSellingType($value)
     {

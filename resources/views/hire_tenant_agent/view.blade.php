@@ -618,7 +618,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </div>
                     @endif
 
-                    {{-- Carport Needed with conditional spaces --}}
+                    {{-- Carport Needed with conditional spaces (Residential-only) --}}
+                    @if (@$auction->get->property_type === 'Residential Property')
                     @if (@$auction->get->carport_needed != null)
                     <div class="col-md-12 col-12 pt-2 fw-bold">
                         Carport Needed:
@@ -629,6 +630,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         Number of Carport Spaces Needed:
                         <span class="removeBold">{{ @$auction->get->other_carport_needed }}</span>
                     </div>
+                    @endif
                     @endif
                     @endif
 
@@ -646,6 +648,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     @endif
                     @endif
 
+                    {{-- Pool Needed (Residential-only) --}}
+                    @if (@$auction->get->property_type === 'Residential Property')
                     @php
                     // Normalize pool_type to an array of key => bool
                     $poolTypeRaw = optional($auction->get)->pool_type;
@@ -676,6 +680,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         Pool Needed:
                         <span class="removeBold">{{ optional($auction->get)->pool_needed }}</span>
                     </div>
+                    @endif
                     @endif
 
                     @if (@$auction->get->view_preference != null || @$auction->get->other_preferences != null)
@@ -789,6 +794,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </span>
                 </div>
                 @endif
+                {{-- Pets section (Residential-only) --}}
+                @if (@$auction->get->property_type === 'Residential Property')
                 @if (@$auction->get->pets)
                 <div class="col-md-12 col-12 pt-2 fw-bold"> Pets:
                     <span class="removeBold">
@@ -826,6 +833,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     <span class="removeBold">
                         {{ @$auction->get->support_animal != '' ? @$auction->get->support_animal : '' }}</span>
                 </div>
+                @endif
                 @endif
 
                 @if (@$auction->get->screening_concerns != null)
