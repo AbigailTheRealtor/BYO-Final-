@@ -478,8 +478,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </div>
                     <div class="col-md-12 col-12 pt-2 fw-bold">
                         Acceptable Property Condition:
-                        @if (gettype(@$auction->get->condition_prop_buyer) == 'array')
                         @php
+                            $rawConditions = @$auction->get->condition_prop_buyer ?? null;
                             $legacyConditionMap = [
                                 'Move-in ready' => 'Updated / Renovated',
                                 'Needs minor updates' => 'Partially updated (some older finishes OK)',
@@ -497,15 +497,32 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 'Tear Down: Requires complete demolition and reconstruction' => 'Older but clean & well maintained',
                                 'Open to any type of property condition' => 'No preference (open to any condition)',
                             ];
-                            $conditionItems = array_filter(@$auction->get->condition_prop_buyer);
+
+                            if (is_array($rawConditions)) {
+                                $conditions = $rawConditions;
+                            } else {
+                                $decoded = is_string($rawConditions) ? json_decode($rawConditions, true) : null;
+                                if (is_array($decoded)) {
+                                    $conditions = $decoded;
+                                } else {
+                                    $conditions = is_string($rawConditions)
+                                        ? array_filter(array_map('trim', explode(',', $rawConditions)))
+                                        : [];
+                                }
+                            }
+
                             $mappedConditions = array_map(function($item) use ($legacyConditionMap) {
                                 return $legacyConditionMap[$item] ?? $item;
-                            }, $conditionItems);
+                            }, array_filter($conditions));
                             $uniqueConditions = array_unique($mappedConditions);
                         @endphp
-                        <span class="removeBold">{{ implode(', ', $uniqueConditions) }}</span>
+                        @if(!empty($uniqueConditions))
+                            @foreach($uniqueConditions as $condition)
+                                <span class="removeBold badge bg-secondary">{{ $condition }}</span>
+                            @endforeach
+                        @else
+                            <span class="removeBold">—</span>
                         @endif
-
                     </div>
                     @if (@$auction->get->condition_prop != null)
                     <div class="col-md-12 col-12 pt-2 fw-bold">
