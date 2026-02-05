@@ -1,0 +1,219 @@
+## Replit Instructions — [Tenant@exp.com](mailto:Tenant@exp.com)
+
+### Hire a Tenant’s Agent → “Next” Button Skips Tabs (Must Advance 1 Tab Only)
+
+---
+
+# Goal
+
+In **Hire a Tenant’s Agent** listing creation (and edit/draft where tabs exist), clicking **Next** must:
+
+* advance **exactly ONE tab forward**
+* never skip to every other tab
+* work consistently for Residential + Commercial
+
+---
+
+# SAFEGUARDS (MANDATORY)
+
+1. **Tenant-only scope:** Do not change Buyer/Seller/Landlord tab navigation.
+2. **Do not change tab order or labels.** This is navigation logic only.
+3. **Single source of truth for active tab:** there must be only ONE state variable controlling the active tab (either Livewire or JS, not both fighting).
+4. **No duplicate click handlers:** ensure the Next button has exactly one action pathway (either `wire:click` OR JS listener, not both).
+5. **Validation must not cause double-advance:** if validation passes, move +1; if fails, do not move.
+6. **Works for Draft/Edit:** same logic used everywhere the tab wizard exists.
+
+---
+
+# Most Common Root Causes (what to fix)
+
+This “skips every other tab” typically happens when **two handlers fire**:
+
+* Example: `wire:click="nextTab"` AND a JS `addEventListener('click', ...)` both increment the tab.
+* Or: both a `<button type="submit">` triggers form submit (JS) AND Livewire click increments.
+* Or: a `dispatchBrowserEvent('next-tab')` is listened to twice.
+
+✅ Fix = ensure only one increment occurs per click and lock navigation with a simple guard.
+
+---
+
+# IMPLEMENTATION
+
+## Step 1 — Find the Tenant tab wizard files
+
+Search for the Tenant listing wizard view/component:
+
+* `TenantAgentAuction.php` (create)
+* `TenantAgentAuctionEdit.php` (edit)
+* Blade: `tenant-agent-auction.blade.php` / `tenant-agent-auction-edit.blade.php`
+  Search for:
+* `Next`
+* `nextTab`
+* `activeTab`
+* `currentStep`
+* `step`
+* `tab`
+
+---
+
+## Step 2 — Confirm the single tab state variable
+
+In the Tenant Livewire component, there should be one of these:
+
+* `public int $activeTab = 1;`
+* `public int $currentStep = 1;`
+
+✅ Standardize on ONE variable (example below uses `$activeTab`).
+
+**Safeguard:** Do not create a second competing variable.
+
+---
+
+## Step 3 — Ensure the Next button triggers only ONE handler
+
+### In the Blade (Tenant-only)
+
+Your Next button should be ONE of these patterns:
+
+✅ **Preferred (Livewire-only):**
+
+```html
+<button type="button" wire:click="goNext" class="...">Next</button>
+```
+
+🚫 Avoid:
+
+* `onclick="..."` AND `wire:click="..."` at the same time
+* `type="submit"` on Next (can trigger form submit + JS)
+
+**Fix:** Set `type="button"` and remove any `onclick` on Next if you’re using Livewire.
+
+---
+
+## Step 4 — Remove/disable duplicate JS listeners (Tenant-only)
+
+Search in:
+
+* `resources/js/...`
+* the Blade file for `<script>`
+* any Alpine code
+
+For things like:
+
+* `document.querySelector('#nextBtn').addEventListener('click', ...)`
+* `window.addEventListener('next-tab', ...)`
+* jQuery `.on('click', ...)`
+
+If you find JS incrementing tabs AND Livewire also increments → that’s the skip.
+
+✅ **Safeguard approach:** For Tenant flow, navigation must be handled by Livewire only.
+
+---
+
+## Step 5 — Add a “one-click guard” in Livewire to prevent double-advance
+
+Even after removing duplicates, add a guard so this never returns.
+
+### In Tenant Livewire component
+
+Add:
+
+```php
+public bool $isNavigating = false;
+
+public function goNext(): void
+{
+    if ($this->isNavigating) {
+        return; // prevents double fire
+    }
+    $this->isNavigating = true;
+
+    // OPTIONAL: validate only the current tab here
+    // $this->validateCurrentTab();
+
+    $this->activeTab = min($this->activeTab + 1, $this->maxTab());
+
+    // release guard after render tick
+    $this->dispatchBrowserEvent('tenant-nav-unlock');
+}
+
+public function goBack(): void
+{
+    if ($this->isNavigating) {
+        return;
+    }
+    $this->isNavigating = true;
+
+    $this->activeTab = max($this->activeTab - 1, 1);
+
+    $this->dispatchBrowserEvent('tenant-nav-unlock');
+}
+
+public function maxTab(): int
+{
+    return 8; // set to your actual Tenant tab count
+}
+```
+
+### In the Tenant Blade (only on this wizard page), unlock:
+
+```html
+<script>
+  window.addEventListener('tenant-nav-unlock', () => {
+    // slight delay ensures Livewire has applied state
+    setTimeout(() => {
+      @this.set('isNavigating', false);
+    }, 50);
+  });
+</script>
+```
+
+✅ This prevents “double increment” even if a second click event sneaks back in later.
+
+---
+
+## Step 6 — Ensure active tab only changes in ONE place
+
+Search for any other tab change methods:
+
+* `nextTab()`
+* `incrementTab()`
+* `setTab()`
+* `jumpToTab()`
+
+If Next calls multiple methods (e.g., validates then calls next twice), consolidate so Next only calls **one** method that increments once.
+
+---
+
+## Step 7 — Ensure “Next” isn’t firing twice due to form submit
+
+If the wizard sits inside a `<form wire:submit.prevent="save">`, and Next is `type="submit"`, clicking Next can:
+
+* submit the form (triggering logic)
+* AND trigger `wire:click`
+
+✅ Fix:
+
+* Next must be `type="button"`
+* Save/Submit buttons are `type="submit"` only on final step
+
+---
+
+# QA TESTS (REQUIRED)
+
+1. Click Next from Tab 1 → lands on Tab 2
+2. Next again → Tab 3
+3. Repeat through all tabs — no skipping
+4. Try fast double-click → still only advances one tab (guard works)
+5. Back button works one tab at a time
+6. Draft/edit wizard also works (if separate component)
+
+---
+
+# “DONE” DEFINITION
+
+In Hire a Tenant’s Agent wizard, Next/Back always moves exactly one tab per click and never skips, across create + draft + edit.
+
+---
+
+If you paste the HTML for your Next button and the Livewire property name for the current tab (`activeTab` / `currentStep`), I can rewrite this using your exact method names so it’s truly copy/paste for Replit.

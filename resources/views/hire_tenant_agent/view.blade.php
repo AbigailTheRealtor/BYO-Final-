@@ -765,13 +765,23 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </div>
 
                 @if (!empty($auction->get->leasing_spaces_tenant))
+                @php
+                    // Filter out ADU for Commercial properties (display enforcement)
+                    $aduLabel = 'Accessory Unit / Guest Suite (ADU)';
+                    $leasingSpaces = $auction->get->leasing_spaces_tenant;
+                    if (($auction->get->property_type ?? null) === 'Commercial Property' && is_array($leasingSpaces)) {
+                        $leasingSpaces = array_values(array_filter($leasingSpaces, fn($v) => $v !== $aduLabel));
+                    }
+                @endphp
+                @if (!empty($leasingSpaces))
                 <ul>
-                    @foreach ($auction->get->leasing_spaces_tenant as $leasing_space)
+                    @foreach ($leasingSpaces as $leasing_space)
                     <li style="font-size: 16px;">
                         {{ $leasing_space }}
                     </li>
                     @endforeach
                 </ul>
+                @endif
                 @endif
                 <hr>
                 <div class="card-header section-header">
@@ -884,13 +894,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     <h4 class="section-title">Broker Compensation & Agency Agreement Terms</h4>
                 </div>
 
-                <!-- Tenant\'s Broker Compensation Sub-section -->
-                <h5 class="mt-3 mb-2"><strong>Tenant\'s Broker Compensation:</strong></h5>
+                <!-- Tenant's Broker Compensation Sub-section -->
+                <h5 class="mt-3 mb-2"><strong>Tenant's Broker Compensation:</strong></h5>
                 <div class="broker-compensation-section">
 
                 @if (@$auction->get->commission_structure != null)
                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Tenant\'s Broker Commission Structure:
+                    Tenant's Broker Commission Structure:
                     <span class="removeBold">
                         @php
                             $commissionDisplay = @$auction->get->commission_structure;
@@ -907,7 +917,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
 @if (@$auction->get->lease_fee_type != null)
                 @php
-                    // Build combined Tenant\'s Broker Commission Fee display for listing
+                    // Build combined Tenant's Broker Commission Fee display for listing
                     $listingLeaseFeeType = @$auction->get->lease_fee_type ?? '';
                     $listingLeaseFeeCombined = '-';
                     
@@ -940,7 +950,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     }
                 @endphp
                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Tenant\'s Broker Commission Fee:
+                    Tenant's Broker Commission Fee:
                     <span class="removeBold">{{ $listingLeaseFeeCombined }}</span>
                 </div>
                 @endif
@@ -1128,7 +1138,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </div> <!-- end broker-compensation-section -->
                 <hr />
                 <div class="card-header section-header">
-                    <h4 class="section-title">Tenant\'s Info </h4>
+                    <h4 class="section-title">Tenant's Info </h4>
                 </div>
                 @if (!empty($auction->get->first_name))
                 <div class="col-md-12 col-12 pt-2 fw-bold"> First

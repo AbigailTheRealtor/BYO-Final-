@@ -2225,6 +2225,11 @@ class TenantAgentAuctionEdit extends Component
             $this->user_type = $user_type;
 
             $this->loadAuctionData($auctionId, $user_type); // Load auction data if auctionId is provided
+            
+            // Enforce ADU removal for Commercial properties after load
+            if ($this->property_type === 'Commercial Property') {
+                $this->removeAduFromLeasingSpaceSelection();
+            }
         }
     }
     // Load auction data
