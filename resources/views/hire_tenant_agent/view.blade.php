@@ -477,14 +477,33 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         @endif
                     </div>
                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                        Acceptable Property Conditions:
+                        Acceptable Property Condition:
                         @if (gettype(@$auction->get->condition_prop_buyer) == 'array')
-                        @foreach (array_filter(@$auction->get->condition_prop_buyer) as $item)
-                        <span class="removeBold"> {{ $item }}</span>
-                        @if ($item == 'Other')
-                        <span class="removeBold"> {{ @$auction->get->other_property_condition }}</span>
-                        @endif
-                        @endforeach
+                        @php
+                            $legacyConditionMap = [
+                                'Move-in ready' => 'Updated / Renovated',
+                                'Needs minor updates' => 'Partially updated (some older finishes OK)',
+                                'Needs major renovation' => 'Older but clean & well maintained',
+                                'Open to any condition' => 'No preference (open to any condition)',
+                                'Completely Updated: No updates needed' => 'Updated / Renovated',
+                                'No updates needed: Completely updated' => 'Updated / Renovated',
+                                'Not Updated: Requires a complete update' => 'Older but clean & well maintained',
+                                'Not updated: Requires a complete update' => 'Older but clean & well maintained',
+                                'Semi-updated: Needs minor updates' => 'Partially updated (some older finishes OK)',
+                                'Currently Being Built' => 'Updated / Renovated',
+                                'Currently being built' => 'Updated / Renovated',
+                                'New Construction' => 'Updated / Renovated',
+                                'Pre-Construction' => 'Updated / Renovated',
+                                'Tear Down: Requires complete demolition and reconstruction' => 'Older but clean & well maintained',
+                                'Open to any type of property condition' => 'No preference (open to any condition)',
+                            ];
+                            $conditionItems = array_filter(@$auction->get->condition_prop_buyer);
+                            $mappedConditions = array_map(function($item) use ($legacyConditionMap) {
+                                return $legacyConditionMap[$item] ?? $item;
+                            }, $conditionItems);
+                            $uniqueConditions = array_unique($mappedConditions);
+                        @endphp
+                        <span class="removeBold">{{ implode(', ', $uniqueConditions) }}</span>
                         @endif
 
                     </div>

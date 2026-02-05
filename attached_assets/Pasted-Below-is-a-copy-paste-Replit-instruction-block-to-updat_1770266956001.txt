@@ -1,0 +1,221 @@
+Below is a **copy/paste Replit instruction block** to update **ONLY** the **Hire a Tenant’s Agent** listing flow, specifically the **Acceptable Property Condition** field, across **create/edit**, **drafts**, and **listing display**—without affecting Buyer/Seller/Landlord flows.
+
+---
+
+## ✅ REPLIT INSTRUCTIONS (Tenant Listing Only) — Acceptable Property Condition Options Update
+
+### Goal
+
+Update the selectable options for **Acceptable Property Condition** in the **Hire a Tenant’s Agent** listing flow ONLY, everywhere it appears (create form, edit form, draft edit, listing display rendering).
+
+### ✅ NEW OPTIONS (Tenant Only)
+
+Replace the existing Tenant options with exactly these 4:
+
+1. `Updated / Renovated`
+2. `Partially updated (some older finishes OK)`
+3. `Older but clean & well maintained`
+4. `No preference (open to any condition)`
+
+---
+
+## SAFEGUARDS (MUST FOLLOW)
+
+1. **Do NOT** rename any database columns.
+2. **Do NOT** delete or modify any existing Tenant listings in the database.
+3. **Do NOT** change Buyer/Seller/Landlord “Acceptable Property Condition” options anywhere.
+4. **Do NOT** run a global find/replace across shared components used by other flows.
+5. If older saved values exist (ex: “Needs minor updates”), **do NOT break display**—map them to the closest new label for display only.
+6. Changes must apply to:
+
+   * New tenant listing creation
+   * Editing a tenant listing
+   * Editing a tenant draft
+   * Viewing tenant listing (public/internal display)
+
+---
+
+## STEP 1 — Identify the Tenant-only source of options
+
+In the **Hire a Tenant’s Agent** Livewire component(s), locate the options array used for the chip/multi-select.
+
+Search in Replit for these strings:
+
+* `Acceptable Property Conditions`
+* `acceptable_property_condition`
+* `acceptable_property_conditions`
+* `Needs minor updates`
+* `Needs major renovation`
+* `Move-in ready`
+* `Open to any condition`
+
+You must confirm you are editing the **Tenant** flow component only (often named something like):
+
+* `TenantAgentAuction.php`
+* `TenantAgentAuctionCreate.php`
+* `TenantAgentAuctionEdit.php`
+* `TenantAgentAuctionDraft.php`
+
+> If the Tenant flow uses a shared helper/config for options, **duplicate it for Tenant only** (do NOT edit a shared Buyer options source).
+
+---
+
+## STEP 2 — Replace Tenant options (create + edit + draft)
+
+Wherever the Tenant options are defined, replace the Tenant list with:
+
+**Internal stored values (recommended):**
+Use stable keys + display labels (prevents future text edits from breaking stored data):
+
+```php
+$tenantPropertyConditionOptions = [
+  'updated_renovated' => 'Updated / Renovated',
+  'partially_updated' => 'Partially updated (some older finishes OK)',
+  'older_clean'       => 'Older but clean & well maintained',
+  'no_preference'     => 'No preference (open to any condition)',
+];
+```
+
+### If your system currently stores the full label text in DB:
+
+You may store the labels directly, but then you MUST also add legacy mapping (Step 4). Keys are safer.
+
+---
+
+## STEP 3 — Ensure multi-select behavior + “No preference” logic (Tenant only)
+
+If this field is multi-select chips:
+
+**Tenant-only rule:**
+
+* If `no_preference` is selected, it should be **the only selected value**.
+* If user selects any other option, automatically **remove** `no_preference`.
+
+Implementation (Tenant component only) — in the updated hook for that field:
+
+```php
+public function updatedAcceptablePropertyConditions($value)
+{
+    if (in_array('no_preference', $this->acceptable_property_conditions ?? [])) {
+        // If anything else selected with no_preference, keep only no_preference
+        if (count($this->acceptable_property_conditions) > 1) {
+            $this->acceptable_property_conditions = ['no_preference'];
+        }
+    }
+}
+```
+
+If you prefer the opposite behavior (selecting a specific option removes no_preference), implement:
+
+```php
+if (count($this->acceptable_property_conditions) > 1) {
+   $this->acceptable_property_conditions = array_values(array_diff(
+     $this->acceptable_property_conditions,
+     ['no_preference']
+   ));
+}
+```
+
+**Pick ONE rule and keep it consistent.**
+
+---
+
+## STEP 4 — Legacy value display mapping (do NOT modify stored data)
+
+Some older Tenant listings/drafts may have values like:
+
+* `Move-in ready`
+* `Needs minor updates`
+* `Needs major renovation`
+* `Open to any condition`
+
+Do NOT alter DB rows. Instead, when displaying Tenant listings, map legacy values to new labels:
+
+**Tenant display mapping (view layer or accessor):**
+
+```php
+$legacyTenantConditionMap = [
+  'Move-in ready'           => 'Updated / Renovated',
+  'Needs minor updates'     => 'Partially updated (some older finishes OK)',
+  'Needs major renovation'  => 'Older but clean & well maintained', // best-fit fallback
+  'Open to any condition'   => 'No preference (open to any condition)',
+];
+```
+
+Rules:
+
+* If value matches a new key/label, display normally.
+* If value matches legacy text, display mapped label.
+* If unknown value appears, display raw value (do not crash).
+
+---
+
+## STEP 5 — Apply to ALL Tenant entry points
+
+Confirm this is updated in each Tenant location:
+
+### A) Tenant listing creation form
+
+* option list replaced
+* “no preference” logic correct
+* validation allows only these values (plus legacy values if editing old draft)
+
+### B) Tenant listing edit form
+
+* same as create
+* preserves existing selections
+
+### C) Tenant drafts edit
+
+* same as edit
+* no errors when opening older drafts
+
+### D) Tenant listing display page
+
+* uses label mapping so older listings render cleanly
+* displays as a single line if only one, comma-separated if multiple
+
+**Display recommendation (Tenant only):**
+
+* Label: `Acceptable Property Condition:`
+* Value: `Updated / Renovated, Older but clean & well maintained`
+
+---
+
+## STEP 6 — Validation (Tenant only, non-breaking)
+
+If you validate allowed values, ensure you don’t block older drafts from saving/editing.
+
+Tenant-only validation should accept:
+
+* the 4 new values/keys
+* plus legacy values **only when loading old records**
+
+Safest approach:
+
+* Validate against the new list on **new submissions**
+* On edit: allow existing legacy values to remain unless user changes selection
+
+---
+
+## STEP 7 — QA Checklist (must test)
+
+1. Create a NEW tenant listing → shows only the 4 new options
+2. Save as draft → reopen draft → options still correct
+3. Submit listing → display page shows correct label(s)
+4. Open an OLD tenant listing/draft with “Needs minor updates” → display maps to “Partially updated…” and edit does not error
+5. Confirm Buyer/Seller/Landlord flows still show their original condition options unchanged
+
+---
+
+## QUICK “DO NOT BREAK ANYTHING” REMINDER
+
+* Tenant-only files/components only
+* No DB renames
+* No global replacements
+* No deleting old values
+* Add display mapping so legacy records render cleanly
+
+---
+
+If you paste me the **file path(s)** where Tenant “Acceptable Property Conditions” is defined (even just the snippet), I’ll rewrite this into **exact line-by-line edits for your actual component names** (Tenant create/edit/view) so your dev can’t misinterpret it.

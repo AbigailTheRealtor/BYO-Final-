@@ -1200,6 +1200,31 @@ class TenantAgentAuction extends Component
     public function conditionUpdated($value)
     {
         $this->condition_prop_buyer = $value['value'];
+        $this->enforceNoPreferenceExclusivity();
+    }
+
+    public function updatedConditionPropBuyer($value)
+    {
+        $this->enforceNoPreferenceExclusivity();
+    }
+
+    protected function enforceNoPreferenceExclusivity()
+    {
+        $noPreferenceValue = 'No preference (open to any condition)';
+        
+        if (!is_array($this->condition_prop_buyer) || empty($this->condition_prop_buyer)) {
+            return;
+        }
+        
+        $hasNoPreference = in_array($noPreferenceValue, $this->condition_prop_buyer);
+        $count = count($this->condition_prop_buyer);
+        
+        if ($hasNoPreference && $count > 1) {
+            $this->condition_prop_buyer = array_values(array_diff(
+                $this->condition_prop_buyer,
+                [$noPreferenceValue]
+            ));
+        }
     }
 
 
@@ -3095,9 +3120,21 @@ class TenantAgentAuction extends Component
     protected function mapLegacyPropertyConditions($conditions)
     {
         $legacyMap = [
-            'Completely Updated: No updates needed' => 'No updates needed: Completely updated',
-            'Not Updated: Requires a complete update' => 'Not updated: Requires a complete update',
-            'Currently Being Built' => 'Currently being built',
+            'Move-in ready' => 'Updated / Renovated',
+            'Needs minor updates' => 'Partially updated (some older finishes OK)',
+            'Needs major renovation' => 'Older but clean & well maintained',
+            'Open to any condition' => 'No preference (open to any condition)',
+            'Completely Updated: No updates needed' => 'Updated / Renovated',
+            'No updates needed: Completely updated' => 'Updated / Renovated',
+            'Not Updated: Requires a complete update' => 'Older but clean & well maintained',
+            'Not updated: Requires a complete update' => 'Older but clean & well maintained',
+            'Semi-updated: Needs minor updates' => 'Partially updated (some older finishes OK)',
+            'Currently Being Built' => 'Updated / Renovated',
+            'Currently being built' => 'Updated / Renovated',
+            'New Construction' => 'Updated / Renovated',
+            'Pre-Construction' => 'Updated / Renovated',
+            'Tear Down: Requires complete demolition and reconstruction' => 'Older but clean & well maintained',
+            'Open to any type of property condition' => 'No preference (open to any condition)',
         ];
         
         // Handle single value (string)
