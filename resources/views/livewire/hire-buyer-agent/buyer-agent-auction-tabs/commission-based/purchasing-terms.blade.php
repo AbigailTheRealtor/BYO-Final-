@@ -1,3 +1,17 @@
+<style>
+    .input-cover .input-icon2 {
+        z-index: 1 !important;
+    }
+
+    .input-cover .select2 .selection .select2-selection--multiple {
+        padding-left: 44px !important;
+        padding-bottom: 0 !important;
+    }
+
+    .input-cover .select2 .selection .select2-selection--multiple input {
+        font-size: 1rem !important;
+    }
+</style>
 @php
     // Ensure multiselect fields are always arrays to prevent in_array() errors
     // Handles: arrays (pass through), JSON strings (decode), plain strings (wrap in array), null/empty (default to [])
