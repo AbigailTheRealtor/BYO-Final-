@@ -75,7 +75,7 @@
         color: #0f1a24;
     }
 
-    /* SECTION HEADER BAR — shorter + true vertical centering */
+    /* SECTION HEADER BAR - shorter + true vertical centering */
     .card-header.section-header {
         display: flex !important;
         align-items: center !important;
@@ -85,7 +85,7 @@
         margin-top: 1.25rem;
     }
 
-    /* SECTION TITLE TEXT — remove default heading spacing */
+    /* SECTION TITLE TEXT - remove default heading spacing */
     .section-header .section-title {
         margin: 0 !important;
         padding: 0 !important;
@@ -1011,7 +1011,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @php
                     // Build combined Tenant's Broker Commission Fee display for listing
                     $listingLeaseFeeType = @$auction->get->lease_fee_type ?? '';
-                    $listingLeaseFeeCombined = '—';
+                    $listingLeaseFeeCombined = '-';
                     
                     if ($listingLeaseFeeType === 'Flat Fee' && @$auction->get->lease_fee_flat) {
                         $listingLeaseFeeCombined = $fmtMoney(@$auction->get->lease_fee_flat);
@@ -1027,14 +1027,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         $listingLeaseFeeCombined = $joinParts([
                             $fmtMoney(@$auction->get->lease_fee_flat_combo),
                             @$auction->get->lease_fee_percentage_combo ? ($fmtPercent(@$auction->get->lease_fee_percentage_combo) . ' of Gross Lease Value') : null,
-                        ]) ?? '—';
+                        ]) ?? '-';
                     } elseif ($listingLeaseFeeType === 'Percentage of the Net Aggregate Rent' && @$auction->get->lease_fee_percentage_net) {
                         $listingLeaseFeeCombined = $fmtPercent(@$auction->get->lease_fee_percentage_net) . ' of Net Aggregate Rent';
                     } elseif ($listingLeaseFeeType === 'Flat Fee + Percentage of the Net Aggregate Rent') {
                         $listingLeaseFeeCombined = $joinParts([
                             $fmtMoney(@$auction->get->lease_fee_flat_combo_net),
                             @$auction->get->lease_fee_percentage_combo_net ? ($fmtPercent(@$auction->get->lease_fee_percentage_combo_net) . ' of Net Aggregate Rent') : null,
-                        ]) ?? '—';
+                        ]) ?? '-';
                     } elseif (strtolower($listingLeaseFeeType) === 'other' && @$auction->get->lease_fee_other) {
                         $listingLeaseFeeCombined = @$auction->get->lease_fee_other;
                     } elseif ($listingLeaseFeeType) {
@@ -1083,20 +1083,20 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @php
                     // Build combined Purchase Fee display for listing
                     $listingPurchaseFeeType = @$auction->get->purchase_fee_type ?? '';
-                    $listingPurchaseFeeCombined = '—';
+                    $listingPurchaseFeeCombined = '-';
                     
                     if ($listingPurchaseFeeType === 'Flat Fee') {
-                        $listingPurchaseFeeCombined = $fmtMoney(@$auction->get->purchase_fee_flat) ?? '—';
+                        $listingPurchaseFeeCombined = $fmtMoney(@$auction->get->purchase_fee_flat) ?? '-';
                     } elseif ($listingPurchaseFeeType === 'Percentage of the Total Purchase Price') {
                         $pct = @$auction->get->purchase_fee_percentage;
-                        $listingPurchaseFeeCombined = $pct ? ($fmtPercent($pct) . ' of Total Purchase Price') : '—';
+                        $listingPurchaseFeeCombined = $pct ? ($fmtPercent($pct) . ' of Total Purchase Price') : '-';
                     } elseif ($listingPurchaseFeeType === 'Percentage of the Total Purchase Price + Flat Fee') {
                         $listingPurchaseFeeCombined = $joinParts([
                             $fmtMoney(@$auction->get->purchase_fee_flat_combo),
                             @$auction->get->purchase_fee_percentage_combo ? ($fmtPercent(@$auction->get->purchase_fee_percentage_combo) . ' of Total Purchase Price') : null,
-                        ]) ?? '—';
+                        ]) ?? '-';
                     } elseif ($listingPurchaseFeeType === 'other') {
-                        $listingPurchaseFeeCombined = @$auction->get->purchase_fee_other ?? '—';
+                        $listingPurchaseFeeCombined = @$auction->get->purchase_fee_other ?? '-';
                     }
                 @endphp
                 <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -1763,7 +1763,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             $leaseFeeOther = data_get($bid, 'get.lease_fee_other', '');
                             
                             // Build commission fee display using helper functions (combined format: $2,323 + 3% of Gross Lease Value)
-                            $commissionFeeDisplay = '—';
+                            $commissionFeeDisplay = '-';
                             if ($leaseFeeType === 'Flat Fee' && $leaseFeeFlat) {
                                 $commissionFeeDisplay = $fmtMoney($leaseFeeFlat);
                             } elseif ($leaseFeeType === 'Percentage of the Gross Lease Value' && $leaseFeePercentage) {
@@ -1778,14 +1778,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 $commissionFeeDisplay = $joinParts([
                                     $fmtMoney($leaseFeeFlatCombo),
                                     $leaseFeePercentageCombo ? ($fmtPercent($leaseFeePercentageCombo) . ' of Gross Lease Value') : null,
-                                ]) ?? '—';
+                                ]) ?? '-';
                             } elseif ($leaseFeeType === 'Percentage of the Net Aggregate Rent' && $leaseFeePercentageNet) {
                                 $commissionFeeDisplay = $fmtPercent($leaseFeePercentageNet) . ' of Net Aggregate Rent';
                             } elseif ($leaseFeeType === 'Flat Fee + Percentage of the Net Aggregate Rent') {
                                 $commissionFeeDisplay = $joinParts([
                                     $fmtMoney($leaseFeeFlatComboNet),
                                     $leaseFeePercentageComboNet ? ($fmtPercent($leaseFeePercentageComboNet) . ' of Net Aggregate Rent') : null,
-                                ]) ?? '—';
+                                ]) ?? '-';
                             } elseif (strtolower($leaseFeeType) === 'other' && $leaseFeeOther) {
                                 $commissionFeeDisplay = $leaseFeeOther;
                             } elseif ($leaseFeeType) {
@@ -1793,32 +1793,32 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             }
                             
                             // Build Purchase Fee combined display
-                            $purchaseFeeDisplay = '—';
+                            $purchaseFeeDisplay = '-';
                             $purchaseFeeType = data_get($bid, 'get.purchase_fee_type', '');
                             if ($purchaseFeeType === 'Flat Fee') {
-                                $purchaseFeeDisplay = $fmtMoney(data_get($bid, 'get.purchase_fee_flat')) ?? '—';
+                                $purchaseFeeDisplay = $fmtMoney(data_get($bid, 'get.purchase_fee_flat')) ?? '-';
                             } elseif ($purchaseFeeType === 'Percentage of the Total Purchase Price') {
                                 $pct = data_get($bid, 'get.purchase_fee_percentage');
-                                $purchaseFeeDisplay = $pct ? ($fmtPercent($pct) . ' of Total Purchase Price') : '—';
+                                $purchaseFeeDisplay = $pct ? ($fmtPercent($pct) . ' of Total Purchase Price') : '-';
                             } elseif ($purchaseFeeType === 'Percentage of the Total Purchase Price + Flat Fee') {
                                 $purchaseFeeDisplay = $joinParts([
                                     $fmtMoney(data_get($bid, 'get.purchase_fee_flat_combo')),
                                     data_get($bid, 'get.purchase_fee_percentage_combo') ? ($fmtPercent(data_get($bid, 'get.purchase_fee_percentage_combo')) . ' of Total Purchase Price') : null,
-                                ]) ?? '—';
+                                ]) ?? '-';
                             } elseif ($purchaseFeeType === 'other') {
-                                $purchaseFeeDisplay = data_get($bid, 'get.purchase_fee_other') ?? '—';
+                                $purchaseFeeDisplay = data_get($bid, 'get.purchase_fee_other') ?? '-';
                             }
                             
                             // Build Lease-Option combined display
-                            $leaseOptionCreatedDisplay = '—';
-                            $leaseOptionExercisedDisplay = '—';
+                            $leaseOptionCreatedDisplay = '-';
+                            $leaseOptionExercisedDisplay = '-';
                             if (data_get($bid, 'get.interested_lease_option_agreement') === 'Yes') {
                                 $leaseType = data_get($bid, 'get.lease_type');
                                 $leaseValue = data_get($bid, 'get.lease_value');
                                 if ($leaseType === 'percent' && $leaseValue) {
                                     $leaseOptionCreatedDisplay = $fmtPercent($leaseValue);
                                 } elseif ($leaseValue) {
-                                    $leaseOptionCreatedDisplay = $fmtMoney($leaseValue) ?? '—';
+                                    $leaseOptionCreatedDisplay = $fmtMoney($leaseValue) ?? '-';
                                 }
                                 
                                 $purchaseType = data_get($bid, 'get.purchase_type');
@@ -1826,14 +1826,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 if ($purchaseType === 'percent' && $purchaseValue) {
                                     $leaseOptionExercisedDisplay = $fmtPercent($purchaseValue);
                                 } elseif ($purchaseValue) {
-                                    $leaseOptionExercisedDisplay = $fmtMoney($purchaseValue) ?? '—';
+                                    $leaseOptionExercisedDisplay = $fmtMoney($purchaseValue) ?? '-';
                                 }
                             }
                             
                             // Termination Fee display
-                            $terminationFeeDisplay = '—';
+                            $terminationFeeDisplay = '-';
                             if (data_get($bid, 'get.early_termination_fee_option') === 'Yes') {
-                                $terminationFeeDisplay = $fmtMoney(data_get($bid, 'get.early_termination_fee_amount')) ?? '—';
+                                $terminationFeeDisplay = $fmtMoney(data_get($bid, 'get.early_termination_fee_amount')) ?? '-';
                             }
                             
                             // === MATCH SCORE CALCULATION (for bid card and modal) ===
@@ -2174,7 +2174,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 @else
                                 {{-- Default: Private message --}}
                                 <span style="color: #888; font-style: italic; font-size: 0.95rem;">
-                                    <i class="fa fa-lock me-1"></i> Private — visible only to listing creator
+                                    <i class="fa fa-lock me-1"></i> Private - visible only to listing creator
                                 </span>
                                 @endif
                                 
@@ -2198,13 +2198,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 @elseif ($isBidOwner && $isExpired)
                                 <div class="mt-3">
                                     <span class="text-muted small">
-                                        <i class="fa fa-clock me-1"></i> Bidding has ended — edit/withdraw unavailable
+                                        <i class="fa fa-clock me-1"></i> Bidding has ended - edit/withdraw unavailable
                                     </span>
                                 </div>
                                 @elseif ($isBidOwner && ($bidAccepted === 'accepted' || $bidAccepted === 'rejected'))
                                 <div class="mt-3">
                                     <span class="text-muted small">
-                                        <i class="fa fa-lock me-1"></i> Bid {{ $bidAccepted }} — edit/withdraw unavailable
+                                        <i class="fa fa-lock me-1"></i> Bid {{ $bidAccepted }} - edit/withdraw unavailable
                                     </span>
                                     @if($bidAccepted === 'accepted')
                                     @php
@@ -2516,7 +2516,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">B) Purchase Fee Details</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 <li class="mb-1" style="{{ isset($brokerMismatches['interested_purchase_fee_type']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Interested in Purchasing a Property:</span> {{ data_get($bid, 'get.interested_purchase_fee_type') }}{!! isset($brokerMismatches['interested_purchase_fee_type']) ? $mismatchBadge : '' !!}</li>
-                                                                @if (data_get($bid, 'get.interested_purchase_fee_type') === 'Yes' && $purchaseFeeDisplay !== '—')
+                                                                @if (data_get($bid, 'get.interested_purchase_fee_type') === 'Yes' && $purchaseFeeDisplay !== '-')
                                                                 <li class="mb-1" style="{{ isset($brokerMismatches['purchase_fee_type']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Purchase Fee:</span> {{ $purchaseFeeDisplay }}{!! isset($brokerMismatches['purchase_fee_type']) ? $mismatchBadge : '' !!}</li>
                                                                 @endif
                                                             </ul>
@@ -2530,10 +2530,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 <li class="mb-1" style="{{ isset($brokerMismatches['interested_lease_option_agreement']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Interested in a Lease-Option Agreement:</span> {{ data_get($bid, 'get.interested_lease_option_agreement') }}{!! isset($brokerMismatches['interested_lease_option_agreement']) ? $mismatchBadge : '' !!}</li>
                                                                 @if (data_get($bid, 'get.interested_lease_option_agreement') === 'Yes')
-                                                                    @if ($leaseOptionCreatedDisplay !== '—')
+                                                                    @if ($leaseOptionCreatedDisplay !== '-')
                                                                     <li class="mb-1" style="{{ isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Compensation (When Option Is Created):</span> {{ $leaseOptionCreatedDisplay }}{!! isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value']) ? $mismatchBadge : '' !!}</li>
                                                                     @endif
-                                                                    @if ($leaseOptionExercisedDisplay !== '—')
+                                                                    @if ($leaseOptionExercisedDisplay !== '-')
                                                                     <li class="mb-1" style="{{ isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Compensation (If Purchase Option Exercised):</span> {{ $leaseOptionExercisedDisplay }}{!! isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value']) ? $mismatchBadge : '' !!}</li>
                                                                     @endif
                                                                 @endif
@@ -2551,7 +2551,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 @endif
                                                                 @if (data_get($bid, 'get.early_termination_fee_option'))
                                                                 <li class="mb-1" style="{{ isset($brokerMismatches['early_termination_fee_option']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Early Termination Fee:</span> {{ data_get($bid, 'get.early_termination_fee_option') }}{!! isset($brokerMismatches['early_termination_fee_option']) ? $mismatchBadge : '' !!}</li>
-                                                                    @if ($terminationFeeDisplay !== '—')
+                                                                    @if ($terminationFeeDisplay !== '-')
                                                                     <li class="mb-1" style="{{ isset($brokerMismatches['early_termination_fee_amount']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Termination Fee Amount:</span> {{ $terminationFeeDisplay }}{!! isset($brokerMismatches['early_termination_fee_amount']) ? $mismatchBadge : '' !!}</li>
                                                                     @endif
                                                                 @endif
@@ -3525,7 +3525,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                         @if($isMismatch('interested_purchase_fee_type')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
                                                                     </span>
                                                                 </li>
-                                                                @if (data_get($bid, 'get.interested_purchase_fee_type') === 'Yes' && $purchaseFeeDisplay !== '—')
+                                                                @if (data_get($bid, 'get.interested_purchase_fee_type') === 'Yes' && $purchaseFeeDisplay !== '-')
                                                                 <li class="mb-1 d-flex justify-content-between align-items-start">
                                                                     <span class="fw-semibold">Purchase Fee:</span>
                                                                     <span style="{{ $checkPurchaseFeeFieldMismatch() ? $mismatchStyle : '' }}">
@@ -3551,7 +3551,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                     </span>
                                                                 </li>
                                                                 @if (data_get($bid, 'get.interested_lease_option_agreement') === 'Yes')
-                                                                    @if ($leaseOptionCreatedDisplay !== '—')
+                                                                    @if ($leaseOptionCreatedDisplay !== '-')
                                                                     <li class="mb-1 d-flex justify-content-between align-items-start">
                                                                         <span class="fw-semibold">Compensation (When Option Is Created):</span>
                                                                         <span style="{{ $isMismatch('lease_value') ? $mismatchStyle : '' }}">
@@ -3560,7 +3560,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                         </span>
                                                                     </li>
                                                                     @endif
-                                                                    @if ($leaseOptionExercisedDisplay !== '—')
+                                                                    @if ($leaseOptionExercisedDisplay !== '-')
                                                                     <li class="mb-1 d-flex justify-content-between align-items-start">
                                                                         <span class="fw-semibold">Compensation (If Purchase Option Exercised):</span>
                                                                         <span style="{{ $isMismatch('purchase_value') ? $mismatchStyle : '' }}">
@@ -3596,7 +3596,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                         @if($isMismatch('early_termination_fee_option')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
                                                                     </span>
                                                                 </li>
-                                                                    @if ($terminationFeeDisplay !== '—')
+                                                                    @if ($terminationFeeDisplay !== '-')
                                                                     <li class="mb-1 d-flex justify-content-between align-items-start">
                                                                         <span class="fw-semibold">Termination Fee Amount:</span>
                                                                         <span style="{{ $isMismatch('early_termination_fee_amount') ? $mismatchStyle : '' }}">
@@ -4182,7 +4182,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     
                                                     // Build combined commission fee display
                                                     $counterLeaseFeeType = $allMeta['lease_fee_type'] ?? '';
-                                                    $counterCommissionFeeDisplay = '—';
+                                                    $counterCommissionFeeDisplay = '-';
                                                     if ($counterLeaseFeeType === 'Flat Fee' && !empty($allMeta['lease_fee_flat'])) {
                                                         $counterCommissionFeeDisplay = $counterFmtMoney($allMeta['lease_fee_flat']);
                                                     } elseif ($counterLeaseFeeType === 'Percentage of the Gross Lease Value' && !empty($allMeta['lease_fee_percentage'])) {
@@ -4201,7 +4201,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         if (!empty($allMeta['lease_fee_percentage_combo'])) {
                                                             $parts[] = $counterFmtPercent($allMeta['lease_fee_percentage_combo']) . ' of Gross Lease Value';
                                                         }
-                                                        $counterCommissionFeeDisplay = implode(' + ', $parts) ?: '—';
+                                                        $counterCommissionFeeDisplay = implode(' + ', $parts) ?: '-';
                                                     } elseif ($counterLeaseFeeType === 'Percentage of the Net Aggregate Rent' && !empty($allMeta['lease_fee_percentage_net'])) {
                                                         $counterCommissionFeeDisplay = $counterFmtPercent($allMeta['lease_fee_percentage_net']) . ' of Net Aggregate Rent';
                                                     } elseif ($counterLeaseFeeType === 'Flat Fee + Percentage of the Net Aggregate Rent') {
@@ -4212,14 +4212,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         if (!empty($allMeta['lease_fee_percentage_combo_net'])) {
                                                             $parts[] = $counterFmtPercent($allMeta['lease_fee_percentage_combo_net']) . ' of Net Aggregate Rent';
                                                         }
-                                                        $counterCommissionFeeDisplay = implode(' + ', $parts) ?: '—';
+                                                        $counterCommissionFeeDisplay = implode(' + ', $parts) ?: '-';
                                                     } elseif ($counterLeaseFeeType === 'other' && !empty($allMeta['lease_fee_other'])) {
                                                         $counterCommissionFeeDisplay = $allMeta['lease_fee_other'];
                                                     }
                                                     
                                                     // Build combined purchase fee display
                                                     $counterPurchaseFeeType = $allMeta['purchase_fee_type'] ?? '';
-                                                    $counterPurchaseFeeDisplay = '—';
+                                                    $counterPurchaseFeeDisplay = '-';
                                                     if ($counterPurchaseFeeType === 'Flat Fee' && !empty($allMeta['purchase_fee_flat'])) {
                                                         $counterPurchaseFeeDisplay = $counterFmtMoney($allMeta['purchase_fee_flat']);
                                                     } elseif ($counterPurchaseFeeType === 'Percentage of the Total Purchase Price' && !empty($allMeta['purchase_fee_percentage'])) {
@@ -4232,14 +4232,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         if (!empty($allMeta['purchase_fee_percentage_combo'])) {
                                                             $parts[] = $counterFmtPercent($allMeta['purchase_fee_percentage_combo']) . ' of Total Purchase Price';
                                                         }
-                                                        $counterPurchaseFeeDisplay = implode(' + ', $parts) ?: '—';
+                                                        $counterPurchaseFeeDisplay = implode(' + ', $parts) ?: '-';
                                                     } elseif ($counterPurchaseFeeType === 'other' && !empty($allMeta['purchase_fee_other'])) {
                                                         $counterPurchaseFeeDisplay = $allMeta['purchase_fee_other'];
                                                     }
                                                     
                                                     // Build lease-option displays
-                                                    $counterLeaseOptionCreatedDisplay = '—';
-                                                    $counterLeaseOptionExercisedDisplay = '—';
+                                                    $counterLeaseOptionCreatedDisplay = '-';
+                                                    $counterLeaseOptionExercisedDisplay = '-';
                                                     if (!empty($allMeta['interested_lease_option_agreement']) && $allMeta['interested_lease_option_agreement'] === 'Yes') {
                                                         if (!empty($allMeta['lease_value'])) {
                                                             $counterLeaseOptionCreatedDisplay = (!empty($allMeta['lease_type']) && $allMeta['lease_type'] === 'percent') 
@@ -4254,7 +4254,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     }
                                                     
                                                     // Build termination fee display
-                                                    $counterTerminationFeeDisplay = '—';
+                                                    $counterTerminationFeeDisplay = '-';
                                                     if (!empty($allMeta['early_termination_fee_option']) && $allMeta['early_termination_fee_option'] === 'Yes' && !empty($allMeta['early_termination_fee_amount'])) {
                                                         $counterTerminationFeeDisplay = $counterFmtMoney($allMeta['early_termination_fee_amount']);
                                                     }
@@ -4309,7 +4309,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 @php $purchaseIntChanged = $isChanged($allMeta['interested_purchase_fee_type'], 'interested_purchase_fee_type'); @endphp
                                                                 <li class="mb-1" style="{{ $purchaseIntChanged ? $changedStyle : '' }}"><span class="fw-semibold">Interested in Purchasing a Property:</span> {{ $allMeta['interested_purchase_fee_type'] }}{!! $purchaseIntChanged ? $changedBadge : '' !!}</li>
-                                                                @if ($allMeta['interested_purchase_fee_type'] === 'Yes' && $counterPurchaseFeeDisplay !== '—')
+                                                                @if ($allMeta['interested_purchase_fee_type'] === 'Yes' && $counterPurchaseFeeDisplay !== '-')
                                                                 @php $purchaseFeeChanged = $isChanged($allMeta['purchase_fee_type'] ?? '', 'purchase_fee_type'); @endphp
                                                                 <li class="mb-1" style="{{ $purchaseFeeChanged ? $changedStyle : '' }}"><span class="fw-semibold">Purchase Fee:</span> {{ $counterPurchaseFeeDisplay }}{!! $purchaseFeeChanged ? $changedBadge : '' !!}</li>
                                                                 @endif
@@ -4325,11 +4325,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 @php $leaseOptIntChanged = $isChanged($allMeta['interested_lease_option_agreement'], 'interested_lease_option_agreement'); @endphp
                                                                 <li class="mb-1" style="{{ $leaseOptIntChanged ? $changedStyle : '' }}"><span class="fw-semibold">Interested in a Lease-Option Agreement:</span> {{ $allMeta['interested_lease_option_agreement'] }}{!! $leaseOptIntChanged ? $changedBadge : '' !!}</li>
                                                                 @if ($allMeta['interested_lease_option_agreement'] === 'Yes')
-                                                                    @if ($counterLeaseOptionCreatedDisplay !== '—')
+                                                                    @if ($counterLeaseOptionCreatedDisplay !== '-')
                                                                     @php $leaseCreatedChanged = $isChanged($allMeta['lease_value'] ?? '', 'lease_value'); @endphp
                                                                     <li class="mb-1" style="{{ $leaseCreatedChanged ? $changedStyle : '' }}"><span class="fw-semibold">Compensation (When Option Is Created):</span> {{ $counterLeaseOptionCreatedDisplay }}{!! $leaseCreatedChanged ? $changedBadge : '' !!}</li>
                                                                     @endif
-                                                                    @if ($counterLeaseOptionExercisedDisplay !== '—')
+                                                                    @if ($counterLeaseOptionExercisedDisplay !== '-')
                                                                     @php $leaseExercisedChanged = $isChanged($allMeta['purchase_value'] ?? '', 'purchase_value'); @endphp
                                                                     <li class="mb-1" style="{{ $leaseExercisedChanged ? $changedStyle : '' }}"><span class="fw-semibold">Compensation (If Purchase Option Exercised):</span> {{ $counterLeaseOptionExercisedDisplay }}{!! $leaseExercisedChanged ? $changedBadge : '' !!}</li>
                                                                     @endif
@@ -4350,7 +4350,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 @if (!empty($allMeta['early_termination_fee_option']))
                                                                 @php $termOptChanged = $isChanged($allMeta['early_termination_fee_option'], 'early_termination_fee_option'); @endphp
                                                                 <li class="mb-1" style="{{ $termOptChanged ? $changedStyle : '' }}"><span class="fw-semibold">Early Termination Fee:</span> {{ $allMeta['early_termination_fee_option'] }}{!! $termOptChanged ? $changedBadge : '' !!}</li>
-                                                                    @if ($counterTerminationFeeDisplay !== '—')
+                                                                    @if ($counterTerminationFeeDisplay !== '-')
                                                                     @php $termAmtChanged = $isChanged($allMeta['early_termination_fee_amount'] ?? '', 'early_termination_fee_amount'); @endphp
                                                                     <li class="mb-1" style="{{ $termAmtChanged ? $changedStyle : '' }}"><span class="fw-semibold">Termination Fee Amount:</span> {{ $counterTerminationFeeDisplay }}{!! $termAmtChanged ? $changedBadge : '' !!}</li>
                                                                     @endif
