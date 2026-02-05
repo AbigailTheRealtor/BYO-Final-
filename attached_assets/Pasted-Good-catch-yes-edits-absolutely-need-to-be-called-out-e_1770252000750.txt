@@ -1,0 +1,199 @@
+Good catch — yes, edits absolutely need to be called out explicitly.
+Here is the **final, corrected version** with **Edits added everywhere they must be covered**, written cleanly so Replit can’t miss or sidestep it.
+
+---
+
+# Replit Final Instructions — Hire a Buyer’s Agent
+
+**Document-Driven Fixes with Property-Type Safeguards**
+**Example Login:** `tenant@exp.com`
+
+## PURPOSE
+
+You are being provided a document that serves as the **source-of-truth punch list** for fixes related to **Hire a Buyer’s Agent** listings. You must review the document **line-by-line**, implement **each fix exactly as written**, and apply changes **only to the property types specified for each issue**.
+All fixes must apply consistently to **new listings, existing listings, drafts, edits, bids, counters, summaries, and exports** wherever applicable.
+
+---
+
+## 1) GLOBAL SAFEGUARDS (NON-NEGOTIABLE)
+
+1. **No destructive changes**
+
+   * Do NOT rename database tables or columns
+   * Do NOT delete fields, options, or stored values
+   * Do NOT overwrite existing records
+
+2. **Add-only changes if needed**
+
+   * Any database or schema change must be add-only
+   * No drops, renames, or data migrations without approval
+
+3. **No global refactors**
+
+   * Do NOT refactor components, flows, or architecture
+   * Fix issues in the smallest, most isolated way possible
+
+4. **Backward compatibility required**
+
+   * Fixes must work for **existing listings, drafts, edits, bids, and counters**
+
+5. **Gold-standard preservation**
+
+   * Do NOT change text, order, logic, or formatting that already matches intended behavior unless the document explicitly instructs it
+
+---
+
+## 2) PROPERTY-TYPE SCOPE RULE (CRITICAL)
+
+Every issue in the document **must be scoped to property type(s)** before implementation.
+
+### Required Scope Labels (Choose One Per Issue)
+
+* **All Buyer Listings**
+* **Residential Only**
+* **Income Only**
+* **Commercial Only**
+* **Business Only**
+* **Vacant Land Only**
+* **Multi-Type:** *(explicitly list which types)*
+
+### Enforcement Rules
+
+* Implement the fix **only** for the scoped property type(s)
+* Do **NOT** apply fixes globally unless scope is **All Buyer Listings**
+* If a fix impacts an unintended property type, it is a **regression and must be corrected**
+
+> Sections that pertain only to **Income** (or any single property type) must remain fully isolated and must not affect other listing types.
+
+---
+
+## 3) REQUIRED WORKFLOW (MUST FOLLOW IN ORDER)
+
+### A) Convert the document into a tracked punch list
+
+For **each issue** found in the document, create a task entry containing:
+
+* **Issue ID** (example: `BUA-INC-001`)
+* **Property Type Scope** (from Section 2)
+* **Location** (Tab → Section → Field)
+* **Current Behavior**
+* **Expected Behavior** (exactly as written in the document)
+* **Surfaces Impacted**
+  *(Listing, **Edit**, Draft, Bid, Counter, Summary, PDF, Compare, Widget)*
+* **Files Touched**
+* **Database Fields Referenced**
+* **Exact Test Steps**
+
+No issue may be marked complete unless it appears in this list.
+
+---
+
+### B) Fix issues in this priority order
+
+1. Data persistence (save, submit, **edit**, reload)
+2. Data mapping (wrong value shown, wrong field source)
+3. Rendering / display issues (order, labels, symbols)
+4. Formatting consistency
+5. PDF / export consistency
+
+---
+
+### C) “Applies Everywhere” Rule
+
+If a field appears in multiple places, the fix must apply consistently to **all relevant surfaces**, unless the document explicitly limits it.
+
+**Minimum surfaces that must be checked:**
+
+* Actual listing view
+* **Edit listing view (pre-populated values + re-save)**
+* Draft save + reload
+* Agent bid view
+* Counter-bid view
+* Summary / confirmation page
+* PDF / export / Accepted Bid Summary
+* Compare All Bids (if shown)
+
+---
+
+## 4) TYPE-SPECIFIC TESTING REQUIREMENTS
+
+For **every fix**, testing is mandatory.
+
+### If scoped to **one property type** (example: *Income Only*)
+
+You must:
+
+1. Prove the fix works for that property type
+2. Confirm at least **one other property type remains unchanged**
+
+### If scoped to **multiple property types**
+
+* Test **each listed type**
+* Confirm all non-listed types are unaffected
+
+---
+
+## 5) DISPLAY & ORDER CONSISTENCY RULE
+
+Where services, compensation terms, or selectable options appear:
+
+* The **Create Listing screen is the canonical source**
+* Display order must match creation order everywhere:
+
+  * Listing
+  * **Edit**
+  * Draft
+  * Bid
+  * Counter
+  * Summary
+  * PDF / export
+
+No alphabetical sorting. No stored-order assumptions.
+
+---
+
+## 6) DELIVERY REQUIREMENTS
+
+When responding with completed work, provide:
+
+* ✅ Completed issue list (by Issue ID)
+* 🔧 Files changed per issue
+* 🧪 Test results per issue (including **edit-flow verification**)
+* ⚠️ Any blocked items with clear explanation
+
+---
+
+## 7) ACCESS
+
+Use the following test account:
+
+* **[tenant@exp.com](mailto:tenant@exp.com)**
+
+Follow reproduction steps from the document.
+If steps are missing, use the shortest valid path based on the section name.
+
+---
+
+## 8) STOP RULE (HIGH-RISK CHANGES)
+
+If any issue:
+
+* Requires a destructive database change, or
+* Impacts property types outside the defined scope
+
+**STOP**, report findings, and propose the safest add-only alternative.
+Do not implement without confirmation.
+
+---
+
+### FINAL NOTE
+
+The document defines **what** must be fixed.
+These instructions define **how** to fix it safely — including **drafts, edits, and existing records**.
+
+---
+
+If you want, I can also:
+
+* Convert your document into a **fully scoped, numbered checklist**, or
+* Add a **sign-off matrix** where Replit must confirm **Draft / Edit / Submit / Bid / Counter / Summary / PDF** for each property type before closing the task.
