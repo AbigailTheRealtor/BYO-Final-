@@ -285,25 +285,38 @@
     <span class="error mt-2" id="leasing_space_error"></span>
 </div>
 
+@php
+    $conditionOptions = $property_condition;
+    if (isset($user_type) && $user_type === 'landlord' && isset($property_condition_landlord)) {
+        $conditionOptions = $property_condition_landlord;
+        if (!empty($condition_prop_buyer) && is_array($condition_prop_buyer)) {
+            $optionNames = array_column($conditionOptions, 'name');
+            foreach ($condition_prop_buyer as $saved) {
+                if (!in_array($saved, $optionNames)) {
+                    $conditionOptions[] = ['name' => $saved];
+                }
+            }
+        }
+    }
+@endphp
 <div class="form-group">
-    <label class="fw-bold"> Acceptable Property Conditions:
+    <label class="fw-bold">
+        @if (isset($user_type) && $user_type === 'landlord')
+            Property Condition:
+        @else
+            Acceptable Property Conditions:
+        @endif
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select the property conditions that are acceptable to the Tenant.">
+            title="{{ isset($user_type) && $user_type === 'landlord' ? 'Select the condition of the property.' : 'Select the property conditions that are acceptable to the Tenant.' }}">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
 
     <div class="input-cover">
-        {{-- <select wire:model="condition_prop" id="condition_prop" class="form-control has-icon"
-            data-icon="fa-solid fa-screwdriver-wrench">
-
-
-            <option value="">Select</option> --}}
-
               <select wire:model="condition_prop_buyer" id="condition_prop_buyer"
                 class="condition_prop_buyer form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-screwdriver-wrench input-icon2" multiple>
-            @foreach ($property_condition as $row_pt)
+            @foreach ($conditionOptions as $row_pt)
                 <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
             @endforeach
         </select>

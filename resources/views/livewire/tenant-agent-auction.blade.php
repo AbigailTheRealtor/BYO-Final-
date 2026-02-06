@@ -411,6 +411,12 @@ $property_condition_seller = [
 ['name' => 'Semi-updated: Needs minor updates'],
 ['name' => 'Tear Down: Requires complete demolition and reconstruction'],
 ];
+$property_condition_landlord = [
+['name' => 'New Construction'],
+['name' => 'No updates needed: Completely updated'],
+['name' => 'Semi-updated: Needs minor updates'],
+['name' => 'Not updated: Requires a complete update'],
+];
 $bedroomsRes = [
 ['name' => '1'],
 ['name' => '2'],

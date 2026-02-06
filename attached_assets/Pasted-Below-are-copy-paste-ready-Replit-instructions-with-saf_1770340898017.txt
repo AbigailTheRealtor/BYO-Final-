@@ -1,0 +1,196 @@
+Below are **copy-paste-ready Replit instructions with safeguards** to change **Property Condition options ONLY** for **Hire a Landlord’s Agent** listings (login example: **[tenant@exp.com](mailto:tenant@exp.com) → Hire a Landlord Agent**). This must **NOT** affect Tenant, Buyer, or Seller flows.
+
+---
+
+# Replit Instructions — [Tenant@exp.com](mailto:Tenant@exp.com)
+
+## Hire a Landlord’s Agent → Property Condition Dropdown
+
+### Change Options (Landlord Only) + Safeguards
+
+## Goal
+
+Update the **Property Condition** dropdown options **ONLY** in the **Hire a Landlord’s Agent** listing flow (create, edit, drafts, submit) so it uses the following **exact** options:
+
+### ✅ Required Options (Exact Text — Must Match)
+
+1. **New Construction**
+2. **No updates needed: Completely updated**
+3. **Semi-updated: Needs minor updates**
+4. **Not updated: Requires a complete update**
+
+### ❌ Must NOT Appear (Landlord)
+
+* Open to any type of property condition
+* Pre-Construction
+* Currently being built
+* Tear Down: Requires complete demolition and reconstruction
+* Any Tenant-style wording (preferences)
+
+---
+
+## SAFEGUARDS (Do Not Skip)
+
+1. **Do NOT modify** the shared/global property condition list if one exists.
+2. **Do NOT change** Tenant, Buyer, or Seller dropdown options, logic, tooltips, validation, or DB fields.
+3. **Do NOT rename** any database columns.
+4. **Do NOT run mass updates** on existing listings. (Existing saved values should remain valid.)
+5. Implement Landlord-only options via a **Landlord-specific options source** (constant/config/enum or method), used only by the Landlord Livewire component + Blade.
+
+---
+
+## Implementation Steps
+
+### Step 1 — Locate where “Property Condition” options are currently coming from (Landlord Flow)
+
+In the **Hire a Landlord’s Agent** create/edit UI, find the dropdown rendering for **Property Condition** and identify its source:
+
+* It may be hard-coded in the Blade view (`<option>…`)
+* Or coming from a shared config/enum helper (common cause of cross-role bleed)
+* Or coming from a DB table / seed list
+
+✅ Add a quick temporary comment in code (or log) to confirm the Landlord dropdown’s source before changing anything.
+
+---
+
+### Step 2 — Create a Landlord-only option list (DO NOT reuse Seller/Tenant list)
+
+Add a dedicated Landlord list in **one** of these safe locations (choose the pattern already used in your codebase):
+
+**Option A (Preferred): config/constants.php or config/dropdowns.php**
+
+```php
+'landlord_property_condition_options' => [
+  'New Construction',
+  'No updates needed: Completely updated',
+  'Semi-updated: Needs minor updates',
+  'Not updated: Requires a complete update',
+],
+```
+
+**Option B: Dedicated Enum / Class Constant**
+Create something like:
+
+* `app/Support/Dropdowns/LandlordDropdowns.php`
+* or an existing dropdown helper file
+
+Return:
+
+```php
+public static function propertyCondition(): array {
+  return [
+    'New Construction',
+    'No updates needed: Completely updated',
+    'Semi-updated: Needs minor updates',
+    'Not updated: Requires a complete update',
+  ];
+}
+```
+
+✅ **Important:** This must be **Landlord-only** and not referenced anywhere else.
+
+---
+
+### Step 3 — Wire Landlord UI to the Landlord-only list
+
+In the **Hire a Landlord’s Agent** Livewire component (create + edit), set the dropdown options variable to the new Landlord-only list.
+
+Example patterns (adjust to your code style):
+
+**If options are passed from the component:**
+
+```php
+public array $propertyConditionOptions = [];
+
+public function mount() {
+  $this->propertyConditionOptions = config('dropdowns.landlord_property_condition_options');
+}
+```
+
+**Blade example:**
+
+```php
+<select wire:model="property_condition">
+  <option value="">Select</option>
+  @foreach($propertyConditionOptions as $opt)
+    <option value="{{ $opt }}">{{ $opt }}</option>
+  @endforeach
+</select>
+```
+
+✅ Do this for:
+
+* **Create listing**
+* **Edit listing**
+* Any **Draft edit** screen that uses a separate component/view
+
+---
+
+### Step 4 — Validation: Landlord must validate against Landlord list only
+
+Update the Landlord flow validation rule so it allows **only** those 4 values **for landlord listings**, without impacting other flows:
+
+```php
+Rule::in(config('dropdowns.landlord_property_condition_options'))
+```
+
+✅ Keep the validation scoped **only** to the Landlord listing component(s).
+
+---
+
+### Step 5 — Backward Compatibility (Don’t break old saved drafts/listings)
+
+If Landlord listings were previously saved with “older” values (like “Pre-Construction”), do **not** wipe them.
+
+Implement one of these safe behaviors:
+
+**Preferred behavior:**
+
+* If saved value is not in the new list, still display it as the selected value (read-only option), and show a small notice like “Previously saved value — please re-select to update.”
+
+Implementation idea:
+
+* When rendering options, if `property_condition` exists and isn’t in the list, temporarily append it so the edit form doesn’t break:
+
+```php
+$options = config('dropdowns.landlord_property_condition_options');
+if ($this->property_condition && !in_array($this->property_condition, $options)) {
+  $options[] = $this->property_condition;
+}
+$this->propertyConditionOptions = $options;
+```
+
+✅ This prevents edit pages/drafts from breaking while still enforcing new selections going forward.
+
+---
+
+## Testing Checklist (Must Pass)
+
+### Landlord Flow ([Tenant@exp.com](mailto:Tenant@exp.com) → Hire a Landlord Agent)
+
+* [ ] Create listing shows **only** the 4 options above
+* [ ] Save Draft preserves selection
+* [ ] Edit Draft preserves selection
+* [ ] Submit works
+* [ ] Edit submitted listing preserves selection
+* [ ] No console errors / no validation errors when correct value selected
+
+### Non-Landlord Regression (Must NOT Change)
+
+* [ ] Hire a Tenant listing Property Condition unchanged
+* [ ] Hire a Buyer listing Property Condition unchanged
+* [ ] Hire a Seller listing Property Condition unchanged
+* [ ] Any other role flow using “Property Condition” remains exactly as before
+
+---
+
+## Final Acceptance Requirement
+
+✅ Only **Hire a Landlord’s Agent** is updated.
+✅ Tenant/Buyer/Seller are untouched.
+✅ Draft/edit/submit all work.
+✅ No shared dropdown list was modified.
+
+---
+
+If you want, paste me a screenshot of **where the Landlord Property Condition dropdown appears (tab + section)** and I’ll tailor the instructions to match your exact UI placement and behavior (single-select vs multi-select), but the above is already safe to hand to Replit as-is.
