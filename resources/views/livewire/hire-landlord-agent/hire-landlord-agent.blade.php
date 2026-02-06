@@ -2660,9 +2660,11 @@
     </script>
     <script>
         document.addEventListener('livewire:load', function() {
-            const draftModal = new bootstrap.Modal(document.getElementById('draftModal'));
-            draftModal.show();
-
+            var draftEl = document.getElementById('draftModal');
+            if (draftEl) {
+                var draftModal = new bootstrap.Modal(draftEl);
+                draftModal.show();
+            }
         });
     </script>
 
