@@ -12,7 +12,7 @@
 
         <div class="mt-2">
             <div class="input-group">
-
+                <span class="input-group-text"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></span>
                 <input type="number" wire:model.lazy="expansion_commission_percentage" class="form-control"
                     placeholder="Enter percentage of original commission for expansion (e.g., 50)">
                 <span class="input-group-text">%</span>
