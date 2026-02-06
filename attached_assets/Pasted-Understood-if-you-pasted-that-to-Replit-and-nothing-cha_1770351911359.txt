@@ -1,0 +1,235 @@
+Understood — if you pasted that to Replit and **nothing changed**, it’s usually because the instructions weren’t “surgical” enough (too many possible table/field/component guesses), so they didn’t touch the right files, or they only *looked* and didn’t implement.
+
+Here’s a **more developer-proof, file/action checklist** you can send that forces them to (1) **prove where the bug is** and (2) **commit specific code changes**. It’s still **Landlord-only** and includes **hard safeguards**.
+
+---
+
+# Replit Instructions (V2 — Must Implement, Not Investigate)
+
+## Hire a Landlord Drafts Not Showing + Draft Fields Not Restoring
+
+### Login Example
+
+* **[tenant@exp.com](mailto:tenant@exp.com)**
+
+### Applies To
+
+* **Hire a Landlord’s Agent** only
+* **Residential + Commercial**
+
+### Must NOT Affect
+
+* Tenant / Buyer / Seller drafts, listings, save logic, or UI
+* DB schema changes (no renames/drops)
+
+---
+
+# PART 1 — Fix “Only 2 drafts showing”
+
+## 1) Add a temporary, one-time debug proof (required)
+
+**Goal:** prove the drafts exist + prove what query is used to display drafts.
+
+### A) In the code that renders “Saved Drafts” (Landlord section)
+
+Add temporary logging:
+
+* Count of landlord drafts returned
+* The exact filters used (status/is_draft/submitted flags)
+* The sort + limit/pagination value
+* The user_id used
+
+✅ This must be logged when [tenant@exp.com](mailto:tenant@exp.com) loads Saved Drafts.
+
+**Safeguard:** keep logs behind `app()->environment('local')` or a `config('app.debug')` gate.
+
+### B) In the Landlord Save Draft handler
+
+Log:
+
+* Draft ID saved
+* status/is_draft/submitted flags saved
+* user_id
+* property_type
+* updated_at
+
+This makes it impossible for them to claim it saved “somewhere else”.
+
+---
+
+## 2) Hard requirement: Saved Drafts must not have any hidden limits
+
+In the drafts query code, search for:
+
+* `take(2)`
+* `limit(2)`
+* `paginate(2)`
+* `->slice(0,2)`
+* UI logic like “show first 2 only”
+* Alpine/JS rendering that hides after 2
+
+✅ Remove Landlord-only draft limiting if it exists.
+
+**Safeguard:** if there is a limit, it must be at least 25 for landlord drafts or follow the site standard.
+
+---
+
+## 3) Hard requirement: Landlord drafts query must use OR logic (not AND)
+
+For landlord drafts, return records where:
+
+* `status = 'draft'` **OR**
+* `is_draft = 1` **OR**
+* (`submitted_at IS NULL` AND `is_submitted = 0`) *(only if those fields exist)*
+
+Also ensure:
+
+* `user_id = auth()->id()`
+* `deleted_at IS NULL` unless intentionally including trashed
+
+**Safeguard:** apply ONLY inside landlord draft fetch. Do not change other listing types.
+
+---
+
+## 4) Soft delete restore (only if applicable)
+
+If landlord drafts are soft deleted, confirm whether the missing ones have `deleted_at` set.
+
+✅ If yes, restore ONLY those drafts for [tenant@exp.com](mailto:tenant@exp.com) created/updated today:
+
+* set deleted_at = null for those IDs only
+
+**Safeguard:** must select IDs first and only restore those specific rows.
+
+---
+
+# PART 2 — Fix “Draft fields not saving/restoring when opening a landlord draft”
+
+When opening a saved landlord draft, these do not persist:
+
+### For BOTH Residential + Commercial
+
+* City, County, State, Zip do not save
+* Appliances Included: Other text not restored
+* Desired Lease Term: Other text not restored
+* Personal photo not restored
+
+### Residential ONLY
+
+* Landlord’s Broker Lease Fee not restored
+* Rent Includes: Other text not restored
+
+### Commercial ONLY
+
+* Tenant Pays + Owner Pays: Other text not restored
+* Terms of Lease not restored
+
+---
+
+## 5) REQUIRED: Fix must be done in 2 places (Landlord only)
+
+### A) Save Draft
+
+In landlord `saveDraft()`:
+
+* explicitly persist every listed field (no “it’s already in $data” assumptions)
+
+### B) Draft Load
+
+In landlord `mount($id)` / `loadDraft($id)` / edit initializer:
+
+* explicitly assign every listed field back into Livewire state
+
+**This is the most common reason “Other” inputs don’t reappear**: the DB has the value, but Livewire doesn’t repopulate the `*_other` property.
+
+---
+
+## 6) REQUIRED: Cast all landlord multi-select fields to array (Landlord model only)
+
+In the Landlord model add/verify:
+
+* appliances_included => array
+* rent_includes => array
+* tenant_pays => array
+* owner_pays => array
+* (any other landlord multi-select fields used in conditions)
+
+Without casts, `in_array('Other', …)` fails after draft reload, and the input won’t show.
+
+**Safeguard:** only update Landlord model casts.
+
+---
+
+## 7) Personal photo draft fix (Landlord only)
+
+Drafts can’t restore Livewire’s temporary upload object. So:
+
+✅ Required approach:
+
+* On saveDraft: store the upload to disk and save `personal_photo_path` in DB
+* On draft load: set `$this->personal_photo_path` and render preview via Storage URL
+* Never wipe path on draft save unless user explicitly deletes photo
+
+**Safeguard:** do not change photo logic in other flows.
+
+---
+
+## 8) Stop “defaults” from wiping loaded draft values
+
+In Landlord Livewire component, check for default setters like:
+
+* `$this->state = 'FL'`
+* `$this->city = null`
+* `$this->appliances_included = []`
+
+✅ Required:
+
+* defaults run ONLY on new listing create
+* NOT when `$id` exists and draft is being loaded
+
+---
+
+# PART 3 — Deliverable requirement (so you know they actually did work)
+
+## 9) Replit must provide a “Changed Files” list
+
+They must reply with:
+
+1. File paths changed
+2. Which functions changed (saveDraft, mount/load)
+3. What fields were added
+4. Screenshot showing more than 2 landlord drafts visible
+5. Video/gif or screenshot proving a draft reload keeps “Other” values + city/county/state/zip + broker lease fee + photo preview
+
+No “we investigated” updates — only proof.
+
+---
+
+# Copy/Paste Message to Replit (Use This)
+
+**Send exactly:**
+
+> “Nothing was implemented from prior instructions. I need an implementation-only fix with proof for Hire a Landlord drafts ([tenant@exp.com](mailto:tenant@exp.com)). Issue 1: Saved Drafts shows only 2 landlord drafts even though more were saved today. You must locate the landlord drafts query used for the Saved Drafts UI, remove any limit/take/paginate(2), and apply landlord-only draft detection using OR logic (status='draft' OR is_draft=1 OR (submitted_at is null AND is_submitted=0 if fields exist)). Add temporary debug logs to prove the query result count for [tenant@exp.com](mailto:tenant@exp.com) and the exact filters used, then remove logs after confirming.
+> Issue 2: When opening a landlord draft, City/County/State/Zip do not persist; Appliances Included Other text, Desired Lease Term Other text, and Personal Photo do not persist. Residential-only: Landlord’s Broker Lease Fee and Rent Includes Other text do not persist. Commercial-only: Tenant Pays/Owner Pays Other text and Terms of Lease do not persist. Fix must be in landlord saveDraft() AND landlord draft-load initializer (mount/load). Add landlord-model casts for multi-select JSON arrays. For Personal Photo, store path on draft save and render preview from Storage URL on reload.
+> Provide a list of changed files + screenshots proving: (a) more than 2 landlord drafts show, (b) opening a draft restores all fields listed, including Other inputs and photo preview.”
+
+---
+
+## Why this version works
+
+It forces them to:
+
+* touch the **actual saved drafts query**
+* remove any hidden `limit(2)` behavior
+* fix the exact Livewire save/load mismatch that causes “Other” fields to disappear
+* prove it with changed files + screenshots
+
+---
+
+If you want, paste **one** of these and I’ll tailor the message to your exact codebase structure:
+
+* the URL/route of your “Saved Drafts” page, OR
+* the name of the Livewire component you see in the landlord form (top of the file), OR
+* a screenshot of the DB columns for `landlord_agent_auctions` (column names only)
+
+But even without that, the instructions above are specific enough that a competent Replit dev can’t dodge them.

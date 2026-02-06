@@ -377,6 +377,10 @@ class LandLordAgentAuction extends Component
     public $highlightedCountyIndex = -1;
     public $highlightedStateIndex = -1;
     public $highlightedAddressIndex = -1;
+    public $countyFieldVisible = true;
+    public $stateFieldVisible = false;
+    public $cityFieldVisible = false;
+    public $zipCodeFieldVisible = false;
     public $fees = [];
 
 
@@ -1364,6 +1368,11 @@ class LandLordAgentAuction extends Component
             $this->property_county = $auction->get->property_county ?? null;
             $this->property_state = $auction->get->property_state ?? null;
             $this->property_zip = $auction->get->property_zip ?? null;
+
+            $this->cityFieldVisible = !empty($this->cities);
+            $this->countyFieldVisible = !empty($this->counties);
+            $this->stateFieldVisible = !empty($this->state);
+            $this->zipCodeFieldVisible = !empty($this->zipCodes);
             // Property details
 
             $raw = $auction->get->property_items ?? null;
