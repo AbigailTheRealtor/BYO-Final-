@@ -63,7 +63,7 @@ class LandLordAgentAuction extends Component
     public $lease_amount_frequency = '';
     public $desired_rental_amount = '';
     public $desired_rental_amount_tenant = '';
-    public $desired_lease_length = '';
+    public $desired_lease_length = [];
     public $rent_includes = []; // Residential only
     public $terms_of_lease = []; // Commercial only
     public $tenant_pays = []; // Commercial only
@@ -80,7 +80,7 @@ class LandLordAgentAuction extends Component
 
     // Properties
     public $maximum_budget = '';
-    public $offered_financing = '';
+    public $offered_financing = [];
     public $other_financing = '';
     public $cash_budget = '';
     public $pre_approved = '';
@@ -158,7 +158,7 @@ class LandLordAgentAuction extends Component
     public $property_criteria = '';
     public $unit_size = '';
     public $unit_size_other = '';
-    public $appliances = '';
+    public $appliances = [];
     public $appliances_other = '';
 
     public $leasing_55_plus = '';
@@ -471,6 +471,13 @@ class LandLordAgentAuction extends Component
     public $other_appliances = '';
     public $tenant_pays_other = '';
     public $owner_pays_other = '';
+
+    // Visibility flags for "Other" text fields
+    public $is_other_tenant_pay_visible = false;
+    public $is_other_owner_pays_visible = false;
+    public $is_rent_include_visible = false;
+    public $is_other_appliances_visible = false;
+    public $showOtherAppliances = false;
 
     // Landlord Broker Lease Fee fields
     public $landlord_broker_purchase_price = '';
@@ -825,10 +832,21 @@ class LandLordAgentAuction extends Component
         // loadDraft() will overwrite this with the saved value if loading a draft
         $this->listing_date = now()->format('Y-m-d');
 
-        // Check for existing drafts
-        $this->hasDrafts = HirelandLordAgentAuction::where('user_id', Auth::id())
-            ->where('is_draft', true)
-            ->exists();
+        // Check for existing drafts using OR logic
+        $draftCount = HirelandLordAgentAuction::where('user_id', Auth::id())
+            ->where(function ($query) {
+                $query->where('is_draft', true)
+                      ->orWhereNull('is_draft');
+            })
+            ->count();
+        $this->hasDrafts = $draftCount > 0;
+
+        \Log::info('[LANDLORD DRAFT CHECK] mount()', [
+            'user_id' => Auth::id(),
+            'draft_count' => $draftCount,
+            'hasDrafts' => $this->hasDrafts,
+            'listingId_param' => $listingId,
+        ]);
 
         if ($listingId) {
             $this->loadDraft($listingId);
@@ -836,22 +854,29 @@ class LandLordAgentAuction extends Component
     }
     public function startNew()
     {
-        // Reset all properties to their initial state
         $this->resetExcept(['hasDrafts', 'service_type', 'user_type']);
-
-        // Re-initialize necessary properties
         $this->addService();
-
-        // Clear the listing ID
         $this->listingId = null;
         $this->isDraft = false;
     }
     public function getDrafts()
     {
-        return HirelandLordAgentAuction::where('user_id', Auth::id())
-            ->where('is_draft', true)
+        $drafts = HirelandLordAgentAuction::where('user_id', Auth::id())
+            ->where(function ($query) {
+                $query->where('is_draft', true)
+                      ->orWhereNull('is_draft');
+            })
             ->latest()
             ->get();
+
+        \Log::info('[LANDLORD getDrafts]', [
+            'user_id' => Auth::id(),
+            'total_drafts_returned' => $drafts->count(),
+            'draft_ids' => $drafts->pluck('id')->toArray(),
+            'draft_titles' => $drafts->pluck('title')->toArray(),
+        ]);
+
+        return $drafts;
     }
     public function updatedFees()
     {
@@ -1352,17 +1377,11 @@ class LandLordAgentAuction extends Component
             $this->auction_time = $auction->get->auction_time ?? null;
 
             $this->state = $auction->get->state ?? null;
-            $raw = $auction->get->zipCodes ?? null;
-            $this->zipCodes = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
+            $this->zipCodes = $this->ensureArray($auction->get->zipCodes ?? null);
             $this->zip_code = $this->zipCodes[0] ?? ($auction->get->zip_code ?? '');
             $this->property_type = $auction->get->property_type ?? null;
-            $raw = $auction->get->cities ?? null;
-            $this->cities = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
-
-            $raw = $auction->get->counties ?? null;
-            $this->counties = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
-            $raw = $auction->get->zipCodes ?? null;
-            $this->zipCodes = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
+            $this->cities = $this->ensureArray($auction->get->cities ?? null);
+            $this->counties = $this->ensureArray($auction->get->counties ?? null);
 
             $this->property_city = $auction->get->property_city ?? null;
             $this->property_county = $auction->get->property_county ?? null;
@@ -1375,8 +1394,7 @@ class LandLordAgentAuction extends Component
             $this->zipCodeFieldVisible = !empty($this->zipCodes);
             // Property details
 
-            $raw = $auction->get->property_items ?? null;
-            $this->property_items = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
+            $this->property_items = $this->ensureArray($auction->get->property_items ?? null);
 
             $this->other_property_items = $auction->get->other_property_items ?? null;
             $this->condition_prop = $auction->get->condition_prop ?? null;
@@ -1396,8 +1414,7 @@ class LandLordAgentAuction extends Component
             $this->property_criteria = $auction->get->property_criteria ?? null;
             $this->unit_size = $auction->get->unit_size ?? null;
             $this->unit_size_other = $auction->get->unit_size_other ?? null;
-            $raw = $auction->get->appliances ?? null;
-            $this->appliances = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
+            $this->appliances = $this->ensureArray($auction->get->appliances ?? null);
             $this->appliances_other = $auction->get->appliances_other ?? null;
             $this->other_appliances = $auction->get->other_appliances ?? ($auction->get->appliances_other ?? null);
             $this->preferance_details = $auction->get->preferance_details ?? null;
@@ -1413,8 +1430,7 @@ class LandLordAgentAuction extends Component
 
             // Budget & Financing
             $this->maximum_budget = $auction->get->maximum_budget ?? null;
-            $raw = $auction->get->offered_financing ?? null;
-            $this->offered_financing = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
+            $this->offered_financing = $this->ensureArray($auction->get->offered_financing ?? null);
             $this->other_financing = $auction->get->other_financing ?? null;
             $this->cash_budget = $auction->get->cash_budget ?? null;
             $this->pre_approved = $auction->get->pre_approved ?? null;
@@ -1474,8 +1490,7 @@ class LandLordAgentAuction extends Component
 
             // Amenities and features
 
-            $raw = $auction->get->tenant_require ?? null;
-            $this->tenant_require = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
+            $this->tenant_require = $this->ensureArray($auction->get->tenant_require ?? null);
 
 
             $this->carport_needed = $auction->get->carport_needed ?? null;
@@ -1484,22 +1499,15 @@ class LandLordAgentAuction extends Component
             $this->occupant_types_tenant = $auction->get->occupant_types_tenant ?? null;
             $this->leasing_space_property = $auction->get->leasing_space_property ?? null;
             $this->lease_amount_frequency = $auction->get->lease_amount_frequency ?? null;
-            $raw = $auction->get->desired_lease_length ?? null;
-            $this->desired_lease_length = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
+            $this->desired_lease_length = $this->ensureArray($auction->get->desired_lease_length ?? null);
             $this->desired_rental_amount = $auction->get->desired_rental_amount ?? null;
             $this->desired_rental_amount_tenant = $auction->get->desired_rental_amount_tenant ?? null;
 
 
-            $raw = $auction->get->rent_includes ?? null;
-            $this->rent_includes = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
-
-            $raw = $auction->get->terms_of_lease ?? null;
-            $this->terms_of_lease = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
-
-            $raw = $auction->get->tenant_pays ?? null;
-            $this->tenant_pays = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
-            $raw = $auction->get->owner_pays ?? null;
-            $this->owner_pays = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
+            $this->rent_includes = $this->ensureArray($auction->get->rent_includes ?? null);
+            $this->terms_of_lease = $this->ensureArray($auction->get->terms_of_lease ?? null);
+            $this->tenant_pays = $this->ensureArray($auction->get->tenant_pays ?? null);
+            $this->owner_pays = $this->ensureArray($auction->get->owner_pays ?? null);
             $this->other_tenant_pays = $auction->get->other_tenant_pays ?? null;
             $this->other_owner_pays = $auction->get->other_owner_pays ?? null;
             $this->tenant_pays_other = $auction->get->tenant_pays_other ?? null;
@@ -1507,6 +1515,12 @@ class LandLordAgentAuction extends Component
             $this->custom_lease_term = $auction->get->custom_lease_term ?? null;
             $this->other_lease_term = $auction->get->other_lease_term ?? null;
             $this->other_rent_include = $auction->get->other_rent_include ?? null;
+
+            $this->is_other_tenant_pay_visible = in_array('Other', $this->tenant_pays);
+            $this->is_other_owner_pays_visible = in_array('Other', $this->owner_pays);
+            $this->is_rent_include_visible = in_array('Other', $this->rent_includes);
+            $this->is_other_appliances_visible = in_array('Other', $this->appliances);
+            $this->showOtherAppliances = in_array('Other', $this->appliances);
 
 
             $this->garage_needed = $auction->get->garage_needed ?? null;
@@ -1516,14 +1530,12 @@ class LandLordAgentAuction extends Component
             $this->other_parking_space_wrapper = $auction->get->other_parking_space_wrapper ?? null;
             $this->pool_needed = $auction->get->pool_needed ?? null;
 
-            $raw = $auction->get->pool_type ?? null;
-            $this->pool_type = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
+            $this->pool_type = $this->ensureArray($auction->get->pool_type ?? null);
 
 
 
 
-            $raw = $auction->get->view_preference ?? null;
-            $this->view_preference = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
+            $this->view_preference = $this->ensureArray($auction->get->view_preference ?? null);
 
 
 
@@ -1563,8 +1575,7 @@ class LandLordAgentAuction extends Component
             $this->included_storage_space = $auction->get->included_storage_space ?? null;
             $this->storage_space = $auction->get->storage_space ?? null;
 
-            $raw = $auction->get->non_negotiable_amenities ?? null;
-            $this->non_negotiable_amenities = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
+            $this->non_negotiable_amenities = $this->ensureArray($auction->get->non_negotiable_amenities ?? null);
 
             $this->other_non_negotiable_amenities = $auction->get->other_non_negotiable_amenities ?? null;
             $this->budget = $auction->get->budget ?? null;
@@ -1572,8 +1583,7 @@ class LandLordAgentAuction extends Component
             // Lease terms
             $this->additional_details = $auction->get->additional_details ?? null;
 
-            $raw = $auction->get->lease_for ?? null;
-            $this->lease_for = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
+            $this->lease_for = $this->ensureArray($auction->get->lease_for ?? null);
 
 
             $this->other_lease_for = $auction->get->other_lease_for ?? null;
@@ -1588,8 +1598,7 @@ class LandLordAgentAuction extends Component
             $this->weight_of_pets = $auction->get->weight_of_pets ?? null;
 
 
-            $raw = $auction->get->credit_scroe_rating ?? null;
-            $this->credit_scroe_rating = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
+            $this->credit_scroe_rating = $this->ensureArray($auction->get->credit_scroe_rating ?? null);
 
             $this->prior_eviction = $auction->get->prior_eviction ?? null;
             $this->eviction_explanation = $auction->get->eviction_explanation ?? null;
@@ -1600,15 +1609,13 @@ class LandLordAgentAuction extends Component
 
             // Services
 
-            $raw = $auction->get->services ?? null;
-            $this->services = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
+            $this->services = $this->ensureArray($auction->get->services ?? null);
 
 
             $this->other_services = $auction->get->other_services ?? null;
 
 
-            $raw = $auction->get->flat_fee_services ?? null;
-            $this->flat_fee_services = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
+            $this->flat_fee_services = $this->ensureArray($auction->get->flat_fee_services ?? null);
             $this->additional_details = $auction->get->additional_details ?? null;
 
             // Broker compensation
@@ -1784,8 +1791,7 @@ class LandLordAgentAuction extends Component
             $this->sqft_heated_source = $auction->get->sqft_heated_source ?? null;
             $this->meeting_Preference = $auction->get->meeting_Preference ?? null;
 
-            $raw = $auction->get->photo_enhancements ?? null;
-            $this->photo_enhancements = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
+            $this->photo_enhancements = $this->ensureArray($auction->get->photo_enhancements ?? null);
 
             $this->custom_enhancement = $auction->get->custom_enhancement ?? null;
             $this->has_breed_restrictions = $auction->get->has_breed_restrictions ?? null;
@@ -1811,18 +1817,15 @@ class LandLordAgentAuction extends Component
 
             // Custom services
 
-            $raw = $auction->get->custom_services ?? null;
-            $this->custom_services = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
+            $this->custom_services = $this->ensureArray($auction->get->custom_services ?? null);
 
             $this->total_marketing_fee = $auction->get->total_marketing_fee ?? null;
             $this->total_flat_fee = $auction->get->total_flat_fee ?? null;
 
             // Flat fee agent (limited service) tenant
 
-            $raw = $auction->get->fees ?? null;
-            $this->fees = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
-            $raw = $auction->get->enable ?? null;
-            $this->enable = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
+            $this->fees = $this->ensureArray($auction->get->fees ?? null);
+            $this->enable = $this->ensureArray($auction->get->enable ?? null);
 
             $this->showings_count = $auction->get->showings_count ?? null;
             $this->attend_showings_count = $auction->get->attend_showings_count ?? null;
@@ -1844,16 +1847,43 @@ class LandLordAgentAuction extends Component
             //     }
             // }
             
-            // Dispatch browser event to sync select values after draft loads
-            $this->dispatchBrowserEvent('draftLoaded');
+            $this->dispatchBrowserEvent('draftLoaded', [
+                'appliances' => $this->ensureArray($this->appliances),
+                'offered_financing' => $this->ensureArray($this->offered_financing),
+                'tenant_pays' => $this->ensureArray($this->tenant_pays),
+                'owner_pays' => $this->ensureArray($this->owner_pays),
+                'terms_of_lease' => $this->ensureArray($this->terms_of_lease),
+                'rent_includes' => $this->ensureArray($this->rent_includes),
+                'desired_lease_length' => $this->ensureArray($this->desired_lease_length),
+                'view_preference' => $this->ensureArray($this->view_preference),
+                'non_negotiable_amenities' => $this->ensureArray($this->non_negotiable_amenities),
+                'lease_for' => $this->ensureArray($this->lease_for),
+                'credit_scroe_rating' => $this->ensureArray($this->credit_scroe_rating),
+                'services' => $this->ensureArray($this->services),
+                'pool_type' => $this->ensureArray($this->pool_type),
+                'photo_enhancements' => $this->ensureArray($this->photo_enhancements),
+                'property_items' => $this->ensureArray($this->property_items),
+                'tenant_require' => $this->ensureArray($this->tenant_require),
+            ]);
         }
+    }
+
+    protected function ensureArray($value)
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+        if (is_string($value) && $value !== '') {
+            $decoded = json_decode($value, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                return $decoded;
+            }
+        }
+        return [];
     }
 
     protected function saveAllMetadata($auction)
     {
-
-
-
         $auction->saveMeta('service_type', $this->service_type);
         $auction->saveMeta('user_type', $this->user_type);
         $auction->saveMeta('listing_status', $this->listing_status);
@@ -1865,11 +1895,11 @@ class LandLordAgentAuction extends Component
         $auction->saveMeta('auction_time', $this->auction_time);
 
         // Location Information
-        $auction->saveMeta('cities', json_encode($this->cities));
-        $auction->saveMeta('counties', json_encode($this->counties));
+        $auction->saveMeta('cities', json_encode($this->ensureArray($this->cities)));
+        $auction->saveMeta('counties', json_encode($this->ensureArray($this->counties)));
         $auction->saveMeta('state', $this->state);
         $auction->saveMeta('zip_code', $this->zip_code);
-        $auction->saveMeta('zipCodes', json_encode($this->zipCodes));
+        $auction->saveMeta('zipCodes', json_encode($this->ensureArray($this->zipCodes)));
         $auction->saveMeta('property_city', $this->property_city);
         $auction->saveMeta('property_county', $this->property_county);
         $auction->saveMeta('property_state', $this->property_state);
@@ -1877,7 +1907,7 @@ class LandLordAgentAuction extends Component
 
         // Property Details
         $auction->saveMeta('property_type', $this->property_type);
-        $auction->saveMeta('property_items', json_encode($this->property_items));
+        $auction->saveMeta('property_items', json_encode($this->ensureArray($this->property_items)));
         $auction->saveMeta('leasing_space', $this->leasing_space);
         $auction->saveMeta('other_property_items', $this->other_property_items);
         $auction->saveMeta('condition_prop', $this->condition_prop);
@@ -1896,7 +1926,7 @@ class LandLordAgentAuction extends Component
         $auction->saveMeta('property_criteria', $this->property_criteria);
         $auction->saveMeta('unit_size', $this->unit_size);
         $auction->saveMeta('unit_size_other', $this->unit_size_other);
-        $auction->saveMeta('appliances', $this->appliances);
+        $auction->saveMeta('appliances', json_encode($this->ensureArray($this->appliances)));
         $auction->saveMeta('appliances_other', $this->appliances_other);
         $auction->saveMeta('other_appliances', $this->other_appliances);
         $auction->saveMeta('preferance_details', $this->preferance_details);
@@ -1911,7 +1941,7 @@ class LandLordAgentAuction extends Component
 
         // Budget & Financing
         $auction->saveMeta('maximum_budget', $this->maximum_budget);
-        $auction->saveMeta('offered_financing', json_encode($this->offered_financing));
+        $auction->saveMeta('offered_financing', json_encode($this->ensureArray($this->offered_financing)));
         $auction->saveMeta('other_financing', $this->other_financing);
         $auction->saveMeta('cash_budget', $this->cash_budget);
         $auction->saveMeta('pre_approved', $this->pre_approved);
@@ -1970,20 +2000,20 @@ class LandLordAgentAuction extends Component
         $auction->saveMeta('cash_percentage_nft', $this->cash_percentage_nft);
 
         // Amenities and Features
-        $auction->saveMeta('tenant_require', json_encode($this->tenant_require));
+        $auction->saveMeta('tenant_require', json_encode($this->ensureArray($this->tenant_require)));
         $auction->saveMeta('carport_needed', $this->carport_needed);
         $auction->saveMeta('other_carport_needed', $this->other_carport_needed);
         $auction->saveMeta('occupant_types', $this->occupant_types);
         $auction->saveMeta('occupant_types_tenant', $this->occupant_types_tenant);
         $auction->saveMeta('leasing_space_property', $this->leasing_space_property);
         $auction->saveMeta('lease_amount_frequency', $this->lease_amount_frequency);
-        $auction->saveMeta('desired_lease_length', $this->desired_lease_length);
+        $auction->saveMeta('desired_lease_length', json_encode($this->ensureArray($this->desired_lease_length)));
         $auction->saveMeta('desired_rental_amount', $this->desired_rental_amount);
         $auction->saveMeta('desired_rental_amount_tenant', $this->desired_rental_amount_tenant);
-        $auction->saveMeta('rent_includes', json_encode($this->rent_includes));
-        $auction->saveMeta('terms_of_lease', json_encode($this->terms_of_lease));
-        $auction->saveMeta('tenant_pays', json_encode($this->tenant_pays));
-        $auction->saveMeta('owner_pays', json_encode($this->owner_pays));
+        $auction->saveMeta('rent_includes', json_encode($this->ensureArray($this->rent_includes)));
+        $auction->saveMeta('terms_of_lease', json_encode($this->ensureArray($this->terms_of_lease)));
+        $auction->saveMeta('tenant_pays', json_encode($this->ensureArray($this->tenant_pays)));
+        $auction->saveMeta('owner_pays', json_encode($this->ensureArray($this->owner_pays)));
         $auction->saveMeta('other_tenant_pays', $this->other_tenant_pays);
         $auction->saveMeta('other_owner_pays', $this->other_owner_pays);
         $auction->saveMeta('tenant_pays_other', $this->tenant_pays_other);
@@ -2000,8 +2030,8 @@ class LandLordAgentAuction extends Component
         $auction->saveMeta('garage_parking_spaces_option', $this->garage_parking_spaces_option);
         $auction->saveMeta('other_parking_space_wrapper', $this->other_parking_space_wrapper);
         $auction->saveMeta('pool_needed', $this->pool_needed);
-        $auction->saveMeta('pool_type', json_encode($this->pool_type));
-        $auction->saveMeta('view_preference', json_encode($this->view_preference));
+        $auction->saveMeta('pool_type', json_encode($this->ensureArray($this->pool_type)));
+        $auction->saveMeta('view_preference', json_encode($this->ensureArray($this->view_preference)));
         $auction->saveMeta('other_preferences', $this->other_preferences);
         $auction->saveMeta('real_estate_purchase', $this->real_estate_purchase);
         $auction->saveMeta('number_of_unit', $this->number_of_unit);
@@ -2039,12 +2069,12 @@ class LandLordAgentAuction extends Component
         $auction->saveMeta('storage_space', $this->storage_space);
 
         // Requirements
-        $auction->saveMeta('non_negotiable_amenities', json_encode($this->non_negotiable_amenities));
+        $auction->saveMeta('non_negotiable_amenities', json_encode($this->ensureArray($this->non_negotiable_amenities)));
         $auction->saveMeta('other_non_negotiable_amenities', $this->other_non_negotiable_amenities);
         $auction->saveMeta('budget', $this->budget);
 
         // Lease Terms
-        $auction->saveMeta('lease_for', json_encode($this->lease_for));
+        $auction->saveMeta('lease_for', json_encode($this->ensureArray($this->lease_for)));
         $auction->saveMeta('other_lease_for', $this->other_lease_for);
         $auction->saveMeta('lease_by', $this->lease_by);
         $auction->saveMeta('lease_date', $this->lease_date);
@@ -2055,7 +2085,7 @@ class LandLordAgentAuction extends Component
         $auction->saveMeta('breed_of_pets', $this->breed_of_pets);
         $auction->saveMeta('type_of_pets', $this->type_of_pets);
         $auction->saveMeta('weight_of_pets', $this->weight_of_pets);
-        $auction->saveMeta('credit_scroe_rating', json_encode($this->credit_scroe_rating));
+        $auction->saveMeta('credit_scroe_rating', json_encode($this->ensureArray($this->credit_scroe_rating)));
         $auction->saveMeta('prior_eviction', $this->prior_eviction);
         $auction->saveMeta('eviction_explanation', $this->eviction_explanation);
         $auction->saveMeta('prior_felony', $this->prior_felony);
@@ -2064,9 +2094,9 @@ class LandLordAgentAuction extends Component
         $auction->saveMeta('number_occupant', $this->number_occupant);
 
         // Services
-        $auction->saveMeta('services', json_encode($this->services));
+        $auction->saveMeta('services', json_encode($this->ensureArray($this->services)));
         $auction->saveMeta('other_services', $this->other_services);
-        $auction->saveMeta('flat_fee_services', json_encode($this->flat_fee_services));
+        $auction->saveMeta('flat_fee_services', json_encode($this->ensureArray($this->flat_fee_services)));
         $auction->saveMeta('additional_details', $this->additional_details);
 
         // Broker Compensation
@@ -2144,7 +2174,7 @@ class LandLordAgentAuction extends Component
         $auction->saveMeta('total_square_feet', $this->total_square_feet);
         $auction->saveMeta('sqft_heated_source', $this->sqft_heated_source);
         $auction->saveMeta('meeting_Preference', $this->meeting_Preference);
-        $auction->saveMeta('photo_enhancements', json_encode($this->photo_enhancements));
+        $auction->saveMeta('photo_enhancements', json_encode($this->ensureArray($this->photo_enhancements)));
         $auction->saveMeta('custom_enhancement', $this->custom_enhancement);
         $auction->saveMeta('has_breed_restrictions', $this->has_breed_restrictions);
         $auction->saveMeta('breed_restrictions', $this->breed_restrictions);
@@ -2271,14 +2301,14 @@ class LandLordAgentAuction extends Component
 
 
 
-        $auction->saveMeta('custom_services', json_encode($this->custom_services));
+        $auction->saveMeta('custom_services', json_encode($this->ensureArray($this->custom_services)));
         $auction->saveMeta('total_marketing_fee', $this->total_marketing_fee);
         $auction->saveMeta('total_flat_fee', $this->total_flat_fee);
 
 
         //Flat Fee Agent (Limited Service) Tenant
-        $auction->saveMeta('fees', json_encode($this->fees));
-        $auction->saveMeta('enable', json_encode($this->enable));
+        $auction->saveMeta('fees', json_encode($this->ensureArray($this->fees)));
+        $auction->saveMeta('enable', json_encode($this->ensureArray($this->enable)));
         $auction->saveMeta('showings_count', $this->showings_count);
         $auction->saveMeta('attend_showings_count', $this->attend_showings_count);
         $auction->saveMeta('virtual_tours_count', $this->virtual_tours_count);
@@ -2412,12 +2442,80 @@ class LandLordAgentAuction extends Component
                 ->delete();
 
             $this->hasDrafts = HirelandLordAgentAuction::where('user_id', Auth::id())
-                ->where('is_draft', true)
+                ->where(function ($query) {
+                    $query->where('is_draft', true)
+                          ->orWhereNull('is_draft');
+                })
                 ->exists();
 
             session()->flash('success', 'Draft deleted successfully.');
         } catch (\Exception $e) {
             session()->flash('error', 'Error deleting draft: ' . $e->getMessage());
+        }
+    }
+
+    public function updateTenantPays($selectedValues)
+    {
+        $selectedValues = $this->ensureArray($selectedValues);
+        if (in_array('Other', $selectedValues)) {
+            $this->is_other_tenant_pay_visible = true;
+        } else {
+            $this->is_other_tenant_pay_visible = false;
+            $this->other_tenant_pays = '';
+        }
+    }
+
+    public function updateOwnerPays($selectedValues)
+    {
+        $selectedValues = $this->ensureArray($selectedValues);
+        if (in_array('Other', $selectedValues)) {
+            $this->is_other_owner_pays_visible = true;
+        } else {
+            $this->is_other_owner_pays_visible = false;
+            $this->other_owner_pays = '';
+        }
+    }
+
+    public function updateRentIncludes($selectedValues)
+    {
+        $selectedValues = $this->ensureArray($selectedValues);
+        if (in_array('Other', $selectedValues)) {
+            $this->is_rent_include_visible = true;
+        } else {
+            $this->is_rent_include_visible = false;
+            $this->other_rent_include = '';
+        }
+    }
+
+    public function updateAppliances($selectedValues)
+    {
+        $selectedValues = $this->ensureArray($selectedValues);
+        if (in_array('Other', $selectedValues)) {
+            $this->is_other_appliances_visible = true;
+            $this->showOtherAppliances = true;
+        } else {
+            $this->is_other_appliances_visible = false;
+            $this->showOtherAppliances = false;
+            $this->other_appliances = '';
+        }
+    }
+
+    public function deletePhoto()
+    {
+        try {
+            if ($this->listingId) {
+                $auction = HirelandLordAgentAuction::find($this->listingId);
+                if ($auction) {
+                    if ($this->photo && is_string($this->photo)) {
+                        Storage::disk('public')->delete('auction/images/' . $this->photo);
+                    }
+                    $auction->deleteMeta('photo');
+                }
+            }
+            $this->photo = null;
+            session()->flash('success', 'Photo deleted successfully.');
+        } catch (\Exception $e) {
+            session()->flash('error', 'Error deleting photo: ' . $e->getMessage());
         }
     }
 

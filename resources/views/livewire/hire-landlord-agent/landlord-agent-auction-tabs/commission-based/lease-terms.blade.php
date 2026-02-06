@@ -861,7 +861,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <select wire:model="tenant_pays" class="tenant_pays form-control has-icon select2-multiple"
+            <select wire:model="tenant_pays" id="tenant_pays" class="tenant_pays form-control has-icon select2-multiple"
                 data-icon="fas fa-user input-icon2" multiple required>
                 @foreach ($tenantPays as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -898,7 +898,7 @@
 
         </span>
         <div class="input-cover">
-            <select wire:model="owner_pays" class="owner_pays form-control has-icon select2-multiple"
+            <select wire:model="owner_pays" id="owner_pays" class="owner_pays form-control has-icon select2-multiple"
                 data-icon="fas fa-user-tie input-icon2" multiple required>
                 @foreach ($ownerPays as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -1069,7 +1069,7 @@
 
         </span>
         <div class="input-cover">
-            <select wire:model="rent_includes" class="form-control has-icon select2-multiple rent_includes" multiple
+            <select wire:model="rent_includes" id="rent_includes" class="form-control has-icon select2-multiple rent_includes" multiple
                 data-icon="fas fa-home input-icon2" wire:ignore required>
                 @foreach ($rent_includes as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>

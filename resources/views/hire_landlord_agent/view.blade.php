@@ -950,51 +950,68 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endif
 
         @php
-        $tenantPays = is_string($auction->get->tenant_pays)
-        ? json_decode($auction->get->tenant_pays, true)
-        : $auction->get->tenant_pays;
+        $rawTenantPays = $auction->get->tenant_pays ?? null;
+        $tenantPays = is_string($rawTenantPays)
+        ? (json_decode($rawTenantPays, true) ?? [])
+        : (is_array($rawTenantPays) ? $rawTenantPays : []);
 
-        $ownerPays = is_string($auction->get->owner_pays)
-        ? json_decode($auction->get->owner_pays, true)
-        : $auction->get->owner_pays;
+        $rawOwnerPays = $auction->get->owner_pays ?? null;
+        $ownerPays = is_string($rawOwnerPays)
+        ? (json_decode($rawOwnerPays, true) ?? [])
+        : (is_array($rawOwnerPays) ? $rawOwnerPays : []);
 
-        $termsOfLease = is_string($auction->get->terms_of_lease)
-        ? json_decode($auction->get->terms_of_lease, true)
-        : $auction->get->terms_of_lease;
+        $rawTermsOfLease = $auction->get->terms_of_lease ?? null;
+        $termsOfLease = is_string($rawTermsOfLease)
+        ? (json_decode($rawTermsOfLease, true) ?? [])
+        : (is_array($rawTermsOfLease) ? $rawTermsOfLease : []);
         @endphp
 
 
-        @if (count($tenantPays) > 0)
+        @if (count($tenantPays) > 0 || !empty($auction->get->other_tenant_pays))
         <div class="col-md-12 col-12 pt-2 fw-bold">
              Tenant Pays:
             <ul>
                 @foreach ($tenantPays as $tenant_pay)
-                <li style="font-size: 16px;">{{ $tenant_pay }}</li>
+                    @if ($tenant_pay !== 'Other')
+                    <li style="font-size: 16px;">{{ $tenant_pay }}</li>
+                    @endif
                 @endforeach
+                @if (!empty($auction->get->other_tenant_pays))
+                <li style="font-size: 16px;">{{ $auction->get->other_tenant_pays }}</li>
+                @endif
             </ul>
         </div>
-
         @endif
 
 
-        @if (!empty($ownerPays))
+        @if (!empty($ownerPays) || !empty($auction->get->other_owner_pays))
         <div class="col-md-12 col-12 pt-2 fw-bold">
              Owner Pays:
             <ul>
                 @foreach ($ownerPays as $owner_pay)
-                <li style="font-size: 16px;">{{ $owner_pay }}</li>
+                    @if ($owner_pay !== 'Other')
+                    <li style="font-size: 16px;">{{ $owner_pay }}</li>
+                    @endif
                 @endforeach
+                @if (!empty($auction->get->other_owner_pays))
+                <li style="font-size: 16px;">{{ $auction->get->other_owner_pays }}</li>
+                @endif
             </ul>
         </div>
         @endif
 
-        @if (!empty($termsOfLease))
+        @if (!empty($termsOfLease) || !empty($auction->get->custom_lease_term))
         <div class="col-md-12 col-12 pt-2 fw-bold">
              Terms of Lease:
             <ul>
                 @foreach ($termsOfLease as $lease)
-                <li style="font-size: 16px;">{{ $lease }}</li>
+                    @if ($lease !== 'Other')
+                    <li style="font-size: 16px;">{{ $lease }}</li>
+                    @endif
                 @endforeach
+                @if (!empty($auction->get->custom_lease_term))
+                <li style="font-size: 16px;">{{ $auction->get->custom_lease_term }}</li>
+                @endif
             </ul>
         </div>
         @endif

@@ -1206,15 +1206,43 @@
             });
         }
         
-        // Listen for draftLoaded browser event
-        window.addEventListener('draftLoaded', function() {
-            console.log('[DraftLoaded] Event received - syncing select values');
+        window.addEventListener('draftLoaded', function(event) {
+            console.log('[DraftLoaded] Event received - syncing select values', event.detail);
             setTimeout(function() {
+                var data = event.detail || {};
+                var select2Fields = {
+                    'appliances': data.appliances || [],
+                    'offered_financing': data.offered_financing || [],
+                    'tenant_pays': data.tenant_pays || [],
+                    'owner_pays': data.owner_pays || [],
+                    'terms_of_lease': data.terms_of_lease || [],
+                    'rent_includes': data.rent_includes || [],
+                    'desired_lease_length': data.desired_lease_length || [],
+                    'view_preference': data.view_preference || [],
+                    'non_negotiable_amenities': data.non_negotiable_amenities || [],
+                    'lease_for': data.lease_for || [],
+                    'credit_scroe_rating': data.credit_scroe_rating || [],
+                    'services': data.services || [],
+                    'pool_type': data.pool_type || [],
+                    'photo_enhancements': data.photo_enhancements || [],
+                    'property_items': data.property_items || [],
+                    'tenant_require': data.tenant_require || [],
+                };
+                Object.keys(select2Fields).forEach(function(fieldName) {
+                    var values = select2Fields[fieldName];
+                    if (values && values.length > 0) {
+                        var selectEl = document.querySelector('select[wire\\:model="' + fieldName + '"]');
+                        if (selectEl && $(selectEl).hasClass('select2-multiple')) {
+                            console.log('[DraftLoaded] Hydrating Select2: ' + fieldName + ' with ' + values.length + ' values');
+                            $(selectEl).val(values).trigger('change');
+                        }
+                    }
+                });
                 syncSelectValues();
                 if (typeof window.updateSaveButton === 'function') {
                     window.updateSaveButton();
                 }
-            }, 100);
+            }, 200);
         });
 
         // Listen for force-redirect event to ensure redirect works after submit
@@ -1744,6 +1772,25 @@
             });
 
 
+            // ///// appliances
+            $('#appliances').select2({
+                placeholder: "Select appliances",
+                allowClear: true,
+            });
+
+            $('#appliances').on('change', function(e) {
+                let selectedValues = $(this).val() || [];
+                @this.set('appliances', selectedValues);
+                @this.call('updateAppliances', selectedValues);
+            });
+
+            Livewire.hook('message.processed', (message, component) => {
+                $('#appliances').select2({
+                    placeholder: "Select appliances",
+                    allowClear: true,
+                });
+            });
+
             // ///// rent_includes
             $('#rent_includes').select2({
                 placeholder: "Select rent",
@@ -1752,8 +1799,9 @@
 
             // Update Livewire property on change
             $('#rent_includes').on('change', function(e) {
-                let selectedValues = $(this).val();
+                let selectedValues = $(this).val() || [];
                 @this.set('rent_includes', selectedValues);
+                @this.call('updateRentIncludes', selectedValues);
             });
 
             // Reinitialize Select2 after Livewire update
@@ -1808,8 +1856,9 @@
 
             // Update Livewire property on change
             $('#tenant_pays').on('change', function(e) {
-                let selectedValues = $(this).val();
+                let selectedValues = $(this).val() || [];
                 @this.set('tenant_pays', selectedValues);
+                @this.call('updateTenantPays', selectedValues);
             });
 
             // Reinitialize Select2 after Livewire update
@@ -1835,8 +1884,9 @@
 
             // Update Livewire property on change
             $('#owner_pays').on('change', function(e) {
-                let selectedValues = $(this).val();
+                let selectedValues = $(this).val() || [];
                 @this.set('owner_pays', selectedValues);
+                @this.call('updateOwnerPays', selectedValues);
             });
 
             // Reinitialize Select2 after Livewire update
