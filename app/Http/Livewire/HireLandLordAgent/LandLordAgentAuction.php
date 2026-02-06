@@ -1396,7 +1396,8 @@ class LandLordAgentAuction extends Component
             $this->property_criteria = $auction->get->property_criteria ?? null;
             $this->unit_size = $auction->get->unit_size ?? null;
             $this->unit_size_other = $auction->get->unit_size_other ?? null;
-            $this->appliances = $auction->get->appliances ?? null;
+            $raw = $auction->get->appliances ?? null;
+            $this->appliances = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
             $this->appliances_other = $auction->get->appliances_other ?? null;
             $this->other_appliances = $auction->get->other_appliances ?? ($auction->get->appliances_other ?? null);
             $this->preferance_details = $auction->get->preferance_details ?? null;
@@ -1483,7 +1484,8 @@ class LandLordAgentAuction extends Component
             $this->occupant_types_tenant = $auction->get->occupant_types_tenant ?? null;
             $this->leasing_space_property = $auction->get->leasing_space_property ?? null;
             $this->lease_amount_frequency = $auction->get->lease_amount_frequency ?? null;
-            $this->desired_lease_length = $auction->get->desired_lease_length ?? null;
+            $raw = $auction->get->desired_lease_length ?? null;
+            $this->desired_lease_length = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
             $this->desired_rental_amount = $auction->get->desired_rental_amount ?? null;
             $this->desired_rental_amount_tenant = $auction->get->desired_rental_amount_tenant ?? null;
 

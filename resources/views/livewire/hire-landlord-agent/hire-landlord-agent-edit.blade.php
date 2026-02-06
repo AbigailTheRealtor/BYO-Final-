@@ -1095,6 +1095,42 @@ $tenantPays = [
             Livewire.emit('serviceTypeChanged', serviceType);
         }
 
+        function syncSelectValues() {
+            const wireEl = document.querySelector('[wire\\:id]');
+            if (!wireEl || typeof Livewire === 'undefined') return;
+            const component = Livewire.find(wireEl.getAttribute('wire:id'));
+            if (!component) return;
+            document.querySelectorAll('select[wire\\:model]').forEach(select => {
+                const wireModel = select.getAttribute('wire:model');
+                if (wireModel && component.get) {
+                    try {
+                        const lwValue = component.get(wireModel);
+                        if (lwValue === null || lwValue === undefined) return;
+
+                        if (select.multiple) {
+                            const values = Array.isArray(lwValue) ? lwValue : [lwValue];
+                            if (values.length > 0) {
+                                console.log('[SyncSelect] Syncing multi-select ' + wireModel + ' with ' + values.length + ' values');
+                                $(select).val(values).trigger('change');
+                            }
+                        } else {
+                            if (lwValue && select.value !== lwValue) {
+                                console.log('[SyncSelect] Syncing ' + wireModel + ': DOM="' + select.value + '" -> LW="' + lwValue + '"');
+                                select.value = lwValue;
+                            }
+                        }
+                    } catch (e) {}
+                }
+            });
+        }
+
+        window.addEventListener('draftLoaded', function() {
+            console.log('[DraftLoaded] Edit event received - syncing select values');
+            setTimeout(function() {
+                syncSelectValues();
+            }, 100);
+        });
+
         function removeWizardEventListeners() {
             const nextBtn = document.querySelector('.wizard-step-next');
             const backBtn = document.querySelector('.wizard-step-back');

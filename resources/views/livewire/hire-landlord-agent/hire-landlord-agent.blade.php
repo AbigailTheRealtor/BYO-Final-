@@ -1187,9 +1187,19 @@
                 if (wireModel && component.get) {
                     try {
                         const lwValue = component.get(wireModel);
-                        if (lwValue && select.value !== lwValue) {
-                            console.log('[SyncSelect] Syncing ' + wireModel + ': DOM="' + select.value + '" -> LW="' + lwValue + '"');
-                            select.value = lwValue;
+                        if (lwValue === null || lwValue === undefined) return;
+
+                        if (select.multiple) {
+                            const values = Array.isArray(lwValue) ? lwValue : [lwValue];
+                            if (values.length > 0) {
+                                console.log('[SyncSelect] Syncing multi-select ' + wireModel + ' with ' + values.length + ' values');
+                                $(select).val(values).trigger('change');
+                            }
+                        } else {
+                            if (lwValue && select.value !== lwValue) {
+                                console.log('[SyncSelect] Syncing ' + wireModel + ': DOM="' + select.value + '" -> LW="' + lwValue + '"');
+                                select.value = lwValue;
+                            }
                         }
                     } catch (e) {}
                 }
