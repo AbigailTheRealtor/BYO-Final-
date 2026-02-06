@@ -328,6 +328,20 @@
     <span class="error mt-2" id="leasing_space_error"></span>
 </div>
 
+@php
+    $landlordConditionOptions = isset($property_condition_landlord) ? $property_condition_landlord : [
+        ['name' => 'New Construction'],
+        ['name' => 'No updates needed: Completely updated'],
+        ['name' => 'Semi-updated: Needs minor updates'],
+        ['name' => 'Not updated: Requires a complete update'],
+    ];
+    if (!empty($condition_prop) && is_string($condition_prop)) {
+        $optNames = array_column($landlordConditionOptions, 'name');
+        if (!in_array($condition_prop, $optNames)) {
+            $landlordConditionOptions[] = ['name' => $condition_prop];
+        }
+    }
+@endphp
 <div class="form-group">
     <label class="fw-bold">Property Condition:<span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -339,7 +353,7 @@
         <select wire:model="condition_prop" id="condition_prop" class="form-control has-icon"
             data-icon="fa-solid fa-screwdriver-wrench" required>
             <option value="">Select</option>
-            @foreach ($property_condition as $row_pt)
+            @foreach ($landlordConditionOptions as $row_pt)
                 <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
             @endforeach
         </select>
