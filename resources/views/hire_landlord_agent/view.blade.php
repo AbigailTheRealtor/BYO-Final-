@@ -312,21 +312,27 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         {{-- Property Address intentionally hidden on listing display --}}
 
                         @if (@$auction->get->cities != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold"> City:
+                        <div class="col-md-12 col-12 pt-2 fw-bold"> Acceptable Cities:
                             @if (gettype(@$auction->get->cities) == 'array')
-                            @foreach (@$auction->get->cities as $item)
-                            <span class="removeBold">{{ $item }}</span>
-                            @endforeach
+                            @php
+                                $cleanCities = array_map(function($city) {
+                                    return preg_replace('/,\s*[A-Z]{2}$/', '', trim($city));
+                                }, @$auction->get->cities);
+                            @endphp
+                            <span class="removeBold">{{ implode('; ', $cleanCities) }}</span>
                             @endif
                         </div>
                         @endif
                         @if (@$auction->get->counties != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
-                            County:
+                            Acceptable Counties:
                             @if (gettype(@$auction->get->counties) == 'array')
-                            @foreach (@$auction->get->counties as $item)
-                            <span class="removeBold">{{ $item }}</span>
-                            @endforeach
+                            @php
+                                $cleanCounties = array_map(function($county) {
+                                    return preg_replace('/,\s*[A-Z]{2}$/', '', trim($county));
+                                }, @$auction->get->counties);
+                            @endphp
+                            <span class="removeBold">{{ implode('; ', $cleanCounties) }}</span>
                             @endif
                         </div>
                         @endif
@@ -334,29 +340,26 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
 
 
-
-
+                        @if (@$auction->get->states != null || @$auction->get->state != null)
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
+                            Acceptable State:
+                            <span class="removeBold">
+                                @if (is_array(@$auction->get->states))
+                                    {{ implode('; ', @$auction->get->states) }}
+                                @elseif (@$auction->get->state)
+                                    {{ @$auction->get->state }}
+                                @endif
+                            </span>
+                        </div>
+                        @endif
                         @if (!empty($auction->get->zipCodes) && is_array($auction->get->zipCodes))
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Zip Code:
-
                             @foreach ($auction->get->zipCodes as $zip)
                             <span class="removeBold badge bg-secondary">
                                 {{ @$zip }}
                             </span>
                             @endforeach
-
-                        </div>
-                        @endif
-
-
-
-
-
-
-                        @if (@$auction->get->state != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold"> State:
-                            <span class="removeBold">{{ @$auction->get->state }}</span>
                         </div>
                         @endif
 
@@ -1284,23 +1287,27 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             </div>
             @endif
 
-            @php
-                $rawEnhancements = $auction->get->photo_enhancements ?? null;
-                $photoEnhancements = is_string($rawEnhancements)
-                    ? (json_decode($rawEnhancements, true) ?? [])
-                    : (is_array($rawEnhancements) ? $rawEnhancements : []);
-                $customEnhancement = $auction->get->custom_enhancement ?? null;
+        </div>
+        @endif
 
-                $enhancementOrder = [
-                    'Basic edits (brightness, contrast, cropping)',
-                    'Twilight conversion (convert daytime photo to sunset look)',
-                    'Object removal (e.g., cars, trash cans, furniture, etc.)',
-                    'Virtual twilight photography',
-                    'Color correction or sky replacement',
-                    'Other',
-                ];
-            @endphp
-            @if (!empty($photoEnhancements))
+        @php
+            $rawEnhancements = $auction->get->photo_enhancements ?? null;
+            $photoEnhancements = is_string($rawEnhancements)
+                ? (json_decode($rawEnhancements, true) ?? [])
+                : (is_array($rawEnhancements) ? $rawEnhancements : []);
+            $customEnhancement = $auction->get->custom_enhancement ?? null;
+
+            $enhancementOrder = [
+                'Basic edits (brightness, contrast, cropping)',
+                'Twilight conversion (convert daytime photo to sunset look)',
+                'Object removal (e.g., cars, trash cans, furniture, etc.)',
+                'Virtual twilight photography',
+                'Color correction or sky replacement',
+                'Other',
+            ];
+        @endphp
+        @if (!empty($photoEnhancements))
+        <div class="col-md-12 col-12 pt-2">
             <div class="mt-3">
                 <strong>📸 Digital Photo Enhancements</strong>
                 <ul class="services">
@@ -1315,7 +1322,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     @endforeach
                 </ul>
             </div>
-            @endif
         </div>
         @endif
         <hr>
