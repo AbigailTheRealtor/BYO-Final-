@@ -2143,16 +2143,90 @@ $lease_types = [
     
     // Listen for draftLoaded browser event to sync values after draft loads
     window.addEventListener('draftLoaded', function() {
-        console.log('[DraftLoaded] Event received - syncing select values');
-        // Small delay to ensure Livewire has finished updating the DOM
+        
         setTimeout(function() {
             syncSelectValues();
-            // Trigger validation update if function exists
+            syncSelect2MultiSelects();
             if (typeof window.updateSaveButton === 'function') {
                 window.updateSaveButton();
             }
-        }, 100);
+        }, 200);
     });
+
+    function syncSelect2MultiSelects() {
+        var wireEl = document.querySelector('[wire\\:id]');
+        if (!wireEl || typeof Livewire === 'undefined') return;
+        var component = Livewire.find(wireEl.getAttribute('wire:id'));
+        if (!component) return;
+
+        var select2Fields = [
+            { id: '#sale_provision', prop: 'sale_provision' },
+            { id: '#offered_financing', prop: 'offered_financing' },
+            { id: '.condition_prop_buyer', prop: 'condition_prop_buyer' },
+            { id: '#lease_for', prop: 'lease_for' },
+            { id: '#property_items', prop: 'property_items' },
+            { id: '#view_preference', prop: 'view_preference' },
+            { id: '#appliances', prop: 'appliances' },
+            { id: '#credit_scroe_rating', prop: 'credit_scroe_rating' },
+            { id: '.number_of_unit_type', prop: 'number_of_unit_type' },
+            { id: '#garage_parking_spaces_option', prop: 'garage_parking_spaces_option' },
+            { id: '#garage_parking_spaces_option_landlord', prop: 'garage_parking_spaces_option' },
+            { id: '#leasing_spaces_tenant', prop: 'leasing_spaces_tenant' },
+            { id: '#tenant_pays', prop: 'tenant_pays' },
+            { id: '#owner_pays', prop: 'owner_pays' },
+            { id: '#rent_includes', prop: 'rent_includes' },
+            { id: '#desired_lease_length', prop: 'desired_lease_length' },
+            { id: '#terms_of_lease', prop: 'terms_of_lease' },
+            { id: '#pool_type', prop: 'pool_type' },
+            { id: '#non_negotiable_amenities', prop: 'non_negotiable_amenities' },
+            { id: '#tenant_require', prop: 'tenant_require' },
+            { id: '#garage_parking_spaces_option_buyer', prop: 'garage_parking_spaces_option_buyer' },
+        ];
+
+        select2Fields.forEach(function(field) {
+            try {
+                var $el = $(field.id);
+                if ($el.length === 0) return;
+                var val = component.get(field.prop);
+                if (val && Array.isArray(val) && val.length > 0) {
+                    
+                    $el.val(val).trigger('change.select2');
+                }
+            } catch(e) {
+                // Silently skip fields that don't exist for this user_type
+            }
+        });
+
+        // Handle "Other" visibility for multi-selects with "Other" option
+        try {
+            var tenantPays = component.get('tenant_pays');
+            if (tenantPays && Array.isArray(tenantPays) && tenantPays.includes('Other')) {
+                $('#other_tenant_pays_wrapper').removeClass('d-none');
+            }
+            var ownerPays = component.get('owner_pays');
+            if (ownerPays && Array.isArray(ownerPays) && ownerPays.includes('Other')) {
+                $('#other_owner_pays_wrapper').removeClass('d-none');
+            }
+            var rentIncludes = component.get('rent_includes');
+            if (rentIncludes && Array.isArray(rentIncludes) && rentIncludes.includes('Other')) {
+                $('#other_rent_include_wrapper').removeClass('d-none');
+            }
+            var leaseFor = component.get('lease_for');
+            if (leaseFor && Array.isArray(leaseFor) && leaseFor.includes('Other')) {
+                $('#other_lease_input_wrapper').removeClass('d-none');
+            }
+            var viewPref = component.get('view_preference');
+            if (viewPref && Array.isArray(viewPref) && viewPref.includes('Other')) {
+                $('#other_view_preference_wrapper, #other_preferences_wrapper').removeClass('d-none');
+            }
+            var nonNeg = component.get('non_negotiable_amenities');
+            if (nonNeg && Array.isArray(nonNeg) && nonNeg.includes('Other')) {
+                $('#other_non_negotiable_wrapper').removeClass('d-none');
+            }
+        } catch(e) {
+            console.warn('[Select2Sync] Other visibility error:', e);
+        }
+    }
 
     function selectService(serviceType) {
         if (currentServiceType === serviceType) return;
@@ -4856,6 +4930,6 @@ $lease_types = [
 
 </script> -->
 
-
+<!-- DEBUG FINGERPRINT: tenant-agent-auction.blade.php loaded from resources/views/livewire/tenant-agent-auction.blade.php | Component: App\Http\Livewire\TenantAgentAuction -->
 
 @endpush

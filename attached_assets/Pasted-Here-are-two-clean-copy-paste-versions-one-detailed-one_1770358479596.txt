@@ -1,0 +1,37 @@
+Here are two clean copy/paste versions (one detailed, one shorter) you can send to Replit.
+
+**Option 1 — Clear + implementation-ready**
+
+> I need Replit instructions/implementation for **Hire a Landlord actual listings**.
+> **Login example:** [tenant@exp.com](mailto:tenant@exp.com)
+> **Applies to:** Residential + Commercial
+>
+> **Issue 1 — Property Details (Missing Location Fields):**
+> On the actual listing page, **City, County, State, and ZIP Code are missing**. These must display and should be the **first fields under “Property Details.”**
+>
+> **Issue 2 — Services → Photography, Video & Virtual Media (Digital Photo Enhancements):**
+> If the user selects **“Provide digital photo enhancements,”** then any selected sub-options must:
+>
+> 1. **Display on the actual listing**, and
+> 2. **Save to draft and re-populate when the draft is reopened**.
+>
+> **Sub-options that must be supported (exact):**
+>
+> * Basic edits (brightness, contrast, cropping)
+> * Twilight conversion (convert daytime photo to sunset look)
+> * Object removal (e.g., cars, trash cans, furniture, etc.)
+> * Virtual twilight photography
+> * Color correction or sky replacement
+> * Other (must show the user’s custom text, not just the word “Other”)
+>
+> **Safeguards:** Apply these changes **ONLY** to Hire a Landlord (Residential + Commercial). Do not affect Tenant/Buyer/Seller flows. No DB renames/drops. Provide changed file list + screenshot proof.
+
+**Option 2 — Short + firm**
+
+> Hire a Landlord actual listing fixes needed ([tenant@exp.com](mailto:tenant@exp.com), Residential + Commercial):
+>
+> 1. City/County/State/ZIP are missing — they must show as the first fields under Property Details.
+> 2. If “Provide digital photo enhancements” is selected, any chosen sub-options must show on the actual listing AND must save/restore in drafts (including “Other” text).
+>    Landlord-only scope; no changes to tenant/buyer/seller. Provide proof + changed files.
+
+If you want, I can also format it in your usual “Replit Instructions — Applies To / Location / Change Required / Safeguards / Acceptance Test” template.

@@ -32,6 +32,7 @@ class TenantAgentAuction extends Component
 
     public $listingId = null; // To track existing listings
     public $isDraft = false; // To track draft status
+    protected $isLoadingData = false; // Guard flag to prevent updated* hooks from resetting fields during draft load
     public $service_type = 'full_service'; // 'full_service' or 'limited_service'
     public $listing_status = 'Active'; // 'Active', 'Pending', or 'Hired Agent'
 
@@ -909,6 +910,7 @@ class TenantAgentAuction extends Component
     // Handle purchase fee type changes
     public function updatedPurchaseFeeType($value)
     {
+        if ($this->isLoadingData) return;
         if ($this->property_type === 'Residential Property') {
             $this->resetResidentialFeeFields();
         } elseif ($this->property_type === 'Commercial Property') {
@@ -919,6 +921,7 @@ class TenantAgentAuction extends Component
     // Handle property type changes - clear Residential-only fields when switching to Commercial
     public function updatedPropertyType($value)
     {
+        if ($this->isLoadingData) return;
         if ($value === 'Commercial Property') {
             // A) Pool (Residential-only)
             $this->pool_needed = '';
@@ -963,16 +966,19 @@ class TenantAgentAuction extends Component
     // Handle interested in selling type changes
     public function updatedInterestedInSellingType($value)
     {
+        if ($this->isLoadingData) return;
         $this->resetSellingFields();
     }
 
     // Handle renewal fee type changes
     public function updatedRenewalFeeType($value)
     {
+        if ($this->isLoadingData) return;
         $this->resetRenewalFeeFields();
     }
     public function updatedLeaseFeeType($value)
     {
+        if ($this->isLoadingData) return;
         $this->resetValidation();
         $this->resetErrorBag();
         $this->resetTenantBrokerLeaseFee();
@@ -982,6 +988,7 @@ class TenantAgentAuction extends Component
     // Handle tenant broker fee structure changes
     public function updatedTenantBrokerFeeStructure($value)
     {
+        if ($this->isLoadingData) return;
         $this->resetValidation();
         $this->resetErrorBag();
         $this->resetTenantBrokerFields();
@@ -990,6 +997,7 @@ class TenantAgentAuction extends Component
     // Handle property management fee changes
     public function updatedInterestedInPropertyManagementFee($value)
     {
+        if ($this->isLoadingData) return;
         $this->resetValidation();
         $this->resetErrorBag();
         $this->resetPropertyManagementFields();
@@ -998,6 +1006,7 @@ class TenantAgentAuction extends Component
     // Handle lease option agreement changes
     public function updatedInterestedLeaseOptionAgreement($value)
     {
+        if ($this->isLoadingData) return;
         $this->resetValidation();
         $this->resetErrorBag();
 
@@ -1014,6 +1023,7 @@ class TenantAgentAuction extends Component
     // Handle interested in selling changes
     public function updatedInterestedInSelling($value)
     {
+        if ($this->isLoadingData) return;
         $this->resetValidation();
         $this->resetErrorBag();
 
@@ -1032,6 +1042,7 @@ class TenantAgentAuction extends Component
     // Handle broker fee timing changes
     public function updatedBrokerFeeTiming($value)
     {
+        if ($this->isLoadingData) return;
         // Reset validation and error bags first to prevent rendering issues
         $this->resetValidation();
         $this->resetErrorBag();
@@ -1051,6 +1062,7 @@ class TenantAgentAuction extends Component
     // Handle early termination fee option changes
     public function updatedEarlyTerminationFeeOption($value)
     {
+        if ($this->isLoadingData) return;
         $this->resetValidation();
         $this->resetErrorBag();
 
@@ -1062,6 +1074,7 @@ class TenantAgentAuction extends Component
     // Handle agency agreement timeframe changes
     public function updatedAgencyAgreementTimeframe($value)
     {
+        if ($this->isLoadingData) return;
         $this->resetValidation();
         $this->resetErrorBag();
 
@@ -1073,6 +1086,7 @@ class TenantAgentAuction extends Component
     // Handle interested in property management changes
     public function updatedInterestedInPropertyManagement($value)
     {
+        if ($this->isLoadingData) return;
         $this->resetValidation();
         $this->resetErrorBag();
 
@@ -1097,6 +1111,7 @@ class TenantAgentAuction extends Component
     // Ensure lease_type never becomes empty during transitions
     public function updatedLeaseType($value)
     {
+        if ($this->isLoadingData) return;
         $this->resetValidation();
         $this->resetErrorBag();
         
@@ -1109,6 +1124,7 @@ class TenantAgentAuction extends Component
     // Ensure purchase_type never becomes empty during transitions
     public function updatedPurchaseType($value)
     {
+        if ($this->isLoadingData) return;
         $this->resetValidation();
         $this->resetErrorBag();
         
@@ -1238,6 +1254,7 @@ class TenantAgentAuction extends Component
 
     public function updatedConditionPropBuyer($value)
     {
+        if ($this->isLoadingData) return;
         $this->enforceNoPreferenceExclusivity();
     }
 
@@ -1280,6 +1297,7 @@ class TenantAgentAuction extends Component
     }
     public function updated($propertyName)
     {
+        if ($this->isLoadingData) return;
         if (empty($propertyName)) {
             return;
         }
@@ -1289,7 +1307,7 @@ class TenantAgentAuction extends Component
 
     public function updatedServices()
     {
-        // Automatically show enhancements when main option is selected
+        if ($this->isLoadingData) return;
         if (in_array('Provide digital photo enhancements', $this->services)) {
             $this->showEnhancements = true;
         } else {
@@ -1320,7 +1338,7 @@ class TenantAgentAuction extends Component
 
     public function updatedPhotoEnhancements()
     {
-        // Automatically show custom field when "Other" is selected
+        if ($this->isLoadingData) return;
         $this->showCustomEnhancement = in_array('Other', $this->photo_enhancements);
     }
     public function notifyJs($type, $checked)
@@ -1684,6 +1702,7 @@ class TenantAgentAuction extends Component
 
     public function updatedWorkingWithAgent($value)
     {
+        if ($this->isLoadingData) return;
         if ($value === 'Represented') {
             $this->dispatchBrowserEvent('show-representation-notice');
         } else {
@@ -1693,6 +1712,7 @@ class TenantAgentAuction extends Component
 
     public function updatedAuctionType($value)
     {
+        if ($this->isLoadingData) return;
         if ($value === 'Auction') {
             $this->dispatchBrowserEvent('show-auction-time');
         } else {
@@ -2425,6 +2445,15 @@ class TenantAgentAuction extends Component
     public function saveDraft()
     {
         try {
+            \Log::info('[SAVE_DRAFT] TenantAgentAuction.php saveDraft fired', [
+                'component' => 'App\Http\Livewire\TenantAgentAuction',
+                'method' => 'saveDraft',
+                'user_type' => $this->user_type,
+                'listing_id' => $this->listingId,
+                'user_id' => auth()->id(),
+                'timestamp' => now()->toDateTimeString(),
+            ]);
+
             $this->isDraft = true;
             $this->validateOnlyFilledFields();
 
@@ -2484,6 +2513,8 @@ class TenantAgentAuction extends Component
 
     public function loadDraft($listingId)
     {
+        $this->isLoadingData = true;
+
         // All model classes to search
         $modelClasses = [
             'tenant'   => HireTenantAgentAuction::class,
@@ -2581,6 +2612,7 @@ class TenantAgentAuction extends Component
             $this->restrictions = $auction->get->restrictions;
             $this->common_areas_access = $auction->get->common_areas_access;
             $this->maintenance_response_time = $auction->get->maintenance_response_time;
+            $this->storage_space = $auction->get->storage_space ?? '';
             $this->included_storage_space_com_entire = $auction->get->included_storage_space_com_entire;
             $this->storage_space_com_entire = $auction->get->storage_space_com_entire;
             $this->utilities = $auction->get->utilities;
@@ -3122,8 +3154,38 @@ class TenantAgentAuction extends Component
             //     }
             // }
             
+            // Restore "Other" visibility flags from loaded array values
+            $this->is_other_tenant_pay_visible = is_array($this->tenant_pays) && in_array('Other', $this->tenant_pays);
+            $this->is_other_owner_pays_visible = is_array($this->owner_pays) && in_array('Other', $this->owner_pays);
+            $this->is_rent_include_visible = is_array($this->rent_includes) && in_array('Other', $this->rent_includes);
+            $this->showOtherAppliances = is_array($this->appliances) && in_array('Other', $this->appliances);
+
+            // Restore showOpenHouseInput from loaded services
+            if (is_array($this->services)) {
+                $this->showOpenHouseInput = in_array('Host open houses', $this->services)
+                    || in_array('Host broker tours', $this->services)
+                    || in_array('Host site visit event (administrative coordination only)', $this->services);
+            }
+
+            // Restore photo enhancements visibility
+            if (is_array($this->services) && in_array('Provide digital photo enhancements', $this->services)) {
+                $this->showEnhancements = true;
+            }
+            $photoEnhRaw = $auction->get->photo_enhancements ?? null;
+            $this->photo_enhancements = $photoEnhRaw ? (is_string($photoEnhRaw) ? json_decode($photoEnhRaw, true) ?? [] : (array)$photoEnhRaw) : [];
+            $this->custom_enhancement = $auction->get->custom_enhancement ?? '';
+            if (!empty($this->photo_enhancements)) {
+                $this->showEnhancements = true;
+                $this->showCustomEnhancement = in_array('Other', $this->photo_enhancements);
+            }
+
+            // Clear loading guard BEFORE dispatching browser event
+            $this->isLoadingData = false;
+
             // Dispatch browser event to sync select values after draft loads
             $this->dispatchBrowserEvent('draftLoaded');
+        } else {
+            $this->isLoadingData = false;
         }
     }
 
@@ -3244,6 +3306,7 @@ class TenantAgentAuction extends Component
         $auction->saveMeta('common_areas_access', $this->common_areas_access);
         $auction->saveMeta('maintenance_by', $this->maintenance_by);
         $auction->saveMeta('maintenance_response_time', $this->maintenance_response_time);
+        $auction->saveMeta('storage_space', $this->storage_space);
         $auction->saveMeta('included_storage_space_com_entire', $this->included_storage_space_com_entire);
         $auction->saveMeta('storage_space_com_entire', $this->storage_space_com_entire);
         $auction->saveMeta('utilities', $this->utilities);
@@ -3473,6 +3536,8 @@ class TenantAgentAuction extends Component
         $auction->saveMeta('services', json_encode($this->services));
         $auction->saveMeta('other_services', json_encode($this->other_services));
         $auction->saveMeta('flat_fee_services', json_encode($this->flat_fee_services));
+        $auction->saveMeta('photo_enhancements', json_encode($this->photo_enhancements));
+        $auction->saveMeta('custom_enhancement', $this->custom_enhancement);
         
         // Build and save services snapshot for ordered display
         $servicesSnapshot = TenantServicesCatalog::buildSnapshot(
