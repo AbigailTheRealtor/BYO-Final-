@@ -1,0 +1,225 @@
+Perfect — we can write this **without guessing any component names**. Here are **Replit instructions that are 100% search-based**, so your dev can find the exact correct submit handler(s) on **Edit Listing → Submit** for **Tenant Agent** and **Buyer Agent** flows.
+
+---
+
+## ✅ REQUIREMENT
+
+When a user **edits** a listing and clicks **SUBMIT**, the system must:
+
+1. **Save successfully**, then
+2. **Immediately redirect to the public listing “Show” page** for that same listing
+3. (Optional) Keep the success message, but it should display **on the Show page**, not the Edit page
+
+This must apply to:
+
+* **Hire a Tenant’s Agent → Edit → Submit**
+* **Hire a Buyer’s Agent → Edit → Submit**
+
+---
+
+## ✅ SAFEGUARDS (DO NOT BREAK ANYTHING)
+
+1. **Do NOT rename DB tables/columns.**
+2. **Do NOT change Create Listing behavior.** (Edit-only fix)
+3. **Do NOT change Save Draft behavior.**
+4. **Do NOT change tab logic, validation rules, tooltips, labels, or field options.**
+5. **Do NOT change service rendering logic.** (Not part of this fix)
+6. Only modify the **final “Submit” on Edit** post-save behavior.
+
+---
+
+## STEP 1 — FIND THE *EDIT SUBMIT* HANDLER (NO GUESSING)
+
+In Replit, use **Search in Files** and search these exact strings (do them in order):
+
+### Search A (best)
+
+* `Listing updated successfully`
+* `updated successfully`
+
+✅ This will usually land you exactly in the method that currently flashes the message and stays on the page.
+
+### Search B (if no exact phrase)
+
+Search for any of these:
+
+* `session()->flash(`
+* `dispatchBrowserEvent`
+* `toast(`
+* `notify(`
+* `update successful`
+* `submit`
+* `final`
+* `status` (often “Submitted”)
+* `is_draft`
+* `draft`
+
+### Search C (confirm it’s EDIT not CREATE)
+
+Once you find the method, confirm it’s the **Edit submit** by checking for one of these patterns:
+
+* It loads an existing model like `Model::find($id)` or it already has a `$listing/$auction` object
+* It uses `update()` (not `create()`)
+* It’s in an “Edit” page flow (route/view contains `edit`)
+
+**Safeguard:** If it’s create-submit, **do not touch it**.
+
+---
+
+## STEP 2 — ADD REDIRECT AFTER SUCCESSFUL EDIT SUBMIT
+
+Inside the **Edit Submit** method you found, the end of it will look like one of these:
+
+### Pattern 1
+
+```php
+session()->flash('success', 'Listing updated successfully!');
+```
+
+### Pattern 2
+
+```php
+$this->dispatchBrowserEvent('success', ...);
+```
+
+### Pattern 3
+
+```php
+return; // or no return at all
+```
+
+### Required change (generic and safe)
+
+After the data is saved and the success message is set, do:
+
+```php
+session()->flash('success', 'Listing updated successfully!');
+
+// Redirect to the SHOW page for THIS listing
+return redirect()->to($showUrl);
+```
+
+Now define `$showUrl` in a way that matches your existing app:
+
+---
+
+## STEP 3 — GET THE REAL SHOW URL WITHOUT GUESSING ROUTE NAMES
+
+**Do NOT guess route names.** Instead, your dev should use one of these safe methods:
+
+### Option A (best): Copy the Show URL pattern from the app
+
+1. Open any live listing in the browser
+2. Copy the URL (this is the Show page pattern)
+3. Use the same pattern in code
+
+Example approach:
+
+```php
+$showUrl = url('/hire-a-tenants-agent/' . $listing->id);
+return redirect()->to($showUrl);
+```
+
+### Option B: Use existing route helper already used elsewhere
+
+Search in files for places where the app already navigates to the listing show page:
+
+Search:
+
+* `->route(` + `show`
+* `hire-a-tenant`
+* `hire-a-buyer`
+* `auctions.show`
+* `/show/`
+* `/listing/`
+
+Once found, reuse that exact same route/to() logic.
+
+---
+
+## STEP 4 — MAKE SURE IT ONLY HAPPENS ON **EDIT + SUBMIT**
+
+Many edit pages have **Save Draft** and **Submit**.
+
+### If the code has a draft flag
+
+Look for anything like:
+
+* `$isDraft`
+* `$draft`
+* `$status`
+* `$submitType`
+
+Then enforce:
+
+```php
+if ($isDraft) {
+    // Keep existing draft behavior EXACTLY
+    session()->flash('success', 'Draft saved successfully!');
+    return; // or whatever it currently does
+}
+
+// Only redirect on real SUBMIT
+session()->flash('success', 'Listing updated successfully!');
+return redirect()->to($showUrl);
+```
+
+**Safeguard:** Do not change how draft is determined; only branch based on the existing variable/logic.
+
+---
+
+## STEP 5 — SUCCESS MESSAGE SHOULD SHOW ON THE SHOW PAGE
+
+The flash message will survive the redirect automatically **only if** the Show page renders it.
+
+Search in the Show page template for:
+
+* `session('success')`
+* `session('message')`
+
+If it’s missing, add a minimal block near the top:
+
+```php
+@if (session('success'))
+  <div class="alert alert-success">
+    {{ session('success') }}
+  </div>
+@endif
+```
+
+**Safeguard:** If your UI uses a custom alert component already, use that instead—do not add duplicate alerts.
+
+---
+
+## APPLY IT TO BOTH FLOWS (TENANT + BUYER)
+
+Repeat the same steps for:
+
+* **Tenant listing edit submit handler**
+* **Buyer listing edit submit handler**
+
+Do not assume they share the same file—often they don’t.
+
+---
+
+## QA CHECKLIST (MUST PASS)
+
+For **Tenant Edit**:
+
+* Edit a listing → click **Submit** → should land on **Show page**
+* Show page displays success message
+* Changes appear
+
+For **Buyer Edit**:
+
+* Same test
+
+Regression:
+
+* **Create listing submit unchanged**
+* **Save Draft unchanged**
+* Tabs/step navigation unchanged
+
+---
+
+If you want, paste the **exact text of the current success message** you see (or a screenshot of the toast) and I’ll tell you the single best search phrase to locate the correct submit handler instantly.

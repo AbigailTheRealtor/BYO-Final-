@@ -3333,10 +3333,20 @@ class TenantAgentAuctionEdit extends Component
 
             DB::commit();
             session()->flash('success', 'Listing updated successfully!');
-            // return redirect()->route('tenant.hire.agent.auction.edit', [
-            //     'auctionId' => $this->auctionId,
-            //     'user_type' => $this->user_type,
-            // ]);
+
+            $routeName = match ($this->user_type) {
+                'tenant'   => 'tenant.agent.auction.view',
+                'landlord' => 'landlord.agent.auction.view',
+                'buyer'    => 'buyer.view-auction',
+                'seller'   => 'seller.agent.auction.detail',
+                default    => 'tenant.agent.auction.view',
+            };
+
+            $url = route($routeName, ['id' => $this->auctionId]);
+
+            $this->dispatchBrowserEvent('force-redirect', ['url' => $url]);
+
+            return redirect()->to($url);
         } catch (\Exception $e) {
             DB::rollBack();
             session()->flash('error', 'Error updating auction: ' . $e->getMessage());
