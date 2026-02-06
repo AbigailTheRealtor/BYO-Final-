@@ -22,6 +22,7 @@ class LandLordAgentAuction extends Component
 
     public $listingId = null; // To track existing listings
     public $isDraft = false; // To track draft status
+    public $isLoadingDraft = false; // Prevents updated* hooks from resetting dependent fields during draft load
     public $service_type = 'full_service'; // 'full_service' or 'limited_service'
     public $listing_status = 'Active'; // 'Active', 'Pending', or 'Hired Agent'
 
@@ -704,7 +705,7 @@ class LandLordAgentAuction extends Component
      */
     public function updatedLeaseFeeType($value)
     {
-        // Reset all dependent lease fee fields when fee type changes
+        if ($this->isLoadingDraft) return;
         $this->reset([
             'lease_fee_flat',
             'lease_fee_percentage',
@@ -722,7 +723,7 @@ class LandLordAgentAuction extends Component
      */
     public function updatedPurchaseFeeType($value)
     {
-        // Reset all dependent fee fields when fee type changes
+        if ($this->isLoadingDraft) return;
         $this->reset([
             'purchase_fee_flat',
             'purchase_fee_rental_period',
@@ -762,7 +763,7 @@ class LandLordAgentAuction extends Component
 
     public function updatedOfferedFinancing()
     {
-        // Reset all dependent fields when financing type changes
+        if ($this->isLoadingDraft) return;
         $this->reset([
             'other_financing',
             'cash_budget',
@@ -792,7 +793,7 @@ class LandLordAgentAuction extends Component
 
     public function updatedSaleProvision()
     {
-        // Reset all dependent fields when main selection changes
+        if ($this->isLoadingDraft) return;
         $this->reset([
             'sale_provision_other',
             'sale_provision_assignment',
@@ -803,11 +804,13 @@ class LandLordAgentAuction extends Component
 
     public function updatedSaleProvisionAssignment()
     {
+        if ($this->isLoadingDraft) return;
         $this->reset(['assignment_fee_amount', 'buyer_sell_contract']);
     }
 
     public function updatedBuyerSellContract()
     {
+        if ($this->isLoadingDraft) return;
         $this->reset(['assignment_fee_amount']);
     }
 
@@ -1356,6 +1359,11 @@ class LandLordAgentAuction extends Component
         }
     }
 
+    public function finishDraftLoad()
+    {
+        $this->isLoadingDraft = false;
+    }
+
     public function loadDraft($listingId)
     {
         $auction = HirelandLordAgentAuction::where('id', $listingId)
@@ -1363,6 +1371,7 @@ class LandLordAgentAuction extends Component
             ->first();
 
         if ($auction) {
+            $this->isLoadingDraft = true;
 
             // Load all metadata fields
             $this->listing_title = $auction->title;
@@ -1655,6 +1664,7 @@ class LandLordAgentAuction extends Component
             $this->email = $auction->get->email ?? null;
             $this->video_link = $auction->get->video_link ?? null;
             $this->photo = $auction->get->photo ?? null;
+            $this->video = $auction->get->video ?? null;
 
             // Location and meeting details
             $this->person_meeting = $auction->get->person_meeting ?? null;
@@ -1825,7 +1835,10 @@ class LandLordAgentAuction extends Component
             // Flat fee agent (limited service) tenant
 
             $this->fees = $this->ensureArray($auction->get->fees ?? null);
-            $this->enable = $this->ensureArray($auction->get->enable ?? null);
+            $loadedEnable = $this->ensureArray($auction->get->enable ?? null);
+            if (!empty($loadedEnable)) {
+                $this->enable = array_replace($this->enable, $loadedEnable);
+            }
 
             $this->showings_count = $auction->get->showings_count ?? null;
             $this->attend_showings_count = $auction->get->attend_showings_count ?? null;

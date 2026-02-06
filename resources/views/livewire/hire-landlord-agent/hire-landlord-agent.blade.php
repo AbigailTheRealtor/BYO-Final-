@@ -1242,6 +1242,15 @@
                 if (typeof window.updateSaveButton === 'function') {
                     window.updateSaveButton();
                 }
+                try {
+                    setTimeout(function() {
+                        @this.call('finishDraftLoad');
+                        console.log('[DraftLoaded] Called finishDraftLoad - updated* hooks re-enabled');
+                    }, 500);
+                } catch (e) {
+                    console.error('[DraftLoaded] Error calling finishDraftLoad, forcing clear:', e);
+                    @this.set('isLoadingDraft', false);
+                }
             }, 200);
         });
 
