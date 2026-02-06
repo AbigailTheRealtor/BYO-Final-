@@ -522,6 +522,8 @@ class LandLordAgentAuction extends Component
     public $meeting_Preference = '';
     public $photo_enhancements = [];
     public $custom_enhancement = '';
+    public $showEnhancements = false;
+    public $showCustomEnhancement = false;
 
     // Pet/animal fields
     public $has_breed_restrictions = '';
@@ -1804,6 +1806,8 @@ class LandLordAgentAuction extends Component
             $this->photo_enhancements = $this->ensureArray($auction->get->photo_enhancements ?? null);
 
             $this->custom_enhancement = $auction->get->custom_enhancement ?? null;
+            $this->showEnhancements = !empty($this->photo_enhancements);
+            $this->showCustomEnhancement = in_array('Other', $this->photo_enhancements);
             $this->has_breed_restrictions = $auction->get->has_breed_restrictions ?? null;
             $this->breed_restrictions = $auction->get->breed_restrictions ?? null;
             $this->service_animal = $auction->get->service_animal ?? null;

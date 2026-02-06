@@ -1,0 +1,95 @@
+Here’s a stronger, **copy/paste** message that forces them to **identify the exact component + file path actually used** for **[tenant@exp.com](mailto:tenant@exp.com) → Hire a Landlord’s Agent**, and then implement the fixes there (with safeguards + proof). I wrote it so there’s no room for “we updated X” when X isn’t even being called.
+
+---
+
+All draft edits for **Hire a Landlord’s Agent** are still not saving. At this point I believe the **wrong files/components are being edited**.
+
+**Test Path (Required):**
+Login **[tenant@exp.com](mailto:tenant@exp.com)** → select **Hire a Landlord’s Agent** (Residential + Commercial) → complete fields → click **Save Draft** → open the draft → confirm everything re-populates.
+
+## Critical Note (Likely Root Cause)
+
+Even though this is “Hire a Landlord” functionality, it may be rendered/handled by a **Tenant-side Livewire component/controller** (example: something under a Tenant flow/component that mounts the Landlord form). I suspect you’re editing “Landlord” files that are **not actually used** in the [tenant@exp.com](mailto:tenant@exp.com) Hire a Landlord path.
+
+---
+
+# Step 1 — You MUST prove you are editing the correct files
+
+Before making any more changes, do this:
+
+### A) Identify the exact route + handler used
+
+When I click “Hire a Landlord’s Agent” while logged in as **[tenant@exp.com](mailto:tenant@exp.com)**, you must confirm:
+
+1. The exact **URL/route name**
+2. The exact **controller or Livewire component** that renders the form
+3. The exact **saveDraft() method location** being executed
+
+### B) Add a temporary “fingerprint” to confirm the correct view/component
+
+Add a temporary debug marker visible only in local/dev, for example:
+
+* a comment in the Blade view: `<!-- LANDLORD DRAFT VIEW LOADED: file_path_here -->`
+* OR a small dev-only text line at the bottom of the page showing:
+
+  * component name + file path
+
+Then load the page in the browser and confirm the marker appears.
+**If the marker does not appear, you are editing the wrong file.**
+
+### C) Add temporary logs to prove the correct saveDraft is firing
+
+In the **actual method** that runs when clicking **Save Draft** for Hire a Landlord, add a log entry:
+
+* component/class name
+* function name
+* listing id
+* user id
+* timestamp
+
+Example requirement: When I click Save Draft, you must be able to show the log line confirming which file executed.
+
+**Safeguard:** logs must be dev-only and removed after confirming.
+
+---
+
+# Step 2 — Implement Draft Fixes ONLY in the confirmed component/files
+
+Once you prove the correct files are being edited, implement the following with safeguards:
+
+## Safeguards (Must Follow)
+
+1. **Scope Lock:** Apply changes **ONLY** to Hire a Landlord drafts (Residential + Commercial) under the [tenant@exp.com](mailto:tenant@exp.com) path. Do NOT affect Tenant/Buyer/Seller flows.
+2. **No DB Breaking Changes:** No renames/drops. No destructive migrations.
+3. **Save Draft = Save Everything:** Save Draft must persist **every field** on the form (no missing fields).
+4. **Draft Load = Restore Everything:** Opening a draft must re-populate **all values** exactly.
+5. **Other Must Restore Custom Text:** If “Other” is selected anywhere, the custom input must:
+
+   * show on draft reopen
+   * retain the saved value
+   * never display only the word “Other” or load blank
+6. **No Default Overwrites:** Do not run defaults after loading a draft.
+7. **Multi-select casts:** Landlord multi-select JSON fields must cast to arrays in the correct model used by this flow.
+8. **Personal photo:** Save photo path to DB on draft save and show preview on reopen (no re-upload required).
+9. **No regressions:** Submit still works; draft save allows partial forms.
+10. **Proof Required:** Provide changed files list + screenshots/video proving Save Draft → reopen → values persist (include at least one “Other” + the photo).
+
+---
+
+# Step 3 — Required Deliverables (No Exceptions)
+
+When you respond, you must include:
+
+1. **Exact file paths edited**
+2. **Component/controller name**
+3. Screenshot showing the debug fingerprint on the correct page
+4. Screenshot/log proving the correct saveDraft() executed
+5. Video or screenshots proving drafts now persist and re-load correctly
+
+---
+
+**Bottom line:** Until you prove the correct component is being edited for **[tenant@exp.com](mailto:tenant@exp.com) → Hire a Landlord**, no more “updates” should be made because they are clearly not affecting the real flow.
+
+---
+
+If you want, paste **one screenshot** of the browser URL when you’re on the “Hire a Landlord” form (or the route name if you see it), and I’ll rewrite this message to explicitly reference the route pattern they should be tracing (so they can’t miss it).

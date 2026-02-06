@@ -309,15 +309,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                     <div class="row" style="flex-wrap: wrap;">
 
-                        @if (@$auction->get->address != null)
-                        @if (auth()->check() && auth()->user()->id == @$auction->user_id)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            
-                            Property Address:
-                            <span class="removeBold">{{ @$auction->get->address }}</span>
-                        </div>
-                        @endif
-                        @endif
+                        {{-- Property Address intentionally hidden on listing display --}}
 
                         @if (@$auction->get->cities != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold"> City:
@@ -786,21 +778,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
 
-        @if (@$auction->get->space_features != '' && @$auction->get->space_features != 'null')
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Space Features:
-                <span class="removeBold">{{ $auction->get->space_features }}</span>
-            </div>
-        </div>
-        @endif
-        @if (@$auction->get->neighboring_tenants != '' && @$auction->get->neighboring_tenants != 'null')
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Neighboring Tenants Include:
-                <span class="removeBold">{{ $auction->get->neighboring_tenants }}</span>
-            </div>
-        </div>
-        @endif
-
+        {{-- Leasing Space sub-fields: ordered per specification --}}
+        {{-- 1. Restrictions Include --}}
         @if (@$auction->get->restrictions != '' && @$auction->get->restrictions != 'null')
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Restrictions Include:
@@ -808,6 +787,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             </div>
         </div>
         @endif
+        {{-- 2. Maintenance and Repairs Are Handled By --}}
         @if (@$auction->get->maintenance_by != '' && @$auction->get->maintenance_by != 'null')
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Maintenance and Repairs Are Handled By:
@@ -815,6 +795,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             </div>
         </div>
         @endif
+        {{-- 3. Maintenance Response Time --}}
         @if (@$auction->get->maintenance_response_time != '' && @$auction->get->maintenance_response_time != 'null')
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Maintenance Response Time:
@@ -822,6 +803,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             </div>
         </div>
         @endif
+        {{-- 4 & 5. Included Storage Space + Storage Space Size (all variants) --}}
         @if (@$auction->get->included_storage_space_res_both != '' && @$auction->get->included_storage_space_res_both != 'null')
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Included Storage Space:
@@ -850,35 +832,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             </div>
         </div>
         @endif
-        @if (@$auction->get->guests_allowed != '' && @$auction->get->guests_allowed != 'null')
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Guests are:
-                <span class="removeBold">{{ $auction->get->guests_allowed }}</span>
-            </div>
-        </div>
-        @endif
-        @if (@$auction->get->common_areas_access != '' && @$auction->get->common_areas_access != 'null')
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Shared Areas Available:
-                <span class="removeBold">{{ $auction->get->common_areas_access }}</span>
-            </div>
-        </div>
-        @endif
-        @if (@$auction->get->utilities != '' && @$auction->get->utilities != 'null')
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Utilities:
-                <span class="removeBold">{{ $auction->get->utilities }}</span>
-            </div>
-        </div>
-        @endif
-        @if (@$auction->get->common_areas_cleaning != '' && @$auction->get->common_areas_cleaning != 'null')
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Common Area Maintenance:
-                <span class="removeBold">{{ $auction->get->common_areas_cleaning }}</span>
-            </div>
-        </div>
-        @endif
-
         @if (@$auction->get->included_storage_space_res_single != '' && @$auction->get->included_storage_space_res_single != 'null')
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Included Storage Space:
@@ -921,6 +874,83 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             </div>
         </div>
         @endif
+        {{-- 6. Shared Amenities Include --}}
+        @if (@$auction->get->shared_amenities != '' && @$auction->get->shared_amenities != 'null')
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Shared Amenities Include:
+                <span class="removeBold">{{ $auction->get->shared_amenities }}</span>
+            </div>
+        </div>
+        @endif
+        {{-- 7. Building Hours --}}
+        @if (@$auction->get->building_hours != '' && @$auction->get->building_hours != 'null')
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Building Hours:
+                <span class="removeBold">{{ $auction->get->building_hours }}</span>
+            </div>
+        </div>
+        @endif
+        {{-- 8. 24/7 Access Available --}}
+        @if (@$auction->get->access_24_7 != '' && @$auction->get->access_24_7 != 'null')
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">24/7 Access Available:
+                <span class="removeBold">{{ $auction->get->access_24_7 }}</span>
+            </div>
+        </div>
+        @endif
+        {{-- 9. Zoning Allows --}}
+        @if (@$auction->get->zoning_allows != '' && @$auction->get->zoning_allows != 'null')
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Zoning Allows:
+                <span class="removeBold">{{ $auction->get->zoning_allows }}</span>
+            </div>
+        </div>
+        @endif
+        {{-- 10. Space Features --}}
+        @if (@$auction->get->space_features != '' && @$auction->get->space_features != 'null')
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Space Features:
+                <span class="removeBold">{{ $auction->get->space_features }}</span>
+            </div>
+        </div>
+        @endif
+        {{-- 11. Neighboring Tenants Include --}}
+        @if (@$auction->get->neighboring_tenants != '' && @$auction->get->neighboring_tenants != 'null')
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Neighboring Tenants Include:
+                <span class="removeBold">{{ $auction->get->neighboring_tenants }}</span>
+            </div>
+        </div>
+        @endif
+        {{-- Other leasing sub-fields (not in the 11-item ordered list) --}}
+        @if (@$auction->get->guests_allowed != '' && @$auction->get->guests_allowed != 'null')
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Guests are:
+                <span class="removeBold">{{ $auction->get->guests_allowed }}</span>
+            </div>
+        </div>
+        @endif
+        @if (@$auction->get->common_areas_access != '' && @$auction->get->common_areas_access != 'null')
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Shared Areas Available:
+                <span class="removeBold">{{ $auction->get->common_areas_access }}</span>
+            </div>
+        </div>
+        @endif
+        @if (@$auction->get->utilities != '' && @$auction->get->utilities != 'null')
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Utilities:
+                <span class="removeBold">{{ $auction->get->utilities }}</span>
+            </div>
+        </div>
+        @endif
+        @if (@$auction->get->common_areas_cleaning != '' && @$auction->get->common_areas_cleaning != 'null')
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Common Area Maintenance:
+                <span class="removeBold">{{ $auction->get->common_areas_cleaning }}</span>
+            </div>
+        </div>
+        @endif
         @if (@$auction->get->bathroom_facilities != '' && @$auction->get->bathroom_facilities != 'null')
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Bathroom Facilities:
@@ -932,34 +962,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Approximate Room Size:
                 <span class="removeBold">{{ $auction->get->room_size }}</span>
-            </div>
-        </div>
-        @endif
-        @if (@$auction->get->shared_amenities != '' && @$auction->get->shared_amenities != 'null')
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Shared Amenities Include:
-                <span class="removeBold">{{ $auction->get->shared_amenities }}</span>
-            </div>
-        </div>
-        @endif
-        @if (@$auction->get->building_hours != '' && @$auction->get->building_hours != 'null')
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Building Hours:
-                <span class="removeBold">{{ $auction->get->building_hours }}</span>
-            </div>
-        </div>
-        @endif
-        @if (@$auction->get->access_24_7 != '' && @$auction->get->access_24_7 != 'null')
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">24/7 Access Available:
-                <span class="removeBold">{{ $auction->get->access_24_7 }}</span>
-            </div>
-        </div>
-        @endif
-        @if (@$auction->get->zoning_allows != '' && @$auction->get->zoning_allows != 'null')
-        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
-            <div class="col-12 fw-bold">Zoning Allows:
-                <span class="removeBold">{{ $auction->get->zoning_allows }}</span>
             </div>
         </div>
         @endif
@@ -1250,9 +1252,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @php
                     $matchedServices = [];
                     foreach ($categoryServices as $catalogService) {
-                        $canonCatalog = $canon($catalogService);
+                        $canonCatalog = trim($canon($catalogService));
                         foreach ($allServices as $savedService) {
-                            if ($canon($savedService) === $canonCatalog) {
+                            if (trim($canon($savedService)) === $canonCatalog) {
                                 $matchedServices[] = $savedService;
                                 break;
                             }
@@ -1277,6 +1279,39 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 <ul class="services">
                     @foreach ($otherServices as $other_service)
                     <li style="font-size: 16px;">{{ $other_service }}</li>
+                    @endforeach
+                </ul>
+            </div>
+            @endif
+
+            @php
+                $rawEnhancements = $auction->get->photo_enhancements ?? null;
+                $photoEnhancements = is_string($rawEnhancements)
+                    ? (json_decode($rawEnhancements, true) ?? [])
+                    : (is_array($rawEnhancements) ? $rawEnhancements : []);
+                $customEnhancement = $auction->get->custom_enhancement ?? null;
+
+                $enhancementOrder = [
+                    'Basic edits (brightness, contrast, cropping)',
+                    'Twilight conversion (convert daytime photo to sunset look)',
+                    'Object removal (e.g., cars, trash cans, furniture, etc.)',
+                    'Virtual twilight photography',
+                    'Color correction or sky replacement',
+                    'Other',
+                ];
+            @endphp
+            @if (!empty($photoEnhancements))
+            <div class="mt-3">
+                <strong>📸 Digital Photo Enhancements</strong>
+                <ul class="services">
+                    @foreach ($enhancementOrder as $enhancement)
+                        @if (in_array($enhancement, $photoEnhancements))
+                            @if ($enhancement === 'Other' && !empty($customEnhancement))
+                                <li style="font-size: 16px;">{{ $customEnhancement }}</li>
+                            @elseif ($enhancement !== 'Other')
+                                <li style="font-size: 16px;">{{ $enhancement }}</li>
+                            @endif
+                        @endif
                     @endforeach
                 </ul>
             </div>
@@ -1352,6 +1387,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         <div class="col-md-12 col-12 pt-2 fw-bold">
             Sales Tax:
             <span class="removeBold">{{ @$auction->get->sales_tax_option_monthly === 'including' ? 'Including Sales Tax' : (@$auction->get->sales_tax_option_monthly === 'excluding' ? 'Excluding Sales Tax' : $auction->get->sales_tax_option_monthly) }}</span>
+        </div>
+        @endif
+
+        @if ($canon(@$auction->get->purchase_fee_type ?? '') === 'Flat Fee' && !empty(@$auction->get->sales_tax_option_flat) && @$auction->get->sales_tax_option_flat !== 'null')
+        <div class="col-md-12 col-12 pt-2 fw-bold">
+            Sales Tax:
+            <span class="removeBold">{{ @$auction->get->sales_tax_option_flat === 'including' ? 'Including Sales Tax' : (@$auction->get->sales_tax_option_flat === 'excluding' ? 'Excluding Sales Tax' : $auction->get->sales_tax_option_flat) }}</span>
         </div>
         @endif
 
