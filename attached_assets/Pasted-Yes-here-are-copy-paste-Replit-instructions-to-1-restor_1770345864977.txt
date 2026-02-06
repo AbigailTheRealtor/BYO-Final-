@@ -1,0 +1,180 @@
+Yes — here are **copy-paste Replit instructions** to (1) **restore today’s missing Hire a Landlord drafts** and (2) **prevent it from happening again**, with strict safeguards so nothing else is affected.
+
+---
+
+## Replit Instructions — Restore Missing “Today” Drafts (Hire a Landlord Only)
+
+### Applies To
+
+* Login example: **[tenant@exp.com](mailto:tenant@exp.com)**
+* Flow: **Hire a Landlord’s Agent**
+* Property Types: **Residential + Commercial**
+* Issue: **Only 2 drafts show**, but multiple drafts were saved today
+
+### Must NOT Affect
+
+* Hire a Tenant / Buyer / Seller drafts
+* Any global drafts logic
+* Database schema (no renames/drops)
+
+---
+
+# A) First: Confirm the missing drafts still exist in the database
+
+## 1) Identify the correct Landlord drafts table + draft fields
+
+In codebase search for:
+
+* `LandlordAgentAuction`
+* `landlord_agent_auctions`
+* `saveDraft`
+* `status`, `is_draft`, `submitted_at`, `is_submitted`, `deleted_at`
+
+## 2) Run DB queries for *today’s* landlord drafts
+
+**Run these in the DB console** (adjust table/field names if different):
+
+### A. All landlord records updated today for this user
+
+```sql
+SELECT id, user_id, status, is_draft, is_submitted, submitted_at, deleted_at, created_at, updated_at
+FROM landlord_agent_auctions
+WHERE user_id = (SELECT id FROM users WHERE email='tenant@exp.com')
+  AND DATE(updated_at) = CURDATE()
+ORDER BY updated_at DESC;
+```
+
+### B. All landlord drafts updated today (any user)
+
+```sql
+SELECT id, user_id, status, is_draft, is_submitted, submitted_at, deleted_at, created_at, updated_at
+FROM landlord_agent_auctions
+WHERE DATE(updated_at) = CURDATE()
+ORDER BY updated_at DESC;
+```
+
+### C. If soft deletes exist, include them
+
+If you use Laravel soft deletes, also run:
+
+```sql
+SELECT id, user_id, status, is_draft, is_submitted, submitted_at, deleted_at, created_at, updated_at
+FROM landlord_agent_auctions
+WHERE user_id = (SELECT id FROM users WHERE email='tenant@exp.com')
+ORDER BY updated_at DESC;
+```
+
+✅ If the missing drafts appear in these results, they were **not lost** — they’re just being **filtered out** on the Saved Drafts page.
+
+❌ If they do not appear, the drafts either:
+
+* never saved successfully (validation or save flow issue), or
+* were overwritten (same record reused instead of new draft), or
+* were soft-deleted.
+
+---
+
+# B) Restore / re-enable visibility of today’s drafts (non-destructive)
+
+## 3) If drafts are being hidden by a wrong filter, fix the query (Landlord only)
+
+Locate the **Saved Drafts** query and ensure it **does not exclude** Landlord drafts because of:
+
+### Common hidden causes
+
+* filter requires `status='Draft'` but records use `draft`
+* filter requires `is_draft=1` but landlord drafts only set `status`
+* filter requires `submitted_at IS NULL` but landlord uses `is_submitted`
+* filter excludes `commercial` or a property-type flag
+* filter uses the wrong owner field (`created_by` vs `user_id`)
+* filter excludes anything with `deleted_at` (soft delete)
+
+### Required Landlord draft rule (use OR, not AND)
+
+For Landlord only, treat as draft if **ANY** of these are true:
+
+* `status = 'draft'`
+* OR `is_draft = 1`
+* OR (`submitted_at IS NULL` AND `is_submitted = 0`) *(only if those fields exist)*
+
+**Safeguard:** apply only in the Landlord drafts fetch, not in global/shared draft logic.
+
+---
+
+## 4) If drafts were soft-deleted today, restore them
+
+If DB shows `deleted_at` populated for the missing drafts:
+
+### Restore only today’s drafts for this user (example)
+
+```sql
+UPDATE landlord_agent_auctions
+SET deleted_at = NULL
+WHERE user_id = (SELECT id FROM users WHERE email='tenant@exp.com')
+  AND DATE(updated_at) = CURDATE();
+```
+
+⚠️ Safeguards:
+
+* Do **not** restore drafts for other users
+* Do **not** restore older deletes unless specifically requested
+* Confirm IDs to restore first with a SELECT
+
+---
+
+## 5) If Save Draft overwrote the same draft record instead of creating new ones
+
+This happens if the code reuses a single “draft session” row and keeps updating it.
+
+### Fix required (Landlord only)
+
+When user clicks **Save Draft**:
+
+* If `listing_id` exists → update that draft
+* If user is starting a new draft → create a **new record** (do not “find latest draft and update it”)
+
+**Safeguard:** Do not change behavior for other listing types.
+
+---
+
+# C) Prevent future “missing drafts” (today) issue
+
+## 6) Drafts page should sort and paginate correctly
+
+On Landlord drafts list:
+
+* Order by `updated_at DESC`
+* Ensure pagination isn’t defaulting to 2 items, or hidden by “recent only” filters
+
+Check for:
+
+* `take(2)` / `limit(2)`
+* pagination page size too small
+* UI “Show more” not rendering due to a JS error
+
+**Safeguard:** Only adjust page size for Landlord drafts section if it’s scoped.
+
+---
+
+# D) Acceptance Test (must pass)
+
+Using **[tenant@exp.com](mailto:tenant@exp.com)**:
+
+1. Save 3 new landlord drafts today (Residential + Commercial mixed)
+2. Go to Saved Drafts
+3. ✅ All drafts saved today appear
+4. ✅ Sorting shows most recent first
+5. ✅ Clicking each opens correct landlord edit page
+6. ✅ After submit, it disappears from drafts (expected)
+
+---
+
+## What to tell Replit (copy/paste message)
+
+**Message to Replit:**
+
+* “Please restore today’s missing drafts for **Hire a Landlord’s Agent**. Right now only 2 show. First confirm whether the missing drafts still exist in the landlord drafts table by querying today’s updated_at for user [tenant@exp.com](mailto:tenant@exp.com). If they exist, fix the Saved Drafts query/filter so landlord drafts are not excluded due to status casing, is_draft vs status mismatch, submitted flags, property-type filters, soft-deletes, or pagination limits. If they were soft-deleted today, restore only those rows for [tenant@exp.com](mailto:tenant@exp.com) by clearing deleted_at. Apply fixes ONLY to Hire a Landlord drafts and do not change tenant/buyer/seller flows.”
+
+---
+
+If you want, I can tighten this even more by tailoring it to your exact table/fields (e.g., whether you use `landlord_agent_auctions`, `status`, `is_draft`, `deleted_at`). If you paste a screenshot of your DB columns (or the model snippet), I’ll rewrite the SQL and the exact conditional logic to match your schema exactly.
