@@ -1051,6 +1051,12 @@ $tenantPays = [
     <script>
         let currentServiceType = null;
 
+        window.addEventListener('force-redirect', function(event) {
+            if (event.detail && event.detail.url) {
+                window.location.href = event.detail.url;
+            }
+        });
+
         document.addEventListener('DOMContentLoaded', () => {
             // Detect which service is preselected on load
             if (document.getElementById('fullService')?.checked) {

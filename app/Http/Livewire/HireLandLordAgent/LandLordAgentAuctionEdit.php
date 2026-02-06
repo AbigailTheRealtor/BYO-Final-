@@ -2155,8 +2155,11 @@ class LandLordAgentAuctionEdit extends Component
 
             session()->flash('success', 'Listing updated successfully!');
 
-            // Optionally redirect to a success page
-            // return redirect()->route('listings.success');
+            $url = route('landlord.agent.auction.view', ['id' => $auction->id]);
+
+            $this->dispatchBrowserEvent('force-redirect', ['url' => $url]);
+
+            return redirect()->to($url);
 
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving listing: ' . $e->getMessage());

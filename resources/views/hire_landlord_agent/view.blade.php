@@ -26,6 +26,11 @@
     return $basis ? ('of ' . $basis) : null;
   };
 
+  $canon = function($str) {
+    if (!is_string($str)) return $str;
+    return str_replace(["\xe2\x80\x99", "\xe2\x80\x98", "\xe2\x80\x9c", "\xe2\x80\x9d"], ["'", "'", '"', '"'], $str);
+  };
+
   // Determine if property is Residential or Commercial (case-insensitive, handles variations)
   $propertyType = strtolower(trim($auction->get->property_type ?? ''));
   $isResidential = str_contains($propertyType, 'residential') || 
@@ -504,13 +509,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             @endif
 
 
+            @if ($isResidential)
             @if (@$auction->get->tenant_require != null)
             <div class="col-md-12 col-12 pt-2 fw-bold">
                 Furnishings:
                 <span class="removeBold">
                     <?php
                     $tenantRequire = @$auction->get->tenant_require;
-                    // Remove surrounding quotes if present
                     $tenantRequire = trim($tenantRequire, '"');
                     ?>
                     <span class="removeBold badge bg-secondary">{{ $tenantRequire }}</span>
@@ -557,8 +562,35 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </span>
             </div>
             @endif
+            @endif
+
+            @if ($isCommercial)
+            @php
+                $garageParkingOptions = @$auction->get->garage_parking_spaces_option;
+                if (is_string($garageParkingOptions)) {
+                    $garageParkingOptions = json_decode($garageParkingOptions, true);
+                }
+                if (!is_array($garageParkingOptions)) {
+                    $garageParkingOptions = [];
+                }
+                $garageParkingOptions = array_filter($garageParkingOptions, fn($v) => $v !== 'Other');
+                $otherParking = @$auction->get->other_parking_space_wrapper;
+                if (!empty($otherParking)) {
+                    $garageParkingOptions[] = $otherParking;
+                }
+            @endphp
+            @if (!empty($garageParkingOptions))
+            <div class="col-md-12 col-12 pt-2 fw-bold">
+                Garage/Parking Features:
+                @foreach ($garageParkingOptions as $parkingOption)
+                <span class="removeBold badge bg-secondary">{{ $parkingOption }}</span>
+                @endforeach
+            </div>
+            @endif
+            @endif
 
 
+            @if ($isResidential)
             @php
             // Normalize pool_type to an array of key => bool
             $poolTypeRaw = optional($auction->get)->pool_type;
@@ -614,6 +646,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 Pool:
                 <span class="removeBold">Optional</span>
             </div>
+            @endif
             @endif
 
 
@@ -774,10 +807,31 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             </div>
         </div>
         @endif
+        @if (@$auction->get->included_storage_space_res_both != '' && @$auction->get->included_storage_space_res_both != 'null')
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Included Storage Space:
+                <span class="removeBold">{{ $auction->get->included_storage_space_res_both }}</span>
+            </div>
+        </div>
+        @endif
         @if (@$auction->get->storage_space_res_both != '' && @$auction->get->storage_space_res_both != 'null')
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Storage Space Size:
                 <span class="removeBold">{{ $auction->get->storage_space_res_both }}</span>
+            </div>
+        </div>
+        @endif
+        @if (@$auction->get->included_storage_space_com_entire != '' && @$auction->get->included_storage_space_com_entire != 'null')
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Included Storage Space:
+                <span class="removeBold">{{ $auction->get->included_storage_space_com_entire }}</span>
+            </div>
+        </div>
+        @endif
+        @if (@$auction->get->storage_space_com_entire != '' && @$auction->get->storage_space_com_entire != 'null')
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Storage Space Size:
+                <span class="removeBold">{{ $auction->get->storage_space_com_entire }}</span>
             </div>
         </div>
         @endif
@@ -810,10 +864,45 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
 
+        @if (@$auction->get->included_storage_space_res_single != '' && @$auction->get->included_storage_space_res_single != 'null')
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Included Storage Space:
+                <span class="removeBold">{{ $auction->get->included_storage_space_res_single }}</span>
+            </div>
+        </div>
+        @endif
         @if (@$auction->get->storage_space_res_single != '' && @$auction->get->storage_space_res_single != 'null')
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Storage Space Size:
                 <span class="removeBold">{{ $auction->get->storage_space_res_single }}</span>
+            </div>
+        </div>
+        @endif
+        @if (@$auction->get->included_storage_space_com_single != '' && @$auction->get->included_storage_space_com_single != 'null')
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Included Storage Space:
+                <span class="removeBold">{{ $auction->get->included_storage_space_com_single }}</span>
+            </div>
+        </div>
+        @endif
+        @if (@$auction->get->storage_space_com_single != '' && @$auction->get->storage_space_com_single != 'null')
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Storage Space Size:
+                <span class="removeBold">{{ $auction->get->storage_space_com_single }}</span>
+            </div>
+        </div>
+        @endif
+        @if (@$auction->get->included_storage_space != '' && @$auction->get->included_storage_space != 'null')
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Included Storage Space:
+                <span class="removeBold">{{ $auction->get->included_storage_space }}</span>
+            </div>
+        </div>
+        @endif
+        @if (@$auction->get->storage_space != '' && @$auction->get->storage_space != 'null')
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Storage Space Size:
+                <span class="removeBold">{{ $auction->get->storage_space }}</span>
             </div>
         </div>
         @endif
@@ -1180,7 +1269,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @if (@$auction->get->purchase_fee_type != null)
         @php
             // Build combined Landlord's Broker Lease Fee display
-            $landlordLeaseFeeType = @$auction->get->purchase_fee_type ?? '';
+            $landlordLeaseFeeType = $canon(@$auction->get->purchase_fee_type ?? '');
             $landlordLeaseFeeCombined = '—';
             
             if ($landlordLeaseFeeType === 'Flat Fee' && @$auction->get->purchase_fee_flat) {
@@ -1213,17 +1302,17 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
 
-        @if (@$auction->get->purchase_fee_type === 'Percentage of the Gross Rent' && @$auction->get->sales_tax_option_gross != null)
+        @if ($canon(@$auction->get->purchase_fee_type ?? '') === 'Percentage of the Gross Rent' && !empty(@$auction->get->sales_tax_option_gross) && @$auction->get->sales_tax_option_gross !== 'null')
         <div class="col-md-12 col-12 pt-2 fw-bold">
             Sales Tax:
-            <span class="removeBold">{{ $auction->get->sales_tax_option_gross }}</span>
+            <span class="removeBold">{{ @$auction->get->sales_tax_option_gross === 'including' ? 'Including Sales Tax' : (@$auction->get->sales_tax_option_gross === 'excluding' ? 'Excluding Sales Tax' : $auction->get->sales_tax_option_gross) }}</span>
         </div>
         @endif
 
-        @if (@$auction->get->purchase_fee_type === "Percentage of Month's Rent" && @$auction->get->sales_tax_option_monthly != null)
+        @if ($canon(@$auction->get->purchase_fee_type ?? '') === "Percentage of Month's Rent" && !empty(@$auction->get->sales_tax_option_monthly) && @$auction->get->sales_tax_option_monthly !== 'null')
         <div class="col-md-12 col-12 pt-2 fw-bold">
             Sales Tax:
-            <span class="removeBold">{{ $auction->get->sales_tax_option_monthly }}</span>
+            <span class="removeBold">{{ @$auction->get->sales_tax_option_monthly === 'including' ? 'Including Sales Tax' : (@$auction->get->sales_tax_option_monthly === 'excluding' ? 'Excluding Sales Tax' : $auction->get->sales_tax_option_monthly) }}</span>
         </div>
         @endif
 
@@ -1243,7 +1332,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @if (@$auction->get->tenant_broker_commission_structure != 'no_compensation')
         @php
             // Build combined Tenant's Broker Fee display
-            $tenantFeeType = @$auction->get->tenant_broker_fee_structure ?? '';
+            $tenantFeeType = $canon(@$auction->get->tenant_broker_fee_structure ?? '');
             $tenantFeeCombined = '—';
             
             if ($tenantFeeType === 'Flat Fee' && @$auction->get->tenant_broker_flat_fee) {
@@ -1307,7 +1396,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @if (@$auction->get->renewal_fee_type != null)
         @php
             // Build combined Lease Renewal/Extension Fee display
-            $renewalFeeType = @$auction->get->renewal_fee_type ?? '';
+            $renewalFeeType = $canon(@$auction->get->renewal_fee_type ?? '');
             $renewalFeeCombined = '—';
             
             if ($renewalFeeType === 'Flat Fee' && @$auction->get->renewal_fee_flat_free) {
@@ -1340,10 +1429,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
 
-        @if (@$auction->get->renewal_fee_sales_tax_lease_value != null || @$auction->get->renewal_fee_sales_tax_first_month != null || @$auction->get->renewal_fee_sales_tax_flat_fee != null)
+        @php
+            $salesTaxValue = @$auction->get->renewal_fee_sales_tax_lease_value ?? @$auction->get->renewal_fee_sales_tax_first_month ?? @$auction->get->renewal_fee_sales_tax_flat_fee ?? null;
+        @endphp
+        @if (!empty($salesTaxValue) && $salesTaxValue !== 'null')
         <div class="col-md-12 col-12 pt-2 fw-bold">
             Sales Tax:
-            <span class="removeBold">{{ @$auction->get->renewal_fee_sales_tax_lease_value ?? @$auction->get->renewal_fee_sales_tax_first_month ?? @$auction->get->renewal_fee_sales_tax_flat_fee }}</span>
+            <span class="removeBold">{{ $salesTaxValue === 'including' ? 'Including Sales Tax' : ($salesTaxValue === 'excluding' ? 'Excluding Sales Tax' : $salesTaxValue) }}</span>
         </div>
         @endif
 
@@ -1407,7 +1499,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @if (@$auction->get->interested_lease_option_agreement === 'Yes')
             @if (@$auction->get->lease_value != null)
             <div class="col-md-12 col-12 pt-2 fw-bold">
-                Compensation (When Option Is Created):
+                Compensation for Creating the Lease-Option Agreement:
                 <span class="removeBold">
                     @if (@$auction->get->lease_type === 'percent')
                         {{ $fmtPercent($auction->get->lease_value) }} of Total Purchase Price
@@ -1420,7 +1512,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
             @if (@$auction->get->purchase_value != null)
             <div class="col-md-12 col-12 pt-2 fw-bold">
-                Compensation (If Purchase Option Is Exercised):
+                Compensation if Purchase Option is Exercised:
                 <span class="removeBold">
                     @if (@$auction->get->purchase_type === 'percent')
                         {{ $fmtPercent($auction->get->purchase_value) }} of Total Purchase Price
@@ -2273,7 +2365,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                         </div>
                                                         @endif
 
-                                                        @if (data_get($bid, 'get.purchase_fee_type') === 'Percentage of the First Month\'s Rent' && data_get($bid, 'get.purchase_fee_flat_combo'))
+                                                        @if ($canon(data_get($bid, 'get.purchase_fee_type') ?? '') === 'Percentage of the First Month\'s Rent' && data_get($bid, 'get.purchase_fee_flat_combo'))
                                                         <div class="mb-2">
                                                             <div class="fw-semibold" style="color: #049399;">Percentage of First Month's Rent:</div>
                                                             <div class="text-muted">{{ data_get($bid, 'get.purchase_fee_flat_combo') }}%</div>
@@ -2310,7 +2402,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                         @endif
                                                         @endif
 
-                                                        @if (data_get($bid, 'get.purchase_fee_type') === 'Percentage of Month\'s Rent' && data_get($bid, 'get.purchase_fee_monthly_percentage'))
+                                                        @if ($canon(data_get($bid, 'get.purchase_fee_type') ?? '') === 'Percentage of Month\'s Rent' && data_get($bid, 'get.purchase_fee_monthly_percentage'))
                                                         <div class="mb-2">
                                                             <div class="fw-semibold" style="color: #049399;">Percentage of Month's Rent:</div>
                                                             <div class="text-muted">{{ data_get($bid, 'get.purchase_fee_monthly_percentage') }}%</div>
@@ -2513,7 +2605,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                         </div>
                                                         @endif
 
-                                                        @if (data_get($bid, 'get.renewal_fee_type') === 'Percentage of the First Month\'s Rent' && data_get($bid, 'get.renewal_fee_first_month'))
+                                                        @if ($canon(data_get($bid, 'get.renewal_fee_type') ?? '') === 'Percentage of the First Month\'s Rent' && data_get($bid, 'get.renewal_fee_first_month'))
                                                         <div class="mb-2">
                                                             <div class="fw-semibold" style="color: #049399;">Percentage of First Month's Rent:</div>
                                                             <div class="text-muted">{{ data_get($bid, 'get.renewal_fee_first_month') }}%</div>
@@ -2550,7 +2642,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                         @endif
                                                         @endif
 
-                                                        @if (data_get($bid, 'get.renewal_fee_type') === 'Percentage of Month\'s Rent' && data_get($bid, 'get.renewal_fee_first_month'))
+                                                        @if ($canon(data_get($bid, 'get.renewal_fee_type') ?? '') === 'Percentage of Month\'s Rent' && data_get($bid, 'get.renewal_fee_first_month'))
                                                         <div class="mb-2">
                                                             <div class="fw-semibold" style="color: #049399;">Percentage of Month's Rent:</div>
                                                             <div class="text-muted">{{ data_get($bid, 'get.renewal_fee_first_month') }}%</div>
@@ -3538,7 +3630,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                         <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Percentage of Gross Lease Value:</span> {{ $allMeta['purchase_fee_percentage_combo'] }}%</div>
                                                         @endif
 
-                                                        @if (!empty($allMeta['purchase_fee_flat_combo']) && $allMeta['purchase_fee_type'] === 'Percentage of the First Month\'s Rent')
+                                                        @if (!empty($allMeta['purchase_fee_flat_combo']) && $canon($allMeta['purchase_fee_type'] ?? '') === 'Percentage of the First Month\'s Rent')
                                                         <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Percentage of First Month's Rent:</span> {{ $allMeta['purchase_fee_flat_combo'] }}%</div>
                                                         @endif
 
@@ -3558,7 +3650,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                         @endif
                                                         @endif
 
-                                                        @if (!empty($allMeta['purchase_fee_monthly_percentage']) && $allMeta['purchase_fee_type'] === 'Percentage of Month\'s Rent')
+                                                        @if (!empty($allMeta['purchase_fee_monthly_percentage']) && $canon($allMeta['purchase_fee_type'] ?? '') === 'Percentage of Month\'s Rent')
                                                         <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Percentage of Month's Rent:</span> {{ $allMeta['purchase_fee_monthly_percentage'] }}%</div>
                                                         @if (!empty($allMeta['purchase_fee_months']))
                                                         <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Number of Months:</span> {{ $allMeta['purchase_fee_months'] }} months</div>
@@ -3683,7 +3775,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                         <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Percentage of Gross Lease Value:</span> {{ $allMeta['renewal_fee_lease_value'] }}%</div>
                                                         @endif
 
-                                                        @if (!empty($allMeta['renewal_fee_first_month']) && $allMeta['renewal_fee_type'] === 'Percentage of the First Month\'s Rent')
+                                                        @if (!empty($allMeta['renewal_fee_first_month']) && $canon($allMeta['renewal_fee_type'] ?? '') === 'Percentage of the First Month\'s Rent')
                                                         <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Percentage of First Month's Rent:</span> {{ $allMeta['renewal_fee_first_month'] }}%</div>
                                                         @endif
 
@@ -3695,11 +3787,11 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                         <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Sales Tax:</span> {{ $allMeta['renewal_fee_sales_tax_lease_value'] === 'including' ? 'Including Sales Tax' : 'Excluding Sales Tax' }}</div>
                                                         @endif
 
-                                                        @if (!empty($allMeta['renewal_fee_no_of_months']) && $allMeta['renewal_fee_type'] === 'Percentage of Month\'s Rent')
+                                                        @if (!empty($allMeta['renewal_fee_no_of_months']) && $canon($allMeta['renewal_fee_type'] ?? '') === 'Percentage of Month\'s Rent')
                                                         <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Number of Months:</span> {{ $allMeta['renewal_fee_no_of_months'] }} months</div>
                                                         @endif
 
-                                                        @if (!empty($allMeta['renewal_fee_sales_tax_first_month']) && $allMeta['renewal_fee_type'] === 'Percentage of Month\'s Rent')
+                                                        @if (!empty($allMeta['renewal_fee_sales_tax_first_month']) && $canon($allMeta['renewal_fee_type'] ?? '') === 'Percentage of Month\'s Rent')
                                                         <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Sales Tax:</span> {{ $allMeta['renewal_fee_sales_tax_first_month'] === 'including' ? 'Including Sales Tax' : 'Excluding Sales Tax' }}</div>
                                                         @endif
 
@@ -3734,7 +3826,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                         <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Percentage of Gross Lease Value:</span> {{ $allMeta['tenant_broker_gross_lease'] }}%</div>
                                                         @endif
 
-                                                        @if (!empty($allMeta['tenant_broker_first_month_rent']) && $allMeta['tenant_broker_fee_structure'] === 'Percentage of the First Month\'s Rent')
+                                                        @if (!empty($allMeta['tenant_broker_first_month_rent']) && $canon($allMeta['tenant_broker_fee_structure'] ?? '') === 'Percentage of the First Month\'s Rent')
                                                         <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Percentage of First Month's Rent:</span> {{ $allMeta['tenant_broker_first_month_rent'] }}%</div>
                                                         @endif
 
