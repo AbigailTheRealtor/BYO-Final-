@@ -397,6 +397,121 @@ class LandLordAgentAuctionEdit extends Component
     public $expansion_first_month_percentage = null;
     public $expansion_flat_fee = null;
     public $expansion_custom_commission = null;
+
+    // Lease-Option Agreement Compensation
+    public $interested_lease_option_agreement = '';
+    public $lease_type = 'percent';
+    public $purchase_type = 'percent';
+    public $lease_value = '';
+    public $purchase_value = '';
+
+    // ZIP code fields
+    public $zipCodes = [];
+    public $zip_code = '';
+    public $zipCodeSuggestions = [];
+    public $highlightedZipCodeIndex = -1;
+
+    // Address autocomplete with place_id mapping
+    public $addressPlaceIds = [];
+
+    // Property location fields
+    public $property_city = '';
+    public $property_state = '';
+    public $property_zip = '';
+    public $property_county = '';
+    public $propertyCitySuggestions = [];
+    public $highlightedPropertyCityIndex = -1;
+
+    // Lease Terms - Leasing Space Sub-Fields
+    public $occupant_status = '';
+    public $occupant_tenant = '';
+    public $leasing_spaces = '';
+    public $restrictions = '';
+    public $maintenance_by = '';
+    public $maintenance_response_time = '';
+    public $included_storage_space_res_both = '';
+    public $storage_space_res_both = '';
+    public $guests_allowed = '';
+    public $common_areas_access = '';
+    public $utilities = '';
+    public $common_areas_cleaning = '';
+    public $included_storage_space_res_single = '';
+    public $storage_space_res_single = '';
+    public $bathroom_facilities = '';
+    public $room_size = '';
+    public $included_storage_space_com_entire = '';
+    public $storage_space_com_entire = '';
+    public $shared_amenities = '';
+    public $building_hours = '';
+    public $access_24_7 = '';
+    public $zoning_allows = '';
+    public $space_features = '';
+    public $neighboring_tenants = '';
+    public $included_storage_space_com_single = '';
+    public $storage_space_com_single = '';
+    public $maintenance_handler = '';
+    public $included_storage_space = '';
+    public $storage_space = '';
+
+    // "Other" text fields for multi-select dropdowns
+    public $other_tenant_pays = '';
+    public $other_owner_pays = '';
+    public $custom_lease_term = '';
+    public $other_lease_term = '';
+    public $other_rent_include = '';
+    public $other_appliances = '';
+    public $tenant_pays_other = '';
+    public $owner_pays_other = '';
+
+    // Landlord Broker Lease Fee fields
+    public $landlord_broker_purchase_price = '';
+    public $landlord_broker_percentage_price = '';
+    public $landlord_broker_dollar_price = '';
+    public $landlord_broker_flate_fee = '';
+    public $landlord_broker_other = '';
+
+    // Property Management & Selling Interest
+    public $interested_in_property_management = '';
+    public $interested_in_property_management_fee = '';
+    public $interested_in_property_management_fee_flate_free = '';
+    public $interested_in_property_management_fee_gross_lease = '';
+    public $interested_in_property_management_fee_other = '';
+    public $interested_in_property_management_fee_rental_periord = '';
+    public $interested_in_selling = '';
+    public $interested_in_selling_type = '';
+
+    // Additional broker compensation sub-fields
+    public $lease_fee_flat_type = '';
+    public $purchase_fee_flat_type = '';
+    public $purchase_fee_gross_rent = '';
+    public $purchase_fee_rental_period = '';
+    public $split_payment_due_other = '';
+    public $tenant_broker_first_month_rent = '';
+    public $tenant_broker_gross_lease = '';
+    public $tenant_broker_other = '';
+    public $renewal_fee_first_month = '';
+    public $renewal_fee_flat_free = '';
+    public $renewal_fee_lease_value = '';
+    public $renewal_fee_no_of_months = '';
+    public $renewal_fee_sales_tax_first_month = '';
+    public $renewal_fee_sales_tax_flat_fee = '';
+    public $renewal_fee_sales_tax_lease_value = '';
+
+    // Listing & property additional fields
+    public $additional_details_broker = '';
+    public $agent_bid_visibility = '';
+    public $total_square_feet = '';
+    public $sqft_heated_source = '';
+    public $meeting_Preference = '';
+    public $photo_enhancements = [];
+    public $custom_enhancement = '';
+
+    // Pet/animal fields
+    public $has_breed_restrictions = '';
+    public $breed_restrictions = '';
+    public $service_animal = '';
+    public $support_animal = '';
+
     // Enable/disable checkboxes
     public $enable = [
         // Marketing & Promotion
@@ -501,6 +616,31 @@ class LandLordAgentAuctionEdit extends Component
     public function getIsOtherNonNegotiableVisibleProperty()
     {
         return is_array($this->non_negotiable_amenities) && in_array('Other', $this->non_negotiable_amenities);
+    }
+
+    public function getShowOtherAppliancesProperty()
+    {
+        return is_array($this->appliances) && in_array('Other', $this->appliances);
+    }
+
+    public function getIsOtherTenantPayVisibleProperty()
+    {
+        return is_array($this->tenant_pays) && in_array('Other', $this->tenant_pays);
+    }
+
+    public function getIsOtherOwnerPaysVisibleProperty()
+    {
+        return is_array($this->owner_pays) && in_array('Other', $this->owner_pays);
+    }
+
+    public function getIsUpdateLeaseTermOptionVisibleProperty()
+    {
+        return is_array($this->desired_lease_length) && in_array('Other', $this->desired_lease_length);
+    }
+
+    public function getIsRentIncludeVisibleProperty()
+    {
+        return is_array($this->rent_includes) && in_array('Other', $this->rent_includes);
     }
 
     // Methods
@@ -1029,6 +1169,13 @@ class LandLordAgentAuctionEdit extends Component
 
             $raw = $auction->get->counties ?? null;
             $this->counties = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
+            $this->property_city = $auction->get->property_city ?? null;
+            $this->property_county = $auction->get->property_county ?? null;
+            $this->property_state = $auction->get->property_state ?? null;
+            $this->property_zip = $auction->get->property_zip ?? null;
+
+            $raw = $auction->get->zipCodes ?? null;
+            $this->zipCodes = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
             // Property details
 
             $raw = $auction->get->property_items ?? null;
@@ -1055,6 +1202,7 @@ class LandLordAgentAuctionEdit extends Component
             $this->appliances = $auction->get->appliances ?? '';
             $this->appliances_other = $auction->get->appliances_other ?? '';
             $this->preferance_details = $auction->get->preferance_details ?? '';
+            $this->other_appliances = $auction->get->other_appliances ?? ($auction->get->appliances_other ?? null);
 
 
             // Sale Provision
@@ -1157,6 +1305,13 @@ class LandLordAgentAuctionEdit extends Component
             $this->tenant_pays = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
             $raw = $auction->get->owner_pays ?? null;
             $this->owner_pays = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
+            $this->other_tenant_pays = $auction->get->other_tenant_pays ?? null;
+            $this->other_owner_pays = $auction->get->other_owner_pays ?? null;
+            $this->tenant_pays_other = $auction->get->tenant_pays_other ?? null;
+            $this->owner_pays_other = $auction->get->owner_pays_other ?? null;
+            $this->custom_lease_term = $auction->get->custom_lease_term ?? null;
+            $this->other_lease_term = $auction->get->other_lease_term ?? null;
+            $this->other_rent_include = $auction->get->other_rent_include ?? null;
 
 
             $this->garage_needed = $auction->get->garage_needed ?? null;
@@ -1183,6 +1338,35 @@ class LandLordAgentAuctionEdit extends Component
             $this->number_of_unit_other = $auction->get->number_of_unit_other ?? null;
             $this->minimum_annual_net_income = $auction->get->minimum_annual_net_income ?? null;
             $this->leasing_55_plus = $auction->get->leasing_55_plus ?? null;
+            $this->occupant_status = $auction->get->occupant_status ?? null;
+            $this->occupant_tenant = $auction->get->occupant_tenant ?? null;
+            $this->leasing_spaces = $auction->get->leasing_spaces ?? null;
+            $this->restrictions = $auction->get->restrictions ?? null;
+            $this->maintenance_by = $auction->get->maintenance_by ?? null;
+            $this->maintenance_response_time = $auction->get->maintenance_response_time ?? null;
+            $this->included_storage_space_res_both = $auction->get->included_storage_space_res_both ?? null;
+            $this->storage_space_res_both = $auction->get->storage_space_res_both ?? null;
+            $this->guests_allowed = $auction->get->guests_allowed ?? null;
+            $this->common_areas_access = $auction->get->common_areas_access ?? null;
+            $this->utilities = $auction->get->utilities ?? null;
+            $this->common_areas_cleaning = $auction->get->common_areas_cleaning ?? null;
+            $this->included_storage_space_res_single = $auction->get->included_storage_space_res_single ?? null;
+            $this->storage_space_res_single = $auction->get->storage_space_res_single ?? null;
+            $this->bathroom_facilities = $auction->get->bathroom_facilities ?? null;
+            $this->room_size = $auction->get->room_size ?? null;
+            $this->included_storage_space_com_entire = $auction->get->included_storage_space_com_entire ?? null;
+            $this->storage_space_com_entire = $auction->get->storage_space_com_entire ?? null;
+            $this->shared_amenities = $auction->get->shared_amenities ?? null;
+            $this->building_hours = $auction->get->building_hours ?? null;
+            $this->access_24_7 = $auction->get->access_24_7 ?? null;
+            $this->zoning_allows = $auction->get->zoning_allows ?? null;
+            $this->space_features = $auction->get->space_features ?? null;
+            $this->neighboring_tenants = $auction->get->neighboring_tenants ?? null;
+            $this->included_storage_space_com_single = $auction->get->included_storage_space_com_single ?? null;
+            $this->storage_space_com_single = $auction->get->storage_space_com_single ?? null;
+            $this->maintenance_handler = $auction->get->maintenance_handler ?? null;
+            $this->included_storage_space = $auction->get->included_storage_space ?? null;
+            $this->storage_space = $auction->get->storage_space ?? null;
 
             $raw = $auction->get->non_negotiable_amenities ?? null;
             $this->non_negotiable_amenities = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
@@ -1362,6 +1546,55 @@ class LandLordAgentAuctionEdit extends Component
             $this->expansion_first_month_percentage = $auction->get->expansion_first_month_percentage ?? null;
             $this->expansion_flat_fee = $auction->get->expansion_flat_fee ?? null;
             $this->expansion_custom_commission = $auction->get->expansion_custom_commission ?? null;
+            $this->landlord_broker_purchase_price = $auction->get->landlord_broker_purchase_price ?? null;
+            $this->landlord_broker_percentage_price = $auction->get->landlord_broker_percentage_price ?? null;
+            $this->landlord_broker_dollar_price = $auction->get->landlord_broker_dollar_price ?? null;
+            $this->landlord_broker_flate_fee = $auction->get->landlord_broker_flate_fee ?? null;
+            $this->landlord_broker_other = $auction->get->landlord_broker_other ?? null;
+            $this->interested_in_property_management = $auction->get->interested_in_property_management ?? null;
+            $this->interested_in_property_management_fee = $auction->get->interested_in_property_management_fee ?? null;
+            $this->interested_in_property_management_fee_flate_free = $auction->get->interested_in_property_management_fee_flate_free ?? null;
+            $this->interested_in_property_management_fee_gross_lease = $auction->get->interested_in_property_management_fee_gross_lease ?? null;
+            $this->interested_in_property_management_fee_other = $auction->get->interested_in_property_management_fee_other ?? null;
+            $this->interested_in_property_management_fee_rental_periord = $auction->get->interested_in_property_management_fee_rental_periord ?? null;
+            $this->interested_in_selling = $auction->get->interested_in_selling ?? null;
+            $this->interested_in_selling_type = $auction->get->interested_in_selling_type ?? null;
+            $this->lease_fee_flat_type = $auction->get->lease_fee_flat_type ?? null;
+            $this->purchase_fee_flat_type = $auction->get->purchase_fee_flat_type ?? null;
+            $this->purchase_fee_gross_rent = $auction->get->purchase_fee_gross_rent ?? null;
+            $this->purchase_fee_rental_period = $auction->get->purchase_fee_rental_period ?? null;
+            $this->split_payment_due_other = $auction->get->split_payment_due_other ?? null;
+            $this->tenant_broker_first_month_rent = $auction->get->tenant_broker_first_month_rent ?? null;
+            $this->tenant_broker_gross_lease = $auction->get->tenant_broker_gross_lease ?? null;
+            $this->tenant_broker_other = $auction->get->tenant_broker_other ?? null;
+            $this->renewal_fee_first_month = $auction->get->renewal_fee_first_month ?? null;
+            $this->renewal_fee_flat_free = $auction->get->renewal_fee_flat_free ?? null;
+            $this->renewal_fee_lease_value = $auction->get->renewal_fee_lease_value ?? null;
+            $this->renewal_fee_no_of_months = $auction->get->renewal_fee_no_of_months ?? null;
+            $this->renewal_fee_sales_tax_first_month = $auction->get->renewal_fee_sales_tax_first_month ?? null;
+            $this->renewal_fee_sales_tax_flat_fee = $auction->get->renewal_fee_sales_tax_flat_fee ?? null;
+            $this->renewal_fee_sales_tax_lease_value = $auction->get->renewal_fee_sales_tax_lease_value ?? null;
+            $this->additional_details_broker = $auction->get->additional_details_broker ?? null;
+            $this->agent_bid_visibility = $auction->get->agent_bid_visibility ?? null;
+            $this->total_square_feet = $auction->get->total_square_feet ?? null;
+            $this->sqft_heated_source = $auction->get->sqft_heated_source ?? null;
+            $this->meeting_Preference = $auction->get->meeting_Preference ?? null;
+
+            $raw = $auction->get->photo_enhancements ?? null;
+            $this->photo_enhancements = $raw ? (is_string($raw) ? json_decode($raw, true) ?? [] : (array)$raw) : [];
+
+            $this->custom_enhancement = $auction->get->custom_enhancement ?? null;
+            $this->has_breed_restrictions = $auction->get->has_breed_restrictions ?? null;
+            $this->breed_restrictions = $auction->get->breed_restrictions ?? null;
+            $this->service_animal = $auction->get->service_animal ?? null;
+            $this->support_animal = $auction->get->support_animal ?? null;
+
+            // Lease-Option Agreement Compensation
+            $this->interested_lease_option_agreement = $auction->get->interested_lease_option_agreement ?? null;
+            $this->lease_type = $auction->get->lease_type ?? 'percent';
+            $this->purchase_type = $auction->get->purchase_type ?? 'percent';
+            $this->lease_value = $auction->get->lease_value ?? null;
+            $this->purchase_value = $auction->get->purchase_value ?? null;
 
             //add end by AT
             // Move services
@@ -1432,6 +1665,11 @@ class LandLordAgentAuctionEdit extends Component
         $auction->saveMeta('cities', json_encode($this->cities));
         $auction->saveMeta('counties', json_encode($this->counties));
         $auction->saveMeta('state', $this->state);
+        $auction->saveMeta('property_city', $this->property_city);
+        $auction->saveMeta('property_county', $this->property_county);
+        $auction->saveMeta('property_state', $this->property_state);
+        $auction->saveMeta('property_zip', $this->property_zip);
+        $auction->saveMeta('zipCodes', json_encode($this->zipCodes));
 
         // Property Details
         $auction->saveMeta('property_type', $this->property_type);
@@ -1457,6 +1695,7 @@ class LandLordAgentAuctionEdit extends Component
         $auction->saveMeta('appliances', $this->appliances);
         $auction->saveMeta('appliances_other', $this->appliances_other);
         $auction->saveMeta('preferance_details', $this->preferance_details);
+        $auction->saveMeta('other_appliances', $this->other_appliances);
 
         // Sale Provisions
         $auction->saveMeta('sale_provision', $this->sale_provision);
@@ -1546,6 +1785,13 @@ class LandLordAgentAuctionEdit extends Component
 
         $auction->saveMeta('tenant_pays', json_encode($this->tenant_pays));
         $auction->saveMeta('owner_pays', json_encode($this->owner_pays));
+        $auction->saveMeta('other_tenant_pays', $this->other_tenant_pays);
+        $auction->saveMeta('other_owner_pays', $this->other_owner_pays);
+        $auction->saveMeta('tenant_pays_other', $this->tenant_pays_other);
+        $auction->saveMeta('owner_pays_other', $this->owner_pays_other);
+        $auction->saveMeta('custom_lease_term', $this->custom_lease_term);
+        $auction->saveMeta('other_lease_term', $this->other_lease_term);
+        $auction->saveMeta('other_rent_include', $this->other_rent_include);
 
 
         $auction->saveMeta('garage_needed', $this->garage_needed);
@@ -1562,6 +1808,35 @@ class LandLordAgentAuctionEdit extends Component
         $auction->saveMeta('number_of_unit_other', $this->number_of_unit_other);
         $auction->saveMeta('minimum_annual_net_income', $this->minimum_annual_net_income);
         $auction->saveMeta('leasing_55_plus', $this->leasing_55_plus);
+        $auction->saveMeta('occupant_status', $this->occupant_status);
+        $auction->saveMeta('occupant_tenant', $this->occupant_tenant);
+        $auction->saveMeta('leasing_spaces', $this->leasing_spaces);
+        $auction->saveMeta('restrictions', $this->restrictions);
+        $auction->saveMeta('maintenance_by', $this->maintenance_by);
+        $auction->saveMeta('maintenance_response_time', $this->maintenance_response_time);
+        $auction->saveMeta('included_storage_space_res_both', $this->included_storage_space_res_both);
+        $auction->saveMeta('storage_space_res_both', $this->storage_space_res_both);
+        $auction->saveMeta('guests_allowed', $this->guests_allowed);
+        $auction->saveMeta('common_areas_access', $this->common_areas_access);
+        $auction->saveMeta('utilities', $this->utilities);
+        $auction->saveMeta('common_areas_cleaning', $this->common_areas_cleaning);
+        $auction->saveMeta('included_storage_space_res_single', $this->included_storage_space_res_single);
+        $auction->saveMeta('storage_space_res_single', $this->storage_space_res_single);
+        $auction->saveMeta('bathroom_facilities', $this->bathroom_facilities);
+        $auction->saveMeta('room_size', $this->room_size);
+        $auction->saveMeta('included_storage_space_com_entire', $this->included_storage_space_com_entire);
+        $auction->saveMeta('storage_space_com_entire', $this->storage_space_com_entire);
+        $auction->saveMeta('shared_amenities', $this->shared_amenities);
+        $auction->saveMeta('building_hours', $this->building_hours);
+        $auction->saveMeta('access_24_7', $this->access_24_7);
+        $auction->saveMeta('zoning_allows', $this->zoning_allows);
+        $auction->saveMeta('space_features', $this->space_features);
+        $auction->saveMeta('neighboring_tenants', $this->neighboring_tenants);
+        $auction->saveMeta('included_storage_space_com_single', $this->included_storage_space_com_single);
+        $auction->saveMeta('storage_space_com_single', $this->storage_space_com_single);
+        $auction->saveMeta('maintenance_handler', $this->maintenance_handler);
+        $auction->saveMeta('included_storage_space', $this->included_storage_space);
+        $auction->saveMeta('storage_space', $this->storage_space);
 
         // Requirements
         $auction->saveMeta('non_negotiable_amenities', json_encode($this->non_negotiable_amenities));
@@ -1631,6 +1906,50 @@ class LandLordAgentAuctionEdit extends Component
         $auction->saveMeta('agency_agreement_timeframe', $this->agency_agreement_timeframe);
         $auction->saveMeta('agency_agreement_custom', $this->agency_agreement_custom);
         $auction->saveMeta('brokerage_relationship', $this->brokerage_relationship);
+        $auction->saveMeta('landlord_broker_purchase_price', $this->landlord_broker_purchase_price);
+        $auction->saveMeta('landlord_broker_percentage_price', $this->landlord_broker_percentage_price);
+        $auction->saveMeta('landlord_broker_dollar_price', $this->landlord_broker_dollar_price);
+        $auction->saveMeta('landlord_broker_flate_fee', $this->landlord_broker_flate_fee);
+        $auction->saveMeta('landlord_broker_other', $this->landlord_broker_other);
+        $auction->saveMeta('interested_in_property_management', $this->interested_in_property_management);
+        $auction->saveMeta('interested_in_property_management_fee', $this->interested_in_property_management_fee);
+        $auction->saveMeta('interested_in_property_management_fee_flate_free', $this->interested_in_property_management_fee_flate_free);
+        $auction->saveMeta('interested_in_property_management_fee_gross_lease', $this->interested_in_property_management_fee_gross_lease);
+        $auction->saveMeta('interested_in_property_management_fee_other', $this->interested_in_property_management_fee_other);
+        $auction->saveMeta('interested_in_property_management_fee_rental_periord', $this->interested_in_property_management_fee_rental_periord);
+        $auction->saveMeta('interested_in_selling', $this->interested_in_selling);
+        $auction->saveMeta('interested_in_selling_type', $this->interested_in_selling_type);
+        $auction->saveMeta('lease_fee_flat_type', $this->lease_fee_flat_type);
+        $auction->saveMeta('purchase_fee_flat_type', $this->purchase_fee_flat_type);
+        $auction->saveMeta('purchase_fee_gross_rent', $this->purchase_fee_gross_rent);
+        $auction->saveMeta('purchase_fee_rental_period', $this->purchase_fee_rental_period);
+        $auction->saveMeta('split_payment_due_other', $this->split_payment_due_other);
+        $auction->saveMeta('tenant_broker_first_month_rent', $this->tenant_broker_first_month_rent);
+        $auction->saveMeta('tenant_broker_gross_lease', $this->tenant_broker_gross_lease);
+        $auction->saveMeta('tenant_broker_other', $this->tenant_broker_other);
+        $auction->saveMeta('renewal_fee_first_month', $this->renewal_fee_first_month);
+        $auction->saveMeta('renewal_fee_flat_free', $this->renewal_fee_flat_free);
+        $auction->saveMeta('renewal_fee_lease_value', $this->renewal_fee_lease_value);
+        $auction->saveMeta('renewal_fee_no_of_months', $this->renewal_fee_no_of_months);
+        $auction->saveMeta('renewal_fee_sales_tax_first_month', $this->renewal_fee_sales_tax_first_month);
+        $auction->saveMeta('renewal_fee_sales_tax_flat_fee', $this->renewal_fee_sales_tax_flat_fee);
+        $auction->saveMeta('renewal_fee_sales_tax_lease_value', $this->renewal_fee_sales_tax_lease_value);
+        $auction->saveMeta('additional_details_broker', $this->additional_details_broker);
+        $auction->saveMeta('agent_bid_visibility', $this->agent_bid_visibility);
+        $auction->saveMeta('total_square_feet', $this->total_square_feet);
+        $auction->saveMeta('sqft_heated_source', $this->sqft_heated_source);
+        $auction->saveMeta('meeting_Preference', $this->meeting_Preference);
+        $auction->saveMeta('photo_enhancements', json_encode($this->photo_enhancements));
+        $auction->saveMeta('custom_enhancement', $this->custom_enhancement);
+        $auction->saveMeta('has_breed_restrictions', $this->has_breed_restrictions);
+        $auction->saveMeta('breed_restrictions', $this->breed_restrictions);
+        $auction->saveMeta('service_animal', $this->service_animal);
+        $auction->saveMeta('support_animal', $this->support_animal);
+        $auction->saveMeta('interested_lease_option_agreement', $this->interested_lease_option_agreement);
+        $auction->saveMeta('lease_type', $this->lease_type);
+        $auction->saveMeta('purchase_type', $this->purchase_type);
+        $auction->saveMeta('lease_value', $this->lease_value);
+        $auction->saveMeta('purchase_value', $this->purchase_value);
 
         // 2nd tab limited services
         // Meeting details
