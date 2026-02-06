@@ -196,6 +196,9 @@ class LandLordAgentAuctionEdit extends Component
     public $lease_fee_percentage = '';
     public $lease_fee_months = '';
     public $lease_fee_percentage_monthly_rent = '';
+    public $lease_fee_percentage_monthly_number = '';
+    public $lease_fee_percentage_net = '';
+    public $lease_fee_percentage_combo_net = '';
     public $lease_fee_flat_combo = '';
     public $lease_fee_percentage_combo = '';
     public $lease_fee_other = '';
@@ -467,6 +470,8 @@ class LandLordAgentAuctionEdit extends Component
     public $tenant_pays_other = '';
     public $owner_pays_other = '';
 
+    public $showOtherAppliances = false;
+
     // Landlord Broker Lease Fee fields
     public $landlord_broker_purchase_price = '';
     public $landlord_broker_percentage_price = '';
@@ -509,6 +514,12 @@ class LandLordAgentAuctionEdit extends Component
     public $meeting_Preference = '';
     public $photo_enhancements = [];
     public $custom_enhancement = '';
+
+    public $showEnhancements = false;
+    public $showCustomEnhancement = false;
+    public $showOpenHouseInput = false;
+    public $isLoadingData = false;
+    public $current_status = '';
 
     // Pet/animal fields
     public $has_breed_restrictions = '';
@@ -627,6 +638,13 @@ class LandLordAgentAuctionEdit extends Component
         return is_array($this->appliances) && in_array('Other', $this->appliances);
     }
 
+    public function updateAppliances($selectedValues)
+    {
+        if ($this->isLoadingData) return;
+        $this->appliances = $selectedValues;
+        $this->showOtherAppliances = is_array($selectedValues) && in_array('Other', $selectedValues);
+    }
+
     public function getIsOtherTenantPayVisibleProperty()
     {
         return is_array($this->tenant_pays) && in_array('Other', $this->tenant_pays);
@@ -689,7 +707,7 @@ class LandLordAgentAuctionEdit extends Component
      */
     public function updatedLeaseFeeType($value)
     {
-        // Reset all dependent lease fee fields when fee type changes
+        if ($this->isLoadingData) return;
         $this->reset([
             'lease_fee_flat',
             'lease_fee_percentage',
@@ -701,13 +719,9 @@ class LandLordAgentAuctionEdit extends Component
         ]);
     }
 
-    /**
-     * Reset dependent fields when purchase_fee_type (Landlord's Broker Lease Fee) changes
-     * to prevent validation errors when switching between fee types.
-     */
     public function updatedPurchaseFeeType($value)
     {
-        // Reset all dependent fee fields when fee type changes
+        if ($this->isLoadingData) return;
         $this->reset([
             'purchase_fee_flat',
             'purchase_fee_rental_period',
@@ -747,7 +761,7 @@ class LandLordAgentAuctionEdit extends Component
 
     public function updatedOfferedFinancing()
     {
-        // Reset all dependent fields when financing type changes
+        if ($this->isLoadingData) return;
         $this->reset([
             'other_financing',
             'cash_budget',
@@ -777,7 +791,7 @@ class LandLordAgentAuctionEdit extends Component
 
     public function updatedSaleProvision()
     {
-        // Reset all dependent fields when main selection changes
+        if ($this->isLoadingData) return;
         $this->reset([
             'sale_provision_other',
             'sale_provision_assignment',
@@ -788,11 +802,13 @@ class LandLordAgentAuctionEdit extends Component
 
     public function updatedSaleProvisionAssignment()
     {
+        if ($this->isLoadingData) return;
         $this->reset(['assignment_fee_amount', 'buyer_sell_contract']);
     }
 
     public function updatedBuyerSellContract()
     {
+        if ($this->isLoadingData) return;
         $this->reset(['assignment_fee_amount']);
     }
 
@@ -1149,6 +1165,9 @@ class LandLordAgentAuctionEdit extends Component
 
     public function loadAuctionData($listingId)
     {
+        $this->isLoadingData = true;
+
+        try {
         $auction = HirelandLordAgentAuction::where('id', $listingId)
             ->where('user_id', Auth::id())
             ->first();
@@ -1213,6 +1232,7 @@ class LandLordAgentAuctionEdit extends Component
             $this->appliances_other = $auction->get->appliances_other ?? '';
             $this->preferance_details = $auction->get->preferance_details ?? '';
             $this->other_appliances = $auction->get->other_appliances ?? ($auction->get->appliances_other ?? null);
+            $this->showOtherAppliances = is_array($this->appliances) && in_array('Other', $this->appliances);
 
 
             // Sale Provision
@@ -1433,6 +1453,9 @@ class LandLordAgentAuctionEdit extends Component
             $this->lease_fee_percentage = $auction->get->lease_fee_percentage ?? null;
             $this->lease_fee_months = $auction->get->lease_fee_months ?? null;
             $this->lease_fee_percentage_monthly_rent = $auction->get->lease_fee_percentage_monthly_rent ?? null;
+            $this->lease_fee_percentage_monthly_number = $auction->get->lease_fee_percentage_monthly_number ?? null;
+            $this->lease_fee_percentage_net = $auction->get->lease_fee_percentage_net ?? null;
+            $this->lease_fee_percentage_combo_net = $auction->get->lease_fee_percentage_combo_net ?? null;
             $this->lease_fee_flat_combo = $auction->get->lease_fee_flat_combo ?? null;
             $this->lease_fee_percentage_combo = $auction->get->lease_fee_percentage_combo ?? null;
             $this->lease_fee_other = $auction->get->lease_fee_other ?? null;
@@ -1655,7 +1678,28 @@ class LandLordAgentAuctionEdit extends Component
             //     }
             // }
 
+            $this->showOtherAppliances = is_array($this->appliances) && in_array('Other', $this->appliances);
+
+            if (is_array($this->services)) {
+                $this->showOpenHouseInput = in_array('Host open houses', $this->services)
+                    || in_array('Host broker tours', $this->services)
+                    || in_array('Host site visit event (administrative coordination only)', $this->services);
+            }
+
+            if (is_array($this->services) && in_array('Provide digital photo enhancements', $this->services)) {
+                $this->showEnhancements = true;
+            }
+            if (!empty($this->photo_enhancements)) {
+                $this->showEnhancements = true;
+                $this->showCustomEnhancement = in_array('Other', $this->photo_enhancements);
+            }
+
+            $this->current_status = $auction->get->current_status ?? '';
+
             $this->dispatchBrowserEvent('draftLoaded');
+        }
+        } finally {
+            $this->isLoadingData = false;
         }
     }
 
@@ -1891,6 +1935,9 @@ class LandLordAgentAuctionEdit extends Component
         $auction->saveMeta('lease_fee_percentage', $this->lease_fee_percentage);
         $auction->saveMeta('lease_fee_months', $this->lease_fee_months);
         $auction->saveMeta('lease_fee_percentage_monthly_rent', $this->lease_fee_percentage_monthly_rent);
+        $auction->saveMeta('lease_fee_percentage_monthly_number', $this->lease_fee_percentage_monthly_number);
+        $auction->saveMeta('lease_fee_percentage_net', $this->lease_fee_percentage_net);
+        $auction->saveMeta('lease_fee_percentage_combo_net', $this->lease_fee_percentage_combo_net);
         $auction->saveMeta('lease_fee_flat_combo', $this->lease_fee_flat_combo);
         $auction->saveMeta('lease_fee_percentage_combo', $this->lease_fee_percentage_combo);
         $auction->saveMeta('lease_fee_other', $this->lease_fee_other);
@@ -2109,6 +2156,7 @@ class LandLordAgentAuctionEdit extends Component
         $auction->saveMeta('phone_number', $phoneDigitsOnly);
         $auction->saveMeta('email', $this->email);
         $auction->saveMeta('video_link', $this->video_link);
+        $auction->saveMeta('current_status', $this->current_status);
 
         // Save photo - only process if it's a new upload (UploadedFile), not an existing string path
         if ($this->photo && !is_string($this->photo)) {

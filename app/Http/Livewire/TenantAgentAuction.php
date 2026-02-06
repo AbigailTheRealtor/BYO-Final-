@@ -1191,21 +1191,21 @@ class TenantAgentAuction extends Component
 
     public function updateLeaseTermOptions($selectedValues)
     {
+        if ($this->isLoadingData) return;
         if (in_array('Other', $selectedValues)) {
             $this->is_update_lease_term_option_visible = true;
         } else {
             $this->is_update_lease_term_option_visible = false;
-            $this->other_lease_term = '';  // Clear the "Other" field if not selected
+            $this->other_lease_term = '';
         }
     }
 
 
     public function updatePreference($selectedValues)
     {
+        if ($this->isLoadingData) return;
         $this->view_preference = $selectedValues;
 
-        // Visibility is handled by computed property getIsOtherVisibleProperty()
-        // Clear the other_preferences field if "Other" is not selected
         if (!in_array('Other', $selectedValues)) {
             $this->other_preferences = '';
         }
@@ -1213,17 +1213,19 @@ class TenantAgentAuction extends Component
 
     public function updateOwnerPays($selectedValues)
     {
+        if ($this->isLoadingData) return;
         if (in_array('Other', $selectedValues)) {
             $this->is_other_owner_pays_visible = true;
         } else {
             $this->is_other_owner_pays_visible = false;
-            $this->other_owner_pays = '';  // Clear the "Other" field if not selected
+            $this->other_owner_pays = '';
         }
     }
 
 
     public function updateTenantPays($selectedValues)
     {
+        if ($this->isLoadingData) return;
         if (in_array('Other', $selectedValues)) {
             $this->is_other_tenant_pay_visible = true;
         } else {
@@ -1233,12 +1235,12 @@ class TenantAgentAuction extends Component
 
     public function updateRentIncludes($selectedValues)
     {
-        // If "Other" is not selected, hide the "Other" input
+        if ($this->isLoadingData) return;
         if (in_array('Other', $selectedValues)) {
             $this->is_rent_include_visible = true;
         } else {
             $this->is_rent_include_visible = false;
-            $this->other_rent_include = '';  // Clear the "Other" field if not selected
+            $this->other_rent_include = '';
         }
     }
 
@@ -1280,6 +1282,7 @@ class TenantAgentAuction extends Component
 
     public function updateAppliances($selectedValues)
     {
+        if ($this->isLoadingData) return;
         $this->appliances = $selectedValues ?? [];
         $this->showOtherAppliances = in_array('Other', $this->appliances);
         $this->validateOnly('appliances');
@@ -1288,9 +1291,9 @@ class TenantAgentAuction extends Component
 
     public function updateGarageParkingSpaces($selectedValues)
     {
+        if ($this->isLoadingData) return;
         $this->garage_parking_spaces_option = $selectedValues;
 
-        // Clear the "Other" input if "Other" is not selected
         if (!in_array('Other', $selectedValues)) {
             $this->other_parking_space_wrapper = null;
         }
@@ -2515,6 +2518,7 @@ class TenantAgentAuction extends Component
     {
         $this->isLoadingData = true;
 
+        try {
         // All model classes to search
         $modelClasses = [
             'tenant'   => HireTenantAgentAuction::class,
@@ -2641,6 +2645,7 @@ class TenantAgentAuction extends Component
 
             $this->desired_lease_length = is_string($auction->get->desired_lease_length) ? json_decode($auction->get->desired_lease_length, true) ?? [] : (array)$auction->get->desired_lease_length;
             $this->other_lease_term = $auction->get->other_lease_term;
+            $this->is_update_lease_term_option_visible = is_array($this->desired_lease_length) && in_array('Other', $this->desired_lease_length);
 
             $this->rent_includes = is_string($auction->get->rent_includes) ? json_decode($auction->get->rent_includes, true) ?? [] : (array)$auction->get->rent_includes;
             $this->other_rent_include = $auction->get->other_rent_include;
@@ -3179,12 +3184,10 @@ class TenantAgentAuction extends Component
                 $this->showCustomEnhancement = in_array('Other', $this->photo_enhancements);
             }
 
-            // Clear loading guard BEFORE dispatching browser event
-            $this->isLoadingData = false;
-
             // Dispatch browser event to sync select values after draft loads
             $this->dispatchBrowserEvent('draftLoaded');
-        } else {
+        }
+        } finally {
             $this->isLoadingData = false;
         }
     }

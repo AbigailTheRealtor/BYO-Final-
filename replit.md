@@ -28,7 +28,7 @@ Unique listing IDs are generated via a `HasListingId` trait. Location data is so
 
 **Financing Follow-Up Field Persistence**: The `updatedOfferedFinancing()` method uses a selective reset mechanism. It tracks previous financing selections and only resets fields for removed financing types, ensuring dependent fields persist correctly across various workflows. The `$isLoadingData` flag prevents resets during initial draft/edit load.
 
-**Draft Load Protection Pattern**: The `$isLoadingData` flag in `BuyerAgentAuction.php` protects dependent field values from being reset during draft loading. All Livewire `updated*` hooks that reset dependent fields must check this flag.
+**Draft Load Protection Pattern**: The `$isLoadingData` flag protects dependent field values from being reset during draft loading. All Livewire `updated*` hooks that reset dependent fields must check this flag. This pattern is implemented in `TenantAgentAuction.php` (shared create component), `LandLordAgentAuctionEdit.php` (edit component), and `BuyerAgentAuction.php`. Both `loadDraft()` and `loadAuctionData()` use `try/finally` to guarantee the flag is always reset even on exceptions.
 
 **Meta Field Parity**: Create and Edit Livewire components must maintain identical field lists for saving and loading. New meta fields require public property definition, `saveMeta()` calls, and defensive null-guarded hydration in both components.
 
