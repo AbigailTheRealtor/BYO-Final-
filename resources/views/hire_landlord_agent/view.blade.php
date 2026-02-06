@@ -786,6 +786,21 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
 
+        @if (@$auction->get->space_features != '' && @$auction->get->space_features != 'null')
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Space Features:
+                <span class="removeBold">{{ $auction->get->space_features }}</span>
+            </div>
+        </div>
+        @endif
+        @if (@$auction->get->neighboring_tenants != '' && @$auction->get->neighboring_tenants != 'null')
+        <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
+            <div class="col-12 fw-bold">Neighboring Tenants Include:
+                <span class="removeBold">{{ $auction->get->neighboring_tenants }}</span>
+            </div>
+        </div>
+        @endif
+
         @if (@$auction->get->restrictions != '' && @$auction->get->restrictions != 'null')
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Restrictions Include:
@@ -1233,9 +1248,16 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         <div class="col-md-12 col-12 pt-2">
             @foreach ($landlordCategories as $categoryName => $categoryServices)
                 @php
-                    $matchedServices = array_filter($allServices, function($service) use ($categoryServices) {
-                        return in_array($service, $categoryServices);
-                    });
+                    $matchedServices = [];
+                    foreach ($categoryServices as $catalogService) {
+                        $canonCatalog = $canon($catalogService);
+                        foreach ($allServices as $savedService) {
+                            if ($canon($savedService) === $canonCatalog) {
+                                $matchedServices[] = $savedService;
+                                break;
+                            }
+                        }
+                    }
                 @endphp
                 @if (!empty($matchedServices))
                 <div class="mt-3">
@@ -1383,18 +1405,18 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @if (@$auction->get->broker_fee_timing != null)
         @php
             $paymentTimingDisplay = @$auction->get->broker_fee_timing;
-            $daysValue = @$auction->get->broker_fee_days_from_rent ?? @$auction->get->broker_fee_days_after_lease ?? @$auction->get->broker_fee_days_after_rent ?? null;
             
             if ($paymentTimingDisplay === 'other' || $paymentTimingDisplay === 'Other') {
                 $paymentTimingDisplay = @$auction->get->broker_fee_timing_other ?? '';
             }
             
-            // Add days if applicable
-            if ($daysValue && (
-                strpos($paymentTimingDisplay, 'Calendar Days') !== false || 
-                strpos($paymentTimingDisplay, 'Rent Collected') !== false
-            )) {
-                $paymentTimingDisplay .= ' (' . $daysValue . ' days)';
+            $canonTiming = $canon($paymentTimingDisplay);
+            if ($canonTiming === 'Paid Within Calendar Days After Executed Lease' && @$auction->get->broker_fee_days_after_lease) {
+                $paymentTimingDisplay = 'Paid Within ' . $auction->get->broker_fee_days_after_lease . ' Calendar Days After Executed Lease';
+            } elseif ($canonTiming === 'Paid Within Calendar Days of Tenant Rent Payment' && @$auction->get->broker_fee_days_after_rent) {
+                $paymentTimingDisplay = 'Paid Within ' . $auction->get->broker_fee_days_after_rent . ' Calendar Days of Tenant Rent Payment';
+            } elseif ($canonTiming === 'Deducted from Rent Collected' && @$auction->get->broker_fee_days_from_rent) {
+                $paymentTimingDisplay = 'Deducted from Rent Collected (' . $auction->get->broker_fee_days_from_rent . ' Calendar Days to Pay Balance)';
             }
         @endphp
         <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -1447,12 +1469,22 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endif
 
         @php
-            $salesTaxValue = @$auction->get->renewal_fee_sales_tax_lease_value ?? @$auction->get->renewal_fee_sales_tax_first_month ?? @$auction->get->renewal_fee_sales_tax_flat_fee ?? null;
+            $renewalSalesTax = null;
+            $canonRenewalType = $canon($renewalFeeType ?? '');
+            if (in_array($canonRenewalType, ['Percentage of the Gross Lease Value', 'Percentage of the Gross Rent'])) {
+                $renewalSalesTax = @$auction->get->renewal_fee_sales_tax_lease_value;
+            } elseif (in_array($canonRenewalType, ["Percentage of the First Month's Rent", "Percentage of Month's Rent"])) {
+                $renewalSalesTax = @$auction->get->renewal_fee_sales_tax_first_month;
+            } elseif ($canonRenewalType === 'Flat Fee') {
+                $renewalSalesTax = @$auction->get->renewal_fee_sales_tax_flat_fee;
+            } else {
+                $renewalSalesTax = @$auction->get->renewal_fee_sales_tax_lease_value ?? @$auction->get->renewal_fee_sales_tax_first_month ?? @$auction->get->renewal_fee_sales_tax_flat_fee ?? null;
+            }
         @endphp
-        @if (!empty($salesTaxValue) && $salesTaxValue !== 'null')
+        @if (!empty($renewalSalesTax) && $renewalSalesTax !== 'null')
         <div class="col-md-12 col-12 pt-2 fw-bold">
             Sales Tax:
-            <span class="removeBold">{{ $salesTaxValue === 'including' ? 'Including Sales Tax' : ($salesTaxValue === 'excluding' ? 'Excluding Sales Tax' : $salesTaxValue) }}</span>
+            <span class="removeBold">{{ $renewalSalesTax === 'including' ? 'Including Sales Tax' : ($renewalSalesTax === 'excluding' ? 'Excluding Sales Tax' : $renewalSalesTax) }}</span>
         </div>
         @endif
 
