@@ -289,14 +289,12 @@
         ['name' => 'Currently Being Built'],
         ['name' => 'New Construction'],
         ['name' => 'Not Updated: Requires a complete update'],
-        ['name' => 'Open to any type of property condition'],
         ['name' => 'Pre-Construction'],
         ['name' => 'Semi-updated: Needs minor updates'],
         ['name' => 'Tear Down: Requires complete demolition and reconstruction'],
-        // ['name' => 'Open to any type of property condition.'],
-        // ['name' => 'Semi-updated: Needs minor updates.'],
-        // ['name' => 'Other'],
     ];
+
+    $property_condition_seller = $property_condition;
 
     $bedroomsRes = [
         ['name' => '1'],

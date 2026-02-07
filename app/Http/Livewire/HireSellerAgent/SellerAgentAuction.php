@@ -780,6 +780,13 @@ class SellerAgentAuction extends Component
         }
     }
 
+    public function updatedBathrooms($value)
+    {
+        if ($value !== 'Other') {
+            $this->other_bathrooms = null;
+        }
+    }
+
     // Methods
     public function mount($listingId = null)
     {

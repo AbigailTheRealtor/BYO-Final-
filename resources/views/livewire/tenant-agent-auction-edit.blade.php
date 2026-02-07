@@ -394,7 +394,6 @@
         ['name' => 'Currently being built'],
         ['name' => 'New Construction'],
         ['name' => 'Not updated: Requires a complete update'],
-        ['name' => 'Open to any type of property condition'],
         ['name' => 'Pre-Construction'],
         ['name' => 'Semi-updated: Needs minor updates'],
         ['name' => 'Tear Down: Requires complete demolition and reconstruction'],
