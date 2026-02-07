@@ -1057,7 +1057,6 @@ class LandLordAgentAuction extends Component
     
     public function updatedPropertyCity($value)
     {
-        if ($this->isLoadingDraft) return;
         if (strlen($value) > 2) {
             $this->propertyCitySuggestions = $this->getPlaceSuggestions($value, 'city');
         } else {
@@ -1065,15 +1064,11 @@ class LandLordAgentAuction extends Component
         }
     }
     
-    public function searchPropertyCity($value = null)
+    public function searchPropertyCity($value)
     {
-        if ($this->isLoadingDraft) return;
-        if ($value !== null) {
-            $this->property_city = $value;
-        }
-        $searchValue = $this->property_city ?? '';
-        if (strlen($searchValue) > 2) {
-            $this->propertyCitySuggestions = $this->getPlaceSuggestions($searchValue, 'city');
+        $this->property_city = $value;
+        if (strlen($value) > 2) {
+            $this->propertyCitySuggestions = $this->getPlaceSuggestions($value, 'city');
         } else {
             $this->propertyCitySuggestions = [];
         }
@@ -1339,20 +1334,6 @@ class LandLordAgentAuction extends Component
 
     public function saveDraft()
     {
-        \Log::info('[LANDLORD SAVE DRAFT FIRED]', [
-            'component' => static::class,
-            'method' => 'saveDraft',
-            'listing_id' => $this->listingId,
-            'user_id' => Auth::id(),
-            'property_city' => $this->property_city,
-            'property_state' => $this->property_state,
-            'property_county' => $this->property_county,
-            'property_zip' => $this->property_zip,
-            'purchase_fee_type' => $this->purchase_fee_type,
-            'purchase_fee_rental_period' => $this->purchase_fee_rental_period ?? null,
-            'photo_is_string' => is_string($this->photo),
-            'photo_exists' => !empty($this->photo),
-        ]);
 
         try {
 
@@ -1393,19 +1374,6 @@ class LandLordAgentAuction extends Component
 
         if ($auction) {
             $this->isLoadingDraft = true;
-
-            \Log::info('[LANDLORD LOAD DRAFT FIRED]', [
-                'component' => static::class,
-                'method' => 'loadDraft',
-                'listing_id' => $listingId,
-                'user_id' => Auth::id(),
-                'meta_property_city' => $auction->get->property_city ?? 'NOT_SET',
-                'meta_property_state' => $auction->get->property_state ?? 'NOT_SET',
-                'meta_property_county' => $auction->get->property_county ?? 'NOT_SET',
-                'meta_property_zip' => $auction->get->property_zip ?? 'NOT_SET',
-                'meta_purchase_fee_type' => $auction->get->purchase_fee_type ?? 'NOT_SET',
-                'meta_photo' => $auction->get->photo ?? 'NOT_SET',
-            ]);
 
             // Load all metadata fields
             $this->listing_title = $auction->title;
@@ -1949,15 +1917,6 @@ class LandLordAgentAuction extends Component
         $auction->saveMeta('state', $this->state);
         $auction->saveMeta('zip_code', $this->zip_code);
         $auction->saveMeta('zipCodes', json_encode($this->ensureArray($this->zipCodes)));
-
-        \Log::info('[LANDLORD SAVE PROPERTY LOCATION]', [
-            'auction_id' => $auction->id,
-            'property_city' => $this->property_city,
-            'property_state' => $this->property_state,
-            'property_county' => $this->property_county,
-            'property_zip' => $this->property_zip,
-        ]);
-
         $auction->saveMeta('property_city', $this->property_city);
         $auction->saveMeta('property_county', $this->property_county);
         $auction->saveMeta('property_state', $this->property_state);

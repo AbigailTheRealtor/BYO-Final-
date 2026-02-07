@@ -1,4 +1,3 @@
-<!-- HIRE LANDLORD DRAFT FORM LOADED: resources/views/livewire/hire-landlord-agent/hire-landlord-agent.blade.php -->
 @push('styles')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bbbootstrap/libraries@main/choices.min.css">
 
@@ -1134,7 +1133,7 @@
                                 <button type="button" class="btn btn-secondary wizard-step-back">Back</button>
                             </div>
                             <div>
-                                <button type="button" class="btn btn-outline-primary me-2" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="saveDraft, photo, video">
+                                <button type="button" class="btn btn-outline-primary me-2" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="saveDraft">
                                     <span wire:loading.remove wire:target="saveDraft"><i class="fas fa-save me-1"></i> Save Draft</span>
                                     <span wire:loading wire:target="saveDraft">Saving...</span>
                                 </button>
