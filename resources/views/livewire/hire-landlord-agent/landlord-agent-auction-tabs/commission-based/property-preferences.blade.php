@@ -46,7 +46,8 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover position-relative">
-        <input type="text" wire:model.live.debounce.300ms="property_city"
+        <input type="text" wire:model.defer="property_city"
+            x-on:input.debounce.300ms="$wire.searchPropertyCity($event.target.value)"
             wire:keydown.enter.prevent="selectPropertyCitySuggestion()"
             wire:keydown.arrow-up.prevent="decrementPropertyCityHighlight()"
             wire:keydown.arrow-down.prevent="incrementPropertyCityHighlight()"
@@ -85,7 +86,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <input type="text" wire:model="property_state" 
+        <input type="text" wire:model.defer="property_state" 
             class="form-control has-icon @error('property_state') is-invalid @enderror" 
             data-icon="fa-solid fa-flag-usa"
             placeholder="Enter state" 
@@ -104,7 +105,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <input type="text" wire:model="property_county" 
+        <input type="text" wire:model.defer="property_county" 
             class="form-control has-icon @error('property_county') is-invalid @enderror" 
             data-icon="fa-solid fa-map"
             placeholder="Enter county" 
@@ -123,7 +124,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <input type="text" wire:model="property_zip" 
+        <input type="text" wire:model.defer="property_zip" 
             class="form-control has-icon @error('property_zip') is-invalid @enderror" 
             data-icon="fa-solid fa-map-pin"
             placeholder="Enter ZIP code" 

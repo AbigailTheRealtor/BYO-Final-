@@ -1,0 +1,166 @@
+Here are **copy/paste Replit instructions with safeguards** focused only on the 3 items you listed for **Hire a Landlord → Drafts**.
+
+---
+
+# Replit Instructions — Hire a Landlord Drafts Not Saving (City/State/County/ZIP + Landlord’s Broker Lease Fee + Personal Photo)
+
+## Login / Repro (Required)
+
+* Login: **[tenant@exp.com](mailto:tenant@exp.com)**
+* Flow: **Hire a Landlord’s Agent**
+* Property Types: **Residential + Commercial**
+* Steps:
+
+  1. Create Hire a Landlord listing
+  2. Fill **City, State, County, ZIP**, **Landlord’s Broker Lease Fee** (including % value if selected), upload **Personal Photo**
+  3. Click **Save Draft**
+  4. Open the saved draft
+     ✅ These fields must still be filled in
+
+---
+
+## Safeguards (Must Follow)
+
+1. **Scope Lock:** Apply fixes **ONLY** to **Hire a Landlord** drafts (Residential + Commercial). Do **NOT** affect Tenant/Buyer/Seller.
+2. **No DB Breaking Changes:** Do not rename/drop tables or columns. No destructive migrations.
+3. **Save Draft must save everything:** Draft saves must persist these fields exactly like Submit does (without requiring full submit validation).
+4. **Draft load must restore everything:** Opening a draft must rehydrate these values into Livewire state and show them in the inputs.
+5. **No default overwrites:** Do not reset these values after draft load (defaults only for brand-new listings).
+6. **Proof Required:** Provide list of changed files + screenshots showing Save Draft → reopen draft retains all 3 areas.
+
+---
+
+# Step 1 — Confirm you’re editing the correct files (Mandatory)
+
+Because this is run from **[tenant@exp.com](mailto:tenant@exp.com)**, confirm the actual component used for **Hire a Landlord** under that login.
+
+### A) Add a dev-only fingerprint
+
+Add an HTML comment in the Hire a Landlord form view (dev/local only):
+`<!-- HIRE LANDLORD DRAFT FORM LOADED: {full file path} -->`
+
+### B) Add a dev-only Save Draft log
+
+Inside the actual method fired by the **Save Draft** button for Hire a Landlord:
+Log component/class + method + listing id + user id.
+
+If these do not appear, you are editing the wrong files. Remove after confirmation.
+
+---
+
+# Step 2 — Fix Draft Save + Draft Load for the 3 problem areas
+
+## A) City / State / County / ZIP must save + restore
+
+### Required
+
+* Save Draft must persist these values
+* Draft reopen must re-populate these inputs
+
+### Implementation
+
+1. Verify inputs have Livewire bindings (must exist):
+
+* `wire:model.defer="city"`
+* `wire:model.defer="state"`
+* `wire:model.defer="county"`
+* `wire:model.defer="zip"` (or `zip_code`)
+
+✅ If any is missing `wire:model`, add it.
+
+2. In Hire a Landlord `saveDraft()` explicitly persist:
+
+* city, state, county, zip/zip_code
+
+3. In draft load/mount/hydration explicitly restore:
+
+* `$this->city = $listing->city;`
+* `$this->state = $listing->state;`
+* `$this->county = $listing->county;`
+* `$this->zip = $listing->zip;`
+
+4. Ensure defaults do NOT overwrite these after loading the draft.
+
+---
+
+## B) Landlord’s Broker Lease Fee must save + restore (including % input)
+
+### Required
+
+If lease fee option is “Percentage of the Rent Due Each Rental Period,” the numeric % must save + restore.
+
+### Implementation
+
+1. Confirm dropdown has a Livewire property (example):
+
+* `wire:model.defer="landlord_broker_lease_fee_type"`
+
+2. Confirm the numeric input has a Livewire property (example):
+
+* `wire:model.defer="landlord_broker_lease_fee_percent"`
+
+✅ If the numeric input is missing `wire:model`, it will never save—add it.
+
+3. In `saveDraft()` explicitly persist BOTH:
+
+* lease fee type (dropdown)
+* lease fee value / percent (numeric input)
+
+4. In draft load/mount explicitly restore BOTH properties.
+
+5. Check for any `updated*()` method that clears the percent/value and ensure it does NOT run during draft hydration (only clear values when user changes the selection away from that option).
+
+---
+
+## C) Personal Photo must persist in drafts
+
+### Required
+
+If user uploads personal photo and clicks Save Draft:
+
+* reopening the draft must still show the photo (preview) without re-upload.
+
+### Implementation
+
+1. Ensure landlord record has a DB column storing the file path:
+
+* `personal_photo_path` (or existing equivalent)
+
+**Safeguard:** No renames.
+
+2. In `saveDraft()`:
+
+* If a new photo upload exists, store it and save the path into `personal_photo_path`
+* If no new upload, DO NOT overwrite existing path with null
+
+3. In draft load/mount:
+
+* `$this->personal_photo_path = $listing->personal_photo_path;`
+
+4. In view:
+
+* If `personal_photo_path` exists, render preview using `Storage::url($personal_photo_path)`
+
+---
+
+# Acceptance Test (Must Pass)
+
+Using [tenant@exp.com](mailto:tenant@exp.com):
+
+1. Fill City/State/County/ZIP + set Landlord’s Broker Lease Fee to percent and enter “10” + upload a personal photo
+2. Save Draft
+3. Reopen Draft
+   ✅ City/State/County/ZIP still filled
+   ✅ Lease fee selection still set and % value still shows
+   ✅ Photo preview still shows
+
+---
+
+## Copy/Paste Message to Replit
+
+> “Hire a Landlord drafts are still not saving these fields: City/State/County/ZIP, Landlord’s Broker Lease Fee (including % value when selected), and Personal Photo. Please fix for [tenant@exp.com](mailto:tenant@exp.com) → Hire a Landlord Agent (Residential + Commercial).
+> Mandatory: first prove you’re editing the correct component by adding a dev-only fingerprint comment to the form Blade + a dev-only log inside the actual saveDraft() method triggered by the Save Draft button. If that doesn’t show, you are editing the wrong files.
+> Then: ensure City/State/County/ZIP inputs have wire:model.defer and are explicitly persisted in saveDraft() and restored in mount/load; ensure Landlord’s Broker Lease Fee saves BOTH the dropdown type and numeric % input and restores both; ensure Personal Photo persists by storing a file path (personal_photo_path) on draft save, restoring it on load, and showing preview via Storage::url.
+> Landlord-only scope; no tenant/buyer/seller changes. Provide changed file list + screenshots proving Save Draft → reopen retains these fields.”
+
+---

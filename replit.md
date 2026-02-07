@@ -48,6 +48,10 @@ All listing types have independent submission redirects. Tab visibility ensures 
 
 **Landlord View Page Photo Enhancements**: The photo enhancements display section in the landlord view is rendered independently of the `@if ($hasServices)` block, with defensive parsing for JSON, array, and null values.
 
+**Landlord Property Location Field Bindings**: The property location fields (property_city, property_state, property_county, property_zip) use `wire:model.defer` to guarantee values are sent with the Save Draft action. The city autocomplete search is triggered via Alpine.js `x-on:input.debounce.300ms="$wire.searchPropertyCity($event.target.value)"` separately from the model binding. Both `updatedPropertyCity()` and `searchPropertyCity()` methods have `isLoadingDraft` guards to prevent autocomplete during draft restoration.
+
+**Landlord Photo Draft Persistence**: Photo uploads are stored via `saveAllMetadata()` only when `$this->photo` is a new `UploadedFile` (not a string path). When re-saving a draft with an existing photo, the string-typed `$this->photo` bypasses the upload logic, preserving the existing meta record. The Save Draft button is disabled during photo/video uploads via `wire:target="saveDraft, photo, video"`.
+
 ### System Design Choices
 The architecture emphasizes modularity through Laravel's structure and Livewire components. A database-first approach prioritizes local database solutions for core services. Clear separation of concerns is maintained between frontend, backend, and data persistence. The system is deployment-ready with production environment optimizations. Existing database schema and storage logic for fees are immutable, with fee format updates being display-only.
 
