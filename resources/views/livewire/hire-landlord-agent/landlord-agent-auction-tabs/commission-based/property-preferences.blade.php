@@ -47,7 +47,7 @@
     </span>
     <div class="input-cover position-relative">
         <input type="text" wire:model.defer="property_city"
-            x-on:input.debounce.300ms="$wire.searchPropertyCity($event.target.value)"
+            wire:input.debounce.300ms="searchPropertyCity"
             wire:keydown.enter.prevent="selectPropertyCitySuggestion()"
             wire:keydown.arrow-up.prevent="decrementPropertyCityHighlight()"
             wire:keydown.arrow-down.prevent="incrementPropertyCityHighlight()"
