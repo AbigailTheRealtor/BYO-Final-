@@ -757,6 +757,29 @@ class SellerAgentAuction extends Component
         $this->updatedViewPreference();
     }
 
+    public function syncInput($name, $value, $rehash = true)
+    {
+        if (blank($name)) {
+            return;
+        }
+        return parent::syncInput($name, $value, $rehash);
+    }
+
+    protected function callUpdatedHook($name, $value = null)
+    {
+        if (blank($name)) {
+            return;
+        }
+        return parent::callUpdatedHook($name, $value);
+    }
+
+    public function updated($propertyName, $value = null)
+    {
+        if (empty($propertyName)) {
+            return;
+        }
+    }
+
     // Methods
     public function mount($listingId = null)
     {

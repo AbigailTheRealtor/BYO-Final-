@@ -1551,6 +1551,22 @@ class TenantAgentAuction extends Component
             $this->unit_type_configurations = array_values($this->unit_type_configurations);
         }
     }
+    public function syncInput($name, $value, $rehash = true)
+    {
+        if (blank($name)) {
+            return;
+        }
+        return parent::syncInput($name, $value, $rehash);
+    }
+
+    protected function callUpdatedHook($name, $value = null)
+    {
+        if (blank($name)) {
+            return;
+        }
+        return parent::callUpdatedHook($name, $value);
+    }
+
     // Methods
     public function mount($user_type = null, $listingId = null)
     {
