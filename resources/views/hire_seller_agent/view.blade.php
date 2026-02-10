@@ -700,13 +700,13 @@
                             @if (@$auction->get->assumable_monthly_payment != '' && @$auction->get->assumable_monthly_payment != 'null')
                             <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
                                 <span class="fw-bold">Monthly Payment (P&I) for Assumable Loan:</span>
-                                ${{ number_format(@$auction->get->assumable_monthly_payment, 0) }}
+                                ${{ number_format((float)str_replace(',', '', @$auction->get->assumable_monthly_payment), 0) }}
                             </div>
                             @endif
                             @if (@$auction->get->assumable_balance != '' && @$auction->get->assumable_balance != 'null')
                             <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
                                 <span class="fw-bold">Assumable Balance:</span>
-                                ${{ number_format(@$auction->get->assumable_balance, 0) }}
+                                ${{ number_format((float)str_replace(',', '', @$auction->get->assumable_balance), 0) }}
                             </div>
                             @endif
                             @if (@$auction->get->lender_approval != '' && @$auction->get->lender_approval != 'null')
@@ -718,7 +718,7 @@
                             @if (@$auction->get->assumable_down_payment != '' && @$auction->get->assumable_down_payment != 'null')
                             <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
                                 <span class="fw-bold">Down Payment to Bridge Gap:</span>
-                                ${{ number_format(@$auction->get->assumable_down_payment, 0) }}
+                                ${{ number_format((float)str_replace(',', '', @$auction->get->assumable_down_payment), 0) }}
                             </div>
                             @endif
                             @if (@$auction->get->assumable_loan_term_remaining != '' && @$auction->get->assumable_loan_term_remaining != 'null')
@@ -739,7 +739,7 @@
                                 @if (@$auction->get->assumable_fee_type === '%')
                                     {{ @$auction->get->assumable_fee_amount }}%
                                 @else
-                                    ${{ number_format(@$auction->get->assumable_fee_amount, 0) }}
+                                    ${{ number_format((float)str_replace(',', '', @$auction->get->assumable_fee_amount), 0) }}
                                 @endif
                             </div>
                             @endif
@@ -753,7 +753,7 @@
                                 @if (@$auction->get->seller_financing_type === '%')
                                     {{ @$auction->get->seller_financing_amount }}% of Total Purchase Price
                                 @else
-                                    ${{ number_format(@$auction->get->seller_financing_amount, 0) }}
+                                    ${{ number_format((float)str_replace(',', '', @$auction->get->seller_financing_amount), 0) }}
                                 @endif
                             </div>
                             @endif
@@ -776,13 +776,13 @@
                             @if (@$auction->get->lease_option_price != '' && @$auction->get->lease_option_price != 'null')
                             <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
                                 <span class="fw-bold">Lease Option Purchase Price:</span>
-                                ${{ number_format(@$auction->get->lease_option_price, 0) }}
+                                ${{ number_format((float)str_replace(',', '', @$auction->get->lease_option_price), 0) }}
                             </div>
                             @endif
                             @if (@$auction->get->lease_option_payment != '' && @$auction->get->lease_option_payment != 'null')
                             <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
                                 <span class="fw-bold">Monthly Lease Payment:</span>
-                                ${{ number_format(@$auction->get->lease_option_payment, 0) }}
+                                ${{ number_format((float)str_replace(',', '', @$auction->get->lease_option_payment), 0) }}
                             </div>
                             @endif
                             @if (@$auction->get->lease_option_duration != '' && @$auction->get->lease_option_duration != 'null')
@@ -794,7 +794,7 @@
                             @if (@$auction->get->lease_option_fee != '' && @$auction->get->lease_option_fee != 'null')
                             <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
                                 <span class="fw-bold">Option Fee:</span>
-                                ${{ number_format(@$auction->get->lease_option_fee, 0) }}
+                                ${{ number_format((float)str_replace(',', '', @$auction->get->lease_option_fee), 0) }}
                             </div>
                             @endif
                             @if (@$auction->get->lease_option_fee_credit != '' && @$auction->get->lease_option_fee_credit != 'null')
@@ -1841,7 +1841,7 @@
                                                                             @if (!empty($allMeta['lease_fee_flat']))
                                                                                 <div class="mb-2"><strong>Lease Flat
                                                                                         Fee:</strong>
-                                                                                    ${{ number_format($allMeta['lease_fee_flat'], 2) }}
+                                                                                    ${{ number_format((float)str_replace(',', '', $allMeta['lease_fee_flat']), 2) }}
                                                                                 </div>
                                                                             @endif
                                                                             @if (!empty($allMeta['lease_fee_percentage']))

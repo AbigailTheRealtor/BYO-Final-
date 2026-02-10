@@ -1,0 +1,121 @@
+/home/runner/workspace/
+TypeError
+number_format(): Argument #1 ($num) must be of type float, string given (View: /home/runner/workspace/resources/views/hire_seller_agent/view.blade.php)
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/seller/agent/auction/view/22
+Stack trace
+Request
+App
+User
+Context
+Debug
+Share 
+
+
+Expand vendor frames
+63
+resources/views/hire_seller_agent/view.blade.php
+:779
+62
+:779
+
+59 vendor frames…
+2
+public/index.php
+:51
+1
+:21
+::number_format
+resources/views/hire_seller_agent/view.blade.php:779
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                            </div>
+
+                            @endif
+
+                            @if (@$auction->get->seller_financing_term != '' && @$auction->get->seller_financing_term != 'null')
+
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+
+                                <span class="fw-bold">Seller Financing Term:</span>
+
+                                {{ @$auction->get->seller_financing_term }}
+
+                            </div>
+
+                            @endif
+
+                        @endif
+
+ 
+
+                        {{-- Lease Option Sub-Questions --}}
+
+                        @if (is_array(@$auction->get->offered_financing) && in_array('Lease Option', @$auction->get->offered_financing))
+
+                            @if (@$auction->get->lease_option_price != '' && @$auction->get->lease_option_price != 'null')
+
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+
+                                <span class="fw-bold">Lease Option Purchase Price:</span>
+
+                                ${{ number_format(@$auction->get->lease_option_price, 0) }}
+
+                            </div>
+
+                            @endif
+
+                            @if (@$auction->get->lease_option_payment != '' && @$auction->get->lease_option_payment != 'null')
+
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+
+                                <span class="fw-bold">Monthly Lease Payment:</span>
+
+                                ${{ number_format(@$auction->get->lease_option_payment, 0) }}
+
+                            </div>
+
+                            @endif
+
+                            @if (@$auction->get->lease_option_duration != '' && @$auction->get->lease_option_duration != 'null')
+
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+
+                                <span class="fw-bold">Lease Option Duration:</span>
+
+                                {{ @$auction->get->lease_option_duration }} months
+
+                            </div>
+
+                            @endif
+
+                            @if (@$auction->get->lease_option_fee != '' && @$auction->get->lease_option_fee != 'null')
+
