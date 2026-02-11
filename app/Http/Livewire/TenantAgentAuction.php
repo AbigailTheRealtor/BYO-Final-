@@ -3034,6 +3034,7 @@ class TenantAgentAuction extends Component
             $this->purchase_fee_gross_rent = $auction->get->purchase_fee_gross_rent ?? '';
             $this->sales_tax_option_gross = $auction->get->sales_tax_option_gross ?? '';
             $this->sales_tax_option_flat = $auction->get->sales_tax_option_flat ?? '';
+            $this->sales_tax_option_monthly = $auction->get->sales_tax_option_monthly ?? '';
 
             $this->purchase_fee_net_aggregate = $auction->get->purchase_fee_net_aggregate ?? '';
             $this->purchase_fee_monthly_percentage = $auction->get->purchase_fee_monthly_percentage ?? '';
@@ -3041,9 +3042,13 @@ class TenantAgentAuction extends Component
             $this->purchase_fee_percentage = $auction->get->purchase_fee_percentage ?? '';
             $this->purchase_fee_flat = $auction->get->purchase_fee_flat ?? '';
             $this->purchase_fee_flat_type = $auction->get->purchase_fee_flat_type ?? '';
+            $this->purchase_fee_rental_period = $auction->get->purchase_fee_rental_period ?? '';
             $this->purchase_fee_percentage_combo = $auction->get->purchase_fee_percentage_combo ?? '';
             $this->purchase_fee_flat_combo = $auction->get->purchase_fee_flat_combo ?? '';
             $this->purchase_fee_other = $auction->get->purchase_fee_other ?? '';
+            $this->purchase_fee_other_commercial = $auction->get->purchase_fee_other_commercial ?? '';
+            $this->purchase_fee_purchase_price = $auction->get->purchase_fee_purchase_price ?? '';
+            $this->purchase_fee_flat_commercial = $auction->get->purchase_fee_flat_commercial ?? '';
             $this->nominal = $auction->get->nominal ?? '';
 
 
@@ -3718,6 +3723,9 @@ class TenantAgentAuction extends Component
         $auction->saveMeta('purchase_fee_percentage_combo', $this->purchase_fee_percentage_combo);
         $auction->saveMeta('purchase_fee_flat_combo', $this->stripCommas($this->purchase_fee_flat_combo));
         $auction->saveMeta('purchase_fee_other', $this->purchase_fee_other);
+        $auction->saveMeta('purchase_fee_other_commercial', $this->purchase_fee_other_commercial);
+        $auction->saveMeta('purchase_fee_purchase_price', $this->purchase_fee_purchase_price);
+        $auction->saveMeta('sales_tax_option_monthly', $this->sales_tax_option_monthly);
         $auction->saveMeta('nominal', $this->nominal);
         $auction->saveMeta('interested_lease_option', $this->interested_lease_option);
         $auction->saveMeta('interested_lease_option_agreement', $this->interested_lease_option_agreement);

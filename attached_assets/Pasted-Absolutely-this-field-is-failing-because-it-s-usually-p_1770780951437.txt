@@ -1,0 +1,199 @@
+Absolutely — this field is failing because it’s usually part of a **conditional sub-section** (only shows when that “Percentage of the Rent Due Each Rental Period” option is selected). In these cases, devs often save the *selection* but forget to persist the **percent value input**, or they save it under the wrong key, or they clear it during tab saves.
+
+Below are **copy/paste-ready Replit instructions with safeguards** specifically for:
+
+✅ **Hire a Landlord’s Agent → Draft + Edit**
+✅ **Landlord’s Broker Lease Fee → “Percentage of the Rent Due Each Rental Period”** (the percent input)
+
+---
+
+## Replit Instructions (WITH SAFEGUARDS) — Landlord’s Broker Lease Fee % Field Not Saving (Draft + Edit)
+
+### Applies To
+
+* Tenant flow (Tenant PHP / tenant dashboard)
+* Hire a Landlord’s Agent listings
+* Residential + Commercial
+* Field: **Landlord’s Broker Lease Fee → Percentage of the Rent Due Each Rental Period → percent input**
+
+---
+
+# 1) SAFEGUARD — Confirm correct component (Tenant PHP only)
+
+**Do not edit legacy/admin forms.** Fix must be applied in the component(s) used by:
+
+* Create/Draft: `/hire/agent/auction/landlord`
+* Draft open/edit: whichever route opens an existing draft (must load saved values)
+
+✅ Add temporary debug text in the tenant landlord create view:
+
+* `DEBUG: LANDLORD TENANT CREATE`
+
+✅ Add temporary debug text in the tenant landlord edit view (draft reopen):
+
+* `DEBUG: LANDLORD TENANT EDIT`
+
+**Pass condition:** You (Abigail) see the correct debug line on the correct screen. Remove after verification.
+
+---
+
+# 2) Root cause to fix: persist BOTH “fee type” + “percent value”
+
+This field must be saved as a **pair**:
+
+### A) Lease fee method selection (the dropdown)
+
+Example values:
+
+* `lease_fee_type = 'percent_rent_each_period'` (or whatever your enum/value is)
+
+### B) Lease fee percent value (the textbox in your screenshot)
+
+Example:
+
+* `lease_fee_percent = 10`
+
+✅ **Both values must be saved + loaded** on draft and edit.
+
+---
+
+# 3) REQUIRED DATA PERSISTENCE FIX (Draft + Edit)
+
+## A) Create/Draft Save
+
+In the Tenant Landlord Create (draft save) method (often `saveDraft()`, `saveAllMetadata()`, or `saveAllTabs()`):
+
+### Required
+
+1. Ensure the percent input property is included in the payload.
+2. Ensure it is not being dropped when saving other tabs (merge-save).
+
+**Add to saved fields (exactly):**
+
+* the field key for the dropdown selection (lease fee method)
+* the field key for the percentage value
+
+✅ **Safeguard: merge-save**
+
+* Never overwrite an existing saved percent with `null`/empty when the current request doesn’t include it (common when saving another tab).
+
+**Rule:**
+
+* If the incoming value is empty AND the record already has a value AND the selected lease fee type is still percent → do not wipe it.
+
+---
+
+## B) Draft Reopen / Edit Hydration (mount/loadDraft)
+
+When opening a saved draft, the form must repopulate:
+
+### Required
+
+* Load the saved dropdown selection into the correct Livewire property
+* Load the saved percent value into the correct Livewire property
+* Force the UI to show the percent textbox if the selection is the percent option
+
+✅ **Safeguard: conditional rendering must be driven by saved selection**
+Example logic (conceptual):
+
+* If saved `lease_fee_type` == percent option → `showLeaseFeePercent = true`
+
+If you don’t set the boolean on mount, the input won’t render, and the user will think it didn’t save.
+
+---
+
+## C) Edit Save
+
+In Tenant Landlord Edit save method:
+
+### Required
+
+* Include the same two keys in the update payload:
+
+  * lease fee type selection
+  * lease fee percent value
+
+✅ **Safeguard: prevent “later tab saves” from wiping this**
+Same merge-save rule applies on edit saves too.
+
+---
+
+# 4) INPUT + VALIDATION SAFEGUARDS (so it saves reliably)
+
+## A) Percent value should be numeric, stored clean
+
+* Accept values like `10` or `10.5` if you allow decimals.
+* Store as a numeric value (recommended) or a string consistently (match the rest of your system).
+
+✅ **If you use stripCommas():**
+
+* Apply it here too (even though percent usually won’t have commas, consistency matters)
+* Also trim `%` if your UI ever allows someone to type it.
+
+## B) Required only when that option is selected
+
+Validation rules must be conditional:
+
+* If `lease_fee_type` == percent option → `lease_fee_percent` is required and must be numeric and within a sensible range (ex: `0–100`)
+* Otherwise → `lease_fee_percent` can be nullable and should not block saving.
+
+✅ **Safeguard: do not clear saved percent just because user navigated away**
+Only clear `lease_fee_percent` if the user changes the dropdown away from percent.
+
+---
+
+# 5) UI SAFEGUARDS (prevent “looks blank” even if saved)
+
+## A) Keep the textbox bound to the correct property
+
+In Blade, confirm the input is bound to the exact Livewire property you save/load:
+
+* `wire:model="lease_fee_percent"` (or your exact property)
+
+✅ **Safeguard: do not use a different property name on create vs edit.**
+That’s the #1 cause of “it saved but didn’t repopulate.”
+
+---
+
+# 6) REQUIRED ACCEPTANCE TESTS (must pass before closing)
+
+### Draft test
+
+1. Login `tenant@exp.com`
+2. Hire a Landlord’s Agent → go to Landlord’s Broker Lease Fee
+3. Select **Percentage of the Rent Due Each Rental Period**
+4. Enter `10`
+5. Save Draft
+6. Reopen the draft
+   ✅ Dropdown still selected
+   ✅ Percent textbox visible
+   ✅ Value `10` still populated
+
+### Edit test
+
+1. Change it to `12`
+2. Save edits
+3. Refresh page (hard refresh)
+   ✅ Value remains `12`
+
+### Non-wipe test (critical)
+
+1. After entering the percent, go to a totally different tab
+2. Save Draft / Save Edit from that other tab
+3. Reopen
+   ✅ Percent value is NOT wiped
+
+---
+
+# 7) “If you can only fix one thing” checklist (most common failure points)
+
+Tell dev to verify these 4 things in Tenant PHP:
+
+1. The percent textbox uses `wire:model` that matches the saved key
+2. The save payload actually includes the percent value
+3. The edit/draft load (`mount()` / `loadDraft()`) sets that property
+4. The UI boolean that shows the textbox is set on load when percent is selected
+
+---
+
+If you paste **the name of the Livewire property** currently bound to that percent textbox (or the Blade snippet for that input), I’ll rewrite this instruction with the **exact field key names** so your dev can’t “almost” fix it again.
