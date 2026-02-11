@@ -125,9 +125,14 @@ $safeKey = function(...$parts) {
 
         <div class="input-cover">
             <span class="input-group-text-seller"> $</span>
-            <input type="number" wire:model="nominal" class="form-control has-icon"
-                placeholder="Enter nominal consideration fee amount (e.g., 1000)">
+            <input type="text" wire:model="nominal" class="form-control has-icon"
+                placeholder="Enter nominal consideration fee amount (e.g., 1000)"
+                data-error-id="nominal_error"
+                oninput="validateInput(this)"
+                onblur="reformatNumber(this)"
+                onpaste="handlePaste(event)">
         </div>
+        <span class="error mt-2" id="nominal_error"></span>
     </div>
 @endif
 

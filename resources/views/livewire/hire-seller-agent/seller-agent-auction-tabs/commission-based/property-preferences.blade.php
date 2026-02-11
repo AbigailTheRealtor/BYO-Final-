@@ -1490,10 +1490,15 @@
                         <div class="input-cover">
                             <span class="input-group-text-seller">$</span>
 
-                            <input type="number"
+                            <input type="text"
                                 wire:model="unit_type_configurations.{{ $index }}.expected_rent"
-                                class="form-control has-icon" placeholder="Enter expected monthly rent (e.g., 1500)">
+                                class="form-control has-icon" placeholder="Enter expected monthly rent (e.g., 1500)"
+                                data-error-id="expected_rent_{{ $index }}_error"
+                                oninput="validateInput(this)"
+                                onblur="reformatNumber(this)"
+                                onpaste="handlePaste(event)">
                         </div>
+                        <span class="error mt-2" id="expected_rent_{{ $index }}_error"></span>
                     </div>
 
                     <div class="form-group">

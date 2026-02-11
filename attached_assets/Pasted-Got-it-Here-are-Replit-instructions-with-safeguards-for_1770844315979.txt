@@ -1,0 +1,247 @@
+Got it. Here are **Replit instructions (with safeguards)** for **Hire a Seller’s Agent** so:
+
+1. **Included Property or Business Assets → “Other”** shows the **actual custom input** on **Draft + Edit** (and saves/repopulates), and
+2. **Draft versioning**: if a user opens a draft, changes anything, and clicks **Save Draft**, it creates a **NEW draft copy** (keeps the prior draft), so you can test drafts properly.
+
+---
+
+# A) “Other” input must save + display on Drafts and Edits
+
+### Problem pattern
+
+Most likely you’re saving the selection (e.g., `other`) but **not saving the “other text” value**, and/or your show/edit/draft hydration logic isn’t checking for it.
+
+## A1) Data model (do NOT break existing data)
+
+**Safeguard rule:** do not rename existing fields. Add only what’s missing.
+
+You need **two separate fields**:
+
+* `included_assets_selection` (string or array depending on your UI)
+* `included_assets_other_text` (string)
+
+### If you store this inside a JSON “details” column
+
+Store it like:
+
+```json
+"included_assets": {
+  "selection": "other",
+  "other_text": "Convey golf cart + security system subscription"
+}
+```
+
+### If you store as columns
+
+Add column only if missing:
+
+* `included_assets_other_text` (nullable text)
+
+**Safeguard:** keep the existing `Included Property or Business Assets` value exactly as-is; do not overwrite it with the custom string.
+
+---
+
+## A2) Create/Edit form binding
+
+On the form component (create + edit use the same state), bind:
+
+* Dropdown/select:
+
+  * `wire:model="form.included_assets_selection"`
+* “Other” text input:
+
+  * `wire:model.defer="form.included_assets_other_text"`
+
+### Display logic (critical)
+
+Show the “Other” text input when:
+
+* selection equals `"Other"` **OR** `"other"` (handle casing)
+* OR selection contains `"Other"` if it’s a multi-select
+
+**Safeguard:** Normalize selection values (trim + consistent casing) in one place.
+
+---
+
+## A3) Save logic for Draft + Submit + Update
+
+Wherever you build the payload (draft/save/update), enforce:
+
+### Save rules
+
+* Always save `included_assets_selection`
+* Save `included_assets_other_text` **only if** selection is Other
+* If selection is not Other, **clear** `included_assets_other_text` (or leave but ignore). Safer to clear to prevent stale values.
+
+### Normalization
+
+Before saving:
+
+* trim whitespace
+* convert empty string to null
+
+---
+
+## A4) Draft hydration (repopulate)
+
+When opening a draft:
+
+* hydrate both:
+
+  * `form.included_assets_selection`
+  * `form.included_assets_other_text`
+
+When rendering the UI:
+
+* if selection is Other, the input must show and be filled.
+
+**Safeguard:** if older drafts don’t have `included_assets_other_text`, default to `null` so no errors.
+
+---
+
+## A5) Actual Listing show page (optional but recommended)
+
+If you display the value publicly in the listing:
+
+* show the selection label(s)
+* if selection includes Other and other_text is present, show it as:
+
+  * `Other: {other_text}`
+
+---
+
+# B) Draft Versioning: Saving changes creates a NEW Draft
+
+### What you want (for testing)
+
+* Drafts should be **append-only versions**
+* Saving a draft never overwrites the previous one
+* You can optionally keep “latest” pointing to the newest draft
+
+---
+
+## B1) Recommended draft structure
+
+Create a `drafts` table if you don’t already have it (or adjust yours):
+
+**drafts**
+
+* `id`
+* `user_id`
+* `listing_type` (e.g., `hire_seller_agent`)
+* `property_type` (income/residential/etc.)
+* `status` (active/archived)
+* `version` (int)
+* `parent_draft_id` (nullable) (for version chain)
+* `source_listing_id` (nullable) (if draft came from an existing listing)
+* `payload` (json)
+* `payload_hash` (string) (for “did anything change?” detection)
+* timestamps
+
+**Safeguard:** if you already store drafts inside listings, don’t rip it out—add versioning behavior around it.
+
+---
+
+## B2) “Save Draft” must *clone* instead of update
+
+### Current bug
+
+You are likely doing:
+
+* `Draft::updateOrCreate([...])`
+
+### Change to
+
+When user clicks “Save Draft”:
+
+1. Build the normalized payload
+2. Compute a hash of payload (see below)
+3. Compare against the last saved draft hash (if exists)
+4. If different → create a NEW draft record:
+
+   * `version = last_version + 1`
+   * `parent_draft_id = last_draft_id`
+   * `payload_hash = new_hash`
+5. If identical → do not create a new draft (or still create if you want, but that gets noisy)
+
+**Safeguard:** This prevents infinite “new drafts” when user clicks save without changes.
+
+---
+
+## B3) Payload hashing (change detection)
+
+Create a deterministic JSON string:
+
+* sort keys
+* remove UI-only fields
+* normalize numeric strings (commas removed, etc.)
+* trim strings
+
+Then hash:
+
+* sha256(payload_string)
+
+Store:
+
+* `payload_hash`
+
+---
+
+## B4) Which draft opens when user clicks “Drafts”
+
+Your UI should load:
+
+* the **latest active draft** for that listing context (listing type + property type + maybe listing_id if editing an existing listing)
+* OR show a list of versions
+
+For testing, do:
+
+* “Drafts” shows newest first (Version 5, 4, 3…)
+* Clicking one opens that version’s payload
+
+---
+
+## B5) Edge cases (Safeguards)
+
+* If user submits a listing from a draft:
+
+  * mark that draft chain as `converted` or keep it; but don’t delete
+* If user edits an existing listing and clicks “Save Draft”:
+
+  * create a draft with `source_listing_id = listing.id`
+  * version chain still applies
+
+---
+
+# C) QA Test ([tenant@exp.com](mailto:tenant@exp.com))
+
+### “Other” field test
+
+1. Create Hire Seller listing
+
+2. Select **Included Property or Business Assets = Other**
+
+3. Enter custom text
+
+4. Save Draft
+
+5. Reopen Draft
+   ✅ “Other” input shows + contains the text
+
+6. Submit listing
+
+7. Edit listing
+   ✅ “Other” input shows + contains the text
+
+### Draft versioning test
+
+1. Save draft v1
+2. Change one field (anything)
+3. Save Draft again
+   ✅ creates v2 (v1 remains)
+4. Change again → Save
+   ✅ creates v3
+
+---
+
+If you tell me **how you currently store drafts** (separate table vs `draft_payload` on listings) I can tailor these instructions to your exact structure, but you can implement everything above without changing user-facing text or existing saved listings.

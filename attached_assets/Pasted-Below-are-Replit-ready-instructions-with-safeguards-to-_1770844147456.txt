@@ -1,0 +1,218 @@
+Below are **Replit-ready instructions (with safeguards)** to fix **Hire a Seller’s Agent → Income property type** so these fields **save + repopulate correctly in BOTH Drafts and Edits** (login example: `tenant@exp.com`).
+
+---
+
+## 0) Safeguard Rules (do these first)
+
+1. **Do not rename existing DB columns.** Only add new columns if missing.
+2. **Do not change current field keys** used in the form payload unless you confirm they aren’t already in production data.
+3. Add a small **normalization function** used by **both**:
+
+   * `saveDraft()`
+   * `submitListing() / updateListing()`
+
+This prevents “works on submit but not on draft” (or vice-versa).
+
+---
+
+## 1) Fix comma-format input for “Expected Rent” + “Nominal Consideration Fee”
+
+### Goal
+
+These two fields should behave like your other numeric fields (ex: **Total Sqft**) where the UI shows commas, but the database stores clean numbers.
+
+### A) Frontend input formatting (match Total Sqft behavior)
+
+1. Find how **Total Sqft** is implemented (the exact input + any JS mask it uses).
+2. Copy the **same input mask / formatting approach** to:
+
+   * `Expected Rent`
+   * `Nominal Consideration Fee`
+
+**If Total Sqft uses an input mask library** (common ones: AutoNumeric, Cleave, Inputmask):
+
+* Instantiate the same mask settings (thousand separators, no currency symbol unless you want one).
+* Ensure it runs on:
+
+  * create form load
+  * edit form load
+  * when opening a draft
+
+### B) Back-end normalization (critical for saving)
+
+In the server-side save logic (used for draft + submit + update), strip formatting:
+
+* Convert:
+
+  * `"2,450"` → `2450`
+  * `"$2,450.00"` → `2450.00` (if you allow currency symbols)
+
+**Normalization rule (apply to BOTH fields):**
+
+* remove commas
+* remove `$` (if present)
+* trim spaces
+* store `null` if empty
+
+> Safeguard: Do **not** store the formatted string in DB—store numeric or numeric string.
+
+### C) Validation (so drafts don’t fail)
+
+If you validate these fields:
+
+* allow nullable
+* numeric after normalization
+
+---
+
+## 2) Make these Income fields save + repopulate in Drafts and Edits
+
+### Fields you listed
+
+* **Total Number of Units**
+* **Total Number of Buildings**
+* **Annual Net Income**
+* **Unit Type + sub-questions** (currently not saving in draft)
+
+### A) Confirm fields are included in the form “state”
+
+Most draft bugs happen because the field is displayed but **never included in the array/object you persist**.
+
+In your form state (whatever you call it: `form`, `listing`, `data`, etc.), confirm these keys exist and are bound with `wire:model` (or your equivalent):
+
+* `income_total_units`
+* `income_total_buildings`
+* `income_annual_net_income`
+* `income_unit_types` (this one is usually an array)
+
+> Safeguard: If you have different keys already, keep your existing keys—just ensure they’re saved.
+
+### B) Persist them in the Draft payload
+
+Wherever your draft save happens (often a `draft_payload` JSON column or a drafts table), ensure you include:
+
+* Total units
+* Total buildings
+* Annual net income
+* Unit types array **including all nested sub-questions**
+
+**Common failure:** draft save only stores “top-level” fields and accidentally drops nested arrays.
+
+### C) Persist them in the Listing payload (submit + update)
+
+On submit and update, ensure you are saving the same set of keys.
+
+**Best practice safeguard:**
+Use ONE method like `buildPayload()` / `normalizedPayload()` and call it from:
+
+* `saveDraft`
+* `storeListing`
+* `updateListing`
+
+So draft and submit never diverge.
+
+---
+
+## 3) Fix “Unit Type + sub questions do not save in draft”
+
+This is almost always one of these issues:
+
+### Fix 1 — Store Unit Types as a JSON array (with casts)
+
+1. Ensure the listing model has a column meant to hold this structure, e.g.:
+
+   * `income_unit_types` (JSON)
+2. In the model, add a cast:
+
+* `income_unit_types` → `array`
+
+This ensures arrays don’t become strings and that edits rehydrate properly.
+
+> Safeguard: If you already have a generic `property_details` / `income_details` JSON column, store `unit_types` inside that existing structure instead of adding new columns.
+
+### Fix 2 — Ensure Livewire (or your framework) tracks nested array changes
+
+If you’re using Livewire-style nested data like:
+
+* `wire:model="form.income_unit_types.0.bedrooms"`
+
+You must ensure:
+
+* When you add/remove a unit row, you update the array in a way the framework detects (reindex after delete, etc.)
+* You are not using temporary UI-only variables that never go into `form`
+
+**Safeguard checklist**
+
+* When removing a unit type row: reindex the array (`array_values`) before saving
+* On saveDraft: include the full nested array
+* On mount/edit/draft load: initialize missing keys to defaults:
+
+  * `income_unit_types = []` not `null`
+
+### Fix 3 — Validation must include nested fields (or drafts may silently skip)
+
+If you validate unit types, make sure draft saves either:
+
+* skip strict validation for drafts, OR
+* validate with `nullable` rules so partial drafts are allowed
+
+A very common pattern:
+
+* Draft: minimal validation (only listing_id/user_id/type)
+* Submit: full validation
+
+---
+
+## 4) Repopulation on Edit + Draft Open (the “hydration” step)
+
+When user opens:
+
+* a saved draft
+* an existing listing to edit
+
+Make sure you rehydrate ALL income fields back into the form state, including nested unit types.
+
+**Required behavior:**
+
+* `Expected Rent` and `Nominal Consideration Fee` should repopulate and display formatted (commas) again
+* Unit types should repopulate with all sub-answers visible
+
+**Safeguard:** if older drafts exist without these keys, use safe defaults:
+
+* units/buildings/net_income → `null`
+* unit_types → `[]`
+
+---
+
+## 5) Quick QA Script (use [tenant@exp.com](mailto:tenant@exp.com))
+
+Test these exact flows:
+
+### Draft flow
+
+1. Login `tenant@exp.com`
+2. Create Hire a Seller → **Income** property type
+3. Enter:
+
+   * Expected Rent = `2450`
+   * Nominal Consideration Fee = `10000`
+   * Total Units = `4`
+   * Total Buildings = `1`
+   * Annual Net Income = `32000`
+   * Add **2 Unit Types** and fill sub-questions
+4. Save Draft
+5. Reopen Draft
+   ✅ Everything should reappear, including both unit types and sub-answers.
+
+### Edit flow
+
+1. Submit listing
+2. Edit listing
+3. Change unit types + change numbers
+4. Save
+5. Reload listing/edit again
+   ✅ Changes persist.
+
+---
+
+If you paste (or screenshot) the **Income “Unit Type” section fields + sub-questions** you currently have (just that section), I’ll map the **exact JSON structure + key names** you should persist so it saves perfectly across Drafts/Edits without breaking existing data.

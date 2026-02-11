@@ -778,22 +778,22 @@
                             <!-- Listing Details Tab -->
                             <div class="tab-pane fade {{ $activeTab === 0 ? 'show active' : '' }}" id="listing-details"
                                 role="tabpanel" aria-labelledby="listing-details-tab">
-                                @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.listing-details')
+                                @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.listing-details')
 
                             </div>
                             @if ($service_type === 'full_service')
                                 <div class="tab-pane fade {{ $activeTab === 1 ? 'show active' : '' }}"
                                     id="property-preferences" role="tabpanel"
                                     aria-labelledby="property-preferences-tab">
-                                    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.property-preferences')
+                                    @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.property-preferences')
 
                                 </div>
 
-                                <!-- Leasing Terms Tab -->
+                                <!-- Sale Terms Tab -->
                                 <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
                                     id="purchasing-terms" role="tabpanel" aria-labelledby="purchasing-terms-tab">
 
-                                    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.purchasing-terms')
+                                    @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-terms')
                                 </div>
 
 
@@ -801,13 +801,13 @@
                                 <!-- Services Tab -->
                                 <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}" id="services"
                                     role="tabpanel" aria-labelledby="services-tab">
-                                    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.services')
+                                    @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.services')
                                 </div>
                                 <!-- Additional Details Tab -->
                                 <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
                                     id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
 
-                                    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.additional-details')
+                                    @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.additional-details')
 
                                 </div>
 
@@ -816,7 +816,7 @@
                                     id="broker-compensation" role="tabpanel"
                                     aria-labelledby="broker-compensation-tab">
 
-                                    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.broker-compensation')
+                                    @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.broker-compensation')
 
                                 </div>
 

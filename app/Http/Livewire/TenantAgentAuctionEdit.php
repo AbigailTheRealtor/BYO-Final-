@@ -2402,7 +2402,19 @@ class TenantAgentAuctionEdit extends Component
         $this->assets_visible = is_array($this->assets) && in_array('Other', $this->assets);
         $this->minimum_annual_net_income = $auction->info('minimum_annual_net_income') ?? '';
         $this->minimum_cap_rate = $auction->info('minimum_cap_rate') ?? '';
-        
+
+        $this->unit_number = $auction->info('unit_number') ?? '';
+        $this->unit_buildings = $auction->info('unit_buildings') ?? '';
+        $this->nominal = $auction->info('nominal') ?? '';
+
+        $unitTypeConfigRaw = $auction->info('unit_type_configurations');
+        if ($unitTypeConfigRaw) {
+            $decoded = is_string($unitTypeConfigRaw) ? json_decode($unitTypeConfigRaw, true) : (array)$unitTypeConfigRaw;
+            if (!empty($decoded) && is_array($decoded)) {
+                $this->unit_type_configurations = array_values($decoded);
+            }
+        }
+
         $this->property_city = $auction->info('property_city') ?: '';
         $this->property_state = $auction->info('property_state') ?: '';
         $this->property_zip = $auction->info('property_zip') ?: '';
@@ -3087,9 +3099,19 @@ class TenantAgentAuctionEdit extends Component
             $auction->saveMeta('emotional_support_animal', $this->emotional_support_animal);
             $auction->saveMeta('has_breed_restrictions', $this->has_breed_restrictions);
             $auction->saveMeta('breed_restrictions', $this->breed_restrictions);
-            $auction->saveMeta('minimum_annual_net_income', $this->minimum_annual_net_income);
+            $auction->saveMeta('minimum_annual_net_income', $this->stripCommas($this->minimum_annual_net_income));
             $auction->saveMeta('minimum_cap_rate', $this->minimum_cap_rate);
             $auction->saveMeta('number_of_unit_type', json_encode($this->number_of_unit_type));
+            $auction->saveMeta('unit_number', $this->unit_number);
+            $auction->saveMeta('unit_buildings', $this->unit_buildings);
+            $configs = is_array($this->unit_type_configurations) ? $this->unit_type_configurations : [];
+            $cleanedConfigs = array_map(function ($config) {
+                if (isset($config['expected_rent'])) {
+                    $config['expected_rent'] = $this->stripCommas($config['expected_rent']);
+                }
+                return $config;
+            }, $configs);
+            $auction->saveMeta('unit_type_configurations', json_encode(array_values($cleanedConfigs)));
             $auction->saveMeta('screening_concerns', $this->screening_concerns);
             $auction->saveMeta('screening_concerns_explanation', $this->screening_concerns_explanation);
             $auction->saveMeta('credit_scroe_rating', json_encode($this->credit_scroe_rating));
@@ -3360,7 +3382,7 @@ class TenantAgentAuctionEdit extends Component
             $auction->saveMeta('sales_tax_option_gross', $this->sales_tax_option_gross);
             $auction->saveMeta('sales_tax_option_flat', $this->sales_tax_option_flat);
             $auction->saveMeta('sales_tax_option_monthly', $this->sales_tax_option_monthly);
-            $auction->saveMeta('nominal', $this->nominal);
+            $auction->saveMeta('nominal', $this->stripCommas($this->nominal));
             $auction->saveMeta('interested_lease_option', $this->interested_lease_option);
             $auction->saveMeta('interested_lease_option_agreement', $this->interested_lease_option_agreement);
 
