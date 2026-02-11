@@ -462,7 +462,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Route::get('/hire/agent/auction', [LandlordAgentAuctionController::class, 'index'])->name('hire.agent.auction');
         Route::post('/hire/agent/auction', [LandlordAgentAuctionController::class, 'store']);
         // Route::get('/hire/agent/auction/edit/{id}', [LandlordAgentAuctionController::class, 'edit'])->name('hire.agent.auction.edit');
-        Route::get('/hire/agent/auction/edit/{auctionId}', LandLordAgentAuctionEdit::class)->name('hire.agent.auction.edit');
+        Route::get('/hire/agent/auction/edit/{auctionId}', function ($auctionId) {
+            return redirect()->route('hire.agent.auction.edit', ['auctionId' => $auctionId, 'user_type' => 'landlord']);
+        })->name('hire.agent.auction.edit');
 
 
         Route::post('/hire/agent/auction/edit/{id}', [LandlordAgentAuctionController::class, 'update'])->name('hire.agent.auction.update');
