@@ -1,0 +1,250 @@
+Here are **copy/paste Replit instructions with safeguards** for the exact issue:
+
+✅ You submitted a **Hire a Seller’s Agent** listing successfully
+❌ But it **does not appear in the website search bar** for Hire a Seller listings
+❌ And drafts have similar “not showing” behavior
+
+This almost always comes down to **status/visibility flags, tenant scoping, search query filters, or the search indexing source** not matching the place you’re saving to.
+
+---
+
+## Replit Instructions (WITH SAFEGUARDS) — Hire a Seller Listings Not Showing in Search + Drafts Not Showing
+
+### Applies To
+
+* Tenant flow (login example: `tenant@exp.com`)
+* Hire a Seller’s Agent
+* **Submitted listings** not appearing in Hire Seller search
+* **Drafts** not appearing in drafts list or search
+
+---
+
+# 1) SAFEGUARD — Confirm you’re saving to the same dataset the search uses
+
+### Problem pattern
+
+The “submit” action may be saving into one table/model (or one listing type), while the search bar reads from another table/model/query.
+
+### Required dev action
+
+1. Identify the exact query used by the **Hire a Seller search bar**.
+2. Identify the exact model/table written by **Seller submit** and **Seller draft save**.
+3. Confirm they match.
+
+✅ **Safeguard:** Add a 1-time debug log on submit:
+
+* listing ID
+* table/model name (or class)
+* listing type
+* status
+* published flag
+* visibility flag
+* user_id/tenant_id
+  Then compare to what the search query expects.
+
+---
+
+# 2) FIX — On Submit, ensure listing is marked “Published / Active / Searchable”
+
+### Common cause
+
+Listings save successfully but remain:
+
+* `status = draft`
+* `is_published = 0`
+* `is_active = 0`
+* `is_visible = 0`
+* missing `submitted_at` / `published_at`
+* missing required listing_type/category value used by search filters
+
+### Required changes (Submit action)
+
+When user clicks **Submit Listing** for Hire a Seller, set all required “searchable” flags explicitly:
+
+**Required fields to set on submit (use your actual column names):**
+
+* `status = 'active'` (or `'submitted'` if your search includes it)
+* `is_draft = 0`
+* `is_published = 1`
+* `is_active = 1`
+* `published_at = now()` (or `submitted_at = now()`)
+* `listing_type = 'seller_agent'` (or whatever your search filter expects)
+
+✅ **Safeguard:** Do not rely on defaults. Set them explicitly in the submit method.
+
+---
+
+# 3) FIX — Search query must include the statuses you’re using
+
+### Common cause
+
+Search query filters only include one status, like:
+
+* `where status = 'active'`
+  …but your submitted listing is set to `'submitted'`, or `'pending'`.
+
+### Required dev action
+
+Update the search query to include every status that should show publicly in that search.
+
+Examples (conceptual):
+
+* include: `active`, `submitted`, `pending_review`
+* exclude: `draft`, `archived`, `deleted`
+
+✅ **Safeguard:** Make the status filter a constant array used across the app:
+
+* `SEARCHABLE_SELLER_STATUSES = ['active','submitted','pending_review']`
+
+---
+
+# 4) FIX — Remove tenant-only scoping if the search is meant to be sitewide
+
+### Common cause
+
+Search is unintentionally scoped like:
+
+* `where user_id = auth()->id()`
+  or
+* `where tenant_id = currentTenant`
+
+So you “submitted” but it won’t show in the global search bar.
+
+### Required dev action
+
+Decide the intended behavior:
+
+## A) If search bar is PUBLIC/sitewide:
+
+* remove user-specific scoping
+* include all published/active listings
+
+## B) If search bar is “My Listings” only:
+
+* keep user scoping (but then you must have a separate global search)
+
+✅ **Safeguard:** Add a label in UI:
+
+* “Search My Listings” vs “Search All Listings”
+  So behavior matches expectation.
+
+---
+
+# 5) FIX — Drafts not showing: drafts list must query `status = draft` AND correct listing type
+
+### Common cause
+
+Drafts are saved correctly but drafts list/search is missing filters:
+
+* not filtering `listing_type = seller_agent`
+* or filtering by wrong `role` or wrong `auction_type`
+
+### Required dev action
+
+Drafts list query must include:
+
+* `listing_type = 'seller_agent'` (or your equivalent)
+* `status = 'draft'` (or `is_draft = 1`)
+* correct owner: `user_id = auth()->id()`
+
+✅ **Safeguard:** Draft save must always set:
+
+* `status = 'draft'`
+* `is_draft = 1`
+* `is_published = 0`
+
+---
+
+# 6) FIX — Search indexing (if you use a separate search index / cached list)
+
+### Common cause
+
+The “search bar” is not querying DB directly; it’s hitting:
+
+* cached results
+* a search index table
+* a JSON file
+* an in-memory list
+
+So new listings won’t appear until a refresh job runs.
+
+### Required dev action
+
+1. Identify whether search uses:
+
+* direct DB query, OR
+* cached/indexed dataset
+
+2. If indexed:
+
+* on submit, **trigger re-index** for that listing (sync)
+* or enqueue re-index job and ensure queue is running
+
+✅ **Safeguard:** Until indexing is stable, fallback:
+
+* If listing is published but not found in index, the search endpoint should query DB directly for that listing ID.
+
+---
+
+# 7) REQUIRED DEBUG TO PROVE THE REAL CAUSE (fastest path)
+
+Dev must do this *once* for a single listing you submitted.
+
+## Step A — After submit, log the record
+
+Log (or temporarily display in admin):
+
+* `id`
+* `status`
+* `is_draft`
+* `is_published`
+* `is_active`
+* `listing_type`
+* `created_at`
+* `published_at`
+* `user_id`
+
+## Step B — In the search controller/query, log the filters
+
+Log:
+
+* the exact where clauses
+* the status set included
+* whether it scopes to user_id
+* listing_type filter
+
+✅ You’ll immediately see what’s excluding your listing.
+
+---
+
+# 8) Acceptance Tests (Must pass)
+
+### Submitted listing shows in search
+
+1. Submit Hire a Seller listing
+2. Search using the search bar
+   ✅ Listing appears
+
+### Drafts show consistently
+
+1. Save draft
+2. Go to drafts list
+   ✅ Draft appears
+3. Search drafts (if search applies to drafts)
+   ✅ Draft appears
+
+### No regressions
+
+* Draft listings do NOT appear in public search
+* Published listings DO appear in public search
+
+---
+
+# One thing I need from you (no extra back-and-forth—just paste)
+
+Paste the **URL of the search page** you’re using and tell me whether it’s supposed to be:
+
+* **All listings sitewide**, or
+* **Only your listings**
+
+If you can also paste the **listing title** you submitted (or the Listing ID if you see it anywhere), I can tell you which filter is most likely excluding it and tighten the instructions to the exact scenario.
