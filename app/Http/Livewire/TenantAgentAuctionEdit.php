@@ -2531,9 +2531,10 @@ class TenantAgentAuctionEdit extends Component
         $this->pre_approved = $auction->info('pre_approved');
         $this->pre_approval_amount = $auction->info('pre_approval_amount');
         $this->purchase_price = $auction->info('purchase_price');
-        $this->down_payment_type = $auction->info('down_payment_type');
+        $this->down_payment_type = $auction->info('down_payment_type') ?: '$';
         $this->down_payment_amount = $auction->info('down_payment_amount');
-        $this->seller_financing_type = $auction->info('seller_financing_type');
+        $this->seller_down_payment_amount = $auction->info('seller_down_payment_amount') ?? '';
+        $this->seller_financing_type = $auction->info('seller_financing_type') ?: '$';
         $this->seller_financing_amount = $auction->info('seller_financing_amount');
         $this->interest_rate = $auction->info('interest_rate');
         $this->loan_duration = $auction->info('loan_duration');
@@ -2643,6 +2644,17 @@ class TenantAgentAuctionEdit extends Component
             $this->other_services = json_decode($rawOtherServices, true) ?? [];
         } else {
             $this->other_services = [];
+        }
+
+        if (is_array($this->services) && in_array('Provide digital photo enhancements', $this->services)) {
+            $this->showEnhancements = true;
+        }
+        $photoEnhRaw = $auction->info('photo_enhancements');
+        $this->photo_enhancements = $photoEnhRaw ? (is_string($photoEnhRaw) ? json_decode($photoEnhRaw, true) ?? [] : (array)$photoEnhRaw) : [];
+        $this->custom_enhancement = $auction->info('custom_enhancement') ?? '';
+        if (!empty($this->photo_enhancements)) {
+            $this->showEnhancements = true;
+            $this->showCustomEnhancement = in_array('Other', $this->photo_enhancements);
         }
 
         $this->desired_lease_length = json_decode($auction->info('desired_lease_length'), true) ?? [];
@@ -3208,6 +3220,8 @@ class TenantAgentAuctionEdit extends Component
             $auction->saveMeta('services', json_encode($this->services));
             $auction->saveMeta('other_services', json_encode($this->other_services));
             $auction->saveMeta('flat_fee_services', json_encode($this->flat_fee_services));
+            $auction->saveMeta('photo_enhancements', json_encode($this->photo_enhancements));
+            $auction->saveMeta('custom_enhancement', $this->custom_enhancement);
             
             // Build and save services snapshot for ordered display
             $servicesSnapshot = TenantServicesCatalog::buildSnapshot(

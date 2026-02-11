@@ -1,0 +1,223 @@
+## Replit Instructions (WITH SAFEGUARDS) — Hire a Seller’s Agent: Edit Must Auto-Populate
+
+### Fix: (1) Seller Financing section not reloading on Edit
+
+### Fix: (2) “Provide digital photo enhancements” sub-options (and Other text) not showing on Edit
+
+### Applies To
+
+* Login example: `tenant@exp.com`
+* Tenant dashboard → **Hire a Seller’s Agent**
+* **Edit listing + reopen draft**
+* Property Types: Any Seller listing where these sections appear
+
+---
+
+# NON-NEGOTIABLE SAFEGUARDS
+
+### SAFEGUARD A — Must be implemented under Tenant PHP (tenant flow)
+
+Do not edit legacy/admin forms.
+Add temporary debug text to confirm correct screen:
+
+* Create/Draft view: `DEBUG: SELLER TENANT CREATE`
+* Edit view: `DEBUG: SELLER TENANT EDIT`
+  Remove after verification.
+
+---
+
+### SAFEGUARD B — Persist BOTH parent selections and child sub-answers
+
+For conditional sections (Seller Financing, Digital Photo Enhancements):
+
+* Save the parent toggle/selection
+* Save every sub-field
+* On Edit/Draft reopen: hydrate parent + sub-fields AND set booleans that show sub-UI
+
+🚫 Do not rely on `updated()` hooks only. Edit must set state in `mount()` / `loadDraft()`.
+
+---
+
+### SAFEGUARD C — Merge-save only (no wiping)
+
+Saving other tabs must not overwrite:
+
+* seller financing subfields
+* enhancement types
+* enhancement Other text
+  with null/empty.
+
+Only clear “Other” text if “Other” is de-selected.
+
+---
+
+# FIX 1 — Seller Financing does NOT auto-populate on Edit
+
+## Required behavior
+
+When a user edits a listing (or reopens a draft):
+
+* Seller Financing selection/toggle must reload
+* Any Seller Financing sub-fields must reload
+* All dependent inputs must be visible if they were previously triggered
+
+### Implementation requirements
+
+#### A) Canonical keys (must match create + save + load + edit)
+
+Use one key set for Seller Financing:
+
+* `seller_financing` (boolean or selection)
+* plus the exact sub-fields your form collects (examples)
+
+  * `seller_financing_down_payment`
+  * `seller_financing_interest_rate`
+  * `seller_financing_term_years`
+  * `seller_financing_balloon`
+  * `seller_financing_notes`
+    (Use your actual existing keys; do not invent new ones unless your DB is missing them.)
+
+✅ **Safeguard:** No separate keys for edit vs create.
+
+#### B) Edit hydration must set BOTH values and UI show/hide booleans
+
+In Seller Edit component `mount()` / `loadDraft()`:
+
+1. Set `$this->seller_financing` from saved value
+2. Set each `seller_financing_*` subfield from saved values
+3. Set a boolean like `showSellerFinancingFields = true` when seller financing is enabled/selected
+
+🚫 If you only set the values but not the show boolean, the UI will hide the section and the user thinks it didn’t save.
+
+#### C) Edit save must persist the same keys
+
+In the edit update method:
+
+* save `seller_financing` and all `seller_financing_*` subfields
+* merge-save so other-tab saves don’t clear them
+
+---
+
+# FIX 2 — “Provide digital photo enhancements” sub-options not showing on Edit (and Other text missing)
+
+## Required behavior
+
+If the user selected **Provide digital photo enhancements**, the Edit screen must show:
+
+### Select enhancement types (options MUST be available and selected items must be checked):
+
+* Basic edits (brightness, contrast, cropping)
+* Twilight conversion (convert daytime photo to sunset look)
+* Object removal (e.g., cars, trash cans, furniture, etc.)
+* Virtual twilight photography
+* Color correction or sky replacement
+* Other
+
+If **Other** is selected:
+
+* show the “Other” text input
+* populate it with the saved custom text
+
+---
+
+## Implementation requirements
+
+### A) Store three values (parent + types + other text)
+
+Persist:
+
+1. `digital_photo_enhancements_selected` (boolean parent)
+2. `digital_photo_enhancement_types` (array/JSON)
+3. `digital_photo_enhancement_other_text` (string)
+
+✅ **Safeguard:** enhancement types must be stored as JSON array and hydrated as array.
+
+---
+
+### B) Edit hydration must load values AND force sub-question UI to appear
+
+In Seller Edit component `mount()` / `loadDraft()`:
+
+1. `$this->digital_photo_enhancements_selected = (bool) saved_parent;`
+2. `$this->digital_photo_enhancement_types = saved_array ?? [];`
+3. `$this->digital_photo_enhancement_other_text = saved_text ?? '';`
+
+Then set UI toggles:
+
+* if parent selected → `showDigitalEnhancementTypes = true`
+* if “Other” in types → `showDigitalEnhancementOther = true`
+
+🚫 Do not rely on `updatedDigitalPhotoEnhancementTypes()` only.
+
+---
+
+### C) Edit Blade must reuse the same sub-question partial as Create
+
+The Edit form must render the exact same checkbox list and “Other” textbox component/partial used on Create.
+
+✅ **Safeguard:** Do not use a simplified “selected services summary” renderer on Edit.
+
+---
+
+### D) Save logic (draft + edit) must persist types and other text
+
+On save:
+
+* write parent boolean
+* write selected types array
+* if Other selected, write other text
+* if Other not selected, clear other text (recommended)
+
+✅ Merge-save safeguard applies.
+
+---
+
+# REQUIRED DEBUG SAFEGUARD (Temporary)
+
+Add this near these sections on Seller Edit:
+
+`DEBUG seller_financing: {{ json_encode($seller_financing ?? null) }}`
+`DEBUG seller_financing_fields: {{ json_encode([$seller_financing_down_payment ?? null, $seller_financing_interest_rate ?? null, $seller_financing_term_years ?? null]) }}`
+`DEBUG enhancements: {{ json_encode(['parent' => $digital_photo_enhancements_selected ?? null, 'types' => $digital_photo_enhancement_types ?? null, 'other' => $digital_photo_enhancement_other_text ?? null]) }}`
+
+**Remove after verification.**
+
+This proves whether values are being loaded but not rendered, vs not loaded at all.
+
+---
+
+# ACCEPTANCE TESTS (Must pass)
+
+### Draft reopen test
+
+1. Create Seller listing
+2. Enable Seller Financing + fill subfields
+3. Select Provide digital photo enhancements + choose multiple types + Other + enter Other text
+4. Save Draft
+5. Reopen Draft
+   ✅ Seller Financing toggle + fields visible and populated
+   ✅ Enhancement types checkboxes visible and selections checked
+   ✅ Other textbox visible + text populated
+
+### Edit persistence test
+
+1. Change values in edit
+2. Save
+3. Refresh edit page
+   ✅ Everything remains
+
+### Non-wipe test
+
+1. After setting these, save a different tab
+2. Reopen edit
+   ✅ Values did not wipe
+
+---
+
+# NO TOUCH RULE
+
+Do not change wording, tooltips, option labels, or service order. Persistence + hydration + conditional rendering only.
+
+---
+
+If you paste the **actual Seller Financing subfields you have in your form** (just the labels), I’ll tighten Fix 1 to list the exact keys/fields so your dev can’t “save the toggle but not the subfields” again.
