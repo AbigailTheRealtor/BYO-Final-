@@ -1,0 +1,248 @@
+Got it. Here are **copy/paste-ready Replit instructions with safeguards** to make **Hire a Landlord’s Agent → Edit screen** look **IDENTICAL** to the **Create screen** (same colors, same typography, same multi-select formatting, same spacing, same components).
+
+---
+
+## Replit Instructions (WITH SAFEGUARDS) — Hire a Landlord’s Agent “Edit Must Match Create” UI Parity
+
+### Applies To
+
+* Login example: `tenant@exp.com`
+* Tenant dashboard → **Hire a Landlord’s Agent**
+* **Edit/Draft Edit screens only**
+* Property Types: **Residential + Commercial**
+* Goal: **Edit UI must be visually identical to Create UI** (same components + same CSS classes + same formatting).
+
+---
+
+# NON-NEGOTIABLE SAFEGUARDS
+
+### SAFEGUARD A — Single Shared UI Partial (No Duplicate Markup)
+
+✅ The Edit screen must NOT maintain its own “almost the same” Blade markup.
+
+**Requirement**
+
+* Create and Edit must render the same Blade partials for:
+
+  * section headers
+  * field rows
+  * icons
+  * tooltip buttons
+  * dropdowns
+  * multi-select chips/lists
+  * helper text / selection previews
+  * conditional “Other” inputs
+
+**Implementation**
+
+* Extract Create UI into reusable partials (or components) and include them in both Create and Edit.
+* Do **not** copy/paste markup between create and edit files.
+
+**Pass condition:** Changing a CSS class in one shared partial updates both Create and Edit instantly.
+
+---
+
+### SAFEGUARD B — The Edit screen must use the same “state-driven rendering” as Create
+
+If Create uses:
+
+* booleans like `showX`, `isCommercial`, `selectedServices`
+* computed selection summaries
+* conditional blocks for “Other” fields
+
+Then Edit must:
+
+* set those values during `mount()` / loadDraft hydration
+* render using the same view logic
+
+**Pass condition:** All conditional sections appear the same in Edit when reopening a draft.
+
+---
+
+### SAFEGUARD C — No CSS overrides “just for edit”
+
+🚫 Do not add one-off CSS fixes that only apply to edit to “approximate” create.
+
+✅ Fix must be structural:
+
+* same markup
+* same classes
+* same components
+
+---
+
+# REQUIRED FIXES
+
+## FIX 1 — Text Color Parity (Blue on Create, Black on Edit)
+
+### Issue
+
+Example you gave: in Edit, the “Hire a Landlord’s Agent” text appears **black**, but Create uses your **blue** style.
+
+### Required Change
+
+1. Identify the exact class used on Create for the styled text (blue).
+2. Apply the **same class** to the exact same element in Edit by using the **same shared partial**.
+
+✅ **Safeguard**
+
+* There must be **one** definition of that class usage (in the shared partial), not two separate implementations.
+
+---
+
+## FIX 2 — Multi-Select / Multiple Item Selection Formatting Parity
+
+### Issue
+
+Selections that allow multiple items are displaying differently in Edit vs Create (chips vs bullets, spacing, order, indentation, etc.)
+
+### Required Change
+
+1. Multi-select UI rendering must be unified:
+
+   * Same markup (chips/badges OR bullet list — whichever Create uses)
+   * Same wrapper classes (padding, margin, font size, color)
+   * Same order and grouping rules
+2. The selected values must be displayed using the same helper component used on Create.
+
+✅ **Safeguard**
+
+* If Create uses a reusable component like:
+
+  * `selected-items-preview.blade.php`
+  * or a Blade component `<x-selected-items ... />`
+    then Edit must use that exact component.
+
+---
+
+## FIX 3 — Edit must use the exact same section header + icon rows as Create
+
+### Requirements
+
+* Same emoji headers and section titles
+* Same icon size, color, spacing
+* Same tooltip icon placement and behavior
+* Same required-field indicators
+
+✅ **Safeguard**
+
+* Use shared partials:
+
+  * `resources/views/tenant/hire-landlord/partials/section-header.blade.php`
+  * `.../partials/field-row.blade.php`
+  * `.../partials/multiselect-preview.blade.php`
+    (names can differ—goal is shared reuse)
+
+---
+
+## FIX 4 — “Selections order must match Create”
+
+### Requirement
+
+Wherever Edit displays services/selections:
+
+* Show **only the items the user selected**
+* Preserve the same category order and item order as Create
+* Do not show unselected defaults
+
+✅ **Safeguard**
+
+* Use the same ordered source array/config used by Create to build the selection list.
+* Do not rebuild ordering separately in Edit.
+
+---
+
+# IMPLEMENTATION APPROACH (What dev must do)
+
+## Step 1 — Create a shared “form UI” partial and use it in both Create + Edit
+
+### Requirement
+
+Both pages must render the same file:
+
+Example structure:
+
+* Create view:
+
+  * `@include('tenant.landlord.form', ['mode' => 'create'])`
+* Edit view:
+
+  * `@include('tenant.landlord.form', ['mode' => 'edit'])`
+
+✅ The partial must contain:
+
+* all field markup
+* all styling classes
+* all selection display formatting
+* all tooltips / icons
+* all conditional “Other” inputs
+
+The only difference between modes should be:
+
+* submit button label (“Create” vs “Update”)
+* submit action target (create save vs update save)
+* optional “Draft loaded” message
+
+---
+
+## Step 2 — Standardize a single “style map” for create/edit
+
+If you have classes like:
+
+* `$labelClass`
+* `$helperTextClass`
+* `$selectedValueClass`
+
+Define them once and use them everywhere.
+
+✅ **Safeguard**
+No separate style maps for Edit.
+
+---
+
+## Step 3 — Hydrate Edit state so conditional UI matches Create
+
+In Edit component `mount()` / loadDraft:
+
+* ensure all “show/hide” booleans are set based on saved data
+* ensure multiselect arrays are loaded as arrays (not comma strings)
+* ensure preview formatting uses same computed methods as Create
+
+✅ **Pass condition**
+Open a saved draft and it looks identical to create with the same selections.
+
+---
+
+# REQUIRED ACCEPTANCE TESTS (must pass)
+
+### Test A — Visual parity
+
+1. Open Create screen
+2. Screenshot (mentally) a few sections: listing details + services + broker comp
+3. Open Edit for a draft with data
+   ✅ Font colors identical (blue where blue belongs)
+   ✅ Same font sizes, spacing, icons
+   ✅ Same multi-select formatting
+   ✅ Same order of services and selections
+
+### Test B — No duplicated markup
+
+Dev must demonstrate:
+
+* only 1 shared partial controls the form UI
+* edit and create both include it
+
+### Test C — No regressions
+
+Changing one class in shared partial affects both create/edit.
+
+---
+
+# “NO TOUCH” RULE
+
+Do not change wording, tooltips, or field logic.
+This task is purely **UI parity** between Create and Edit.
+
+---
+
+If you want, paste **one screenshot of Create** and **one screenshot of Edit** showing the same section (like the Services list or Broker Lease Fee section). I’ll point out the exact visual differences and tell your dev *precisely* which class/partial is mismatched so they can fix it in one pass.
