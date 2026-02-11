@@ -1,0 +1,192 @@
+## Replit Instructions (WITH SAFEGUARDS) — Hire a Seller’s Agent: **Property Condition** Not Saving (Draft + Edit)
+
+### Applies To
+
+* Login example: `tenant@exp.com`
+* Tenant dashboard → **Hire a Seller’s Agent**
+* **Save Draft → reopen draft**
+* **Edit listing → save → reload**
+* Field: **Property Condition** only
+
+---
+
+# NON-NEGOTIABLE SAFEGUARDS
+
+### SAFEGUARD A — Must be fixed under Tenant PHP (tenant flow)
+
+Do not edit legacy/admin forms.
+
+**Temporary proof (must add, then remove):**
+
+* Create/Draft view: `DEBUG: SELLER TENANT CREATE`
+* Edit/Draft reopen view: `DEBUG: SELLER TENANT EDIT`
+
+If you don’t see these on the actual screens, they edited the wrong files.
+
+---
+
+### SAFEGUARD B — One canonical key everywhere
+
+Pick ONE canonical field key and use it in:
+
+* create inputs (`wire:model`)
+* draft save payload
+* draft load/hydration
+* edit save payload
+* edit mount/hydration
+
+**Canonical key to use:**
+
+* `property_condition`
+
+🚫 No alternate names like `acceptable_property_condition`, `propertyCondition`, `condition`, etc.
+
+---
+
+### SAFEGUARD C — Merge-save (never wipe)
+
+Saving other tabs must NOT overwrite `property_condition` with empty/null.
+
+Only overwrite when the incoming request includes a real value, OR the user explicitly changes it.
+
+---
+
+# REQUIRED FIX (Draft + Edit)
+
+## Step 1 — Confirm the input is bound to the same Livewire property on Create AND Edit
+
+### Requirement
+
+In BOTH Create and Edit Blade:
+
+* the property condition control must use:
+  `wire:model="property_condition"`
+
+🚫 Do not:
+
+* bind Create to one property and Edit to another
+* bind to a nested key in one place and a flat key in another
+
+✅ **Safeguard**
+Do not include manual `value="..."` attributes. Livewire binding only.
+
+---
+
+## Step 2 — Ensure Draft Save includes `property_condition`
+
+In the Seller create/draft save method (often `saveDraft()`, `saveAllMetadata()`, etc.):
+
+✅ Must include:
+
+* `property_condition`
+
+If drafts are saved as JSON metadata:
+
+* ensure `property_condition` is inside the metadata array written to DB.
+
+If saved in a column:
+
+* ensure the column exists + model `$fillable` includes it.
+
+---
+
+## Step 3 — Ensure Draft Reopen hydrates `property_condition`
+
+In `loadDraft()` / `mount($draftId)` for the Seller flow:
+
+✅ Must set:
+
+* `$this->property_condition = saved_value;`
+
+**Safeguard**
+Default missing value to `null` or `''`, NEVER `false`.
+
+---
+
+## Step 4 — Ensure Edit Save updates `property_condition`
+
+In Seller edit update method:
+
+✅ Must write:
+
+* `property_condition`
+
+**Safeguard**
+Use merge-save so saving a different section doesn’t clear it.
+
+---
+
+# CRITICAL DETAIL — Is Property Condition multi-select or single-select?
+
+### If SINGLE-select
+
+* store as string
+* hydrate as string
+
+### If MULTI-select (very common)
+
+✅ Required:
+
+* store as JSON array
+* hydrate as array
+* Livewire property must be an array
+* the UI must expect an array
+
+**Safeguard**
+If your DB currently stores a string (comma-separated), fix one of these:
+
+* Convert to array on load: `explode(',', $value)`
+* Convert to string on save: `implode(',', $array)`
+  …but **prefer JSON** for reliability.
+
+---
+
+# REQUIRED DEBUG CHECK (Temporary, prevents “it’s done” when it’s not)
+
+Add this near Property Condition in the Seller Edit view:
+
+`DEBUG property_condition: {{ json_encode($property_condition ?? null) }}`
+
+### Interpretation
+
+* If debug prints the correct value but UI is blank → Blade is bound to wrong property
+* If debug prints null after saving draft → draft save payload missing
+* If debug prints `false` → bad default is being assigned
+
+Remove after fix confirmed.
+
+---
+
+# ACCEPTANCE TESTS (Must pass)
+
+### Draft test
+
+1. Create Seller listing
+2. Select Property Condition
+3. Save Draft
+4. Reopen Draft
+   ✅ Property Condition is still selected
+
+### Edit test
+
+1. Change Property Condition
+2. Save
+3. Refresh
+   ✅ Property Condition remains selected
+
+### Non-wipe test
+
+1. Set Property Condition
+2. Save a different tab/section
+3. Reopen draft/edit
+   ✅ Property Condition is NOT cleared
+
+---
+
+# NO TOUCH RULE
+
+Do not change option labels, tooltips, or order — persistence only.
+
+---
+
+If you paste **what type of control it is** (dropdown vs multi-select checkbox list) or the exact option list used, I can tighten Step 5 to the exact storage format your dev needs so it stops failing on drafts.

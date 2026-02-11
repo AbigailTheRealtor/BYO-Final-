@@ -2432,7 +2432,10 @@ class TenantAgentAuctionEdit extends Component
         $this->space_features = $auction->info('space_features');
         $this->neighboring_tenants = $auction->info('neighboring_tenants');
         $this->guests_allowed = $auction->info('guests_allowed');
-        $this->condition_prop = $this->mapLegacyPropertyConditions($auction->info('condition_prop'));
+        $rawConditionProp = $auction->info('condition_prop') ?? '';
+        $this->condition_prop = ($this->user_type === 'seller' || $this->user_type === 'landlord')
+            ? $rawConditionProp
+            : $this->mapLegacyPropertyConditions($rawConditionProp);
         $this->other_property_condition = $auction->info('other_property_condition');
         $this->bedrooms = $auction->info('bedrooms');
         $this->bathrooms = $auction->info('bathrooms');
