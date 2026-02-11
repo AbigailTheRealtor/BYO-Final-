@@ -1,3 +1,34 @@
+@php
+    $occupant_types_seller = $occupant_types_seller ?? [['name' => 'Owner'], ['name' => 'Tenant'], ['name' => 'Vacant']];
+
+    $acceptable_leasing_space = $acceptable_leasing_space ?? (($property_type ?? '') === 'Commercial Property'
+        ? [['name' => 'Entire Property'], ['name' => 'Single Room']]
+        : [['name' => 'Accessory Unit / Guest Suite (ADU)'], ['name' => 'Entire Property'], ['name' => 'Single Room']]);
+
+    $residential_lease_term_options = $residential_lease_term_options ?? [
+        ['name' => '3 Months'], ['name' => '6 Months'], ['name' => '9 Months'],
+        ['name' => '1 Year'], ['name' => '2 Years'], ['name' => 'Month-to-Month'],
+    ];
+
+    $Commercial_lease_term_options = $Commercial_lease_term_options ?? [
+        ['name' => '6 Months'], ['name' => '1 Year'], ['name' => '2 Years'],
+        ['name' => '3-5 Years'], ['name' => '6+ Years'], ['name' => 'Month-to-Month'],
+    ];
+
+    $lease_types = $lease_types ?? [
+        ['name' => 'Absolute (Triple) Net'], ['name' => 'Gross Lease'], ['name' => 'Gross Percentages'],
+        ['name' => 'Ground Lease'], ['name' => 'Lease Option'], ['name' => 'Modified Gross'],
+        ['name' => 'Net Lease'], ['name' => 'Net Net'], ['name' => 'Pass Throughs'],
+        ['name' => 'Purchase Option'], ['name' => 'Renewal Option'], ['name' => 'Sale-Leaseback'],
+        ['name' => 'Seasonal'], ['name' => 'Special Available (CLO)'], ['name' => 'Varied Terms'],
+        ['name' => 'Other'],
+    ];
+
+    $is_other_owner_pays_visible = $is_other_owner_pays_visible ?? (is_array($owner_pays ?? null) && in_array('Other', $owner_pays));
+    $is_other_tenant_pay_visible = $is_other_tenant_pay_visible ?? (is_array($tenant_pays ?? null) && in_array('Other', $tenant_pays));
+    $is_rent_include_visible = $is_rent_include_visible ?? (is_array($rent_includes ?? null) && in_array('Other', $rent_includes));
+    $is_update_lease_term_option_visible = $is_update_lease_term_option_visible ?? (is_array($desired_lease_length ?? null) && in_array('Other', $desired_lease_length));
+@endphp
 <!-- Section Heading -->
 <h3>Leasing Terms</h3>
 <div class="alert alert-info bg-light-info border-info mb-4">
