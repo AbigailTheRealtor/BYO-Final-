@@ -542,14 +542,13 @@ $safeKey = function(...$parts) {
                     <span class="input-group-text">$</span>
                 @endif
 
-                <input type="text" step="any" wire:model.lazy="lease_value" class="form-control"
+                <input type="text" wire:model.lazy="lease_value" class="form-control"
                     wire:key="lease-value-input-{{ $lease_type }}"
                     placeholder="{{ $lease_type === 'percent'
                         ? 'Enter percentage of option consideration (e.g., 5)'
                         : 'Enter flat fee amount (e.g., 1,500)' }}"
                     data-error-id="lease_value_error"
-                    oninput="{{ $lease_type === 'flat' ? 'formatWithCommas(this)' : 'validateInput(this)' }}"
-                    onblur="{{ $lease_type === 'flat' ? 'formatWithCommas(this)' : 'reformatNumber(this)' }}"
+                    oninput="validateInput(this)" onblur="reformatNumber(this)"
                     onpaste="handlePaste(event)">
 
                 @if ($lease_type === 'percent')
@@ -580,14 +579,13 @@ $safeKey = function(...$parts) {
                     <span class="input-group-text">$</span>
                 @endif
 
-                <input type="text" step="any" wire:model.lazy="purchase_value" class="form-control"
+                <input type="text" wire:model.lazy="purchase_value" class="form-control"
                     wire:key="purchase-value-input-{{ $purchase_type }}"
                     placeholder="{{ $purchase_type === 'percent'
                         ? 'Enter percentage of the total purchase price (e.g., 6)'
                         : 'Enter flat fee amount (e.g., 5,000)' }}"
                     data-error-id="purchase_value_error"
-                    oninput="{{ $purchase_type === 'flat' ? 'formatWithCommas(this)' : 'validateInput(this)' }}"
-                    onblur="{{ $purchase_type === 'flat' ? 'formatWithCommas(this)' : 'reformatNumber(this)' }}"
+                    oninput="validateInput(this)" onblur="reformatNumber(this)"
                     onpaste="handlePaste(event)">
 
                 @if ($purchase_type === 'percent')

@@ -305,8 +305,10 @@ class SellerAgentAuction extends Component
     public $commission_structure_type_fee_flat_combo = '';
     public $commission_structure_type_fee_percentage_combo = '';
     public $interested_lease_option_agreement = '';
-    public $lease_type = '';
-    public $purchase_type = '';
+    public $lease_type = 'percent';
+    public $purchase_type = 'percent';
+    public $lease_value = null;
+    public $purchase_value = null;
     public $retained_deposits = '';
     public $additional_details_broker = '';
 
@@ -315,6 +317,7 @@ class SellerAgentAuction extends Component
     public $last_name = '';
     public $phone_number = '';
     public $email = '';
+    public $current_status = '';
     public $video_link = '';
 
 
@@ -583,6 +586,17 @@ class SellerAgentAuction extends Component
     {
         $this->gap_payment_type = $type;
         $this->gap_payment_amount = '';
+    }
+
+    public function setType($which, $type)
+    {
+        if ($which === 'lease') {
+            $this->lease_type = $type ?: 'percent';
+            $this->lease_value = '';
+        } elseif ($which === 'purchase') {
+            $this->purchase_type = $type ?: 'percent';
+            $this->purchase_value = '';
+        }
     }
 
     public function updatedOfferedFinancing()
@@ -1657,6 +1671,11 @@ class SellerAgentAuction extends Component
             $this->protection_period = $auction->get->protection_period;
             $this->early_termination_fee_option = $auction->get->early_termination_fee_option;
             $this->early_termination_fee_amount = $auction->get->early_termination_fee_amount;
+            $this->lease_type = $auction->get->lease_type ?? 'percent';
+            $this->lease_value = $auction->get->lease_value ?? null;
+            $this->purchase_type = $auction->get->purchase_type ?? 'percent';
+            $this->purchase_value = $auction->get->purchase_value ?? null;
+            $this->interested_lease_option_agreement = $auction->get->interested_lease_option_agreement ?? '';
             $this->retainer_fee_option = $auction->get->retainer_fee_option;
             $this->retainer_fee_amount = $auction->get->retainer_fee_amount;
             $this->retainer_fee_application = $auction->get->retainer_fee_application;
@@ -1669,6 +1688,7 @@ class SellerAgentAuction extends Component
             $this->last_name = $auction->get->last_name;
             $this->phone_number = $auction->get->phone_number;
             $this->email = $auction->get->email;
+            $this->current_status = $auction->get->current_status ?? '';
             $this->video_link = $auction->get->video_link;
             $this->photo = $auction->get->photo ?? null;
 
@@ -1998,7 +2018,12 @@ class SellerAgentAuction extends Component
         // Other Broker Terms
         $auction->saveMeta('protection_period', $this->protection_period);
         $auction->saveMeta('early_termination_fee_option', $this->early_termination_fee_option);
-        $auction->saveMeta('early_termination_fee_amount', $this->early_termination_fee_amount);
+        $auction->saveMeta('early_termination_fee_amount', $this->stripCommas($this->early_termination_fee_amount));
+        $auction->saveMeta('lease_type', $this->lease_type);
+        $auction->saveMeta('lease_value', $this->stripCommas($this->lease_value));
+        $auction->saveMeta('purchase_type', $this->purchase_type);
+        $auction->saveMeta('purchase_value', $this->stripCommas($this->purchase_value));
+        $auction->saveMeta('interested_lease_option_agreement', $this->interested_lease_option_agreement);
         $auction->saveMeta('retainer_fee_option', $this->retainer_fee_option);
         $auction->saveMeta('retainer_fee_amount', $this->retainer_fee_amount);
         $auction->saveMeta('retainer_fee_application', $this->retainer_fee_application);
@@ -2114,6 +2139,7 @@ class SellerAgentAuction extends Component
         $phoneDigitsOnly = preg_replace('/\D/', '', $this->phone_number);
         $auction->saveMeta('phone_number', $phoneDigitsOnly);
         $auction->saveMeta('email', $this->email);
+        $auction->saveMeta('current_status', $this->current_status);
         $auction->saveMeta('video_link', $this->video_link);
 
         // Save photo - only process if it's a new upload (UploadedFile), not an existing string path
@@ -2450,5 +2476,13 @@ class SellerAgentAuction extends Component
         } catch (\Exception $e) {
             session()->flash('error', 'Error deleting draft: ' . $e->getMessage());
         }
+    }
+
+    protected function stripCommas($value)
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+        return str_replace(',', '', $value);
     }
 }

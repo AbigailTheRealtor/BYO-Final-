@@ -1,0 +1,314 @@
+Below is a **copy/paste-ready “Replit Instructions with Safeguards”** spec for your developer to implement for **Hire a Seller’s Agent → Draft + Edit** (login example: `tenant@exp.com`). This is written to prevent partial saves, missing repopulation, and “Other” field UI bugs.
+
+---
+
+## Replit Instructions (WITH SAFEGUARDS) — Hire a Seller’s Agent (Draft + Edit Persistence)
+
+### Applies To
+
+* Login example: `tenant@exp.com`
+* Dashboard → **Hire a Seller’s Agent**
+* Must apply to **ALL property types** supported by Hire a Seller (and any shared subflows).
+* **Scope:** Draft save + reopen draft + edit listing + reload page must persist and repopulate **100% of fields** listed below.
+
+---
+
+# NON-NEGOTIABLE SAFEGUARDS (Must Implement)
+
+### SAFEGUARD A — No Partial Tab Saves / No Data Loss
+
+1. **Draft save must persist the entire listing payload**, not only the active tab.
+2. Saving a later tab **must not overwrite earlier tabs** with null/empty defaults.
+3. Implement a **merge-save** strategy:
+
+   * When saving, merge the current Livewire/form state into the existing draft record (or listing record), field-by-field.
+   * Never replace the entire JSON/object with only the current tab’s subset unless you are sure all fields are included.
+
+**Acceptance test:**
+
+* Fill Tab 1 fields → Save Draft
+* Fill Tab 2 fields → Save Draft
+* Reopen draft: Tab 1 + Tab 2 values must still be present (no resets)
+
+---
+
+### SAFEGUARD B — Single Source of Truth for Field Keys
+
+1. Create/maintain **one canonical map** of field keys used by:
+
+   * create form state
+   * draft save payload
+   * edit form state
+   * edit save payload
+   * show/actual listing view
+
+2. Keys must match **exactly** across:
+
+   * database columns (or JSON keys)
+   * Livewire public properties (or state array)
+   * Blade input `wire:model`
+   * edit mount/hydrate logic
+
+**Do not** use slightly different names between create vs edit (example: `county` vs `property_county`).
+
+---
+
+### SAFEGUARD C — “Other” Field Logic Must Persist + Re-render Correctly
+
+For any field that has an “Other” option:
+
+1. Store BOTH:
+
+   * selected option value (e.g., `occupancy_requirement_type = 'Other'`)
+   * the “Other” text input value (e.g., `occupancy_requirement_other = 'Must occupy within 90 days of closing'`)
+2. On edit mount/reopen draft:
+
+   * if selected option is “Other”, automatically set the UI boolean to show the text input
+   * repopulate the “Other” text input value
+
+---
+
+### SAFEGUARD D — Photos must persist (Draft + Edit)
+
+1. Personal Photo must be stored in a durable way:
+
+   * recommended: store file path in DB + store file in persistent disk (not temp)
+2. Draft reopen/edit must display:
+
+   * existing photo preview
+   * ability to remove/replace photo
+3. Delete photo should:
+
+   * clear DB path
+   * remove file from storage (or mark orphan cleanup job)
+
+---
+
+# REQUIRED FIXES (Draft + Edit)
+
+## 1) Fields not saving in Draft or Edit (Must persist & repopulate)
+
+### Listing Location (Not Saving)
+
+* **City**
+* **State**
+* **County**
+* **Zip Code**
+
+**Implementation requirements**
+
+* Ensure these fields are included in:
+
+  * create save (draft)
+  * edit save
+  * edit mount/reopen-draft hydration
+* Ensure they are not being dropped by validation, fillable restrictions, or request filtering.
+
+**Common failure points to check**
+
+* Model `$fillable` missing these fields
+* Migration missing these columns or JSON keys not saved
+* Save payload only includes certain tabs and these fields live on a different tab
+
+---
+
+### Property Condition (Not Saving)
+
+* **Property Condition** (your “acceptable property condition” field)
+
+**Implementation requirements**
+
+* Save selected value(s) on draft + edit
+* Repopulate on reopen/edit
+* If it’s multi-select, make sure storage type matches (array vs string):
+
+  * If JSON column → store array
+  * If varchar → store comma-separated consistently and reverse on hydrate
+
+---
+
+### Loan / Assumable Section (Not Saving)
+
+The following must save + repopulate on draft + edit:
+
+* **Loan Term Remaining (Years)**
+* **Date Loan Originated**
+* **Loan Servicer / Lender**
+* **Assumption Fee**
+* **Occupancy Requirement**
+
+**Implementation requirements**
+
+* Verify these inputs are not conditionally hidden at save time without being included in payload.
+* If they are conditionally displayed (ex: “Assumable” toggle), you must still persist values if filled.
+
+---
+
+### Acceptable Exchange Item (Not Saving)
+
+* **Acceptable Exchange Item** must save + repopulate on draft + edit.
+
+**Implementation requirements**
+
+* Same as above: include in payload, hydrate on mount, do not overwrite on later tab saves.
+
+---
+
+### Seller’s Current Status (Not Saving)
+
+* **Seller’s Current Status** must save + repopulate on draft + edit.
+
+---
+
+### Personal Photo (Not Saving)
+
+* Must persist across:
+
+  * Save Draft → reopen draft
+  * Edit listing → reload page
+* Must support delete/replace.
+
+---
+
+## 2) “Other” field UI bugs (Edit screen)
+
+### Appliances Included: “Other” selected but input box does not appear on Edit
+
+**Fix required**
+
+* On edit mount (and reopen draft), if `appliances_included` contains/equals “Other”:
+
+  * set `showAppliancesOtherInput = true`
+  * repopulate `appliances_included_other`
+
+**Also required**
+
+* If user unselects “Other”, hide the box and optionally clear `appliances_included_other` (only if you want clearing behavior; otherwise keep but ignore unless Other is selected).
+
+---
+
+### View Preference: remove “View (Other):” label above the text box
+
+**Fix required**
+
+* When “Other” is selected, do NOT display label like `View (Other):`
+* Show only the text box (with your normal label/placeholder).
+* This must work on:
+
+  * create
+  * draft reopen
+  * edit
+
+**Implementation approach**
+
+* In Blade: if selected == “Other”, render the input without injecting “(Other)” into the label text.
+* Keep label constant (e.g., `View Preference:`) or omit label entirely above the text box—your call, but **no “(Other)”**.
+
+---
+
+### Occupancy Requirement: “Other” verbiage + placeholder update
+
+**Fix required**
+
+* If user selects “Other” on Occupancy Requirement:
+
+  * remove the “Other”-style label/verbiage
+  * set placeholder exactly to:
+
+**Placeholder must be:**
+`Enter occupancy requirement (e.g., Must occupy within 90 days of closing)`
+
+**Also required**
+
+* The input must show on edit/reopen draft when “Other” was selected, and must retain the saved text.
+
+---
+
+## 3) Broker Compensation & Agency Agreement Terms — Draft not persisting
+
+The following must stay filled out in Draft + Edit:
+
+* **Seller’s Broker Purchase Fee**
+* **Buyer’s Broker Commission Structure**
+* **Interested in Offering a Lease Agreement**
+* **Compensation for Creating the Lease-Option Agreement**
+* **Compensation if Purchase Option is Exercised**
+
+**Implementation requirements**
+
+1. Confirm these fields are included in the save payload (draft + edit).
+2. Confirm these fields are hydrated back into state on:
+
+   * edit mount
+   * draft reopen mount
+3. Confirm that saving another tab does not overwrite these values.
+
+---
+
+## 4) Number formatting — comma auto-format missing on 2 fields
+
+### Problem
+
+For:
+
+* **Compensation for Creating the Lease-Option Agreement**
+* **Compensation if Purchase Option is Exercised**
+
+…the comma formatting is not automatically applied like it is for **Early Termination Fee**.
+
+### Fix required (must match Early Termination Fee behavior)
+
+Implement the **same input masking / formatting** used on Early Termination Fee for these two fields.
+
+**Requirements**
+
+* While typing, format as currency-style commas (e.g., 10000 → 10,000)
+* Store a clean numeric value consistently (either store raw number or store formatted string, but be consistent with the rest of your app)
+* Must work on:
+
+  * create
+  * draft reopen
+  * edit
+  * reload
+
+**Implementation hint**
+
+* Reuse the exact same component/JS mask/directive you already use for Early Termination Fee (do not invent a new format).
+
+---
+
+# Developer Checklist (Use this to verify “done”)
+
+### Draft Save & Reload (Create → Draft)
+
+* Fill City/State/County/Zip → Save Draft → reopen draft → values present
+* Set Property Condition → Save Draft → reopen → present
+* Select Appliances Included = Other + type text → Save Draft → reopen → input visible + text present
+* Select View = Other → Save Draft → reopen → **no “View (Other)” label** + textbox present + text present
+* Fill Loan fields (term, originated date, lender, assumption fee, occupancy requirement) → Save Draft → reopen → present
+* Fill Acceptable Exchange Item → Save Draft → reopen → present
+* Fill Broker Compensation fields listed → Save Draft → reopen → present
+* Upload Personal Photo → Save Draft → reopen → photo present + removable
+* Seller’s Current Status → Save Draft → reopen → present
+* Lease-option compensation fields → Save Draft → reopen → present AND comma formatting works
+
+### Edit Listing & Reload (Draft → Edit → Save)
+
+* Open draft → go to edit → change each field → Save → reload page → values persist
+* Switching tabs then saving must not wipe fields from other tabs
+
+---
+
+# Final “No Regression” Rule
+
+**Do not change field labels, tooltips, or business logic** beyond what is required above.
+This task is strictly:
+
+* persistence fixes,
+* “Other” UI correctness,
+* placeholder text update,
+* and number formatting parity.
+
+---
+
+If you want, paste whatever your dev currently uses for **Early Termination Fee formatting** (the directive/component name or snippet), and I’ll mirror it exactly for those two lease-option compensation fields so it’s impossible for them to implement it inconsistently.

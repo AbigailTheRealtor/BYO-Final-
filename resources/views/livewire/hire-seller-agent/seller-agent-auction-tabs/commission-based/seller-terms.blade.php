@@ -796,7 +796,7 @@
         <div class="input-cover">
             <input type="text" wire:model="assumable_occupancy_other" class="form-control has-icon"
                 data-icon="fa-solid fa-house-user"
-                placeholder="Enter other occupancy requirement">
+                placeholder="Enter occupancy requirement (e.g., Must occupy within 90 days of closing)">
         </div>
     </div>
     @endif

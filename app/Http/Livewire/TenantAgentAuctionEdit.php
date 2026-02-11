@@ -442,6 +442,8 @@ class TenantAgentAuctionEdit extends Component
     public $phone_number = '';
     public $email = '';
     public $current_status = '';
+    public $assumable_occupancy_requirement = '';
+    public $assumable_occupancy_other = '';
     public $video_link = '';
 
 
@@ -2467,6 +2469,7 @@ class TenantAgentAuctionEdit extends Component
         $this->other_preferences = $auction->info('other_preferences');
         $this->appliances = json_decode($auction->info('appliances'), true) ?? [];
         $this->other_appliances = $auction->info('other_appliances');
+        $this->showOtherAppliances = is_array($this->appliances) && in_array('Other', $this->appliances);
         $this->leasing_55_plus = $auction->info('leasing_55_plus');
         $this->non_negotiable_amenities = json_decode($auction->info('non_negotiable_amenities'), true) ?? [];
         $this->other_non_negotiable_amenities = $auction->info('other_non_negotiable_amenities');
@@ -2533,6 +2536,9 @@ class TenantAgentAuctionEdit extends Component
         $this->gap_payment_type = $auction->info('gap_payment_type');
         $this->outstanding_balance = $auction->info('outstanding_balance');
         $this->gap_payment_amount = $auction->info('gap_payment_amount');
+        $this->assumable_occupancy_requirement = $auction->info('assumable_occupancy_requirement') ?? '';
+        $this->assumable_occupancy_other = $auction->info('assumable_occupancy_other') ?? '';
+        $this->current_status = $auction->info('current_status') ?? '';
         $this->exchange_item = $auction->info('exchange_item');
         $this->other_exchange_item = $auction->info('other_exchange_item');
         $this->exchange_item_value = $auction->info('exchange_item_value');
@@ -3066,6 +3072,8 @@ class TenantAgentAuctionEdit extends Component
             $auction->saveMeta('outstanding_balance', $this->outstanding_balance);
             $auction->saveMeta('gap_payment_type', $this->gap_payment_type);
             $auction->saveMeta('gap_payment_amount', $this->gap_payment_amount);
+            $auction->saveMeta('assumable_occupancy_requirement', $this->assumable_occupancy_requirement);
+            $auction->saveMeta('assumable_occupancy_other', $this->assumable_occupancy_other);
             $auction->saveMeta('exchange_item', $this->exchange_item);
             $auction->saveMeta('other_exchange_item', $this->other_exchange_item);
             $auction->saveMeta('exchange_item_value', $this->exchange_item_value);
