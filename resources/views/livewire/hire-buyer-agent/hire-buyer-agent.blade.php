@@ -820,11 +820,12 @@
                                     <p>You have saved drafts. Would you like to load one?</p>
                                     <div class="list-group">
                                         @foreach ($this->getDrafts() as $draft)
+                                            @php $draftVersion = $draft->info('draft_version') ?? null; @endphp
                                             <div
                                                 class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                                                 <a class="btn btn-link text-start flex-grow-1"
                                                     href="{{ route('hire.agent.auction.draft', ['user_type' => $user_type, 'listingId' => $draft->id]) }}">
-                                                    {{ $draft->title }} ({{ $draft->updated_at->format('m/d/Y H:i') }})
+                                                    {{ $draft->title }}@if($draftVersion) <span class="badge bg-secondary">v{{ $draftVersion }}</span>@endif ({{ $draft->updated_at->format('m/d/Y H:i') }})
                                                 </a>
                                                 <button type="button" class="btn btn-sm btn-outline-danger" style="border-color: #dc3545; color: #dc3545;"
                                                     data-bs-dismiss="modal"

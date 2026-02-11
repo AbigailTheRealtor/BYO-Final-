@@ -2470,6 +2470,46 @@ class TenantAgentAuction extends Component
     }
 
 
+    protected function buildDraftPayloadHash()
+    {
+        $fields = [
+            'listing_title', 'service_type', 'auction_type', 'listing_status',
+            'working_with_agent', 'listing_date', 'desired_agent_hire_date',
+            'expiration_date', 'auction_time', 'agent_bid_visibility',
+            'meeting_Preference', 'number_of_unit', 'state', 'property_type',
+            'zip_code', 'address', 'property_city', 'property_state', 'property_zip',
+            'nominal', 'expected_rent', 'pool_needed', 'parking', 'pets',
+            'number_of_pets', 'pet_type', 'support_animal', 'emotional_support_animal',
+            'has_breed_restrictions', 'breed_restrictions', 'minimum_annual_net_income',
+            'minimum_cap_rate', 'unit_number', 'unit_buildings', 'assets_other',
+            'screening_concerns', 'screening_concerns_explanation', 'preferance_details',
+        ];
+        $data = [];
+        foreach ($fields as $f) {
+            $val = $this->{$f} ?? '';
+            if (is_string($val)) {
+                $val = trim(str_replace(',', '', $val));
+            }
+            $data[$f] = $val;
+        }
+        $arrayFields = [
+            'cities', 'counties', 'zipCodes', 'property_items', 'amenities',
+            'non_negotiable_amenities', 'pool_type', 'assets', 'unit_type_configurations',
+            'offered_financing', 'credit_scroe_rating',
+        ];
+        foreach ($arrayFields as $f) {
+            $val = $this->{$f} ?? [];
+            if (is_array($val)) {
+                $sorted = $val;
+                sort($sorted);
+                $val = $sorted;
+            }
+            $data[$f] = $val;
+        }
+        ksort($data);
+        return hash('sha256', json_encode($data, JSON_SORT_KEYS));
+    }
+
     public function saveDraft()
     {
         try {
@@ -2485,7 +2525,6 @@ class TenantAgentAuction extends Component
             $this->isDraft = true;
             $this->validateOnlyFilledFields();
 
-            // Map user_type to model class (same as store())
             $auctionClass = match ($this->user_type) {
                 'tenant'   => HireTenantAgentAuction::class,
                 'landlord' => HireLandLordAgentAuction::class,
@@ -2498,32 +2537,35 @@ class TenantAgentAuction extends Component
                 throw new \Exception("Invalid user_type: {$this->user_type}");
             }
 
-            $auction = $this->listingId
+            $newPayloadHash = $this->buildDraftPayloadHash();
+
+            $previousDraft = $this->listingId
                 ? $auctionClass::find($this->listingId)
                 : null;
 
-            // If listingId was set but record not found, create new instance
-            if (!$auction) {
-                $auction = new $auctionClass();
+            $previousVersion = 0;
+            $parentDraftId = null;
+            if ($previousDraft && $previousDraft->is_draft) {
+                $oldHash = $previousDraft->info('draft_payload_hash') ?? '';
+                if ($oldHash === $newPayloadHash) {
+                    session()->flash('success', 'No changes detected — draft is already up to date.');
+                    return redirect()->route('hire.agent.auction.draft', ['user_type' => $this->user_type, 'listingId' => $this->listingId]);
+                }
+                $previousVersion = (int) ($previousDraft->info('draft_version') ?? 1);
+                $parentDraftId = $previousDraft->id;
             }
+
+            $auction = new $auctionClass();
 
             $auction->user_id = Auth::id();
             $auction->title = $this->listing_title;
             $auction->is_draft = true;
 
-            // Set required fields with defaults for buyer/seller types that have NOT NULL constraints
             if ($this->user_type === 'buyer' || $this->user_type === 'seller') {
                 $auction->address = $this->address ?? 'N/A';
-                // Use string 'true'/'false' to match existing query patterns
-                if (!$auction->exists || $auction->is_approved === null) {
-                    $auction->is_approved = 'false';
-                }
-                if (!$auction->exists || $auction->is_sold === null) {
-                    $auction->is_sold = 'false';
-                }
-                if (!$auction->exists || $auction->is_paid === null) {
-                    $auction->is_paid = 'false';
-                }
+                $auction->is_approved = 'false';
+                $auction->is_sold = 'false';
+                $auction->is_paid = 'false';
             }
 
             $auction->save();
@@ -2532,7 +2574,11 @@ class TenantAgentAuction extends Component
 
             $this->saveAllMetadata($auction);
 
-            session()->flash('success', 'Draft saved successfully. You can return later to complete your listing.');
+            $auction->saveMeta('draft_version', $previousVersion + 1);
+            $auction->saveMeta('parent_draft_id', $parentDraftId);
+            $auction->saveMeta('draft_payload_hash', $newPayloadHash);
+
+            session()->flash('success', 'Draft saved successfully (Version ' . ($previousVersion + 1) . '). You can return later to complete your listing.');
             return redirect()->route('hire.agent.auction.draft', ['user_type' => $this->user_type, 'listingId' => $this->listingId]);
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving draft: ' . $e->getMessage());
@@ -2746,8 +2792,10 @@ class TenantAgentAuction extends Component
 
             $this->other_non_negotiable_amenities = $auction->get->other_non_negotiable_amenities;
             $this->real_estate_purchase = $auction->get->real_estate_purchase ?? '';
-            $this->assets = $auction->get->assets ?? '';
+            $rawAssets = $auction->get->assets ?? '';
+            $this->assets = $rawAssets ? (is_string($rawAssets) ? json_decode($rawAssets, true) ?? [] : (array)$rawAssets) : [];
             $this->assets_other = $auction->get->assets_other ?? '';
+            $this->assets_visible = is_array($this->assets) && in_array('Other', $this->assets);
             $this->property_criteria = $auction->get->property_criteria ?? '';
             $this->unit_size = $auction->get->unit_size ?? '';
             $this->unit_size_other = $auction->get->unit_size_other ?? '';
