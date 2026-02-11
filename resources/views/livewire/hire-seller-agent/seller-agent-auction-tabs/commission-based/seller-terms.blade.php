@@ -763,10 +763,16 @@
                 <option value="$">$</option>
                 <option value="%">%</option>
             </select>
+            @if (($assumable_fee_type ?? '$') === '$')
+                <span class="input-group-text">$</span>
+            @endif
             <input type="text" wire:model="assumable_fee_amount" class="form-control"
-                placeholder="{{ ($assumable_fee_type ?? '$') === '%' ? 'Enter assumption fee percentage (e.g., 1)' : 'Enter assumption fee amount (e.g., 1000)' }}"
+                placeholder="{{ ($assumable_fee_type ?? '$') === '%' ? 'Enter assumption fee percentage (e.g., 1)' : 'Enter assumption fee amount (e.g., 1,000)' }}"
                 data-error-id="assumable_fee_amount_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+            @if (($assumable_fee_type ?? '$') === '%')
+                <span class="input-group-text">%</span>
+            @endif
         </div>
         <span class="error mt-2" id="assumable_fee_amount_error"></span>
     </div>

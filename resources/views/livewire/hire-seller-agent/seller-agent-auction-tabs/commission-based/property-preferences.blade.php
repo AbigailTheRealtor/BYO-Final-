@@ -1003,8 +1003,8 @@
         </div>
     </div>
 @endif
-@if ($pets === 'Yes')
-    <!-- Pet Details (Hidden by Default) -->
+@if ($pets === 'Yes' && in_array($property_type, ['Residential', 'Income']))
+    <!-- Pet Details -->
     <div id="pet-details">
         <!-- Number of Pet(s) -->
         <div class="form-group">

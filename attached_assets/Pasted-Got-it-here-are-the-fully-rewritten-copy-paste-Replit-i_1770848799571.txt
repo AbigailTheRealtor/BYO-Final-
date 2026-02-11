@@ -1,0 +1,246 @@
+Got it — here are the **fully rewritten, copy/paste Replit instructions with safeguards** for **Hire a Seller’s Agent only** (example login **[tenant@exp.com](mailto:tenant@exp.com)**) covering:
+
+1. **Vacant Land must NOT show Pet fields** after switching from Residential
+2. **“Provide digital enhancements to media assets”** flashes/closes on Vacant Land
+3. **Assumption Fee (%) formatting** must match the **“Compensation if Purchase Option is Exercised”** percent format (**Seller only**)
+
+---
+
+# Replit Instructions (WITH SAFEGUARDS)
+
+## Feature: Hire a Seller’s Agent — Property Type Logic + UI Stability + Assumption Fee %
+
+### Test Account
+
+* Login: **[tenant@exp.com](mailto:tenant@exp.com)**
+* Navigate: Dashboard → **Hire a Seller’s Agent** → Create listing AND Edit listing AND Open saved drafts
+
+---
+
+# FIX 1 — Vacant Land must NOT show Residential Pet Fields
+
+## Problem
+
+When the user switches **Property Type: Residential → Vacant Land**, these Residential-only fields still show:
+
+* **Number of Pets Allowed**
+* **Acceptable Pet Types**
+* **Maximum Weight Per Pet (lbs)**
+* **Pet Restrictions**
+
+This is “sticky state” from the prior property type.
+
+## Required Behavior (Must Match)
+
+* Pet fields must display **ONLY** when `property_type` supports pets (Residential / Income if applicable).
+* For **Vacant Land**: pet fields must **never** display.
+* If the user previously entered pet values while Residential and then switches to Vacant Land:
+
+  * the fields must **hide AND clear** immediately
+  * the cleared values must **not** save into drafts/edits
+  * the cleared values must **not** appear on the actual listing preview/output
+
+---
+
+## Implementation Requirements
+
+### A) Add a single authoritative “pet fields allowed” gate
+
+In the **Hire a Seller’s Agent Livewire component(s)** (Create + Edit), define one boolean method/property:
+
+* `petFieldsAllowed = property_type in ['Residential', 'Income']`
+  (Use your exact stored labels.)
+
+**Do not** gate this by `property_style`.
+
+### B) Clear pet fields whenever Property Type changes to a non-allowed type
+
+In `updatedPropertyType()` (or the property type watcher you use), add:
+
+If `petFieldsAllowed === false` then set:
+
+* `number_of_pets_allowed = null`
+* `acceptable_pet_types = null` (or `[]` depending on your field type)
+* `max_weight_per_pet = null`
+* `pet_restrictions = null`
+
+### C) Blade/UI rendering must use the same gate
+
+Wrap the entire Pet section in:
+
+* show only if `petFieldsAllowed === true`
+
+**IMPORTANT:** This must be a real conditional render (not just hidden with CSS).
+If it remains in DOM, Livewire can continue to bind/store the old values.
+
+---
+
+## Safeguards (Pets)
+
+1. **No sticky state:** switching to Vacant Land instantly hides + clears pet fields.
+2. **Draft safety:** after switching to Vacant Land and saving a draft, reopening that draft must show no pet values and no pet fields.
+3. **Edit safety:** editing an existing listing and switching to Vacant Land must remove pet values from the stored record (clear on save).
+4. **Validation safety:** pet field validation rules must apply **only** when `petFieldsAllowed === true`. Otherwise they must be nullable and not block submit.
+
+---
+
+# FIX 2 — “Provide digital enhancements to media assets” flashes/closes on Vacant Land
+
+## Problem
+
+For **Vacant Land**, the “Provide digital enhancements to media assets” options open briefly, then immediately close (flash), preventing selection/input.
+
+## Required Behavior (Must Match)
+
+* On Vacant Land, the enhancements panel must stay open while the user selects checkboxes and types into “Other”.
+* No auto-collapse during Livewire re-renders.
+* Selected enhancement options + “Other” text must save and reload in drafts and edits.
+
+---
+
+## Root Cause (What to fix)
+
+This is almost always caused by **Livewire re-render resetting Alpine/UI state**, or a watcher resetting the enhancements section on property_type change.
+
+---
+
+## Implementation Requirements
+
+### A) Persist the open/close state so Livewire re-renders do not collapse it
+
+Use ONE of these stable patterns (preferred order):
+
+#### Option 1 (Preferred): Entangle Alpine open state to Livewire
+
+1. Add a Livewire property, e.g.:
+
+* `ui.digitalEnhancementsOpen` (boolean)
+
+2. In Blade:
+
+* `x-data="{ open: @entangle('ui.digitalEnhancementsOpen') }"`
+
+3. Toggle with normal UI clicks (Alpine or `wire:click`) but ensure `ui.digitalEnhancementsOpen` is what controls open state.
+
+#### Option 2: `wire:ignore.self` on the collapsing container (use carefully)
+
+If the enhancements UI is purely front-end collapse and Livewire shouldn’t touch it:
+
+* Put `wire:ignore.self` on the collapse wrapper only.
+* Do NOT ignore the actual inputs if they must be saved by Livewire.
+
+### B) Add a stable `wire:key` to the enhancements section
+
+On the enhancements block container:
+
+* `wire:key="seller-digital-enhancements"`
+
+This prevents Livewire from recreating the DOM node during small updates.
+
+### C) Ensure Property Type watcher does NOT reset the enhancements UI state
+
+In `updatedPropertyType()`:
+
+* Do **not** clear `ui.digitalEnhancementsOpen`
+* Do **not** reinitialize enhancement selections unless they are truly invalid for the new type
+
+If enhancements are allowed for all property types (likely), do not reset them.
+
+---
+
+## Safeguards (Enhancements)
+
+1. Must not flash/close on Vacant Land.
+2. Must allow selecting multiple options + typing “Other”.
+3. Draft/edit must persist all selections and “Other” text.
+4. Switching property types must not delete enhancements unless you intentionally require it (default: do not delete).
+
+---
+
+# FIX 3 — Assumption Fee (%) formatting (Hire a Seller’s Agent ONLY)
+
+## Problem
+
+If user selects **Assumption Fee** type as **%**, the UI must show the **% suffix after the input** exactly like:
+**“Compensation if Purchase Option is Exercised:”** percent format.
+
+Right now Assumption Fee does not match that formatting.
+
+## Required Behavior (Must Match)
+
+Under **Assumable / Assumption** fields:
+
+* If Assumption Fee type = **$**
+
+  * show currency-style input
+* If Assumption Fee type = **%**
+
+  * show numeric input with a visible trailing **%** (suffix)
+  * store numeric value only (example: `2.5`, not `2.5%`)
+  * drafts/edits must reload with the suffix showing properly
+
+---
+
+## Implementation Requirements
+
+### A) Reuse the exact same suffix UI used in “Compensation if Purchase Option is Exercised (%)”
+
+Do not create a new pattern.
+Use the same input component/partial/markup logic as the purchase-option compensation percent field:
+
+* same suffix placement
+* same spacing
+* same styling
+
+### B) Store clean numeric values
+
+* DB stores `assumption_fee_value = 2.5`
+* UI displays `2.5` + `%` suffix (display-only)
+
+### C) Conditional validation rules
+
+* If type = `%`: validate numeric between 0 and 100 (or your chosen max)
+* If type = `$`: validate numeric >= 0
+* If Assumption is not selected / not applicable: no validation errors should fire
+
+---
+
+## Safeguards (Assumption Fee)
+
+1. Switching `$ ↔ %` must not corrupt value or append symbols into DB.
+2. Drafts/edits must restore both:
+
+   * selected type
+   * value
+   * correct suffix display when `%` is selected
+3. Listing output/PDF must append `%` only when displaying percent type.
+
+---
+
+# QA Checklist (Must Pass)
+
+Login **[tenant@exp.com](mailto:tenant@exp.com)**
+
+## A) Vacant Land Pets
+
+1. Create Seller listing → set Property Type = Residential → fill pet fields
+2. Switch Property Type = Vacant Land
+   ✅ Pet fields disappear immediately
+   ✅ Values cleared (save draft → reopen → confirm cleared)
+
+## B) Digital Enhancements Panel
+
+3. On Vacant Land, open “Provide digital enhancements to media assets”
+   ✅ Panel stays open
+   ✅ Can select options + input “Other” without closing
+   ✅ Save draft → reopen → selections still present
+
+## C) Assumption Fee % Formatting
+
+4. Select Assumption Fee type = %
+   ✅ Input shows trailing “%” exactly like Purchase Option compensation field
+   ✅ Save draft/edit → reload shows correct suffix and value
+
+---
+
+If you want this even tighter for your developer, paste the **exact field keys** you use for the pet fields + enhancements + assumption fee (the Livewire property names), and I’ll rewrite the clearing logic using your exact variable names so it’s plug-and-play.

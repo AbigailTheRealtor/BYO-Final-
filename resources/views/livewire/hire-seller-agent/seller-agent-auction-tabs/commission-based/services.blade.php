@@ -767,7 +767,7 @@
         </div>
     </div>
 
-    <div class="service-section mb-4">
+    <div class="service-section mb-4" wire:ignore wire:key="seller-vacant-land-media">
         <h5 class="section-header bg-info text-white p-2 mb-3">📸 Photography, Video & Virtual Media</h5>
         <div class="service-options">
             @foreach (['Provide professional property photography', 'Provide aerial (drone) photography (subject to FAA Part 107 compliance)', 'Provide a video overview or narrated walkthrough', 'Provide a 3D virtual tour (if applicable)', 'Provide digital enhancements to media assets', 'Provide a parcel map, topographical image, or plot plan (non-certified; for marketing purposes only)'] as $service)

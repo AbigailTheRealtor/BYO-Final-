@@ -894,15 +894,9 @@ class TenantAgentAuctionEdit extends Component
     public function updatedPropertyType($value)
     {
         if ($this->isLoadingData) return;
-        if ($value === 'Commercial Property') {
-            $this->pool_needed = '';
-            $this->pool_type = [];
 
-            $this->carport_needed = '';
-            $this->carport_spaces = '';
-
-            $this->removeAduFromLeasingSpaceSelection();
-
+        $petAllowedTypes = ['Residential', 'Income'];
+        if (!in_array($value, $petAllowedTypes)) {
             $this->pets = '';
             $this->number_of_pets = '';
             $this->type_of_pets = '';
@@ -913,6 +907,15 @@ class TenantAgentAuctionEdit extends Component
             $this->emotional_support_animal = '';
             $this->breed_restrictions = '';
         }
+
+        if ($value === 'Commercial Property') {
+            $this->pool_needed = '';
+            $this->pool_type = [];
+            $this->carport_needed = '';
+            $this->carport_spaces = '';
+            $this->removeAduFromLeasingSpaceSelection();
+        }
+
         if ($value !== 'Business') {
             $this->business_type_selected = '';
             $this->other_business_type = '';
