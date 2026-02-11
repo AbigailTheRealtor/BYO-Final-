@@ -441,6 +441,13 @@ class TenantAgentAuctionEdit extends Component
     public $phone_number = '';
     public $email = '';
     public $current_status = '';
+    public $assumable_loan_type = '';
+    public $assumable_monthly_escrow = '';
+    public $assumable_loan_term_remaining = '';
+    public $assumable_loan_origination_date = '';
+    public $assumable_loan_servicer = '';
+    public $assumable_fee_type = '$';
+    public $assumable_fee_amount = '';
     public $assumable_occupancy_requirement = '';
     public $assumable_occupancy_other = '';
     public $video_link = '';
@@ -2534,6 +2541,13 @@ class TenantAgentAuctionEdit extends Component
         $this->balloon_payment_date = $auction->info('balloon_payment_date');
         $this->assumable_terms = $auction->info('assumable_terms');
         $this->max_assumable_rate = $auction->info('max_assumable_rate');
+        $this->assumable_loan_type = $auction->info('assumable_loan_type') ?? '';
+        $this->assumable_monthly_escrow = $auction->info('assumable_monthly_escrow') ?? '';
+        $this->assumable_loan_term_remaining = $auction->info('assumable_loan_term_remaining') ?? '';
+        $this->assumable_loan_origination_date = $auction->info('assumable_loan_origination_date') ?? '';
+        $this->assumable_loan_servicer = $auction->info('assumable_loan_servicer') ?? '';
+        $this->assumable_fee_type = $auction->info('assumable_fee_type') ?: '$';
+        $this->assumable_fee_amount = $auction->info('assumable_fee_amount') ?? '';
         $this->max_monthly_payment = $auction->info('max_monthly_payment');
         $this->gap_payment_type = $auction->info('gap_payment_type');
         $this->outstanding_balance = $auction->info('outstanding_balance');
@@ -2862,6 +2876,14 @@ class TenantAgentAuctionEdit extends Component
         }
     }
 
+    protected function stripCommas($value)
+    {
+        if (is_null($value) || $value === '') {
+            return $value;
+        }
+        return str_replace(',', '', $value);
+    }
+
     public function update()
 
     {
@@ -3091,6 +3113,13 @@ class TenantAgentAuctionEdit extends Component
             $auction->saveMeta('balloon_payment_date', $this->balloon_payment_date);
             $auction->saveMeta('assumable_terms', $this->assumable_terms);
             $auction->saveMeta('max_assumable_rate', $this->max_assumable_rate);
+            $auction->saveMeta('assumable_loan_type', $this->assumable_loan_type);
+            $auction->saveMeta('assumable_monthly_escrow', $this->stripCommas($this->assumable_monthly_escrow));
+            $auction->saveMeta('assumable_loan_term_remaining', $this->assumable_loan_term_remaining);
+            $auction->saveMeta('assumable_loan_origination_date', $this->assumable_loan_origination_date);
+            $auction->saveMeta('assumable_loan_servicer', $this->assumable_loan_servicer);
+            $auction->saveMeta('assumable_fee_type', $this->assumable_fee_type);
+            $auction->saveMeta('assumable_fee_amount', $this->stripCommas($this->assumable_fee_amount));
             $auction->saveMeta('max_monthly_payment', $this->max_monthly_payment);
             $auction->saveMeta('outstanding_balance', $this->outstanding_balance);
             $auction->saveMeta('gap_payment_type', $this->gap_payment_type);
