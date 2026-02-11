@@ -1,0 +1,146 @@
+Below are **copy/paste Replit instructions (with safeguards)** to fix this logic for **Hire a Seller’s Agent**.
+
+---
+
+## ✅ Issue
+
+In **Hire a Seller’s Agent → Listing Creation/Edit**:
+
+* **Business Type** should appear **only when Property Type = Business Opportunity / Business**
+* Right now it appears when **Property Style = Business**, which is wrong.
+
+---
+
+## ✅ Expected Behavior (Must Match)
+
+Example test login: **[tenant@exp.com](mailto:tenant@exp.com)**
+
+1. Go to **Hire a Seller’s Agent** → create or edit a listing
+2. When user selects:
+
+* **Property Type = Business (Business Opportunity)** ✅ show **Business Type**
+* **Property Type ≠ Business** ❌ hide **Business Type**
+* **Property Style = Business** ❌ should NOT trigger Business Type
+
+---
+
+## 🔒 Safeguards (Do Not Break Anything)
+
+### Safeguard A — Correct Trigger Source
+
+* **Only** `property_type` controls Business Type visibility.
+* `property_style` must **never** control Business Type visibility.
+
+### Safeguard B — Clear Dependent Field On Change
+
+If user changes **Property Type** from **Business → anything else**:
+
+* Automatically set `business_type = null`
+* Clear any `business_type_other` custom input too (if you have it)
+
+### Safeguard C — Draft + Edit Persistence
+
+* If a draft is saved with **Property Type = Business**, Business Type must:
+
+  * Save
+  * Reload correctly in draft
+  * Reload correctly in edit mode
+* If Property Type is not Business, Business Type must remain hidden and empty.
+
+### Safeguard D — Validation (No False Errors)
+
+* Require `business_type` **only** when `property_type = Business`
+* Never block submit because of missing `business_type` when property type is not Business.
+
+---
+
+## ✅ Implementation Instructions (Laravel/Livewire Pattern)
+
+### 1) Identify the Correct Source Field
+
+Find where you currently have logic like:
+
+* `if ($this->property_style === 'Business') { show business type }`
+
+Replace it with:
+
+* `if ($this->property_type === 'Business') { show business type }`
+
+**Important:** Make sure the comparison matches your actual stored value exactly:
+
+* `"Business"`
+* or `"Business Opportunity"`
+* or `"Business / Business Opportunity"`
+  Use the exact option label/value you store in DB.
+
+---
+
+### 2) Update the Livewire “Updated” Hook
+
+Add/adjust logic so the dependent fields clear safely:
+
+* When `property_type` updates:
+
+  * If it’s NOT Business → clear `business_type` and `business_type_other`
+
+---
+
+### 3) Update the Blade Conditional
+
+Where the Business Type dropdown/input renders in the form:
+
+Render **only if** `property_type` is Business.
+Do **not** reference `property_style` anywhere in this conditional.
+
+---
+
+### 4) Fix Draft Save / Load Mapping
+
+Confirm the draft payload includes:
+
+* `property_type`
+* `business_type`
+* `business_type_other` (if applicable)
+
+And that hydrate/load sets them back onto the component.
+
+---
+
+### 5) Fix Validation Rules
+
+Make Business Type conditionally required:
+
+* Required **only if** `property_type` is Business
+* Otherwise nullable
+
+---
+
+## ✅ QA Test Checklist (Must Pass)
+
+Using **[tenant@exp.com](mailto:tenant@exp.com)**:
+
+### Test 1 — Correct Trigger
+
+* Select **Property Type = Business** → Business Type appears ✅
+* Select **Property Style = Business** (while property type is NOT business) → Business Type does NOT appear ✅
+
+### Test 2 — Clear On Change
+
+* Set Property Type = Business, choose a Business Type
+* Change Property Type to Residential/Commercial/etc.
+* Confirm Business Type clears and hides ✅
+
+### Test 3 — Draft Persistence
+
+* Save draft with Property Type = Business + Business Type chosen
+* Reopen draft → Business Type shows with saved value ✅
+
+### Test 4 — No Wrong Validation
+
+* Property Type ≠ Business
+* Submit listing without Business Type
+* Must submit successfully ✅
+
+---
+
+If you want, paste your exact dropdown option values for **Property Type** (the stored value for “Business”) and I’ll write the **exact if-condition string** so it matches your database 1:1.

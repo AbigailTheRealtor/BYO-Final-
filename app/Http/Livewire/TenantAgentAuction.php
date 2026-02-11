@@ -923,18 +923,14 @@ class TenantAgentAuction extends Component
     {
         if ($this->isLoadingData) return;
         if ($value === 'Commercial Property') {
-            // A) Pool (Residential-only)
             $this->pool_needed = '';
             $this->pool_type = [];
 
-            // B) Carport (Residential-only)
             $this->carport_needed = '';
             $this->carport_spaces = '';
 
-            // C) Leasing Space: remove ADU option only (valid for Residential only)
             $this->removeAduFromLeasingSpaceSelection();
 
-            // D) Pets (Residential-only - clear all pet fields)
             $this->pets = '';
             $this->number_of_pets = '';
             $this->type_of_pets = '';
@@ -944,6 +940,10 @@ class TenantAgentAuction extends Component
             $this->support_animal = '';
             $this->emotional_support_animal = '';
             $this->breed_restrictions = '';
+        }
+        if ($value !== 'Business') {
+            $this->business_type_selected = '';
+            $this->other_business_type = '';
         }
     }
 

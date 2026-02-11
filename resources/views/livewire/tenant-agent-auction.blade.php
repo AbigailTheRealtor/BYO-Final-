@@ -2631,20 +2631,20 @@ $lease_types = [
 
 
         function toggleBusinessTypeSeller() {
-            // get selected values (Select2 returns an array; plain <select multiple> too)
-            var vals = $('#property_style_select').val() || [];
-            if (vals.includes('Business')) {
+            var val = $('#property_type').val() || '';
+            if (val === 'Business') {
                 $('.business_type_seller').removeClass('d-none');
             } else {
                 $('.business_type_seller').addClass('d-none');
+                $('.other-business-input_seller').addClass('d-none');
+                @this.set('business_type_selected', '');
+                @this.set('other_business_type', '');
             }
         }
 
-        // initialize on page load
         toggleBusinessTypeSeller();
 
-        // watch for changes
-        $('#property_items').on('change', function() {
+        $('#property_type').on('change', function() {
             toggleBusinessTypeSeller();
         });
 
