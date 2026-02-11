@@ -1,0 +1,213 @@
+Below are **copy/paste-ready Replit instructions with safeguards** to fix the exact bug:
+
+✅ **Hire a Landlord’s Agent → Edit Listing**
+✅ **Residential:** City/County/State/Zip **do not show**
+✅ **Commercial:** City/County/State/Zip **do show**
+
+This means Residential edit is either (1) rendering a different partial that omits those inputs, or (2) using different property names/keys than Commercial, or (3) a conditional “Residential branch” is hiding the location block.
+
+---
+
+## Replit Instructions (WITH SAFEGUARDS) — Landlord Edit: Residential Missing City/State/County/ZIP (Commercial OK)
+
+### Applies To
+
+* Login: `tenant@exp.com`
+* Tenant dashboard → **Hire a Landlord’s Agent**
+* **Edit listing screen**
+* Property Types:
+
+  * **Residential** (broken)
+  * **Commercial** (working)
+
+---
+
+# NON-NEGOTIABLE SAFEGUARDS
+
+### SAFEGUARD A — Residential & Commercial must use the SAME Location component/partial on Edit
+
+🚫 No separate “Residential edit view” that accidentally omits location fields.
+
+✅ Requirement:
+
+* Create a single shared partial for “Property Location”
+* Include it in BOTH Residential and Commercial edit branches.
+
+**Pass condition:** There is exactly **one** place in Blade that contains the City/State/County/ZIP markup, and both property types include it.
+
+---
+
+### SAFEGUARD B — One canonical field key set everywhere
+
+Use the same keys for both Residential and Commercial:
+
+* `property_city`
+* `property_state`
+* `property_county`
+* `property_zip`
+
+🚫 No `city/state/zip` for residential and `property_city/...` for commercial.
+
+---
+
+### SAFEGUARD C — Do not default to `false`
+
+Edit hydration must never set these fields to `false` or `"false"`.
+
+---
+
+# DIAGNOSIS (Why this is happening)
+
+Because Commercial edit shows the fields, the base edit screen works. Residential missing them indicates one of these code-level issues:
+
+1. Residential edit uses a different Blade branch/partial that **doesn’t include** the location section
+2. Residential edit includes it, but has a conditional like `@if($isCommercial)` around the location block
+3. Residential edit binds inputs to different Livewire properties, so they render empty or not at all
+4. Residential edit loads a different component/view than commercial (route conditional)
+
+Your fix must address all 4 possibilities by enforcing shared rendering + shared keys.
+
+---
+
+# REQUIRED FIXES
+
+## FIX 1 — Force “Property Location” section to render for Residential Edit
+
+### Requirement
+
+On the **Edit** screen, City/State/County/ZIP must render for BOTH property types.
+
+✅ Implementation
+
+1. Find the Edit Blade view that renders Commercial edit correctly.
+2. Locate the “Property Location” block used for Commercial (the working one).
+3. Extract it into a shared partial, for example:
+
+* `resources/views/tenant/landlord/partials/property-location.blade.php`
+
+4. Include the same partial in BOTH branches:
+
+* Residential edit branch
+* Commercial edit branch
+
+✅ **Safeguard**
+
+* Remove any conditional that hides location for residential, such as:
+
+  * `@if($isCommercial)` wrapping the whole section
+  * `@if($propertyType === 'commercial')` wrapping the section
+
+**Pass condition:** Residential edit shows the same location inputs as commercial edit.
+
+---
+
+## FIX 2 — Ensure Residential Edit is hydrated with the same keys Commercial uses
+
+Even if the fields render, they can appear blank if Residential uses different property names.
+
+✅ Requirement
+In the Landlord Edit component `mount()` / `loadDraft()`:
+
+* set the same four Livewire properties regardless of property type:
+
+* `$this->property_city`
+
+* `$this->property_state`
+
+* `$this->property_county`
+
+* `$this->property_zip`
+
+✅ **Safeguard**
+Do not do this:
+
+* `if (commercial) load property_city...`
+* `else load city...`
+
+Residential must load the same canonical property_* fields.
+
+---
+
+## FIX 3 — Ensure Residential Edit inputs bind to the canonical Livewire properties
+
+In the shared partial, inputs must bind to:
+
+* `wire:model="property_city"`
+* `wire:model="property_state"`
+* `wire:model="property_county"`
+* `wire:model="property_zip"`
+
+🚫 Do not use a different wire:model in residential.
+
+✅ **Safeguard**
+Do not set a manual `value="..."` attribute (avoid printing false/empty mismatches). Livewire binding only.
+
+---
+
+## FIX 4 — Ensure Save/Update persists those same keys for Residential
+
+If commercial persists but residential doesn’t, residential update might be saving different keys or not saving them at all.
+
+✅ Requirement
+In the edit save method:
+
+* always save `property_city/state/county/zip` for both property types
+* use merge-save so other tab saves don’t wipe them
+
+✅ **Safeguard**
+Add a server-side assertion during save (temporary):
+
+* If property type is residential and any of these are missing from the incoming payload, log an error.
+
+---
+
+# REQUIRED DEBUG PROOF (to prevent “we edited the wrong file” again)
+
+## Add a temporary debug line in the Edit view under the location header:
+
+`DEBUG LOCATION: {{ json_encode([$property_city ?? null, $property_state ?? null, $property_county ?? null, $property_zip ?? null]) }}`
+
+### Pass/Fail
+
+* ✅ If it prints values but fields don’t show → Blade branch not including the partial for Residential
+* ✅ If it prints nulls on Residential but not Commercial → mount/hydration is conditional
+* ✅ If it prints `"false"` → default/fallback bug still exists
+
+Remove debug line after fix.
+
+---
+
+# ACCEPTANCE TESTS (Must pass)
+
+### Test A — Residential Edit renders location fields
+
+1. Create Residential Landlord listing with city/state/county/zip
+2. Save
+3. Click Edit
+   ✅ City/State/County/ZIP inputs are visible
+
+### Test B — Residential Edit repopulates values
+
+✅ The values appear in the inputs (not blank, not “false”)
+
+### Test C — Residential Edit save persists
+
+1. Change City
+2. Save
+3. Refresh edit page
+   ✅ New value persists
+
+### Test D — Commercial unchanged
+
+✅ Commercial edit still works exactly as before.
+
+---
+
+# NO TOUCH RULE
+
+Do not change tooltips, labels, required indicators, or the commercial flow logic.
+Only enforce Residential/Commercial parity for location rendering + hydration + saving.
+
+---
+
+If you paste **one screenshot of Residential edit** where the location section is missing + **one screenshot of Commercial edit** where it shows, I can tell you instantly whether this is a **Blade conditional** problem vs a **hydration key** problem — but the instructions above already cover both so your dev can’t miss it.

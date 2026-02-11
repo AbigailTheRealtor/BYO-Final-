@@ -1,0 +1,267 @@
+## Replit Instructions (WITH SAFEGUARDS) — Hire a Landlord’s Agent Edit Fixes
+
+### (1) Residential Edit: Personal Photo must auto-populate
+
+### (2) Residential + Commercial Edit: “Digital Photo Enhancements” sub-options must display & persist (including Other + custom text)
+
+### Applies To
+
+* Login example: `tenant@exp.com`
+* Tenant dashboard → **Hire a Landlord’s Agent**
+* **Edit listings + reopen drafts**
+* Property Types:
+
+  * **Residential** (Personal Photo issue)
+  * **Residential + Commercial** (Digital Photo Enhancements sub-options issue)
+
+---
+
+# NON-NEGOTIABLE SAFEGUARDS
+
+### SAFEGUARD A — Create and Edit must share the same UI partials for Services
+
+Edit must render the **same services UI component/partial** used on Create so the same sub-question logic and formatting applies.
+🚫 No “simplified services renderer” on Edit.
+
+---
+
+### SAFEGUARD B — Persist BOTH parent selection and child selections
+
+For any service with sub-questions:
+
+* Save the parent “checked” flag
+* Save the child “enhancement types” selections (array)
+* Save “Other” free-text if selected
+
+On edit/draft reopen:
+
+* hydrate all three
+* force the child UI to render when the parent is selected
+
+---
+
+### SAFEGUARD C — Merge-save only (no wiping)
+
+Saving another tab must not overwrite:
+
+* personal photo path
+* enhancement selections
+* enhancement “Other” text
+  with `null`/empty.
+
+Only clear “Other” text if “Other” is de-selected.
+
+---
+
+# FIX 1 — Residential Edit: Personal Photo does NOT auto-populate
+
+## Required behavior
+
+When opening an existing Residential Landlord listing for edit (or reopening a draft):
+
+* the previously uploaded Personal Photo must **display as a preview**
+* user must be able to **remove** or **replace** it
+* saving edits must preserve it unless removed/replaced
+
+## Implementation requirements
+
+### A) Persist the stored photo path in DB (already likely exists)
+
+* Ensure the record stores a durable path like `personal_photo_path` (or your existing column/key).
+
+### B) Hydrate the photo path into Livewire state on Edit mount/loadDraft
+
+In the Landlord **Edit** component `mount()` / `loadDraft()`:
+
+* set Livewire property to the saved path (string), not boolean false, not null if present
+
+Example expectation:
+
+* `$this->personal_photo_path = $listing->personal_photo_path ?? null;`
+
+✅ **Safeguard:** do NOT default to `false` (prevents “false” from rendering issues you already saw elsewhere).
+
+### C) Show preview in Edit blade if a stored path exists
+
+* If `personal_photo_path` exists, render an `<img>` preview (same styling as Create if Create shows preview).
+* Provide “Remove Photo” action:
+
+  * sets path to null in state
+  * removes file (or flags for cleanup)
+  * persists on save
+
+### D) Persist replacement correctly
+
+If user uploads a new photo on edit:
+
+* overwrite the stored path
+* (optional) delete old file to prevent orphan storage
+
+### Acceptance tests (must pass)
+
+1. Upload photo on Residential create → Save Draft → reopen draft → photo preview shows
+2. Save final listing → Edit → photo preview shows
+3. Replace photo → Save → refresh → new photo remains
+4. Remove photo → Save → refresh → no photo + no broken preview
+
+---
+
+# FIX 2 — Residential + Commercial Edit: “Provide Digital Photo Enhancements” sub-options not displaying/retaining
+
+## Required behavior
+
+If user selected the service **“Provide digital photo enhancements”** then Edit must show:
+
+**Select enhancement types (display ONLY those selected, but the selection UI must include all options):**
+
+* Basic edits (brightness, contrast, cropping)
+* Twilight conversion (convert daytime photo to sunset look)
+* Object removal (e.g., cars, trash cans, furniture, etc.)
+* Virtual twilight photography
+* Color correction or sky replacement
+* Other (and if selected, show the text input and display the saved custom text)
+
+### Important: Two UI requirements
+
+1. The **checkbox/list UI must show all options** so user can modify selections.
+2. The **actual listing / summary display** should show only what was selected (plus Other text).
+
+You’re specifically reporting the Edit UI is missing the “Select enhancement types” block entirely or not showing selected items — so we need to fix **render + hydration**.
+
+---
+
+## Implementation requirements
+
+### A) Data Model (must store 3 pieces)
+
+Store these three values:
+
+1. `digital_photo_enhancements_selected` (boolean parent)
+2. `digital_photo_enhancement_types` (array of selected types)
+3. `digital_photo_enhancement_other_text` (string, only if Other selected)
+
+✅ **Safeguard:** enhancement types must be stored as an array/JSON, not a single string that loses multiple selections.
+
+---
+
+### B) Edit Hydration (mount/loadDraft) must set state AND force sub-question to render
+
+In Landlord **Edit** component `mount()` / `loadDraft()`:
+
+1. Load parent:
+
+* `$this->digital_photo_enhancements_selected = (bool) $savedValue;`
+
+2. Load selected types:
+
+* `$this->digital_photo_enhancement_types = $savedArray ?? [];`
+
+3. Load Other text:
+
+* `$this->digital_photo_enhancement_other_text = $savedText ?? '';`
+
+4. Force UI sub-block visible:
+
+* If parent selected → `showDigitalEnhancementTypes = true`
+* If “Other” in types → `showDigitalEnhancementOther = true`
+
+🚫 Do not rely on `updated()` hooks only.
+
+---
+
+### C) Edit Blade must render the same sub-question block as Create
+
+Use the same partial/component as Create for:
+
+* “Select enhancement types:” label
+* list of checkboxes
+* “Other” textbox with placeholder
+
+✅ **Safeguard:** If Edit currently uses a “read-only services summary” renderer, replace it with the Create-style interactive renderer (since this is edit).
+
+---
+
+### D) Save logic (draft save + edit save) must persist the array + other text
+
+When saving:
+
+* Save parent boolean
+* Save the selected types array
+* If “Other” selected:
+
+  * save other text
+* If “Other” not selected:
+
+  * clear other text (optional but recommended)
+
+✅ **Merge-save safeguard:** do not wipe these values during other-tab saves.
+
+---
+
+### E) Display logic (actual listing view)
+
+On the actual listing / summary:
+
+* Show **only selected enhancement types**
+* If “Other” selected, show: `Other: <custom text>`
+
+✅ **Safeguard:** Never display “Other” without the custom text if it exists.
+
+---
+
+# REQUIRED OPTIONS (Exact text must match Create)
+
+The checkbox options must be EXACTLY:
+
+* Basic edits (brightness, contrast, cropping)
+* Twilight conversion (convert daytime photo to sunset look)
+* Object removal (e.g., cars, trash cans, furniture, etc.)
+* Virtual twilight photography
+* Color correction or sky replacement
+* Other
+
+✅ **Safeguard:** Use one constant array for these labels used by both Create and Edit (and Listing view).
+
+---
+
+# ACCEPTANCE TESTS (Must pass)
+
+### Test 1 — Draft reopen
+
+1. Create Landlord listing (Residential and Commercial separately)
+2. Select “Provide digital photo enhancements”
+3. Select 2–3 enhancement types, including “Other”
+4. Enter Other text
+5. Save Draft → Reopen Draft
+   ✅ Sub-question block shows
+   ✅ All options available
+   ✅ Previously selected options are checked
+   ✅ Other textbox visible and pre-filled
+
+### Test 2 — Edit save
+
+1. Change selections (add/remove types)
+2. Save edits
+3. Refresh
+   ✅ Selections persist exactly
+   ✅ Other text persists only if Other remains selected
+
+### Test 3 — Listing display
+
+✅ Only selected enhancement types show
+✅ Other displays with custom text
+
+---
+
+# NO TOUCH RULE
+
+Do not change service order, tooltips, icons, or wording.
+This is strictly:
+
+* edit hydration + UI rendering parity
+* saving of parent/child selections
+* “Other” persistence and display
+
+---
+
+If you can paste the exact **service key/name** your dev uses for “Provide digital photo enhancements” (sometimes it’s a slug like `digital_photo_enhancements`), I’ll rewrite this with the exact variable names so it’s impossible for them to wire the wrong fields again.
