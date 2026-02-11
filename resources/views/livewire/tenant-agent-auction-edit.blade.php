@@ -2914,6 +2914,9 @@
                 allowClear: true
             });
 
+            // Check initial tenant_pays values for "Other" visibility
+            toggleOtherTenantField($('.tenant_pays').val() || []);
+
             // Sync with Livewire and show/hide Other field
             $('.tenant_pays').on('change', function() {
                 let selectedValues = $(this).val() || [];
@@ -2954,11 +2957,19 @@
 
 
 
+            var termsOfLeaseValues = @json($terms_of_lease ?? []);
+            if (termsOfLeaseValues && termsOfLeaseValues.length > 0) {
+                $('.terms_of_lease').val(termsOfLeaseValues);
+            }
             $('.terms_of_lease').select2({
                 placeholder: "Select lease terms",
                 allowClear: true,
                 width: '100%'
             });
+            if (termsOfLeaseValues && termsOfLeaseValues.length > 0) {
+                $('.terms_of_lease').trigger('change.select2');
+                @this.set('terms_of_lease', termsOfLeaseValues);
+            }
 
             // Function to toggle the "Other" input field
             function toggleLeaseOther(selectedValues) {
@@ -2969,9 +2980,13 @@
                 }
             }
 
+            // Check initial terms_of_lease values for "Other" visibility
+            toggleLeaseOther($('.terms_of_lease').val() || []);
+
             // Listen for changes to the select box
             $('.terms_of_lease').on('change', function(e) {
                 const selectedValues = $(this).val() || [];
+                @this.set('terms_of_lease', selectedValues);
                 toggleLeaseOther(selectedValues);
             });
 
@@ -2991,6 +3006,9 @@
                 placeholder: "Select",
                 allowClear: true
             });
+
+            // Check initial owner_pays values for "Other" visibility
+            toggleOwnerPaysOther($('.owner_pays').val() || []);
 
             // On change: sync to Livewire & toggle Other
             $('.owner_pays').on('change', function() {

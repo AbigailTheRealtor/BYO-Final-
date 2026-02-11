@@ -1,0 +1,201 @@
+## Replit Instructions (WITH SAFEGUARDS) — Hire a Landlord’s Agent (Commercial) Edit Listings
+
+### Fix “Other” inputs not showing for Tenant Pays / Owner Pays / Desired Lease Term / Terms of Lease (Edit + Draft Reopen)
+
+### Applies To
+
+* Login example: `tenant@exp.com`
+* Tenant dashboard → **Hire a Landlord’s Agent**
+* **Commercial listings only**
+* **Edit listings + reopen drafts**
+* Issue: When “Other” is selected, the text input does **not** appear (and/or saved “Other” values don’t repopulate).
+
+---
+
+# NON-NEGOTIABLE SAFEGUARDS
+
+### SAFEGUARD A — Edit must hydrate all “Other” toggles on mount
+
+When opening an edit screen (or reopening a draft), the component must:
+
+1. load saved selections
+2. set the `showOther...` booleans based on those selections
+3. load the saved “Other” text values into the input properties
+
+🚫 Do not rely on `updated()` hooks alone — those only run when the user changes a value, not on initial page load.
+
+---
+
+### SAFEGUARD B — Store BOTH the selection and the “Other” text
+
+For each of these fields, persist two values:
+
+* the selected option (array or string)
+* the “Other” free-text input value
+
+**Never** store only “Other” and expect the UI to infer it later.
+
+---
+
+### SAFEGUARD C — Do not wipe “Other” text on unrelated saves
+
+Use merge-save logic:
+
+* Saving other tabs must not overwrite these “Other” values with `null` / empty.
+
+Only clear an “Other” text value if the user explicitly removes “Other” from the selection.
+
+---
+
+# REQUIRED FIXES (Commercial Edit)
+
+## 1) Tenant Pays — “Other” selected but input not shown (Edit)
+
+### Required behavior
+
+* If “Other” is selected in **Tenant Pays**, show the “Other” textbox.
+* On edit/draft reopen, if saved selection includes “Other”, textbox must appear and repopulate with saved value.
+
+### Implementation requirements
+
+* Add a boolean state variable (or computed) such as:
+
+  * `showTenantPaysOther`
+* On `mount()` / `loadDraft()`:
+
+  * set `showTenantPaysOther = in_array('Other', tenant_pays)` (or equivalent)
+  * set `tenant_pays_other = saved value`
+
+✅ Blade must conditionally render input based on `showTenantPaysOther`.
+
+---
+
+## 2) Owner Pays — “Other” selected but input not shown (Edit)
+
+Same fix pattern as Tenant Pays.
+
+### Implementation requirements
+
+* `showOwnerPaysOther`
+* `owner_pays_other`
+* In `mount()` / `loadDraft()`:
+
+  * set toggle true if “Other” selected
+  * set text value from saved data
+
+---
+
+## 3) Desired Lease Term — shows “Other” but no input (Edit)
+
+### Required behavior
+
+* If Desired Lease Term == “Other”, show the text input.
+* On edit/draft reopen, auto-show input and repopulate.
+
+### Implementation requirements
+
+* `showDesiredLeaseTermOther`
+* `desired_lease_term_other`
+* In `mount()` / `loadDraft()`:
+
+  * if selected == “Other” → toggle true and load saved “other” value
+
+✅ If desired lease term is a dropdown, the condition is equality.
+✅ If it’s multi-select, use contains/in_array.
+
+---
+
+## 4) Terms of Lease — input not showing (Edit)
+
+This sounds like a conditional text/textarea that should appear when a certain option is chosen (often “Other” or “Custom”).
+
+### Required behavior
+
+* When the trigger option is selected, the Terms of Lease input appears.
+* On edit/draft reopen, it must appear automatically if previously triggered, and the saved text must repopulate.
+
+### Implementation requirements
+
+* Identify the trigger selection for Terms of Lease (e.g., “Other”, “Custom Terms”, “Specify”).
+* Store:
+
+  * `terms_of_lease_type` (or selection)
+  * `terms_of_lease_text` (the input value)
+* Add:
+
+  * `showTermsOfLeaseInput` boolean
+* In `mount()` / `loadDraft()`:
+
+  * set `showTermsOfLeaseInput` based on saved trigger selection
+  * load `terms_of_lease_text`
+
+✅ Blade must render textarea/input when `showTermsOfLeaseInput` is true.
+
+---
+
+# UPDATE HOOKS (Create + Edit) — Must exist but not be relied on alone
+
+For each field, keep an `updatedX()` handler so that when a user changes selection while editing, the UI updates instantly:
+
+* If user selects “Other” → show input
+* If user de-selectotl “Other” → hide input and (optionally) clear the “other” value
+
+**But again:** `mount()` must set the state on load.
+
+---
+
+# DATA STORAGE REQUIREMENTS (so it saves + reloads correctly)
+
+### Commercial listing storage rules
+
+* If the field is multi-select, store as JSON array and load as array.
+* If the field is single select, store as string.
+
+**For each:**
+
+* `tenant_pays` + `tenant_pays_other`
+* `owner_pays` + `owner_pays_other`
+* `desired_lease_term` + `desired_lease_term_other`
+* `terms_of_lease_type` + `terms_of_lease_text`
+
+✅ Ensure `$fillable` or allowed keys includes all of these.
+
+---
+
+# ACCEPTANCE TESTS (Must pass)
+
+### Test 1 — Edit screen shows “Other” inputs
+
+1. Create Commercial listing:
+
+   * Tenant Pays: select Other + enter text
+   * Owner Pays: select Other + enter text
+   * Desired Lease Term: select Other + enter text
+   * Terms of Lease: trigger the input + enter text
+2. Save Draft
+3. Reopen Draft (Edit)
+   ✅ All 4 “Other” inputs appear automatically
+   ✅ All 4 values are pre-filled
+
+### Test 2 — Update persists
+
+1. Change the “Other” text values
+2. Save Edit
+3. Refresh page
+   ✅ Values remain
+
+### Test 3 — Non-wipe
+
+1. After setting these, go save a different tab
+2. Reopen edit
+   ✅ Values did not get wiped
+
+---
+
+# “NO TOUCH” RULE
+
+Do not change copy, tooltips, field order, or logic beyond making the missing inputs appear and persist.
+
+---
+
+If you paste **the exact option label** that triggers “Terms of Lease” (is it literally “Other” or something else?), I’ll tighten that section to match your exact UI trigger so your dev can’t misinterpret it.
