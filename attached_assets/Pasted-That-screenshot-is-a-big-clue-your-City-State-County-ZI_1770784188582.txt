@@ -1,0 +1,162 @@
+That screenshot is a **big clue**: your City/State/County/ZIP inputs are being populated with the literal string/boolean **`false`** on edit.
+
+That only happens when the edit component is doing something like:
+
+* setting the Livewire property to `false` (boolean) instead of `''` / `null`, **or**
+* using a fallback like `?? false` / `?: false` when hydrating, **or**
+* the Blade is printing a boolean (or a “truthy” check) into the input value.
+
+So this is **not** just “not saving” — it’s **wrong hydration defaults**.
+
+Below are **copy/paste Replit instructions with safeguards** to fix it correctly for **Hire a Landlord’s Agent (Residential) → Edit**.
+
+---
+
+## Replit Instructions (WITH SAFEGUARDS) — Landlord Edit Shows “false” in City/State/County/ZIP
+
+### Applies To
+
+* Login: `tenant@exp.com`
+* Hire a Landlord’s Agent → **Residential**
+* Edit listing / reopen draft
+* Fields affected:
+
+  * City
+  * State
+  * County
+  * ZIP Code
+
+---
+
+# 1) Root Cause (Must Fix)
+
+The edit hydration is assigning boolean `false` (or string `"false"`) to the location fields.
+
+### Common offending patterns (dev must remove)
+
+* `$this->property_city = $draft->property_city ?? false;`
+* `$this->property_city = $draft->property_city ?: false;`
+* `$this->property_city = isset($draft->property_city) ? $draft->property_city : false;`
+* `value="{{ $property_city ?? false }}"` in Blade
+* `@if($property_city)` logic that then prints `false`
+
+✅ **Requirement:** Location fields must hydrate to **string or null**, never boolean.
+
+---
+
+# 2) Required Fix — Normalize location values on load (mount/loadDraft)
+
+## A) In the Landlord Edit component `mount()` (or loadDraft method)
+
+Replace any `false` fallbacks with `null` or `''`.
+
+### Required logic (exact behavior)
+
+* If saved value is missing → set to `''` (empty string) or `null`
+* If saved value is boolean false → convert to `''`
+* If saved value is the string `"false"` → convert to `''`
+
+✅ **Safeguard:** normalize both booleans and strings.
+
+**Normalization rule (must apply to all four fields):**
+
+* `false`, `"false"`, `0`, `"0"` (if those appear) should not render as text in these inputs.
+
+---
+
+# 3) Required Fix — Ensure Blade input binds to Livewire property only
+
+### Requirement
+
+City/State/County/ZIP inputs must be purely:
+
+* `wire:model="property_city"` etc.
+
+🚫 Do not also set a manual `value="..."` attribute that might print `false`.
+
+**Safeguard**
+If Blade currently has something like:
+
+* `<input value="{{ $property_city }}">`
+  Remove it and rely on Livewire binding.
+
+---
+
+# 4) Required Fix — Save correct keys (so edit loads real values)
+
+Once hydration no longer shows false, confirm these fields are actually saved to the same keys you load:
+
+✅ Must be included in both create and edit payloads:
+
+* `property_city`
+* `property_state`
+* `property_county`
+* `property_zip`
+
+**Safeguard**
+Do not mix keys like:
+
+* `city` in create
+* `property_city` in edit
+
+Pick one canonical set (recommended: `property_*`) and use everywhere.
+
+---
+
+# 5) Additional Safeguard — Do not allow booleans into these fields when saving
+
+In the save method (draft save + edit save), normalize before persisting:
+
+* trim whitespace
+* convert booleans to `null`
+* if input is `false` or `"false"` → store `null` or empty string
+
+This prevents bad data from ever entering the DB again.
+
+---
+
+# 6) Required Acceptance Tests
+
+### Test A — Edit no longer displays “false”
+
+1. Open an existing Residential Landlord draft
+2. Click edit
+   ✅ City/State/County/ZIP inputs must show either:
+
+* the actual saved values, OR
+* blank (empty), but NEVER “false”
+
+### Test B — Persist and reload
+
+1. Enter City/State/County/ZIP
+2. Save
+3. Refresh page
+   ✅ Values remain, not “false”
+
+### Test C — Draft reopen
+
+1. Save Draft
+2. Reopen Draft
+   ✅ Values remain and display correctly
+
+---
+
+# 7) Mandatory Debug Step (to stop them editing wrong file)
+
+Add a temporary line near the location section in the edit view:
+
+`DEBUG EDIT LOCATION VALUES: {{ json_encode([$property_city, $property_state, $property_county, $property_zip]) }}`
+
+✅ This will immediately confirm whether the component is passing `false` in the state.
+
+**Remove after fix is confirmed.**
+
+---
+
+## Quick diagnosis you can tell your dev:
+
+> “This is not a UI formatting issue. The Edit component is hydrating City/State/County/ZIP to boolean false (or string ‘false’) due to an incorrect fallback. Replace any `?? false` or `?: false` with `?? ''` and normalize false/‘false’ to blank on mount and before save.”
+
+---
+
+If you paste the **edit component hydration snippet** where it sets these four fields (even 10–15 lines), I’ll point out the exact line causing `false` and rewrite it in your exact style so they can patch it in one minute.

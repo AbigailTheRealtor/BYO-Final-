@@ -2393,10 +2393,10 @@ class TenantAgentAuctionEdit extends Component
         $this->minimum_annual_net_income = $auction->info('minimum_annual_net_income') ?? '';
         $this->minimum_cap_rate = $auction->info('minimum_cap_rate') ?? '';
         
-        $this->property_city = $auction->info('property_city') ?? '';
-        $this->property_state = $auction->info('property_state') ?? '';
-        $this->property_zip = $auction->info('property_zip') ?? '';
-        $this->property_county = $auction->info('property_county') ?? '';
+        $this->property_city = $auction->info('property_city') ?: '';
+        $this->property_state = $auction->info('property_state') ?: '';
+        $this->property_zip = $auction->info('property_zip') ?: '';
+        $this->property_county = $auction->info('property_county') ?: '';
         $this->zip_code = $auction->info('zip_code');
         $this->leasing_space = $auction->info('leasing_space');
         $this->restrictions = $auction->info('restrictions');
