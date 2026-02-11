@@ -2121,34 +2121,34 @@ class LandLordAgentAuction extends Component
 
         // Lease Fee
         $auction->saveMeta('lease_fee_type', $this->lease_fee_type);
-        $auction->saveMeta('lease_fee_flat', $this->lease_fee_flat);
+        $auction->saveMeta('lease_fee_flat', $this->stripCommas($this->lease_fee_flat));
         $auction->saveMeta('lease_fee_percentage', $this->lease_fee_percentage);
         $auction->saveMeta('lease_fee_months', $this->lease_fee_months);
         $auction->saveMeta('lease_fee_percentage_monthly_rent', $this->lease_fee_percentage_monthly_rent);
-        $auction->saveMeta('lease_fee_flat_combo', $this->lease_fee_flat_combo);
+        $auction->saveMeta('lease_fee_flat_combo', $this->stripCommas($this->lease_fee_flat_combo));
         $auction->saveMeta('lease_fee_percentage_combo', $this->lease_fee_percentage_combo);
         $auction->saveMeta('lease_fee_other', $this->lease_fee_other);
 
         // Purchase Fee
         $auction->saveMeta('purchase_fee_type', $this->purchase_fee_type);
         $auction->saveMeta('purchase_fee_percentage', $this->purchase_fee_percentage);
-        $auction->saveMeta('purchase_fee_flat', $this->purchase_fee_flat);
+        $auction->saveMeta('purchase_fee_flat', $this->stripCommas($this->purchase_fee_flat));
         $auction->saveMeta('purchase_fee_percentage_combo', $this->purchase_fee_percentage_combo);
-        $auction->saveMeta('purchase_fee_flat_combo', $this->purchase_fee_flat_combo);
+        $auction->saveMeta('purchase_fee_flat_combo', $this->stripCommas($this->purchase_fee_flat_combo));
         $auction->saveMeta('purchase_fee_other', $this->purchase_fee_other);
 
         // Lease-Option Fee
         $auction->saveMeta('lease_option_fee_type', $this->lease_option_fee_type);
-        $auction->saveMeta('lease_option_fee_flat', $this->lease_option_fee_flat);
+        $auction->saveMeta('lease_option_fee_flat', $this->stripCommas($this->lease_option_fee_flat));
         $auction->saveMeta('lease_option_fee_percentage', $this->lease_option_fee_percentage);
         $auction->saveMeta('lease_option_fee_other', $this->lease_option_fee_other);
 
         // Other Broker Terms
         $auction->saveMeta('protection_period', $this->protection_period);
         $auction->saveMeta('early_termination_fee_option', $this->early_termination_fee_option);
-        $auction->saveMeta('early_termination_fee_amount', $this->early_termination_fee_amount);
+        $auction->saveMeta('early_termination_fee_amount', $this->stripCommas($this->early_termination_fee_amount));
         $auction->saveMeta('retainer_fee_option', $this->retainer_fee_option);
-        $auction->saveMeta('retainer_fee_amount', $this->retainer_fee_amount);
+        $auction->saveMeta('retainer_fee_amount', $this->stripCommas($this->retainer_fee_amount));
         $auction->saveMeta('retainer_fee_application', $this->retainer_fee_application);
         $auction->saveMeta('agency_agreement_timeframe', $this->agency_agreement_timeframe);
         $auction->saveMeta('agency_agreement_custom', $this->agency_agreement_custom);
@@ -2272,7 +2272,7 @@ class LandLordAgentAuction extends Component
         $auction->saveMeta('purchase_fee_monthly_percentage', $this->purchase_fee_monthly_percentage);
         $auction->saveMeta('purchase_fee_months', $this->purchase_fee_months);
         $auction->saveMeta('sales_tax_option_monthly', $this->sales_tax_option_monthly);
-        $auction->saveMeta('purchase_fee_flat_commercial', $this->purchase_fee_flat_commercial);
+        $auction->saveMeta('purchase_fee_flat_commercial', $this->stripCommas($this->purchase_fee_flat_commercial));
         $auction->saveMeta('sales_tax_option_flat', $this->sales_tax_option_flat);
         $auction->saveMeta('purchase_fee_purchase_price', $this->purchase_fee_purchase_price);
         $auction->saveMeta('purchase_fee_other_commercial', $this->purchase_fee_other_commercial);
@@ -2546,5 +2546,13 @@ class LandLordAgentAuction extends Component
             return $phone;
         }
         return substr($digits, 0, 3) . '-' . substr($digits, 3, 3) . '-' . substr($digits, 6);
+    }
+
+    protected function stripCommas($value)
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+        return str_replace(',', '', $value);
     }
 }

@@ -343,6 +343,10 @@ class SellerAgentAuctionController extends Controller
             $auction->saveMeta('state', $request->state);
             $auction->saveMeta('city', $request->city);
             $auction->saveMeta('county', $request->county);
+            $auction->saveMeta('property_city', $request->property_city);
+            $auction->saveMeta('property_state', $request->property_state);
+            $auction->saveMeta('property_county', $request->property_county);
+            $auction->saveMeta('property_zip', $request->property_zip);
             $auction->saveMeta('bedrooms', $request->bedrooms);
             $auction->saveMeta('custom_bedrooms', $request->custom_bedrooms);
             $auction->saveMeta('bathrooms', $request->bathrooms);

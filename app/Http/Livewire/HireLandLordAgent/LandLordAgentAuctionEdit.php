@@ -1011,6 +1011,99 @@ class LandLordAgentAuctionEdit extends Component
             $this->addressSuggestions = [];
         }
     }
+
+    public function updatedPropertyCity($value)
+    {
+        if (strlen($value) > 2) {
+            $this->propertyCitySuggestions = $this->getPlaceSuggestions($value, 'city');
+        } else {
+            $this->propertyCitySuggestions = [];
+        }
+    }
+
+    public function selectPropertyCitySuggestion($suggestion = null)
+    {
+        $suggestion = $suggestion ?? $this->propertyCitySuggestions[$this->highlightedPropertyCityIndex] ?? $this->property_city;
+        $this->property_city = $suggestion;
+        $this->propertyCitySuggestions = [];
+        $this->highlightedPropertyCityIndex = -1;
+
+        $this->autoPopulateFromPropertyCity($suggestion);
+    }
+
+    public function incrementPropertyCityHighlight()
+    {
+        if (count($this->propertyCitySuggestions) > 0) {
+            $this->highlightedPropertyCityIndex = min($this->highlightedPropertyCityIndex + 1, count($this->propertyCitySuggestions) - 1);
+        }
+    }
+
+    public function decrementPropertyCityHighlight()
+    {
+        if ($this->highlightedPropertyCityIndex > 0) {
+            $this->highlightedPropertyCityIndex--;
+        }
+    }
+
+    protected function autoPopulateFromPropertyCity($cityWithState)
+    {
+        $cityName = $this->extractNameFromLocationString($cityWithState);
+        $stateAbbrev = $this->extractStateFromLocationString($cityWithState);
+
+        if (empty($cityName)) return;
+
+        if ($stateAbbrev) {
+            $state = \App\Models\UsState::where('abbreviation', strtoupper($stateAbbrev))->first();
+            if ($state && empty($this->property_state)) {
+                $this->property_state = $state->name;
+            }
+        }
+
+        $city = \App\Models\UsCity::where('name', 'ILIKE', $cityName)
+            ->when($stateAbbrev, function ($query) use ($stateAbbrev) {
+                return $query->whereHas('state', function ($q) use ($stateAbbrev) {
+                    $q->where('abbreviation', strtoupper($stateAbbrev));
+                });
+            })
+            ->with(['county', 'state'])
+            ->first();
+
+        if ($city) {
+            if ($city->county && empty($this->property_county)) {
+                $countyName = $city->county->name;
+                if (!str_contains(strtolower($countyName), 'county')) {
+                    $countyName .= ' County';
+                }
+                $stateAbbr = $city->state ? $city->state->abbreviation : '';
+                $this->property_county = $countyName . ', ' . $stateAbbr;
+            }
+
+            $zipCode = \App\Models\UsZipCode::where('city', 'ILIKE', $cityName)
+                ->when($stateAbbrev, function ($query) use ($stateAbbrev) {
+                    return $query->where('state_abbrev', strtoupper($stateAbbrev));
+                })
+                ->first();
+
+            if ($zipCode && empty($this->property_zip)) {
+                $this->property_zip = $zipCode->zip_code;
+            }
+        }
+    }
+
+    protected function extractStateFromLocationString($locationString)
+    {
+        if (preg_match('/,\s*([A-Z]{2})(?:\s|$|,)/', $locationString, $matches)) {
+            return $matches[1];
+        }
+        return null;
+    }
+
+    protected function extractNameFromLocationString($locationString)
+    {
+        $parts = explode(',', $locationString);
+        return trim($parts[0]);
+    }
+
     protected function getPlaceSuggestions($input, $type = null)
     {
         $client = new \GuzzleHttp\Client();
@@ -1931,37 +2024,37 @@ class LandLordAgentAuctionEdit extends Component
 
         // Lease Fee
         $auction->saveMeta('lease_fee_type', $this->lease_fee_type);
-        $auction->saveMeta('lease_fee_flat', $this->lease_fee_flat);
+        $auction->saveMeta('lease_fee_flat', $this->stripCommas($this->lease_fee_flat));
         $auction->saveMeta('lease_fee_percentage', $this->lease_fee_percentage);
         $auction->saveMeta('lease_fee_months', $this->lease_fee_months);
         $auction->saveMeta('lease_fee_percentage_monthly_rent', $this->lease_fee_percentage_monthly_rent);
         $auction->saveMeta('lease_fee_percentage_monthly_number', $this->lease_fee_percentage_monthly_number);
         $auction->saveMeta('lease_fee_percentage_net', $this->lease_fee_percentage_net);
         $auction->saveMeta('lease_fee_percentage_combo_net', $this->lease_fee_percentage_combo_net);
-        $auction->saveMeta('lease_fee_flat_combo', $this->lease_fee_flat_combo);
+        $auction->saveMeta('lease_fee_flat_combo', $this->stripCommas($this->lease_fee_flat_combo));
         $auction->saveMeta('lease_fee_percentage_combo', $this->lease_fee_percentage_combo);
         $auction->saveMeta('lease_fee_other', $this->lease_fee_other);
 
         // Purchase Fee
         $auction->saveMeta('purchase_fee_type', $this->purchase_fee_type);
         $auction->saveMeta('purchase_fee_percentage', $this->purchase_fee_percentage);
-        $auction->saveMeta('purchase_fee_flat', $this->purchase_fee_flat);
+        $auction->saveMeta('purchase_fee_flat', $this->stripCommas($this->purchase_fee_flat));
         $auction->saveMeta('purchase_fee_percentage_combo', $this->purchase_fee_percentage_combo);
-        $auction->saveMeta('purchase_fee_flat_combo', $this->purchase_fee_flat_combo);
+        $auction->saveMeta('purchase_fee_flat_combo', $this->stripCommas($this->purchase_fee_flat_combo));
         $auction->saveMeta('purchase_fee_other', $this->purchase_fee_other);
 
         // Lease-Option Fee
         $auction->saveMeta('lease_option_fee_type', $this->lease_option_fee_type);
-        $auction->saveMeta('lease_option_fee_flat', $this->lease_option_fee_flat);
+        $auction->saveMeta('lease_option_fee_flat', $this->stripCommas($this->lease_option_fee_flat));
         $auction->saveMeta('lease_option_fee_percentage', $this->lease_option_fee_percentage);
         $auction->saveMeta('lease_option_fee_other', $this->lease_option_fee_other);
 
         // Other Broker Terms
         $auction->saveMeta('protection_period', $this->protection_period);
         $auction->saveMeta('early_termination_fee_option', $this->early_termination_fee_option);
-        $auction->saveMeta('early_termination_fee_amount', $this->early_termination_fee_amount);
+        $auction->saveMeta('early_termination_fee_amount', $this->stripCommas($this->early_termination_fee_amount));
         $auction->saveMeta('retainer_fee_option', $this->retainer_fee_option);
-        $auction->saveMeta('retainer_fee_amount', $this->retainer_fee_amount);
+        $auction->saveMeta('retainer_fee_amount', $this->stripCommas($this->retainer_fee_amount));
         $auction->saveMeta('retainer_fee_application', $this->retainer_fee_application);
         $auction->saveMeta('agency_agreement_timeframe', $this->agency_agreement_timeframe);
         $auction->saveMeta('agency_agreement_custom', $this->agency_agreement_custom);
@@ -2224,5 +2317,13 @@ class LandLordAgentAuctionEdit extends Component
             return $phone;
         }
         return substr($digits, 0, 3) . '-' . substr($digits, 3, 3) . '-' . substr($digits, 6);
+    }
+
+    protected function stripCommas($value)
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+        return str_replace(',', '', $value);
     }
 }

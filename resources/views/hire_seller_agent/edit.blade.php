@@ -247,6 +247,38 @@
                                         class="form-control has-icon search_places" data-icon="fa-solid fa-tree-city"
                                         data-msg-required="Please enter county" required>
                                 </div>
+
+                                <hr class="my-3">
+                                <p class="fw-bold mb-2">Property Location</p>
+
+                                <div class="form-group">
+                                    <label class="fw-bold">Property City</label>
+                                    <input type="text" name="property_city" placeholder="Enter property city"
+                                        id="property_city" value="{{ @$auction->get->property_city }}"
+                                        class="form-control has-icon" data-icon="fas fa-city">
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="fw-bold">Property State</label>
+                                    <input type="text" name="property_state" placeholder="Enter property state"
+                                        id="property_state" value="{{ @$auction->get->property_state }}"
+                                        class="form-control has-icon" data-icon="fa-solid fa-flag-usa">
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="fw-bold">Property County</label>
+                                    <input type="text" name="property_county" placeholder="Enter property county"
+                                        id="property_county" value="{{ @$auction->get->property_county }}"
+                                        class="form-control has-icon" data-icon="fa-solid fa-map">
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="fw-bold">Property ZIP Code</label>
+                                    <input type="text" name="property_zip" placeholder="Enter ZIP code"
+                                        id="property_zip" value="{{ @$auction->get->property_zip }}"
+                                        class="form-control has-icon" data-icon="fa-solid fa-map-pin"
+                                        maxlength="10">
+                                </div>
                             </div>
 
                             <div class="wizard-step">

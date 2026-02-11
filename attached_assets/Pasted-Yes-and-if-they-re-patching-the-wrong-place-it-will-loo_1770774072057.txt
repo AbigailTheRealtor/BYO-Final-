@@ -1,0 +1,133 @@
+Yes — and if they’re patching the wrong place, it will look “done” but nothing changes in your actual Hire flows.
+
+Here’s the **exact Replit instruction you can paste** so they **only** work in the correct Tenant PHP (Livewire) flow and don’t waste time elsewhere.
+
+---
+
+## Replit Instructions (WITH SAFEGUARDS) — You are editing the WRONG file (Hire a Landlord / Hire a Seller)
+
+### Critical Rule
+
+✅ **ALL fixes must be made in the Tenant-side Livewire flow (“Tenant PHP”)** that powers the tenant dashboard hire flows.
+🚫 Do **not** edit shared admin files, listing-show templates, or non-tenant components expecting it to fix drafts/edits.
+
+---
+
+# Step 1 — Locate the REAL components being used (no guessing)
+
+### Required action (Dev)
+
+1. Find the route/view that loads when:
+
+   * Login: `tenant@exp.com`
+   * Click **Hire a Landlord’s Agent** (create + draft)
+   * Open a **draft** (edit)
+
+2. Identify the Livewire component actually mounted by doing ONE of these:
+
+* Search the codebase for the **exact button/link** text or route name used by the dashboard tile:
+
+  * `"Hire a Landlord"` / `"Hire a Landlord’s Agent"`
+  * `"Hire a Seller"` / `"Hire a Seller’s Agent"`
+* Or open the tenant dashboard blade and find the `@livewire(...)` / `<livewire:...>` call.
+
+### Safeguard
+
+**Do not implement any fix until the dev posts:**
+
+* the Livewire component class name(s)
+* the file path(s)
+* the blade/view that mounts them
+
+(Otherwise they’ll keep editing the wrong file again.)
+
+---
+
+# Step 2 — Confirm the fixes are in the correct TWO places (Create + Edit)
+
+For each Hire flow (Landlord + Seller), there are always two sides:
+
+### A) Create/Draft component (where draft is saved)
+
+* Must include these fields in the **draft save payload**.
+
+### B) Edit component (where draft is reloaded and updated)
+
+* Must hydrate these fields in `mount()` (or equivalent)
+* Must include these fields in the **edit save payload**.
+
+### Safeguard
+
+🚫 If they only fix “save” but not “mount/hydrate”, you’ll still see blanks when reopening drafts.
+
+---
+
+# Step 3 — The specific persistence issues you reported (must be implemented under Tenant PHP)
+
+## Hire a Landlord — Draft + Edit
+
+### Fields not saving/repopulating:
+
+* City
+* State
+* County
+* Zip Code
+* Landlord’s Broker Lease Fee
+
+**Required implementation**
+
+1. Add the fields to the create/draft save method (tenant-side component)
+2. Add the fields to edit save method (tenant-side component)
+3. Add hydration on edit/draft reopen:
+
+   * `mount($listingId)` must set Livewire state from DB for each field
+4. Ensure merge-save (no overwriting other tabs with nulls)
+
+---
+
+## Hire a Seller — Draft + Edit
+
+(From your earlier list — same rule: fix under Tenant PHP create + edit components.)
+
+* Location fields, property condition, “Other” inputs (view/appliances/occupancy), loan fields, exchange item, broker comp fields, seller status, personal photo, etc.
+
+---
+
+# Step 4 — Quick “proof” test that they edited the RIGHT file (mandatory)
+
+### Required proof change (temporary)
+
+In the Livewire component they claim is correct, add a temporary, obvious debug string in the render view (then remove it after):
+
+Example:
+
+* Add a small line above the form header: `DEBUG: Tenant Hire Landlord Component Loaded`
+
+If you don’t see it on the tenant dashboard flow, they are still editing the wrong file.
+
+---
+
+# Step 5 — Final Acceptance Test (must pass before closing ticket)
+
+Login `tenant@exp.com`:
+
+### Landlord
+
+1. Hire a Landlord → fill City/State/County/Zip + Landlord Broker Lease Fee → Save Draft
+2. Reopen draft → fields still filled
+3. Edit those fields → Save → refresh page → still filled
+
+### Seller
+
+Same process for the Seller fields you listed earlier.
+
+---
+
+# Important Notes (why this keeps happening)
+
+* Many codebases have **multiple “listing” implementations** (admin vs tenant vs public views).
+* Your bug is **draft/edit persistence**, which is almost always controlled by the **tenant Livewire class**, not the display template.
+
+---
+
+If you want, paste **the file path(s) they said they edited** (just the paths), and I’ll tell you whether those paths are even capable of affecting the `tenant@exp.com → Hire a Landlord/Seller` draft/edit flow.
