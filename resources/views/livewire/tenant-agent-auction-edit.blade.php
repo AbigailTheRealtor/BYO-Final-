@@ -1601,6 +1601,8 @@
         <div class="row">
             <div class="col-12 p-4">
 
+                <!-- DEBUG: EDIT MODE - LISTING ID: {{ $listingId ?? 'N/A' }} - COMPONENT: TenantAgentAuctionEdit (EDIT) -->
+
                 @if (session()->has('success'))
                     <div class="alert alert-success">
                         {{ session('success') }}

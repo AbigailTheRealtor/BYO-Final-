@@ -481,6 +481,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::any('/update-counter-terms/{id}', [LandlordCounteredTermsController::class, 'update'])->name('update-counter-terms');
     });
 
+    Route::get('/hire/agent/auction/{user_type}/{listingId}', liverTenantAgentAuction::class)->name('hire.agent.auction.draft')->whereIn('user_type', ['tenant', 'landlord', 'buyer', 'seller']);
     Route::get('/hire/agent/auction/{user_type?}', liverTenantAgentAuction::class)->name('hire.agent.auction');
     Route::get('/hire/agent/auction/edit/{auctionId}/{user_type}', TenantAgentAuctionEdit::class)->name('hire.agent.auction.edit');
     // Only Tenants can access these routes

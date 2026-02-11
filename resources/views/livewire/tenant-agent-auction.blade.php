@@ -1602,6 +1602,8 @@ $lease_types = [
         <div class="row">
             <div class="col-12 p-4">
 
+                <!-- DEBUG: {{ $listingId ? 'DRAFT/EDIT MODE - LISTING ID: ' . $listingId : 'CREATE MODE' }} - COMPONENT: TenantAgentAuction (CREATE) -->
+
                 @if ($hasDrafts && !$listingId)
                 <div class="modal fade" id="draftModal" tabindex="-1" aria-labelledby="draftModalLabel"
                     aria-hidden="true" wire:ignore.self>
@@ -1618,11 +1620,10 @@ $lease_types = [
                                     @foreach ($this->getDrafts() as $draft)
                                     <div
                                         class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                                        <button type="button" class="btn btn-link text-start flex-grow-1"
-                                            wire:click="loadDraft('{{ $draft->id }}')"
-                                            data-bs-dismiss="modal">
+                                        <a class="btn btn-link text-start flex-grow-1"
+                                            href="{{ route('hire.agent.auction.draft', ['user_type' => $user_type, 'listingId' => $draft->id]) }}">
                                             {{ $draft->title }} ({{ $draft->updated_at->format('m/d/Y H:i') }})
-                                        </button>
+                                        </a>
                                         <button type="button" class="btn btn-sm btn-outline-danger" style="border-color: #dc3545; color: #dc3545;"
                                             data-bs-dismiss="modal"
                                             wire:click="deleteDraft('{{ $draft->id }}')" wire:ignore.self
