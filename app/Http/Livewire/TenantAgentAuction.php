@@ -2507,7 +2507,7 @@ class TenantAgentAuction extends Component
             $data[$f] = $val;
         }
         ksort($data);
-        return hash('sha256', json_encode($data, JSON_SORT_KEYS));
+        return hash('sha256', json_encode($data));
     }
 
     public function saveDraft()
