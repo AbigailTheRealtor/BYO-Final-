@@ -820,10 +820,10 @@
 
                                 </div>
 
-                                <!-- Tenant Info Tab -->
+                                <!-- Seller Info Tab -->
                                 <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
                                     id="tenant-info" role="tabpanel" aria-labelledby="tenant-info-tab">
-                                    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.buyer-info')
+                                    @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-info')
                                 </div>
                             @elseif($service_type === 'limited_service')
 
