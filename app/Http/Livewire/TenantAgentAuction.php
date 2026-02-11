@@ -2639,7 +2639,7 @@ class TenantAgentAuction extends Component
             $rawConditionPropBuyer = is_string($auction->get->condition_prop_buyer) ? json_decode($auction->get->condition_prop_buyer, true) ?? [] : (array)$auction->get->condition_prop_buyer;
             $this->condition_prop_buyer = $this->mapLegacyPropertyConditions($rawConditionPropBuyer);
 
-            $this->condition_prop = $this->mapLegacyPropertyConditions($auction->get->condition_prop);
+            $this->condition_prop = $this->mapLegacyPropertyConditions($auction->info('condition_prop') ?? '');
             $this->business_type = $auction->get->business_type;
             $this->business_type_selected = $auction->get->business_type_selected ?? '';
             $this->other_business_type = $auction->get->other_business_type;

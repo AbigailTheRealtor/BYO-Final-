@@ -1,0 +1,175 @@
+## Replit Instructions (WITH SAFEGUARDS) — Hire a Seller’s Agent: Draft + Edit Must Persist
+
+### Fix ONLY: (1) Property Condition, (2) Monthly Escrow / Impounds (Not Assumable, Informational Only)
+
+### Applies To
+
+* Login example: `tenant@exp.com`
+* Tenant dashboard → **Hire a Seller’s Agent**
+* **Save Draft → reopen draft**
+* **Edit listing → save → reload**
+* Property Types: all that use the Seller flow (Residential/Income/Commercial/Business/Vacant Land if applicable)
+
+---
+
+# NON-NEGOTIABLE SAFEGUARDS
+
+### SAFEGUARD A — Must be implemented under Tenant PHP (tenant flow)
+
+Do not edit legacy/admin forms.
+Add temporary debug text to confirm correct screen:
+
+* Create/Draft view: `DEBUG: SELLER TENANT CREATE`
+* Edit/Draft reopen view: `DEBUG: SELLER TENANT EDIT`
+
+Remove after verification.
+
+---
+
+### SAFEGUARD B — Single canonical keys (Create + Draft + Edit must match)
+
+Use ONE key for each field everywhere:
+
+* `property_condition`
+* `monthly_escrow_impounds`
+
+🚫 Do not save one name and load another (e.g., `acceptable_property_condition` vs `property_condition`).
+
+---
+
+### SAFEGUARD C — Merge-save only (never wipe)
+
+Saving a different tab must NOT overwrite these fields with null/empty.
+
+Rule:
+
+* Only overwrite if the incoming request includes an explicit value, OR the user changed the field.
+
+---
+
+# REQUIRED FIXES
+
+## FIX 1 — Property Condition must save + repopulate (Draft + Edit)
+
+### What dev must do
+
+#### A) Confirm UI binding uses the canonical Livewire property
+
+* Input must bind to `wire:model="property_condition"` (or a consistent state key if using an array)
+
+🚫 No separate property for edit vs create.
+
+#### B) Include `property_condition` in draft save payload
+
+In the Seller Create/Draft save method (commonly `saveDraft()`, `saveAllMetadata()`, etc.):
+
+* Add `property_condition` to the saved fields.
+
+#### C) Include `property_condition` in draft load/hydration
+
+In `loadDraft()` / `mount($draftId)`:
+
+* set `$this->property_condition` from saved data
+
+#### D) Include `property_condition` in edit update payload
+
+In Seller Edit save method:
+
+* persist the canonical key
+
+✅ **Safeguard for multi-select**
+If Property Condition is multi-select:
+
+* store as JSON array
+* load as array
+* do not store as a string that breaks repopulation
+
+---
+
+## FIX 2 — Monthly Escrow / Impounds must save + repopulate (Draft + Edit)
+
+Field label: **Monthly Escrow / Impounds (Not Assumable, Informational Only)**
+
+### What dev must do
+
+#### A) Confirm the input binds to ONE canonical key
+
+* `wire:model="monthly_escrow_impounds"`
+
+#### B) Draft save includes it
+
+In draft save payload:
+
+* include `monthly_escrow_impounds`
+
+#### C) Draft load/hydration includes it
+
+In loadDraft/mount:
+
+* set `$this->monthly_escrow_impounds` from saved data
+
+#### D) Edit save includes it
+
+In edit update payload:
+
+* persist the same key
+
+✅ **Safeguard: numeric formatting**
+If the field is currency-formatted with commas:
+
+* apply the same `stripCommas()` normalization used elsewhere
+* store numeric cleanly
+* repopulate formatted consistently
+
+---
+
+# REQUIRED DEBUG CHECK (Temporary, prevents “it’s done” when it’s not)
+
+Add this to the Seller Edit view near these fields:
+
+`DEBUG VALUES: {{ json_encode(['property_condition' => $property_condition ?? null, 'monthly_escrow_impounds' => $monthly_escrow_impounds ?? null]) }}`
+
+### Pass/Fail
+
+* If debug shows correct values but UI is blank → Blade is bound to wrong property
+* If debug shows null → save payload or loadDraft is missing the keys
+* If debug shows `"false"` → bad fallback default exists and must be removed
+
+Remove after fix is confirmed.
+
+---
+
+# ACCEPTANCE TESTS (Must pass)
+
+### Draft test
+
+1. Create Seller listing
+2. Set Property Condition
+3. Enter Monthly Escrow / Impounds
+4. Save Draft
+5. Reopen Draft
+   ✅ Both fields are populated exactly as entered
+
+### Edit test
+
+1. Change both fields in edit
+2. Save
+3. Refresh page
+   ✅ Both fields remain saved
+
+### Non-wipe test
+
+1. After setting both fields, save a different tab/section
+2. Reopen draft/edit
+   ✅ Both fields still populated
+
+---
+
+# NO TOUCH RULE
+
+Do not change any labels, tooltips, option text, or conditional logic.
+This task is **persistence + hydration only** for the two fields listed.
+
+---
+
+If you paste the **Seller draft URL** (the one you see when you click a saved draft), I can also confirm you’re actually opening the edit/draft route and not being sent back to the create route (which would make it look like fields “didn’t save”).
