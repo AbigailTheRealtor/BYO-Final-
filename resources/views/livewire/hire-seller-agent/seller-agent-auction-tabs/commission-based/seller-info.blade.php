@@ -73,6 +73,8 @@
 </div>
 @if ($service_type === 'full_service')
 
+    <div class="alert alert-info mb-2 small"><strong>DEBUG PHOTO PATH:</strong> {{ json_encode($photo ?? null) }}</div>
+
     <!-- Photo Upload -->
     <div class="form-group">
         <label class="fw-bold">

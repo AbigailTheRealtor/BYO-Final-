@@ -823,6 +823,7 @@
                                 <!-- Seller Info Tab -->
                                 <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
                                     id="tenant-info" role="tabpanel" aria-labelledby="tenant-info-tab">
+                                    <div class="alert alert-warning mb-2"><strong>DEBUG: SELLER TENANT EDIT PHOTO</strong></div>
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-info')
                                 </div>
                             @elseif($service_type === 'limited_service')

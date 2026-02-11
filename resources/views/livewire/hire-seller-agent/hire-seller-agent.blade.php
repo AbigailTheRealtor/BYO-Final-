@@ -955,6 +955,7 @@
                                     @if ($user_type === 'tenant')
                                         @include('livewire.tenant-agent-auction-tabs.commission-based.tenant-info')
                                     @elseif($user_type === 'seller')
+                                        <div class="alert alert-warning mb-2"><strong>DEBUG: SELLER TENANT CREATE PHOTO</strong></div>
                                         @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-info')
                                     @elseif($user_type === 'buyer')
                                         @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.buyer-info')

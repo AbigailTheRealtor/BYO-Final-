@@ -3502,15 +3502,14 @@ class TenantAgentAuctionEdit extends Component
 
 
             if ($this->photo instanceof TemporaryUploadedFile) {
-                $extensionPhoto = $this->photo->getClientOriginalExtension(); // Get file extension
-                $uuid = (string) Str::uuid(); // Generate a unique UUID
-                $photoName = $uuid . '.' . $extensionPhoto; // Create a unique file name
+                $extensionPhoto = $this->photo->getClientOriginalExtension();
+                $uuid = (string) Str::uuid();
+                $photoName = $uuid . '.' . $extensionPhoto;
 
-                // Save file to public/auction/images using Livewire's store method
                 $photoPath = $this->photo->storeAs('auction/images', $photoName, 'public');
 
-                // Save file name to database
                 $auction->saveMeta('photo', $photoName);
+                $this->photo = $photoName;
             }
 
 
