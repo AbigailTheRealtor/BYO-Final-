@@ -1,0 +1,204 @@
+## Replit Instructions (WITH SAFEGUARDS) — Hire a Seller’s Agent: Draft + Edit Not Re-Populating Key Fields
+
+### Applies To
+
+* Login example: `tenant@exp.com`
+* Tenant dashboard → **Hire a Seller’s Agent**
+* **Saved Draft reopen** + **Edit listing**
+* Scope: These fields must **persist + repopulate** on:
+
+  1. Save Draft → reopen draft
+  2. Save Edit → reload page / reopen
+
+### Fields affected (must repopulate)
+
+* **Property Condition**
+* **Type of Loan**
+* **Monthly Escrow / Impounds (Not Assumable, Informational Only)**
+* **Loan Term Remaining (Years)**
+* **Loan Servicer / Lender**
+* **Assumption Fee**
+* **Occupancy Requirement**
+* **Acceptable Exchange Item**
+
+---
+
+# NON-NEGOTIABLE SAFEGUARDS
+
+### SAFEGUARD A — Fix must be in Tenant PHP components actually used by [tenant@exp.com](mailto:tenant@exp.com)
+
+Do not edit legacy/admin versions. Confirm you’re in the tenant flow by adding temporary debug text:
+
+* Create/Draft view: `DEBUG: SELLER TENANT CREATE`
+* Draft/Edit view: `DEBUG: SELLER TENANT EDIT`
+
+Remove after verification.
+
+---
+
+### SAFEGUARD B — Save + Load must use the same keys (single source of truth)
+
+Pick one canonical key set and use it everywhere (create, draft save, loadDraft/mount, edit save, listing display).
+
+🚫 Do not save one key and load a different key (common reason drafts reopen blank).
+
+---
+
+### SAFEGUARD C — Merge-save only (no wiping)
+
+Saving another tab must not overwrite these fields with null/empty.
+
+Rule: **Only overwrite a field if the incoming request includes a real value** (or the user explicitly changed it).
+
+---
+
+### SAFEGUARD D — Multi-select fields must store as arrays (JSON)
+
+If any of these are multi-select (Property Condition, Acceptable Exchange Item, Occupancy Requirement options, etc.):
+
+* store as JSON array
+* hydrate as array
+* bind as array
+
+---
+
+# REQUIRED IMPLEMENTATION (Draft + Edit)
+
+## Step 1 — Create a “Canonical Field Map” for these fields
+
+In the Seller tenant flow, define the canonical Livewire properties and DB keys for each field:
+
+**Must include:**
+
+* `property_condition`
+* `loan_type`
+* `monthly_escrow_impounds` (not assumable, informational only)
+* `loan_term_remaining_years`
+* `loan_servicer_lender`
+* `assumption_fee`
+* `occupancy_requirement` (and `occupancy_requirement_other` if applicable)
+* `acceptable_exchange_item`
+
+✅ **Safeguard:** create a single array constant (or config) used in both save + load so keys can’t drift.
+
+---
+
+## Step 2 — Draft Save: ensure these fields are included in the payload
+
+In the Seller Create/Draft component method that writes drafts (commonly `saveDraft()`, `saveAllMetadata()`, or similar):
+
+✅ Add ALL listed fields to the draft payload.
+
+**Safeguard**
+
+* If your draft data is stored as `metadata` JSON, ensure these keys are included in that JSON.
+* If stored in DB columns, ensure they are fillable and included in the `update()`/`create()` call.
+
+**Merge-save safeguard**
+
+* Use a field-by-field merge so saving a different tab doesn’t clear these.
+
+---
+
+## Step 3 — Draft Reopen: hydrate these fields on loadDraft()/mount()
+
+When the user clicks a draft, the edit/draft component must set Livewire state from saved draft values.
+
+✅ In `mount($draftId)` or `loadDraft($draftId)`:
+
+* set each Livewire property from saved data
+* ensure arrays stay arrays
+* ensure booleans/empty values don’t become `"false"` or `false`
+
+**Safeguard**
+Normalize missing values:
+
+* default to `null` or `''` (never `false`)
+
+---
+
+## Step 4 — Edit Save: ensure these fields are included in update payload
+
+In Seller edit save method:
+
+✅ Must write the same canonical keys back to storage:
+
+* either metadata JSON merge
+* or direct DB columns
+
+**Safeguard**
+
+* Do not have separate residential/commercial logic that excludes these fields.
+* Do not rely on “only save current tab fields” — must merge save.
+
+---
+
+# CONDITIONAL “OTHER” SAFEGUARDS (if applicable)
+
+### Occupancy Requirement
+
+If Occupancy Requirement has an “Other” option:
+
+* Save:
+
+  * `occupancy_requirement` selection
+  * `occupancy_requirement_other` text
+* On load:
+
+  * if selection == Other → show input + populate text
+
+### Acceptable Exchange Item
+
+If Acceptable Exchange Item has “Other”:
+
+* Save selection + `acceptable_exchange_item_other`
+* Hydrate and show input on edit/draft reopen
+
+---
+
+# REQUIRED ACCEPTANCE TESTS (Must pass)
+
+### Test A — Draft repopulation
+
+1. Create Hire a Seller listing
+2. Fill ALL listed fields
+3. Save Draft
+4. Reopen Draft
+   ✅ Every field is populated exactly as entered
+
+### Test B — Edit repopulation after update
+
+1. Change those values in Edit
+2. Save
+3. Refresh page
+   ✅ Values persist and display correctly
+
+### Test C — Non-wipe regression check
+
+1. Fill the loan/property fields
+2. Go to a different tab and save
+3. Reopen draft/edit
+   ✅ Fields did not get wiped/reset
+
+---
+
+# DEBUG SAFEGUARD (temporary but highly effective)
+
+Add a temporary debug line in the Seller edit view:
+
+`DEBUG LOAN/CONDITION: {{ json_encode([$property_condition, $loan_type, $monthly_escrow_impounds, $loan_term_remaining_years, $loan_servicer_lender, $assumption_fee, $occupancy_requirement, $acceptable_exchange_item]) }}`
+
+✅ This instantly proves whether the component is loading the values but the UI is failing, or the values are not being hydrated at all.
+
+Remove after confirmed.
+
+---
+
+# NO TOUCH RULE
+
+Do not change tooltips, wording, option labels, or field order.
+This task is strictly draft/edit persistence + hydration.
+
+---
+
+If you want, paste the **URL you see when you open a Seller draft** (like you did for Landlord). If it’s the same URL as create (no ID), that would explain why drafts reopen blank — and I’ll rewrite the instructions to fix routing too.
