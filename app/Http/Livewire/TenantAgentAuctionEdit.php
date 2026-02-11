@@ -24,7 +24,7 @@ class TenantAgentAuctionEdit extends Component
 {
     use WithFileUploads;
 
-    protected $isLoadingData = false;
+    public $isLoadingData = false;
 
     // Livewire properties for form fields
     public $hasDrafts = false;
@@ -2342,6 +2342,9 @@ class TenantAgentAuctionEdit extends Component
     // Load auction data
     public function loadAuctionData($auctionId, $user_type)
     {
+        $this->isLoadingData = true;
+
+        try {
 
         $auctionClass = match ($user_type) {
             'tenant'   => HireTenantAgentAuction::class,
@@ -2850,6 +2853,10 @@ class TenantAgentAuctionEdit extends Component
         $this->is_other_owner_pays_visible = is_array($this->owner_pays) && in_array('Other', $this->owner_pays);
         $this->is_update_lease_term_option_visible = is_array($this->desired_lease_length) && in_array('Other', $this->desired_lease_length);
         $this->is_rent_include_visible = is_array($this->rent_includes) && in_array('Other', $this->rent_includes);
+
+        } finally {
+            $this->isLoadingData = false;
+        }
     }
 
     public function update()

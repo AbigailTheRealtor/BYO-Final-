@@ -2616,10 +2616,10 @@ class TenantAgentAuction extends Component
             $this->zipCodes = is_string($auction->get->zipCodes) ? json_decode($auction->get->zipCodes, true) ?? [] : (array)$auction->get->zipCodes;
             $this->zip_code = $this->zipCodes[0] ?? '';
 
-            $this->property_city = $auction->get->property_city ?? '';
-            $this->property_state = $auction->get->property_state ?? '';
-            $this->property_zip = $auction->get->property_zip ?? '';
-            $this->property_county = $auction->get->property_county ?? '';
+            $this->property_city = $auction->get->property_city ?: '';
+            $this->property_state = $auction->get->property_state ?: '';
+            $this->property_zip = $auction->get->property_zip ?: '';
+            $this->property_county = $auction->get->property_county ?: '';
 
             // Property details
 
