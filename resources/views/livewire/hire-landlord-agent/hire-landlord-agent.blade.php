@@ -1136,7 +1136,7 @@
                                     @elseif($user_type === 'buyer')
                                         @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.purchasing-terms')
                                     @elseif($user_type === 'landlord')
-                                        @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.purchasing-terms')
+                                        @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.lease-terms')
                                     @endif
                                 </div>
 

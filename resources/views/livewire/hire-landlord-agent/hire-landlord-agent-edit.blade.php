@@ -1067,7 +1067,7 @@ $tenantPays = [
                                 <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
                                     id="leasing-terms" role="tabpanel" aria-labelledby="leasing-terms-tab">
 
-                                    @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.purchasing-terms')
+                                    @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.lease-terms')
                                 </div>
 
                                 <!-- Services Tab -->
