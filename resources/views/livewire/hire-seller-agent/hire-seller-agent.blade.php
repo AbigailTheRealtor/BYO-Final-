@@ -754,14 +754,14 @@
                                         @foreach ($this->getDrafts() as $draft)
                                             <div
                                                 class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                                                <button type="button" class="btn btn-link text-start flex-grow-1"
-                                                    wire:click="loadDraft('{{ $draft->id }}')"
-                                                    data-bs-dismiss="modal">
+                                                <a class="btn btn-link text-start flex-grow-1"
+                                                    href="{{ route('hire.agent.auction.draft', ['user_type' => $user_type, 'listingId' => $draft->id]) }}">
                                                     {{ $draft->title }} ({{ $draft->updated_at->format('m/d/Y H:i') }})
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" style="border-color: #dc3545; color: #dc3545;"
                                                     data-bs-dismiss="modal"
-                                                    wire:click="deleteDraft('{{ $draft->id }}')">
+                                                    wire:click="deleteDraft('{{ $draft->id }}')" wire:ignore.self
+                                                    onclick="setTimeout(() => { window.location = '{{ route('hire.agent.auction' , ['user_type' => $user_type])}}' }, 100)">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
@@ -769,12 +769,13 @@
                                     </div>
                                 </div>
                                 <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                                    <button type="button" class="btn btn-secondary" style="background-color: #6c757d; color: #fff; border-color: #6c757d;" data-bs-dismiss="modal"
                                         wire:click="startNew">
                                         Start New
                                     </button>
-                                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal"
-                                        wire:click="deleteAllDrafts">
+                                    <button type="button" class="btn btn-danger" style="background-color: #dc3545; color: #fff; border-color: #dc3545;" data-bs-dismiss="modal"
+                                        wire:click="deleteAllDrafts" wire:ignore.self
+                                        onclick="setTimeout(() => { window.location = '{{ route('hire.agent.auction' , ['user_type' => $user_type])}}' }, 100)">
                                         <i class="fas fa-trash me-1"></i> Delete All Drafts
                                     </button>
                                 </div>
@@ -2398,9 +2399,11 @@
     </script>
     <script>
         document.addEventListener('livewire:load', function() {
-            const draftModal = new bootstrap.Modal(document.getElementById('draftModal'));
-            draftModal.show();
-
+            var draftEl = document.getElementById('draftModal');
+            if (draftEl) {
+                var draftModal = new bootstrap.Modal(draftEl);
+                draftModal.show();
+            }
         });
     </script>
 
