@@ -53,6 +53,12 @@ class TenantAgentAuctionEdit extends Component
     public $number_of_unit = '';
     // Location fields
     public $state = '';
+    public $property_city = '';
+    public $property_state = '';
+    public $property_zip = '';
+    public $property_county = '';
+    public $propertyCitySuggestions = [];
+    public $highlightedPropertyCityIndex = -1;
     public $property_type = '';
     public $rent_includes =  [];
     public $other_rent_include = '';
@@ -1916,6 +1922,104 @@ class TenantAgentAuctionEdit extends Component
         return false;
     }
     
+    public function updatedPropertyCity($value)
+    {
+        if (!in_array($this->user_type, ['landlord', 'seller'])) {
+            return;
+        }
+
+        if ($this->isLoadingData) {
+            $this->propertyCitySuggestions = [];
+            return;
+        }
+
+        if (strlen($value) > 2) {
+            $this->propertyCitySuggestions = $this->getPlaceSuggestions($value, 'city');
+        } else {
+            $this->propertyCitySuggestions = [];
+        }
+    }
+
+    public function searchPropertyCity($value)
+    {
+        if (!in_array($this->user_type, ['landlord', 'seller'])) {
+            return;
+        }
+
+        $this->property_city = $value;
+        if (strlen($value) > 2) {
+            $this->propertyCitySuggestions = $this->getPlaceSuggestions($value, 'city');
+        } else {
+            $this->propertyCitySuggestions = [];
+        }
+    }
+
+    public function selectPropertyCitySuggestion($suggestion = null)
+    {
+        if (!in_array($this->user_type, ['landlord', 'seller'])) {
+            return;
+        }
+
+        $suggestion = $suggestion ?? $this->propertyCitySuggestions[$this->highlightedPropertyCityIndex] ?? $this->property_city;
+        $this->property_city = $suggestion;
+        $this->propertyCitySuggestions = [];
+        $this->highlightedPropertyCityIndex = -1;
+
+        $this->autoPopulateFromPropertyCity($suggestion);
+    }
+
+    protected function autoPopulateFromPropertyCity($cityString)
+    {
+        if (empty($cityString)) {
+            return;
+        }
+
+        $parts = explode(',', $cityString);
+        $cityName = trim($parts[0] ?? '');
+        $stateAbbrev = trim($parts[1] ?? '');
+
+        if (!empty($stateAbbrev) && empty($this->property_state)) {
+            $state = \App\Models\UsState::where('abbreviation', 'ILIKE', $stateAbbrev)->first();
+            if ($state) {
+                $this->property_state = $state->name;
+            }
+        }
+
+        if (!empty($cityName) && !empty($stateAbbrev)) {
+            $state = \App\Models\UsState::where('abbreviation', 'ILIKE', $stateAbbrev)->first();
+            if ($state) {
+                $city = \App\Models\UsCity::where('name', 'ILIKE', $cityName)
+                    ->where('state_id', $state->id)
+                    ->first();
+
+                if ($city && $city->county_id) {
+                    $county = \App\Models\UsCounty::find($city->county_id);
+                    if ($county) {
+                        $countyName = $county->name;
+                        if (!str_contains(strtolower($countyName), 'county')) {
+                            $countyName .= ' County';
+                        }
+                        $this->property_county = $countyName . ', ' . $stateAbbrev;
+                    }
+                }
+            }
+        }
+    }
+
+    public function incrementPropertyCityHighlight()
+    {
+        if (count($this->propertyCitySuggestions) > 0) {
+            $this->highlightedPropertyCityIndex = min($this->highlightedPropertyCityIndex + 1, count($this->propertyCitySuggestions) - 1);
+        }
+    }
+
+    public function decrementPropertyCityHighlight()
+    {
+        if (count($this->propertyCitySuggestions) > 0) {
+            $this->highlightedPropertyCityIndex = max($this->highlightedPropertyCityIndex - 1, 0);
+        }
+    }
+
     private function extractStateFromLocationString($locationString)
     {
         if (empty($locationString)) return null;
@@ -2288,6 +2392,10 @@ class TenantAgentAuctionEdit extends Component
         $this->minimum_annual_net_income = $auction->info('minimum_annual_net_income') ?? '';
         $this->minimum_cap_rate = $auction->info('minimum_cap_rate') ?? '';
         
+        $this->property_city = $auction->info('property_city') ?? '';
+        $this->property_state = $auction->info('property_state') ?? '';
+        $this->property_zip = $auction->info('property_zip') ?? '';
+        $this->property_county = $auction->info('property_county') ?? '';
         $this->zip_code = $auction->info('zip_code');
         $this->leasing_space = $auction->info('leasing_space');
         $this->restrictions = $auction->info('restrictions');
@@ -2779,6 +2887,10 @@ class TenantAgentAuctionEdit extends Component
             $auction->saveMeta('cities', json_encode($this->cities));
             $auction->saveMeta('counties', json_encode($this->counties));
             $auction->saveMeta('state', $this->state);
+            $auction->saveMeta('property_city', $this->property_city);
+            $auction->saveMeta('property_state', $this->property_state);
+            $auction->saveMeta('property_zip', $this->property_zip);
+            $auction->saveMeta('property_county', $this->property_county);
 
             // Property Details
             $auction->saveMeta('property_type', $this->property_type);
