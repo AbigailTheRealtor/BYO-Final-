@@ -319,277 +319,6 @@
     @endif
 @endif --}}
 
-<!-- Seller Financing -->
-
-@if (in_array('Seller Financing', $offered_financing))
-    <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
-        <h5 class="fw-bold text-primary mb-0">
-            <i class="fa-solid fa-handshake me-2"></i>Seller Financing
-        </h5>
-    </div>
-
-    <div class="form-group">
-        <label class="fw-bold"> Purchase Price:</label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the total price the Seller is seeking for the property.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <span class="input-group-text-seller">$</span>
-
-            <input type="text" wire:model="purchase_price" class="form-control has-icon"
-                placeholder="Enter total purchase price (e.g., 500000)" data-error-id="purchase_price_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-        </div>
-        <span class="error mt-2" id="purchase_price_error"></span>
-
-    </div>
-
-    <div class="form-group mt-2">
-        <label class="fw-bold"> Down Payment:</label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the minimum down payment amount the Seller will accept from the Buyer.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-group">
-            <!-- Select for type -->
-            <select wire:model="down_payment_type" class="form-select" style="max-width: 100px;">
-                <option value="%">%</option>
-                <option value="$">$</option>
-            </select>
-
-            <!-- Single input -->
-            <input type="text" step="any" wire:model.lazy="down_payment_amount" class="form-control"
-                placeholder="{{ $down_payment_type === '%'
-                    ? 'Enter down payment amount (e.g., 20)'
-                    : 'Enter down payment amount (e.g., 100000)' }}"
-                data-error-id="down_payment_amount_error" oninput="validateInput(this)" onblur="reformatNumber(this)"
-                onpaste="handlePaste(event)">
-
-            <!-- Suffix (only show % when percentage is selected) -->
-            @if($down_payment_type === '%')
-            <span class="input-group-text">%</span>
-            @endif
-        </div>
-        <span class="error mt-2" id="down_payment_amount_error"></span>
-
-    </div>
-
-    <div class="form-group mt-2">
-        <label class="fw-bold"> Seller Financing:</label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the portion of the purchase price the Seller is willing to finance for the Buyer.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-group">
-            <!-- Select for type -->
-            <select wire:model="seller_financing_type" class="form-select" style="max-width: 100px;">
-                <option value="%">%</option>
-                <option value="$">$</option>
-            </select>
-
-            <!-- Single input -->
-            <input type="text" step="any" wire:model.lazy="seller_down_payment_amount" class="form-control"
-                placeholder="{{ $seller_financing_type === '%'
-                    ? 'Enter seller financing amount (e.g., 80)'
-                    : 'Enter seller financing amount (e.g., 400000)' }}"
-                data-error-id="seller_down_payment_amount_error" oninput="validateInput(this)"
-                onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-
-            <!-- Suffix (only show % when percentage is selected) -->
-            @if($seller_financing_type === '%')
-            <span class="input-group-text">%</span>
-            @endif
-        </div>
-        <span class="error mt-2" id="seller_down_payment_amount_error"></span>
-
-    </div>
-
-    <div class="form-group">
-        <label class="fw-bold"> Interest Rate:</label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the interest rate the Seller will charge on the seller-financed amount.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-
-        <div class="input-cover">
-            <input type="number" wire:model="interest_rate" class="form-control has-icon percentage-value-set"
-                placeholder="Enter interest rate (e.g., 6.5)">
-            <span class="input-group-text-seller">%</span>
-
-        </div>
-    </div>
-
-    <div class="form-group">
-        <label class="fw-bold"> Loan Duration (Years):</label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the term of the loan in years.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-
-        <div class="input-cover">
-            <input type="text" wire:model="loan_duration" class="form-control has-icon"
-                data-icon="fa-regular fa-calendar-days" placeholder="Enter loan duration in years (e.g., 30)">
-        </div>
-    </div>
-
-    <div class="form-group mt-3">
-        <label class="fw-bold">Prepayment Penalty:</label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Indicate if a penalty applies for early payoff and, if so, enter the amount.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-
-        <div class="input-cover">
-            <select wire:model="prepayment_penalty" class="form-control has-icon"
-                data-icon="fa-solid fa-exclamation-circle">
-                <option value="">Select</option>
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
-            </select>
-        </div>
-    </div>
-
-    @if ($prepayment_penalty === 'Yes')
-        <div class="form-group">
-            <label class="fw-bold">Prepayment Penalty Amount:</label>
-            <div class="input-cover">
-                <span class="input-group-text-seller">$</span>
-
-                <input type="text" wire:model="prepayment_penalty_amount" class="form-control has-icon"
-                    placeholder="Enter prepayment penalty amount (e.g., 5000)"
-                    data-error-id="prepayment_penalty_amount_error" oninput="validateInput(this)"
-                    onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-            </div>
-
-            <span class="error mt-2" id="prepayment_penalty_amount_error"></span>
-
-        </div>
-    @endif
-
-    <div class="form-group mt-3">
-        <label class="fw-bold">Balloon Payment:</label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Indicate if a balloon payment is required and, if so, enter the amount and due date.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-
-        <div class="input-cover">
-            <select wire:model="balloon_payment" class="form-control has-icon"
-                data-icon="fa-solid fa-money-bill-wave">
-                <option value="">Select</option>
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
-            </select>
-        </div>
-    </div>
-
-    @if ($balloon_payment === 'Yes')
-        <div class="form-group">
-            <label class="fw-bold">Balloon Payment Amount:</label>
-            <div class="input-cover">
-                <span class="input-group-text-seller">$</span>
-
-                <input type="text" wire:model="balloon_payment_amount" class="form-control has-icon"
-                    placeholder="Enter balloon payment amount (e.g., 100000)"
-                    data-error-id="balloon_payment_amount_error" oninput="validateInput(this)"
-                    onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-            </div>
-
-            <span class="error mt-2" id="balloon_payment_amount_error"></span>
-
-        </div>
-
-        <div class="form-group">
-            <label class="fw-bold">Balloon Payment Due Date:</label>
-            <div class="input-cover">
-                <input type="text" wire:model="balloon_payment_date" class="form-control has-icon"
-                    data-icon="fa-regular fa-calendar-days" placeholder="Enter ballon payment date (e.g., 5 Years)">
-
-            </div>
-        </div>
-    @endif
-
-    <!-- Amortization Type -->
-    <div class="form-group mt-3">
-        <label class="fw-bold">Amortization Type:
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select whether payments will fully amortize the loan over the term, be interest-only, or follow another structure.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-        </label>
-        <div class="input-cover">
-            <select wire:model="seller_amortization_type" class="form-control has-icon"
-                data-icon="fa-solid fa-chart-line">
-                <option value="">Select</option>
-                <option value="Fully Amortizing">Fully Amortizing</option>
-                <option value="Interest-Only">Interest-Only</option>
-                <option value="Other">Other</option>
-            </select>
-        </div>
-    </div>
-
-    @if (($seller_amortization_type ?? '') === 'Other')
-    <div class="form-group mt-2">
-        <div class="input-cover">
-            <input type="text" wire:model="seller_amortization_other" class="form-control has-icon"
-                data-icon="fa-solid fa-chart-line"
-                placeholder="Enter custom amortization type (e.g., Hybrid, Graduated Payments, Step-Up Structure)">
-        </div>
-    </div>
-    @endif
-
-    <!-- Payment Frequency -->
-    <div class="form-group mt-3">
-        <label class="fw-bold">Payment Frequency:
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select how often payments will be made to the Seller.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-        </label>
-        <div class="input-cover">
-            <select wire:model="seller_payment_frequency" class="form-control has-icon"
-                data-icon="fa-solid fa-calendar-check">
-                <option value="">Select</option>
-                <option value="Monthly">Monthly</option>
-                <option value="Bi-Weekly">Bi-Weekly</option>
-                <option value="Quarterly">Quarterly</option>
-                <option value="Annually">Annually</option>
-                <option value="Other">Other</option>
-            </select>
-        </div>
-    </div>
-
-    @if (($seller_payment_frequency ?? '') === 'Other')
-    <div class="form-group mt-2">
-        <div class="input-cover">
-            <input type="text" wire:model="seller_payment_frequency_other" class="form-control has-icon"
-                data-icon="fa-solid fa-calendar-check"
-                placeholder="Enter custom payment schedule (e.g., Semi-Annual, Lump Sum at Harvest)">
-        </div>
-    </div>
-    @endif
-
-    <!-- Late Payment Fee -->
-    <div class="form-group mt-3">
-        <label class="fw-bold">Late Payment Fee:
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the late payment fee amount and when it applies.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-        </label>
-        <div class="input-cover">
-            <input type="text" wire:model="seller_late_fee_amount" class="form-control has-icon"
-                data-icon="fa-solid fa-clock"
-                placeholder="Enter late fee and when it applies (e.g., $100 after 10 days late, or 5% of payment after 15 days)">
-        </div>
-    </div>
-@endif
 
 @if (in_array('Assumable', $offered_financing))
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
@@ -813,6 +542,144 @@
             <input type="text" wire:model="assumable_occupancy_other" class="form-control has-icon"
                 data-icon="fa-solid fa-house-user"
                 placeholder="Enter occupancy requirement (e.g., Must occupy within 90 days of closing)">
+        </div>
+    </div>
+    @endif
+@endif
+<!-- Cryptocurrency Option -->
+
+@if (in_array('Cryptocurrency', $offered_financing))
+    <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
+        <h5 class="fw-bold text-primary mb-0">
+            <i class="fa-brands fa-bitcoin me-2"></i>Cryptocurrency
+        </h5>
+    </div>
+    <div class="form-group">
+        <label class="fw-bold">Acceptable Cryptocurrency:</label>
+
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the type(s) of cryptocurrency the Seller is willing to accept (e.g., Bitcoin, Ethereum).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+
+        <div class="input-cover">
+            <input type="text" wire:model="cryptocurrency_type" class="form-control has-icon"
+                data-icon="fa-solid fa-money-bill-wave"
+                placeholder="Enter type of cryptocurrency (e.g., Bitcoin, Ethereum)">
+        </div>
+    </div>
+    <div class="form-group mt-3">
+        <label class="fw-bold">Percentage of Purchase Price to be Paid with Cryptocurrency:</label>
+
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the portion of the purchase price, as a percentage, that the Buyer is expected to pay in cryptocurrency.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+
+        <div class="input-cover">
+            <input type="text" wire:model="crypto_percentage" class="form-control has-icon percentage-value-set"
+                placeholder="Enter percentage of price paid with crypto (e.g., 50)"
+                data-error-id="crypto_percentage_error" oninput="validateInput(this)" onblur="reformatNumber(this)"
+                onpaste="handlePaste(event)">
+
+            <span class="input-group-text-seller">%</span>
+
+        </div>
+
+        <span class="error mt-2" id="crypto_percentage_error"></span>
+
+    </div>
+
+    <div class="form-group mt-3">
+        <label class="fw-bold">Percentage of Purchase Price to be Paid with Cash:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the portion of the purchase price, as a percentage, to be paid in cash or traditional currency. The two percentages should total 100%.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-group">
+            <input type="text" wire:model="cash_percentage_crypto" class="form-control"
+                placeholder="Enter percentage to be paid with cash (e.g., 50)"
+                data-error-id="cash_percentage_crypto_error"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+            <span class="input-group-text">%</span>
+        </div>
+        <span class="error mt-2" id="cash_percentage_crypto_error"></span>
+    </div>
+
+    <!-- Exchange / Conversion Method -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Exchange / Conversion Method:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Specify how the cryptocurrency will be converted to U.S. dollars at closing. Most transactions use the spot exchange rate at a set time (e.g., date of transfer or settlement).">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <input type="text" wire:model="crypto_exchange_method" class="form-control has-icon"
+                data-icon="fa-solid fa-exchange-alt"
+                placeholder="Enter how crypto will be valued (e.g., Spot price at closing, Coinbase exchange rate)">
+        </div>
+    </div>
+
+    <!-- Custodian / Wallet for Transfer -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Custodian / Wallet for Transfer:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter the wallet, exchange, platform, or escrow service where cryptocurrency will be transferred. Examples include Coinbase, Binance, an escrow wallet address, or a crypto title/escrow provider such as Propy Title. This ensures both parties agree on the transfer method.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <input type="text" wire:model="crypto_custodian_wallet" class="form-control has-icon"
+                data-icon="fa-solid fa-wallet"
+                placeholder="Enter wallet, exchange, or escrow service (e.g., Coinbase, Escrow Wallet, Propy Title)">
+        </div>
+    </div>
+
+    <!-- Transaction Fees Responsibility -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Transaction Fees Responsibility:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select who will be responsible for blockchain transaction fees (miner/gas fees) associated with the crypto transfer.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <select wire:model="crypto_transaction_fees" class="form-control has-icon"
+                data-icon="fa-solid fa-coins">
+                <option value="">Select</option>
+                <option value="Buyer">Buyer</option>
+                <option value="Seller">Seller</option>
+                <option value="Split">Split</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Timing of Transfer -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Timing of Transfer:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select when the cryptocurrency transfer will occur. Timing is important due to price volatility.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <select wire:model="crypto_transfer_timing" class="form-control has-icon"
+                data-icon="fa-solid fa-clock">
+                <option value="">Select</option>
+                <option value="At Contract Signing">At Contract Signing</option>
+                <option value="At Closing">At Closing</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+    </div>
+
+    @if (($crypto_transfer_timing ?? '') === 'Other')
+    <div class="form-group mt-2">
+        <div class="input-cover">
+            <input type="text" wire:model="crypto_transfer_timing_other" class="form-control has-icon"
+                data-icon="fa-solid fa-clock"
+                placeholder="Enter timing of transfer (e.g., within 48 hours of contract acceptance, partial transfer at inspection period)">
         </div>
     </div>
     @endif
@@ -1352,144 +1219,6 @@
     </div>
 @endif
 
-<!-- Cryptocurrency Option -->
-
-@if (in_array('Cryptocurrency', $offered_financing))
-    <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
-        <h5 class="fw-bold text-primary mb-0">
-            <i class="fa-brands fa-bitcoin me-2"></i>Cryptocurrency
-        </h5>
-    </div>
-    <div class="form-group">
-        <label class="fw-bold">Acceptable Cryptocurrency:</label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the type(s) of cryptocurrency the Seller is willing to accept (e.g., Bitcoin, Ethereum).">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-
-        <div class="input-cover">
-            <input type="text" wire:model="cryptocurrency_type" class="form-control has-icon"
-                data-icon="fa-solid fa-money-bill-wave"
-                placeholder="Enter type of cryptocurrency (e.g., Bitcoin, Ethereum)">
-        </div>
-    </div>
-    <div class="form-group mt-3">
-        <label class="fw-bold">Percentage of Purchase Price to be Paid with Cryptocurrency:</label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the portion of the purchase price, as a percentage, that the Buyer is expected to pay in cryptocurrency.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-
-        <div class="input-cover">
-            <input type="text" wire:model="crypto_percentage" class="form-control has-icon percentage-value-set"
-                placeholder="Enter percentage of price paid with crypto (e.g., 50)"
-                data-error-id="crypto_percentage_error" oninput="validateInput(this)" onblur="reformatNumber(this)"
-                onpaste="handlePaste(event)">
-
-            <span class="input-group-text-seller">%</span>
-
-        </div>
-
-        <span class="error mt-2" id="crypto_percentage_error"></span>
-
-    </div>
-
-    <div class="form-group mt-3">
-        <label class="fw-bold">Percentage of Purchase Price to be Paid with Cash:</label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the portion of the purchase price, as a percentage, to be paid in cash or traditional currency. The two percentages should total 100%.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-group">
-            <input type="text" wire:model="cash_percentage_crypto" class="form-control"
-                placeholder="Enter percentage to be paid with cash (e.g., 50)"
-                data-error-id="cash_percentage_crypto_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-            <span class="input-group-text">%</span>
-        </div>
-        <span class="error mt-2" id="cash_percentage_crypto_error"></span>
-    </div>
-
-    <!-- Exchange / Conversion Method -->
-    <div class="form-group mt-3">
-        <label class="fw-bold">Exchange / Conversion Method:
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Specify how the cryptocurrency will be converted to U.S. dollars at closing. Most transactions use the spot exchange rate at a set time (e.g., date of transfer or settlement).">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-        </label>
-        <div class="input-cover">
-            <input type="text" wire:model="crypto_exchange_method" class="form-control has-icon"
-                data-icon="fa-solid fa-exchange-alt"
-                placeholder="Enter how crypto will be valued (e.g., Spot price at closing, Coinbase exchange rate)">
-        </div>
-    </div>
-
-    <!-- Custodian / Wallet for Transfer -->
-    <div class="form-group mt-3">
-        <label class="fw-bold">Custodian / Wallet for Transfer:
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the wallet, exchange, platform, or escrow service where cryptocurrency will be transferred. Examples include Coinbase, Binance, an escrow wallet address, or a crypto title/escrow provider such as Propy Title. This ensures both parties agree on the transfer method.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-        </label>
-        <div class="input-cover">
-            <input type="text" wire:model="crypto_custodian_wallet" class="form-control has-icon"
-                data-icon="fa-solid fa-wallet"
-                placeholder="Enter wallet, exchange, or escrow service (e.g., Coinbase, Escrow Wallet, Propy Title)">
-        </div>
-    </div>
-
-    <!-- Transaction Fees Responsibility -->
-    <div class="form-group mt-3">
-        <label class="fw-bold">Transaction Fees Responsibility:
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select who will be responsible for blockchain transaction fees (miner/gas fees) associated with the crypto transfer.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-        </label>
-        <div class="input-cover">
-            <select wire:model="crypto_transaction_fees" class="form-control has-icon"
-                data-icon="fa-solid fa-coins">
-                <option value="">Select</option>
-                <option value="Buyer">Buyer</option>
-                <option value="Seller">Seller</option>
-                <option value="Split">Split</option>
-            </select>
-        </div>
-    </div>
-
-    <!-- Timing of Transfer -->
-    <div class="form-group mt-3">
-        <label class="fw-bold">Timing of Transfer:
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select when the cryptocurrency transfer will occur. Timing is important due to price volatility.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-        </label>
-        <div class="input-cover">
-            <select wire:model="crypto_transfer_timing" class="form-control has-icon"
-                data-icon="fa-solid fa-clock">
-                <option value="">Select</option>
-                <option value="At Contract Signing">At Contract Signing</option>
-                <option value="At Closing">At Closing</option>
-                <option value="Other">Other</option>
-            </select>
-        </div>
-    </div>
-
-    @if (($crypto_transfer_timing ?? '') === 'Other')
-    <div class="form-group mt-2">
-        <div class="input-cover">
-            <input type="text" wire:model="crypto_transfer_timing_other" class="form-control has-icon"
-                data-icon="fa-solid fa-clock"
-                placeholder="Enter timing of transfer (e.g., within 48 hours of contract acceptance, partial transfer at inspection period)">
-        </div>
-    </div>
-    @endif
-@endif
 
 <!-- NFT Option -->
 
@@ -1593,3 +1322,275 @@
         </div>
     </div>
 @endif
+<!-- Seller Financing -->
+
+@if (in_array('Seller Financing', $offered_financing))
+    <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
+        <h5 class="fw-bold text-primary mb-0">
+            <i class="fa-solid fa-handshake me-2"></i>Seller Financing
+        </h5>
+    </div>
+
+    <div class="form-group">
+        <label class="fw-bold"> Purchase Price:</label>
+
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the total price the Seller is seeking for the property.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <span class="input-group-text-seller">$</span>
+
+            <input type="text" wire:model="purchase_price" class="form-control has-icon"
+                placeholder="Enter total purchase price (e.g., 500000)" data-error-id="purchase_price_error"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+        </div>
+        <span class="error mt-2" id="purchase_price_error"></span>
+
+    </div>
+
+    <div class="form-group mt-2">
+        <label class="fw-bold"> Down Payment:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the minimum down payment amount the Seller will accept from the Buyer.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-group">
+            <!-- Select for type -->
+            <select wire:model="down_payment_type" class="form-select" style="max-width: 100px;">
+                <option value="%">%</option>
+                <option value="$">$</option>
+            </select>
+
+            <!-- Single input -->
+            <input type="text" step="any" wire:model.lazy="down_payment_amount" class="form-control"
+                placeholder="{{ $down_payment_type === '%'
+                    ? 'Enter down payment amount (e.g., 20)'
+                    : 'Enter down payment amount (e.g., 100000)' }}"
+                data-error-id="down_payment_amount_error" oninput="validateInput(this)" onblur="reformatNumber(this)"
+                onpaste="handlePaste(event)">
+
+            <!-- Suffix (only show % when percentage is selected) -->
+            @if($down_payment_type === '%')
+            <span class="input-group-text">%</span>
+            @endif
+        </div>
+        <span class="error mt-2" id="down_payment_amount_error"></span>
+
+    </div>
+
+    <div class="form-group mt-2">
+        <label class="fw-bold"> Seller Financing:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the portion of the purchase price the Seller is willing to finance for the Buyer.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-group">
+            <!-- Select for type -->
+            <select wire:model="seller_financing_type" class="form-select" style="max-width: 100px;">
+                <option value="%">%</option>
+                <option value="$">$</option>
+            </select>
+
+            <!-- Single input -->
+            <input type="text" step="any" wire:model.lazy="seller_down_payment_amount" class="form-control"
+                placeholder="{{ $seller_financing_type === '%'
+                    ? 'Enter seller financing amount (e.g., 80)'
+                    : 'Enter seller financing amount (e.g., 400000)' }}"
+                data-error-id="seller_down_payment_amount_error" oninput="validateInput(this)"
+                onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+
+            <!-- Suffix (only show % when percentage is selected) -->
+            @if($seller_financing_type === '%')
+            <span class="input-group-text">%</span>
+            @endif
+        </div>
+        <span class="error mt-2" id="seller_down_payment_amount_error"></span>
+
+    </div>
+
+    <div class="form-group">
+        <label class="fw-bold"> Interest Rate:</label>
+
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the interest rate the Seller will charge on the seller-financed amount.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+
+        <div class="input-cover">
+            <input type="number" wire:model="interest_rate" class="form-control has-icon percentage-value-set"
+                placeholder="Enter interest rate (e.g., 6.5)">
+            <span class="input-group-text-seller">%</span>
+
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="fw-bold"> Loan Duration (Years):</label>
+
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the term of the loan in years.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+
+        <div class="input-cover">
+            <input type="text" wire:model="loan_duration" class="form-control has-icon"
+                data-icon="fa-regular fa-calendar-days" placeholder="Enter loan duration in years (e.g., 30)">
+        </div>
+    </div>
+
+    <div class="form-group mt-3">
+        <label class="fw-bold">Prepayment Penalty:</label>
+
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Indicate if a penalty applies for early payoff and, if so, enter the amount.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+
+        <div class="input-cover">
+            <select wire:model="prepayment_penalty" class="form-control has-icon"
+                data-icon="fa-solid fa-exclamation-circle">
+                <option value="">Select</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+            </select>
+        </div>
+    </div>
+
+    @if ($prepayment_penalty === 'Yes')
+        <div class="form-group">
+            <label class="fw-bold">Prepayment Penalty Amount:</label>
+            <div class="input-cover">
+                <span class="input-group-text-seller">$</span>
+
+                <input type="text" wire:model="prepayment_penalty_amount" class="form-control has-icon"
+                    placeholder="Enter prepayment penalty amount (e.g., 5000)"
+                    data-error-id="prepayment_penalty_amount_error" oninput="validateInput(this)"
+                    onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+            </div>
+
+            <span class="error mt-2" id="prepayment_penalty_amount_error"></span>
+
+        </div>
+    @endif
+
+    <div class="form-group mt-3">
+        <label class="fw-bold">Balloon Payment:</label>
+
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Indicate if a balloon payment is required and, if so, enter the amount and due date.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+
+        <div class="input-cover">
+            <select wire:model="balloon_payment" class="form-control has-icon"
+                data-icon="fa-solid fa-money-bill-wave">
+                <option value="">Select</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+            </select>
+        </div>
+    </div>
+
+    @if ($balloon_payment === 'Yes')
+        <div class="form-group">
+            <label class="fw-bold">Balloon Payment Amount:</label>
+            <div class="input-cover">
+                <span class="input-group-text-seller">$</span>
+
+                <input type="text" wire:model="balloon_payment_amount" class="form-control has-icon"
+                    placeholder="Enter balloon payment amount (e.g., 100000)"
+                    data-error-id="balloon_payment_amount_error" oninput="validateInput(this)"
+                    onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+            </div>
+
+            <span class="error mt-2" id="balloon_payment_amount_error"></span>
+
+        </div>
+
+        <div class="form-group">
+            <label class="fw-bold">Balloon Payment Due Date:</label>
+            <div class="input-cover">
+                <input type="text" wire:model="balloon_payment_date" class="form-control has-icon"
+                    data-icon="fa-regular fa-calendar-days" placeholder="Enter ballon payment date (e.g., 5 Years)">
+
+            </div>
+        </div>
+    @endif
+
+    <!-- Amortization Type -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Amortization Type:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select whether payments will fully amortize the loan over the term, be interest-only, or follow another structure.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <select wire:model="seller_amortization_type" class="form-control has-icon"
+                data-icon="fa-solid fa-chart-line">
+                <option value="">Select</option>
+                <option value="Fully Amortizing">Fully Amortizing</option>
+                <option value="Interest-Only">Interest-Only</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+    </div>
+
+    @if (($seller_amortization_type ?? '') === 'Other')
+    <div class="form-group mt-2">
+        <div class="input-cover">
+            <input type="text" wire:model="seller_amortization_other" class="form-control has-icon"
+                data-icon="fa-solid fa-chart-line"
+                placeholder="Enter custom amortization type (e.g., Hybrid, Graduated Payments, Step-Up Structure)">
+        </div>
+    </div>
+    @endif
+
+    <!-- Payment Frequency -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Payment Frequency:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select how often payments will be made to the Seller.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <select wire:model="seller_payment_frequency" class="form-control has-icon"
+                data-icon="fa-solid fa-calendar-check">
+                <option value="">Select</option>
+                <option value="Monthly">Monthly</option>
+                <option value="Bi-Weekly">Bi-Weekly</option>
+                <option value="Quarterly">Quarterly</option>
+                <option value="Annually">Annually</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+    </div>
+
+    @if (($seller_payment_frequency ?? '') === 'Other')
+    <div class="form-group mt-2">
+        <div class="input-cover">
+            <input type="text" wire:model="seller_payment_frequency_other" class="form-control has-icon"
+                data-icon="fa-solid fa-calendar-check"
+                placeholder="Enter custom payment schedule (e.g., Semi-Annual, Lump Sum at Harvest)">
+        </div>
+    </div>
+    @endif
+
+    <!-- Late Payment Fee -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Late Payment Fee:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter the late payment fee amount and when it applies.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <input type="text" wire:model="seller_late_fee_amount" class="form-control has-icon"
+                data-icon="fa-solid fa-clock"
+                placeholder="Enter late fee and when it applies (e.g., $100 after 10 days late, or 5% of payment after 15 days)">
+        </div>
+    </div>
+@endif
+
