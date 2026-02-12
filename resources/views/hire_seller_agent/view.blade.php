@@ -393,6 +393,22 @@
                                     @endforeach
                                 @endif
                             </div>
+
+                            @php
+                                $businessTypeValue = @$auction->get->business_type_selected ?: @$auction->get->business_type;
+                                $otherBusinessType = @$auction->get->other_business_type;
+                            @endphp
+                            @if (!empty($businessTypeValue))
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
+                                    Business Type:
+                                    @if ($businessTypeValue != 'Other')
+                                        <span class="removeBold badge bg-secondary">{{ $businessTypeValue }}</span>
+                                    @elseif (!empty($otherBusinessType))
+                                        <span class="removeBold badge bg-secondary">{{ $otherBusinessType }}</span>
+                                    @endif
+                                </div>
+                            @endif
+
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Property Condition:
                                 @if (gettype(@$auction->get->condition_prop_buyer) == 'array')
@@ -581,6 +597,20 @@
 
 
 
+
+                            @if (@$auction->get->number_of_units != null && @$auction->get->number_of_units != '' && @$auction->get->number_of_units != 'null')
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
+                                    Number of Units:
+                                    <span class="removeBold">{{ @$auction->get->number_of_units }}</span>
+                                </div>
+                            @endif
+
+                            @if (@$auction->get->minimum_cap_rate != null && @$auction->get->minimum_cap_rate != '' && @$auction->get->minimum_cap_rate != 'null')
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
+                                    Cap Rate:
+                                    <span class="removeBold">{{ @$auction->get->minimum_cap_rate }}%</span>
+                                </div>
+                            @endif
 
                             @if (@$auction->get->pets != null)
                             <div class="col-md-12 col-12 pt-2 removeBold">
@@ -837,6 +867,135 @@
                             @endif
                         @endif
 
+                        {{-- Exchange/Trade Sub-Questions --}}
+                        @if (is_array(@$auction->get->offered_financing) && in_array('Exchange/Trade', @$auction->get->offered_financing))
+                            @if (@$auction->get->exchange_item != '' && @$auction->get->exchange_item != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Acceptable Exchange Item:</span>
+                                @if (@$auction->get->exchange_item === 'Other' && @$auction->get->other_exchange_item)
+                                    {{ str_replace('"', '', @$auction->get->other_exchange_item) }}
+                                @else
+                                    {{ str_replace('"', '', @$auction->get->exchange_item) }}
+                                @endif
+                            </div>
+                            @endif
+                            @if (@$auction->get->exchange_item_value != '' && @$auction->get->exchange_item_value != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Estimated Value of Exchange/Trade Item:</span>
+                                ${{ number_format((float) str_replace(',', '', @$auction->get->exchange_item_value)) }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->exchange_item_condition != '' && @$auction->get->exchange_item_condition != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Condition of Exchange/Trade Item:</span>
+                                {{ str_replace('"', '', @$auction->get->exchange_item_condition) }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->additional_cash != '' && @$auction->get->additional_cash != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Additional Cash Offered:</span>
+                                ${{ number_format((float) str_replace(',', '', @$auction->get->additional_cash)) }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->value_determination != '' && @$auction->get->value_determination != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Value of Exchange/Trade Item Determined By:</span>
+                                {{ str_replace('"', '', @$auction->get->value_determination) }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->exchange_transfer_method != '' && @$auction->get->exchange_transfer_method != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Transfer Method / Logistics:</span>
+                                {{ @$auction->get->exchange_transfer_method }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->exchange_liens != '' && @$auction->get->exchange_liens != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Liens / Encumbrances Disclosure:</span>
+                                {{ @$auction->get->exchange_liens }}
+                                @if (@$auction->get->exchange_liens === 'Yes' && @$auction->get->exchange_liens_details)
+                                    ({{ @$auction->get->exchange_liens_details }})
+                                @endif
+                            </div>
+                            @endif
+                            @if (@$auction->get->exchange_inspection_rights != '' && @$auction->get->exchange_inspection_rights != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Inspection / Verification Rights:</span>
+                                {{ @$auction->get->exchange_inspection_rights }}
+                            </div>
+                            @endif
+                        @endif
+
+                        {{-- Lease Purchase Sub-Questions --}}
+                        @if (is_array(@$auction->get->offered_financing) && in_array('Lease Purchase', @$auction->get->offered_financing))
+                            @if (@$auction->get->lease_purchase_price != '' && @$auction->get->lease_purchase_price != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Lease Purchase Price:</span>
+                                ${{ number_format((float) str_replace(',', '', @$auction->get->lease_purchase_price)) }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->lease_purchase_payment != '' && @$auction->get->lease_purchase_payment != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Monthly Payment Offered:</span>
+                                ${{ number_format((float) str_replace(',', '', @$auction->get->lease_purchase_payment)) }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->lease_purchase_duration != '' && @$auction->get->lease_purchase_duration != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Proposed Duration of Lease (Months):</span>
+                                {{ @$auction->get->lease_purchase_duration }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->lease_purchase_rent_credit != '' && @$auction->get->lease_purchase_rent_credit != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Rent Credit Toward Purchase Price:</span>
+                                {{ @$auction->get->lease_purchase_rent_credit }}
+                                @if (in_array(@$auction->get->lease_purchase_rent_credit, ['Yes', 'Partial']) && @$auction->get->lease_purchase_rent_credit_amount)
+                                    (${{ number_format((float) str_replace(',', '', @$auction->get->lease_purchase_rent_credit_amount)) }})
+                                @endif
+                            </div>
+                            @endif
+                            @if (@$auction->get->lease_purchase_deposit != '' && @$auction->get->lease_purchase_deposit != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Non-Refundable Deposit / Purchase Deposit:</span>
+                                ${{ number_format((float) str_replace(',', '', @$auction->get->lease_purchase_deposit)) }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->lease_purchase_conditions != '' && @$auction->get->lease_purchase_conditions != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Conditions or Requirements:</span>
+                                {{ str_replace('"', '', @$auction->get->lease_purchase_conditions) }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->lease_purchase_terms != '' && @$auction->get->lease_purchase_terms != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Specific Terms Proposed:</span>
+                                {{ str_replace('"', '', @$auction->get->lease_purchase_terms) }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->lease_purchase_maintenance != '' && @$auction->get->lease_purchase_maintenance != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Maintenance / Repair Responsibility:</span>
+                                {{ str_replace('"', '', @$auction->get->lease_purchase_maintenance) }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->lease_purchase_extension_terms != '' && @$auction->get->lease_purchase_extension_terms != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Extension Terms:</span>
+                                {{ str_replace('"', '', @$auction->get->lease_purchase_extension_terms) }}
+                            </div>
+                            @endif
+                            @if (@$auction->get->lease_purchase_option_fee != '' && @$auction->get->lease_purchase_option_fee != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold" style="margin-left: 1rem;">
+                                <span class="fw-bold">Option Fee:</span>
+                                {{ @$auction->get->lease_purchase_option_fee }}
+                                @if (@$auction->get->lease_purchase_option_fee === 'Yes' && @$auction->get->lease_purchase_option_fee_amount)
+                                    (${{ number_format((float) str_replace(',', '', @$auction->get->lease_purchase_option_fee_amount)) }})
+                                @endif
+                            </div>
+                            @endif
+                        @endif
+
                         <hr>
 
                         @php
@@ -1001,8 +1160,234 @@
                             ],
                         ];
 
+                        // Income seller service categories
+                        $incomeCategories = [
+                            "📢 Property Marketing & Listing Promotion" => [
+                                "List the property on the local Multiple Listing Service (MLS)",
+                                "Syndicate the listing to third-party platforms (e.g., Zillow.com, Realtor.com, Trulia.com, Homes.com)",
+                                "List the property on Crexi.com",
+                                "List the property on LoopNet.com",
+                                "Create a branded flyer with key rental data (e.g., unit mix, gross income, occupancy)",
+                                "Post the property on Craigslist under the \"Multi-Family for Sale\" category",
+                                "Share the listing on Nextdoor in Neighborhood or Community Groups",
+                                "Promote the listing on Facebook in Real Estate Investor or Multi-Family Buyer Groups",
+                                "Share the listing on Instagram using posts, stories, or reels",
+                                "Promote the listing on LinkedIn in Investment or Real Estate Groups",
+                                "Upload a TikTok video walkthrough of the property",
+                                "Upload a YouTube video walkthrough of the property",
+                                "Launch a mass email campaign promoting the listing",
+                                "Distribute printed flyers or postcards in target geographic areas",
+                                "Launch hyperlocal or interest-based digital ad campaigns promoting the listing",
+                            ],
+                            "🛠️ Listing Preparation & Investment Packaging" => [
+                                "Conduct a property walkthrough and provide recommendations for listing readiness",
+                                "Provide a custom listing preparation checklist",
+                                "Assist with assembling an income property packet, including rent roll, lease copies, and an income/expense summary (as available)",
+                                "Provide a visual consultation focused on interior layout, cleanliness, and unit presentation",
+                                "Provide a curb appeal consultation focused on exterior maintenance and first impressions",
+                                "Provide referrals to third-party vendors (e.g., cleaners, handypeople, electricians, landscapers). Vendor fees billed separately. Referrals only — no endorsement or warranty is made",
+                            ],
+                            "📸 Photography, Video & Virtual Media" => [
+                                "Provide professional property photography",
+                                "Provide aerial (drone) photography (subject to FAA Part 107 compliance)",
+                                "Provide a video walkthrough tour",
+                                "Provide a 3D virtual tour",
+                                "Provide virtual staging (digital enhancements only; no physical staging)",
+                                "Provide digital photo enhancements",
+                                "Create a basic schematic floor plan (non-certified; for marketing purposes only)",
+                            ],
+                            "🏘️ Showings & Access Coordination" => [
+                                "Respond to Buyer inquiries and screen for general qualifications",
+                                "Provide Non-Disclosure Agreement (NDA) templates for confidential showings or document access",
+                                "Ensure proper notice is provided if the property is occupied",
+                                "Install a real estate sign on the property",
+                                "Install a lockbox for Agent access",
+                                "Schedule and attend showings with prospective Buyers",
+                                "Coordinate showings with Buyer\u2019s Agents",
+                                "Collect and relay showing feedback to the Seller",
+                            ],
+                            "📉 Offer & Contract Management" => [
+                                "Present all offers to the Seller and summarize key terms, pricing, and contingencies",
+                                "Provide the Seller with the necessary disclosure forms required by state or local law",
+                                "Negotiate deal structure, deposits, due diligence timelines, and Buyer contingencies",
+                                "Draft and deliver counteroffers and manage revisions to the purchase agreement",
+                                "Manage communication with the Buyer\u2019s Agent or Buyers",
+                                "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
+                                "Assist with inspection-related negotiations and Buyer requests for repairs",
+                                "Monitor contract contingencies, including financing, lease audits, estoppel review, insurance, inspections, and environmental reports",
+                                "Provide referrals to Attorneys, Title Companies, Escrow Officers, or 1031 Exchange Professionals. Referrals only — no endorsement or warranty is made",
+                            ],
+                            "🧾 Closing Coordination & Transaction Management" => [
+                                "Review and organize due diligence documentation such as lease agreements, estoppel certificates, rent rolls, utility summaries, and operating expense breakdowns (as available)",
+                                "Coordinate with the Buyer\u2019s Agent, Buyer\u2019s Lender, Title, Escrow, and/or Attorney to prepare for Closing",
+                                "Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed",
+                                "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
+                                "Schedule and confirm the Final Walkthrough",
+                                "Schedule and confirm the Closing Appointment",
+                            ],
+                            "💡 Selling Strategy & Guidance" => [
+                                "Provide a Comparative Market Analysis (CMA) with pricing insights based on recent income property sales, rental income trends, unit mix, and local investor activity",
+                                "Assist in estimating Gross Rent Multiplier (GRM), Capitalization Rate (Cap Rate), or Price per Unit based on listing details and income property comparables",
+                                "Provide general insight on likely Investor Buyer behavior, common value drivers, and investment strategies",
+                                "Recommend adjustments to pricing or marketing strategy if the property is not receiving sufficient interest",
+                                "Provide general guidance on lease transfers, rent proration, security deposits, and possession timelines",
+                            ],
+                        ];
+
+                        // Business seller service categories
+                        $businessCategories = [
+                            "📢 Business Marketing & Listing Promotion" => [
+                                "List the Business Opportunity on the local Multiple Listing Service (MLS)",
+                                "List the Business Opportunity on Crexi.com",
+                                "List the Business Opportunity on LoopNet.com",
+                                "List the Business Opportunity on BizBuySell.com",
+                                "List the Business Opportunity on BizQuest.com",
+                                "List the Business Opportunity on BusinessesForSale.com",
+                                "Create a branded flyer summarizing the Business\u2019s key features (e.g., industry, cash flow, assets)",
+                                "Post the Business Opportunity on Craigslist under the \"Business for Sale\" category",
+                                "Promote the listing on Facebook in Business Buyer, Franchise, or Investor Groups",
+                                "Share the listing on Instagram using posts, stories, or reels",
+                                "Promote the listing on LinkedIn in Business Acquisition, Startup, or Investor Groups",
+                                "Upload a TikTok video summarizing the Business Opportunity",
+                                "Upload a YouTube video summarizing the Business Opportunity",
+                                "Launch a mass email campaign promoting the listing",
+                                "Distribute printed flyers or postcards in target geographic areas",
+                                "Launch hyperlocal or interest-based digital ad campaigns promoting the listing",
+                            ],
+                            "🛠️ Listing Preparation & Confidential Marketing" => [
+                                "Conduct a preliminary Seller consultation to gather details about the Business\u2019s operations, assets, and goals",
+                                "Provide a business sale checklist to collect financials, licenses, lease terms, and key operational details",
+                                "Assist with preparing a non-confidential teaser or executive summary for marketing purposes",
+                                "Organize internal documentation such as profit and loss statements, balance sheets, FF&E summaries, inventory lists, and staffing overviews (as available)",
+                                "Refer third-party professionals such as valuation experts, accountants, or financial consultants, if requested (referrals only — no endorsement or warranty is made)",
+                                "Compile essential marketing materials including business overviews, location descriptions, asset lists, and financial summaries",
+                            ],
+                            "📸 Photography, Video & Virtual Media" => [
+                                "Provide professional property photography",
+                                "Provide aerial (drone) photography (subject to FAA Part 107 compliance)",
+                                "Provide a video walkthrough tour",
+                                "Provide a 3D virtual tour",
+                                "Provide virtual staging (digital enhancements only; no physical staging)",
+                                "Provide digital photo enhancements",
+                                "Create a basic schematic floor plan (non-certified; for marketing purposes only)",
+                            ],
+                            "🏢 Showings & Access Coordination" => [
+                                "Respond to Buyer inquiries and screen for general qualifications",
+                                "Provide Non-Disclosure Agreement (NDA) templates for confidential showings or document access",
+                                "Ensure proper notice is provided if the property or business premises is occupied",
+                                "Install a real estate sign on the property",
+                                "Install a lockbox for Agent access",
+                                "Schedule and attend showings with prospective Buyers",
+                                "Coordinate showings with Buyer\u2019s Agents",
+                                "Coordinate directly with Tenant(s) or business staff to arrange access for showings",
+                                "Collect and relay showing feedback to the Seller",
+                            ],
+                            "📉 Offer & Contract Management" => [
+                                "Present all Letters of Intent (LOIs) or formal offers to the Seller and summarize key deal terms",
+                                "Provide the Seller with the necessary disclosure forms required by state or local law",
+                                "Negotiate deal terms such as purchase price, deposit structure, contingencies, transition period, and asset allocation",
+                                "Coordinate revisions, counteroffers, and ongoing communication with the Buyer or their representatives",
+                                "Manage communication with the Buyer\u2019s Broker or Buyer",
+                                "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
+                                "Monitor contract contingencies and organize delivery of due diligence materials such as leases, vendor contracts, tax filings, and financial statements",
+                                "Refer the Seller to legal counsel for formal contract drafting and execution (referrals only — no legal advice provided)",
+                                "Provide referrals to Business Attorneys, Escrow Officers, or Business Transfer Specialists (referrals only — no endorsement or warranty is made)",
+                            ],
+                            "📃 Closing Coordination & Transaction Management" => [
+                                "Coordinate Buyer inspections, management interviews, and site visits as applicable",
+                                "Provide a transaction checklist and track key deadlines throughout the escrow period",
+                                "Coordinate with the Buyer\u2019s Attorney, Escrow Officer, or designated Closing Facilitator",
+                                "Review the Settlement Statement and coordinate corrections with relevant parties",
+                                "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
+                                "Schedule and confirm the Final Walkthrough",
+                                "Schedule and confirm the Closing Appointment",
+                            ],
+                            "💡 Selling Strategy & Guidance" => [
+                                "Provide a business market overview with insights from recent comparable listings",
+                                "Identify likely Buyer types (e.g., Owner-Operator, Investor, Franchisee) and discuss common deal structures (e.g., asset sale, stock sale)",
+                                "Provide general insight on common value drivers such as cash flow, recurring revenue, transferable licenses, and key staff retention",
+                                "Provide general guidance on operational transition timelines, staff notifications, lease assignments, and post-sale training periods",
+                                "Provide referrals to business valuation, accounting, or legal professionals (referrals only — no endorsement or warranty is made)",
+                            ],
+                        ];
+
+                        // Vacant Land seller service categories
+                        $vacantLandCategories = [
+                            "📢 Property Marketing & Listing Promotion" => [
+                                "List the property in the local Multiple Listing Service (MLS)",
+                                "Syndicate the listing to third-party platforms (e.g., Zillow.com, Realtor.com, Trulia.com, Homes.com)",
+                                "List the property on LandWatch.com",
+                                "List the property on Land.com",
+                                "List the property on LandAndFarm.com",
+                                "Create a branded flyer highlighting lot features, zoning, and potential use",
+                                "Post the listing on Facebook Marketplace",
+                                "Post the listing on Craigslist under the \"Land for Sale\" category",
+                                "Share the listing on Nextdoor in Neighborhood or Rural Groups",
+                                "Promote the listing on Facebook in Land Buyers, Developers, or Homesteader Groups",
+                                "Share the listing on Instagram using posts, stories, or reels",
+                                "Promote the listing on LinkedIn in Land Acquisition or Investment Groups",
+                                "Upload a TikTok video summarizing the land opportunity",
+                                "Upload a YouTube video summarizing the land opportunity (e.g., drone tour, narrated overview)",
+                                "Launch a mass email campaign promoting the listing Distribute printed flyers or postcards in target geographic areas",
+                                "Launch hyperlocal or interest-based digital ad campaigns promoting the listing",
+                            ],
+                            "🛠️ Listing Preparation & Research" => [
+                                "Provide a checklist to gather parcel data (e.g., APN, lot size, zoning, utilities, and access)",
+                                "Assist with collecting public records, flood zone data, and land use information (as available)",
+                                "Provide referrals to surveyors, soil testers, or land service professionals (referrals only — no endorsement or warranty is made)",
+                            ],
+                            "📸 Photography, Video & Virtual Media" => [
+                                "Provide professional property photography",
+                                "Provide aerial (drone) photography (subject to FAA Part 107 compliance)",
+                                "Provide a video overview or narrated walkthrough",
+                                "Provide a 3D virtual tour (if applicable)",
+                                "Provide digital enhancements to media assets",
+                                "Provide a parcel map, topographical image, or plot plan (non-certified; for marketing purposes only)",
+                            ],
+                            "🏡 Showings & Access Coordination" => [
+                                "Install a real estate sign on the property",
+                                "Schedule and attend showings with prospective Buyers",
+                                "Coordinate showings with Buyer\u2019s Agents",
+                                "Collect and relay showing feedback to the Seller",
+                            ],
+                            "📉 Offer & Contract Management" => [
+                                "Present all offers to the Seller and summarize key terms, pricing, and contingencies",
+                                "Provide the Seller with the necessary disclosure forms required by state or local law",
+                                "Negotiate price, due diligence timelines, and closing terms",
+                                "Draft and deliver counteroffers and manage revisions to the purchase agreement",
+                                "Manage communication with the Buyer\u2019s Agent or Buyer",
+                                "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
+                                "Monitor contract contingencies, including survey, zoning verification, financing, and environmental reviews",
+                                "Provide referrals to Attorneys, Title Companies, Escrow Officers, or Land Use Professionals (referrals only — no endorsement or warranty is made)",
+                            ],
+                            "📃 Closing Coordination & Transaction Management" => [
+                                "Coordinate surveys, site visits, or environmental access with the Buyer or Buyer\u2019s Agent, as applicable",
+                                "Coordinate with Title, Escrow, and/or Attorney to prepare for Closing",
+                                "Review the Settlement Statement and coordinate with all parties if corrections are needed",
+                                "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
+                                "Schedule and confirm the Final Walkthrough",
+                                "Schedule and confirm the Closing Appointment",
+                            ],
+                            "💡 Selling Strategy & Guidance" => [
+                                "Provide a Comparative Market Analysis (CMA) with pricing recommendations based on recent land sales, zoning categories, and location-based trends",
+                                "Provide general insight on permitted uses, utility access, parcel features, and Buyer demand in the area",
+                                "Recommend adjustments to pricing or marketing strategy if the land is not receiving sufficient interest",
+                                "Provide general guidance on Seller obligations, disclosure requirements, and listing preparation",
+                            ],
+                        ];
+
                         // Select appropriate categories based on property type
-                        $categories = $isCommercial ? $commercialCategories : $residentialCategories;
+                        if ($isIncome) {
+                            $categories = $incomeCategories;
+                        } elseif ($isCommercial) {
+                            $categories = $commercialCategories;
+                        } elseif ($isBusinessOpportunity) {
+                            $categories = $businessCategories;
+                        } elseif ($isVacantLand) {
+                            $categories = $vacantLandCategories;
+                        } else {
+                            $categories = $residentialCategories;
+                        }
                         $allServices = is_array(@$auction->get->services) ? $auction->get->services : [];
                         $otherServices = is_array(@$auction->get->other_services) ? $auction->get->other_services : [];
 
@@ -1062,6 +1447,31 @@
                             @endif
                         </div>
                         @endif
+
+                        @php
+                            $photoEnhRaw = @$auction->get->photo_enhancements ?? null;
+                            $photoEnhancements = [];
+                            if ($photoEnhRaw) {
+                                $photoEnhancements = is_string($photoEnhRaw) ? (json_decode($photoEnhRaw, true) ?? []) : (array)$photoEnhRaw;
+                            }
+                            $customEnhancement = @$auction->get->custom_enhancement ?? '';
+                        @endphp
+                        @if (!empty($photoEnhancements))
+                        <div class="mt-3">
+                            <strong>📸 Digital Photo Enhancements</strong>
+                            <ul class="services">
+                                @foreach ($photoEnhancements as $enhancement)
+                                    @if ($enhancement !== 'Other')
+                                    <li style="font-size: 16px;">{{ $enhancement }}</li>
+                                    @endif
+                                @endforeach
+                                @if (in_array('Other', $photoEnhancements) && !empty($customEnhancement))
+                                <li style="font-size: 16px;">{{ $customEnhancement }}</li>
+                                @endif
+                            </ul>
+                        </div>
+                        @endif
+
                         <hr>
                         @if (@$auction->get->additional_details != null)
                             <div class="card-header section-header">
@@ -1087,7 +1497,7 @@
                         @if (@$auction->get->commission_structure != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Seller's Broker Commission Structure:
-                            <span class="removeBold">{{ $auction->get->commission_structure ?? '' }}</span>
+                            <span class="removeBold">{{ str_replace('"', '', @$auction->get->commission_structure) }}</span>
                         </div>
                         @endif
 
@@ -1124,7 +1534,7 @@
                         </div>
                         @endif
 
-                        <hr class="my-2">
+                        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
                         <!-- Lease Terms Sub-section -->
                         @if (@$auction->get->interested_purchase_fee_type != null)
@@ -1156,7 +1566,7 @@
                         @endif
                         @endif
 
-                        <hr class="my-2">
+                        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
                         <!-- Lease-Option Terms Sub-section -->
                         @if (@$auction->get->interested_lease_option_agreement != null)
@@ -1199,7 +1609,7 @@
                         @endif
                         @endif
 
-                        <hr class="my-2">
+                        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
                         <!-- Legal Terms Sub-section -->
                         <h5 class="mt-3 mb-2"><strong>Legal Terms:</strong></h5>
@@ -1265,7 +1675,7 @@
                         </div>
                         @endif
 
-                        <hr class="my-2">
+                        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
                         <!-- Brokerage Relationship Sub-section -->
                         <h5 class="mt-3 mb-2"><strong>Brokerage Relationship:</strong></h5>
@@ -1278,7 +1688,7 @@
                         @endif
 
                         @if (@$auction->get->additional_details_broker != null && @$auction->get->additional_details_broker != '')
-                        <hr class="my-2">
+                        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
                         <h5 class="mt-3 mb-2"><strong>Additional Terms:</strong></h5>
                         <div class="col-md-12 col-12 pt-2 removeBold">
                             {{ @$auction->get->additional_details_broker }}
