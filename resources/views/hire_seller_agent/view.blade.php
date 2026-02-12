@@ -1702,8 +1702,8 @@
                             @if ($hasMatchedServices)
                                 @foreach ($categories as $categoryName => $categoryServices)
                                     @php
-                                        $matchedServices = array_filter($allServices, function($service) use ($categoryServices) {
-                                            return in_array($service, $categoryServices);
+                                        $matchedServices = array_filter($categoryServices, function($service) use ($allServices) {
+                                            return in_array($service, $allServices);
                                         });
                                     @endphp
                                     @if (!empty($matchedServices))
@@ -1726,6 +1726,9 @@
                                             @endif
                                             @endforeach
                                         </ul>
+                                        @if (str_contains($categoryName, 'Photography, Video & Virtual Media'))
+                                            <p style="font-size: 14px; font-style: italic; margin-top: 0.25rem; margin-bottom: 0;">Note: These services may be provided by the Agent or through a third-party vendor.</p>
+                                        @endif
                                     </div>
                                     @endif
                                 @endforeach
