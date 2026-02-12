@@ -1523,7 +1523,7 @@
                             } elseif ($purchaseFeeType === 'combo' && (@$auction->get->purchase_fee_percentage_combo || @$auction->get->purchase_fee_flat_combo)) {
                                 $parts = [];
                                 if (@$auction->get->purchase_fee_percentage_combo) $parts[] = $fmtPercent(@$auction->get->purchase_fee_percentage_combo) . ' of Total Purchase Price';
-                                if (@$auction->get->purchase_fee_flat_combo) $parts[] = $fmtMoney(@$auction->get->purchase_fee_flat_combo) . ' flat';
+                                if (@$auction->get->purchase_fee_flat_combo) $parts[] = $fmtMoney(@$auction->get->purchase_fee_flat_combo);
                                 $sellerLeaseFeeCombined = implode(' + ', $parts);
                             } elseif ($purchaseFeeType === 'other' && @$auction->get->purchase_fee_other) {
                                 $sellerLeaseFeeCombined = @$auction->get->purchase_fee_other;
@@ -1551,7 +1551,7 @@
                             } elseif ($sellerLeaseFeeType === 'Flat Fee + Percentage' && (@$auction->get->lease_fee_flat_combo || @$auction->get->lease_fee_percentage_combo)) {
                                 $parts = [];
                                 if (@$auction->get->lease_fee_percentage_combo) $parts[] = $fmtPercent(@$auction->get->lease_fee_percentage_combo) . ' of Total Purchase Price';
-                                if (@$auction->get->lease_fee_flat_combo) $parts[] = $fmtMoney(@$auction->get->lease_fee_flat_combo) . ' flat';
+                                if (@$auction->get->lease_fee_flat_combo) $parts[] = $fmtMoney(@$auction->get->lease_fee_flat_combo);
                                 $sellerLeaseFeeCombined = implode(' + ', $parts);
                             } elseif ($sellerLeaseFeeType === 'Percentage of the Net Aggregate Rent' && @$auction->get->lease_fee_percentage_net) {
                                 $sellerLeaseFeeCombined = $fmtPercent(@$auction->get->lease_fee_percentage_net) . ' of Net Aggregate Rent';
@@ -1568,9 +1568,17 @@
                         @endif
 
                         @if (@$auction->get->commission_structure != null)
+                        @php
+                            $commStructureRaw = str_replace('"', '', @$auction->get->commission_structure);
+                            $commStructureMap = [
+                                'Out-of-Pocket Payment' => "Seller to Pay Buyer's Broker Separately",
+                                'Included in Offer' => "Seller's Broker to Compensate Buyer's Broker from Seller's Broker Commission",
+                            ];
+                            $commStructureDisplay = $commStructureMap[$commStructureRaw] ?? $commStructureRaw;
+                        @endphp
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Buyer's Broker Commission Structure:
-                            <span class="removeBold">{{ str_replace('"', '', @$auction->get->commission_structure) }}</span>
+                            <span class="removeBold">{{ $commStructureDisplay }}</span>
                         </div>
                         @endif
 
@@ -1586,7 +1594,7 @@
                             } elseif ($buyerBrokerFeeType === 'Flat Fee + Percentage' && (@$auction->get->commission_structure_type_fee_flat_combo || @$auction->get->commission_structure_type_fee_percentage_combo)) {
                                 $parts = [];
                                 if (@$auction->get->commission_structure_type_fee_percentage_combo) $parts[] = $fmtPercent(@$auction->get->commission_structure_type_fee_percentage_combo) . ' of Total Purchase Price';
-                                if (@$auction->get->commission_structure_type_fee_flat_combo) $parts[] = $fmtMoney(@$auction->get->commission_structure_type_fee_flat_combo) . ' flat';
+                                if (@$auction->get->commission_structure_type_fee_flat_combo) $parts[] = $fmtMoney(@$auction->get->commission_structure_type_fee_flat_combo);
                                 $buyerBrokerFee = implode(' + ', $parts);
                             } elseif (strtolower($buyerBrokerFeeType) === 'other' && @$auction->get->commission_structure_type_fee_other) {
                                 $buyerBrokerFee = @$auction->get->commission_structure_type_fee_other;
@@ -1719,19 +1727,19 @@
                         @endif
                         @endif
 
-                        @if (@$auction->get->retainer_fee_option != null)
+                        @if (!empty(@$auction->get->retainer_fee_option))
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Retainer Fee:
                             <span class="removeBold">{{ in_array(strtolower(@$auction->get->retainer_fee_option ?? ''), ['yes']) ? 'Yes' : 'No' }}</span>
                         </div>
                         @if (in_array(strtolower(@$auction->get->retainer_fee_option ?? ''), ['yes']))
-                            @if (@$auction->get->retainer_fee_amount)
+                            @if (!empty(@$auction->get->retainer_fee_amount))
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Retainer Fee Amount:
                                 <span class="removeBold">{{ $fmtMoney(@$auction->get->retainer_fee_amount) }}</span>
                             </div>
                             @endif
-                            @if (@$auction->get->retainer_fee_application)
+                            @if (!empty(@$auction->get->retainer_fee_application))
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Retainer Fee Application:
                                 <span class="removeBold">{{ @$auction->get->retainer_fee_application }}</span>
