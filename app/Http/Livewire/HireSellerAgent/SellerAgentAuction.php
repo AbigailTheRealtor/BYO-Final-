@@ -1955,6 +1955,7 @@ class SellerAgentAuction extends Component
         $auction->saveMeta('garage_parking_spaces', $this->garage_parking_spaces);
         $auction->saveMeta('garage_parking_spaces_option', $this->garage_parking_spaces_option);
         $auction->saveMeta('other_parking_space_wrapper', $this->other_parking_space_wrapper);
+        \Log::info('[SELLER POOL DEBUG]', ['pool_needed' => $this->pool_needed, 'pool_type' => $this->pool_type, 'property_type' => $this->property_type]);
         $auction->saveMeta('pool_needed', $this->pool_needed);
         $auction->saveMeta('pool_type', json_encode($this->pool_type));
         $auction->saveMeta('view_preference', json_encode($this->view_preference));

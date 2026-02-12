@@ -1,0 +1,174 @@
+## ✅ REPLIT COPY/PASTE INSTRUCTIONS (WITH SAFEGUARDS)
+
+### Bug: Hire a Seller’s Agent (Residential) → **Pool selection is not saving**, so it **does not show on Actual Listing**
+
+### Test Login: **[tenant@exp.com](mailto:tenant@exp.com)**
+
+### Scope: **Create → Save → Draft/Edit → Submit → Actual Listing Show Page**
+
+---
+
+# 1) REPRO STEPS (MUST FOLLOW EXACTLY)
+
+1. Login: **[tenant@exp.com](mailto:tenant@exp.com)**
+2. Go to: **Hire a Seller’s Agent** → Create Listing → **Residential**
+3. In Property Details, select:
+
+   * **Pool = Yes** (and select Pool Type/sub-fields if present)
+4. Complete minimum required fields and **Submit** listing (not just draft).
+5. Open the **actual listing view**.
+6. Confirm: **Pool is missing**.
+7. Go back → **Edit** listing:
+
+   * Confirm if Pool is **unchecked/blank** (this proves it did not save).
+
+---
+
+# 2) ROOT CAUSE (WHAT TO CHECK)
+
+This issue is almost always one of these:
+
+* Pool input is **not bound** correctly to the Livewire/React state (UI selection never reaches backend).
+* Pool field is **missing from validation rules** OR missing from the **“allowed fields”** list, so it gets dropped.
+* Pool field is **not included in the save payload** for Seller listings (create + update).
+* Pool is saved to a different key than the show page reads (less likely here because you said it’s not saving at all).
+
+---
+
+# 3) FIX: ENSURE POOL IS INCLUDED IN SELLER RESIDENTIAL SAVE PIPELINE
+
+## 3A) Confirm the field name and standardize it
+
+### Instructions
+
+1. Identify the exact field name used in the Seller Residential form UI (examples):
+
+   * `pool`
+   * `has_pool`
+   * `pool_yn`
+   * `property_details.pool`
+2. Pick ONE canonical key (recommended: `pool` with values `Yes/No` or boolean) and use it consistently:
+
+   * Create form binding
+   * Draft saving
+   * Final submit saving
+   * Edit re-population
+   * Show page display
+
+### Safeguards
+
+* Do not create a second “pool” key.
+* Don’t store label text like “Yes” in one place and booleans in another. Normalize.
+
+---
+
+## 3B) Fix form binding (Pool must update state)
+
+### Instructions
+
+1. In the Seller Residential create form component, locate the Pool input.
+2. Confirm it is properly bound (examples):
+
+   * Livewire: `wire:model="form.pool"` (or whatever your state object is)
+   * React/Vue: value + onChange updates the listing state
+3. Ensure Pool selection updates the state immediately (no missing event handler).
+
+### Safeguards
+
+* Add a dev-only temporary debug readout under the field to confirm state updates:
+
+  * Example: “Pool State: {{ $form['pool'] ?? '' }}”
+* Remove debug after confirmed.
+
+---
+
+## 3C) Fix backend “save” (create + update)
+
+### Instructions
+
+1. In the Seller listing create handler (the method that persists the listing), ensure `pool` is explicitly included when building the payload:
+
+   * Add `pool` to the allowed fillable fields / saved attributes list
+   * If using a `property_details` JSON column, ensure `pool` is written into that JSON object
+2. Do the same in the Seller listing update handler (edit flow).
+
+### Safeguards
+
+* If you use a whitelist like `$allowedFields` or `$fillable`:
+
+  * Pool MUST be included or it will be silently dropped.
+* If you validate inputs:
+
+  * Pool must be included in validation rules (even if optional), otherwise it can be stripped from `$validated`.
+* If you use `array_filter()` anywhere on the save payload:
+
+  * It may be removing values like `0/false`. Ensure Pool “No” doesn’t get filtered out unintentionally.
+
+---
+
+## 3D) Fix draft saving (if your drafts store separately)
+
+### Instructions
+
+1. If drafts are saved to a separate table or JSON object, ensure Pool is included there too.
+2. Confirm “Load Draft” repopulates Pool in the UI.
+
+### Safeguards
+
+* Draft and final listing must use the same keys, or the field won’t carry over on submit.
+* Add a test: Save draft with Pool=Yes → reload draft → confirm it stays selected → submit → confirm it persists.
+
+---
+
+# 4) FIX: SHOW PAGE DISPLAY (AFTER SAVING IS FIXED)
+
+### Instructions
+
+1. In the Seller Residential actual listing show page, add:
+
+   * `Pool: [Yes/No]`
+2. Read from the same canonical key you saved (`pool`).
+
+### Safeguards
+
+* No “Not Provided” text.
+* If Pool is empty, hide the line or show blank (match your platform standard).
+
+---
+
+# 5) QA ACCEPTANCE TESTS (MUST PASS)
+
+Using [tenant@exp.com](mailto:tenant@exp.com):
+
+### Test A — Create → Submit
+
+* Select Pool = Yes
+* Submit listing
+* Open actual listing
+  ✅ Pool displays
+
+### Test B — Edit persistence
+
+* Edit listing after submit
+  ✅ Pool still selected
+* Save
+* Reopen listing
+  ✅ Pool still displays
+
+### Test C — Draft persistence (if applicable)
+
+* Save Draft with Pool = Yes
+* Reopen Draft
+  ✅ Pool still selected
+* Submit
+  ✅ Pool displays on actual listing
+
+---
+
+# 6) “DONE WHEN” STATEMENT (PASTE INTO REPLIT TICKET)
+
+Pool field for Hire a Seller’s Agent (Residential) is correctly bound, validated, saved (draft + submit + update), repopulates on edit/draft load, and renders on the actual listing view. Selecting Pool=Yes persists to DB and displays on show page for [tenant@exp.com](mailto:tenant@exp.com) test listing.
+
+---
+
+If you paste the **Seller Residential create form snippet** where Pool is defined (just that section), I’ll rewrite the above into **exact line-level instructions** for that component so Replit can’t miss it.
