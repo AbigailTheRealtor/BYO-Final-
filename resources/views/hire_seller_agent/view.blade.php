@@ -620,16 +620,14 @@
                             @if (!empty($appliancesList))
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Appliances Included:
-                                    <span class="removeBold">
-                                        @foreach ($appliancesList as $appliance)
-                                            @if ($appliance !== 'Other')
-                                                {{ $appliance }}@if (!$loop->last), @endif
-                                            @endif
-                                        @endforeach
-                                        @if (in_array('Other', $appliancesList) && !empty($otherAppliances))
-                                            , {{ $otherAppliances }}
+                                    @foreach ($appliancesList as $appliance)
+                                        @if ($appliance !== 'Other')
+                                            <span class="removeBold badge bg-secondary">{{ $appliance }}</span>
                                         @endif
-                                    </span>
+                                    @endforeach
+                                    @if (in_array('Other', $appliancesList) && !empty($otherAppliances))
+                                        <span class="removeBold badge bg-secondary">{{ $otherAppliances }}</span>
+                                    @endif
                                 </div>
                             @endif
                             @if (@$auction->get->view_preference != null || @$auction->get->other_preferences != null)
@@ -708,13 +706,18 @@
 
                                 <div class="col-md-12 col-12 pt-2 removeBold">
                                     <span class="fw-bold">Maximum Weight Per Pet (lbs):</span>
-                                    {{ @$auction->get->maximum_weight_per_pet ?? @$auction->get->max_pet_weight ?? 'Not Provided' }}
+                                    {{ @$auction->get->weight_of_pets ?? 'Not Provided' }}
                                 </div>
 
+                                @if (@$auction->get->has_breed_restrictions != null && @$auction->get->has_breed_restrictions != '' && @$auction->get->has_breed_restrictions != 'null')
                                 <div class="col-md-12 col-12 pt-2 removeBold">
-                                    <span class="fw-bold">Pet Restrictions:</span>
-                                    {{ @$auction->get->pet_restrictions ?? 'Not Provided' }}
+                                    <span class="fw-bold">Breed Restrictions:</span>
+                                    {{ @$auction->get->has_breed_restrictions }}
+                                    @if (strtolower(@$auction->get->has_breed_restrictions) === 'yes' && @$auction->get->breed_restrictions)
+                                        &mdash; {{ @$auction->get->breed_restrictions }}
+                                    @endif
                                 </div>
+                                @endif
                             @endif
 
                         </div>
@@ -774,13 +777,6 @@
                                     $salePriceRaw = str_replace(',', '', @$auction->get->maximum_budget);
                                     echo is_numeric($salePriceRaw) ? '$' . number_format((float)$salePriceRaw, 0) : '$' . @$auction->get->maximum_budget;
                                 @endphp
-                            </div>
-                        @endif
-
-                        @if (@$auction->get->current_status != null && @$auction->get->current_status != '' && @$auction->get->current_status != 'null')
-                            <div class="col-md-12 col-12 pt-2 removeBold">
-                                <span class="fw-bold">Seller's Current Status:</span>
-                                {{ @$auction->get->current_status }}
                             </div>
                         @endif
 
@@ -1679,13 +1675,32 @@
                             $leasingType = @$auction->get->seller_leasing_fee_type;
                             if ($leasingType === 'Flat Fee' && @$auction->get->seller_leasing_gross_purchase_fee_flat_amount) {
                                 $sellerLeasingFee = $fmtMoney(@$auction->get->seller_leasing_gross_purchase_fee_flat_amount);
-                            } elseif ($leasingType === 'Percentage of Gross Lease Value' && @$auction->get->seller_leasing_gross) {
-                                $sellerLeasingFee = $fmtPercent(@$auction->get->seller_leasing_gross) . ' of Gross Lease Value';
-                            } elseif ($leasingType === 'Percentage of Gross Monthly Rent' && @$auction->get->seller_leasing_gross_month_rent) {
-                                $sellerLeasingFee = $fmtPercent(@$auction->get->seller_leasing_gross_month_rent) . ' of Gross Monthly Rent';
-                            } elseif (strtolower($leasingType) === 'other' && @$auction->get->seller_leasing_gross_other) {
-                                $sellerLeasingFee = @$auction->get->seller_leasing_gross_other;
-                            } else {
+                            } elseif ($leasingType === 'Percentage of the Gross Lease Value' && @$auction->get->seller_leasing_gross) {
+                                $sellerLeasingFee = $fmtPercent(@$auction->get->seller_leasing_gross) . ' of the Gross Lease Value';
+                            } elseif ($leasingType === 'Percentage of the Rent Due Each Rental Period' && @$auction->get->seller_leasing_gross_rental) {
+                                $sellerLeasingFee = $fmtPercent(@$auction->get->seller_leasing_gross_rental) . ' of the Rent Due Each Rental Period';
+                            } elseif ($leasingType === "Percentage of the First Month's Rent" && @$auction->get->seller_leasing_gross_month_rent) {
+                                $sellerLeasingFee = $fmtPercent(@$auction->get->seller_leasing_gross_month_rent) . " of the First Month's Rent";
+                            } elseif ($leasingType === "Percentage of Month's Rent" && @$auction->get->seller_leasing_gross_month_rent) {
+                                $sellerLeasingFee = $fmtPercent(@$auction->get->seller_leasing_gross_month_rent) . " of Month's Rent";
+                            } elseif ($leasingType === 'Percentage of Net Aggregate Rent' && @$auction->get->seller_leasing_gross_other) {
+                                $sellerLeasingFee = $fmtPercent(@$auction->get->seller_leasing_gross_other) . ' of Net Aggregate Rent';
+                            } elseif ($leasingType === 'Percentage of Gross Rent' && (@$auction->get->seller_leasing_gross_percentage || @$auction->get->seller_leasing_gross_ross_percentage_rent)) {
+                                $grossRentVal = @$auction->get->seller_leasing_gross_percentage ?? @$auction->get->seller_leasing_gross_ross_percentage_rent;
+                                $sellerLeasingFee = $fmtPercent($grossRentVal) . ' of Gross Rent';
+                            } elseif ($leasingType === 'Flat Fee + Percentage of the Gross Lease Value' && (@$auction->get->seller_leasing_gross_flat_combo || @$auction->get->seller_leasing_gross_percentage_combo)) {
+                                $parts = [];
+                                if (@$auction->get->seller_leasing_gross_flat_combo) $parts[] = $fmtMoney(@$auction->get->seller_leasing_gross_flat_combo);
+                                if (@$auction->get->seller_leasing_gross_percentage_combo) $parts[] = $fmtPercent(@$auction->get->seller_leasing_gross_percentage_combo) . ' of Gross Lease Value';
+                                $sellerLeasingFee = implode(' + ', $parts);
+                            } elseif ($leasingType === 'Flat Fee + Percentage of the Net Aggregate Rent' && (@$auction->get->seller_leasing_gross_flat_net_combo || @$auction->get->seller_leasing_gross_percentage_net_combo)) {
+                                $parts = [];
+                                if (@$auction->get->seller_leasing_gross_flat_net_combo) $parts[] = $fmtMoney(@$auction->get->seller_leasing_gross_flat_net_combo);
+                                if (@$auction->get->seller_leasing_gross_percentage_net_combo) $parts[] = $fmtPercent(@$auction->get->seller_leasing_gross_percentage_net_combo) . ' of Net Aggregate Rent';
+                                $sellerLeasingFee = implode(' + ', $parts);
+                            } elseif (strtolower($leasingType) === 'other' && @$auction->get->seller_leasing_gross_purchase_fee_other) {
+                                $sellerLeasingFee = @$auction->get->seller_leasing_gross_purchase_fee_other;
+                            } elseif ($leasingType) {
                                 $sellerLeasingFee = $leasingType;
                             }
                         @endphp
@@ -1747,16 +1762,16 @@
                         @if (@$auction->get->protection_period != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Protection Period Timeframe:
-                            <span class="removeBold">{{ $auction->get->protection_period }} days</span>
+                            <span class="removeBold">{{ $auction->get->protection_period }} Days</span>
                         </div>
                         @endif
 
                         @if (@$auction->get->early_termination_fee_option != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Early Termination Fee:
-                            <span class="removeBold">{{ @$auction->get->early_termination_fee_option }}</span>
+                            <span class="removeBold">{{ ucfirst(strtolower(@$auction->get->early_termination_fee_option)) }}</span>
                         </div>
-                        @if (@$auction->get->early_termination_fee_option === 'Yes' && @$auction->get->early_termination_fee_amount)
+                        @if (in_array(strtolower(@$auction->get->early_termination_fee_option ?? ''), ['yes', '1', 'true']) && @$auction->get->early_termination_fee_amount)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Termination Fee Amount:
                             <span class="removeBold">{{ $fmtMoney(@$auction->get->early_termination_fee_amount) }}</span>
@@ -1788,7 +1803,7 @@
                         @if (@$auction->get->retained_deposits != null && @$auction->get->retained_deposits != '' && @$auction->get->retained_deposits != 'null')
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Seller's Broker's Share of Retained Deposits:
-                            <span class="removeBold">{{ $fmtMoney(@$auction->get->retained_deposits) }}</span>
+                            <span class="removeBold">{{ $fmtPercent(@$auction->get->retained_deposits) }}</span>
                         </div>
                         @endif
 
@@ -1831,6 +1846,14 @@
                         <div class="card-header section-header">
                             <h4 class="section-title">Seller Info</h4>
                         </div>
+
+                        @if (@$auction->get->current_status != null && @$auction->get->current_status != '' && @$auction->get->current_status != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold">
+                                <span class="fw-bold">Seller's Current Status:</span>
+                                {{ @$auction->get->current_status }}
+                            </div>
+                        @endif
+
                         @if (!empty($auction->get->first_name))
                             <div class="col-md-12 col-12 pt-2 fw-bold">First
                                 Name:
