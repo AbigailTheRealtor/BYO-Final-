@@ -322,6 +322,11 @@
 <!-- Seller Financing -->
 
 @if (in_array('Seller Financing', $offered_financing))
+    <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
+        <h5 class="fw-bold text-primary mb-0">
+            <i class="fa-solid fa-handshake me-2"></i>Seller Financing
+        </h5>
+    </div>
 
     <div class="form-group">
         <label class="fw-bold"> Purchase Price:</label>
@@ -587,6 +592,11 @@
 @endif
 
 @if (in_array('Assumable', $offered_financing))
+    <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
+        <h5 class="fw-bold text-primary mb-0">
+            <i class="fa-solid fa-arrow-right-arrow-left me-2"></i>Assumable
+        </h5>
+    </div>
     <div class="form-group">
         <label class="fw-bold">Offered Assumable Terms:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -810,6 +820,11 @@
 <!-- Exchange/Trade Option -->
 
 @if (in_array('Exchange/Trade', $offered_financing))
+    <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
+        <h5 class="fw-bold text-primary mb-0">
+            <i class="fa-solid fa-exchange-alt me-2"></i>Exchange/Trade
+        </h5>
+    </div>
 
     <div class="form-group mt-3">
         <label class="fw-bold">Acceptable Exchange Item:</label>
@@ -986,6 +1001,11 @@
 <!-- Lease Option -->
 
 @if (in_array('Lease Option', $offered_financing))
+    <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
+        <h5 class="fw-bold text-primary mb-0">
+            <i class="fa-solid fa-key me-2"></i>Lease Option
+        </h5>
+    </div>
     <!-- 1. Seller's Desired Offering Price for Lease Option -->
     <div class="form-group">
         <label class="fw-bold">Seller's Desired Offering Price for Lease Option:</label>
@@ -1160,6 +1180,11 @@
 <!-- Lease Purchase -->
 
 @if (in_array('Lease Purchase', $offered_financing))
+    <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
+        <h5 class="fw-bold text-primary mb-0">
+            <i class="fa-solid fa-file-signature me-2"></i>Lease Purchase
+        </h5>
+    </div>
     <div class="alert alert-warning mt-3 p-2 small">
         📌 If this transaction is structured as a Lease-Purchase, the Seller’s Broker Purchase Fee applies upon
         successful closing of the sale. Under Broker Compensation, use the Lease Fee or Lease-Option Fee sections only
@@ -1330,6 +1355,11 @@
 <!-- Cryptocurrency Option -->
 
 @if (in_array('Cryptocurrency', $offered_financing))
+    <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
+        <h5 class="fw-bold text-primary mb-0">
+            <i class="fa-brands fa-bitcoin me-2"></i>Cryptocurrency
+        </h5>
+    </div>
     <div class="form-group">
         <label class="fw-bold">Acceptable Cryptocurrency:</label>
 
@@ -1464,6 +1494,11 @@
 <!-- NFT Option -->
 
 @if (in_array('Non-Fungible Token (NFT)', $offered_financing))
+    <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
+        <h5 class="fw-bold text-primary mb-0">
+            <i class="fa-solid fa-image me-2"></i>Non-Fungible Token (NFT)
+        </h5>
+    </div>
     <div class="form-group mt-3">
         <label class="fw-bold">Acceptable Non-Fungible Token (NFT):</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
