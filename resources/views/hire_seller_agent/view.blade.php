@@ -350,46 +350,72 @@
 
                         <div class="row" style="flex-wrap: wrap;">
 
+                            @php
+                                $citiesData = @$auction->get->cities;
+                                $citiesArray = [];
+                                if ($citiesData) {
+                                    if (is_string($citiesData)) {
+                                        $citiesArray = json_decode($citiesData, true) ?? [];
+                                    } elseif (is_array($citiesData)) {
+                                        $citiesArray = $citiesData;
+                                    }
+                                }
+                                $citiesArray = array_filter($citiesArray);
 
-                            @if (@$auction->get->cities != null)
+                                $countiesData = @$auction->get->counties;
+                                $countiesArray = [];
+                                if ($countiesData) {
+                                    if (is_string($countiesData)) {
+                                        $countiesArray = json_decode($countiesData, true) ?? [];
+                                    } elseif (is_array($countiesData)) {
+                                        $countiesArray = $countiesData;
+                                    }
+                                }
+                                $countiesArray = array_filter($countiesArray);
+
+                                $stateVal = @$auction->get->state ?: @$auction->get->property_state;
+                                $zipVal = @$auction->get->zip_code ?: @$auction->get->property_zip;
+                                $propertyCityVal = @$auction->get->property_city;
+                                $propertyCountyVal = @$auction->get->property_county;
+
+                                $stripState = function($str) {
+                                    return trim(preg_replace('/,\s*[A-Z]{2}$/', '', $str));
+                                };
+                            @endphp
+
+                            @if (!empty($citiesArray))
                                 <div class="col-md-12 col-12 pt-2 fw-bold">City:
-                                    @if (gettype(@$auction->get->cities) == 'array')
-                                        @foreach (@$auction->get->cities as $item)
-                                            <span class="removeBold">{{ $item }}</span>
-                                        @endforeach
-                                    @endif
+                                    <span class="removeBold">
+                                        {{ implode('; ', array_map($stripState, $citiesArray)) }}
+                                    </span>
                                 </div>
-                            @endif
-                            @if (@$auction->get->counties != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    County:
-                                    @if (gettype(@$auction->get->counties) == 'array')
-                                        @foreach (@$auction->get->counties as $item)
-                                            <span class="removeBold">{{ $item }}</span>
-                                        @endforeach
-                                    @endif
-                                </div>
-                            @endif
-                            @if (@$auction->get->zip_code != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">ZIP
-                                    Code:
-                                    <span class="removeBold">{{ @$auction->get->zip_code }}</span>
-                                </div>
-                            @endif
-                            @if (@$auction->get->state != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">State:
-                                    <span class="removeBold">{{ @$auction->get->state }}</span>
+                            @elseif (!empty($propertyCityVal))
+                                <div class="col-md-12 col-12 pt-2 fw-bold">City:
+                                    <span class="removeBold">{{ $stripState($propertyCityVal) }}</span>
                                 </div>
                             @endif
 
-                            @if (@$auction->get->county != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">Property
-                                    Location:
-                                    @if (gettype(@$auction->get->cities) == 'array')
-                                        @foreach (@$auction->get->cities as $item)
-                                            <span class="removeBold">{{ $item }}</span>
-                                        @endforeach
-                                    @endif
+                            @if (!empty($countiesArray))
+                                <div class="col-md-12 col-12 pt-2 fw-bold">County:
+                                    <span class="removeBold">
+                                        {{ implode('; ', array_map($stripState, $countiesArray)) }}
+                                    </span>
+                                </div>
+                            @elseif (!empty($propertyCountyVal))
+                                <div class="col-md-12 col-12 pt-2 fw-bold">County:
+                                    <span class="removeBold">{{ $stripState($propertyCountyVal) }}</span>
+                                </div>
+                            @endif
+
+                            @if (!empty($stateVal))
+                                <div class="col-md-12 col-12 pt-2 fw-bold">State:
+                                    <span class="removeBold">{{ $stateVal }}</span>
+                                </div>
+                            @endif
+
+                            @if (!empty($zipVal))
+                                <div class="col-md-12 col-12 pt-2 fw-bold">ZIP Code:
+                                    <span class="removeBold">{{ $zipVal }}</span>
                                 </div>
                             @endif
                             <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -718,13 +744,13 @@
                                 </div>
                                 @endif
 
-                                @if (@$auction->get->has_breed_restrictions != null && @$auction->get->has_breed_restrictions != '' && @$auction->get->has_breed_restrictions != 'null')
+                                @php
+                                    $petRestrictVal = @$auction->get->breed_of_pets ?: @$auction->get->breed_restrictions ?: @$auction->get->has_breed_restrictions;
+                                @endphp
+                                @if (!empty($petRestrictVal) && $petRestrictVal != 'null')
                                 <div class="col-md-12 col-12 pt-2 removeBold">
-                                    <span class="fw-bold">Breed Restrictions:</span>
-                                    {{ @$auction->get->has_breed_restrictions }}
-                                    @if (strtolower(@$auction->get->has_breed_restrictions) === 'yes' && @$auction->get->breed_restrictions)
-                                        &mdash; {{ @$auction->get->breed_restrictions }}
-                                    @endif
+                                    <span class="fw-bold">Pet Restrictions:</span>
+                                    {{ $petRestrictVal }}
                                 </div>
                                 @endif
                             @endif
@@ -756,6 +782,35 @@
                                     @endforeach
                                 @endif
                             </div>
+                        @endif
+
+                        @if (@$auction->get->sale_provision_assignment != null && @$auction->get->sale_provision_assignment != '')
+                            <div class="col-md-12 col-12 pt-2 removeBold">
+                                <span class="fw-bold">Assignment Contract:</span>
+                                {{ @$auction->get->sale_provision_assignment }}
+                            </div>
+                            @if (strtolower(@$auction->get->sale_provision_assignment) === 'yes')
+                                @if (@$auction->get->buyer_sell_contract != null && @$auction->get->buyer_sell_contract != '')
+                                <div class="col-md-12 col-12 pt-2 removeBold">
+                                    <span class="fw-bold">Seller Under Contract for Assignment:</span>
+                                    {{ @$auction->get->buyer_sell_contract }}
+                                </div>
+                                @endif
+                                @if (@$auction->get->assignment_fee_amount != null && @$auction->get->assignment_fee_amount != '')
+                                <div class="col-md-12 col-12 pt-2 removeBold">
+                                    <span class="fw-bold">Assignment Contract Fee to Broker:</span>
+                                    @php
+                                        $assignFeeType = @$auction->get->assignment_fee_type ?? '$';
+                                        $assignFeeAmt = @$auction->get->assignment_fee_amount;
+                                    @endphp
+                                    @if ($assignFeeType === '%' || $assignFeeType === 'percent')
+                                        {{ $assignFeeAmt }}%
+                                    @else
+                                        {{ $fmtMoney($assignFeeAmt) }}
+                                    @endif
+                                </div>
+                                @endif
+                            @endif
                         @endif
 
                         @if (@$auction->get->target_closing_date != null)
@@ -1452,7 +1507,35 @@
                         <!-- Broker Compensation Sub-section -->
                         <h5 class="mt-3 mb-2"><strong>Broker Compensation:</strong></h5>
 
-                        @if (@$auction->get->lease_fee_type != null)
+                        @php
+                            $hasPurchaseFee = !empty(@$auction->get->purchase_fee_type);
+                            $hasLeaseFee = !empty(@$auction->get->lease_fee_type);
+                        @endphp
+                        @if ($hasPurchaseFee)
+                        @php
+                            $purchaseFeeType = @$auction->get->purchase_fee_type ?? '';
+                            $sellerLeaseFeeCombined = '—';
+
+                            if ($purchaseFeeType === 'flat' && @$auction->get->purchase_fee_flat) {
+                                $sellerLeaseFeeCombined = $fmtMoney(@$auction->get->purchase_fee_flat);
+                            } elseif ($purchaseFeeType === 'percentage' && @$auction->get->purchase_fee_percentage) {
+                                $sellerLeaseFeeCombined = $fmtPercent(@$auction->get->purchase_fee_percentage) . ' of Total Purchase Price';
+                            } elseif ($purchaseFeeType === 'combo' && (@$auction->get->purchase_fee_percentage_combo || @$auction->get->purchase_fee_flat_combo)) {
+                                $parts = [];
+                                if (@$auction->get->purchase_fee_percentage_combo) $parts[] = $fmtPercent(@$auction->get->purchase_fee_percentage_combo) . ' of Total Purchase Price';
+                                if (@$auction->get->purchase_fee_flat_combo) $parts[] = $fmtMoney(@$auction->get->purchase_fee_flat_combo) . ' flat';
+                                $sellerLeaseFeeCombined = implode(' + ', $parts);
+                            } elseif ($purchaseFeeType === 'other' && @$auction->get->purchase_fee_other) {
+                                $sellerLeaseFeeCombined = @$auction->get->purchase_fee_other;
+                            } elseif ($purchaseFeeType) {
+                                $sellerLeaseFeeCombined = $purchaseFeeType;
+                            }
+                        @endphp
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
+                            Seller's Broker Purchase Fee:
+                            <span class="removeBold">{{ $sellerLeaseFeeCombined }}</span>
+                        </div>
+                        @elseif ($hasLeaseFee)
                         @php
                             $sellerLeaseFeeType = @$auction->get->lease_fee_type ?? '';
                             $sellerLeaseFeeCombined = '—';
@@ -1704,19 +1787,19 @@
                             <h4 class="section-title">Seller Info</h4>
                         </div>
 
-                        @if (@$auction->get->current_status != null && @$auction->get->current_status != '' && @$auction->get->current_status != 'null')
-                            <div class="col-md-12 col-12 pt-2 removeBold">
-                                <span class="fw-bold">Seller's Current Status:</span>
-                                {{ @$auction->get->current_status }}
-                            </div>
-                        @endif
-
                         @if (!empty($auction->get->first_name))
                             <div class="col-md-12 col-12 pt-2 fw-bold">First
                                 Name:
                                 <span class="removeBold">
                                     {{ $auction->get->first_name }}
                                 </span>
+                            </div>
+                        @endif
+
+                        @if (@$auction->get->current_status != null && @$auction->get->current_status != '' && @$auction->get->current_status != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold">
+                                <span class="fw-bold">Seller's Current Status:</span>
+                                {{ @$auction->get->current_status }}
                             </div>
                         @endif
 
