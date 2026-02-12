@@ -469,6 +469,7 @@
                                 @endif
                             </div>
 {{-- Leasing Space field removed - not applicable for seller listings --}}
+                            @if (@$auction->get->property_type !== 'Income')
                             @if (@$auction->get->bedrooms != null)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Bedrooms:
@@ -492,6 +493,7 @@
                                         @endif
                                     </span>
                                 </div>
+                            @endif
                             @endif
                             @if (
                                 @$auction->get->garageOptions != null &&
@@ -535,6 +537,27 @@
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     SqFt Heated Source:
                                     <span class="removeBold">{{ @$auction->get->sqft_heated_source }}</span>
+                                </div>
+                            @endif
+                            @php
+                                $appliancesData = @$auction->get->appliances;
+                                $appliancesList = [];
+                                if ($appliancesData) {
+                                    $appliancesList = is_string($appliancesData) ? (json_decode($appliancesData, true) ?? []) : (array)$appliancesData;
+                                }
+                                $otherAppliances = @$auction->get->other_appliances ?? '';
+                            @endphp
+                            @if (!empty($appliancesList))
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
+                                    Appliances Included:
+                                    @foreach ($appliancesList as $appliance)
+                                        @if ($appliance !== 'Other')
+                                            <span class="removeBold badge bg-secondary">{{ $appliance }}</span>
+                                        @endif
+                                    @endforeach
+                                    @if (in_array('Other', $appliancesList) && !empty($otherAppliances))
+                                        <span class="removeBold badge bg-secondary">{{ $otherAppliances }}</span>
+                                    @endif
                                 </div>
                             @endif
                             @if (@$auction->get->total_acreage != null && @$auction->get->total_acreage != '' && @$auction->get->total_acreage != 'null')
@@ -618,6 +641,7 @@
                                 </div>
                             @endif
 
+                            @if (@$auction->get->property_type !== 'Income')
                             @if (@$auction->get->pool_needed != null)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Pool:<span class="removeBold"> {{ @$auction->get->pool_needed }}</span>
@@ -639,28 +663,8 @@
                                     @endif
                                 </div>
                             @endif
-
-                            @php
-                                $appliancesData = @$auction->get->appliances;
-                                $appliancesList = [];
-                                if ($appliancesData) {
-                                    $appliancesList = is_string($appliancesData) ? (json_decode($appliancesData, true) ?? []) : (array)$appliancesData;
-                                }
-                                $otherAppliances = @$auction->get->other_appliances ?? '';
-                            @endphp
-                            @if (!empty($appliancesList))
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Appliances Included:
-                                    @foreach ($appliancesList as $appliance)
-                                        @if ($appliance !== 'Other')
-                                            <span class="removeBold badge bg-secondary">{{ $appliance }}</span>
-                                        @endif
-                                    @endforeach
-                                    @if (in_array('Other', $appliancesList) && !empty($otherAppliances))
-                                        <span class="removeBold badge bg-secondary">{{ $otherAppliances }}</span>
-                                    @endif
-                                </div>
                             @endif
+
                             @if (@$auction->get->view_preference != null || @$auction->get->other_preferences != null)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     View:
@@ -701,20 +705,6 @@
 
 
 
-                            @if (@$auction->get->number_of_units != null && @$auction->get->number_of_units != '' && @$auction->get->number_of_units != 'null')
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Number of Units:
-                                    <span class="removeBold">{{ @$auction->get->number_of_units }}</span>
-                                </div>
-                            @endif
-
-                            @if (@$auction->get->minimum_cap_rate != null && @$auction->get->minimum_cap_rate != '' && @$auction->get->minimum_cap_rate != 'null')
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Cap Rate:
-                                    <span class="removeBold">{{ @$auction->get->minimum_cap_rate }}%</span>
-                                </div>
-                            @endif
-
                             @if (@$auction->get->pets != null)
                             <div class="col-md-12 col-12 pt-2 removeBold">
                                 <span class="fw-bold">Pets Allowed:</span>
@@ -752,6 +742,115 @@
                                     <span class="fw-bold">Pet Restrictions:</span>
                                     {{ $petRestrictVal }}
                                 </div>
+                                @endif
+                            @endif
+
+                            @if (@$auction->get->property_type === 'Income')
+                                @php
+                                    $unitNumber = @$auction->get->unit_number;
+                                @endphp
+                                @if (!empty($unitNumber) && $unitNumber != 'null')
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Total Units:
+                                        <span class="removeBold">{{ $unitNumber }}</span>
+                                    </div>
+                                @endif
+
+                                @php
+                                    $unitBuildings = @$auction->get->unit_buildings;
+                                @endphp
+                                @if (!empty($unitBuildings) && $unitBuildings != 'null')
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Total Buildings:
+                                        <span class="removeBold">{{ $unitBuildings }}</span>
+                                    </div>
+                                @endif
+
+                                @php
+                                    $minAnnualNet = @$auction->get->minimum_annual_net_income;
+                                @endphp
+                                @if (!empty($minAnnualNet) && $minAnnualNet != 'null')
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Minimum Annual Net Income:
+                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', $minAnnualNet), 2) }}</span>
+                                    </div>
+                                @endif
+
+                                @php
+                                    $minCapRate = @$auction->get->minimum_cap_rate;
+                                @endphp
+                                @if (!empty($minCapRate) && $minCapRate != 'null')
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Minimum Cap Rate:
+                                        <span class="removeBold">{{ $minCapRate }}%</span>
+                                    </div>
+                                @endif
+
+                                @php
+                                    $assetsData = @$auction->get->assets;
+                                    $assetsList = [];
+                                    if ($assetsData) {
+                                        $assetsList = is_string($assetsData) ? (json_decode($assetsData, true) ?? []) : (array)$assetsData;
+                                    }
+                                @endphp
+                                @if (!empty($assetsList))
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Assets:
+                                        @foreach ($assetsList as $asset)
+                                            <span class="removeBold badge bg-secondary">{{ $asset }}</span>
+                                        @endforeach
+                                    </div>
+                                @endif
+
+                                @php
+                                    $unitConfigs = @$auction->get->unit_type_configurations;
+                                    $unitConfigList = [];
+                                    if ($unitConfigs) {
+                                        $unitConfigList = is_string($unitConfigs) ? (json_decode($unitConfigs, true) ?? []) : (array)$unitConfigs;
+                                    }
+                                @endphp
+                                @if (!empty($unitConfigList))
+                                    <div class="col-12 pt-3">
+                                        <h5 class="fw-bold">Unit Type Configuration</h5>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-sm">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Unit Type</th>
+                                                        <th>Beds</th>
+                                                        <th>Baths</th>
+                                                        <th>Garage</th>
+                                                        <th>Carport</th>
+                                                        <th>Other Spaces</th>
+                                                        <th># Units</th>
+                                                        <th># Occupied</th>
+                                                        <th>Expected Rent</th>
+                                                        <th>Description</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach ($unitConfigList as $unit)
+                                                        <tr>
+                                                            <td>{{ @$unit['unit_type'] ?? '' }}</td>
+                                                            <td>{{ @$unit['beds_unit'] ?? '' }}</td>
+                                                            <td>{{ @$unit['baths_unit'] ?? '' }}</td>
+                                                            <td>{{ @$unit['garage_spaces'] ?? '' }}</td>
+                                                            <td>{{ @$unit['carport_spaces'] ?? '' }}</td>
+                                                            <td>{{ @$unit['other_spaces'] ?? '' }}</td>
+                                                            <td>{{ @$unit['number_of_units'] ?? '' }}</td>
+                                                            <td>{{ @$unit['number_occupied'] ?? '' }}</td>
+                                                            <td>
+                                                                @if (!empty($unit['expected_rent']))
+                                                                    ${{ number_format((float) str_replace(',', '', $unit['expected_rent']), 2) }}
+                                                                @endif
+                                                            </td>
+                                                            <td>{{ @$unit['unit_type_description'] ?? '' }}</td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 @endif
                             @endif
 
@@ -1564,6 +1663,16 @@
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Seller's Broker Purchase Fee:
                             <span class="removeBold">{{ $sellerLeaseFeeCombined }}</span>
+                        </div>
+                        @endif
+
+                        @php
+                            $nominalVal = @$auction->get->nominal;
+                        @endphp
+                        @if (!empty($nominalVal) && $nominalVal != 'null')
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
+                            Nominal Consideration Fee:
+                            <span class="removeBold">${{ number_format((float) str_replace(',', '', $nominalVal), 2) }}</span>
                         </div>
                         @endif
 
