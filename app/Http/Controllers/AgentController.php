@@ -405,21 +405,21 @@ class AgentController extends Controller
             $baseQuery->orWhere('id', $auctionIds[$i]);
         }
 
-        // Create status-specific queries
+        // Create status-specific queries (is_approved and is_sold are varchar columns storing 'true'/'false')
         $pendingQuery = (clone $baseQuery)
-            ->where('is_approved', 0)
-            ->where('is_sold', 0)
-            ->where('is_draft', 0);
+            ->where('is_approved', 'false')
+            ->where('is_sold', 'false')
+            ->where('is_draft', false);
 
         $liveQuery = (clone $baseQuery)
-            ->where('is_approved', 1)
-            ->where('is_sold', 0)
-            ->where('is_draft', 0);
+            ->where('is_approved', 'true')
+            ->where('is_sold', 'false')
+            ->where('is_draft', false);
 
         $soldQuery = (clone $baseQuery)
-            ->where('is_approved', 1)
-            ->where('is_sold', 1)
-            ->where('is_draft', 0);
+            ->where('is_approved', 'true')
+            ->where('is_sold', 'true')
+            ->where('is_draft', false);
 
         // Get data based on type
         if ($type == "1") {
