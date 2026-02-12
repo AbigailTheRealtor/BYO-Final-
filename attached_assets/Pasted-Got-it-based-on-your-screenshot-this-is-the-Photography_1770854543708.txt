@@ -1,0 +1,234 @@
+Got it — based on your screenshot, this is the **Photography, Video & Virtual Media** section for **Hire a Seller’s Agent → Vacant Land**, and you have **two bugs**:
+
+1. ✅ The checked items **aren’t saving into drafts**
+2. ✅ When the user checks **“Provide a parcel map, topographical image, or plot plan …”**, the **“Provide digital enhancements to media assets”** options **disappear**
+
+Below are **copy/paste Replit instructions with safeguards** (test login: **[tenant@exp.com](mailto:tenant@exp.com)**) specifically for **Hire a Seller’s Agent → Vacant Land listings**.
+
+---
+
+# Replit Instructions (WITH SAFEGUARDS)
+
+## Hire a Seller’s Agent → Vacant Land → Photography, Video & Virtual Media
+
+### Test Account
+
+* Login: **[tenant@exp.com](mailto:tenant@exp.com)**
+* Create a Seller listing → select **Property Type = Vacant Land**
+* Go to Services → **Photography, Video & Virtual Media**
+* Select multiple checkboxes (from your screenshot)
+* Save Draft → Reopen Draft → MUST repopulate exactly
+
+---
+
+## FIX A — Selected checkboxes are NOT saving in Drafts
+
+### Problem
+
+The selected items in **Photography, Video & Virtual Media** are not persisting when saving a draft, and do not reload when the draft is reopened.
+
+### Required Behavior (Must Match)
+
+* Every selected checkbox in this section must:
+
+  * Save to draft
+  * Reload on draft open
+  * Persist on edit
+* No selections should “drop” just because user navigates tabs or switches fields.
+
+---
+
+### Implementation Requirements (Draft Save)
+
+**1) Ensure these checkboxes are bound to a single persistent Livewire property**
+All 6 checkboxes shown must bind to a stable array property (example name — use your actual key):
+
+* `vacant_land_media_services` (array of strings)
+
+Each checkbox should be a `wire:model` binding to that array, e.g.:
+
+* `wire:model.defer="vacant_land_media_services"`
+
+and its `value="Provide professional property photography"` etc.
+
+✅ **Safeguard:** Do NOT use separate booleans for each checkbox unless you also explicitly map them into the draft payload. Arrays are safer for drafts.
+
+---
+
+**2) Ensure the draft serializer includes this array**
+Wherever you build your “draft payload” (create + edit), confirm you are including:
+
+* `vacant_land_media_services`
+
+✅ **Safeguard:** If your draft storage is JSON, store it as a true array, not a comma string.
+
+---
+
+**3) Ensure the draft hydrator reloads it**
+When opening a draft, ensure the Livewire component sets:
+
+* `$this->vacant_land_media_services = $draft['vacant_land_media_services'] ?? [];`
+
+✅ **Safeguard:** Default must be `[]` (empty array), not `null`, so checkboxes render correctly.
+
+---
+
+**4) Ensure you are not resetting this array in any “updated” hook**
+Search the component for any logic like:
+
+* `updatedPropertyType`
+* `updatedPropertyStyle`
+* `updatedServices…`
+* `mount()`
+* `hydrate()`
+
+…and ensure none of those do:
+
+* `$this->vacant_land_media_services = [];`
+
+unless the user explicitly changed to a different property type AND you intentionally want to clear it.
+
+✅ **Safeguard:** If you must clear on property type change, do it **only** when leaving Vacant Land, not during normal interaction.
+
+---
+
+## FIX B — Selecting “Provide a parcel map…” makes “digital enhancements” disappear
+
+### Problem
+
+When user selects:
+✅ “Provide a parcel map, topographical image, or plot plan (non-certified; for marketing purposes only)”
+
+…the options under:
+✅ “Provide digital enhancements to media assets”
+**disappear**.
+
+This is almost always caused by one of these:
+
+* a bad conditional that hides the enhancements section when parcel map is selected
+* a watcher (`updated…`) that resets the enhancements array when parcel map is checked
+* a DOM re-render issue due to missing `wire:key` / Alpine state resetting
+
+---
+
+### Required Behavior (Must Match)
+
+* Checking parcel map must **not** hide, collapse, reset, or remove digital enhancements.
+* Digital enhancements options must remain visible and selectable at all times (unless the user unchecks “Provide digital enhancements…” itself, if you’re using a nested sub-options UI).
+
+---
+
+### Implementation Requirements (Do This Exactly)
+
+**1) Separate the “digital enhancements” selection state from the general media services array**
+You should have:
+
+* `vacant_land_media_services` (array) → contains top-level selections like parcel map, drone, photos, etc.
+* `vacant_land_digital_enhancements` (array) → contains sub-options for digital enhancements (brightness, twilight, object removal, etc.)
+* `vacant_land_digital_enhancements_other` (string) → optional
+
+✅ **Safeguard:** Do NOT store digital enhancement sub-options inside the same array as the top-level media services. Mixing them often causes accidental resets when one top-level option toggles.
+
+---
+
+**2) Fix the visibility conditional for the enhancements options**
+The enhancements sub-options should display ONLY based on:
+
+* whether “Provide digital enhancements to media assets” is selected
+
+Example logic:
+
+* show enhancements options if `in_array('Provide digital enhancements to media assets', vacant_land_media_services)`
+
+🚫 The conditional must NOT reference parcel map at all.
+
+✅ **Safeguard:** Parcel map is independent. It must never affect enhancements visibility.
+
+---
+
+**3) Remove any “updated” hook that clears enhancements when parcel map is checked**
+Search for any logic like:
+
+* “if parcel map selected → unset enhancements”
+* “if media_services changes → reinitialize enhancements”
+
+If you find a pattern like this:
+
+* `$this->vacant_land_digital_enhancements = [];`
+
+Make sure it only happens when:
+
+* the user UNCHECKS “Provide digital enhancements to media assets”
+
+✅ Correct clearing rule:
+
+* If “Provide digital enhancements…” is unchecked → clear `vacant_land_digital_enhancements` + `other`
+* Otherwise → never clear it
+
+---
+
+**4) Add `wire:key` to stabilize the section**
+Add stable keys to avoid Livewire “rebuild” behavior:
+
+* The whole “Photography, Video & Virtual Media” block:
+
+  * `wire:key="vacant-land-media-block"`
+* The digital enhancements sub-options container:
+
+  * `wire:key="vacant-land-digital-enhancements"`
+
+✅ **Safeguard:** Don’t key it to values that change every click.
+
+---
+
+## Draft Persistence Requirements (Must Save + Reload)
+
+In your draft JSON/payload for Vacant Land, include ALL of these keys:
+
+* `vacant_land_media_services` (array)
+* `vacant_land_digital_enhancements` (array)
+* `vacant_land_digital_enhancements_other` (string, optional)
+
+And hydrate them on draft open with safe defaults:
+
+* arrays default to `[]`
+* strings default to `null` or `''`
+
+✅ **Safeguard:** Never allow hydration to set arrays to `null`, or checkbox UI won’t bind predictably.
+
+---
+
+# QA Checklist ([tenant@exp.com](mailto:tenant@exp.com)) — Must Pass
+
+### Test 1 — Draft Save
+
+1. Vacant Land → select 3+ items in Photography/Video section
+2. Check “Provide digital enhancements…” and choose sub-options
+3. Save Draft
+4. Reopen Draft
+   ✅ All top-level checkboxes stay checked
+   ✅ Enhancements stays checked + sub-options preserved
+
+### Test 2 — Parcel Map Interaction
+
+1. With digital enhancements visible, check parcel map option
+   ✅ Digital enhancements sub-options remain visible
+   ✅ Previously selected enhancement sub-options remain selected
+   ✅ No flash/close/disappear behavior
+
+### Test 3 — Uncheck Enhancements
+
+1. Uncheck “Provide digital enhancements…”
+   ✅ Sub-options disappear (expected)
+   ✅ Sub-options values are cleared (expected)
+2. Re-check it
+   ✅ Sub-options show again and can be selected cleanly
+
+---
+
+If you paste (or screenshot) the **current Livewire property names** used for:
+
+* those 6 checkboxes
+* digital enhancement sub-options
+
+…I’ll rewrite this using your **exact variable keys** so your developer can implement it with zero interpretation.

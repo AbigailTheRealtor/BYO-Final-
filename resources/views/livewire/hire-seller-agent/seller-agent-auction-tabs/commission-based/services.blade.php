@@ -767,35 +767,35 @@
         </div>
     </div>
 
-    <div class="service-section mb-4" wire:ignore wire:key="seller-vacant-land-media">
+    <div class="service-section mb-4" wire:key="seller-vacant-land-media">
         <h5 class="section-header bg-info text-white p-2 mb-3">📸 Photography, Video & Virtual Media</h5>
         <div class="service-options">
             @foreach (['Provide professional property photography', 'Provide aerial (drone) photography (subject to FAA Part 107 compliance)', 'Provide a video overview or narrated walkthrough', 'Provide a 3D virtual tour (if applicable)', 'Provide digital enhancements to media assets', 'Provide a parcel map, topographical image, or plot plan (non-certified; for marketing purposes only)'] as $service)
                 <div class="form-check service-item">
-                    <input class="form-check-input service-checkbox" type="checkbox"
-                        id="media-{{ Str::slug($service) }}" value="{{ $service }}"
-                        data-service="{{ $service }}" onclick="toggleEnhancements(this)">
-                    <label class="form-check-label" for="media-{{ Str::slug($service) }}">
+                    <input class="form-check-input service-checkbox" type="checkbox" wire:model="services"
+                        id="vl-media-{{ Str::slug($service) }}" value="{{ $service }}">
+                    <label class="form-check-label" for="vl-media-{{ Str::slug($service) }}">
                         {{ $service }}
                     </label>
                 </div>
 
                 @if ($service === 'Provide digital enhancements to media assets')
-                    <div class="enhancement-options ms-4 mt-2 mb-3" id="enhancement-options" style="display: none;">
+                    <div class="enhancement-options ms-4 mt-2 mb-3" wire:key="vacant-land-digital-enhancements"
+                        style="display: {{ $showEnhancements ? 'block' : 'none' }};">
                         <div class="form-text mb-2">Select enhancement types:</div>
 
                         @foreach (['Basic edits (brightness, contrast, cropping)', 'Twilight conversion', 'Object removal (e.g., clutter, signage)', 'Sky replacement or color correction', 'Virtual twilight effect', 'Other'] as $enhancement)
                             <div class="form-check">
                                 <input class="form-check-input enhancement-checkbox" type="checkbox"
-                                    value="{{ $enhancement }}" id="vacant-enhancement-{{ Str::slug($enhancement) }}"
-                                    @if ($enhancement === 'Other') onclick="toggleVacantLandCustomEnhancement(this)" @endif>
+                                    wire:model="photo_enhancements" value="{{ $enhancement }}"
+                                    id="vacant-enhancement-{{ Str::slug($enhancement) }}">
                                 <label class="form-check-label" for="vacant-enhancement-{{ Str::slug($enhancement) }}">
                                     {{ $enhancement }}
                                 </label>
                             </div>
                         @endforeach
 
-                        <div class="mt-2" id="vacant-land-custom-enhancement" style="display: none;">
+                        <div class="mt-2" style="display: {{ $showCustomEnhancement ? 'block' : 'none' }};">
                             <input type="text" class="form-control" wire:model="custom_enhancement"
                                 placeholder="Enter photo enhancement requests">
                         </div>
@@ -940,18 +940,3 @@
     brokerage law and fiduciary duties as outlined in the signed brokerage agreement.
 </div>
 
-<script>
-    function toggleVacantLandCustomEnhancement(checkbox) {
-        const customEnhancementDiv = document.getElementById('vacant-land-custom-enhancement');
-        if (customEnhancementDiv) {
-            customEnhancementDiv.style.display = checkbox.checked ? 'block' : 'none';
-        }
-    }
-
-    function toggleEnhancements(checkbox) {
-        const enhancementOptions = document.getElementById('enhancement-options');
-        if (enhancementOptions) {
-            enhancementOptions.style.display = checkbox.checked ? 'block' : 'none';
-        }
-    }
-</script>

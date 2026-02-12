@@ -1228,8 +1228,9 @@ class TenantAgentAuctionEdit extends Component
 
     public function updatedServices()
     {
-        // Automatically show enhancements when main option is selected
-        if (in_array('Provide digital photo enhancements', $this->services)) {
+        $hasEnhancements = in_array('Provide digital photo enhancements', $this->services)
+            || in_array('Provide digital enhancements to media assets', $this->services);
+        if ($hasEnhancements) {
             $this->showEnhancements = true;
         } else {
             $this->showEnhancements = false;
@@ -2662,7 +2663,10 @@ class TenantAgentAuctionEdit extends Component
             $this->other_services = [];
         }
 
-        if (is_array($this->services) && in_array('Provide digital photo enhancements', $this->services)) {
+        if (is_array($this->services) && (
+            in_array('Provide digital photo enhancements', $this->services)
+            || in_array('Provide digital enhancements to media assets', $this->services)
+        )) {
             $this->showEnhancements = true;
         }
         $photoEnhRaw = $auction->info('photo_enhancements');

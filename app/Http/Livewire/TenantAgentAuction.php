@@ -1314,7 +1314,9 @@ class TenantAgentAuction extends Component
     public function updatedServices()
     {
         if ($this->isLoadingData) return;
-        if (in_array('Provide digital photo enhancements', $this->services)) {
+        $hasEnhancements = in_array('Provide digital photo enhancements', $this->services)
+            || in_array('Provide digital enhancements to media assets', $this->services);
+        if ($hasEnhancements) {
             $this->showEnhancements = true;
         } else {
             $this->showEnhancements = false;
@@ -3280,8 +3282,10 @@ class TenantAgentAuction extends Component
                     || in_array('Host site visit event (administrative coordination only)', $this->services);
             }
 
-            // Restore photo enhancements visibility
-            if (is_array($this->services) && in_array('Provide digital photo enhancements', $this->services)) {
+            if (is_array($this->services) && (
+                in_array('Provide digital photo enhancements', $this->services)
+                || in_array('Provide digital enhancements to media assets', $this->services)
+            )) {
                 $this->showEnhancements = true;
             }
             $photoEnhRaw = $auction->get->photo_enhancements ?? null;
