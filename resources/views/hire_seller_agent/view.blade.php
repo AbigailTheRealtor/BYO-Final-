@@ -411,14 +411,30 @@
 
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Property Condition:
-                                @if (gettype(@$auction->get->condition_prop_buyer) == 'array')
-                                    @foreach (array_filter(@$auction->get->condition_prop_buyer) as $item)
+                                @php
+                                    $conditionData = @$auction->get->condition_prop_buyer;
+                                    $conditionArray = null;
+                                    if ($conditionData) {
+                                        if (is_string($conditionData)) {
+                                            $conditionArray = json_decode($conditionData, true);
+                                        } elseif (is_array($conditionData)) {
+                                            $conditionArray = $conditionData;
+                                        }
+                                    }
+                                    $conditionProp = @$auction->get->condition_prop;
+                                @endphp
+                                @if (is_array($conditionArray) && !empty(array_filter($conditionArray)))
+                                    @foreach (array_filter($conditionArray) as $item)
                                         @if ($item != 'Other')
                                             <span class="removeBold"> {{ $item }}</span>
                                         @elseif (@$auction->get->other_property_condition)
                                             <span class="removeBold"> {{ @$auction->get->other_property_condition }}</span>
                                         @endif
                                     @endforeach
+                                @elseif (!empty($conditionProp))
+                                    <span class="removeBold"> {{ $conditionProp }}</span>
+                                @else
+                                    <span class="removeBold"> Not Provided</span>
                                 @endif
                             </div>
 {{-- Leasing Space field removed - not applicable for seller listings --}}
@@ -473,18 +489,38 @@
                                 </div>
                             @endif
 
-                            @if (@$auction->get->minimum_heated_square != null && @$auction->get->minimum_heated_square != 'null')
+                            @if (@$auction->get->minimum_heated_square != null && @$auction->get->minimum_heated_square != 'null' && @$auction->get->minimum_heated_square != '')
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Heated Square Footage:
+                                    Total SqFt:
                                     <span class="removeBold">
-                                        {{ @$auction->get->minimum_heated_square != '' ? @$auction->get->minimum_heated_square : '' }}</span>
+                                        @php
+                                            $sqftVal = str_replace(',', '', @$auction->get->minimum_heated_square);
+                                            echo is_numeric($sqftVal) ? number_format((float)$sqftVal, 0) : @$auction->get->minimum_heated_square;
+                                        @endphp
+                                    </span>
                                 </div>
                             @endif
-                            @if (@$auction->get->minimum_net_leasable_square != null && @$auction->get->minimum_net_leasable_square != 'null')
+                            @if (@$auction->get->sqft_heated_source != null && @$auction->get->sqft_heated_source != '' && @$auction->get->sqft_heated_source != 'null')
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
+                                    SqFt Heated Source:
+                                    <span class="removeBold">{{ @$auction->get->sqft_heated_source }}</span>
+                                </div>
+                            @endif
+                            @if (@$auction->get->total_acreage != null && @$auction->get->total_acreage != '' && @$auction->get->total_acreage != 'null')
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
+                                    Total Acreage:
+                                    <span class="removeBold">{{ @$auction->get->total_acreage }}</span>
+                                </div>
+                            @endif
+                            @if (@$auction->get->minimum_net_leasable_square != null && @$auction->get->minimum_net_leasable_square != 'null' && @$auction->get->minimum_net_leasable_square != '')
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Net Leasable Square Footage:
                                     <span class="removeBold">
-                                        {{ @$auction->get->minimum_net_leasable_square != '' ? @$auction->get->minimum_net_leasable_square : '' }}</span>
+                                        @php
+                                            $netSqftVal = str_replace(',', '', @$auction->get->minimum_net_leasable_square);
+                                            echo is_numeric($netSqftVal) ? number_format((float)$netSqftVal, 0) : @$auction->get->minimum_net_leasable_square;
+                                        @endphp
+                                    </span>
                                 </div>
                             @endif
                             @if (@$auction->get->garageOption != null && @$auction->get->garageOption != 'null')
@@ -553,8 +589,46 @@
 
                             @if (@$auction->get->pool_needed != null)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Pool:<span class="removeBold"> ({{ @$auction->get->pool_needed }})</span>
+                                    Pool:<span class="removeBold"> {{ @$auction->get->pool_needed }}</span>
+                                    @if (@$auction->get->pool_needed === 'Yes')
+                                        @php
+                                            $poolTypeData = @$auction->get->pool_type;
+                                            $poolTypes = [];
+                                            if ($poolTypeData) {
+                                                $poolTypes = is_string($poolTypeData) ? (json_decode($poolTypeData, true) ?? []) : (array)$poolTypeData;
+                                            }
+                                        @endphp
+                                        @if (!empty($poolTypes))
+                                            <span class="removeBold"> &mdash;
+                                                @foreach ($poolTypes as $pt)
+                                                    {{ $pt }}@if (!$loop->last), @endif
+                                                @endforeach
+                                            </span>
+                                        @endif
+                                    @endif
+                                </div>
+                            @endif
+
+                            @php
+                                $appliancesData = @$auction->get->appliances;
+                                $appliancesList = [];
+                                if ($appliancesData) {
+                                    $appliancesList = is_string($appliancesData) ? (json_decode($appliancesData, true) ?? []) : (array)$appliancesData;
+                                }
+                                $otherAppliances = @$auction->get->other_appliances ?? '';
+                            @endphp
+                            @if (!empty($appliancesList))
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
+                                    Appliances Included:
                                     <span class="removeBold">
+                                        @foreach ($appliancesList as $appliance)
+                                            @if ($appliance !== 'Other')
+                                                {{ $appliance }}@if (!$loop->last), @endif
+                                            @endif
+                                        @endforeach
+                                        @if (in_array('Other', $appliancesList) && !empty($otherAppliances))
+                                            , {{ $otherAppliances }}
+                                        @endif
                                     </span>
                                 </div>
                             @endif
@@ -619,20 +693,29 @@
                             </div>
                             @endif
 
-                            @if (@$auction->get->pets === "Yes" && @$auction->get->number_of_pets != null)
-                            <div class="col-md-12 col-12 pt-2 removeBold">
-                                <span class="fw-bold">Number of Pets Allowed:</span>
-                                {{ @$auction->get->number_of_pets }}
-                            </div>
+                            @if (@$auction->get->pets === "Yes" || @$auction->get->pets === "1" || @$auction->get->pets === 1)
+                                @if (@$auction->get->number_of_pets != null)
+                                <div class="col-md-12 col-12 pt-2 removeBold">
+                                    <span class="fw-bold">Number of Pets Allowed:</span>
+                                    {{ @$auction->get->number_of_pets }}
+                                </div>
+                                @endif
+
+                                <div class="col-md-12 col-12 pt-2 removeBold">
+                                    <span class="fw-bold">Acceptable Pet Types:</span>
+                                    {{ @$auction->get->type_of_pets ?? 'Not Provided' }}
+                                </div>
+
+                                <div class="col-md-12 col-12 pt-2 removeBold">
+                                    <span class="fw-bold">Maximum Weight Per Pet (lbs):</span>
+                                    {{ @$auction->get->maximum_weight_per_pet ?? @$auction->get->max_pet_weight ?? 'Not Provided' }}
+                                </div>
+
+                                <div class="col-md-12 col-12 pt-2 removeBold">
+                                    <span class="fw-bold">Pet Restrictions:</span>
+                                    {{ @$auction->get->pet_restrictions ?? 'Not Provided' }}
+                                </div>
                             @endif
-
-
-                                                        @if (@$auction->get->pets === "Yes" && @$auction->get->type_of_pets != null)
-                                                        <div class="col-md-12 col-12 pt-2 removeBold">
-                                                            <span class="fw-bold">Pet Types:</span>
-                                                            {{ @$auction->get->type_of_pets }}
-                                                        </div>
-                                                        @endif
 
                         </div>
                         <hr>
@@ -687,24 +770,38 @@
                         @if (@$auction->get->maximum_budget != null)
                             <div class="col-md-12 col-12 pt-2 removeBold">
                                 <span class="fw-bold">Desired Sale Price:</span>
-                                ${{ @$auction->get->maximum_budget }}
+                                @php
+                                    $salePriceRaw = str_replace(',', '', @$auction->get->maximum_budget);
+                                    echo is_numeric($salePriceRaw) ? '$' . number_format((float)$salePriceRaw, 0) : '$' . @$auction->get->maximum_budget;
+                                @endphp
+                            </div>
+                        @endif
+
+                        @if (@$auction->get->current_status != null && @$auction->get->current_status != '' && @$auction->get->current_status != 'null')
+                            <div class="col-md-12 col-12 pt-2 removeBold">
+                                <span class="fw-bold">Seller's Current Status:</span>
+                                {{ @$auction->get->current_status }}
                             </div>
                         @endif
 
                         @if (@$auction->get->offered_financing != '' && @$auction->get->offered_financing != 'null')
-                            <div class="col-md-12 col-12 pt-2 fw-bold">Offered
-                                Financing/Currency:
-                                @if (gettype(@$auction->get->offered_financing) == 'array')
-                                    @foreach ($auction->get->offered_financing as $financing)
-                                        @if ($financing !== 'Other')
-                                        <span class="removeBold badge bg-secondary">{{ $financing }}</span>
-                                        @endif
+                            @php
+                                $financingData = @$auction->get->offered_financing;
+                                $financingList = [];
+                                if ($financingData) {
+                                    $financingList = is_string($financingData) ? (json_decode($financingData, true) ?? []) : (is_array($financingData) ? $financingData : []);
+                                }
+                            @endphp
+                            @if (!empty($financingList))
+                            <div class="row mb-3">
+                                <div class="col-md-12 col-12 fw-bold">
+                                    Offered Financing/Currency Terms:
+                                    @foreach (array_filter($financingList) as $financing)
+                                        <span style="font-size: 16px; margin-top:5px; display: block" class="removeBold">&nbsp; {{ $financing === 'Other' && @$auction->get->other_financing ? $auction->get->other_financing : $financing }}</span>
                                     @endforeach
-                                    @if (@$auction->get->other_financing)
-                                        <span class="removeBold badge bg-secondary">{{ $auction->get->other_financing }}</span>
-                                    @endif
-                                @endif
+                                </div>
                             </div>
+                            @endif
                         @endif
 
                         {{-- Assumable Sub-Questions --}}
@@ -1402,6 +1499,15 @@
                         }
                         @endphp
 
+                        @php
+                            $photoEnhRaw = @$auction->get->photo_enhancements ?? null;
+                            $photoEnhancements = [];
+                            if ($photoEnhRaw) {
+                                $photoEnhancements = is_string($photoEnhRaw) ? (json_decode($photoEnhRaw, true) ?? []) : (array)$photoEnhRaw;
+                            }
+                            $customEnhancement = @$auction->get->custom_enhancement ?? '';
+                        @endphp
+
                         <div class="col-md-12 col-12 pt-2">
                             @if ($hasMatchedServices)
                                 @foreach ($categories as $categoryName => $categoryServices)
@@ -1416,19 +1522,42 @@
                                         <ul class="services">
                                             @foreach ($matchedServices as $service)
                                             <li style="font-size: 16px;">{{ $service }}</li>
+                                            @if ($service === 'Provide digital photo enhancements' && !empty($photoEnhancements))
+                                                <ul style="list-style: disc; padding-left: 1.5rem; margin-top: 0.25rem; margin-bottom: 0.25rem;">
+                                                    @foreach ($photoEnhancements as $enhancement)
+                                                        @if ($enhancement !== 'Other')
+                                                        <li style="font-size: 15px;" class="removeBold">{{ $enhancement }}</li>
+                                                        @endif
+                                                    @endforeach
+                                                    @if (in_array('Other', $photoEnhancements) && !empty($customEnhancement))
+                                                    <li style="font-size: 15px;" class="removeBold">{{ $customEnhancement }}</li>
+                                                    @endif
+                                                </ul>
+                                            @endif
                                             @endforeach
                                         </ul>
                                     </div>
                                     @endif
                                 @endforeach
                             @else
-                                {{-- Fallback: show all services if none match categories --}}
                                 @if (!empty($allServices))
                                 <div class="mt-3">
                                     <strong>📋 Services Requested</strong>
                                     <ul class="services">
                                         @foreach ($allServices as $service)
                                         <li style="font-size: 16px;">{{ $service }}</li>
+                                        @if ($service === 'Provide digital photo enhancements' && !empty($photoEnhancements))
+                                            <ul style="list-style: disc; padding-left: 1.5rem; margin-top: 0.25rem; margin-bottom: 0.25rem;">
+                                                @foreach ($photoEnhancements as $enhancement)
+                                                    @if ($enhancement !== 'Other')
+                                                    <li style="font-size: 15px;" class="removeBold">{{ $enhancement }}</li>
+                                                    @endif
+                                                @endforeach
+                                                @if (in_array('Other', $photoEnhancements) && !empty($customEnhancement))
+                                                <li style="font-size: 15px;" class="removeBold">{{ $customEnhancement }}</li>
+                                                @endif
+                                            </ul>
+                                        @endif
                                         @endforeach
                                     </ul>
                                 </div>
@@ -1445,30 +1574,6 @@
                                 </ul>
                             </div>
                             @endif
-                        </div>
-                        @endif
-
-                        @php
-                            $photoEnhRaw = @$auction->get->photo_enhancements ?? null;
-                            $photoEnhancements = [];
-                            if ($photoEnhRaw) {
-                                $photoEnhancements = is_string($photoEnhRaw) ? (json_decode($photoEnhRaw, true) ?? []) : (array)$photoEnhRaw;
-                            }
-                            $customEnhancement = @$auction->get->custom_enhancement ?? '';
-                        @endphp
-                        @if (!empty($photoEnhancements))
-                        <div class="mt-3">
-                            <strong>📸 Digital Photo Enhancements</strong>
-                            <ul class="services">
-                                @foreach ($photoEnhancements as $enhancement)
-                                    @if ($enhancement !== 'Other')
-                                    <li style="font-size: 16px;">{{ $enhancement }}</li>
-                                    @endif
-                                @endforeach
-                                @if (in_array('Other', $photoEnhancements) && !empty($customEnhancement))
-                                <li style="font-size: 16px;">{{ $customEnhancement }}</li>
-                                @endif
-                            </ul>
                         </div>
                         @endif
 
@@ -1491,19 +1596,11 @@
 
                         <div class="broker-compensation-section">
 
-                        <!-- Seller's Broker Compensation Sub-section -->
-                        <h5 class="mt-3 mb-2"><strong>Seller's Broker Compensation:</strong></h5>
-
-                        @if (@$auction->get->commission_structure != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Seller's Broker Commission Structure:
-                            <span class="removeBold">{{ str_replace('"', '', @$auction->get->commission_structure) }}</span>
-                        </div>
-                        @endif
+                        <!-- Broker Compensation Sub-section -->
+                        <h5 class="mt-3 mb-2"><strong>Broker Compensation:</strong></h5>
 
                         @if (@$auction->get->lease_fee_type != null)
                         @php
-                            // Build combined Seller's Broker Lease Fee display
                             $sellerLeaseFeeType = @$auction->get->lease_fee_type ?? '';
                             $sellerLeaseFeeCombined = '—';
                             
@@ -1531,6 +1628,39 @@
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Seller's Broker Purchase Fee:
                             <span class="removeBold">{{ $sellerLeaseFeeCombined }}</span>
+                        </div>
+                        @endif
+
+                        @if (@$auction->get->commission_structure != null)
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
+                            Buyer's Broker Commission Structure:
+                            <span class="removeBold">{{ str_replace('"', '', @$auction->get->commission_structure) }}</span>
+                        </div>
+                        @endif
+
+                        @if (@$auction->get->commission_structure_type != null)
+                        @php
+                            $buyerBrokerFeeType = @$auction->get->commission_structure_type ?? '';
+                            $buyerBrokerFee = '—';
+                            
+                            if ($buyerBrokerFeeType === 'Flat Fee' && @$auction->get->commission_structure_type_fee_flat) {
+                                $buyerBrokerFee = $fmtMoney(@$auction->get->commission_structure_type_fee_flat);
+                            } elseif ($buyerBrokerFeeType === 'Percentage of the Total Purchase Price' && @$auction->get->commission_structure_type_fee_percentage) {
+                                $buyerBrokerFee = $fmtPercent(@$auction->get->commission_structure_type_fee_percentage) . ' of Total Purchase Price';
+                            } elseif ($buyerBrokerFeeType === 'Flat Fee + Percentage' && (@$auction->get->commission_structure_type_fee_flat_combo || @$auction->get->commission_structure_type_fee_percentage_combo)) {
+                                $parts = [];
+                                if (@$auction->get->commission_structure_type_fee_percentage_combo) $parts[] = $fmtPercent(@$auction->get->commission_structure_type_fee_percentage_combo) . ' of Total Purchase Price';
+                                if (@$auction->get->commission_structure_type_fee_flat_combo) $parts[] = $fmtMoney(@$auction->get->commission_structure_type_fee_flat_combo) . ' flat';
+                                $buyerBrokerFee = implode(' + ', $parts);
+                            } elseif (strtolower($buyerBrokerFeeType) === 'other' && @$auction->get->commission_structure_type_fee_other) {
+                                $buyerBrokerFee = @$auction->get->commission_structure_type_fee_other;
+                            } elseif ($buyerBrokerFeeType) {
+                                $buyerBrokerFee = $buyerBrokerFeeType;
+                            }
+                        @endphp
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
+                            Buyer's Broker Commission Fee:
+                            <span class="removeBold">{{ $buyerBrokerFee }}</span>
                         </div>
                         @endif
 
