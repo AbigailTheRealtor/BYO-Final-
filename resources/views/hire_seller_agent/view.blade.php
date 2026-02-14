@@ -514,6 +514,38 @@
                             @endif
                             @endif
 
+                            @if ($propType === 'Residential')
+                                @if (@$auction->get->minimum_heated_square != null && @$auction->get->minimum_heated_square != 'null' && @$auction->get->minimum_heated_square != '')
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Heated Sqft:
+                                        <span class="removeBold">
+                                            @php
+                                                $sqftVal = str_replace(',', '', @$auction->get->minimum_heated_square);
+                                                echo is_numeric($sqftVal) ? number_format((float)$sqftVal, 0) : @$auction->get->minimum_heated_square;
+                                            @endphp
+                                        </span>
+                                    </div>
+                                @endif
+                                @php $totalSqFt = @$auction->get->total_square_feet; @endphp
+                                @if (!empty($totalSqFt) && $totalSqFt != 'null')
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Total Sqft:
+                                        <span class="removeBold">
+                                            @php
+                                                $totalSqFtClean = str_replace(',', '', $totalSqFt);
+                                                echo is_numeric($totalSqFtClean) ? number_format((float)$totalSqFtClean, 0) : $totalSqFt;
+                                            @endphp
+                                        </span>
+                                    </div>
+                                @endif
+                                @if (@$auction->get->sqft_heated_source != null && @$auction->get->sqft_heated_source != '' && @$auction->get->sqft_heated_source != 'null')
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Sqft Heated Source:
+                                        <span class="removeBold">{{ @$auction->get->sqft_heated_source }}</span>
+                                    </div>
+                                @endif
+                            @endif
+
                             @if (in_array($propType, ['Commercial', 'Business']))
                                 @if (@$auction->get->minimum_heated_square != null && @$auction->get->minimum_heated_square != 'null' && @$auction->get->minimum_heated_square != '')
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -563,7 +595,7 @@
                                 @endif
                             @endif
 
-                            @if (in_array($propType, ['Residential', 'Income']))
+                            @if ($propType === 'Income')
                                 @if (@$auction->get->minimum_heated_square != null && @$auction->get->minimum_heated_square != 'null' && @$auction->get->minimum_heated_square != '')
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Total SqFt:

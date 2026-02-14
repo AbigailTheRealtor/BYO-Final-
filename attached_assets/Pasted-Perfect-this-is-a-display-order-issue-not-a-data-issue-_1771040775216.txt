@@ -1,0 +1,222 @@
+Perfect — this is a **display order issue**, not a data issue.
+Below is a **clean, copy-paste Replit instruction set with safeguards** specifically for:
+
+> **Hire a Seller’s Agent → Residential listing → Live Listing Display**
+> Heated Sqft must show immediately after Bathrooms.
+
+---
+
+# ✅ REPLIT INSTRUCTIONS WITH SAFEGUARDS
+
+## Module: Hire a Seller’s Agent → Residential → Live Listing Display
+
+**Test login:** `tenant@exp.com`
+
+---
+
+# 🎯 GOAL
+
+For **Residential listings only**, on the **actual listing display**:
+
+### Required Order:
+
+1. Bedrooms
+2. Bathrooms
+3. **Heated Sqft** ← must appear immediately here
+4. Total Sqft
+5. Sqft Heated Source
+6. Continue remaining fields
+
+Currently Heated Sqft is either:
+
+* Showing in the wrong place
+* Not rendering
+* Rendering later in the block
+
+---
+
+# 1️⃣ STEP ONE — DO NOT MODIFY DATABASE
+
+This is a **display order issue only**.
+
+✅ No migration required
+✅ No DB changes
+✅ No model changes
+
+---
+
+# 2️⃣ LOCATE THE LIVE LISTING DISPLAY FILE
+
+Search in Replit for:
+
+```
+Bathrooms
+Total Sqft
+Sqft Heated Source
+```
+
+You are looking for the Blade file that renders:
+
+```
+Hire a Seller’s Agent → Residential → Live Listing
+```
+
+Usually something like:
+
+```
+resources/views/seller/listing-show.blade.php
+```
+
+or a shared partial like:
+
+```
+resources/views/components/seller/property-details.blade.php
+```
+
+---
+
+# 3️⃣ IMPLEMENT PROPERTY-TYPE GATE (CRITICAL SAFEGUARD)
+
+You must NOT reorder this for Commercial, Business, Income, or Vacant Land.
+
+Wrap Residential property details in an allowlist condition:
+
+```php
+@if($listing->property_type === 'Residential')
+```
+
+Do NOT use:
+
+```
+!= 'Commercial'
+```
+
+Use strict allowlist only.
+
+---
+
+# 4️⃣ REORDER THE RESIDENTIAL FIELD BLOCK
+
+Inside the Residential block, render fields in this exact order:
+
+```php
+{{-- Bedrooms --}}
+@if(!is_null($listing->bedrooms))
+  <div>
+    <strong>Bedrooms:</strong> {{ $listing->bedrooms }}
+  </div>
+@endif
+
+{{-- Bathrooms --}}
+@if(!is_null($listing->bathrooms))
+  <div>
+    <strong>Bathrooms:</strong> {{ $listing->bathrooms }}
+  </div>
+@endif
+
+{{-- Heated Sqft (MUST BE HERE) --}}
+@if(!is_null($listing->heated_sqft))
+  <div>
+    <strong>Heated Sqft:</strong> {{ number_format($listing->heated_sqft) }}
+  </div>
+@endif
+
+{{-- Total Sqft --}}
+@if(!is_null($listing->total_sqft))
+  <div>
+    <strong>Total Sqft:</strong> {{ number_format($listing->total_sqft) }}
+  </div>
+@endif
+
+{{-- Sqft Heated Source --}}
+@if(!is_null($listing->sqft_heated_source))
+  <div>
+    <strong>Sqft Heated Source:</strong> {{ $listing->sqft_heated_source }}
+  </div>
+@endif
+```
+
+---
+
+# 5️⃣ CRITICAL SAFEGUARDS
+
+## ✅ Safeguard 1 — Only show Heated Sqft if value exists
+
+Never show empty Heated Sqft row.
+
+## ✅ Safeguard 2 — Do NOT move shared component globally
+
+If this block is inside a shared partial used by all property types:
+
+* Duplicate the block
+* Gate it strictly for Residential
+
+## ✅ Safeguard 3 — Do NOT rely on alphabetical rendering
+
+Some components dynamically loop fields.
+If you see something like:
+
+```php
+@foreach($fields as $field)
+```
+
+Then remove Heated Sqft from the dynamic loop and render it manually after Bathrooms.
+
+---
+
+# 6️⃣ TESTING CHECKLIST (MUST PASS)
+
+Login: `tenant@exp.com`
+
+### Test Residential:
+
+* Enter Bedrooms
+* Enter Bathrooms
+* Enter Heated Sqft
+* Submit
+* Open live listing
+
+### Must display:
+
+Bedrooms
+Bathrooms
+**Heated Sqft**
+Total Sqft
+Sqft Heated Source
+
+### Test Commercial:
+
+Heated Sqft order must NOT be affected.
+
+### Test Income:
+
+No unintended reorder.
+
+---
+
+# 🚨 COMMON CAUSES IF IT DOESN’T WORK
+
+If Heated Sqft still doesn’t show:
+
+1. Field name mismatch (`heated_sq_ft` vs `heated_sqft`)
+2. Not in `$fillable`
+3. Being overwritten by a shared partial
+4. Conditional hiding due to wrong property type check
+
+---
+
+# 🏆 FINAL RESULT
+
+Residential live listing will display:
+
+Bedrooms
+Bathrooms
+Heated Sqft
+Total Sqft
+Sqft Heated Source
+
+Clean. Logical. MLS-style. Professional.
+
+---
+
+If you paste the file path of your live listing Blade file, I can rewrite this with your exact variable names so Harry can drop it in without guessing.
