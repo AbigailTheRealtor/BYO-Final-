@@ -916,6 +916,14 @@ class TenantAgentAuctionEdit extends Component
             $this->removeAduFromLeasingSpaceSelection();
         }
 
+        if ($value === 'Vacant Land') {
+            $this->appliances = [];
+            $this->other_appliances = '';
+            $this->showOtherAppliances = false;
+            $this->pool_needed = '';
+            $this->pool_type = [];
+        }
+
         if ($value !== 'Business') {
             $this->business_type_selected = '';
             $this->other_business_type = '';

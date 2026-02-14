@@ -672,7 +672,7 @@
     </div>
 
 @endif
-@if ($showOtherAppliances)
+@if ($showOtherAppliances && $property_type !== 'Vacant Land')
     <div class="form-group" id="other_appliances">
         <div class="input-cover">
             <input type="text" wire:model="other_appliances" class="form-control has-icon"

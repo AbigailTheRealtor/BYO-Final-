@@ -418,14 +418,27 @@
                                     <span class="removeBold">{{ $zipVal }}</span>
                                 </div>
                             @endif
+                            @php
+                                $propType = @$auction->get->property_type ?? '';
+                            @endphp
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Property Style:<span class="removeBold"> ({{ @$auction->get->property_type }})</span><br>
-                                @if (gettype(@$auction->get->property_items) == 'array')
-                                    @foreach (@$auction->get->property_items as $item)
-                                        <span class="removeBold badge bg-secondary">{{ $item }}</span>
-                                    @endforeach
-                                @endif
+                                Property Type:<span class="removeBold"> {{ $propType }}</span>
                             </div>
+                            @php
+                                $propertyStyleValue = @$auction->get->property_items;
+                                $propertyStyleDisplay = '';
+                                if (is_array($propertyStyleValue)) {
+                                    $propertyStyleDisplay = implode(', ', $propertyStyleValue);
+                                } elseif (is_string($propertyStyleValue) && !empty($propertyStyleValue)) {
+                                    $decoded = json_decode($propertyStyleValue, true);
+                                    $propertyStyleDisplay = is_array($decoded) ? implode(', ', $decoded) : $propertyStyleValue;
+                                }
+                            @endphp
+                            @if (!empty($propertyStyleDisplay))
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
+                                    Property Style:<span class="removeBold"> {{ $propertyStyleDisplay }}</span>
+                                </div>
+                            @endif
 
                             @php
                                 $businessTypeValue = @$auction->get->business_type_selected ?: @$auction->get->business_type;
@@ -442,6 +455,7 @@
                                 </div>
                             @endif
 
+                            @if ($propType !== 'Vacant Land')
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Property Condition:
                                 @php
@@ -468,8 +482,9 @@
                                     <span class="removeBold"> {{ $conditionProp }}</span>
                                 @endif
                             </div>
-{{-- Leasing Space field removed - not applicable for seller listings --}}
-                            @if (@$auction->get->property_type !== 'Income')
+                            @endif
+
+                            @if (in_array($propType, ['Residential']))
                             @if (@$auction->get->bedrooms != null)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Bedrooms:
@@ -482,6 +497,9 @@
                                     </span>
                                 </div>
                             @endif
+                            @endif
+
+                            @if (in_array($propType, ['Residential', 'Commercial', 'Business']))
                             @if (@$auction->get->bathrooms != null)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Bathrooms:
@@ -495,254 +513,305 @@
                                 </div>
                             @endif
                             @endif
-                            @if (
-                                @$auction->get->garageOptions != null &&
-                                    @$auction->get->garageOptions != 'null' &&
-                                    @$auction->get->garageOptions != '')
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Garage<span class="removeBold"> ({{ @$auction->get->garageOptions }})</span>:
-                                    @if (@$auction->get->garageOptions == 'Yes' || @$auction->get->garageOptions == 'Optional')
-                                        <span class="removeBold"> {{ @$auction->get->custom_garage }}</span>
-                                    @else
-                                        <span class="removeBold"> {{ @$auction->get->garageOptions }}</span>
-                                    @endif
-                                </div>
-                            @endif
-                            @if (
-                                @$auction->get->carportOptions != null &&
-                                    @$auction->get->carportOptions != 'null' &&
-                                    @$auction->get->carportOptions != '')
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Carport<span class="removeBold"> ({{ @$auction->get->carportOptions }})</span>:
-                                    @if (@$auction->get->carportOptions == 'Yes')
-                                        <span class="removeBold"> {{ @$auction->get->custom_carport }}</span>
-                                    @else
-                                        <span class="removeBold"> {{ @$auction->get->carportOptions }}</span>
-                                    @endif
-                                </div>
+
+                            @if (in_array($propType, ['Commercial', 'Business']))
+                                @if (@$auction->get->minimum_heated_square != null && @$auction->get->minimum_heated_square != 'null' && @$auction->get->minimum_heated_square != '')
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Total SqFt:
+                                        <span class="removeBold">
+                                            @php
+                                                $sqftVal = str_replace(',', '', @$auction->get->minimum_heated_square);
+                                                echo is_numeric($sqftVal) ? number_format((float)$sqftVal, 0) : @$auction->get->minimum_heated_square;
+                                            @endphp
+                                        </span>
+                                    </div>
+                                @endif
+                                @if (@$auction->get->sqft_heated_source != null && @$auction->get->sqft_heated_source != '' && @$auction->get->sqft_heated_source != 'null')
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        SqFt Heated Source:
+                                        <span class="removeBold">{{ @$auction->get->sqft_heated_source }}</span>
+                                    </div>
+                                @endif
                             @endif
 
-                            @if (@$auction->get->minimum_heated_square != null && @$auction->get->minimum_heated_square != 'null' && @$auction->get->minimum_heated_square != '')
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Total SqFt:
-                                    <span class="removeBold">
-                                        @php
-                                            $sqftVal = str_replace(',', '', @$auction->get->minimum_heated_square);
-                                            echo is_numeric($sqftVal) ? number_format((float)$sqftVal, 0) : @$auction->get->minimum_heated_square;
-                                        @endphp
-                                    </span>
-                                </div>
-                            @endif
-                            @if (@$auction->get->sqft_heated_source != null && @$auction->get->sqft_heated_source != '' && @$auction->get->sqft_heated_source != 'null')
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    SqFt Heated Source:
-                                    <span class="removeBold">{{ @$auction->get->sqft_heated_source }}</span>
-                                </div>
-                            @endif
-                            @php
-                                $appliancesData = @$auction->get->appliances;
-                                $appliancesList = [];
-                                if ($appliancesData) {
-                                    $appliancesList = is_string($appliancesData) ? (json_decode($appliancesData, true) ?? []) : (array)$appliancesData;
-                                }
-                                $otherAppliances = @$auction->get->other_appliances ?? '';
-                            @endphp
-                            @if (!empty($appliancesList))
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Appliances Included:
-                                    @foreach ($appliancesList as $appliance)
-                                        @if ($appliance !== 'Other')
-                                            <span class="removeBold badge bg-secondary">{{ $appliance }}</span>
+                            @if (in_array($propType, ['Residential', 'Income']))
+                                @if (
+                                    @$auction->get->garageOptions != null &&
+                                        @$auction->get->garageOptions != 'null' &&
+                                        @$auction->get->garageOptions != '')
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Garage<span class="removeBold"> ({{ @$auction->get->garageOptions }})</span>:
+                                        @if (@$auction->get->garageOptions == 'Yes' || @$auction->get->garageOptions == 'Optional')
+                                            <span class="removeBold"> {{ @$auction->get->custom_garage }}</span>
+                                        @else
+                                            <span class="removeBold"> {{ @$auction->get->garageOptions }}</span>
                                         @endif
-                                    @endforeach
-                                    @if (in_array('Other', $appliancesList) && !empty($otherAppliances))
-                                        <span class="removeBold badge bg-secondary">{{ $otherAppliances }}</span>
-                                    @endif
-                                </div>
+                                    </div>
+                                @endif
+                                @if (
+                                    @$auction->get->carportOptions != null &&
+                                        @$auction->get->carportOptions != 'null' &&
+                                        @$auction->get->carportOptions != '')
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Carport<span class="removeBold"> ({{ @$auction->get->carportOptions }})</span>:
+                                        @if (@$auction->get->carportOptions == 'Yes')
+                                            <span class="removeBold"> {{ @$auction->get->custom_carport }}</span>
+                                        @else
+                                            <span class="removeBold"> {{ @$auction->get->carportOptions }}</span>
+                                        @endif
+                                    </div>
+                                @endif
                             @endif
-                            @if (@$auction->get->property_type === 'Income' && @$auction->get->pool_needed !== null && @$auction->get->pool_needed !== '' && @$auction->get->pool_needed !== 'null')
+
+                            @if (in_array($propType, ['Residential', 'Income']))
+                                @if (@$auction->get->minimum_heated_square != null && @$auction->get->minimum_heated_square != 'null' && @$auction->get->minimum_heated_square != '')
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Total SqFt:
+                                        <span class="removeBold">
+                                            @php
+                                                $sqftVal = str_replace(',', '', @$auction->get->minimum_heated_square);
+                                                echo is_numeric($sqftVal) ? number_format((float)$sqftVal, 0) : @$auction->get->minimum_heated_square;
+                                            @endphp
+                                        </span>
+                                    </div>
+                                @endif
+                                @if (@$auction->get->sqft_heated_source != null && @$auction->get->sqft_heated_source != '' && @$auction->get->sqft_heated_source != 'null')
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        SqFt Heated Source:
+                                        <span class="removeBold">{{ @$auction->get->sqft_heated_source }}</span>
+                                    </div>
+                                @endif
+                            @endif
+
+                            @if (in_array($propType, ['Residential', 'Income']))
+                                @php
+                                    $appliancesData = @$auction->get->appliances;
+                                    $appliancesList = [];
+                                    if ($appliancesData) {
+                                        $appliancesList = is_string($appliancesData) ? (json_decode($appliancesData, true) ?? []) : (array)$appliancesData;
+                                    }
+                                    $otherAppliances = @$auction->get->other_appliances ?? '';
+                                @endphp
+                                @if (!empty($appliancesList))
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Appliances Included:
+                                        @foreach ($appliancesList as $appliance)
+                                            @if ($appliance !== 'Other')
+                                                <span class="removeBold badge bg-secondary">{{ $appliance }}</span>
+                                            @endif
+                                        @endforeach
+                                        @if (in_array('Other', $appliancesList) && !empty($otherAppliances))
+                                            <span class="removeBold badge bg-secondary">{{ $otherAppliances }}</span>
+                                        @endif
+                                    </div>
+                                @endif
+                            @endif
+
+                            @if ($propType === 'Income' && @$auction->get->pool_needed !== null && @$auction->get->pool_needed !== '' && @$auction->get->pool_needed !== 'null')
                                 @include('hire_seller_agent.partials.pool-display', ['auction' => $auction])
                             @endif
+
                             @if (@$auction->get->total_acreage != null && @$auction->get->total_acreage != '' && @$auction->get->total_acreage != 'null')
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Total Acreage:
                                     <span class="removeBold">{{ @$auction->get->total_acreage }}</span>
                                 </div>
                             @endif
-                            @if (@$auction->get->minimum_net_leasable_square != null && @$auction->get->minimum_net_leasable_square != 'null' && @$auction->get->minimum_net_leasable_square != '')
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Net Leasable Square Footage:
-                                    <span class="removeBold">
-                                        @php
-                                            $netSqftVal = str_replace(',', '', @$auction->get->minimum_net_leasable_square);
-                                            echo is_numeric($netSqftVal) ? number_format((float)$netSqftVal, 0) : @$auction->get->minimum_net_leasable_square;
-                                        @endphp
-                                    </span>
-                                </div>
+
+                            @if (in_array($propType, ['Commercial', 'Business', 'Income']))
+                                @if (@$auction->get->minimum_net_leasable_square != null && @$auction->get->minimum_net_leasable_square != 'null' && @$auction->get->minimum_net_leasable_square != '')
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Net Leasable Square Footage:
+                                        <span class="removeBold">
+                                            @php
+                                                $netSqftVal = str_replace(',', '', @$auction->get->minimum_net_leasable_square);
+                                                echo is_numeric($netSqftVal) ? number_format((float)$netSqftVal, 0) : @$auction->get->minimum_net_leasable_square;
+                                            @endphp
+                                        </span>
+                                    </div>
+                                @endif
                             @endif
-                            @if (@$auction->get->garageOption != null && @$auction->get->garageOption != 'null')
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Garage/Parking Features:
-                                    <span class="removeBold">
-                                        ({{ @$auction->get->garageOption }})
-                                    </span><br>
-                                    @if (@$auction->get->garageOption == 'Yes')
-                                        @foreach (@$auction->get->garage_parking as $item)
-                                            <span class="removeBold badge bg-secondary">
-                                                {{ @$item }}
-                                            </span>
+
+                            @if (in_array($propType, ['Commercial', 'Business']))
+                                @php
+                                    $garageParkingData = @$auction->get->garage_parking_spaces_option;
+                                    $garageParkingList = [];
+                                    if ($garageParkingData) {
+                                        $garageParkingList = is_string($garageParkingData) ? (json_decode($garageParkingData, true) ?? []) : (array)$garageParkingData;
+                                    }
+                                    $otherParkingWrapper = @$auction->get->other_parking_space_wrapper ?? '';
+                                @endphp
+                                @if (!empty($garageParkingList))
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Garage/Parking Features:
+                                        @foreach ($garageParkingList as $gpItem)
+                                            @if ($gpItem !== 'Other')
+                                                <span class="removeBold badge bg-secondary">{{ $gpItem }}</span>
+                                            @endif
                                         @endforeach
-                                        @if (!empty($auction->get->other_services))
-                                            <span class="removeBold badge bg-secondary">
-                                                @foreach ($auction->get->other_services as $other_service)
-                                                    <br>{{ $other_service }}
-                                                @endforeach
-                                            </span>
+                                        @if (in_array('Other', $garageParkingList) && !empty($otherParkingWrapper))
+                                            <span class="removeBold badge bg-secondary">{{ $otherParkingWrapper }}</span>
                                         @endif
-                                    @endif
-                                </div>
+                                    </div>
+                                @endif
                             @endif
-                            @if (@$auction->get->carport_needed != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                   Carport:
-                                    <span class="removeBold">
-                                        <span
-                                            class="removeBold badge bg-secondary">{{ @$auction->get->carport_needed }}</span>
-                                    </span>
-                                </div>
+
+                            @if (in_array($propType, ['Residential', 'Income']))
+                                @if (@$auction->get->carport_needed != null)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                       Carport:
+                                        <span class="removeBold">
+                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->carport_needed }}</span>
+                                        </span>
+                                    </div>
+                                @endif
+                                @if (@$auction->get->other_carport_needed != '')
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                      Carport Spaces:
+                                        <span class="removeBold">
+                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->other_carport_needed }}</span>
+                                        </span>
+                                    </div>
+                                @endif
+                                @if (@$auction->get->garage_needed != null)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                      Garage:
+                                        <span class="removeBold">
+                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->garage_needed }}</span>
+                                        </span>
+                                    </div>
+                                @endif
+                                @if (@$auction->get->other_garage_needed != '')
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                      Garage Spaces:
+                                        <span class="removeBold">
+                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->other_garage_needed }}</span>
+                                        </span>
+                                    </div>
+                                @endif
                             @endif
-                            @if (@$auction->get->other_carport_needed != '')
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                  Carport Spaces:
-                                    <span class="removeBold">
-                                        <span
-                                            class="removeBold badge bg-secondary">{{ @$auction->get->other_carport_needed }}</span>
-                                    </span>
-                                </div>
-                            @endif
-                            @if (@$auction->get->garage_needed != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                  Garage:
-                                    <span class="removeBold">
-                                        <span
-                                            class="removeBold badge bg-secondary">{{ @$auction->get->garage_needed }}</span>
-                                    </span>
-                                </div>
-                            @endif
-                            @if (@$auction->get->other_garage_needed != '')
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                  Garage Spaces:
-                                    <span class="removeBold">
-                                        <span
-                                            class="removeBold badge bg-secondary">{{ @$auction->get->other_garage_needed }}</span>
-                                    </span>
-                                </div>
-                            @endif
-                            @if (@$auction->get->property_type !== 'Income' && @$auction->get->pool_needed !== null && @$auction->get->pool_needed !== '' && @$auction->get->pool_needed !== 'null')
+
+                            @if ($propType === 'Residential' && @$auction->get->pool_needed !== null && @$auction->get->pool_needed !== '' && @$auction->get->pool_needed !== 'null')
                                 @include('hire_seller_agent.partials.pool-display', ['auction' => $auction])
                             @endif
 
-                            @if (@$auction->get->view_preference != null || @$auction->get->other_preferences != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    View:
-                                    @foreach (@$auction->get->view_preference as $item)
-                                        @if ($item !== 'Other')
-                                        <span class="removeBold badge bg-secondary">{{ @$item }}</span>
-                                        @endif
-                                    @endforeach
-                                    @if (@$auction->get->other_preferences)
-                                        <span class="removeBold badge bg-secondary">{{ @$auction->get->other_preferences }}</span>
-                                    @endif
-                                </div>
-                            @endif
-                            @if (@$auction->get->leasing_55_plus != null && @$auction->get->leasing_55_plus != '')
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Age-Restricted Community:
-                                <span class="removeBold">
-                                    {{ @$auction->get->leasing_55_plus }}</span>
-                            </div>
-                            @endif
-
-                            @if (@$auction->get->non_negotiable_amenities != null || @$auction->get->other_non_negotiable_amenities != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Amenities and Property Features:
-                                    @if (gettype(@$auction->get->non_negotiable_amenities) == 'array')
-                                        @foreach (@$auction->get->non_negotiable_amenities as $item)
+                            @if (in_array($propType, ['Residential', 'Income']))
+                                @if (@$auction->get->view_preference != null || @$auction->get->other_preferences != null)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        View:
+                                        @foreach (@$auction->get->view_preference as $item)
                                             @if ($item !== 'Other')
                                             <span class="removeBold badge bg-secondary">{{ @$item }}</span>
                                             @endif
                                         @endforeach
-                                    @endif
-                                    @if (@$auction->get->other_non_negotiable_amenities)
-                                        <span class="removeBold badge bg-secondary">{{ @$auction->get->other_non_negotiable_amenities }}</span>
-                                    @endif
-                                </div>
-                            @endif
-
-
-
-
-                            @if (@$auction->get->pets != null)
-                            <div class="col-md-12 col-12 pt-2 removeBold">
-                                <span class="fw-bold">Pets Allowed:</span>
-                                {{ @$auction->get->pets }}
-                            </div>
-                            @endif
-
-                            @if (@$auction->get->pets === "Yes" || @$auction->get->pets === "1" || @$auction->get->pets === 1)
-                                @if (@$auction->get->number_of_pets != null)
-                                <div class="col-md-12 col-12 pt-2 removeBold">
-                                    <span class="fw-bold">Number of Pets Allowed:</span>
-                                    {{ @$auction->get->number_of_pets }}
-                                </div>
-                                @endif
-
-                                @if (@$auction->get->type_of_pets)
-                                <div class="col-md-12 col-12 pt-2 removeBold">
-                                    <span class="fw-bold">Acceptable Pet Types:</span>
-                                    {{ @$auction->get->type_of_pets }}
-                                </div>
-                                @endif
-
-                                @if (@$auction->get->weight_of_pets)
-                                <div class="col-md-12 col-12 pt-2 removeBold">
-                                    <span class="fw-bold">Maximum Weight Per Pet (lbs):</span>
-                                    {{ @$auction->get->weight_of_pets }}
-                                </div>
-                                @endif
-
-                                @php
-                                    $petRestrictVal = @$auction->get->breed_of_pets ?: @$auction->get->breed_restrictions ?: @$auction->get->has_breed_restrictions;
-                                @endphp
-                                @if (!empty($petRestrictVal) && $petRestrictVal != 'null')
-                                <div class="col-md-12 col-12 pt-2 removeBold">
-                                    <span class="fw-bold">Pet Restrictions:</span>
-                                    {{ $petRestrictVal }}
-                                </div>
-                                @endif
-                            @endif
-
-                            @if (@$auction->get->property_type === 'Income')
-                                @php
-                                    $unitNumber = @$auction->get->unit_number;
-                                @endphp
-                                @if (!empty($unitNumber) && $unitNumber != 'null')
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Total Number of Units:
-                                        <span class="removeBold">{{ $unitNumber }}</span>
+                                        @if (@$auction->get->other_preferences)
+                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->other_preferences }}</span>
+                                        @endif
                                     </div>
                                 @endif
+                            @endif
 
-                                @php
-                                    $unitBuildings = @$auction->get->unit_buildings;
-                                @endphp
-                                @if (!empty($unitBuildings) && $unitBuildings != 'null')
+                            @if (in_array($propType, ['Residential', 'Income']))
+                                @if (@$auction->get->leasing_55_plus != null && @$auction->get->leasing_55_plus != '')
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
+                                    Age-Restricted Community:
+                                    <span class="removeBold">
+                                        {{ @$auction->get->leasing_55_plus }}</span>
+                                </div>
+                                @endif
+                            @endif
+
+                            @if (!in_array($propType, ['Vacant Land']))
+                                @if (@$auction->get->non_negotiable_amenities != null || @$auction->get->other_non_negotiable_amenities != null)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Total Number of Buildings:
-                                        <span class="removeBold">{{ $unitBuildings }}</span>
+                                        Amenities and Property Features:
+                                        @if (gettype(@$auction->get->non_negotiable_amenities) == 'array')
+                                            @foreach (@$auction->get->non_negotiable_amenities as $item)
+                                                @if ($item !== 'Other')
+                                                <span class="removeBold badge bg-secondary">{{ @$item }}</span>
+                                                @endif
+                                            @endforeach
+                                        @endif
+                                        @if (@$auction->get->other_non_negotiable_amenities)
+                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->other_non_negotiable_amenities }}</span>
+                                        @endif
                                     </div>
                                 @endif
+                            @endif
 
+                            @if (in_array($propType, ['Residential', 'Income']))
+                                @if (@$auction->get->pets != null)
+                                <div class="col-md-12 col-12 pt-2 removeBold">
+                                    <span class="fw-bold">Pets Allowed:</span>
+                                    {{ @$auction->get->pets }}
+                                </div>
+                                @endif
+
+                                @if (@$auction->get->pets === "Yes" || @$auction->get->pets === "1" || @$auction->get->pets === 1)
+                                    @if (@$auction->get->number_of_pets != null)
+                                    <div class="col-md-12 col-12 pt-2 removeBold">
+                                        <span class="fw-bold">Number of Pets Allowed:</span>
+                                        {{ @$auction->get->number_of_pets }}
+                                    </div>
+                                    @endif
+
+                                    @if (@$auction->get->type_of_pets)
+                                    <div class="col-md-12 col-12 pt-2 removeBold">
+                                        <span class="fw-bold">Acceptable Pet Types:</span>
+                                        {{ @$auction->get->type_of_pets }}
+                                    </div>
+                                    @endif
+
+                                    @if (@$auction->get->weight_of_pets)
+                                    <div class="col-md-12 col-12 pt-2 removeBold">
+                                        <span class="fw-bold">Maximum Weight Per Pet (lbs):</span>
+                                        {{ @$auction->get->weight_of_pets }}
+                                    </div>
+                                    @endif
+
+                                    @php
+                                        $petRestrictVal = @$auction->get->breed_of_pets ?: @$auction->get->breed_restrictions ?: @$auction->get->has_breed_restrictions;
+                                    @endphp
+                                    @if (!empty($petRestrictVal) && $petRestrictVal != 'null')
+                                    <div class="col-md-12 col-12 pt-2 removeBold">
+                                        <span class="fw-bold">Pet Restrictions:</span>
+                                        {{ $petRestrictVal }}
+                                    </div>
+                                    @endif
+                                @endif
+                            @endif
+
+                            @if ($propType === 'Business')
+                                @php
+                                    $realEstatePurchase = @$auction->get->real_estate_purchase;
+                                @endphp
+                                @if (!empty($realEstatePurchase) && $realEstatePurchase != 'null')
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Business & Real Estate Purchase Requirements:
+                                        <span class="removeBold">{{ $realEstatePurchase }}</span>
+                                    </div>
+                                @endif
+                            @endif
+
+                            @if (in_array($propType, ['Commercial', 'Business', 'Income']))
+                                @php
+                                    $assetsData = @$auction->get->assets;
+                                    $assetsList = [];
+                                    if ($assetsData) {
+                                        $assetsList = is_string($assetsData) ? (json_decode($assetsData, true) ?? []) : (array)$assetsData;
+                                    }
+                                @endphp
+                                @if (!empty($assetsList))
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Included Property or Business Assets:
+                                        @foreach ($assetsList as $asset)
+                                            <span class="removeBold badge bg-secondary">{{ $asset }}</span>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            @endif
+
+                            @if (in_array($propType, ['Commercial', 'Business', 'Income']))
                                 @php
                                     $minAnnualNet = @$auction->get->minimum_annual_net_income;
                                 @endphp
@@ -762,20 +831,26 @@
                                         <span class="removeBold">{{ $minCapRate }}%</span>
                                     </div>
                                 @endif
+                            @endif
+
+                            @if ($propType === 'Income')
+                                @php
+                                    $unitNumber = @$auction->get->unit_number;
+                                @endphp
+                                @if (!empty($unitNumber) && $unitNumber != 'null')
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Total Number of Units:
+                                        <span class="removeBold">{{ $unitNumber }}</span>
+                                    </div>
+                                @endif
 
                                 @php
-                                    $assetsData = @$auction->get->assets;
-                                    $assetsList = [];
-                                    if ($assetsData) {
-                                        $assetsList = is_string($assetsData) ? (json_decode($assetsData, true) ?? []) : (array)$assetsData;
-                                    }
+                                    $unitBuildings = @$auction->get->unit_buildings;
                                 @endphp
-                                @if (!empty($assetsList))
+                                @if (!empty($unitBuildings) && $unitBuildings != 'null')
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Included Property or Business Assets:
-                                        @foreach ($assetsList as $asset)
-                                            <span class="removeBold badge bg-secondary">{{ $asset }}</span>
-                                        @endforeach
+                                        Total Number of Buildings:
+                                        <span class="removeBold">{{ $unitBuildings }}</span>
                                     </div>
                                 @endif
 
