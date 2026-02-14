@@ -2407,7 +2407,9 @@ class TenantAgentAuctionEdit extends Component
         $this->property_type = $auction->info('property_type');
         
         // Business-specific fields
+        $this->business_type = $auction->info('business_type') ?? '';
         $this->business_type_selected = $auction->info('business_type_selected') ?? '';
+        $this->other_business_type = $auction->info('other_business_type') ?? '';
         $this->real_estate_purchase = $auction->info('real_estate_purchase') ?? '';
         $rawAssets = $auction->info('assets');
         $this->assets = $rawAssets ? (is_string($rawAssets) ? json_decode($rawAssets, true) ?? [] : (array)$rawAssets) : [];

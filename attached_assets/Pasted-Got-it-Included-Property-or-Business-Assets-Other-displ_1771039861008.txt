@@ -1,0 +1,292 @@
+Got it — **Included Property or Business Assets “Other” display logic applies to: Income + Commercial + Business (NOT Vacant Land).** Here is the **full rewritten copy/paste Replit instruction set** with that corrected everywhere.
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS (COPY/PASTE)
+
+### Hire a Seller’s Agent Listings — Residential, Income, Commercial, Business, Vacant Land
+
+**Test login:** `tenant@exp.com`
+**Must work for:** Create → Save Draft → Open Draft → Edit → Save → Live Listing Display
+
+---
+
+# 1) BUSINESS LISTINGS — Business Type must SAVE + REPOPULATE (Edit + Draft) + DISPLAY correctly
+
+### Issue
+
+Business Type is not displaying the selected option on **Edit** (blank) and is not reliably saving for **Drafts**.
+
+### Required Behavior
+
+* Business Type saves to DB on Create/Submit and Draft Save
+* Draft reload repopulates Business Type selection
+* Edit repopulates Business Type selection
+* Live listing displays exactly what was selected
+
+## 1.1 Database / Model Safeguards
+
+Confirm Seller listings table/model includes:
+
+* `business_type` (string OR id)
+* `business_type_other_text` (nullable string, only if “Other” exists)
+
+Model:
+
+* Add to `$fillable`
+* Add casts only if multi-select JSON
+
+✅ Safeguard: Create, Draft Save, and Edit must all write/read the **same columns** in the **same table**.
+
+## 1.2 Create Livewire Save (Submit + Draft Save)
+
+In Seller Create Livewire component:
+
+* Bind inputs:
+
+  * `wire:model="business_type"`
+  * `wire:model="business_type_other_text"` (if Other)
+
+On Submit and on Save Draft:
+
+```php
+$listing->business_type = $this->business_type;
+$listing->business_type_other_text = $this->business_type_other_text;
+```
+
+✅ Safeguard: Do not rely on `fill()` unless keys match exactly.
+
+## 1.3 Edit + Draft Repopulation (Mount Only)
+
+In Seller Edit component `mount()` and Draft load:
+
+```php
+$this->business_type = $listing->business_type;
+$this->business_type_other_text = $listing->business_type_other_text;
+```
+
+✅ Safeguards:
+
+* Do NOT reset these in `render()`
+* Only clear Business fields if property_type changes away from Business
+
+## 1.4 Live Listing Display (Business Type)
+
+On Business live listing display:
+
+* Show:
+
+  * **Business Type:** {business_type}
+* If business_type is “Other”:
+
+  * **Business Type (Other):** {business_type_other_text}
+
+✅ Safeguard: Display must be driven by DB values, not a default option list.
+
+---
+
+# 2) COMMERCIAL + BUSINESS — Heated Sqft must show immediately after Bathrooms (Live Listing)
+
+### Issue
+
+Heated Sqft is missing or not positioned directly after Bathrooms.
+
+### Required Order (Commercial + Business live listing)
+
+1. Bathrooms
+2. **Heated Sqft**
+3. Continue remaining fields
+
+## 2.1 Display Order Safeguard
+
+In the Seller live listing Blade/view used for Commercial and Business:
+
+* Render Bathrooms row
+* Immediately after, render Heated Sqft row (if present)
+
+✅ Safeguards:
+
+* Only show Heated Sqft if a value exists
+* Do not use a shared “Residential” block that inserts other fields in between
+
+---
+
+# 3) INCLUDED PROPERTY OR BUSINESS ASSETS — “Other” must display the custom text (Income + Commercial + Business ONLY)
+
+### Issue
+
+If user selects “Other” for Included Property or Business Assets, the live listing displays the word **Other** instead of the actual input text.
+
+### Applies to property types (ONLY):
+
+✅ Income
+✅ Commercial
+✅ Business
+🚫 Not part of this fix for Vacant Land
+
+### Required Behavior
+
+When rendering **Included Property or Business Assets:**
+
+* If “Other” is selected, display the user’s custom input text (not the word “Other”)
+* Must repopulate correctly in Draft + Edit as well
+
+## 3.1 Required DB fields
+
+Confirm Seller listing model/table contains either:
+**Option A (recommended):**
+
+* `included_assets_selection` (string, ex: “Fixtures”, “Business Assets”, “Other”)
+* `included_assets_other_text` (nullable string)
+
+**Option B (multi-select):**
+
+* `included_assets` (json array of selected values)
+* `included_assets_other_text` (nullable string)
+
+Model safeguards:
+
+* Add to `$fillable`
+* Add to `$casts` if json array
+
+## 3.2 Save safeguards (Create + Draft Save + Edit Save)
+
+On save:
+
+```php
+$listing->included_assets_selection = $this->included_assets_selection;
+$listing->included_assets_other_text = $this->included_assets_other_text;
+```
+
+If multi-select json:
+
+```php
+$listing->included_assets = $this->included_assets; // array
+$listing->included_assets_other_text = $this->included_assets_other_text;
+```
+
+✅ Safeguard:
+
+* If “Other” is selected but text is blank, block save OR show validation error (preferred):
+
+  * “Please specify the assets included.”
+
+## 3.3 Edit/Draft repopulation safeguards (Mount Only)
+
+```php
+$this->included_assets_selection = $listing->included_assets_selection;
+$this->included_assets_other_text = $listing->included_assets_other_text;
+```
+
+(or for JSON multi-select, load array)
+
+✅ Safeguard:
+
+* Do not overwrite these values in render()
+
+## 3.4 LIVE LISTING DISPLAY RULE (Income + Commercial + Business)
+
+When rendering **Included Property or Business Assets:** on the actual listing display:
+
+### If single-select:
+
+* If selection == “Other” AND other_text exists:
+
+  * Display **other_text**
+* Else display the selected value
+
+### If multi-select:
+
+* If selected includes “Other” AND other_text exists:
+
+  * Display all selected values EXCEPT “Other”, plus append **other_text** as the “Other” value
+  * Do **not** display the word “Other” by itself
+
+✅ Safeguard: Never print the literal “Other” as the final display value.
+
+---
+
+# 4) PERCENTAGE OF MONTH’S RENT — display as “{percent}% of Month’s Rent x {months} Months” (instead of “Number of Months”)
+
+### Issue
+
+Live listing currently shows a separate “Number of Months” line. You want it shown as a single computed phrase.
+
+### Required Display
+
+Example:
+
+* **100% of Month’s Rent x 3 Months**
+
+## 4.1 Required stored fields
+
+Confirm fields exist:
+
+* `lease_percent_of_month_rent` (numeric, e.g. 100)
+* `lease_num_months` (integer, e.g. 3)
+
+✅ Safeguards:
+
+* Cast months as integer
+* Validate months required only when comp type = Percent of Month’s Rent
+
+## 4.2 Live listing rendering rule
+
+If lease comp type == “Percentage of Month’s Rent”:
+
+* Render ONE line (no separate “Number of Months” row):
+
+  * `{percent}% of Month’s Rent x {months} Months`
+
+If months is null:
+
+* Render `{percent}% of Month’s Rent` only
+
+✅ Safeguard:
+
+* Do not show “Number of Months” anywhere on listing display if using the combined phrase.
+
+## 4.3 Edit/Draft stale data safeguard
+
+If user changes comp type away from Percent of Month’s Rent:
+
+* clear months:
+
+```php
+if ($this->lease_comp_type !== 'percent_month_rent') {
+    $this->lease_num_months = null;
+}
+```
+
+---
+
+# 5) QA ACCEPTANCE TESTS (MUST PASS)
+
+Using `tenant@exp.com`:
+
+### Business Type
+
+* Create Business listing → select Business Type → Save Draft → reopen draft → selection persists
+* Submit → Edit → selection persists (not blank)
+* Live listing displays correct selection
+
+### Heated Sqft (Commercial & Business)
+
+* Bathrooms entered + Heated Sqft entered
+* Live listing shows Heated Sqft immediately after Bathrooms
+
+### Included Property or Business Assets (Income + Commercial + Business)
+
+* Select Other + enter custom text
+* Live listing displays the custom text (not “Other”)
+* Edit + Draft repopulates the custom text
+
+### Percent of Month’s Rent phrase
+
+* Select percent + months
+* Live listing shows: “{percent}% of Month’s Rent x {months} Months”
+* No separate “Number of Months” line
+
+---
+
+If you paste the **actual file path(s)** for your Seller live listing Blade and Seller Create/Edit Livewire components, I’ll convert this into **exact line edits** (with your real variable names and condition keys) so Harry can implement with no guesswork.

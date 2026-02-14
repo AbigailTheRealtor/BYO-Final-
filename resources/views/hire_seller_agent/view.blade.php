@@ -517,7 +517,7 @@
                             @if (in_array($propType, ['Commercial', 'Business']))
                                 @if (@$auction->get->minimum_heated_square != null && @$auction->get->minimum_heated_square != 'null' && @$auction->get->minimum_heated_square != '')
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Total SqFt:
+                                        Heated Sqft:
                                         <span class="removeBold">
                                             @php
                                                 $sqftVal = str_replace(',', '', @$auction->get->minimum_heated_square);
@@ -802,10 +802,17 @@
                                     }
                                 @endphp
                                 @if (!empty($assetsList))
+                                    @php
+                                        $assetsOtherText = @$auction->get->assets_other;
+                                    @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Included Property or Business Assets:
                                         @foreach ($assetsList as $asset)
-                                            <span class="removeBold badge bg-secondary">{{ $asset }}</span>
+                                            @if ($asset === 'Other' && !empty($assetsOtherText))
+                                                <span class="removeBold badge bg-secondary">{{ $assetsOtherText }}</span>
+                                            @elseif ($asset !== 'Other')
+                                                <span class="removeBold badge bg-secondary">{{ $asset }}</span>
+                                            @endif
                                         @endforeach
                                     </div>
                                 @endif
@@ -1801,7 +1808,11 @@
                             } elseif ($leasingType === "Percentage of the First Month's Rent" && @$auction->get->seller_leasing_gross_month_rent) {
                                 $sellerLeasingFee = $fmtPercent(@$auction->get->seller_leasing_gross_month_rent) . " of the First Month's Rent";
                             } elseif ($leasingType === "Percentage of Month's Rent" && @$auction->get->seller_leasing_gross_month_rent) {
+                                $monthsVal = @$auction->get->seller_leasing_gross_no_of_months;
                                 $sellerLeasingFee = $fmtPercent(@$auction->get->seller_leasing_gross_month_rent) . " of Month's Rent";
+                                if (!empty($monthsVal) && $monthsVal != 'null') {
+                                    $sellerLeasingFee .= ' x ' . intval($monthsVal) . ' Months';
+                                }
                             } elseif ($leasingType === 'Percentage of Net Aggregate Rent' && @$auction->get->seller_leasing_gross_other) {
                                 $sellerLeasingFee = $fmtPercent(@$auction->get->seller_leasing_gross_other) . ' of Net Aggregate Rent';
                             } elseif ($leasingType === 'Percentage of Gross Rent' && (@$auction->get->seller_leasing_gross_percentage || @$auction->get->seller_leasing_gross_ross_percentage_rent)) {
@@ -1846,7 +1857,7 @@
                             </div>
                             @endif
 
-                            @if (in_array($leasingType, ["Percentage of Month's Rent", "Percentage of the First Month's Rent"]))
+                            @if ($leasingType === "Percentage of the First Month's Rent")
                                 @php $numMonths = @$auction->get->seller_leasing_gross_no_of_months; @endphp
                                 @if (!empty($numMonths) && $numMonths != 'null')
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
