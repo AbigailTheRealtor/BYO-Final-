@@ -560,10 +560,16 @@
                                     @endif
                                 </div>
                             @endif
-                            @if (@$auction->get->pool_needed !== null && @$auction->get->pool_needed !== '' && @$auction->get->pool_needed !== 'null')
+                            @php
+                                $sellerPropType = @$auction->get->property_type ?? '';
+                                $poolApplicable = in_array($sellerPropType, ['Residential', 'Residential Property', 'Income', 'Income Property']);
+                                $poolVal = @$auction->get->pool_needed;
+                                $poolHasValue = ($poolVal !== null && $poolVal !== '' && $poolVal !== 'null');
+                            @endphp
+                            @if ($poolApplicable)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Pool:<span class="removeBold"> {{ @$auction->get->pool_needed }}</span>
-                                    @if (@$auction->get->pool_needed === 'Yes')
+                                    Pool:<span class="removeBold"> {{ $poolHasValue ? $poolVal : 'Not Provided' }}</span>
+                                    @if ($poolVal === 'Yes')
                                         @php
                                             $poolTypeData = @$auction->get->pool_type;
                                             $poolTypes = [];
