@@ -1314,7 +1314,7 @@
                                 "Install a real estate sign on the property",
                                 "Install a lockbox for Agent access",
                                 "Schedule and attend showings with prospective Buyers",
-                                "Coordinate showings with Buyer\u2019s Agents",
+                                "Coordinate showings with Buyer’s Agents",
                                 "Collect and relay showing feedback to the Seller",
                             ],
                             "📉 Offer & Contract Management" => [
@@ -1322,7 +1322,7 @@
                                 "Provide the Seller with the necessary disclosure forms required by state or local law",
                                 "Negotiate deal structure, deposits, due diligence timelines, and Buyer contingencies",
                                 "Draft and deliver counteroffers and manage revisions to the purchase agreement",
-                                "Manage communication with the Buyer\u2019s Agent or Buyers",
+                                "Manage communication with the Buyer’s Agent or Buyers",
                                 "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
                                 "Assist with inspection-related negotiations and Buyer requests for repairs",
                                 "Monitor contract contingencies, including financing, lease audits, estoppel review, insurance, inspections, and environmental reports",
@@ -1330,7 +1330,7 @@
                             ],
                             "🧾 Closing Coordination & Transaction Management" => [
                                 "Review and organize due diligence documentation such as lease agreements, estoppel certificates, rent rolls, utility summaries, and operating expense breakdowns (as available)",
-                                "Coordinate with the Buyer\u2019s Agent, Buyer\u2019s Lender, Title, Escrow, and/or Attorney to prepare for Closing",
+                                "Coordinate with the Buyer’s Agent, Buyer’s Lender, Title, Escrow, and/or Attorney to prepare for Closing",
                                 "Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed",
                                 "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
                                 "Schedule and confirm the Final Walkthrough",
@@ -1354,7 +1354,7 @@
                                 "List the Business Opportunity on BizBuySell.com",
                                 "List the Business Opportunity on BizQuest.com",
                                 "List the Business Opportunity on BusinessesForSale.com",
-                                "Create a branded flyer summarizing the Business\u2019s key features (e.g., industry, cash flow, assets)",
+                                "Create a branded flyer summarizing the Business’s key features (e.g., industry, cash flow, assets)",
                                 "Post the Business Opportunity on Craigslist under the \"Business for Sale\" category",
                                 "Promote the listing on Facebook in Business Buyer, Franchise, or Investor Groups",
                                 "Share the listing on Instagram using posts, stories, or reels",
@@ -1366,7 +1366,7 @@
                                 "Launch hyperlocal or interest-based digital ad campaigns promoting the listing",
                             ],
                             "🛠️ Listing Preparation & Confidential Marketing" => [
-                                "Conduct a preliminary Seller consultation to gather details about the Business\u2019s operations, assets, and goals",
+                                "Conduct a preliminary Seller consultation to gather details about the Business’s operations, assets, and goals",
                                 "Provide a business sale checklist to collect financials, licenses, lease terms, and key operational details",
                                 "Assist with preparing a non-confidential teaser or executive summary for marketing purposes",
                                 "Organize internal documentation such as profit and loss statements, balance sheets, FF&E summaries, inventory lists, and staffing overviews (as available)",
@@ -1389,7 +1389,7 @@
                                 "Install a real estate sign on the property",
                                 "Install a lockbox for Agent access",
                                 "Schedule and attend showings with prospective Buyers",
-                                "Coordinate showings with Buyer\u2019s Agents",
+                                "Coordinate showings with Buyer’s Agents",
                                 "Coordinate directly with Tenant(s) or business staff to arrange access for showings",
                                 "Collect and relay showing feedback to the Seller",
                             ],
@@ -1398,7 +1398,7 @@
                                 "Provide the Seller with the necessary disclosure forms required by state or local law",
                                 "Negotiate deal terms such as purchase price, deposit structure, contingencies, transition period, and asset allocation",
                                 "Coordinate revisions, counteroffers, and ongoing communication with the Buyer or their representatives",
-                                "Manage communication with the Buyer\u2019s Broker or Buyer",
+                                "Manage communication with the Buyer’s Broker or Buyer",
                                 "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
                                 "Monitor contract contingencies and organize delivery of due diligence materials such as leases, vendor contracts, tax filings, and financial statements",
                                 "Refer the Seller to legal counsel for formal contract drafting and execution (referrals only — no legal advice provided)",
@@ -1407,7 +1407,7 @@
                             "📃 Closing Coordination & Transaction Management" => [
                                 "Coordinate Buyer inspections, management interviews, and site visits as applicable",
                                 "Provide a transaction checklist and track key deadlines throughout the escrow period",
-                                "Coordinate with the Buyer\u2019s Attorney, Escrow Officer, or designated Closing Facilitator",
+                                "Coordinate with the Buyer’s Attorney, Escrow Officer, or designated Closing Facilitator",
                                 "Review the Settlement Statement and coordinate corrections with relevant parties",
                                 "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
                                 "Schedule and confirm the Final Walkthrough",
@@ -1458,7 +1458,7 @@
                             "🏡 Showings & Access Coordination" => [
                                 "Install a real estate sign on the property",
                                 "Schedule and attend showings with prospective Buyers",
-                                "Coordinate showings with Buyer\u2019s Agents",
+                                "Coordinate showings with Buyer’s Agents",
                                 "Collect and relay showing feedback to the Seller",
                             ],
                             "📉 Offer & Contract Management" => [
@@ -1466,13 +1466,13 @@
                                 "Provide the Seller with the necessary disclosure forms required by state or local law",
                                 "Negotiate price, due diligence timelines, and closing terms",
                                 "Draft and deliver counteroffers and manage revisions to the purchase agreement",
-                                "Manage communication with the Buyer\u2019s Agent or Buyer",
+                                "Manage communication with the Buyer’s Agent or Buyer",
                                 "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
                                 "Monitor contract contingencies, including survey, zoning verification, financing, and environmental reviews",
                                 "Provide referrals to Attorneys, Title Companies, Escrow Officers, or Land Use Professionals (referrals only — no endorsement or warranty is made)",
                             ],
                             "📃 Closing Coordination & Transaction Management" => [
-                                "Coordinate surveys, site visits, or environmental access with the Buyer or Buyer\u2019s Agent, as applicable",
+                                "Coordinate surveys, site visits, or environmental access with the Buyer or Buyer’s Agent, as applicable",
                                 "Coordinate with Title, Escrow, and/or Attorney to prepare for Closing",
                                 "Review the Settlement Statement and coordinate with all parties if corrections are needed",
                                 "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
@@ -1503,11 +1503,19 @@
                         $allServices = array_map('trim', $allServicesRaw);
                         $otherServices = is_array(@$auction->get->other_services) ? $auction->get->other_services : [];
 
+                        $canon = function($str) {
+                            $str = str_replace(["\u{2018}", "\u{2019}", "\u{201A}", "\u{2032}"], "'", $str);
+                            $str = str_replace(["\u{201C}", "\u{201D}", "\u{201E}", "\u{2033}"], '"', $str);
+                            $str = str_replace(["\u{2014}", "\u{2013}"], '-', $str);
+                            return trim($str);
+                        };
+
+                        $allServicesCanon = array_map($canon, $allServices);
+
                         // Check if we have any services that match categories
                         $hasMatchedServices = false;
                         foreach ($categories as $categoryServices) {
-                            $trimmedCat = array_map('trim', $categoryServices);
-                            $matched = array_filter($allServices, fn($s) => in_array(trim($s), $trimmedCat));
+                            $matched = array_filter($categoryServices, fn($s) => in_array($canon($s), $allServicesCanon));
                             if (!empty($matched)) {
                                 $hasMatchedServices = true;
                                 break;
@@ -1528,8 +1536,8 @@
                             @if ($hasMatchedServices)
                                 @foreach ($categories as $categoryName => $categoryServices)
                                     @php
-                                        $matchedServices = array_filter($categoryServices, function($service) use ($allServices) {
-                                            return in_array(trim($service), $allServices);
+                                        $matchedServices = array_filter($categoryServices, function($service) use ($allServicesCanon, $canon) {
+                                            return in_array($canon($service), $allServicesCanon);
                                         });
                                     @endphp
                                     @if (!empty($matchedServices))
