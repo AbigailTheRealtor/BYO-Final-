@@ -1588,7 +1588,7 @@
                                         <ul class="services">
                                             @foreach ($matchedServices as $service)
                                             <li style="font-size: 16px;">{{ trim($service) }}</li>
-                                            @if (trim($service) === 'Provide digital photo enhancements' && !empty($photoEnhancements))
+                                            @if (in_array(trim($service), ['Provide digital photo enhancements', 'Provide digital enhancements to media assets']) && !empty($photoEnhancements))
                                                 <ul style="list-style: disc; padding-left: 1.5rem; margin-top: 0.25rem; margin-bottom: 0.25rem;">
                                                     @foreach ($photoEnhancements as $enhancement)
                                                         @if ($enhancement !== 'Other')
@@ -1615,7 +1615,7 @@
                                     <ul class="services">
                                         @foreach ($allServices as $service)
                                         <li style="font-size: 16px;">{{ trim($service) }}</li>
-                                        @if (trim($service) === 'Provide digital photo enhancements' && !empty($photoEnhancements))
+                                        @if (in_array(trim($service), ['Provide digital photo enhancements', 'Provide digital enhancements to media assets']) && !empty($photoEnhancements))
                                             <ul style="list-style: disc; padding-left: 1.5rem; margin-top: 0.25rem; margin-bottom: 0.25rem;">
                                                 @foreach ($photoEnhancements as $enhancement)
                                                     @if ($enhancement !== 'Other')
