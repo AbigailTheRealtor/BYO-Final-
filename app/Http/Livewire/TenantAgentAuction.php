@@ -3496,7 +3496,7 @@ class TenantAgentAuction extends Component
         $auction->saveMeta('garage_parking_spaces', $this->garage_parking_spaces);
         $auction->saveMeta('garage_parking_spaces_option',  json_encode($this->garage_parking_spaces_option));
         $auction->saveMeta('other_parking_space_wrapper', $this->other_parking_space_wrapper);
-        if (($this->property_type ?? '') === 'Residential Property') {
+        if (in_array($this->property_type ?? '', ['Residential Property', 'Residential', 'Income', 'Income Property'])) {
             $auction->saveMeta('pool_needed', $this->pool_needed);
             $auction->saveMeta('pool_type', json_encode($this->pool_type));
         } else {
