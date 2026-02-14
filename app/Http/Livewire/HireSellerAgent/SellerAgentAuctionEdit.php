@@ -1101,9 +1101,10 @@ class SellerAgentAuctionEdit extends Component
             $this->garage_parking_spaces = $auction->get->garage_parking_spaces;
             $this->garage_parking_spaces_option = $auction->get->garage_parking_spaces_option;
             $this->other_parking_space_wrapper = $auction->get->other_parking_space_wrapper;
-            $this->pool_needed = $auction->get->pool_needed;
+            $this->pool_needed = $auction->get->pool_needed ?? '';
 
-            $this->pool_type = is_string($auction->get->pool_type) ? json_decode($auction->get->pool_type, true) ?? [] : (array)$auction->get->pool_type;
+            $poolTypeRaw = $auction->get->pool_type ?? [];
+            $this->pool_type = is_string($poolTypeRaw) ? json_decode($poolTypeRaw, true) ?? [] : (array)$poolTypeRaw;
 
 
 

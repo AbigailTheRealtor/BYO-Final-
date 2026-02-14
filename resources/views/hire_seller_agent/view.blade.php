@@ -641,7 +641,7 @@
                                 </div>
                             @endif
 
-                            @if (@$auction->get->pool_needed != null)
+                            @if (@$auction->get->pool_needed !== null && @$auction->get->pool_needed !== '' && @$auction->get->pool_needed !== 'null')
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Pool:<span class="removeBold"> {{ @$auction->get->pool_needed }}</span>
                                     @if (@$auction->get->pool_needed === 'Yes')
