@@ -207,6 +207,8 @@ class SellerAgentAuction extends Component
     public $real_estate_purchase = '';
     public $number_of_unit = '';
     public $number_of_unit_other = '';
+    public $unit_number = '';
+    public $unit_buildings = '';
     public $minimum_annual_net_income = '';
     public $minimum_cap_rate = '';
     public $assets = '';
@@ -1482,6 +1484,8 @@ class SellerAgentAuction extends Component
             $this->min_acreage = $auction->get->min_acreage;
             $this->total_acreage = $auction->get->total_acreage;
             $this->minimum_cap_rate = $auction->get->minimum_cap_rate;
+            $this->unit_number = $auction->get->unit_number ?? '';
+            $this->unit_buildings = $auction->get->unit_buildings ?? '';
             $this->assets = $auction->get->assets;
             $this->assets_other = $auction->get->assets_other;
             $this->property_criteria = $auction->get->property_criteria;
@@ -1965,6 +1969,8 @@ class SellerAgentAuction extends Component
         $auction->saveMeta('real_estate_purchase', $this->real_estate_purchase);
         $auction->saveMeta('number_of_unit', $this->number_of_unit);
         $auction->saveMeta('number_of_unit_other', $this->number_of_unit_other);
+        $auction->saveMeta('unit_number', $this->unit_number);
+        $auction->saveMeta('unit_buildings', $this->unit_buildings);
         $auction->saveMeta('minimum_annual_net_income', $this->stripCommas($this->minimum_annual_net_income));
         $auction->saveMeta('leasing_55_plus', $this->leasing_55_plus);
 

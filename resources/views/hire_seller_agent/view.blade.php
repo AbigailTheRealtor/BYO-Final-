@@ -641,7 +641,6 @@
                                 </div>
                             @endif
 
-                            @if (@$auction->get->property_type !== 'Income')
                             @if (@$auction->get->pool_needed != null)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Pool:<span class="removeBold"> {{ @$auction->get->pool_needed }}</span>
@@ -650,7 +649,19 @@
                                             $poolTypeData = @$auction->get->pool_type;
                                             $poolTypes = [];
                                             if ($poolTypeData) {
-                                                $poolTypes = is_string($poolTypeData) ? (json_decode($poolTypeData, true) ?? []) : (array)$poolTypeData;
+                                                $decoded = is_string($poolTypeData) ? (json_decode($poolTypeData, true) ?? []) : (array)$poolTypeData;
+                                                if (!empty($decoded)) {
+                                                    $first = reset($decoded);
+                                                    if (is_bool($first) || $first === '1' || $first === 1 || $first === '0' || $first === 0 || $first === true || $first === false) {
+                                                        foreach ($decoded as $key => $val) {
+                                                            if ($val && $val !== '0' && $val !== 0 && $val !== false) {
+                                                                $poolTypes[] = ucfirst($key);
+                                                            }
+                                                        }
+                                                    } else {
+                                                        $poolTypes = array_values($decoded);
+                                                    }
+                                                }
                                             }
                                         @endphp
                                         @if (!empty($poolTypes))
@@ -662,7 +673,6 @@
                                         @endif
                                     @endif
                                 </div>
-                            @endif
                             @endif
 
                             @if (@$auction->get->view_preference != null || @$auction->get->other_preferences != null)
@@ -751,7 +761,7 @@
                                 @endphp
                                 @if (!empty($unitNumber) && $unitNumber != 'null')
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Total Units:
+                                        Total Number of Units:
                                         <span class="removeBold">{{ $unitNumber }}</span>
                                     </div>
                                 @endif
@@ -761,7 +771,7 @@
                                 @endphp
                                 @if (!empty($unitBuildings) && $unitBuildings != 'null')
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Total Buildings:
+                                        Total Number of Buildings:
                                         <span class="removeBold">{{ $unitBuildings }}</span>
                                     </div>
                                 @endif
@@ -771,7 +781,7 @@
                                 @endphp
                                 @if (!empty($minAnnualNet) && $minAnnualNet != 'null')
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Minimum Annual Net Income:
+                                        Annual Net Income:
                                         <span class="removeBold">${{ number_format((float) str_replace(',', '', $minAnnualNet), 2) }}</span>
                                     </div>
                                 @endif
@@ -781,7 +791,7 @@
                                 @endphp
                                 @if (!empty($minCapRate) && $minCapRate != 'null')
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Minimum Cap Rate:
+                                        Cap Rate:
                                         <span class="removeBold">{{ $minCapRate }}%</span>
                                     </div>
                                 @endif
@@ -795,7 +805,7 @@
                                 @endphp
                                 @if (!empty($assetsList))
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Assets:
+                                        Included Property or Business Assets:
                                         @foreach ($assetsList as $asset)
                                             <span class="removeBold badge bg-secondary">{{ $asset }}</span>
                                         @endforeach
@@ -1328,7 +1338,7 @@
                             ],
                             "💡 Selling Strategy & Guidance" => [
                                 "Provide a Comparative Market Analysis (CMA) with pricing insights based on recent income property sales, rental income trends, unit mix, and local investor activity",
-                                "Assist in estimating Gross Rent Multiplier (GRM), Capitalization Rate (Cap Rate), or Price per Unit based on listing details and income property comparables",
+                                "Assist in estimating Gross Rent Multiplier (GRM), Capitalization Rate (Cap Rate), or Price per Unit based on listing details and income property comparables ",
                                 "Provide general insight on likely Investor Buyer behavior, common value drivers, and investment strategies",
                                 "Recommend adjustments to pricing or marketing strategy if the property is not receiving sufficient interest",
                                 "Provide general guidance on lease transfers, rent proration, security deposits, and possession timelines",
@@ -1489,13 +1499,15 @@
                         } else {
                             $categories = $residentialCategories;
                         }
-                        $allServices = is_array(@$auction->get->services) ? $auction->get->services : [];
+                        $allServicesRaw = is_array(@$auction->get->services) ? $auction->get->services : [];
+                        $allServices = array_map('trim', $allServicesRaw);
                         $otherServices = is_array(@$auction->get->other_services) ? $auction->get->other_services : [];
 
                         // Check if we have any services that match categories
                         $hasMatchedServices = false;
                         foreach ($categories as $categoryServices) {
-                            $matched = array_filter($allServices, fn($s) => in_array($s, $categoryServices));
+                            $trimmedCat = array_map('trim', $categoryServices);
+                            $matched = array_filter($allServices, fn($s) => in_array(trim($s), $trimmedCat));
                             if (!empty($matched)) {
                                 $hasMatchedServices = true;
                                 break;
@@ -1517,7 +1529,7 @@
                                 @foreach ($categories as $categoryName => $categoryServices)
                                     @php
                                         $matchedServices = array_filter($categoryServices, function($service) use ($allServices) {
-                                            return in_array($service, $allServices);
+                                            return in_array(trim($service), $allServices);
                                         });
                                     @endphp
                                     @if (!empty($matchedServices))
@@ -1525,8 +1537,8 @@
                                         <strong>{{ $categoryName }}</strong>
                                         <ul class="services">
                                             @foreach ($matchedServices as $service)
-                                            <li style="font-size: 16px;">{{ $service }}</li>
-                                            @if ($service === 'Provide digital photo enhancements' && !empty($photoEnhancements))
+                                            <li style="font-size: 16px;">{{ trim($service) }}</li>
+                                            @if (trim($service) === 'Provide digital photo enhancements' && !empty($photoEnhancements))
                                                 <ul style="list-style: disc; padding-left: 1.5rem; margin-top: 0.25rem; margin-bottom: 0.25rem;">
                                                     @foreach ($photoEnhancements as $enhancement)
                                                         @if ($enhancement !== 'Other')
@@ -1552,8 +1564,8 @@
                                     <strong>📋 Services Requested</strong>
                                     <ul class="services">
                                         @foreach ($allServices as $service)
-                                        <li style="font-size: 16px;">{{ $service }}</li>
-                                        @if ($service === 'Provide digital photo enhancements' && !empty($photoEnhancements))
+                                        <li style="font-size: 16px;">{{ trim($service) }}</li>
+                                        @if (trim($service) === 'Provide digital photo enhancements' && !empty($photoEnhancements))
                                             <ul style="list-style: disc; padding-left: 1.5rem; margin-top: 0.25rem; margin-bottom: 0.25rem;">
                                                 @foreach ($photoEnhancements as $enhancement)
                                                     @if ($enhancement !== 'Other')

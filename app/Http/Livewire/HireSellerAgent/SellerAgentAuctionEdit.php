@@ -136,6 +136,8 @@ class SellerAgentAuctionEdit extends Component
     public $real_estate_purchase = '';
     public $number_of_unit = '';
     public $number_of_unit_other = '';
+    public $unit_number = '';
+    public $unit_buildings = '';
     public $minimum_annual_net_income = '';
     public $minimum_cap_rate = '';
     public $assets = '';
@@ -1009,6 +1011,8 @@ class SellerAgentAuctionEdit extends Component
             $this->min_acreage = $auction->get->min_acreage;
             $this->total_acreage = $auction->get->total_acreage;
             $this->minimum_cap_rate = $auction->get->minimum_cap_rate;
+            $this->unit_number = $auction->get->unit_number ?? '';
+            $this->unit_buildings = $auction->get->unit_buildings ?? '';
             $this->assets = $auction->get->assets;
             $this->assets_other = $auction->get->assets_other;
             $this->property_criteria = $auction->get->property_criteria;
@@ -1337,6 +1341,8 @@ class SellerAgentAuctionEdit extends Component
         $auction->saveMeta('min_acreage', $this->min_acreage);
         $auction->saveMeta('total_acreage', $this->total_acreage);
         $auction->saveMeta('minimum_cap_rate', $this->minimum_cap_rate);
+        $auction->saveMeta('unit_number', $this->unit_number);
+        $auction->saveMeta('unit_buildings', $this->unit_buildings);
         $auction->saveMeta('assets', $this->assets);
         $auction->saveMeta('assets_other', $this->assets_other);
         $auction->saveMeta('property_criteria', $this->property_criteria);

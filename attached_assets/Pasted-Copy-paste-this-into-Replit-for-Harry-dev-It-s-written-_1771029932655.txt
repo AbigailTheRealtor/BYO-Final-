@@ -1,0 +1,283 @@
+Copy/paste this into Replit for **Harry/dev**. It’s written as **implementation steps + safeguards**, using your exact test case (**[tenant@exp.com](mailto:tenant@exp.com) → Hire a Seller’s Agent → Income → create → submit → view live listing → edit**).
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS
+
+### Feature: Hire a Seller’s Agent → Income listings (Live Listing + Edit Persistence)
+
+### Test Account / Repro Steps (must pass)
+
+1. Login: **[tenant@exp.com](mailto:tenant@exp.com)**
+2. Create **Hire a Seller’s Agent** listing → Property Type = **Income**
+3. Set **Pool = Yes**
+4. Fill: **Included Property or Business Assets**, **Total Number of Units**, **Total Number of Buildings**, **Annual Net Income**, **Cap Rate**
+5. Select multiple services across categories (including the ones currently missing)
+6. Submit listing
+7. Open the **actual listing display** and confirm fields show correctly
+8. Click **Edit listing** and confirm everything repopulates (Pool must remain Yes)
+9. Save changes and confirm live listing updates
+
+✅ Safeguard: **If any field saves on create but fails to repopulate on edit OR fails to show on live listing, it’s a hard fail.**
+
+---
+
+# PART A — FIX “POOL” NOT SAVING + NOT SHOWING + NOT REPOPULATING
+
+## A1) Confirm DB column exists (or add it)
+
+**Goal:** Persist pool for Income listings.
+
+* Check the listings table used by Seller Agent listings (whatever table stores these listings).
+* Confirm a column exists for pool, preferably:
+
+  * `has_pool` (BOOLEAN, nullable)
+
+### If missing: create migration
+
+* Add column: `has_pool` boolean nullable
+
+✅ Safeguard:
+
+* Use a nullable boolean so “not answered” ≠ “No”.
+* Do **not** store as “Yes/No” string unless the rest of the system does. Pick one and keep consistent.
+
+## A2) Add model protection
+
+In the **Seller listing model** (the Eloquent model used for these listings):
+
+* Add `has_pool` to `$fillable`
+* Add `has_pool` to `$casts` as boolean
+
+```php
+protected $casts = [
+  'has_pool' => 'boolean',
+];
+```
+
+✅ Safeguard:
+
+* If `$guarded = []` is NOT used, missing fillable will silently fail saving.
+
+## A3) Fix Livewire Create save mapping
+
+In the **Create Livewire component** for Hire a Seller’s Agent:
+
+* Ensure the input binds to a Livewire property that is used in the save method:
+
+  * `wire:model="has_pool"`
+
+In the save/submit method:
+
+* Explicitly assign:
+
+```php
+$listing->has_pool = $this->has_pool;
+```
+
+✅ Safeguard:
+
+* Do not rely on `$listing->fill($this->all())` unless you’re 100% sure the key names match.
+* Add an assertion log (temporary) to confirm the Livewire value is not null at save.
+
+## A4) Fix Livewire Edit repopulation
+
+In the **Edit Livewire component** mount/load method:
+
+* Explicitly load from DB:
+
+```php
+$this->has_pool = (bool) $listing->has_pool;
+```
+
+✅ Safeguard:
+
+* If you store as string (“Yes/No”), map it consistently both directions:
+
+  * Save: `Yes/No`
+  * Load: `Yes => true`, `No => false`
+
+## A5) Show it on the Live Listing view
+
+On the **actual listing display blade/view**:
+
+* Add a “Pool” row in the Income property details section:
+
+  * Label: **Pool:**
+  * Value: **Yes / No**
+  * Show only if not null
+
+✅ Safeguard:
+
+* Do not hide Pool simply because property type is Income if it exists on the Intake form.
+* If the live view is using a different data source (cached JSON, summary table), update that pipeline too.
+
+---
+
+# PART B — FIX LABEL MISMATCHES ON LIVE LISTING (DISPLAY TEXT MUST MATCH CREATION FORM)
+
+## B1) Standardize labels (do NOT abbreviate or rename)
+
+On the Income live listing display, replace:
+
+* “Total Building” → **Total Number of Buildings:**
+* “Total Units” → **Total Number of Units:**
+* “Assets” → **Included Property or Business Assets:**
+* “Minimum Annual Net Income” → **Annual Net Income:**
+* “Minimum Cap Rate” → **Cap Rate:**
+
+✅ Safeguard:
+
+* This is **display-only** unless DB keys are also wrong.
+* Keep DB keys if needed, but display labels must match the creation form for consistency.
+
+## B2) Make the live listing view pull the correct fields
+
+Confirm the view is reading the correct properties:
+
+* `included_property_or_business_assets`
+* `total_number_of_units`
+* `total_number_of_buildings`
+* `annual_net_income`
+* `cap_rate`
+
+✅ Safeguard:
+
+* If the DB currently stores these as different column names (like `assets`, `total_units`, etc.), do one of these:
+
+  1. **Preferred:** Rename columns and update form mapping (clean long-term)
+  2. **Acceptable:** Keep columns, but map display labels to the old fields consistently
+
+Hard rule: **Live listing labels must match creation form wording.**
+
+---
+
+# PART C — SERVICES: MUST DISPLAY ONLY SELECTED SERVICES, IN THE EXACT ORDER OF CREATION FORM
+
+## C1) Root cause
+
+Service order breaks when services are stored as:
+
+* associative arrays (keys reorder)
+* database joins (ORDER BY missing)
+* booleans (rendered from a config list not tied to user selection order)
+* grouped loops that sort by label
+
+## C2) Required storage approach (ordered)
+
+Store selected services in the listing as an **ordered JSON array** exactly as selected in the form.
+
+Example field:
+
+* `selected_services` (JSON)
+
+Store as:
+
+```json
+[
+  "List the property on the local Multiple Listing Service (MLS)",
+  "Syndicate the listing to third-party platforms (e.g., Zillow.com...)",
+  ...
+]
+```
+
+✅ Safeguard:
+
+* Do NOT re-sort this array on save.
+* Do NOT “group then sort” before rendering.
+
+## C3) Save logic (Create + Edit)
+
+When saving:
+
+* Build the ordered list from the creation form master list, filtering by checked items, preserving that master order.
+
+Pseudo:
+
+* `$master = config('services.income'); // in the exact UI order`
+* `$selected = array_values(array_filter($master, fn($s)=>in_array($s['id'],$this->selectedIds)));`
+* Save `$selected` in same order.
+
+✅ Safeguard:
+
+* Rendering should read from the stored ordered array, not from the master config.
+
+## C4) Live listing rendering logic
+
+Render category headers + bullet list using the stored ordered array.
+If you store only IDs, render by ID but **keep stored order**.
+
+✅ Safeguard:
+
+* Ensure the following currently missing services are included in the Income master list AND can be selected AND render:
+
+**MUST NOT BE MISSING on listing if selected:**
+
+* “Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties”
+* “Coordinate with the Buyer’s Agent, Buyer’s Lender, Title, Escrow, and/or Attorney to prepare for Closing”
+* “Assist in estimating Gross Rent Multiplier (GRM), Capitalization Rate (Cap Rate), or Price per Unit based on listing details and income property comparables”
+
+---
+
+# PART D — VALIDATION + REGRESSION SAFEGUARDS (REQUIRED)
+
+## D1) Add automated regression checks (minimum)
+
+Create a basic test or manual QA checklist that must pass before deploy:
+
+**Create → Submit → View Live → Edit**
+
+* Pool persists
+* Pool displays on live listing
+* All Income “Assets/Units/Buildings/Net Income/Cap Rate” labels match exact required wording
+* Services display **only selected**
+* Services display in **exact master order**
+* Missing services show if selected
+
+## D2) Prevent silent failures
+
+In Livewire save methods:
+
+* Add temporary logging (remove after fixed) for:
+
+  * `has_pool`
+  * `selected_services` count
+  * income fields (assets/units/buildings/net income/cap rate)
+
+✅ Safeguard:
+
+* If any of these are null after save, throw a validation error instead of silently saving an incomplete listing.
+
+## D3) One source of truth for labels
+
+Put Income labels in one config file:
+
+* `config/listing_labels.php` (or equivalent)
+  So Create + Edit + Live view all use the same label text.
+
+✅ Safeguard:
+
+* No hardcoded “Total Units” in one place and “Total Number of Units” in another.
+
+---
+
+# REQUIRED LIVE LISTING OUTPUT (FINAL TARGET)
+
+## Income Details section must show:
+
+* **Pool:** Yes/No (if answered)
+* **Included Property or Business Assets:**
+* **Total Number of Units:**
+* **Total Number of Buildings:**
+* **Annual Net Income:**
+* **Cap Rate:**
+
+## Services section must show:
+
+* Only services user selected
+* Exact same order as the creation checklist
+* Including the missing items when selected
+
+---
+
+If you want, paste your Seller Income **Livewire component names + DB table name** and I’ll rewrite this with **exact file paths, exact variable names, and exact config array structure** (so it’s plug-and-play for your codebase).
