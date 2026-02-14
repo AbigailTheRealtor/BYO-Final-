@@ -558,6 +558,18 @@
                                         </span>
                                     </div>
                                 @endif
+                                @php $totalSqFtCom = @$auction->get->total_square_feet; @endphp
+                                @if (!empty($totalSqFtCom) && $totalSqFtCom != 'null')
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Total Sqft:
+                                        <span class="removeBold">
+                                            @php
+                                                $totalSqFtComClean = str_replace(',', '', $totalSqFtCom);
+                                                echo is_numeric($totalSqFtComClean) ? number_format((float)$totalSqFtComClean, 0) : $totalSqFtCom;
+                                            @endphp
+                                        </span>
+                                    </div>
+                                @endif
                                 @if (@$auction->get->sqft_heated_source != null && @$auction->get->sqft_heated_source != '' && @$auction->get->sqft_heated_source != 'null')
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         SqFt Heated Source:
