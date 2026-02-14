@@ -1827,6 +1827,35 @@
                             Seller's Broker Leasing Fee:
                             <span class="removeBold">{{ $sellerLeasingFee }}</span>
                         </div>
+
+                        @if (in_array($propType, ['Commercial', 'Business']))
+                            @php
+                                $salesTaxVal = null;
+                                if (in_array($leasingType, ['Flat Fee'])) {
+                                    $salesTaxVal = @$auction->get->seller_leasing_gross_sales_tax_flat_free_gross;
+                                } elseif (in_array($leasingType, ["Percentage of Month's Rent", "Percentage of the First Month's Rent"])) {
+                                    $salesTaxVal = @$auction->get->seller_leasing_gross_sales_tax_first_month;
+                                } elseif ($leasingType === 'Percentage of Gross Rent') {
+                                    $salesTaxVal = @$auction->get->seller_leasing_gross_sales_tax_option_gross;
+                                }
+                            @endphp
+                            @if (!empty($salesTaxVal) && $salesTaxVal != 'null')
+                            <div class="col-md-12 col-12 pt-2 fw-bold">
+                                Sales Tax:
+                                <span class="removeBold">{{ ucfirst($salesTaxVal) }} Sales Tax</span>
+                            </div>
+                            @endif
+
+                            @if (in_array($leasingType, ["Percentage of Month's Rent", "Percentage of the First Month's Rent"]))
+                                @php $numMonths = @$auction->get->seller_leasing_gross_no_of_months; @endphp
+                                @if (!empty($numMonths) && $numMonths != 'null')
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
+                                    Number of Months:
+                                    <span class="removeBold">{{ $numMonths }}</span>
+                                </div>
+                                @endif
+                            @endif
+                        @endif
                         @endif
                         @endif
 
@@ -1851,7 +1880,7 @@
                                 }
                             @endphp
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Compensation (When Option Is Created):
+                                Compensation for Creating the Lease-Option Agreement:
                                 <span class="removeBold">{{ $leaseCompDisplay }}</span>
                             </div>
                             @endif
@@ -1866,7 +1895,7 @@
                                 }
                             @endphp
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Compensation (If Purchase Option Is Exercised):
+                                Compensation if Purchase Option is Exercised:
                                 <span class="removeBold">{{ $purchaseCompDisplay }}</span>
                             </div>
                             @endif

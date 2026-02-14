@@ -1,0 +1,224 @@
+Below are **copy/paste Replit instructions with safeguards** to apply to **Hire a Seller’s Agent listings** across **Residential, Income, Commercial, Business, Vacant Land** (and the Commercial/Business “Sales Tax + # of Months” logic).
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS
+
+### Module: Hire a Seller’s Agent → Broker Compensation & Agency Agreement → Live Listing Display
+
+**Applies to:** Residential, Income, Commercial, Business, Vacant Land
+**Test login:** `tenant@exp.com`
+
+---
+
+# 1) GLOBAL LABEL FIXES (ALL 5 PROPERTY TYPES)
+
+### Issue
+
+Live listing is showing the wrong label text for lease-option compensation fields.
+
+### Required live listing labels (Exact Text)
+
+Replace these labels on the **actual listing display**:
+
+1. **Old:** `Compensation (When Option Is Created):`
+   **New:** `Compensation for Creating the Lease-Option Agreement:`
+
+2. **Old:** `Compensation (If Purchase Option Is Exercised):`
+   **New:** `Compensation if Purchase Option is Exercised:`
+
+✅ Safeguards
+
+* This is a **display label change only** (do not rename DB columns unless they’re wrong).
+* Apply the same wording everywhere the lease-option summary appears:
+
+  * Live listing display
+  * PDF/summary view (if applicable)
+  * Any “review” step
+
+### Implementation Steps
+
+1. Locate the Seller live listing Blade where lease-option compensation is rendered. Search for:
+
+   * `Compensation (When Option Is Created)`
+   * `Purchase Option Is Exercised`
+   * `Lease-Option`
+
+2. Replace the label strings exactly with the new required labels.
+
+✅ Safeguard: Put these labels into a single config to prevent future mismatch:
+
+* `config/listing_labels.php` (or existing labels file)
+  Example keys:
+* `seller.lease_option.comp_created_label`
+* `seller.lease_option.comp_exercised_label`
+
+Then the view prints the config label instead of hardcoding.
+
+---
+
+# 2) COMMERCIAL + BUSINESS: “LEASE AGREEMENT” COMPENSATION MUST SHOW SALES TAX FOR SPECIFIC TYPES
+
+### Requirement
+
+For **Commercial** and **Business** listings ONLY, under:
+**Interested in Offering a Lease Agreement**
+If the user selected any of these compensation types:
+
+* Flat Fee
+* Percentage of Month’s Rent
+* Percentage of Gross Rent
+
+Then the live listing must show **Sales Tax**.
+
+✅ Safeguards
+
+* Sales Tax should NOT show for Residential/Income unless you explicitly want it there too.
+* Sales Tax should display only if:
+
+  * property type is Commercial or Business, AND
+  * lease agreement is enabled/Yes, AND
+  * selected compensation type is one of the 3 above, AND
+  * sales_tax has a value (or show even if 0% depending on your UI rules—pick one).
+
+---
+
+## 2.1 Confirm fields exist and persist
+
+Confirm the DB/model has:
+
+* `lease_comp_type` (string enum)
+* `lease_sales_tax` (numeric/string)
+* `lease_num_months` (int) for “Percentage of Month’s Rent”
+* plus the lease compensation amount fields you already use
+
+✅ Safeguard:
+
+* Add to `$fillable` in the Seller listing model
+* Add to `$casts` where applicable:
+
+  * `lease_num_months => integer`
+  * `lease_sales_tax => decimal:2` (or string if you format elsewhere)
+
+---
+
+## 2.2 Live Listing Display Logic (Commercial/Business only)
+
+In the Seller live listing view, within the “Interested in Offering a Lease Agreement” section:
+
+### A) Determine if Sales Tax should render
+
+Render **Sales Tax** if:
+
+* `$listing->property_type` in [`Commercial`, `Business`]
+  AND
+* `$listing->lease_comp_type` in [`flat_fee`, `percent_month_rent`, `percent_gross_rent`]
+
+(Use your actual stored enum values; don’t guess.)
+
+### B) Render Sales Tax line
+
+* **Label:** `Sales Tax:`
+* **Value:** show stored rate/value exactly as user entered (with % if that’s your format)
+
+✅ Safeguard:
+
+* Do not show Sales Tax for other lease comp types (like “No compensation” or anything else).
+
+---
+
+# 3) COMMERCIAL + BUSINESS: “Percentage of Month’s Rent” MUST SHOW “Number of Months” ON LIVE LISTING
+
+### Requirement
+
+If lease compensation type is **Percentage of Month’s Rent**, live listing must show:
+
+* **Number of Months:** {value}
+
+✅ Safeguards
+
+* Only display “Number of Months” when comp type = Percentage of Month’s Rent.
+* Must repopulate in edit/drafts too (field persistence).
+
+---
+
+## 3.1 Save + Edit repopulation safeguard
+
+In Create/Save:
+
+* Ensure `lease_num_months` is saved when comp type = Percentage of Month’s Rent.
+* Validate it:
+
+  * required integer > 0 (only when that comp type is selected)
+
+In Edit mount:
+
+* `$this->lease_num_months = $listing->lease_num_months;`
+
+✅ Safeguard:
+
+* Clear `lease_num_months` automatically when comp type changes away from Percentage of Month’s Rent, to avoid stale display:
+
+```php
+if ($this->lease_comp_type !== 'percent_month_rent') {
+    $this->lease_num_months = null;
+}
+```
+
+---
+
+# 4) ORDER + CONSISTENCY SAFEGUARD (PREVENT FUTURE MISMATCH)
+
+Create a single “display schema” for Seller compensation output:
+
+* `SellerCompensationPresenter` (helper/class) OR `config/seller_compensation_display.php`
+
+The presenter returns an array of rows to render in order:
+
+* label
+* value
+* show_if condition
+
+✅ Safeguard:
+
+* The Blade view should only loop through presenter rows.
+* This prevents labels and conditional fields from diverging across property types.
+
+---
+
+# 5) QA TEST (MUST PASS)
+
+Using `tenant@exp.com` create 2 listings:
+
+### Test A — Commercial
+
+* Interested in Offering a Lease Agreement = Yes
+* Compensation type = Percentage of Month’s Rent
+* Enter Number of Months = 3
+* Enter Sales Tax (whatever your field accepts)
+
+✅ Live listing must show:
+
+* Sales Tax
+* Number of Months
+
+### Test B — Any property type (Residential/Income/Vacant Land)
+
+* Lease-Option section enabled and compensation fields entered
+
+✅ Live listing must show EXACT labels:
+
+* “Compensation for Creating the Lease-Option Agreement:”
+* “Compensation if Purchase Option is Exercised:”
+
+---
+
+## If you want, I can make this “exact file edits”
+
+Paste the file path(s) for:
+
+1. Seller live listing display Blade
+2. Seller create Livewire component
+3. Seller edit Livewire component
+
+…and I’ll rewrite this as **line-by-line changes** with the exact conditional blocks and exact enum comparisons matching your codebase.
