@@ -1,0 +1,188 @@
+Copy/paste this into Replit for **Harry/dev**. This is **one fix applied universally** to **Hire a Seller’s Agent → Residential + Income** so Pool saves, shows on the live listing, and repopulates on Edit.
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS
+
+### Issue: “Pool” not saving / not showing on live listing / not repopulating on Edit
+
+**Applies to:** Hire a Seller’s Agent listings (**Residential + Income**)
+**Test login:** `tenant@exp.com`
+
+---
+
+# 1) REPRO STEPS (MUST PASS)
+
+1. Login as **[tenant@exp.com](mailto:tenant@exp.com)**
+2. Create **Hire a Seller’s Agent** listing
+3. Test **Residential** first:
+
+   * Set **Pool = Yes**
+   * Submit listing
+   * Open live listing → Pool must display as **Yes**
+   * Click Edit → Pool must still be **Yes**
+4. Repeat same test for **Income**
+5. Change Pool to **No**, save, confirm it updates on live listing and edit
+
+✅ Safeguard: If Pool shows on create form but does not persist through (Create → Live → Edit → Save), it’s a hard fail.
+
+---
+
+# 2) DATABASE SAFEGUARD (SOURCE OF TRUTH)
+
+## 2.1 Confirm the Seller listing table has a Pool column
+
+Find the DB table used for Hire a Seller’s Agent listings (ex: `seller_agent_listings` or similar).
+
+Required column (preferred):
+
+* `has_pool` **BOOLEAN NULL**
+
+### If missing, add migration:
+
+* Add `has_pool` boolean nullable
+
+✅ Safeguard:
+
+* Use **nullable boolean** so “not answered” is distinct from “No”.
+
+---
+
+# 3) MODEL SAFEGUARD (PREVENT SILENT FAILURES)
+
+In the Eloquent model that backs Hire a Seller’s Agent listings:
+
+### 3.1 Add to `$fillable`
+
+Add:
+
+* `has_pool`
+
+### 3.2 Add to `$casts`
+
+```php
+protected $casts = [
+    'has_pool' => 'boolean',
+];
+```
+
+✅ Safeguard:
+
+* If `has_pool` is not fillable, it can silently fail saving.
+* If not cast, it may not repopulate correctly in edit forms.
+
+---
+
+# 4) LIVEWIRE CREATE COMPONENT (SAVE POOL CORRECTLY)
+
+In the **Create** Livewire component for Hire a Seller’s Agent:
+
+### 4.1 Bind form input properly
+
+Pool input must bind to the Livewire property:
+
+* `wire:model="has_pool"`
+
+### 4.2 Validate pool (only if field is shown)
+
+If Pool is displayed for Residential & Income:
+
+* Validate it as nullable boolean
+
+### 4.3 Explicitly assign on save
+
+In the save/submit method:
+
+```php
+$listing->has_pool = $this->has_pool;
+```
+
+✅ Safeguards:
+
+* Do **not** rely on `fill()` unless the form key exactly matches the DB column.
+* Ensure you’re not resetting `$this->has_pool` anywhere after save.
+
+---
+
+# 5) LIVEWIRE EDIT COMPONENT (REPOPULATE POOL)
+
+In the **Edit** Livewire component mount/load:
+
+### 5.1 Load from DB into Livewire state
+
+```php
+$this->has_pool = $listing->has_pool; // will be boolean via casts
+```
+
+### 5.2 Persist changes on update
+
+In update/save method:
+
+```php
+$listing->has_pool = $this->has_pool;
+$listing->save();
+```
+
+✅ Safeguard:
+
+* Do NOT overwrite `$this->has_pool` with null during render.
+* Only initialize from DB in `mount()` (not every render).
+
+---
+
+# 6) LIVE LISTING DISPLAY (SHOW POOL ON ACTUAL LISTING)
+
+In the **actual listing display Blade/view** for Hire a Seller’s Agent (Residential + Income):
+
+### 6.1 Add Pool row in property details section
+
+Display label:
+
+* **Pool:**
+
+Display value:
+
+* **Yes** if `has_pool === true`
+* **No** if `has_pool === false`
+* Hide if `has_pool === null`
+
+✅ Safeguard:
+
+* If Pool is part of the creation form for Residential/Income, it must also appear on live listing.
+* Do not restrict Pool display by property type unless the form also restricts it.
+
+---
+
+# 7) HARD SAFEGUARD: QUICK DEBUG CHECK
+
+If this still fails after implementing above, it’s usually one of these:
+
+### A) Wrong table/model used in Edit vs Create
+
+* Create saves to Table A
+* Edit loads from Table B
+  Fix: confirm both components use the **same model/table**.
+
+### B) Pool field name mismatch
+
+* Form uses `pool` but DB uses `has_pool`
+  Fix: standardize to one key and map explicitly.
+
+### C) Mass assignment blocked
+
+* `has_pool` missing from `$fillable`
+  Fix: add to `$fillable`.
+
+---
+
+# 8) ACCEPTANCE CRITERIA (NON-NEGOTIABLE)
+
+✅ Pool saves on Residential
+✅ Pool saves on Income
+✅ Pool shows on live listing for both
+✅ Pool repopulates correctly on Edit for both
+✅ Changing Pool from Yes → No updates live listing + repopulates on Edit
+
+---
+
+If you paste the **Seller Create component path**, **Seller Edit component path**, and **Seller live listing view path**, I’ll rewrite this again with exact file names and exact variable names to match your codebase (so Harry can implement in minutes).
