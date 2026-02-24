@@ -243,7 +243,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         <div class="col-sm-12 col-md-8 col-lg-8 leftCol">
             <div class="card description">
                 <div class="card-header">
-                    <h4 style="margin-left: 15px; margin-top: 10px;">Listing Details: </h5>
+                    <h4 style="margin-left: 15px; margin-top: 10px;">Listing Details: </h4>
                 </div>
                 <div class="card-body">
                     <div class="row" style="flex-wrap: wrap;">
@@ -1175,15 +1175,33 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             }
                         }
                     }
+                    $svcLimit = 6;
+                    $svcTotal = count($matchedServices);
+                    $svcVisible = array_slice($matchedServices, 0, $svcLimit);
+                    $svcHidden = array_slice($matchedServices, $svcLimit);
+                    $svcCollapseId = 'svc-landlord-' . md5($categoryName) . '-' . uniqid();
                 @endphp
                 @if (!empty($matchedServices))
                 <div class="mt-3">
                     <strong>{{ $categoryName }}</strong>
                     <ul class="services">
-                        @foreach ($matchedServices as $service)
+                        @foreach ($svcVisible as $service)
                         <li style="font-size: 16px;">{{ $service }}</li>
                         @endforeach
                     </ul>
+                    @if (!empty($svcHidden))
+                    <div class="collapse" id="{{ $svcCollapseId }}">
+                        <ul class="services">
+                            @foreach ($svcHidden as $service)
+                            <li style="font-size: 16px;">{{ $service }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                    <a class="small text-decoration-none" data-bs-toggle="collapse" href="#{{ $svcCollapseId }}" role="button"
+                        aria-expanded="false" aria-controls="{{ $svcCollapseId }}">
+                        Show all ({{ $svcTotal }})
+                    </a>
+                    @endif
                 </div>
                 @endif
             @endforeach

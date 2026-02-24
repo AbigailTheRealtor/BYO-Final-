@@ -64,6 +64,8 @@ All listing types have independent submission redirects. Tab visibility ensures 
 - `client-info.blade.php` — Client info card with photo/video support (props: `title`, `auction`, `user`).
 - `services-list.blade.php` — Services display with category grouping, first 6 items shown, "Show all (X)" toggle, and placeholder filtering (props: `categories`, `limit`).
 
+**Services "Show all" Toggle Pattern**: All four agent listing views (Seller, Landlord, Tenant, Buyer) implement a consistent services rendering pattern: the first 6 items per category are shown initially, with a "Show all (X)" Bootstrap collapse toggle to reveal additional items. Each category gets a unique collapse ID via `md5($categoryName) . uniqid()`. The Seller view preserves photo enhancement sub-lists nested under "Provide digital photo enhancements" items. The Tenant view uses a shared partial (`resources/views/partials/tenant/services_snapshot.blade.php`) with snapshot-first, canonical-fallback matching via `TenantServicesCatalog`. The Seller and Landlord views use inline category matching with smart quote canonicalization. The `<x-listing.services-list>` component provides the same pattern for standalone use.
+
 ### System Design Choices
 The architecture emphasizes modularity through Laravel's structure and Livewire components. A database-first approach prioritizes local database solutions for core services. Clear separation of concerns is maintained between frontend, backend, and data persistence. The system is deployment-ready with production environment optimizations. Existing database schema and storage logic for fees are immutable, with fee format updates being display-only.
 

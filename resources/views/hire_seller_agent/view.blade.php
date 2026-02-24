@@ -1556,15 +1556,20 @@
                             @if ($hasMatchedServices)
                                 @foreach ($categories as $categoryName => $categoryServices)
                                     @php
-                                        $matchedServices = array_filter($categoryServices, function($service) use ($allServicesCanon, $canon) {
+                                        $matchedServices = array_values(array_filter($categoryServices, function($service) use ($allServicesCanon, $canon) {
                                             return in_array($canon($service), $allServicesCanon);
-                                        });
+                                        }));
+                                        $svcLimit = 6;
+                                        $svcTotal = count($matchedServices);
+                                        $svcVisible = array_slice($matchedServices, 0, $svcLimit);
+                                        $svcHidden = array_slice($matchedServices, $svcLimit);
+                                        $svcCollapseId = 'svc-seller-' . md5($categoryName) . '-' . uniqid();
                                     @endphp
                                     @if (!empty($matchedServices))
                                     <div class="mt-3">
                                         <strong>{{ $categoryName }}</strong>
                                         <ul class="services">
-                                            @foreach ($matchedServices as $service)
+                                            @foreach ($svcVisible as $service)
                                             <li style="font-size: 16px;">{{ trim($service) }}</li>
                                             @if (in_array(trim($service), ['Provide digital photo enhancements', 'Provide digital enhancements to media assets']) && !empty($photoEnhancements))
                                                 <ul style="list-style: disc; padding-left: 1.5rem; margin-top: 0.25rem; margin-bottom: 0.25rem;">
@@ -1580,6 +1585,31 @@
                                             @endif
                                             @endforeach
                                         </ul>
+                                        @if (!empty($svcHidden))
+                                        <div class="collapse" id="{{ $svcCollapseId }}">
+                                            <ul class="services">
+                                                @foreach ($svcHidden as $service)
+                                                <li style="font-size: 16px;">{{ trim($service) }}</li>
+                                                @if (in_array(trim($service), ['Provide digital photo enhancements', 'Provide digital enhancements to media assets']) && !empty($photoEnhancements))
+                                                    <ul style="list-style: disc; padding-left: 1.5rem; margin-top: 0.25rem; margin-bottom: 0.25rem;">
+                                                        @foreach ($photoEnhancements as $enhancement)
+                                                            @if ($enhancement !== 'Other')
+                                                            <li style="font-size: 15px;" class="removeBold">{{ $enhancement }}</li>
+                                                            @endif
+                                                        @endforeach
+                                                        @if (in_array('Other', $photoEnhancements) && !empty($customEnhancement))
+                                                        <li style="font-size: 15px;" class="removeBold">{{ $customEnhancement }}</li>
+                                                        @endif
+                                                    </ul>
+                                                @endif
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                        <a class="small text-decoration-none" data-bs-toggle="collapse" href="#{{ $svcCollapseId }}" role="button"
+                                            aria-expanded="false" aria-controls="{{ $svcCollapseId }}">
+                                            Show all ({{ $svcTotal }})
+                                        </a>
+                                        @endif
                                         @if (str_contains($categoryName, 'Photography, Video & Virtual Media'))
                                             <p style="font-size: 14px; font-style: italic; margin-top: 0.25rem; margin-bottom: 0;">Note: These services may be provided by the Agent or through a third-party vendor.</p>
                                         @endif
@@ -1588,10 +1618,17 @@
                                 @endforeach
                             @else
                                 @if (!empty($allServices))
+                                @php
+                                    $fallbackLimit = 6;
+                                    $fallbackTotal = count($allServices);
+                                    $fallbackVisible = array_slice($allServices, 0, $fallbackLimit);
+                                    $fallbackHidden = array_slice($allServices, $fallbackLimit);
+                                    $fallbackCollapseId = 'svc-seller-fallback-' . uniqid();
+                                @endphp
                                 <div class="mt-3">
                                     <strong>📋 Services Requested</strong>
                                     <ul class="services">
-                                        @foreach ($allServices as $service)
+                                        @foreach ($fallbackVisible as $service)
                                         <li style="font-size: 16px;">{{ trim($service) }}</li>
                                         @if (in_array(trim($service), ['Provide digital photo enhancements', 'Provide digital enhancements to media assets']) && !empty($photoEnhancements))
                                             <ul style="list-style: disc; padding-left: 1.5rem; margin-top: 0.25rem; margin-bottom: 0.25rem;">
@@ -1607,6 +1644,19 @@
                                         @endif
                                         @endforeach
                                     </ul>
+                                    @if (!empty($fallbackHidden))
+                                    <div class="collapse" id="{{ $fallbackCollapseId }}">
+                                        <ul class="services">
+                                            @foreach ($fallbackHidden as $service)
+                                            <li style="font-size: 16px;">{{ trim($service) }}</li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                    <a class="small text-decoration-none" data-bs-toggle="collapse" href="#{{ $fallbackCollapseId }}" role="button"
+                                        aria-expanded="false" aria-controls="{{ $fallbackCollapseId }}">
+                                        Show all ({{ $fallbackTotal }})
+                                    </a>
+                                    @endif
                                 </div>
                                 @endif
                             @endif
