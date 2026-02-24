@@ -1,0 +1,360 @@
+Absolutely — here are **complete, copy/paste-ready Replit instructions** specifically for **Residential “Hire an Agent” listing SHOW pages** for **Hire a Buyer, Tenant, Seller, and Landlord**. This focuses on the **listing view formatting only** (Services + Compensation + Client Info + Sidebar), and includes strict **safeguards**.
+
+---
+
+## ✅ REPLIT COPY/PASTE INSTRUCTIONS — RESIDENTIAL LISTING SHOW PAGES (ALL 4 ROLES)
+
+### Context / Login
+
+* Login example: **[tenant@exp.com](mailto:tenant@exp.com)**
+* User creates a **Residential** listing for:
+
+  * Hire a Buyer’s Agent
+  * Hire a Tenant’s Agent
+  * Hire a Seller’s Agent
+  * Hire a Landlord’s Agent
+* Then user opens the listing “show” view page.
+
+### Goal
+
+Make all Residential listing “show” pages have:
+
+1. **Consistent premium layout**
+2. **Consistent section styling + formatting rules**
+3. **Readable Services section** (collapsible, same style for all roles)
+4. **Broker Compensation & Agency Agreement Terms displayed as grouped cards** (not a long raw dump)
+5. **Client Info displayed as a consistent profile card** (photo/video sized correctly)
+6. **Same right sidebar card** on every listing view
+7. **Remove “Recommended For You”** from listing view pages
+
+---
+
+# 🚫 SAFEGUARDS (NON-NEGOTIABLE)
+
+1. **DO NOT change or delete** any existing fields, tooltips, tab logic, save logic, validations, or database schema.
+2. **DO NOT rename columns** or modify stored values.
+3. **SHOW pages only**: refactor the rendering/UI by introducing reusable components/partials.
+4. If new helpers are needed (formatting, placeholder suppression), **add them** without changing existing business logic.
+5. Changes must be **add-only** and **non-destructive**.
+
+---
+
+# 1) STANDARDIZE THE RESIDENTIAL LISTING SHOW PAGE LAYOUT (ALL ROLES)
+
+## Required layout rules
+
+* Use the same two-column layout for ALL Residential show pages:
+
+  * **Left column:** listing content sections
+  * **Right column:** listing action/share sidebar (same component everywhere)
+* Desktop: 2 columns (left wide, right fixed)
+* Mobile: right sidebar stacks consistently
+* Right sidebar should be sticky on desktop (optional but recommended)
+
+✅ Implement a shared show layout wrapper:
+
+* `resources/views/components/listing/show-layout.blade.php`
+
+  * Slots: `leftContent`, `rightSidebar`
+
+---
+
+# 2) CREATE REUSABLE VIEW COMPONENTS (UI KIT)
+
+Create these reusable Blade components and use them on ALL Residential show pages:
+
+### A) Section wrapper
+
+**`resources/views/components/listing/section.blade.php`**
+
+* Standard section title + divider + slot
+
+### B) Key/Value row
+
+**`resources/views/components/listing/kv-row.blade.php`**
+
+* Renders `Label:` `Value`
+* Supports multiline values
+* Supports boolean Yes/No
+* Supports “pills” rendering if value is an array
+
+### C) Pills renderer (multi-select display)
+
+**`resources/views/components/listing/pills.blade.php`**
+
+* Renders multi-select values as consistent pill tags
+
+### D) Accordion (collapsible)
+
+**`resources/views/components/listing/accordion.blade.php`**
+
+* Used for long sections:
+
+  * Services (per category)
+  * Amenities/Features (if included)
+  * Financing Details (Buyer/Seller when applicable)
+  * Compensation cards (optional)
+
+### E) Sidebar card (must be identical across roles)
+
+**`resources/views/components/listing/sidebar-card.blade.php`**
+Includes:
+
+1. Listing Title
+2. Status badge (Active / Draft / Bidding Ended / Expired)
+3. Listing ID badge
+4. Edit Listing button
+5. Timer (if active bidding)
+6. Send Message button
+7. Bid status: “Only Agents can place bids” + bid count/status
+8. Share card: QR + social icons + copy link
+
+✅ Replace all existing sidebar markup for Buyer/Tenant/Seller/Landlord show pages with this one component.
+
+---
+
+# 3) GLOBAL DISPLAY FORMATTING RULES (ALL RESIDENTIAL SHOW PAGES)
+
+Implement formatting helpers and use them everywhere:
+
+### A) Formatting
+
+* Dates: `Feb 5, 2026`
+* Currency: `$800,000`
+* Percent: `5%`
+* Combined compensation: `$5,000 + 5% of Net Aggregate Rent`
+* Boolean: `Yes` / `No`
+
+### B) Hide empty values consistently
+
+Choose **one rule** and apply globally:
+
+* ✅ Preferred: **Hide empty rows entirely**
+* Do not display blank fields.
+
+### C) Placeholder suppression (CRITICAL)
+
+If a stored value contains:
+
+* starts with `Example:` OR equals any known placeholder text,
+  then treat it as empty and do not render it.
+
+This removes ugly outputs like:
+
+* “Additional Terms: Example: Additional Terms”
+* “Payment Timing: Example: Payment timing…”
+
+✅ Add helper:
+
+* `isPlaceholderValue($value): bool`
+
+---
+
+# 4) SERVICES SECTION — CONSISTENT + COLLAPSIBLE FOR ALL ROLES
+
+## Problem
+
+Services currently display as long raw bullet lists and formatting differs per role, and sometimes “Additional Services” is duplicated.
+
+## Required solution
+
+Create:
+**`resources/views/components/listing/services.blade.php`**
+
+### Inputs
+
+* `services` structured as:
+
+  * category_title
+  * category_icon (optional)
+  * items[] (strings)
+
+### Display rules
+
+1. **Preserve the exact order the user selected** during listing creation (no re-sorting).
+2. Each category renders:
+
+   * Category header (bold)
+   * Bullets underneath
+3. If category has more than **6 items**:
+
+   * Show first 6
+   * Add “Show all (X)” toggle (accordion) to expand
+4. Fix duplicate additional services:
+
+   * If you have two “Additional Services” blocks (ex: referrals + custom):
+
+     * Rename first to **Referrals & Recommendations**
+     * Rename second to **✍️ Additional Services**
+   * If placeholder “Example 1 / Example 2” exists and unchanged, hide it.
+
+✅ Apply this same component to:
+
+* Hire Buyer Residential show page
+* Hire Tenant Residential show page
+* Hire Seller Residential show page
+* Hire Landlord Residential show page
+
+---
+
+# 5) BROKER COMPENSATION & AGENCY AGREEMENT TERMS — GROUPED CARDS (ALL ROLES)
+
+## Problem
+
+This section is a long raw dump and hard to scan.
+
+## Required solution
+
+Create:
+**`resources/views/components/listing/comp-terms.blade.php`**
+
+### Cards (always in this order)
+
+1. **Broker Compensation**
+2. **Lease Fee** (if applicable)
+3. **Lease-Option Details** (if applicable)
+4. **Purchase Fee Details** (if applicable)
+5. **Payment Timing & Renewal Terms** (if applicable)
+6. **Property Management** (Landlord only, if applicable)
+7. **Legal Terms**
+8. **Brokerage Relationship**
+9. **Additional Terms**
+
+### Display rules
+
+* Each card uses `kv-row` rows
+* Hide empty fields
+* Suppress placeholder “Example:” values
+* Use your preferred labels:
+
+  * ✅ “Lease Fee”
+  * ✅ “Lease-Option Fee”
+* Capitalize roles consistently: Buyer, Seller, Tenant, Landlord, Agent, Broker
+
+✅ Only show cards that have at least one real value (after placeholder suppression).
+
+---
+
+# 6) CLIENT INFO SECTION — STANDARD PROFILE CARD (ALL ROLES)
+
+## Problem
+
+Photo/video sizes are inconsistent and too large.
+
+## Required solution
+
+Create:
+**`resources/views/components/listing/client-info.blade.php`**
+
+### Inputs
+
+* role (buyer/tenant/seller/landlord)
+* first_name
+* photo_url (optional)
+* video_url (optional)
+
+### Display rules
+
+1. Title must match role:
+
+   * Buyer’s Info / Tenant’s Info / Seller’s Info / Landlord’s Info
+2. Layout:
+
+   * Desktop: 2-column grid
+
+     * Photo left
+     * Video right
+   * Mobile: stacked
+3. Media sizing:
+
+   * Photo max height: ~420px (crop/contain; do not stretch full page)
+   * Video uses fixed responsive ratio box
+4. If photo or video missing, hide that block
+5. Under media, render the same user widget (Message / View Profile)
+
+---
+
+# 7) REMOVE “RECOMMENDED FOR YOU” FROM ALL RESIDENTIAL SHOW PAGES
+
+In listing view pages, remove the “Recommended For You” cards entirely.
+
+✅ If you want recommendations, show them on dashboard only — not inside the listing/negotiation room.
+
+---
+
+# 8) REQUIRED SECTION ORDER ON RESIDENTIAL SHOW PAGES
+
+Enforce consistent order:
+
+### Hire a Tenant (Residential)
+
+1. Listing Details
+2. Property Preferences
+3. Leasing Terms
+4. Pre-Screening
+5. Services (collapsible)
+6. Additional Details (if any)
+7. Broker Compensation & Agency Agreement Terms (cards)
+8. Tenant’s Info
+
+### Hire a Buyer (Residential)
+
+1. Listing Details
+2. Property Preferences
+3. Purchasing Terms
+4. Financing Details (accordion, collapsed by default if long)
+5. Services
+6. Additional Details
+7. Broker Compensation & Agency Agreement Terms
+8. Buyer’s Info
+
+### Hire a Seller (Residential)
+
+1. Listing Details
+2. Property Details
+3. Sale Terms
+4. Financing Details (accordion, only if anything filled)
+5. Services
+6. Additional Details
+7. Broker Compensation & Agency Agreement Terms
+8. Seller’s Info
+
+### Hire a Landlord (Residential)
+
+1. Listing Details
+2. Property Details
+3. Leasing Terms
+4. Services
+5. Additional Details
+6. Broker Compensation & Agency Agreement Terms
+7. Landlord’s Info
+
+---
+
+# 9) QA TEST REQUIREMENTS (MANDATORY)
+
+Login: **[tenant@exp.com](mailto:tenant@exp.com)** and open one Residential listing per role.
+
+Confirm:
+
+* Sidebar card identical for all 4 roles
+* Services categories in same order as selected
+* Services categories collapse after 6 bullets
+* Compensation terms appear as grouped cards
+* No “Example:” placeholder text appears anywhere
+* Client photo/video are properly sized and responsive
+* “Recommended For You” is gone
+
+---
+
+## ✅ DELIVERABLE REQUIREMENT
+
+After implementing, provide:
+
+* The list of updated show page files
+* The list of newly created shared components
+* Confirmation that no database/schema/create/edit logic was changed
+
+---
+
+If you paste your **Commercial remainder screenshots** next, I’ll give you the matching Commercial version so both Residential + Commercial are unified under the same UI kit and layout system.
