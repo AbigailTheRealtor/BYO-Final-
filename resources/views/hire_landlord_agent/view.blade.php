@@ -311,65 +311,78 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                         {{-- Property Address intentionally hidden on listing display --}}
 
-                        @if (@$auction->get->cities != null)
-                        <div class="col-md-12 col-12 pt-2 fw-bold"> Acceptable Cities:
-                            @if (gettype(@$auction->get->cities) == 'array')
-                            @php
-                                $cleanCities = array_map(function($city) {
-                                    return preg_replace('/,\s*[A-Z]{2}$/', '', trim($city));
-                                }, @$auction->get->cities);
-                            @endphp
+                        @php
+                            $rawCities = @$auction->get->cities;
+                            if (is_string($rawCities)) { $rawCities = json_decode($rawCities, true); }
+                            $rawCities = is_array($rawCities) ? $rawCities : [];
+                            $cleanCities = array_map(function($city) {
+                                return preg_replace('/,\s*[A-Z]{2}$/', '', trim($city));
+                            }, array_filter($rawCities));
+
+                            $rawCounties = @$auction->get->counties;
+                            if (is_string($rawCounties)) { $rawCounties = json_decode($rawCounties, true); }
+                            $rawCounties = is_array($rawCounties) ? $rawCounties : [];
+                            $cleanCounties = array_map(function($county) {
+                                return preg_replace('/,\s*[A-Z]{2}$/', '', trim($county));
+                            }, array_filter($rawCounties));
+
+                            $stateVal = null;
+                            $rawStates = @$auction->get->states;
+                            if (is_string($rawStates)) { $rawStates = json_decode($rawStates, true); }
+                            if (is_array($rawStates) && !empty($rawStates)) {
+                                $stateVal = implode('; ', $rawStates);
+                            } elseif (!empty(@$auction->get->state)) {
+                                $stateVal = @$auction->get->state;
+                            }
+
+                            $rawZips = @$auction->get->zipCodes;
+                            if (is_string($rawZips)) { $rawZips = json_decode($rawZips, true); }
+                            $rawZips = is_array($rawZips) ? array_filter($rawZips) : [];
+                        @endphp
+                        @if (!empty($cleanCities))
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
+                            Acceptable Cities:
                             <span class="removeBold">{{ implode('; ', $cleanCities) }}</span>
-                            @endif
                         </div>
                         @endif
-                        @if (@$auction->get->counties != null)
+                        @if (!empty($cleanCounties))
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Acceptable Counties:
-                            @if (gettype(@$auction->get->counties) == 'array')
-                            @php
-                                $cleanCounties = array_map(function($county) {
-                                    return preg_replace('/,\s*[A-Z]{2}$/', '', trim($county));
-                                }, @$auction->get->counties);
-                            @endphp
                             <span class="removeBold">{{ implode('; ', $cleanCounties) }}</span>
-                            @endif
                         </div>
                         @endif
-
-
-
-
-                        @if (@$auction->get->states != null || @$auction->get->state != null)
+                        @if (!empty($stateVal))
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Acceptable State:
-                            <span class="removeBold">
-                                @if (is_array(@$auction->get->states))
-                                    {{ implode('; ', @$auction->get->states) }}
-                                @elseif (@$auction->get->state)
-                                    {{ @$auction->get->state }}
-                                @endif
-                            </span>
+                            <span class="removeBold">{{ $stateVal }}</span>
                         </div>
                         @endif
-                        @if (!empty($auction->get->zipCodes) && is_array($auction->get->zipCodes))
+                        @if (!empty($rawZips))
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Zip Code:
-                            @foreach ($auction->get->zipCodes as $zip)
-                            <span class="removeBold badge bg-secondary">
-                                {{ @$zip }}
-                            </span>
+                            @foreach ($rawZips as $zip)
+                            <span class="removeBold badge bg-secondary">{{ $zip }}</span>
                             @endforeach
                         </div>
                         @endif
 
+                        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->property_type))
                         <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Property
-                            Style :<span class="removeBold"> {{ @$auction->get->property_type }}</span><br>
-
-                            <span class="removeBold badge bg-secondary">{{@$auction->get->property_items}}</span>
-
+                            Property Type:
+                            <span class="removeBold">{{ @$auction->get->property_type }}</span>
                         </div>
+                        @endif
+                        @php
+                            $landlordPropertyStyleItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->property_items);
+                        @endphp
+                        @if (!empty($landlordPropertyStyleItems))
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
+                            Property Style:
+                            @foreach ($landlordPropertyStyleItems as $psItem)
+                                <span class="removeBold badge bg-secondary">{{ $psItem }}</span>
+                            @endforeach
+                        </div>
+                        @endif
 
 
                         {{-- <div class="col-md-12 col-12 pt-2 fw-bold">
