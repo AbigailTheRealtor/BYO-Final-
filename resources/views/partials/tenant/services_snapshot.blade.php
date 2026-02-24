@@ -49,33 +49,13 @@ if (empty($servicesGrouped) && !empty($allServices)) {
 <div class="col-md-12 col-12 pt-2">
     @foreach ($servicesGrouped as $sectionName => $items)
         @if (!empty($items))
-        @php
-            $svcLimit = 6;
-            $svcTotal = count($items);
-            $svcVisible = array_slice($items, 0, $svcLimit);
-            $svcHidden = array_slice($items, $svcLimit);
-            $svcCollapseId = 'svc-tenant-' . md5($sectionName) . '-' . uniqid();
-        @endphp
         <div class="mt-3">
             <strong>{{ $sectionName }}</strong>
             <ul class="services">
-                @foreach ($svcVisible as $service)
+                @foreach ($items as $service)
                 <li style="font-size: 16px;">{{ $service }}</li>
                 @endforeach
             </ul>
-            @if (!empty($svcHidden))
-            <div class="collapse" id="{{ $svcCollapseId }}">
-                <ul class="services">
-                    @foreach ($svcHidden as $service)
-                    <li style="font-size: 16px;">{{ $service }}</li>
-                    @endforeach
-                </ul>
-            </div>
-            <a class="small text-decoration-none" data-bs-toggle="collapse" href="#{{ $svcCollapseId }}" role="button"
-                aria-expanded="false" aria-controls="{{ $svcCollapseId }}">
-                Show all ({{ $svcTotal }})
-            </a>
-            @endif
         </div>
         @endif
     @endforeach

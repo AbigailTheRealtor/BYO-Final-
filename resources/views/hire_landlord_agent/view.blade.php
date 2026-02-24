@@ -1001,28 +1001,24 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
 
-        @if (@$auction->get->desired_lease_length != null || @$auction->get->other_lease_term != null)
+        @php
+            $desiredLeaseTermItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->desired_lease_length, @$auction->get->other_lease_term);
+        @endphp
+        @if (!empty($desiredLeaseTermItems))
         <div class="col-md-12 col-12 pt-2 fw-bold"> Desired Lease Term:
-            @foreach (@$auction->get->desired_lease_length as $item)
-                @if ($item !== 'Other')
-                <span class="removeBold badge bg-secondary">{{ @$item }}</span>
-                @endif
+            @foreach ($desiredLeaseTermItems as $item)
+                <span class="removeBold badge bg-secondary">{{ $item }}</span>
             @endforeach
-            @if (@$auction->get->other_lease_term)
-            <span class="removeBold badge bg-secondary">{{ @$auction->get->other_lease_term }}</span>
-            @endif
         </div>
         @endif
-        @if (@$auction->get->rent_includes != null || @$auction->get->other_rent_include != null)
+        @php
+            $rentIncludesItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->rent_includes, @$auction->get->other_rent_include);
+        @endphp
+        @if (!empty($rentIncludesItems))
         <div class="col-md-12 col-12 pt-2 fw-bold"> Rent Includes:
-            @foreach (@$auction->get->rent_includes as $item)
-                @if ($item !== 'Other')
-                <span class="removeBold badge bg-secondary">{{ @$item }}</span>
-                @endif
+            @foreach ($rentIncludesItems as $item)
+                <span class="removeBold badge bg-secondary">{{ $item }}</span>
             @endforeach
-            @if (@$auction->get->other_rent_include)
-            <span class="removeBold badge bg-secondary">{{ @$auction->get->other_rent_include }}</span>
-            @endif
         </div>
         @endif
 
@@ -1211,33 +1207,15 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             }
                         }
                     }
-                    $svcLimit = 6;
-                    $svcTotal = count($matchedServices);
-                    $svcVisible = array_slice($matchedServices, 0, $svcLimit);
-                    $svcHidden = array_slice($matchedServices, $svcLimit);
-                    $svcCollapseId = 'svc-landlord-' . md5($categoryName) . '-' . uniqid();
                 @endphp
                 @if (!empty($matchedServices))
                 <div class="mt-3">
                     <strong>{{ $categoryName }}</strong>
                     <ul class="services">
-                        @foreach ($svcVisible as $service)
+                        @foreach ($matchedServices as $service)
                         <li style="font-size: 16px;">{{ $service }}</li>
                         @endforeach
                     </ul>
-                    @if (!empty($svcHidden))
-                    <div class="collapse" id="{{ $svcCollapseId }}">
-                        <ul class="services">
-                            @foreach ($svcHidden as $service)
-                            <li style="font-size: 16px;">{{ $service }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                    <a class="small text-decoration-none" data-bs-toggle="collapse" href="#{{ $svcCollapseId }}" role="button"
-                        aria-expanded="false" aria-controls="{{ $svcCollapseId }}">
-                        Show all ({{ $svcTotal }})
-                    </a>
-                    @endif
                 </div>
                 @endif
             @endforeach
