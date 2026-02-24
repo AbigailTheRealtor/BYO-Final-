@@ -961,7 +961,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
 
-        @if (!empty($ownerPayItems))
+        @if ($isCommercial && !empty($ownerPayItems))
         <div class="row" style="flex-wrap: wrap;">
             <div class="col-12 fw-bold pt-2">
                 Owner Responsible For:

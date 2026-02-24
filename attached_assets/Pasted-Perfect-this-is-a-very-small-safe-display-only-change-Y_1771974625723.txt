@@ -1,0 +1,186 @@
+Perfect — this is a **very small, safe display-only change**.
+
+You want:
+
+> **Landlord → Residential listings only:**
+> Remove **“Owner Responsible For”** from the display
+> (it’s a commercial-only field)
+>
+> DO NOT delete the field from database
+> DO NOT remove it from commercial listings
+> DO NOT change intake forms
+
+Below are **clean Replit instructions with safeguards**.
+
+---
+
+# 🟢 COPY THIS INTO REPLIT AI
+
+## Goal
+
+Hide **“Owner Responsible For”** on **Residential Landlord listings only**.
+Keep it visible for Commercial listings.
+Do not modify database or form logic.
+
+---
+
+## 🔒 SAFEGUARDS (must follow)
+
+* DO NOT rename or delete database columns
+* DO NOT remove the field from forms
+* DO NOT modify how the value is saved
+* DO NOT affect commercial listings
+* ONLY change display/preview Blade templates
+* This is a UI visibility rule only
+
+---
+
+# STEP 1 — Find where “Owner Responsible For” is rendered
+
+Search codebase for:
+
+```
+Owner Responsible For
+owner_responsible_for
+ownerResponsibleFor
+```
+
+Open the Blade file that prints:
+
+```blade
+Owner Responsible For:
+```
+
+It will be inside the **Landlord listing display** template
+(usually under Leasing Terms section).
+
+---
+
+# STEP 2 — Wrap it in a Residential check
+
+We only want this to show if property is **commercial**.
+
+### Replace the existing line:
+
+```blade
+<div>
+  <strong>Owner Responsible For:</strong>
+  {{ $listing->owner_responsible_for }}
+</div>
+```
+
+### WITH THIS:
+
+```blade
+@php
+  $isCommercial = false;
+
+  // Adjust to your actual property type field
+  if(isset($listing->property_type)){
+      $type = strtolower($listing->property_type);
+      $isCommercial = str_contains($type, 'commercial');
+  }
+@endphp
+
+@if($isCommercial && !empty($listing->owner_responsible_for))
+  <div>
+    <strong>Owner Responsible For:</strong>
+    {{ $listing->owner_responsible_for }}
+  </div>
+@endif
+```
+
+---
+
+# STEP 3 — If your system uses category instead of property_type
+
+Some of your platform flows use:
+
+* `$listing->listing_type`
+* `$listing->property_category`
+* `$listing->asset_type`
+
+If you see one of those instead, use:
+
+```blade
+@php
+  $isCommercial = ($listing->property_category ?? '') === 'Commercial';
+@endphp
+
+@if($isCommercial && !empty($listing->owner_responsible_for))
+  ...
+@endif
+```
+
+Replit AI should **detect the correct field automatically** and apply the condition.
+
+---
+
+# STEP 4 — Do NOT remove from forms
+
+If you see this field inside:
+
+* intake forms
+* Livewire form components
+* edit listing pages
+
+**Leave it there.**
+We are only hiding it on display pages.
+
+---
+
+# STEP 5 — Test
+
+### Residential listing
+
+* Owner Responsible For → should NOT appear
+
+### Commercial listing
+
+* Owner Responsible For → should appear
+
+### Data check
+
+* Edit listing → field still exists
+* Database → value still saved
+
+---
+
+# WHY THIS FIXES YOUR PLATFORM
+
+Your system shares display templates across property types.
+This adds a **property-type visibility rule** without breaking:
+
+* commercial landlord flows
+* service matching
+* saved data
+* offer logic
+
+---
+
+# If you want it even cleaner (recommended later)
+
+We can move this to a reusable Blade helper:
+
+```
+<x-commercial-only>
+```
+
+But for now this direct conditional is safest.
+
+---
+
+## Quick confirmation question
+
+Before you paste into Replit:
+
+What is your property type field called in landlord listings?
+
+Is it:
+
+A) `property_type`
+B) `property_category`
+C) `listing_type`
+D) something else
+
+Tell me the letter and I’ll give you a **zero-guess exact version**.
