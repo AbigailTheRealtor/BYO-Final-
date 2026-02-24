@@ -108,7 +108,7 @@ class ListingDownloadController extends Controller
             'Property Style' => $this->formatListOrText($meta->property_items ?? null, $meta->other_property_style ?? null),
             'Bedrooms' => $meta->bedrooms ?? null,
             'Bathrooms' => $meta->bathrooms ?? null,
-            'Square Footage' => $meta->sqft ? ListingDisplayHelper::fmtNumber($meta->sqft) : null,
+            'Square Footage' => isset($meta->sqft) ? ListingDisplayHelper::fmtNumber($meta->sqft) : null,
             'Year Built' => $meta->year_built ?? null,
             'Lot Size' => $meta->lot_size ?? null,
             'Property Condition' => $this->formatListOrText($meta->property_conditions ?? null, $meta->other_property_condition ?? null),
