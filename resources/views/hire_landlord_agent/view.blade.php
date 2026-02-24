@@ -952,7 +952,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endphp
 
         @if (!empty($tenantPayItems) || !empty($ownerPayItems))
-        <x-listing.accordion title="Responsibilities" id="landlord-responsibilities" :open="true">
+        <div class="card-header section-header mt-3">
+            <h4 class="section-title">Responsibilities</h4>
+        </div>
+        <div class="row">
             @if (!empty($tenantPayItems))
             <div class="col-md-12 col-12 pt-2 fw-bold">
                 Tenant Responsible For:
@@ -970,7 +973,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @endforeach
             </div>
             @endif
-        </x-listing.accordion>
+        </div>
         @endif
 
         @php

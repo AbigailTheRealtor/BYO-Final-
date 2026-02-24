@@ -993,7 +993,10 @@
                         @endphp
                         @if (!empty($financingPills))
                             <hr>
-                            <x-listing.accordion title="Financing Details" id="seller-financing">
+                            <div class="card-header section-header">
+                                <h4 class="section-title">Financing Details</h4>
+                            </div>
+                            <div class="row">
 
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Offered Financing/Currency:
@@ -1124,7 +1127,7 @@
                                     @endif
                                 @endif
                             @endforeach
-                            </x-listing.accordion>
+                            </div>
                         @endif
 
                         <hr>

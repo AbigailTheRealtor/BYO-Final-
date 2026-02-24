@@ -114,7 +114,10 @@
                                 $buyerFinancingPills = \App\Helpers\ListingDisplayHelper::normalizeList($buyerFinancingArr, @$auction->get->financingOther);
                             @endphp
                             @if (!empty($buyerFinancingPills))
-                                <x-listing.accordion title="Financing Details" id="buyer-financing">
+                                <div class="card-header section-header">
+                                    <h4 class="section-title">Financing Details</h4>
+                                </div>
+                                <div class="row">
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Offered Currency/Financing:
                                     @foreach ($buyerFinancingPills as $fp)
@@ -204,7 +207,7 @@
                                 @endif
                                 @endif
 
-                                </x-listing.accordion>
+                                </div>
                             @endif
                             @if (@$auction->get->escrow_amount != null)
                                 <div class="row align-items-center">
