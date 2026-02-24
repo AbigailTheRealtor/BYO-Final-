@@ -108,97 +108,103 @@
                                     <span class="removeBold">{{ @$auction->get->max_price }}</span>
                                 </div>
                             @endif
-                            @if (@$auction->get->financings != '' && @$auction->get->financings != null && @$auction->get->financings != 'null')
-                                @php
-                                    $financingData = @$auction->get->financings;
-                                @endphp
-                                <div class="row mb-3">
-                                    <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i> Offered
-                                        Currency/Financing:
-                                        @if ($financingData != null)
-                                            @foreach (array_filter($financingData) as $key => $item)
-                                                <span style="font-size: 16px; margin-top:5px; display: block"
-                                                    class="removeBold">&nbsp; {{ $item }}</span>
-                                                @if ($item == 'Seller Financing')
-                                                    @foreach (@$auction->get->sellerFinancing as $key => $item)
-                                                        <span
-                                                            class="d-inline-block bg-secondary removeBold text-white px-2 rounded"
-                                                            style="font-size: 14px">
-                                                            {{ @$item }}</span>
-                                                    @endforeach
-                                                @elseif ($item == 'Assumable')
-                                                    @foreach (@$auction->get->assumable as $key => $item)
-                                                        <span
-                                                            class="d-inline-block bg-secondary removeBold text-white  px-2 rounded"
-                                                            style="font-size: 14px">
-                                                            {{ @$item }}</span>
-                                                    @endforeach
-                                                @elseif ($item == 'Exchange/Trade')
-                                                    @foreach (@$auction->get->trade as $key => $item)
-                                                        <span
-                                                            class="d-inline-block bg-secondary removeBold text-white  px-2 rounded"
-                                                            style="font-size: 14px">
-                                                            {{ @$item }}</span>
-                                                    @endforeach
-                                                @elseif ($item == 'Lease Option' || $item == 'Lease Purchase')
-                                                    @foreach (@$auction->get->leaseOptions as $key => $item)
-                                                        <span
-                                                            class="d-inline-block bg-secondary removeBold text-white  px-2 rounded"
-                                                            style="font-size: 14px">
-                                                            {{ @$item }}</span>
-                                                    @endforeach
-                                                @elseif($item == 'Cryptocurrency')
-                                                    @foreach (@$auction->get->cryptocurrency as $key => $item)
-                                                        <span
-                                                            class="d-inline-block bg-secondary removeBold text-white  px-2 rounded"
-                                                            style="font-size: 14px">
-                                                            {{ @$item }}</span>
-                                                    @endforeach
-                                                @elseif($item == 'NFT')
-                                                    @foreach (array_filter(@$auction->get->nft) as $key => $item)
-                                                        <span
-                                                            class="d-inline-block bg-secondary removeBold text-white  px-2 rounded"
-                                                            style="font-size: 14px">
-                                                            {{ @$item }}</span>
-                                                    @endforeach
-                                                @elseif($item == 'Prepayment Penalty')
-                                                    @if (@$auction->get->prepayment == 'Yes')
-                                                        @foreach (@$auction->get->prepaymentOther as $key => $item)
-                                                            <span
-                                                                class="d-inline-block bg-secondary removeBold text-white  px-2 rounded"
-                                                                style="font-size: 14px">
-                                                                {{ @$item }}</span>
-                                                        @endforeach
-                                                    @else
-                                                        <span
-                                                            class="d-inline-block bg-secondary removeBold text-white  px-2 rounded"
-                                                            style="font-size: 14px">
-                                                            {{ @$auction->get->prepayment }}</span>
-                                                    @endif
-                                                @elseif($item == 'Balloon Payment')
-                                                    @if (@$auction->get->balloon == 'Yes')
-                                                        @foreach (@$auction->get->balloonpyment as $key => $item)
-                                                            <span
-                                                                class="d-inline-block bg-secondary removeBold text-white  px-2 rounded"
-                                                                style="font-size: 14px">
-                                                                {{ @$item }}</span>
-                                                        @endforeach
-                                                    @else
-                                                        <span
-                                                            class="d-inline-block bg-secondary removeBold text-white  px-2 rounded"
-                                                            style="font-size: 14px">
-                                                            {{ @$auction->get->balloon }}</span>
-                                                    @endif
-                                                @elseif($item == 'Other')
-                                                    <span
-                                                        class="d-inline-block bg-secondary removeBold text-white  px-2 rounded"
-                                                        style="font-size: 14px">
-                                                        {{ @$auction->get->financingOther }}</span>
-                                                @endif
-                                            @endforeach
-                                        @endif
-                                    </div>
+                            @php
+                                $buyerFinancingData = @$auction->get->financings;
+                                $buyerFinancingArr = is_array($buyerFinancingData) ? array_filter($buyerFinancingData) : [];
+                                $buyerFinancingPills = \App\Helpers\ListingDisplayHelper::normalizeList($buyerFinancingArr, @$auction->get->financingOther);
+                            @endphp
+                            @if (!empty($buyerFinancingPills))
+                                <x-listing.accordion title="Financing Details" id="buyer-financing">
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
+                                    Offered Currency/Financing:
+                                    @foreach ($buyerFinancingPills as $fp)
+                                        <span class="removeBold badge bg-secondary">{{ $fp }}</span>
+                                    @endforeach
                                 </div>
+
+                                @php $buyerFinancingOriginal = is_array($buyerFinancingData) ? array_filter($buyerFinancingData) : []; @endphp
+
+                                @if (in_array('Seller Financing', $buyerFinancingOriginal) && !empty(@$auction->get->sellerFinancing))
+                                <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">Seller Financing Terms</h6></div>
+                                @foreach (@$auction->get->sellerFinancing as $sf)
+                                    @if (\App\Helpers\ListingDisplayHelper::hasValue($sf))
+                                    <div class="col-md-12 col-12 pt-1"><span class="badge bg-secondary">{{ $sf }}</span></div>
+                                    @endif
+                                @endforeach
+                                @endif
+
+                                @if (in_array('Assumable', $buyerFinancingOriginal) && !empty(@$auction->get->assumable))
+                                <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">Assumable Terms</h6></div>
+                                @foreach (@$auction->get->assumable as $at)
+                                    @if (\App\Helpers\ListingDisplayHelper::hasValue($at))
+                                    <div class="col-md-12 col-12 pt-1"><span class="badge bg-secondary">{{ $at }}</span></div>
+                                    @endif
+                                @endforeach
+                                @endif
+
+                                @if (in_array('Exchange/Trade', $buyerFinancingOriginal) && !empty(@$auction->get->trade))
+                                <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">Exchange/Trade Terms</h6></div>
+                                @foreach (@$auction->get->trade as $tr)
+                                    @if (\App\Helpers\ListingDisplayHelper::hasValue($tr))
+                                    <div class="col-md-12 col-12 pt-1"><span class="badge bg-secondary">{{ $tr }}</span></div>
+                                    @endif
+                                @endforeach
+                                @endif
+
+                                @if ((in_array('Lease Option', $buyerFinancingOriginal) || in_array('Lease Purchase', $buyerFinancingOriginal)) && !empty(@$auction->get->leaseOptions))
+                                <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">Lease Option/Purchase Terms</h6></div>
+                                @foreach (@$auction->get->leaseOptions as $lo)
+                                    @if (\App\Helpers\ListingDisplayHelper::hasValue($lo))
+                                    <div class="col-md-12 col-12 pt-1"><span class="badge bg-secondary">{{ $lo }}</span></div>
+                                    @endif
+                                @endforeach
+                                @endif
+
+                                @if (in_array('Cryptocurrency', $buyerFinancingOriginal) && !empty(@$auction->get->cryptocurrency))
+                                <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">Cryptocurrency Terms</h6></div>
+                                @foreach (@$auction->get->cryptocurrency as $cr)
+                                    @if (\App\Helpers\ListingDisplayHelper::hasValue($cr))
+                                    <div class="col-md-12 col-12 pt-1"><span class="badge bg-secondary">{{ $cr }}</span></div>
+                                    @endif
+                                @endforeach
+                                @endif
+
+                                @if (in_array('NFT', $buyerFinancingOriginal) && !empty(@$auction->get->nft))
+                                <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">NFT Terms</h6></div>
+                                @foreach (array_filter(@$auction->get->nft) as $nf)
+                                    @if (\App\Helpers\ListingDisplayHelper::hasValue($nf))
+                                    <div class="col-md-12 col-12 pt-1"><span class="badge bg-secondary">{{ $nf }}</span></div>
+                                    @endif
+                                @endforeach
+                                @endif
+
+                                @if (in_array('Prepayment Penalty', $buyerFinancingOriginal))
+                                <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">Prepayment Penalty</h6></div>
+                                @if (@$auction->get->prepayment == 'Yes' && !empty(@$auction->get->prepaymentOther))
+                                    @foreach (@$auction->get->prepaymentOther as $pp)
+                                        @if (\App\Helpers\ListingDisplayHelper::hasValue($pp))
+                                        <div class="col-md-12 col-12 pt-1"><span class="badge bg-secondary">{{ $pp }}</span></div>
+                                        @endif
+                                    @endforeach
+                                @elseif (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->prepayment))
+                                    <div class="col-md-12 col-12 pt-1"><span class="removeBold">{{ @$auction->get->prepayment }}</span></div>
+                                @endif
+                                @endif
+
+                                @if (in_array('Balloon Payment', $buyerFinancingOriginal))
+                                <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">Balloon Payment</h6></div>
+                                @if (@$auction->get->balloon == 'Yes' && !empty(@$auction->get->balloonpyment))
+                                    @foreach (@$auction->get->balloonpyment as $bp)
+                                        @if (\App\Helpers\ListingDisplayHelper::hasValue($bp))
+                                        <div class="col-md-12 col-12 pt-1"><span class="badge bg-secondary">{{ $bp }}</span></div>
+                                        @endif
+                                    @endforeach
+                                @elseif (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->balloon))
+                                    <div class="col-md-12 col-12 pt-1"><span class="removeBold">{{ @$auction->get->balloon }}</span></div>
+                                @endif
+                                @endif
+
+                                </x-listing.accordion>
                             @endif
                             @if (@$auction->get->escrow_amount != null)
                                 <div class="row align-items-center">
@@ -361,36 +367,32 @@
                                         @endforeach
                                     </div>
                                 @endif
-                                @if (@$auction->get->minimum_annual_net_income !== null)
-                                    <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i>
-                                        Minimum
-                                        Annual Net Income:
-                                        <span class="removeBold">{{ @$auction->get->minimum_annual_net_income }}</span>
+                                @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->minimum_annual_net_income))
+                                    <div class="col-md-12 col-12 fw-bold">
+                                        Minimum Annual Net Income:
+                                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::fmtMoney(@$auction->get->minimum_annual_net_income) }}</span>
                                     </div>
                                 @endif
-                                @if (@$auction->get->minimum_cap_rate !== null)
-                                    <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i>
-                                        Minimum
-                                        Cap Rate:
-                                        <span class="removeBold">{{ @$auction->get->minimum_cap_rate }}</span>
+                                @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->minimum_cap_rate))
+                                    <div class="col-md-12 col-12 fw-bold">
+                                        Minimum Cap Rate:
+                                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::fmtPercent(@$auction->get->minimum_cap_rate) }}</span>
                                     </div>
                                 @endif
-                                @if (@$auction->get->titleListing == 'Commercial Property' && @$auction->get->included_in_sale !== null)
-                                    <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i> Does
-                                        the sale need to include any of the following: Building(s) and Land,
-                                        Furniture/Fixtures, Leases, or Other?
-                                        @foreach (@$auction->get->included_in_sale as $item)
-                                            <span class="removeBold">{{ $item }}</span>
-                                            @if ($item == 'Other')
-                                                <div class="col-md-12 col-12 fw-bold"><i
-                                                        class="fa-regular fa-check-square"></i> Sale Needs to Include:
-                                                    <span class="removeBold">{{ @$auction->get->licenseOther }}</span>
-                                                </div>
-                                            @endif
+                                @if (@$auction->get->titleListing == 'Commercial Property')
+                                    @php
+                                        $includedItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->included_in_sale, @$auction->get->licenseOther);
+                                    @endphp
+                                    @if (!empty($includedItems))
+                                    <div class="col-md-12 col-12 fw-bold">
+                                        Included in Sale:
+                                        @foreach ($includedItems as $item)
+                                            <span class="removeBold badge bg-secondary">{{ $item }}</span>
                                         @endforeach
                                     </div>
+                                    @endif
                                 @endif
-                                @if (@$auction->get->additional_details !== null)
+                                @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->additional_details))
                                     <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i>
                                         Additional Details:
                                         <span class="removeBold">{{ @$auction->get->additional_details }}</span>
@@ -400,42 +402,43 @@
                         @endif
                         <div class="row align-items-center Listing Information mt-4">
                             <h5>Desired Features:</h5>
-                            @if (@$auction->get->property_items != null && @$auction->get->property_type != null)
+                            @php
+                                $buyerPropertyStyles = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->property_items);
+                            @endphp
+                            @if (!empty($buyerPropertyStyles))
                                 <div class="col-md-12 col-12 removeBold"><i class="fa-regular fa-check-square"></i>
-                                    <span class="fw-bold">Acceptable Property Styles:</span><span
-                                        class="removeBold">({{ @$auction->get->property_type }}) </span>
-                                    @foreach (@$auction->get->property_items as $item)
-                                        <span class="badge bg-secondary removeBold">{{ $item }}</span>
+                                    <span class="fw-bold">Acceptable Property Styles:</span>
+                                    @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->property_type))
+                                        <span class="removeBold">({{ @$auction->get->property_type }})</span>
+                                    @endif
+                                    @foreach ($buyerPropertyStyles as $psItem)
+                                        <span class="badge bg-secondary removeBold">{{ $psItem }}</span>
                                     @endforeach
                                 </div>
                             @endif
-                            @if (@$auction->get->special_sales != null)
+                            @php
+                                $specialSaleItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->special_sales);
+                            @endphp
+                            @if (!empty($specialSaleItems))
                                 <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i>
                                     Acceptable Special Sales Provisions:
-                                    @if (gettype(@$auction->get->special_sales) == 'array')
-                                        @foreach (@$auction->get->special_sales as $item)
-                                            <span class="badge bg-secondary removeBold">{{ $item }}</span>
-                                        @endforeach
-                                    @endif
+                                    @foreach ($specialSaleItems as $ssItem)
+                                        <span class="badge bg-secondary removeBold">{{ $ssItem }}</span>
+                                    @endforeach
                                 </div>
                             @endif
-                            @if (
-                                @$auction->get->prop_condition &&
-                                    @$auction->get->prop_condition != null &&
-                                    $auction->get->property_type !== 'Vacant Land')
+                            @if ($auction->get->property_type !== 'Vacant Land')
+                                @php
+                                    $conditionItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->prop_condition, @$auction->get->propConditionOther);
+                                @endphp
+                                @if (!empty($conditionItems))
                                 <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i>
                                     Acceptable Property Conditions:
-                                    @if (gettype(@$auction->get->prop_condition) == 'array')
-                                        @foreach (@$auction->get->prop_condition as $item)
-                                            <span
-                                                class="d-inline-block badge bg-secondary removeBold">{{ $item }}</span>
-                                            @if ($item == 'Other')
-                                                <span
-                                                    class="d-inline-block badge bg-secondary removeBold">{{ @$auction->get->propConditionOther }}</span>
-                                            @endif
-                                        @endforeach
-                                    @endif
+                                    @foreach ($conditionItems as $cItem)
+                                        <span class="d-inline-block badge bg-secondary removeBold">{{ $cItem }}</span>
+                                    @endforeach
                                 </div>
+                                @endif
                             @endif
                             @if (@$auction->get->bedrooms && @$auction->get->bedrooms != null && $auction->get->property_type !== 'Vacant Land')
                                 <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i> Minimum
@@ -1102,9 +1105,9 @@
                                   <div class="col-md-12 col-12 fw-bold"> <i class="fa-regular fa-check-square"></i> Minimum Cap Rate:
                                     ${{ @$auction->get->min_cap_rate }} </div>
                                 @endif
-                                @if (@$auction->get->additional_details != null)
-                                  <div class="col-md-12 col-12 fw-bold"> <i class="fa-regular fa-check-square"></i> Any additional
-                                    details:{{ @$auction->get->additional_details }}
+                                @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->additional_details))
+                                  <div class="col-md-12 col-12 fw-bold"> <i class="fa-regular fa-check-square"></i> Additional Details:
+                                    <span class="removeBold">{{ @$auction->get->additional_details }}</span>
                                   </div>
                                 @endif
                                 @if (@$auction->get->arv != null)

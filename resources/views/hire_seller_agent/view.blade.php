@@ -456,32 +456,20 @@
                             @endif
 
                             @if ($propType !== 'Vacant Land')
+                            @php
+                                $conditionItems = \App\Helpers\ListingDisplayHelper::normalizeList(
+                                    @$auction->get->condition_prop_buyer ?? @$auction->get->condition_prop,
+                                    @$auction->get->other_property_condition
+                                );
+                            @endphp
+                            @if (!empty($conditionItems))
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Property Condition:
-                                @php
-                                    $conditionData = @$auction->get->condition_prop_buyer;
-                                    $conditionArray = null;
-                                    if ($conditionData) {
-                                        if (is_string($conditionData)) {
-                                            $conditionArray = json_decode($conditionData, true);
-                                        } elseif (is_array($conditionData)) {
-                                            $conditionArray = $conditionData;
-                                        }
-                                    }
-                                    $conditionProp = @$auction->get->condition_prop;
-                                @endphp
-                                @if (is_array($conditionArray) && !empty(array_filter($conditionArray)))
-                                    @foreach (array_filter($conditionArray) as $item)
-                                        @if ($item != 'Other')
-                                            <span class="removeBold"> {{ $item }}</span>
-                                        @elseif (@$auction->get->other_property_condition)
-                                            <span class="removeBold"> {{ @$auction->get->other_property_condition }}</span>
-                                        @endif
-                                    @endforeach
-                                @elseif (!empty($conditionProp))
-                                    <span class="removeBold"> {{ $conditionProp }}</span>
-                                @endif
+                                @foreach ($conditionItems as $cItem)
+                                    <span class="removeBold badge bg-secondary">{{ $cItem }}</span>
+                                @endforeach
                             </div>
+                            @endif
                             @endif
 
                             @if (in_array($propType, ['Residential']))
@@ -682,24 +670,14 @@
 
                             @if (in_array($propType, ['Commercial', 'Business']))
                                 @php
-                                    $garageParkingData = @$auction->get->garage_parking_spaces_option;
-                                    $garageParkingList = [];
-                                    if ($garageParkingData) {
-                                        $garageParkingList = is_string($garageParkingData) ? (json_decode($garageParkingData, true) ?? []) : (array)$garageParkingData;
-                                    }
-                                    $otherParkingWrapper = @$auction->get->other_parking_space_wrapper ?? '';
+                                    $parkingItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->garage_parking_spaces_option, @$auction->get->other_parking_space_wrapper);
                                 @endphp
-                                @if (!empty($garageParkingList))
+                                @if (!empty($parkingItems))
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Garage/Parking Features:
-                                        @foreach ($garageParkingList as $gpItem)
-                                            @if ($gpItem !== 'Other')
-                                                <span class="removeBold badge bg-secondary">{{ $gpItem }}</span>
-                                            @endif
+                                        @foreach ($parkingItems as $feature)
+                                            <span class="removeBold badge bg-secondary">{{ $feature }}</span>
                                         @endforeach
-                                        @if (in_array('Other', $garageParkingList) && !empty($otherParkingWrapper))
-                                            <span class="removeBold badge bg-secondary">{{ $otherParkingWrapper }}</span>
-                                        @endif
                                     </div>
                                 @endif
                             @endif
@@ -810,47 +788,30 @@
 
                             @if (in_array($propType, ['Commercial', 'Business', 'Income']))
                                 @php
-                                    $assetsData = @$auction->get->assets;
-                                    $assetsList = [];
-                                    if ($assetsData) {
-                                        $assetsList = is_string($assetsData) ? (json_decode($assetsData, true) ?? []) : (array)$assetsData;
-                                    }
+                                    $assetItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->assets, @$auction->get->assets_other);
                                 @endphp
-                                @if (!empty($assetsList))
-                                    @php
-                                        $assetsOtherText = @$auction->get->assets_other;
-                                    @endphp
+                                @if (!empty($assetItems))
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Included Property or Business Assets:
-                                        @foreach ($assetsList as $asset)
-                                            @if ($asset === 'Other' && !empty($assetsOtherText))
-                                                <span class="removeBold badge bg-secondary">{{ $assetsOtherText }}</span>
-                                            @elseif ($asset !== 'Other')
-                                                <span class="removeBold badge bg-secondary">{{ $asset }}</span>
-                                            @endif
+                                        @foreach ($assetItems as $asset)
+                                            <span class="removeBold badge bg-secondary">{{ $asset }}</span>
                                         @endforeach
                                     </div>
                                 @endif
                             @endif
 
                             @if (in_array($propType, ['Commercial', 'Business', 'Income']))
-                                @php
-                                    $minAnnualNet = @$auction->get->minimum_annual_net_income;
-                                @endphp
-                                @if (!empty($minAnnualNet) && $minAnnualNet != 'null')
+                                @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->minimum_annual_net_income))
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Annual Net Income:
-                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', $minAnnualNet), 2) }}</span>
+                                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::fmtMoney(@$auction->get->minimum_annual_net_income) }}</span>
                                     </div>
                                 @endif
 
-                                @php
-                                    $minCapRate = @$auction->get->minimum_cap_rate;
-                                @endphp
-                                @if (!empty($minCapRate) && $minCapRate != 'null')
+                                @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->minimum_cap_rate))
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Cap Rate:
-                                        <span class="removeBold">{{ $minCapRate }}%</span>
+                                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::fmtPercent(@$auction->get->minimum_cap_rate) }}</span>
                                     </div>
                                 @endif
                             @endif
@@ -1027,24 +988,18 @@
                             $displayOtherFinancing = str_replace('"', '', @$auction->get->other_financing ?? '');
                         @endphp
 
-                        @if (!empty($financingArray))
+                        @php
+                            $financingPills = \App\Helpers\ListingDisplayHelper::normalizeList($financingArray, $displayOtherFinancing);
+                        @endphp
+                        @if (!empty($financingPills))
                             <hr>
-                            <div class="col-12">
-                                <div class="card-header section-header">
-                                    <h4 class="section-title">Financing Details</h4>
-                                </div>
-                            </div>
+                            <x-listing.accordion title="Financing Details" id="seller-financing">
 
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Offered Financing/Currency:
-                                @foreach ($financingArray as $financingItem)
-                                    @if ($financingItem != 'Other')
-                                        <span class="removeBold badge bg-secondary">{{ str_replace('"', '', $financingItem) }}</span>
-                                    @endif
+                                @foreach ($financingPills as $fp)
+                                    <span class="removeBold badge bg-secondary">{{ $fp }}</span>
                                 @endforeach
-                                @if (in_array('Other', $financingArray) && $displayOtherFinancing)
-                                    <span class="removeBold badge bg-secondary">{{ $displayOtherFinancing }}</span>
-                                @endif
                             </div>
 
                             @php
@@ -1066,10 +1021,10 @@
                                         $hasAnyData = false;
                                         foreach ($fields as $field) {
                                             $val = $getVal($field['key']);
-                                            if (!empty($val)) { $hasAnyData = true; break; }
+                                            if (\App\Helpers\ListingDisplayHelper::hasValue($val)) { $hasAnyData = true; break; }
                                             if (isset($field['alt_keys'])) {
                                                 foreach ($field['alt_keys'] as $altKey) {
-                                                    if (!empty($getVal($altKey))) { $hasAnyData = true; break 2; }
+                                                    if (\App\Helpers\ListingDisplayHelper::hasValue($getVal($altKey))) { $hasAnyData = true; break 2; }
                                                 }
                                             }
                                         }
@@ -1087,7 +1042,7 @@
                                                         if (!empty($altVal)) { $fieldVal = $altVal; break; }
                                                     }
                                                 }
-                                                $showField = !empty($fieldVal);
+                                                $showField = \App\Helpers\ListingDisplayHelper::hasValue($fieldVal);
                                                 if ($showField && isset($field['show_when'])) {
                                                     $condKey = $field['show_when']['key'];
                                                     $condVal = $field['show_when']['value'];
@@ -1169,6 +1124,7 @@
                                     @endif
                                 @endif
                             @endforeach
+                            </x-listing.accordion>
                         @endif
 
                         <hr>
@@ -1669,14 +1625,14 @@
                         @endif
 
                         <hr>
-                        @if (@$auction->get->additional_details != null)
+                        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->additional_details))
                             <div class="card-header section-header">
                                 <h4 class="section-title">Additional Details:</h4>
                             </div>
 
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Additional Details:<span
-                                    class="removeBold">{{ $auction->get->additional_details ?? '' }}</span>
+                                    class="removeBold">{{ $auction->get->additional_details }}</span>
                             </div>
                         @endif
 
@@ -2006,7 +1962,7 @@
                         </div>
                         @endif
 
-                        @if (@$auction->get->additional_details_broker != null && @$auction->get->additional_details_broker != '')
+                        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->additional_details_broker))
                         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
                         <h5 class="mt-3 mb-2"><strong>Additional Terms:</strong></h5>
                         <div class="col-md-12 col-12 pt-2 removeBold">

@@ -484,14 +484,17 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         Acceptable Property Type:
                         <span class="removeBold">{{ @$auction->get->property_type }}</span>
                     </div>
+                    @php
+                        $propertyStyleItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->property_items);
+                    @endphp
+                    @if (!empty($propertyStyleItems))
                     <div class="col-md-12 col-12 pt-2 fw-bold">
                         Acceptable Property Styles:
-                        @if (gettype(@$auction->get->property_items) == 'array')
-                        @foreach (@$auction->get->property_items as $item)
-                        <span class="removeBold badge bg-secondary">{{ $item }}</span>
+                        @foreach ($propertyStyleItems as $psItem)
+                        <span class="removeBold badge bg-secondary">{{ $psItem }}</span>
                         @endforeach
-                        @endif
                     </div>
+                    @endif
                     <div class="col-md-12 col-12 pt-2 fw-bold">
                         Acceptable Property Condition:
                         @php
@@ -540,13 +543,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             <span class="removeBold">—</span>
                         @endif
                     </div>
-                    @if (@$auction->get->condition_prop != null)
+                    @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->leasing_space))
                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                        Acceptable Leasing
-                        Space:
-                        <span class="removeBold">{{ $auction->get->leasing_space }}
-
-                        </span>
+                        Acceptable Leasing Space:
+                        <span class="removeBold">{{ $auction->get->leasing_space }}</span>
                     </div>
                     @endif
                     @if (@$auction->get->bedrooms != null)
@@ -596,32 +596,23 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </div>
                     @endif
 
-                    {{-- Garage/Parking Features Needed (Commercial only) - IMMEDIATELY after Min Net Leasable --}}
+                    {{-- Garage/Parking Features Needed (Commercial only) --}}
                     @if (@$auction->get->property_type === 'Commercial Property')
-                        @if (@$auction->get->garage_parking_spaces != null && @$auction->get->garage_parking_spaces != '')
+                        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->garage_parking_spaces))
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Garage/Parking Features Needed:
                             <span class="removeBold">{{ @$auction->get->garage_parking_spaces }}</span>
                         </div>
                         @endif
                         @php
-                            $garageParkingOptions = @$auction->get->garage_parking_spaces_option;
-                            if (is_string($garageParkingOptions)) {
-                                $garageParkingOptions = json_decode($garageParkingOptions, true) ?? [];
-                            }
-                            $garageParkingOptions = is_array($garageParkingOptions) ? array_filter($garageParkingOptions) : [];
+                            $parkingItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->garage_parking_spaces_option, @$auction->get->other_parking_space_wrapper);
                         @endphp
-                        @if (!empty($garageParkingOptions))
+                        @if (!empty($parkingItems))
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Garage/Parking Features:
-                            @foreach ($garageParkingOptions as $feature)
-                                @if ($feature !== 'Other' && !empty($feature))
+                            @foreach ($parkingItems as $feature)
                                 <span class="removeBold badge bg-secondary">{{ $feature }}</span>
-                                @endif
                             @endforeach
-                            @if (!empty(@$auction->get->other_parking_space_wrapper))
-                            <span class="removeBold badge bg-secondary">{{ @$auction->get->other_parking_space_wrapper }}</span>
-                            @endif
                         </div>
                         @endif
                     @endif
@@ -870,14 +861,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @include('partials.tenant.services_snapshot', ['auction' => $auction])
                 @endif
                 <hr>
-                @if (@$auction->get->additional_details != null)
+                @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->additional_details))
                 <div class="card-header section-header">
                     <h4 class="section-title">Additional Details: </h4>
                 </div>
 
                 <div class="col-md-12 col-12 pt-2 fw-bold">
                     Additional Details:<span class="removeBold">
-                        {{ $auction->get->additional_details ?? '' }}</span>
+                        {{ $auction->get->additional_details }}</span>
                 </div>
                 @endif
 
@@ -1115,10 +1106,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </div>
                 @endif
 
-                @if (@$auction->get->additional_details_broker != null)
+                @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->additional_details_broker))
                 <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
-                <!-- Additional Terms Sub-section (Separate from Brokerage Relationship) -->
                 <h5 class="mt-3 mb-2"><strong>Additional Terms:</strong></h5>
 
                 <div class="col-md-12 col-12 pt-2 fw-bold">

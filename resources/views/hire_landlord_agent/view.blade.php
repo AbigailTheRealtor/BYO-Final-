@@ -386,9 +386,17 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         <span class="removeBold">{{ @$auction->get->property_items }}</span>
                     </div>
                     @endif --}}
-                    @if (@$auction->get->condition_prop != null)
+                    @php
+                        $landlordConditionItems = \App\Helpers\ListingDisplayHelper::normalizeList(
+                            @$auction->get->condition_prop_buyer ?? @$auction->get->condition_prop,
+                            @$auction->get->other_property_condition
+                        );
+                    @endphp
+                    @if (!empty($landlordConditionItems))
                     <div class="col-md-12 col-12 pt-2 fw-bold"> Property Condition:
-                        <span class="removeBold">{{ @$auction->get->condition_prop }}</span>
+                        @foreach ($landlordConditionItems as $cItem)
+                            <span class="removeBold badge bg-secondary">{{ $cItem }}</span>
+                        @endforeach
                     </div>
                     @endif
 
@@ -533,24 +541,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
             @if ($isCommercial)
             @php
-                $garageParkingOptions = @$auction->get->garage_parking_spaces_option;
-                if (is_string($garageParkingOptions)) {
-                    $garageParkingOptions = json_decode($garageParkingOptions, true);
-                }
-                if (!is_array($garageParkingOptions)) {
-                    $garageParkingOptions = [];
-                }
-                $garageParkingOptions = array_filter($garageParkingOptions, fn($v) => $v !== 'Other');
-                $otherParking = @$auction->get->other_parking_space_wrapper;
-                if (!empty($otherParking)) {
-                    $garageParkingOptions[] = $otherParking;
-                }
+                $parkingItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->garage_parking_spaces_option, @$auction->get->other_parking_space_wrapper);
             @endphp
-            @if (!empty($garageParkingOptions))
+            @if (!empty($parkingItems))
             <div class="col-md-12 col-12 pt-2 fw-bold">
                 Garage/Parking Features:
-                @foreach ($garageParkingOptions as $parkingOption)
-                <span class="removeBold badge bg-secondary">{{ $parkingOption }}</span>
+                @foreach ($parkingItems as $feature)
+                <span class="removeBold badge bg-secondary">{{ $feature }}</span>
                 @endforeach
             </div>
             @endif
@@ -895,84 +892,61 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endif
 
         @php
-        $rawTenantPays = $auction->get->tenant_pays ?? null;
-        $tenantPays = is_string($rawTenantPays)
-        ? (json_decode($rawTenantPays, true) ?? [])
-        : (is_array($rawTenantPays) ? $rawTenantPays : []);
+            $tenantPayItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->tenant_pays, @$auction->get->other_tenant_pays);
+            $ownerPayItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->owner_pays, @$auction->get->other_owner_pays);
 
-        $rawOwnerPays = $auction->get->owner_pays ?? null;
-        $ownerPays = is_string($rawOwnerPays)
-        ? (json_decode($rawOwnerPays, true) ?? [])
-        : (is_array($rawOwnerPays) ? $rawOwnerPays : []);
-
-        $rawTermsOfLease = $auction->get->terms_of_lease ?? null;
-        $termsOfLease = is_string($rawTermsOfLease)
-        ? (json_decode($rawTermsOfLease, true) ?? [])
-        : (is_array($rawTermsOfLease) ? $rawTermsOfLease : []);
+            $rawTermsOfLease = $auction->get->terms_of_lease ?? null;
+            $termsOfLease = is_string($rawTermsOfLease)
+            ? (json_decode($rawTermsOfLease, true) ?? [])
+            : (is_array($rawTermsOfLease) ? $rawTermsOfLease : []);
         @endphp
 
-
-        @if (count($tenantPays) > 0 || !empty($auction->get->other_tenant_pays))
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-             Tenant Pays:
-            <ul>
-                @foreach ($tenantPays as $tenant_pay)
-                    @if ($tenant_pay !== 'Other')
-                    <li style="font-size: 16px;">{{ $tenant_pay }}</li>
-                    @endif
+        @if (!empty($tenantPayItems) || !empty($ownerPayItems))
+        <x-listing.accordion title="Responsibilities" id="landlord-responsibilities" :open="true">
+            @if (!empty($tenantPayItems))
+            <div class="col-md-12 col-12 pt-2 fw-bold">
+                Tenant Responsible For:
+                @foreach ($tenantPayItems as $item)
+                    <span class="removeBold badge bg-secondary">{{ $item }}</span>
                 @endforeach
-                @if (!empty($auction->get->other_tenant_pays))
-                <li style="font-size: 16px;">{{ $auction->get->other_tenant_pays }}</li>
-                @endif
-            </ul>
-        </div>
+            </div>
+            @endif
+
+            @if (!empty($ownerPayItems))
+            <div class="col-md-12 col-12 pt-2 fw-bold">
+                Owner Responsible For:
+                @foreach ($ownerPayItems as $item)
+                    <span class="removeBold badge bg-secondary">{{ $item }}</span>
+                @endforeach
+            </div>
+            @endif
+        </x-listing.accordion>
         @endif
 
-
-        @if (!empty($ownerPays) || !empty($auction->get->other_owner_pays))
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-             Owner Pays:
-            <ul>
-                @foreach ($ownerPays as $owner_pay)
-                    @if ($owner_pay !== 'Other')
-                    <li style="font-size: 16px;">{{ $owner_pay }}</li>
-                    @endif
-                @endforeach
-                @if (!empty($auction->get->other_owner_pays))
-                <li style="font-size: 16px;">{{ $auction->get->other_owner_pays }}</li>
-                @endif
-            </ul>
-        </div>
-        @endif
-
-        @if (!empty($termsOfLease) || !empty($auction->get->custom_lease_term))
+        @php
+            $leaseTermItems = \App\Helpers\ListingDisplayHelper::normalizeList($termsOfLease, @$auction->get->custom_lease_term);
+        @endphp
+        @if (!empty($leaseTermItems))
         <div class="col-md-12 col-12 pt-2 fw-bold">
              Terms of Lease:
-            <ul>
-                @foreach ($termsOfLease as $lease)
-                    @if ($lease !== 'Other')
-                    <li style="font-size: 16px;">{{ $lease }}</li>
-                    @endif
-                @endforeach
-                @if (!empty($auction->get->custom_lease_term))
-                <li style="font-size: 16px;">{{ $auction->get->custom_lease_term }}</li>
-                @endif
-            </ul>
+            @foreach ($leaseTermItems as $lt)
+                <span class="removeBold badge bg-secondary">{{ $lt }}</span>
+            @endforeach
         </div>
         @endif
 
-        @if (@$auction->get->desired_rental_amount != '' && @$auction->get->desired_rental_amount != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->desired_rental_amount))
         <div class="row" style="flex-wrap: wrap;">
-            <div class="col-12 fw-bold">  Desired Rental
-                Amount:
-                <span class="removeBold">${{ @$auction->get->desired_rental_amount }}</span>
+            <div class="col-12 fw-bold pt-2">
+                Desired Rental Amount:
+                <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::fmtMoney(@$auction->get->desired_rental_amount) }}</span>
             </div>
         </div>
         @endif
-        @if (@$auction->get->lease_amount_frequency != '' && @$auction->get->lease_amount_frequency != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->lease_amount_frequency))
         <div class="row" style="flex-wrap: wrap;">
-            <div class="col-12 fw-bold">  Lease Amount
-                Frequency:
+            <div class="col-12 fw-bold pt-2">
+                Lease Amount Frequency:
                 <span class="removeBold">{{ @$auction->get->lease_amount_frequency }}</span>
             </div>
         </div>
@@ -1250,14 +1224,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
         <hr>
-        @if (@$auction->get->additional_details != null)
-        <div class="card-header">
-            <h4>Additional Details: </h4>
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->additional_details))
+        <div class="card-header section-header">
+            <h4 class="section-title">Additional Details: </h4>
         </div>
 
         <div class="col-md-12 col-12 pt-2 fw-bold">
             Additional Details: <span
-                class="removeBold">{{ $auction->get->additional_details ?? '' }}</span>
+                class="removeBold">{{ $auction->get->additional_details }}</span>
         </div>
         @endif
 
@@ -1632,10 +1606,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
 
-        @if (@$auction->get->additional_details_broker != null)
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->additional_details_broker))
         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
-        <!-- Additional Terms Sub-section -->
         <h5 class="mt-3 mb-2"><strong>Additional Terms:</strong></h5>
 
         <div class="col-md-12 col-12 pt-2 fw-bold">

@@ -148,6 +148,47 @@ class ListingDisplayHelper
         return $result;
     }
 
+    public static function normalizeJsonList($value, $otherText = null): array
+    {
+        if (empty($value)) return [];
+
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                if (array_keys($decoded) !== range(0, count($decoded) - 1)) {
+                    $value = collect($decoded)
+                        ->filter(fn($v) => $v === true || $v === 1 || $v === '1' || $v === 'true')
+                        ->keys()
+                        ->toArray();
+                } else {
+                    $value = $decoded;
+                }
+            } else {
+                $value = [$value];
+            }
+        }
+
+        if (is_object($value)) {
+            $value = (array) $value;
+            if (array_keys($value) !== range(0, count($value) - 1)) {
+                $value = collect($value)
+                    ->filter(fn($v) => $v === true || $v === 1 || $v === '1' || $v === 'true')
+                    ->keys()
+                    ->toArray();
+            }
+        }
+
+        return self::normalizeList($value, $otherText);
+    }
+
+    public static function hasAnyValue(...$values): bool
+    {
+        foreach ($values as $v) {
+            if (self::hasValue($v)) return true;
+        }
+        return false;
+    }
+
     public static function isParentNo($value): bool
     {
         $yn = self::formatYesNo($value);
