@@ -309,21 +309,28 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                     <div class="row" style="flex-wrap: wrap;">
 
-                        {{-- Property Address intentionally hidden on listing display --}}
-
                         @php
+                            $stripState = function($str) {
+                                return trim(preg_replace('/,\s*[A-Z]{2}$/', '', $str));
+                            };
+
+                            $propertyCityVal = @$auction->get->property_city;
+                            $propertyCountyVal = @$auction->get->property_county;
+                            $propertyStateVal = @$auction->get->property_state ?: @$auction->get->state;
+                            $propertyZipVal = @$auction->get->property_zip ?: @$auction->get->zip_code;
+
                             $rawCities = @$auction->get->cities;
                             if (is_string($rawCities)) { $rawCities = json_decode($rawCities, true); }
                             $rawCities = is_array($rawCities) ? $rawCities : [];
-                            $cleanCities = array_map(function($city) {
-                                return preg_replace('/,\s*[A-Z]{2}$/', '', trim($city));
+                            $cleanCities = array_map(function($city) use ($stripState) {
+                                return $stripState($city);
                             }, array_filter($rawCities));
 
                             $rawCounties = @$auction->get->counties;
                             if (is_string($rawCounties)) { $rawCounties = json_decode($rawCounties, true); }
                             $rawCounties = is_array($rawCounties) ? $rawCounties : [];
-                            $cleanCounties = array_map(function($county) {
-                                return preg_replace('/,\s*[A-Z]{2}$/', '', trim($county));
+                            $cleanCounties = array_map(function($county) use ($stripState) {
+                                return $stripState($county);
                             }, array_filter($rawCounties));
 
                             $stateVal = null;
@@ -339,16 +346,46 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             if (is_string($rawZips)) { $rawZips = json_decode($rawZips, true); }
                             $rawZips = is_array($rawZips) ? array_filter($rawZips) : [];
                         @endphp
+
+                        @if (\App\Helpers\ListingDisplayHelper::hasValue($propertyCityVal))
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
+                            City:
+                            <span class="removeBold">{{ $stripState($propertyCityVal) }}</span>
+                        </div>
+                        @endif
+                        @if (\App\Helpers\ListingDisplayHelper::hasValue($propertyCountyVal))
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
+                            County:
+                            <span class="removeBold">{{ $stripState($propertyCountyVal) }}</span>
+                        </div>
+                        @endif
+                        @if (\App\Helpers\ListingDisplayHelper::hasValue($propertyStateVal))
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
+                            State:
+                            <span class="removeBold">{{ $propertyStateVal }}</span>
+                        </div>
+                        @endif
+                        @if (\App\Helpers\ListingDisplayHelper::hasValue($propertyZipVal))
+                        <div class="col-md-12 col-12 pt-2 fw-bold">
+                            Zip Code:
+                            <span class="removeBold">{{ $propertyZipVal }}</span>
+                        </div>
+                        @endif
+
                         @if (!empty($cleanCities))
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Acceptable Cities:
-                            <span class="removeBold">{{ implode('; ', $cleanCities) }}</span>
+                            @foreach ($cleanCities as $city)
+                                <span class="removeBold badge bg-secondary">{{ $city }}</span>
+                            @endforeach
                         </div>
                         @endif
                         @if (!empty($cleanCounties))
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Acceptable Counties:
-                            <span class="removeBold">{{ implode('; ', $cleanCounties) }}</span>
+                            @foreach ($cleanCounties as $county)
+                                <span class="removeBold badge bg-secondary">{{ $county }}</span>
+                            @endforeach
                         </div>
                         @endif
                         @if (!empty($stateVal))
@@ -359,9 +396,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         @endif
                         @if (!empty($rawZips))
                         <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Zip Code:
+                            Acceptable Zip Code:
                             @foreach ($rawZips as $zip)
-                            <span class="removeBold badge bg-secondary">{{ $zip }}</span>
+                                <span class="removeBold badge bg-secondary">{{ $zip }}</span>
                             @endforeach
                         </div>
                         @endif

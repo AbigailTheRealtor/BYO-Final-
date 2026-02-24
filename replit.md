@@ -50,7 +50,7 @@ All listing types have independent submission redirects. Tab visibility ensures 
 
 **Landlord Agent "Other" Visibility Pattern**: The `LandLordAgentAuction.php` component uses visibility flag properties (`$is_other_tenant_pay_visible`, etc.) to toggle "Other" custom text fields. Select2 change handlers call Livewire update methods to set these flags. During draft loading, flags are initialized from loaded array values. The view page filters "Other" from displayed lists and renders custom text from meta fields. Photo deletion is handled by `deletePhoto()`.
 
-**Landlord View Page Location Fields**: The landlord listing view page displays location fields (Acceptable Cities, Counties, State, Zip Code) as the first fields under Property Details, stripping state abbreviations from city/county names and displaying them semicolon-separated. This matches the tenant view pattern.
+**Landlord View Page Location Fields**: The landlord listing view page displays property address fields (City, County, State, Zip Code from `property_city`, `property_county`, `property_state`, `property_zip` meta) as the first 4 rows under Property Details, followed by Acceptable Cities/Counties/State/Zip Code (from `cities`, `counties`, `states`, `zipCodes` arrays) rendered as chip badges. State abbreviations are stripped from city/county names. Falls back to `state`/`zip_code` meta if property-specific fields are empty.
 
 **Landlord View Page Photo Enhancements**: The photo enhancements display section in the landlord view is rendered independently of the `@if ($hasServices)` block, with defensive parsing for JSON, array, and null values.
 
