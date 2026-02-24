@@ -54,6 +54,8 @@ All listing types have independent submission redirects. Tab visibility ensures 
 
 **Landlord View Page Photo Enhancements**: The photo enhancements display section in the landlord view is rendered independently of the `@if ($hasServices)` block, with defensive parsing for JSON, array, and null values.
 
+**ListingDisplayHelper (`app/Helpers/ListingDisplayHelper.php`)**: A shared PHP helper class used across all four agent listing view pages (Seller, Buyer, Tenant, Landlord) to standardize field display. Key methods: `hasValue()` (hide-when-empty gating), `isPlaceholder()` (suppresses "Example:" text), `formatYesNo()`, `formatYesCount($parent, $count, $suffix)` (merges count into parent: "Yes (2 Spaces)"), `formatYesList($parent, $list)` (merges list into parent: "Yes (In-Ground, Heated)"), `formatYesText($parent, $text)`, `normalizeList($list, $otherText)` (filters "Other" from arrays and substitutes custom text), `isParentYes()`, `fmtMoney/Percent/Number/Date()`. All four view files use this helper for garage/carport/pool/pets/amenities/view-preference display. "Recommended For You" hardcoded card sections have been removed from all four agent views.
+
 ### System Design Choices
 The architecture emphasizes modularity through Laravel's structure and Livewire components. A database-first approach prioritizes local database solutions for core services. Clear separation of concerns is maintained between frontend, backend, and data persistence. The system is deployment-ready with production environment optimizations. Existing database schema and storage logic for fees are immutable, with fee format updates being display-only.
 

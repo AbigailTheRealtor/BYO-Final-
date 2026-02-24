@@ -634,32 +634,22 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </div>
                     @endif
 
-                    {{-- Carport Needed with conditional spaces (Residential-only) --}}
+                    {{-- Carport Needed with merged spaces (Residential-only) --}}
                     @if (@$auction->get->property_type === 'Residential Property')
-                    @if (@$auction->get->carport_needed != null)
+                    @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->carport_needed))
                     <div class="col-md-12 col-12 pt-2 fw-bold">
                         Carport Needed:
-                        <span class="removeBold">{{ @$auction->get->carport_needed }}</span>
+                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->carport_needed, @$auction->get->other_carport_needed, 'Spaces') }}</span>
                     </div>
-                    @if (@$auction->get->carport_needed === 'Yes' && !empty(@$auction->get->other_carport_needed) && @$auction->get->other_carport_needed !== 'null')
-                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                        Number of Carport Spaces Needed:
-                        <span class="removeBold">{{ @$auction->get->other_carport_needed }}</span>
-                    </div>
-                    @endif
                     @endif
                     @endif
 
-                    {{-- Garage Needed with conditional spaces (Residential) --}}
-                    @if (@$auction->get->property_type === 'Residential Property' && @$auction->get->garage_needed != null)
+                    {{-- Garage Needed with merged spaces (Residential) --}}
+                    @if (@$auction->get->property_type === 'Residential Property')
+                    @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->garage_needed))
                     <div class="col-md-12 col-12 pt-2 fw-bold">
                         Garage Needed:
-                        <span class="removeBold">{{ @$auction->get->garage_needed }}</span>
-                    </div>
-                    @if (@$auction->get->garage_needed === 'Yes' && !empty(@$auction->get->other_garage_needed) && @$auction->get->other_garage_needed !== 'null')
-                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                        Number of Garage Spaces Needed:
-                        <span class="removeBold">{{ @$auction->get->other_garage_needed }}</span>
+                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->garage_needed, @$auction->get->other_garage_needed, 'Spaces') }}</span>
                     </div>
                     @endif
                     @endif
@@ -699,19 +689,15 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     @endif
                     @endif
 
-                    @if (@$auction->get->view_preference != null || @$auction->get->other_preferences != null)
+                    @php
+                        $viewPrefItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->view_preference, @$auction->get->other_preferences);
+                    @endphp
+                    @if (!empty($viewPrefItems))
                     <div class="col-md-12 col-12 pt-2 fw-bold"> View
                         Preference Needed:
-                        @if (is_array(@$auction->get->view_preference))
-                        @foreach (@$auction->get->view_preference as $item)
-                            @if ($item !== 'Other')
-                            <span class="removeBold badge bg-secondary">{{ @$item }}</span>
-                            @endif
+                        @foreach ($viewPrefItems as $item)
+                            <span class="removeBold badge bg-secondary">{{ $item }}</span>
                         @endforeach
-                        @endif
-                        @if (!empty(@$auction->get->other_preferences))
-                        <span class="removeBold badge bg-secondary">{{ @$auction->get->other_preferences }}</span>
-                        @endif
                     </div>
                     @endif
                     @if (@$auction->get->property_type === 'Residential Property' && !empty(@$auction->get->leasing_55_plus))
@@ -721,19 +707,15 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </div>
                     @endif
 
-                    @if (@$auction->get->non_negotiable_amenities != null || @$auction->get->other_non_negotiable_amenities != null)
+                    @php
+                        $amenityItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->non_negotiable_amenities, @$auction->get->other_non_negotiable_amenities);
+                    @endphp
+                    @if (!empty($amenityItems))
                     <div class="col-md-12 col-12 pt-2 fw-bold">
                         Non-Negotiable Amenities and Property Features:
-                        @if (is_array(@$auction->get->non_negotiable_amenities))
-                        @foreach (@$auction->get->non_negotiable_amenities as $item)
-                            @if ($item !== 'Other')
-                            <span class="removeBold badge bg-secondary">{{ @$item }}</span>
-                            @endif
+                        @foreach ($amenityItems as $item)
+                            <span class="removeBold badge bg-secondary">{{ $item }}</span>
                         @endforeach
-                        @endif
-                        @if (!empty(@$auction->get->other_non_negotiable_amenities))
-                        <span class="removeBold badge bg-secondary">{{ @$auction->get->other_non_negotiable_amenities }}</span>
-                        @endif
                     </div>
                     @endif
                 </div>
@@ -822,43 +804,37 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @endif
                 {{-- Pets section (Residential-only) --}}
                 @if (@$auction->get->property_type === 'Residential Property')
-                @if (@$auction->get->pets)
+                @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->pets))
                 <div class="col-md-12 col-12 pt-2 fw-bold"> Pets:
-                    <span class="removeBold">
-                        {{ @$auction->get->pets }}</span>
+                    <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->pets, @$auction->get->number_of_pets) }}</span>
                 </div>
                 @endif
-                @if (@$auction->get->pets == 'Yes')
-                <div class="col-md-12 col-12 pt-2 fw-bold"> Number
-                    of Pets:
-                    <span class="removeBold">
-                        {{ @$auction->get->number_of_pets != '' ? @$auction->get->number_of_pets : '' }}</span>
+                @if (\App\Helpers\ListingDisplayHelper::isParentYes(@$auction->get->pets))
+                @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->type_of_pets))
+                <div class="col-md-12 col-12 pt-2 fw-bold"> Pet Type:
+                    <span class="removeBold">{{ @$auction->get->type_of_pets }}</span>
                 </div>
-                <div class="col-md-12 col-12 pt-2 fw-bold"> Type of
-                    Pets:
-                    <span class="removeBold">
-                        {{ @$auction->get->type_of_pets != '' ? @$auction->get->type_of_pets : '' }}</span>
+                @endif
+                @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->breed_of_pets))
+                <div class="col-md-12 col-12 pt-2 fw-bold"> Breed of Pets:
+                    <span class="removeBold">{{ @$auction->get->breed_of_pets }}</span>
                 </div>
-                <div class="col-md-12 col-12 pt-2 fw-bold"> Breed of
-                    Pets:
-                    <span class="removeBold">
-                        {{ @$auction->get->breed_of_pets != '' ? @$auction->get->breed_of_pets : '' }}</span>
+                @endif
+                @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->weight_of_pets))
+                <div class="col-md-12 col-12 pt-2 fw-bold"> Weight:
+                    <span class="removeBold">{{ @$auction->get->weight_of_pets }} lbs</span>
                 </div>
-                <div class="col-md-12 col-12 pt-2 fw-bold"> Weight
-                    of Pets (lbs):
-                    <span class="removeBold">
-                        {{ @$auction->get->weight_of_pets != '' ? @$auction->get->weight_of_pets : '' }}</span>
+                @endif
+                @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->service_animal))
+                <div class="col-md-12 col-12 pt-2 fw-bold"> Service Animal:
+                    <span class="removeBold">{{ @$auction->get->service_animal }}</span>
                 </div>
-                <div class="col-md-12 col-12 pt-2 fw-bold"> Service
-                    Animal:
-                    <span class="removeBold">
-                        {{ @$auction->get->service_animal != '' ? @$auction->get->service_animal : '' }}</span>
+                @endif
+                @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->support_animal))
+                <div class="col-md-12 col-12 pt-2 fw-bold"> Emotional Support Animal:
+                    <span class="removeBold">{{ @$auction->get->support_animal }}</span>
                 </div>
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Emotional Support Animal:
-                    <span class="removeBold">
-                        {{ @$auction->get->support_animal != '' ? @$auction->get->support_animal : '' }}</span>
-                </div>
+                @endif
                 @endif
                 @endif
 
@@ -4929,137 +4905,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 </div>
 </div>
 </div>
-</div>
-<hr>
-<div class="container buyerOfferContentDetails">
-    <h3 class="text-600 mb-4">Recommended For You</h3>
-    <div class="cardsDetails row  justify-content-start">
-        <!-- Card 1 -->
-        <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
-            <div class="card ">
-                <img src="https://bidyouroffer.com/wp-content/uploads/2022/10/165522238955562a8b07535346697508007-300x200.jpg"
-                    class="card-img-top" alt="...">
-                <div class="card-body pb-2 pt-2">
-                    <h5 class="card-title"><a href="">1199 Randall Way, Brownsburg, IN 46112 </a></h5>
-                    <div class="houseDetails mb-1">
-                        <span>
-                            <span class="d-inline-flex justify-content-center align-items-center gap-1"><img
-                                    src="{{ asset('assets/fontawesome/svgs/thin/bed-front.svg') }}" alt="bed icon"
-                                    width="15"><b>
-                                    4</b></span>
-                            <span class="d-inline-flex justify-content-center align-items-center gap-1"><img
-                                    src="{{ asset('assets/fontawesome/svgs/thin/bath.svg') }}" alt="bed icon"
-                                    width="15"><b>
-                                    2</b></span>
-                            <span class="d-inline-flex justify-content-center align-items-center gap-1"><img
-                                    src="{{ asset('assets/fontawesome/svgs/thin/ruler-triangle.svg') }}"
-                                    alt="bed icon" width="15"><b> 1,643 </b>Sq Ft</span>
-                        </span>
-                        - House for sale
-                    </div>
-                    <p class="card-text mb-1"><span class="badge bg-secondary">land/lots</span> <span
-                            class="float-end"><span><b>MLS ID</b></span> <span>#12345</span></span></p>
-                    <p class="m-0"><svg xmlns="http://www.w3.org/2000/svg" class="clock" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg><b>28d 03:15:29</b></p>
-                </div>
-                <div class="card-footer bg-light">
-                    <div class="row">
-                        <div class="col-6 left">
-                            <!-- Barcode  -->
-                            <svg data-bs-container="body" tabindex="0" data-bs-toggle="popover"
-                                data-bs-trigger="hover focus" data-bs-placement="top" data-bs-content="Scan Qr Code"
-                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z">
-                                </path>
-                            </svg>
-                            <svg data-bs-container="body" tabindex="0" data-bs-toggle="popover"
-                                data-bs-trigger="hover focus" data-bs-placement="top" data-bs-content="Send Message"
-                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z">
-                                </path>
-                            </svg>
-                            <!-- FAvourite  -->
-                            <svg data-bs-container="body" tabindex="0" data-bs-toggle="popover"
-                                data-bs-trigger="hover focus" data-bs-placement="top" data-bs-content="Add Favorites"
-                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z">
-                                </path>
-                            </svg>
-                        </div>
-                        <div class="col-6 right text-end">
-                            <b>$1,000</b>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Card 2 -->
-        <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
-            <div class="card ">
-                <img src="https://bidyouroffer.com/wp-content/uploads/2022/10/165522238955562a8b07535346697508007-300x200.jpg"
-                    class="card-img-top" alt="...">
-                <div class="card-body">
-                    <h5 class="card-title"><a href="">1199 Randall Way, Brownsburg, IN 46112 </a></h5>
-                    <div class="houseDetails">
-                        <span>
-                            <span><b>4</b> bds</span>
-                            <span><b>2</b> ba</span>
-                            <span><b>1,643</b> sqft</span>
-                        </span>
-                        - House for sale
-                    </div>
-                    <p class="card-text"><span class="badge bg-secondary">land/lots</span> <span
-                            class="float-end"><span><b>MLS
-                                    ID</b></span> <span>#12345</span></span></p>
-                </div>
-                <div class="card-footer bg-light">
-                    <div class="row">
-                        <div class="col-6 left">
-                            <!-- Barcode  -->
-                            <svg data-bs-container="body" tabindex="0" data-bs-toggle="popover"
-                                data-bs-trigger="hover focus" data-bs-placement="top"
-                                data-bs-content="Scan Qr Code" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z">
-                                </path>
-                            </svg>
-                            <!-- Message  -->
-                            <svg data-bs-container="body" tabindex="0" data-bs-toggle="popover"
-                                data-bs-trigger="hover focus" data-bs-placement="top"
-                                data-bs-content="Send Message" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z">
-                                </path>
-                            </svg>
-                            <!-- FAvourite  -->
-                            <svg data-bs-container="body" tabindex="0" data-bs-toggle="popover"
-                                data-bs-trigger="hover focus" data-bs-placement="top"
-                                data-bs-content="Add Favorites" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z">
-                                </path>
-                            </svg>
-                        </div>
-                        <div class="col-6 right text-end">
-                            <b>$1,000</b>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 @endsection
 

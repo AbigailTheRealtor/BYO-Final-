@@ -517,44 +517,16 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </span>
             </div>
             @endif
-            @if (@$auction->get->carport_needed != null)
+            @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->carport_needed))
             <div class="col-md-12 col-12 pt-2 fw-bold">
-                Carport :
-                <span class="removeBold">
-                    <span
-                        class="removeBold badge bg-secondary">{{ @$auction->get->carport_needed }}</span>
-
-                </span>
+                Carport:
+                <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->carport_needed, @$auction->get->other_carport_needed, 'Spaces') }}</span>
             </div>
             @endif
-            @if (@$auction->get->other_carport_needed != '')
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                Number of Carport Spaces:
-                <span class="removeBold">
-                    <span
-                        class="removeBold badge bg-secondary">{{ @$auction->get->other_carport_needed }}</span>
-
-                </span>
-            </div>
-            @endif
-            @if (@$auction->get->garage_needed != null)
+            @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->garage_needed))
             <div class="col-md-12 col-12 pt-2 fw-bold">
                 Garage:
-                <span class="removeBold">
-                    <span
-                        class="removeBold badge bg-secondary">{{ @$auction->get->garage_needed }}</span>
-
-                </span>
-            </div>
-            @endif
-            @if (@$auction->get->other_garage_needed != '')
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                Number of Garage Spaces:
-                <span class="removeBold">
-                    <span
-                        class="removeBold badge bg-secondary">{{ @$auction->get->other_garage_needed }}</span>
-
-                </span>
+                <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->garage_needed, @$auction->get->other_garage_needed, 'Spaces') }}</span>
             </div>
             @endif
             @endif
@@ -646,29 +618,12 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
 
             @php
-            $displayViews = [];
-
-            // Add all selected view preferences, filtering out "Other"
-            if (!empty($auction->get->view_preference) && $auction->get->view_preference != 'null') {
-                foreach ($auction->get->view_preference as $item) {
-                    if ($item !== 'Other') {
-                        $displayViews[] = $item;
-                    }
-                }
-            }
-
-            // Add the custom preferences if they exist
-            if (!empty($auction->get->other_preferences)) {
-                $displayViews[] = $auction->get->other_preferences;
-            }
+                $viewPrefItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->view_preference, @$auction->get->other_preferences);
             @endphp
-
-            @if (!empty($displayViews))
-            <div class="col-md-12 col-12 pt-2 fw-bold"> View:
-                @foreach ($displayViews as $item)
-                <span class="removeBold badge bg-secondary">
-                    {{ $item }}
-                </span>
+            @if (!empty($viewPrefItems))
+            <div class="col-md-12 col-12 pt-2 fw-bold"> View Preference:
+                @foreach ($viewPrefItems as $item)
+                <span class="removeBold badge bg-secondary">{{ $item }}</span>
                 @endforeach
             </div>
             @endif
@@ -681,70 +636,40 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             </div>
 
             @endif
-            @if (!empty($auction->get->non_negotiable_amenities) || !empty($auction->get->other_non_negotiable_amenities))
+            @php
+                $amenityItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->non_negotiable_amenities, @$auction->get->other_non_negotiable_amenities);
+            @endphp
+            @if (!empty($amenityItems))
             <div class="col-md-12 col-12 pt-2 fw-bold">
-                
                 Amenities and Property Features:
-
-                @php
-                $displayAmenities = [];
-
-                // Process non_negotiable_amenities array
-                if (!empty($auction->get->non_negotiable_amenities)) {
-                foreach ($auction->get->non_negotiable_amenities as $item) {
-                if ($item === 'Other' && !empty($auction->get->other_non_negotiable_amenities)) {
-                // Replace "Other" with the custom value
-                $displayAmenities[] = $auction->get->other_non_negotiable_amenities;
-                } elseif ($item !== 'Other') {
-                // Keep all other values except "Other"
-                $displayAmenities[] = $item;
-                }
-                }
-                }
-
-                // Add custom amenities if they exist but "Other" wasn't selected
-                if (!empty($auction->get->other_non_negotiable_amenities) &&
-                (empty($auction->get->non_negotiable_amenities) ||
-                !in_array('Other', $auction->get->non_negotiable_amenities))) {
-                $displayAmenities[] = $auction->get->other_non_negotiable_amenities;
-                }
-                @endphp
-
-                @foreach ($displayAmenities as $amenity)
-                <span class="removeBold badge bg-secondary">{{ $amenity }}</span>
+                @foreach ($amenityItems as $item)
+                <span class="removeBold badge bg-secondary">{{ $item }}</span>
                 @endforeach
             </div>
             @endif
 
-
-            @if (@$auction->get->pets)
+            @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->pets))
             <div class="col-md-12 col-12 pt-2 fw-bold">
                 Pets Allowed:
-                <span class="removeBold">
-                    {{ @$auction->get->pets }}</span>
+                <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->pets, @$auction->get->number_of_pets) }}</span>
             </div>
             @endif
-            @if (@$auction->get->pets == 'Yes')
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-               Number of Pets Allowed:
-                <span class="removeBold">
-                    {{ @$auction->get->number_of_pets != '' ? @$auction->get->number_of_pets : '' }}</span>
+            @if (\App\Helpers\ListingDisplayHelper::isParentYes(@$auction->get->pets))
+            @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->type_of_pets))
+            <div class="col-md-12 col-12 pt-2 fw-bold"> Pet Type:
+                <span class="removeBold">{{ @$auction->get->type_of_pets }}</span>
             </div>
-            <div class="col-md-12 col-12 pt-2 fw-bold"> Acceptable Pet Types:
-                <span class="removeBold">
-                    {{ @$auction->get->type_of_pets != '' ? @$auction->get->type_of_pets : '' }}</span>
+            @endif
+            @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->weight_of_pets))
+            <div class="col-md-12 col-12 pt-2 fw-bold"> Weight:
+                <span class="removeBold">{{ @$auction->get->weight_of_pets }} lbs</span>
             </div>
-
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-               Maximum Weight Per Pet (lbs):
-                <span class="removeBold">
-                    {{ @$auction->get->weight_of_pets != '' ? @$auction->get->weight_of_pets : '' }}</span>
+            @endif
+            @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->breed_restrictions))
+            <div class="col-md-12 col-12 pt-2 fw-bold"> Pet Restrictions:
+                <span class="removeBold">{{ @$auction->get->breed_restrictions }}</span>
             </div>
-            <div class="col-md-12 col-12 pt-2 fw-bold"> Pet
-                Restrictions:
-                <span class="removeBold">
-                    {{ @$auction->get->breed_restrictions != '' ? @$auction->get->breed_restrictions : '' }}</span>
-            </div>
+            @endif
             @endif
 
         </div>
@@ -4376,360 +4301,6 @@ $auser = $auctionUser::find(@$auction->user_id);
 </div>
 </div>
 <hr>
-<!-- Recommmended Section  -->
-<div class="container buyerOfferContentDetails">
-    <h3 class="text-600 mb-4">Recommended For You</h3>
-    <div class="cardsDetails row  justify-content-start">
-        <!-- Card 1 -->
-        <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
-            <div class="card ">
-                <img src="https://bidyouroffer.com/wp-content/uploads/2022/10/165522238955562a8b07535346697508007-300x200.jpg"
-                    class="card-img-top" alt="...">
-                <div class="card-body pb-2 pt-2">
-                    <h5 class="card-title"><a href="">1199 Randall Way, Brownsburg, IN 46112 </a></h5>
-                    <div class="houseDetails mb-1">
-                        <span>
-                            <span class="d-inline-flex justify-content-center align-items-center gap-1"><img
-                                    src="{{ asset('assets/fontawesome/svgs/thin/bed-front.svg') }}" alt="bed icon"
-                                    width="15"><b>
-                                    4</b></span>
-                            <span class="d-inline-flex justify-content-center align-items-center gap-1"><img
-                                    src="{{ asset('assets/fontawesome/svgs/thin/bath.svg') }}" alt="bed icon"
-                                    width="15"><b>
-                                    2</b></span>
-                            <span class="d-inline-flex justify-content-center align-items-center gap-1"><img
-                                    src="{{ asset('assets/fontawesome/svgs/thin/ruler-triangle.svg') }}"
-                                    alt="bed icon" width="15"><b> 1,643 </b>Sq Ft</span>
-                        </span>
-                        - House for sale
-                    </div>
-                    <p class="card-text mb-1"><span class="badge bg-secondary">land/lots</span> <span
-                            class="float-end"><span><b>MLS ID</b></span> <span>#12345</span></span></p>
-                    <p class="m-0"><svg xmlns="http://www.w3.org/2000/svg" class="clock" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg><b>28d 03:15:29</b></p>
-                </div>
-                <div class="card-footer bg-light">
-                    <div class="row">
-                        <div class="col-6 left">
-                            <!-- Barcode  -->
-                            <svg data-bs-container="body" tabindex="0" data-bs-toggle="popover"
-                                data-bs-trigger="hover focus" data-bs-placement="top"
-                                data-bs-content="Scan Qr Code" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z">
-                                </path>
-                            </svg>
-                            <svg data-bs-container="body" tabindex="0" data-bs-toggle="popover"
-                                data-bs-trigger="hover focus" data-bs-placement="top"
-                                data-bs-content="Send Message" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z">
-                                </path>
-                            </svg>
-                            <!-- FAvourite  -->
-                            <svg data-bs-container="body" tabindex="0" data-bs-toggle="popover"
-                                data-bs-trigger="hover focus" data-bs-placement="top"
-                                data-bs-content="Add Favorites" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z">
-                                </path>
-                            </svg>
-                        </div>
-                        <div class="col-6 right text-end">
-                            <b>$1,000</b>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Card 2 -->
-        <div class="col-sm-6 col-md-4 col-lg-3 mb-3">
-            <div class="card ">
-                <img src="https://bidyouroffer.com/wp-content/uploads/2022/10/165522238955562a8b07535346697508007-300x200.jpg"
-                    class="card-img-top" alt="...">
-                <div class="card-body">
-                    <h5 class="card-title"><a href="">1199 Randall Way, Brownsburg, IN 46112 </a></h5>
-                    <div class="houseDetails">
-                        <span>
-                            <span><b>4</b> bds</span>
-                            <span><b>2</b> ba</span>
-                            <span><b>1,643</b> sqft</span>
-                        </span>
-                        - House for sale
-                    </div>
-                    <p class="card-text"><span class="badge bg-secondary">land/lots</span> <span
-                            class="float-end"><span><b>MLS
-                                    ID</b></span> <span>#12345</span></span></p>
-                </div>
-                <div class="card-footer bg-light">
-                    <div class="row">
-                        <div class="col-6 left">
-                            <!-- Barcode  -->
-                            <svg data-bs-container="body" tabindex="0" data-bs-toggle="popover"
-                                data-bs-trigger="hover focus" data-bs-placement="top"
-                                data-bs-content="Scan Qr Code" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z">
-                                </path>
-                            </svg>
-                            <!-- Message  -->
-                            <svg data-bs-container="body" tabindex="0" data-bs-toggle="popover"
-                                data-bs-trigger="hover focus" data-bs-placement="top"
-                                data-bs-content="Send Message" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z">
-                                </path>
-                            </svg>
-                            <!-- FAvourite  -->
-                            <svg data-bs-container="body" tabindex="0" data-bs-toggle="popover"
-                                data-bs-trigger="hover focus" data-bs-placement="top"
-                                data-bs-content="Add Favorites" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z">
-                                </path>
-                            </svg>
-                        </div>
-                        <div class="col-6 right text-end">
-                            <b>$1,000</b>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal -->
-<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel"
-    aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <form action="{{ route('saveSABid') }}" method="post" enctype="multipart/form-data">
-                @csrf
-                <input type="hidden" name="auction_id" value="{{ @$auction->id }}">
-                <div class="modal-body">
-                    <div class="d-flex justify-content-between mb-2">
-                        <div style="font-size:18px; font-weight:bold;">
-                            ${{ $auction->min_price }}</div>
-                        <div style="color: rgba(0,0,0,0.5);">Price Now</div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="row form-group">
-                                <div class="col-md-6">
-                                    <label>Full Name: <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="name" required
-                                        value="{{ old('name') }}" />
-                                    @if ($errors->has('name'))
-                                    <div class="small error">{{ $errors->first('name') }}</div>
-                                    @endif
-                                </div>
-                                <div class="col-md-6">
-                                    <label>Phone Number: <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="phone"
-                                        value="{{ old('phone') }}" required />
-                                    @if ($errors->has('phone'))
-                                    <div class="small error">{{ $errors->first('phone') }}</div>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="row form-group">
-                                <div class="col-md-6">
-                                    <label>Email: <span class="text-danger">*</span></label>
-                                    <input type="email" class="form-control" name="email"
-                                        value="{{ old('email') }}" required />
-                                    @if ($errors->has('email'))
-                                    <div class="small error">{{ $errors->first('email') }}</div>
-                                    @endif
-                                </div>
-                                <div class="col-md-6">
-                                    <label>Brokerage: <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="brokerage" id="brokerage"
-                                        required value="{{ old('brokerage') }}">
-                                    {{-- </div> --}}
-                                    @if ($errors->has('brokerage'))
-                                    <div class="small error">{{ $errors->first('brokerage') }}</div>
-                                    @endif
-                                </div>
-                                <div class="col-md-6 d-none">
-                                    <label>MLS ID: <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="mls_id"
-                                        value="{{ old('mls_id') }}" />
-                                    @if ($errors->has('mls_id'))
-                                    <div class="small error">{{ $errors->first('mls_id') }}</div>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="row form-group">
-                                <div class="col-md-6">
-                                    <label>Real Estate License #: <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="license_no" required
-                                        value="{{ old('license_no') }}" />
-                                    @if ($errors->has('license_no'))
-                                    <div class="small error">{{ $errors->first('license_no') }}</div>
-                                    @endif
-                                </div>
-                                <div class="col-md-6">
-                                    <label>Commission Offered %: <span class="text-danger">*</span></label>
-                                    <div class="d-flex align-items-baseline">
-                                        <i class="fa fa-percent"></i>
-                                        <input type="number" class="form-control border-start-0"
-                                            name="price_percent" id="price_percent" min="0"
-                                            max="100" required placeholder="0.00"
-                                            value="{{ old('price_percent') }}">
-                                    </div>
-                                    @if ($errors->has('price_percent'))
-                                    <div class="small error">{{ $errors->first('price_percent') }}</div>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="row form-group d-none">
-                                <div class="col-md-6">
-                                    <label>County the agent is in:</label>
-                                    <select class="form-control" name="county_id">
-                                        @foreach ($counties as $county)
-                                        <option value="{{ $county->id }}"
-                                            {{ old('county_id') == $county->id ? 'selected' : '' }}>
-                                            {{ $county->name }}
-                                        </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label>Offering Price $: <span class="text-danger">*</span></label>
-                                    <div class="d-flex align-items-baseline">
-                                        <i class="fa fa-dollar"></i>
-                                        <input type="number" class="form-control border-start-0" name="price"
-                                            id="price" min="0" placeholder="0.00"
-                                            value="{{ old('price') }}">
-                                    </div>
-                                    @if ($errors->has('price'))
-                                    <div class="small error">{{ $errors->first('price') }}</div>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="row form-group">
-                                <div class="col-md-6">
-                                    <label>Reviews link:</label>
-                                    <input type="text" class="form-control" name="reviews_link"
-                                        value="{{ old('reviews_link') }}" />
-                                </div>
-                                <div class="col-md-6">
-                                    <label>Website link:</label>
-                                    <input type="text" class="form-control" name="website_link"
-                                        value="{{ old('website_link') }}" />
-                                </div>
-                            </div>
-                            <div class="row form-group">
-                                <div class="col-md-12 mb-2">
-                                    <table class="table table-bordered">
-                                        <thead>
-                                            <tr>
-                                                <th colspan="2" class="text-center">Social Media Platforms</th>
-                                            </tr>
-                                            <tr>
-                                                <th>Type</th>
-                                                <th>Link</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="social-links">
-                                            <tr>
-                                                <td>
-                                                    <select name="socialType[]" class="form-select">
-                                                        <option value="Facebook">Facebook</option>
-                                                        <option value="YouTube">YouTube</option>
-                                                        <option value="LinkedIn">LinkedIn</option>
-                                                        <option value="Twitter">Twitter</option>
-                                                        <option value="Instagram">Instagram</option>
-                                                    </select>
-                                                </td>
-                                                <td>
-                                                    <input type="text" name="social_link[]"
-                                                        class="form-control">
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                        <tfoot>
-                                            <tr>
-                                                <th colspan="2" class="text-right">
-                                                    <a class="btn btn-primary add-row">Add New Row</a>
-                                                </th>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Any details agent wants to share with the seller (Why should the Seller pick
-                                    you
-                                    as their agent):</label>
-                                <textarea class="form-control" name="additional_details">{{ old('additional_details') }}</textarea>
-                            </div>
-                            <div class="form-group">
-                                <label>Contract Listing Terms (Time amount for listing agreement):</label>
-                                <textarea class="form-control" name="listing_terms">{{ old('listing_terms') }}</textarea>
-                            </div>
-                            <div class="form-group d-none">
-                                <label>Why should the Seller pick you as their agent?</label>
-                                <textarea class="form-control" name="why_seller_pick_me">{{ old('why_seller_pick_me') }}</textarea>
-                            </div>
-                            <div class="form-group">
-                                <label>Services offered to Seller: </label>
-                                <textarea class="form-control" name="services_description">{{ old('services_description') }}</textarea>
-                            </div>
-                        </div>
-                        <div class="col-md-12">
-                            <div class="form-group d-none">
-                                <div>
-                                    <label>Video:</label>
-                                    <div class="d-flex align-items-baseline">
-                                        <input type="file" class="form-control" name="video">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="form-group col-md-12 mb-2">
-                                <label>Video URL: (Virtual Listing Presentation)</label>
-                                <div class="d-flex align-items-baseline">
-                                    <input type="text" class="form-control" name="video_url">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Audio:</label>
-                                <div class="d-flex align-items-baseline">
-                                    <input type="file" class="form-control" name="audio">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Note:</label>
-                                <div class="d-flex align-items-baseline">
-                                    <input type="file" class="form-control" name="note">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Comparative Market Analysis:</label>
-                                <div class="d-flex align-items-baseline">
-                                    <input type="file" class="form-control" name="market_analysis">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div style="text-align: right;">
-                        <button type="submit" class="btn btn-secondary">Bid Now</button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 @endsection
 
 {{-- 🧠 Timer Script --}}
