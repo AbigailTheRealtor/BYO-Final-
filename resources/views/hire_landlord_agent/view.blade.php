@@ -406,7 +406,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->property_type))
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Property Type:
-                            <span class="removeBold">{{ @$auction->get->property_type }}</span>
+                            <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::normalizePropertyType(@$auction->get->property_type) }}</span>
                         </div>
                         @endif
                         @php
@@ -1821,6 +1821,10 @@ $auser = $auctionUser::find(@$auction->user_id);
         <a href="{{ route('landlord.hire.agent.auction.edit', ['auctionId' => $auction->id]) }}" 
            class="btn btn-outline-primary btn-sm">
             <i class="fa fa-edit me-1"></i> Edit Listing
+        </a>
+        <a href="{{ route('landlord.listings.download', $auction->id) }}" 
+           class="btn btn-outline-secondary btn-sm ms-2">
+            <i class="fa fa-download me-1"></i> Download Listing Snapshot (PDF)
         </a>
     </div>
     @endif

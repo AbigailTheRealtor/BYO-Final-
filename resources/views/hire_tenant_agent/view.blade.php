@@ -492,7 +492,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->property_type))
                     <div class="col-md-12 col-12 pt-2 fw-bold">
                         Acceptable Property Type:
-                        <span class="removeBold">{{ @$auction->get->property_type }}</span>
+                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::normalizePropertyType(@$auction->get->property_type) }}</span>
                     </div>
                     @endif
                     @php
@@ -1275,6 +1275,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         <a href="{{ route('hire.agent.auction.edit', ['auctionId' => $auction->id, 'user_type' => 'tenant']) }}" 
            class="btn btn-outline-primary btn-sm">
             <i class="fa fa-edit me-1"></i> Edit Listing
+        </a>
+        <a href="{{ route('tenant.listings.download', $auction->id) }}" 
+           class="btn btn-outline-secondary btn-sm ms-2">
+            <i class="fa fa-download me-1"></i> Download Listing Snapshot (PDF)
         </a>
     </div>
     @endif

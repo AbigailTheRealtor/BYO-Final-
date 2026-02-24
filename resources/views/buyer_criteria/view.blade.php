@@ -63,7 +63,7 @@
                     @if ($auction->user_id == auth()->user()->id)
                         <div class="d-flex justify-content-end align-content-center">
                             <a href="{{route('buyer_agent.auction.edit', $auction->id)}}" class="btn btn-success btn-sm px-3 mb-3 me-2"><i class="fa-solid fa-pen-to-square me-1"></i>Edit Listing</a>
-                            {{-- <a href="javascript:void(0)" class="btn btn-success btn-sm px-3 mb-3"><i class="fa-solid fa-pen-to-square me-1"></i>Edit Auction Status</a> --}}
+                            <a href="{{ route('buyer.listings.download', $auction->id) }}" class="btn btn-outline-secondary btn-sm px-3 mb-3 me-2"><i class="fa fa-download me-1"></i>Download Listing Snapshot (PDF)</a>
                         </div>
                     @endif
                 </div>
@@ -408,7 +408,7 @@
                                 <div class="col-md-12 col-12 removeBold"><i class="fa-regular fa-check-square"></i>
                                     <span class="fw-bold">Acceptable Property Styles:</span>
                                     @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->property_type))
-                                        <span class="removeBold">({{ @$auction->get->property_type }})</span>
+                                        <span class="removeBold">({{ \App\Helpers\ListingDisplayHelper::normalizePropertyType(@$auction->get->property_type) }})</span>
                                     @endif
                                     @foreach ($buyerPropertyStyles as $psItem)
                                         <span class="badge bg-secondary removeBold">{{ $psItem }}</span>

@@ -288,6 +288,11 @@ Route::get('get-qr-code', function (Request $request) {
 
 
 
+Route::get('/seller/listings/{id}/download', [\App\Http\Controllers\ListingDownloadController::class, 'seller'])->name('seller.listings.download')->middleware('auth');
+Route::get('/buyer/listings/{id}/download', [\App\Http\Controllers\ListingDownloadController::class, 'buyer'])->name('buyer.listings.download')->middleware('auth');
+Route::get('/landlord/listings/{id}/download', [\App\Http\Controllers\ListingDownloadController::class, 'landlord'])->name('landlord.listings.download')->middleware('auth');
+Route::get('/tenant/listings/{id}/download', [\App\Http\Controllers\ListingDownloadController::class, 'tenant'])->name('tenant.listings.download')->middleware('auth');
+
 Route::get('/seller/agent/auction/view/{id}', [SellerAgentAuctionController::class, 'viewDetail'])->name('seller.agent.auction.detail');
 Route::get('/buyer/agent/auction/view/{id}', [BuyerAgentAuctionController::class, 'viewAuctionDetails'])->name('buyer.view-auction');
 Route::get('/tenant/agent/auction/view/{id}', [TenantAgentAuctionController::class, 'view'])->name('tenant.agent.view.auction.view');

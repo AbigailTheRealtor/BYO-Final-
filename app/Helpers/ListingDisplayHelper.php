@@ -200,4 +200,17 @@ class ListingDisplayHelper
         $lower = strtolower(trim((string) $value));
         return in_array($lower, ['yes', '1', 'true']);
     }
+
+    public static function normalizePropertyType($value): string
+    {
+        if (empty($value) || $value === 'null') return '';
+        $val = trim((string) $value);
+        if (preg_match('/^(Residential|Commercial|Vacant Land|Business Opportunity|Income)\s+Property$/i', $val, $m)) {
+            return ucfirst(strtolower($m[1]));
+        }
+        if (preg_match('/\s+Property$/i', $val)) {
+            return preg_replace('/\s+Property$/i', '', $val);
+        }
+        return $val;
+    }
 }

@@ -422,7 +422,7 @@
                                 $propType = @$auction->get->property_type ?? '';
                             @endphp
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Property Type:<span class="removeBold"> {{ $propType }}</span>
+                                Property Type:<span class="removeBold"> {{ \App\Helpers\ListingDisplayHelper::normalizePropertyType($propType) }}</span>
                             </div>
                             @php
                                 $propertyStyleItems = \App\Helpers\ListingDisplayHelper::normalizeList(
@@ -2084,6 +2084,10 @@
                     <a href="{{ route('hire.agent.auction.edit', ['auctionId' => $auction->id, 'user_type' => 'seller']) }}" 
                        class="btn btn-outline-primary btn-sm">
                         <i class="fa fa-edit me-1"></i> Edit Listing
+                    </a>
+                    <a href="{{ route('seller.listings.download', $auction->id) }}" 
+                       class="btn btn-outline-secondary btn-sm ms-2">
+                        <i class="fa fa-download me-1"></i> Download Listing Snapshot (PDF)
                     </a>
                 </div>
                 @endif

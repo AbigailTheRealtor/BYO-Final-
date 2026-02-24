@@ -1,0 +1,107 @@
+Perfect — if **Seller & Landlord can only select ONE Property Style**, then the cleanest fix is even simpler:
+
+✅ **Always render Property Style as plain text**
+✅ **No implode / no chip logic needed**
+✅ **Just remove the bubble styling for that one line**
+
+Here are the **correct Replit instructions with safeguards**.
+
+---
+
+## 🧠 Paste into Replit
+
+### 🔒 SAFEGUARDS
+
+* DO NOT change database schema or migrations.
+* DO NOT change the form input (keep it single-select).
+* DO NOT change stored values.
+* ONLY change the **display formatting** of **Property Style** on **Seller and Landlord listing display pages**.
+* Do NOT change Buyer/Tenant preference formatting.
+
+---
+
+## ✅ Task
+
+On **Seller** and **Landlord** listing view pages:
+
+* Replace bubble/chip output for **Property Style** with **plain text**.
+
+---
+
+## Step 1 — Find where “Property Style:” is rendered
+
+Search the codebase for:
+
+* `Property Style:`
+* `property_style`
+
+You’ll likely find something like:
+
+```blade
+<x-value-display :value="$listing->property_style" />
+```
+
+or:
+
+```blade
+<span class="px-3 py-1 rounded-full ...">{{ $listing->property_style }}</span>
+```
+
+---
+
+## Step 2 — Seller: Replace with text output
+
+In the **Seller listing display template**, set Property Style value to render like this:
+
+```blade
+@if(!empty($listing->property_style))
+  <div class="flex gap-3">
+    <div class="w-56 font-semibold">Property Style:</div>
+    <div class="flex-1">{{ $listing->property_style }}</div>
+  </div>
+@endif
+```
+
+✅ This forces plain text.
+
+---
+
+## Step 3 — Landlord: Replace with text output
+
+In the **Landlord listing display template**, do the same:
+
+```blade
+@if(!empty($listing->property_style))
+  <div class="flex gap-3">
+    <div class="w-56 font-semibold">Property Style:</div>
+    <div class="flex-1">{{ $listing->property_style }}</div>
+  </div>
+@endif
+```
+
+---
+
+## Step 4 — Do NOT change other chip fields
+
+Leave chip/bubble formatting unchanged for:
+
+* Appliances Included
+* Amenities and Property Features
+* View Preference
+* Buyer/Tenant Acceptable Cities/Counties/Styles/Conditions/etc.
+
+Only change **Seller + Landlord Property Style**.
+
+---
+
+## Expected Result
+
+✅ Seller & Landlord:
+
+**Property Style: Single Family Residence**
+
+(no bubble)
+
+---
+
+If you want, paste the exact snippet currently rendering Property Style and I’ll tell you the exact 1–2 lines to replace so Replit doesn’t “approximate” it.
