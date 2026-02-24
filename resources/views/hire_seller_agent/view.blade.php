@@ -433,9 +433,7 @@
                             @if (!empty($propertyStyleItems))
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Property Style:
-                                    @foreach ($propertyStyleItems as $psItem)
-                                        <span class="removeBold badge bg-secondary">{{ $psItem }}</span>
-                                    @endforeach
+                                    <span class="removeBold">{{ implode(', ', $propertyStyleItems) }}</span>
                                 </div>
                             @endif
 

@@ -415,9 +415,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         @if (!empty($landlordPropertyStyleItems))
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Property Style:
-                            @foreach ($landlordPropertyStyleItems as $psItem)
-                                <span class="removeBold badge bg-secondary">{{ $psItem }}</span>
-                            @endforeach
+                            <span class="removeBold">{{ implode(', ', $landlordPropertyStyleItems) }}</span>
                         </div>
                         @endif
 
