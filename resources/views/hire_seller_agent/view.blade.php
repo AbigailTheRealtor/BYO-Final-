@@ -425,18 +425,17 @@
                                 Property Type:<span class="removeBold"> {{ $propType }}</span>
                             </div>
                             @php
-                                $propertyStyleValue = @$auction->get->property_items;
-                                $propertyStyleDisplay = '';
-                                if (is_array($propertyStyleValue)) {
-                                    $propertyStyleDisplay = implode(', ', $propertyStyleValue);
-                                } elseif (is_string($propertyStyleValue) && !empty($propertyStyleValue)) {
-                                    $decoded = json_decode($propertyStyleValue, true);
-                                    $propertyStyleDisplay = is_array($decoded) ? implode(', ', $decoded) : $propertyStyleValue;
-                                }
+                                $propertyStyleItems = \App\Helpers\ListingDisplayHelper::normalizeList(
+                                    @$auction->get->property_items,
+                                    @$auction->get->other_property_style
+                                );
                             @endphp
-                            @if (!empty($propertyStyleDisplay))
+                            @if (!empty($propertyStyleItems))
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Property Style:<span class="removeBold"> {{ $propertyStyleDisplay }}</span>
+                                    Property Style:
+                                    @foreach ($propertyStyleItems as $psItem)
+                                        <span class="removeBold badge bg-secondary">{{ $psItem }}</span>
+                                    @endforeach
                                 </div>
                             @endif
 
@@ -791,6 +790,12 @@
                                     $assetItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->assets, @$auction->get->assets_other);
                                 @endphp
                                 @if (!empty($assetItems))
+                                </div>
+                                <hr>
+                                <div class="card-header section-header">
+                                    <h4 class="section-title">Business/Property Assets</h4>
+                                </div>
+                                <div class="row" style="flex-wrap: wrap;">
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Included Property or Business Assets:
                                         @foreach ($assetItems as $asset)
@@ -801,18 +806,30 @@
                             @endif
 
                             @if (in_array($propType, ['Commercial', 'Business', 'Income']))
-                                @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->minimum_annual_net_income))
+                                @php
+                                    $hasNOI = \App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->minimum_annual_net_income);
+                                    $hasCapRate = \App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->minimum_cap_rate);
+                                @endphp
+                                @if ($hasNOI || $hasCapRate)
+                                </div>
+                                <hr>
+                                <div class="card-header section-header">
+                                    <h4 class="section-title">Income & Investment Metrics</h4>
+                                </div>
+                                <div class="row" style="flex-wrap: wrap;">
+                                    @if ($hasNOI)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Annual Net Income:
                                         <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::fmtMoney(@$auction->get->minimum_annual_net_income) }}</span>
                                     </div>
-                                @endif
+                                    @endif
 
-                                @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->minimum_cap_rate))
+                                    @if ($hasCapRate)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Cap Rate:
                                         <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::fmtPercent(@$auction->get->minimum_cap_rate) }}</span>
                                     </div>
+                                    @endif
                                 @endif
                             @endif
 
@@ -895,26 +912,17 @@
                             <h4 class="section-title">Sale Terms</h4>
                         </div>
 
-                         @if (@$auction->get->sale_provision != '' && @$auction->get->sale_provision != 'null')
-                            <div class="col-md-12 col-12 pt-2  fw-bold">Special Sale
-                                Provision:
-                                @if (gettype(@$auction->get->sale_provision) == 'array')
-                                    @foreach ($auction->get->sale_provision as $sale)
-                                        @if ($sale != 'Other')
-                                            <span class="removeBold badge bg-secondary">
-                                                {{ $sale }}
-                                            </span>
-                                        @else
-                                            <br>
-                                            <ul class="leasing">
-                                                <li style="font-size:16px;">
-                                                    <span class="removeBold">
-                                                        {{ $auction->get->sale_provision_other }}</span>
-                                                </li>
-                                            </ul>
-                                        @endif
-                                    @endforeach
-                                @endif
+                        @php
+                            $saleProvisionItems = \App\Helpers\ListingDisplayHelper::normalizeList(
+                                @$auction->get->sale_provision,
+                                @$auction->get->sale_provision_other
+                            );
+                        @endphp
+                        @if (!empty($saleProvisionItems))
+                            <div class="col-md-12 col-12 pt-2 fw-bold">Special Sale Provision:
+                                @foreach ($saleProvisionItems as $spItem)
+                                    <span class="removeBold badge bg-secondary">{{ $spItem }}</span>
+                                @endforeach
                             </div>
                         @endif
 

@@ -355,18 +355,14 @@
                                         <span class="removeBold">{{ @$auction->get->total_number_of_units }}</span>
                                     </div>
                                 @endif
-                                @if (@$auction->get->unit_size && @$auction->get->unit_size != null && @$auction->get->titleListing == 'Income Property')
+                                @php
+                                    $unitSizePills = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->unit_size, @$auction->get->otherBuyerIncome);
+                                @endphp
+                                @if (!empty($unitSizePills) && @$auction->get->titleListing == 'Income Property')
                                     <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i> Unit
                                         sizes that the buyer is interested in purchasing:
-                                        @foreach (@$auction->get->unit_size as $item)
-                                            <span class="removeBold">{{ $item }}</span>
-                                            @if ($item == 'Other')
-                                                <div class="col-md-12 col-12 fw-bold"><i
-                                                        class="fa-regular fa-check-square"></i> Buyer's Preferred Income
-                                                    Property Criteria:
-                                                    <span class="removeBold">{{ @$auction->get->otherBuyerIncome }}</span>
-                                                </div>
-                                            @endif
+                                        @foreach ($unitSizePills as $item)
+                                            <span class="badge bg-secondary removeBold">{{ $item }}</span>
                                         @endforeach
                                     </div>
                                 @endif
@@ -478,32 +474,24 @@
                                         class="d-inline-block badge bg-secondary removeBold">{{ @$auction->get->minimum_total_acreage_needed }}</span>
                                 </div>
                             @endif
-                            @if (
-                                @$auction->get->air_conditioning &&
-                                    @$auction->get->air_conditioning != null &&
-                                    $auction->get->property_type !== 'Vacant Land')
+                            @php
+                                $acVal = @$auction->get->air_conditioning;
+                                $acDisplay = ($acVal && strtolower($acVal) === 'other' && \App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->otherAirCondition)) ? @$auction->get->otherAirCondition : $acVal;
+                            @endphp
+                            @if (\App\Helpers\ListingDisplayHelper::hasValue($acDisplay) && $auction->get->property_type !== 'Vacant Land')
                                 <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i> Air
                                     Conditioning Needed:
-                                    <span
-                                        class="d-inline-block badge bg-secondary removeBold">{{ @$auction->get->air_conditioning }}</span>
-                                    @if (@$auction->get->air_conditioning == 'Other')
-                                        <span
-                                            class="d-inline-block badge bg-secondary removeBold">{{ @$auction->get->otherAirCondition }}</span>
-                                    @endif
+                                    <span class="d-inline-block badge bg-secondary removeBold">{{ $acDisplay }}</span>
                                 </div>
                             @endif
-                            @if (
-                                @$auction->get->heating_and_fuel &&
-                                    @$auction->get->heating_and_fuel != null &&
-                                    $auction->get->property_type !== 'Vacant Land')
-                                <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i> Air
+                            @php
+                                $hfVal = @$auction->get->heating_and_fuel;
+                                $hfDisplay = ($hfVal && strtolower($hfVal) === 'other' && \App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->otherFuel)) ? @$auction->get->otherFuel : $hfVal;
+                            @endphp
+                            @if (\App\Helpers\ListingDisplayHelper::hasValue($hfDisplay) && $auction->get->property_type !== 'Vacant Land')
+                                <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i>
                                     Heating and Fuel Needed:
-                                    <span
-                                        class="d-inline-block badge bg-secondary removeBold">{{ @$auction->get->heating_and_fuel }}</span>
-                                    @if (@$auction->get->heating_and_fuel == 'Other')
-                                        <span
-                                            class="d-inline-block badge bg-secondary removeBold">{{ @$auction->get->otherFuel }}</span>
-                                    @endif
+                                    <span class="d-inline-block badge bg-secondary removeBold">{{ $hfDisplay }}</span>
                                 </div>
                             @endif
                             @php
@@ -549,99 +537,71 @@
                                     <span class="removeBold">{{ @$auction->get->front_footage }}</span>
                                 </div>
                             @endif
-                            @if (@$auction->get->road_frontage != null && $auction->get->property_type == 'Vacant Land')
+                            @php $roadFrontagePills = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->road_frontage, @$auction->get->otherFrontage); @endphp
+                            @if (!empty($roadFrontagePills) && $auction->get->property_type == 'Vacant Land')
                                 <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i> Road
                                     Frontage Needed:
-                                    @foreach (@$auction->get->road_frontage as $item)
-                                        <span class="d-inline-block removeBold">{{ $item }}</span>
-                                        @if ($item == 'Other')
-                                            <span
-                                                class="d-inline-block badge bg-secondary removeBold">{{ @$auction->get->otherFrontage }}</span>
-                                        @endif
+                                    @foreach ($roadFrontagePills as $item)
+                                        <span class="badge bg-secondary removeBold">{{ $item }}</span>
                                     @endforeach
                                 </div>
                             @endif
-                            @if (@$auction->get->road_surface_type != null && $auction->get->property_type == 'Vacant Land')
+                            @php $roadSurfacePills = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->road_surface_type, @$auction->get->othersurface); @endphp
+                            @if (!empty($roadSurfacePills) && $auction->get->property_type == 'Vacant Land')
                                 <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i> Road
                                     Surface Type Needed:
-                                    @foreach (@$auction->get->road_surface_type as $item)
-                                        <span class="d-inline-block removeBold">{{ $item }}</span>
-                                        @if ($item == 'Other')
-                                            <span
-                                                class="d-inline-block badge bg-secondary removeBold">{{ @$auction->get->othersurface }}</span>
-                                        @endif
+                                    @foreach ($roadSurfacePills as $item)
+                                        <span class="badge bg-secondary removeBold">{{ $item }}</span>
                                     @endforeach
                                 </div>
                             @endif
-                            @if (@$auction->get->utilities != null && $auction->get->property_type == 'Vacant Land')
+                            @php $utilitiesPills = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->utilities, @$auction->get->otherUtilities); @endphp
+                            @if (!empty($utilitiesPills) && $auction->get->property_type == 'Vacant Land')
                                 <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i> Utilities
                                     Needed:
-                                    @foreach (@$auction->get->utilities as $item)
-                                        <span class="d-inline-block removeBold">{{ $item }}</span>
-                                        @if ($item == 'Other')
-                                            <span
-                                                class="d-inline-block badge bg-secondary removeBold">{{ @$auction->get->otherUtilities }}</span>
-                                        @endif
+                                    @foreach ($utilitiesPills as $item)
+                                        <span class="badge bg-secondary removeBold">{{ $item }}</span>
                                     @endforeach
                                 </div>
                             @endif
-                            @if (@$auction->get->water != null && $auction->get->property_type == 'Vacant Land')
+                            @php $waterPills = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->water, @$auction->get->otherWater); @endphp
+                            @if (!empty($waterPills) && $auction->get->property_type == 'Vacant Land')
                                 <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i> Water
                                     Needed:
-                                    @foreach (@$auction->get->water as $item)
-                                        <span class="d-inline-block removeBold">{{ $item }}</span>
-                                        @if ($item == 'Other')
-                                            <span
-                                                class="d-inline-block badge bg-secondary removeBold">{{ @$auction->get->otherWater }}</span>
-                                        @endif
+                                    @foreach ($waterPills as $item)
+                                        <span class="badge bg-secondary removeBold">{{ $item }}</span>
                                     @endforeach
                                 </div>
                             @endif
-                            @if (@$auction->get->sewer != null && $auction->get->property_type == 'Vacant Land')
+                            @php $sewerPills = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->sewer, @$auction->get->otherSewer); @endphp
+                            @if (!empty($sewerPills) && $auction->get->property_type == 'Vacant Land')
                                 <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i> Sewer
                                     Needed:
-                                    @foreach (@$auction->get->sewer as $item)
-                                        <span class="d-inline-block removeBold">{{ $item }}</span>
-                                        @if ($item == 'Other')
-                                            <span
-                                                class="d-inline-block badge bg-secondary removeBold">{{ @$auction->get->otherSewer }}</span>
-                                        @endif
+                                    @foreach ($sewerPills as $item)
+                                        <span class="badge bg-secondary removeBold">{{ $item }}</span>
                                     @endforeach
                                 </div>
                             @endif
-                            @if (@$auction->get->lot_features != null && $auction->get->property_type == 'Vacant Land')
+                            @php $lotFeaturePills = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->lot_features, @$auction->get->otherFeature); @endphp
+                            @if (!empty($lotFeaturePills) && $auction->get->property_type == 'Vacant Land')
                                 <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i> Lot
                                     Features:
-                                    @foreach (@$auction->get->lot_features as $item)
-                                        <span class="d-inline-block removeBold">{{ $item }}</span>
-                                        @if ($item == 'Other')
-                                            <span
-                                                class="d-inline-block badge bg-secondary removeBold">{{ @$auction->get->otherFeature }}</span>
-                                        @endif
+                                    @foreach ($lotFeaturePills as $item)
+                                        <span class="badge bg-secondary removeBold">{{ $item }}</span>
                                     @endforeach
                                 </div>
                             @endif
-                            @if (($auction->get->viewOptions || $auction->get->viewOptionsRes || $auction->get->viewOptionsCom) != null && @$auction->get->viewOptions != 'null')
+                            @php
+                                $viewOptionVal = @$auction->get->viewOptions ?? @$auction->get->viewOptionsRes ?? @$auction->get->viewOptionsCom;
+                                $viewPills = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->view, @$auction->get->viewOther);
+                            @endphp
+                            @if (\App\Helpers\ListingDisplayHelper::hasValue($viewOptionVal))
                                 <div class="col-md-9 fw-bold">
                                     <i class="fa-regular fa-check-square"></i> View Preference Needed:
-                                    @if ($auction->get->viewOptions != null)
-                                        <span class="removeBold">({{ @$auction->get->viewOptions }})</span>
-                                    @elseif ($auction->get->viewOptionsRes != null)
-                                        <span class="removeBold">({{ @$auction->get->viewOptionsRes }})</span>
-                                    @elseif ($auction->get->viewOptionsCom != null)
-                                        <span class="removeBold">({{ @$auction->get->viewOptionsCom }})</span>
-                                    @endif
-                                        
-                                    @if (gettype(@$auction->get->view) == 'array' && @$auction->get->view != 'No')
-                                        @foreach (@$auction->get->view as $item)
-                                            @if ($item != 'Other')
-                                                <span class="badge bg-secondary removeBold">{{ $item }}</span>
-                                            @else
-                                                <span
-                                                    class="badge bg-secondary removeBold">{{ @$auction->get->viewOther }}</span>
-                                            @endif
-                                        @endforeach
-                                    @endif
+                                    <span class="removeBold">({{ $viewOptionVal }})</span>
+                                    @foreach ($viewPills as $item)
+                                        <span class="badge bg-secondary removeBold">{{ $item }}</span>
+                                    @endforeach
                                 </div>
                             @endif
                             @if (@$auction->get->has_water_access != null && @$auction->get->has_water_access != 'null')
@@ -688,20 +648,14 @@
                                     @endif
                                 </div>
                             @endif
-                            @if (@$auction->get->has_dock != null && @$auction->get->has_water_frontage != 'null')
+                            @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->has_dock))
+                                @php $dockPills = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->dock, @$auction->get->dockDescription); @endphp
                                 <div class="col-md-9 fw-bold">
                                     <i class="fa-regular fa-check-square"></i> Dock Needed:<span
                                         class="removeBold">({{ @$auction->get->has_dock }})</span>
-                                    @if (gettype(@$auction->get->dock) == 'array' && @$auction->get->dock != 'No')
-                                        @foreach (@$auction->get->dock as $item)
-                                            @if ($item != 'Other')
-                                                <span class="badge bg-secondary removeBold">{{ $item }}</span>
-                                            @else
-                                                <span
-                                                    class="badge bg-secondary removeBold">{{ @$auction->get->dockDescription }}</span>
-                                            @endif
-                                        @endforeach
-                                    @endif
+                                    @foreach ($dockPills as $item)
+                                        <span class="badge bg-secondary removeBold">{{ $item }}</span>
+                                    @endforeach
                                 </div>
                             @endif
                             @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->petOptions))

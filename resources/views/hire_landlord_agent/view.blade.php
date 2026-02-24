@@ -724,19 +724,18 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         <div class="card-header">
             <h4>Leasing Terms: </h4>
         </div>
-        @if (@$auction->get->occupant_status != '' && @$auction->get->occupant_status != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->occupant_status))
         <div class="row" style="flex-wrap: wrap;">
             <div class="col-12 fw-bold">  Occupant Type:
                 <span class="removeBold">{{ @$auction->get->occupant_status }}</span>
             </div>
         </div>
         @endif
-        @if (@$auction->get->occupant_tenant != '' && @$auction->get->occupant_tenant != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->occupant_tenant))
             <div class="row" style="flex-wrap: wrap;">
                 <div class="col-12 fw-bold">  Occupied Until:
                     <span class="removeBold">
                         @php
-                            // Format the date from Y-m-d to F j, Y (e.g., January 9, 2026)
                             $date = \Carbon\Carbon::parse($auction->get->occupant_tenant);
                             echo $date->format('F j, Y');
                         @endphp
@@ -745,7 +744,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             </div>
         @endif
 
-        @if (@$auction->get->leasing_spaces != '' && @$auction->get->leasing_spaces != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->leasing_spaces))
         <div class="row" style="flex-wrap: wrap;">
             <div class="col-12 fw-bold">  Leasing Space:
                 <span class="removeBold">{{ @$auction->get->leasing_spaces }}</span>
@@ -755,7 +754,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
         {{-- Leasing Space sub-fields: ordered per specification --}}
         {{-- 1. Restrictions Include --}}
-        @if (@$auction->get->restrictions != '' && @$auction->get->restrictions != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->restrictions))
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Restrictions Include:
                 <span class="removeBold">{{ $auction->get->restrictions }}</span>
@@ -763,7 +762,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
         {{-- 2. Maintenance and Repairs Are Handled By --}}
-        @if (@$auction->get->maintenance_by != '' && @$auction->get->maintenance_by != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->maintenance_by))
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Maintenance and Repairs Are Handled By:
                 <span class="removeBold">{{ $auction->get->maintenance_by }}</span>
@@ -771,7 +770,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
         {{-- 3. Maintenance Response Time --}}
-        @if (@$auction->get->maintenance_response_time != '' && @$auction->get->maintenance_response_time != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->maintenance_response_time))
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Maintenance Response Time:
                 <span class="removeBold">{{ $auction->get->maintenance_response_time }}</span>
@@ -779,70 +778,70 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
         {{-- 4 & 5. Included Storage Space + Storage Space Size (all variants) --}}
-        @if (@$auction->get->included_storage_space_res_both != '' && @$auction->get->included_storage_space_res_both != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->included_storage_space_res_both))
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Included Storage Space:
                 <span class="removeBold">{{ $auction->get->included_storage_space_res_both }}</span>
             </div>
         </div>
         @endif
-        @if (@$auction->get->storage_space_res_both != '' && @$auction->get->storage_space_res_both != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->storage_space_res_both))
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Storage Space Size:
                 <span class="removeBold">{{ $auction->get->storage_space_res_both }}</span>
             </div>
         </div>
         @endif
-        @if (@$auction->get->included_storage_space_com_entire != '' && @$auction->get->included_storage_space_com_entire != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->included_storage_space_com_entire))
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Included Storage Space:
                 <span class="removeBold">{{ $auction->get->included_storage_space_com_entire }}</span>
             </div>
         </div>
         @endif
-        @if (@$auction->get->storage_space_com_entire != '' && @$auction->get->storage_space_com_entire != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->storage_space_com_entire))
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Storage Space Size:
                 <span class="removeBold">{{ $auction->get->storage_space_com_entire }}</span>
             </div>
         </div>
         @endif
-        @if (@$auction->get->included_storage_space_res_single != '' && @$auction->get->included_storage_space_res_single != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->included_storage_space_res_single))
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Included Storage Space:
                 <span class="removeBold">{{ $auction->get->included_storage_space_res_single }}</span>
             </div>
         </div>
         @endif
-        @if (@$auction->get->storage_space_res_single != '' && @$auction->get->storage_space_res_single != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->storage_space_res_single))
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Storage Space Size:
                 <span class="removeBold">{{ $auction->get->storage_space_res_single }}</span>
             </div>
         </div>
         @endif
-        @if (@$auction->get->included_storage_space_com_single != '' && @$auction->get->included_storage_space_com_single != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->included_storage_space_com_single))
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Included Storage Space:
                 <span class="removeBold">{{ $auction->get->included_storage_space_com_single }}</span>
             </div>
         </div>
         @endif
-        @if (@$auction->get->storage_space_com_single != '' && @$auction->get->storage_space_com_single != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->storage_space_com_single))
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Storage Space Size:
                 <span class="removeBold">{{ $auction->get->storage_space_com_single }}</span>
             </div>
         </div>
         @endif
-        @if (@$auction->get->included_storage_space != '' && @$auction->get->included_storage_space != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->included_storage_space))
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Included Storage Space:
                 <span class="removeBold">{{ $auction->get->included_storage_space }}</span>
             </div>
         </div>
         @endif
-        @if (@$auction->get->storage_space != '' && @$auction->get->storage_space != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->storage_space))
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Storage Space Size:
                 <span class="removeBold">{{ $auction->get->storage_space }}</span>
@@ -850,7 +849,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
         {{-- 6. Shared Amenities Include --}}
-        @if (@$auction->get->shared_amenities != '' && @$auction->get->shared_amenities != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->shared_amenities))
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Shared Amenities Include:
                 <span class="removeBold">{{ $auction->get->shared_amenities }}</span>
@@ -858,7 +857,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
         {{-- 7. Building Hours --}}
-        @if (@$auction->get->building_hours != '' && @$auction->get->building_hours != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->building_hours))
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Building Hours:
                 <span class="removeBold">{{ $auction->get->building_hours }}</span>
@@ -866,7 +865,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
         {{-- 8. 24/7 Access Available --}}
-        @if (@$auction->get->access_24_7 != '' && @$auction->get->access_24_7 != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->access_24_7))
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">24/7 Access Available:
                 <span class="removeBold">{{ $auction->get->access_24_7 }}</span>
@@ -874,7 +873,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
         {{-- 9. Zoning Allows --}}
-        @if (@$auction->get->zoning_allows != '' && @$auction->get->zoning_allows != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->zoning_allows))
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Zoning Allows:
                 <span class="removeBold">{{ $auction->get->zoning_allows }}</span>
@@ -882,7 +881,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
         {{-- 10. Space Features --}}
-        @if (@$auction->get->space_features != '' && @$auction->get->space_features != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->space_features))
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Space Features:
                 <span class="removeBold">{{ $auction->get->space_features }}</span>
@@ -890,7 +889,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
         {{-- 11. Neighboring Tenants Include --}}
-        @if (@$auction->get->neighboring_tenants != '' && @$auction->get->neighboring_tenants != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->neighboring_tenants))
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Neighboring Tenants Include:
                 <span class="removeBold">{{ $auction->get->neighboring_tenants }}</span>
@@ -898,42 +897,42 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
         {{-- Other leasing sub-fields (not in the 11-item ordered list) --}}
-        @if (@$auction->get->guests_allowed != '' && @$auction->get->guests_allowed != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->guests_allowed))
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Guests are:
                 <span class="removeBold">{{ $auction->get->guests_allowed }}</span>
             </div>
         </div>
         @endif
-        @if (@$auction->get->common_areas_access != '' && @$auction->get->common_areas_access != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->common_areas_access))
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Shared Areas Available:
                 <span class="removeBold">{{ $auction->get->common_areas_access }}</span>
             </div>
         </div>
         @endif
-        @if (@$auction->get->utilities != '' && @$auction->get->utilities != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->utilities))
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Utilities:
                 <span class="removeBold">{{ $auction->get->utilities }}</span>
             </div>
         </div>
         @endif
-        @if (@$auction->get->common_areas_cleaning != '' && @$auction->get->common_areas_cleaning != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->common_areas_cleaning))
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Common Area Maintenance:
                 <span class="removeBold">{{ $auction->get->common_areas_cleaning }}</span>
             </div>
         </div>
         @endif
-        @if (@$auction->get->bathroom_facilities != '' && @$auction->get->bathroom_facilities != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->bathroom_facilities))
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Bathroom Facilities:
                 <span class="removeBold">{{ $auction->get->bathroom_facilities }}</span>
             </div>
         </div>
         @endif
-        @if (@$auction->get->room_size != '' && @$auction->get->room_size != 'null')
+        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->room_size))
         <div class="row" style="flex-wrap: wrap; margin-left: 1rem;">
             <div class="col-12 fw-bold">Approximate Room Size:
                 <span class="removeBold">{{ $auction->get->room_size }}</span>
@@ -951,28 +950,25 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             : (is_array($rawTermsOfLease) ? $rawTermsOfLease : []);
         @endphp
 
-        @if (!empty($tenantPayItems) || !empty($ownerPayItems))
-        <div class="card-header section-header mt-3">
-            <h4 class="section-title">Responsibilities</h4>
-        </div>
-        <div class="row">
-            @if (!empty($tenantPayItems))
-            <div class="col-md-12 col-12 pt-2 fw-bold">
+        @if (!empty($tenantPayItems))
+        <div class="row" style="flex-wrap: wrap;">
+            <div class="col-12 fw-bold pt-2">
                 Tenant Responsible For:
                 @foreach ($tenantPayItems as $item)
                     <span class="removeBold badge bg-secondary">{{ $item }}</span>
                 @endforeach
             </div>
-            @endif
+        </div>
+        @endif
 
-            @if (!empty($ownerPayItems))
-            <div class="col-md-12 col-12 pt-2 fw-bold">
+        @if (!empty($ownerPayItems))
+        <div class="row" style="flex-wrap: wrap;">
+            <div class="col-12 fw-bold pt-2">
                 Owner Responsible For:
                 @foreach ($ownerPayItems as $item)
                     <span class="removeBold badge bg-secondary">{{ $item }}</span>
                 @endforeach
             </div>
-            @endif
         </div>
         @endif
 

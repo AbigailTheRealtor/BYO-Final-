@@ -489,10 +489,12 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </div>
                     @endif --}}
 
+                    @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->property_type))
                     <div class="col-md-12 col-12 pt-2 fw-bold">
                         Acceptable Property Type:
                         <span class="removeBold">{{ @$auction->get->property_type }}</span>
                     </div>
+                    @endif
                     @php
                         $propertyStyleItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->property_items);
                     @endphp
@@ -558,50 +560,41 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         <span class="removeBold">{{ $auction->get->leasing_space }}</span>
                     </div>
                     @endif
-                    @if (@$auction->get->bedrooms != null)
+                    @php
+                        $bedroomVal = @$auction->get->bedrooms;
+                        if (strtolower(trim((string)$bedroomVal)) === 'other') {
+                            $bedroomVal = \App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->other_bedrooms) ? @$auction->get->other_bedrooms : null;
+                        }
+                    @endphp
+                    @if (\App\Helpers\ListingDisplayHelper::hasValue($bedroomVal))
                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                        Minimum Bedrooms
-                        Needed:
-                        <span class="removeBold">
-                            @if (@$auction->get->bedrooms != 'Other')
-                            {{ $auction->get->bedrooms }}
-                            @elseif(@$auction->get->bedrooms == 'Other')
-                            {{ @$auction->get->other_bedrooms }}
-                            @endif
-                        </span>
+                        Minimum Bedrooms Needed:
+                        <span class="removeBold">{{ $bedroomVal }}</span>
                     </div>
                     @endif
-                    @if (@$auction->get->bathrooms != null)
+                    @php
+                        $bathroomVal = @$auction->get->bathrooms;
+                        if (strtolower(trim((string)$bathroomVal)) === 'other') {
+                            $bathroomVal = \App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->other_bathrooms) ? @$auction->get->other_bathrooms : null;
+                        }
+                    @endphp
+                    @if (\App\Helpers\ListingDisplayHelper::hasValue($bathroomVal))
                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                        Minimum Bathrooms
-                        Needed:
-                        <span class="removeBold">
-                            @if (@$auction->get->bathrooms != 'Other')
-                            {{ $auction->get->bathrooms }}
-                            @elseif(@$auction->get->bathrooms == 'Other')
-                            {{ @$auction->get->other_bathrooms }}
-                            @endif
-                        </span>
+                        Minimum Bathrooms Needed:
+                        <span class="removeBold">{{ $bathroomVal }}</span>
                     </div>
                     @endif
 
-                    @if (@$auction->get->minimum_heated_square != null && @$auction->get->minimum_heated_square != 'null')
+                    @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->minimum_heated_square))
                     <div class="col-md-12 col-12 pt-2 fw-bold">
                         Minimum Sqft Needed:
-                        <span class="removeBold">
-
-                            {{ str_replace(',', '', $auction->get->minimum_heated_square ?? '') }}
-
-                        </span>
+                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::fmtNumber(@$auction->get->minimum_heated_square) }}</span>
                     </div>
                     @endif
-                    @if (@$auction->get->minimum_leaseable != null && @$auction->get->minimum_leaseable != 'null')
+                    @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->minimum_leaseable))
                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                        Minimum Net Leasable
-                        Sqft Needed:
-                        <span class="removeBold">
-                            {{ number_format((int)str_replace(',', '', $auction->get->minimum_leaseable ?? '0')) }}
-                        </span>
+                        Minimum Net Leasable Sqft Needed:
+                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::fmtNumber(@$auction->get->minimum_leaseable) }}</span>
                     </div>
                     @endif
 
@@ -723,63 +716,48 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 <div class="card-header section-header">
                     <h4 class="section-title">Leasing Terms: </h4>
                 </div>
-                <div class="col-md-12 col-12 pt-2 fw-bold"> Maximum
-                    Monthly Lease Price:
-                    <span class="removeBold">
-                        ${{ str_replace(',', '', $auction->get->budget ?? '') }}</span>
-                </div>
-
-                @if (@$auction->get->lease_for != null || $auction->get->other_lease_for != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold"> Offered
-                    Lease Term:
-
-                    <ul>
-                        @if (@$auction->get->lease_for)
-                        @foreach ($auction->get->lease_for as $lease)
-                            @if ($lease !== 'Other')
-                            <li style="font-size: 16px;">{{ $lease }}</li>
-                            @endif
-                        @endforeach
-                        @endif
-                        @if (!empty($auction->get->other_lease_for))
-                        <li style="font-size: 16px;">{{ $auction->get->other_lease_for }}</li>
-                        @endif
-                    </ul>
-
+                @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->budget))
+                <div class="col-md-12 col-12 pt-2 fw-bold">
+                    Maximum Monthly Lease Price:
+                    <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::fmtMoneyWhole(@$auction->get->budget) }}</span>
                 </div>
                 @endif
-                <div class="col-md-12 col-12 pt-2 fw-bold"> Offered
-                    Lease Date:
-                    <span class="removeBold">
-                        @if (@$auction->get->lease_date)
-                        {{ date('F j, Y', strtotime(@$auction->get->lease_date)) }}
-                        @endif
-                    </span>
-                </div>
 
-                <div class="col-md-12 col-12 pt-2 fw-bold"> Leasing
-                    Space:
-
-                </div>
-
-                @if (!empty($auction->get->leasing_spaces_tenant))
                 @php
-                    // Filter out ADU for Commercial properties (display enforcement)
-                    $aduLabel = 'Accessory Unit / Guest Suite (ADU)';
-                    $leasingSpaces = $auction->get->leasing_spaces_tenant;
-                    if (($auction->get->property_type ?? null) === 'Commercial Property' && is_array($leasingSpaces)) {
-                        $leasingSpaces = array_values(array_filter($leasingSpaces, fn($v) => $v !== $aduLabel));
-                    }
+                    $leaseTermItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->lease_for, @$auction->get->other_lease_for);
                 @endphp
-                @if (!empty($leasingSpaces))
-                <ul>
-                    @foreach ($leasingSpaces as $leasing_space)
-                    <li style="font-size: 16px;">
-                        {{ $leasing_space }}
-                    </li>
+                @if (!empty($leaseTermItems))
+                <div class="col-md-12 col-12 pt-2 fw-bold">
+                    Offered Lease Term:
+                    @foreach ($leaseTermItems as $ltItem)
+                        <span class="removeBold badge bg-secondary">{{ $ltItem }}</span>
                     @endforeach
-                </ul>
+                </div>
                 @endif
+                @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->lease_date))
+                <div class="col-md-12 col-12 pt-2 fw-bold">
+                    Offered Lease Date:
+                    <span class="removeBold">{{ date('F j, Y', strtotime(@$auction->get->lease_date)) }}</span>
+                </div>
+                @endif
+
+                @php
+                    $rawLeasingSpaces = @$auction->get->leasing_spaces_tenant;
+                    if (is_array($rawLeasingSpaces)) {
+                        $aduLabel = 'Accessory Unit / Guest Suite (ADU)';
+                        if (($auction->get->property_type ?? null) === 'Commercial Property') {
+                            $rawLeasingSpaces = array_values(array_filter($rawLeasingSpaces, fn($v) => $v !== $aduLabel));
+                        }
+                    }
+                    $leasingSpaceItems = \App\Helpers\ListingDisplayHelper::normalizeList($rawLeasingSpaces);
+                @endphp
+                @if (!empty($leasingSpaceItems))
+                <div class="col-md-12 col-12 pt-2 fw-bold">
+                    Leasing Space:
+                    @foreach ($leasingSpaceItems as $lsItem)
+                        <span class="removeBold badge bg-secondary">{{ $lsItem }}</span>
+                    @endforeach
+                </div>
                 @endif
                 <hr>
                 <div class="card-header section-header">
@@ -792,14 +770,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         {{ $auction->get->number_occupant ?? '' }}</span>
                 </div>
                 @endif
-                @if ($auction->get->monthly_income)
+                @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->monthly_income))
                 <div class="col-md-12 col-12 pt-2 fw-bold">
                     Estimated Monthly Net Household Income:
-                    <span class="removeBold">
-
-                        ${{ str_replace(',', '', $auction->get->monthly_income ?? '') }}
-
-                    </span>
+                    <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::fmtMoneyWhole(@$auction->get->monthly_income) }}</span>
                 </div>
                 @endif
                 {{-- Pets section (Residential-only) --}}
