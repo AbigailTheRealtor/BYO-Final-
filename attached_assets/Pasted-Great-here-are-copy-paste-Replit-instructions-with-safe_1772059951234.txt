@@ -1,0 +1,220 @@
+Great — here are **copy/paste Replit instructions with safeguards** to make the **Next** button advance on **one click** everywhere for **Hire a Tenant’s Agent (Residential + Commercial)**: **Create + Draft + Edit**.
+
+---
+
+# ✅ REPLIT INSTRUCTIONS (WITH SAFEGUARDS)
+
+## Goal
+
+Fix the stepper so **Next advances on the first click** consistently across:
+
+* Listing Creation (new)
+* Saved Drafts (edit draft)
+* Edit Submitted Listing
+
+**Module:** Hire a Tenant’s Agent (Residential + Commercial)
+
+---
+
+## 🔒 SAFEGUARDS
+
+1. **Do NOT remove validation.**
+2. **Do NOT change field names or DB schema.**
+3. Do not add hacks like timeouts unless absolutely necessary.
+4. Fix must apply to **all tabs/steps**, not just one.
+
+---
+
+# 1) Root cause checklist (what typically makes Next require 2 clicks)
+
+Your bug will be one (or more) of these:
+
+### A) Button is triggering **two actions**
+
+Example: `type="submit"` + `wire:click="nextStep"` at the same time
+→ first click submits/validates, second click advances.
+
+✅ Fix: Use **ONE** trigger method per button.
+
+---
+
+### B) `wire:model.defer` values aren’t synced before validation / step change
+
+On first click, Livewire validates old state; second click uses updated state.
+
+✅ Fix: Move Next into a **form submit** (`wire:submit.prevent`) so Livewire syncs inputs before running `nextStep()`.
+
+---
+
+### C) You have a JS stepper + Livewire fighting
+
+Alpine/JS changes the step immediately, but Livewire rerender resets it.
+
+✅ Fix: Make the step state Livewire-owned, or isolate JS with `wire:ignore` properly.
+
+---
+
+### D) Click blocked by overlays / loading states
+
+First click triggers loading and disables, but UI doesn’t advance.
+
+✅ Fix: consistent `wire:loading.attr="disabled"` and no invisible overlay div.
+
+---
+
+# 2) REQUIRED FIX (the clean pattern that works everywhere)
+
+## Make Next a FORM SUBMIT (single source of truth)
+
+### ✅ On every step/tab view:
+
+Wrap the tab content in a form:
+
+```html
+<form wire:submit.prevent="nextStep">
+    <!-- tab fields here -->
+
+    <button type="submit"
+            class="btn btn-primary"
+            wire:loading.attr="disabled"
+            wire:target="nextStep">
+        Next
+    </button>
+</form>
+```
+
+### Then REMOVE any of these from the Next button:
+
+* `wire:click="nextStep"`
+* `onclick="..."`
+* `x-on:click="..."`
+* `type="button"` (if you use submit)
+
+**One button = one event.** This is the #1 fix for “needs 2 clicks.”
+
+---
+
+# 3) If you must keep type="button" (alternate acceptable fix)
+
+If your layout can’t use a `<form>` per tab, then do:
+
+```html
+<button type="button"
+        wire:click.prevent="nextStep"
+        wire:loading.attr="disabled"
+        wire:target="nextStep">
+    Next
+</button>
+```
+
+And ensure there is **no parent form** that auto-submits on click.
+
+---
+
+# 4) Update the Livewire method (avoid double-run / race conditions)
+
+In the Tenant stepper component:
+
+### A) Prevent double clicking from firing twice
+
+Add a simple guard:
+
+```php
+public bool $isAdvancing = false;
+
+public function nextStep()
+{
+    if ($this->isAdvancing) return;
+    $this->isAdvancing = true;
+
+    try {
+        // 1) validate current step only
+        $this->validate($this->rulesForStep($this->currentStep));
+
+        // 2) persist current step data if you do autosave
+        // $this->saveDraftIfNeeded();
+
+        // 3) advance step
+        $this->currentStep++;
+
+    } finally {
+        $this->isAdvancing = false;
+    }
+}
+```
+
+### B) Validate only the current step
+
+If you validate all fields across all steps, the first click often “just triggers errors,” and the second click advances after corrections.
+
+✅ Use step-specific rules, even if some fields are required later.
+
+---
+
+# 5) Fix any duplicate JS click bindings
+
+Search in the Tenant create/edit blades for:
+
+* `nextStep`
+* `Next`
+* `wire:click`
+* `onclick`
+* `x-on:click`
+* `submit`
+
+Make sure **only one path exists**.
+
+**Common anti-pattern to remove:**
+
+```html
+<button type="submit" wire:click="nextStep">Next</button>
+```
+
+This causes exactly the “two clicks” behavior.
+
+---
+
+# 6) Draft/Edit/Creation must share the same stepper behavior
+
+Ensure:
+
+* Create component
+* Draft edit component
+* Submitted edit component
+
+…all use the **same Next implementation** and same button markup.
+
+If there are multiple components (ex: `TenantAgentAuction.php` and `TenantAgentAuctionEdit.php`), apply the same pattern in both.
+
+---
+
+# ✅ TEST PLAN (must pass)
+
+Login: `tenant@exp.com`
+
+### Test 1: New Listing
+
+* Start Residential → Next advances with one click through all steps
+* Start Commercial → same
+
+### Test 2: Draft
+
+* Save draft mid-way
+* Re-open draft
+* Next advances with one click every step
+
+### Test 3: Edit Submitted Listing
+
+* Edit listing
+* Next advances with one click every step
+
+### Test 4: Validation
+
+* Leave a required field blank → Next should show the error on first click
+* Fill it → Next should advance on the next click (normal behavior)
+
+---
+
+## If you paste me ONE screenshot of your Next button HTML (or the blade snippet)
+
+I’ll tell you exactly which of A/B/C/D above is happening and the exact line(s) to delete so it’s guaranteed one-click everywhere.
