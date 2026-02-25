@@ -596,23 +596,29 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </div>
                     @endif
 
-                    {{-- Garage/Parking Features Needed (Commercial only) --}}
+                    {{-- Garage/Parking Features Needed (Commercial only — merged single line) --}}
                     @if (@$auction->get->property_type === 'Commercial Property')
-                        @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->garage_parking_spaces))
+                        @php
+                            $garageNeeded = \App\Helpers\ListingDisplayHelper::formatYesNo(@$auction->get->garage_parking_spaces);
+                            $parkingItems = ($garageNeeded === 'Yes')
+                                ? \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->garage_parking_spaces_option, @$auction->get->other_parking_space_wrapper)
+                                : [];
+                        @endphp
+                        @if ($garageNeeded !== '')
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Garage/Parking Features Needed:
-                            <span class="removeBold">{{ @$auction->get->garage_parking_spaces }}</span>
-                        </div>
-                        @endif
-                        @php
-                            $parkingItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->garage_parking_spaces_option, @$auction->get->other_parking_space_wrapper);
-                        @endphp
-                        @if (!empty($parkingItems))
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Garage/Parking Features:
-                            @foreach ($parkingItems as $feature)
-                                <span class="removeBold badge bg-secondary">{{ $feature }}</span>
-                            @endforeach
+                            @if ($garageNeeded === 'Yes' && !empty($parkingItems))
+                                <span class="removeBold">Yes</span>
+                                @if (count($parkingItems) === 1)
+                                    <span class="removeBold">{{ $parkingItems[0] }}</span>
+                                @else
+                                    @foreach ($parkingItems as $feature)
+                                        <span class="removeBold badge bg-secondary">{{ $feature }}</span>
+                                    @endforeach
+                                @endif
+                            @else
+                                <span class="removeBold">{{ $garageNeeded }}</span>
+                            @endif
                         </div>
                         @endif
                     @endif

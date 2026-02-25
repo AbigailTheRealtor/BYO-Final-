@@ -2393,46 +2393,24 @@ $lease_types = [
 
         ///////////////////   condition_prop_buyer
 
-
         function initConditionSelect2() {
-            $('.condition_prop_buyer').select2({
+            var $sel = $('.condition_prop_buyer');
+            if ($sel.hasClass('select2-hidden-accessible')) return;
+
+            $sel.select2({
                 placeholder: "Select",
                 allowClear: true
             });
 
-            // Handle changes
-            $('.condition_prop_buyer').on('change', function(e) {
+            $sel.on('change', function(e) {
                 let data = $(this).val();
-                safeLivewireSet('condition_prop_buyer', data, true); // Livewire v2.x
+                safeLivewireSet('condition_prop_buyer', data, true);
             });
         }
 
-        // Initial initialization
         $(document).ready(function() {
             initConditionSelect2();
         });
-
-        // Reinitialize after Livewire updates
-        document.addEventListener('livewire:load', function() {
-            Livewire.hook('message.processed', (message, component) => {
-                // Only reinitialize if this component was updated
-                if (component.serverMemo.data.condition_prop_buyer !== undefined) {
-                    // Destroy existing Select2
-                    if ($('.condition_prop_buyer').hasClass('select2-hidden-accessible')) {
-                        $('.condition_prop_buyer').select2('destroy');
-                    }
-
-                    // Reinitialize
-                    initConditionSelect2();
-
-                    // Restore selected values
-                    $('.condition_prop_buyer').val(component.serverMemo.data.condition_prop_buyer)
-                        .trigger('change');
-                }
-            });
-        });
-
-
 
         /////////////////////condition_prop_buyer
 

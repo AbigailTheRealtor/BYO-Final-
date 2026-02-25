@@ -124,26 +124,33 @@ class ListingDisplayHelper
 
     public static function normalizeList($list, $otherText = null): array
     {
-        if (empty($list)) return [];
+        if (empty($list) && !self::hasValue($otherText)) return [];
 
-        if (is_string($list)) {
-            $decoded = json_decode($list, true);
-            if (json_last_error() === JSON_ERROR_NONE) {
-                $list = is_array($decoded) ? $decoded : [$decoded];
-            } else {
-                $list = [$list];
+        $items = [];
+        if (!empty($list)) {
+            if (is_string($list)) {
+                $decoded = json_decode($list, true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $list = is_array($decoded) ? $decoded : [$decoded];
+                } else {
+                    $list = [$list];
+                }
+            }
+
+            if (is_array($list)) {
+                $items = $list;
             }
         }
 
-        if (!is_array($list)) return [];
-
         $result = [];
-        foreach ($list as $item) {
+        $foundOther = false;
+        foreach ($items as $item) {
             $val = trim((string) $item);
             $val = trim($val, '"');
             if ($val === '' || self::isPlaceholder($val)) continue;
             if (self::isNoneNa($val)) continue;
             if (strtolower($val) === 'other') {
+                $foundOther = true;
                 if (self::hasValue($otherText)) {
                     $otherStr = trim((string) $otherText);
                     $result[] = trim($otherStr, '"');
@@ -152,6 +159,12 @@ class ListingDisplayHelper
             }
             $result[] = $val;
         }
+
+        if (!$foundOther && self::hasValue($otherText)) {
+            $otherStr = trim((string) $otherText);
+            $result[] = trim($otherStr, '"');
+        }
+
         return $result;
     }
 
