@@ -312,10 +312,11 @@
         </span>
     </label>
 
-    <div class="input-cover">
+    <div class="input-cover" wire:key="condition-prop-buyer-wrapper">
               <select wire:model="condition_prop_buyer" id="condition_prop_buyer"
                 class="condition_prop_buyer form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-screwdriver-wrench input-icon2" multiple>
+                data-icon="fa-solid fa-screwdriver-wrench input-icon2" multiple
+                style="visibility:hidden;height:0;overflow:hidden">
             @foreach ($conditionOptions as $row_pt)
                 <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
             @endforeach

@@ -134,7 +134,7 @@ class TenantFieldMap
                 'Number of Pets' => 'number_of_pets',
                 'Breed of Pets' => 'breed_of_pets',
                 'Pet Types' => 'type_of_pets',
-                'Pet Weight Limit (lbs)' => 'weight_of_pets',
+                'Pet Weight (lbs)' => 'weight_of_pets',
                 'Service Animal' => 'service_animal',
                 'Other Services Enabled' => 'other_services_enabled',
                 'Support Animal' => 'support_animal',

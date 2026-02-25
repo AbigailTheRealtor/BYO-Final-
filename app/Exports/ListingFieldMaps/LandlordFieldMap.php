@@ -130,7 +130,7 @@ class LandlordFieldMap
                 'Support Animal' => 'support_animal',
                 'Breed of Pets' => 'breed_of_pets',
                 'Pet Types' => 'type_of_pets',
-                'Pet Weight Limit (lbs)' => 'weight_of_pets',
+                'Pet Weight (lbs)' => 'weight_of_pets',
                 'Monthly Income' => 'monthly_income',
                 'Number of Occupants' => 'number_occupant',
             ],

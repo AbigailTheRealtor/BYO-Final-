@@ -139,7 +139,7 @@
 
         <!-- Maximum Weight -->
         <div class="form-group">
-            <label class="fw-bold">Pet Weight Limit (lbs):</label>
+            <label class="fw-bold">Pet Weight (lbs):</label>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Enter the weight of the Tenant’s pet(s) in pounds (e.g., 30 lbs, 50 lbs). If the Tenant has multiple pets, list their weights individually.">
                 <i class="fa-solid fa-circle-info"></i>

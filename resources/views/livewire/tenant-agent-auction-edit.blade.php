@@ -3437,6 +3437,27 @@
 
 
 
+        function isElementVisible(element) {
+            if (!element) return false;
+            if (element.disabled) return false;
+            if (element.type === 'hidden') return false;
+            if (element.offsetParent === null && element.tagName !== 'BODY' && element.tagName !== 'HTML') {
+                if (element.offsetHeight === 0 && element.offsetWidth === 0) {
+                    return false;
+                }
+            }
+            if (element.offsetHeight === 0 || element.offsetWidth === 0) {
+                return false;
+            }
+            const style = window.getComputedStyle(element);
+            if (style.display === 'none' || style.visibility === 'hidden') {
+                return false;
+            }
+            const parent = element.closest('.d-none, .collapse:not(.show)');
+            if (parent) return false;
+            return true;
+        }
+
         // Shared wizard navigation handler - called once on load and avoids duplicate handlers
         let wizardNavigationInitialized = false;
 
@@ -3525,6 +3546,9 @@
                     'input[required], select[required], textarea[required]');
                 if (requiredFields) {
                     requiredFields.forEach(function(input) {
+                        if (!isElementVisible(input)) {
+                            return;
+                        }
                         if (!input.value) {
                             isValid = false;
                             input.classList.add('is-invalid');

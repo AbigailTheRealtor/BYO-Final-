@@ -867,7 +867,7 @@
                                     @endif
                                     @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->petsWeight))
                                         <div class="col-md-12 col-12 fw-bold">
-                                            Weight:
+                                            Pet Weight (lbs):
                                             <span class="removeBold">{{ @$auction->get->petsWeight }} lbs</span>
                                         </div>
                                     @endif

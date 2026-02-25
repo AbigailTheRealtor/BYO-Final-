@@ -810,7 +810,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </div>
                 @endif
                 @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->weight_of_pets))
-                <div class="col-md-12 col-12 pt-2 fw-bold"> Pet Weight Limit (lbs):
+                <div class="col-md-12 col-12 pt-2 fw-bold"> Pet Weight (lbs):
                     <span class="removeBold">{{ @$auction->get->weight_of_pets }} lbs</span>
                 </div>
                 @endif

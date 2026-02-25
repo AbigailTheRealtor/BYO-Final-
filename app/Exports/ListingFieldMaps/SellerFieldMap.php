@@ -75,7 +75,7 @@ class SellerFieldMap
                 'Number of Pets' => 'number_of_pets',
                 'Breed of Pets' => 'breed_of_pets',
                 'Pet Types' => 'type_of_pets',
-                'Pet Weight Limit (lbs)' => 'weight_of_pets',
+                'Pet Weight (lbs)' => 'weight_of_pets',
                 'Number of Occupants' => 'number_occupant',
             ],
 

@@ -1,0 +1,330 @@
+Below are **copy/paste-ready Replit instructions with safeguards** to fix the **Hire a Tenant (actual listing display + edit flow)** issues you listed.
+
+---
+
+## Replit Instructions (WITH SAFEGUARDS) — Hire a Tenant Listing Display + Edit Bugs
+
+### SAFEGUARDS (DO NOT BREAK ANYTHING)
+
+1. **Do not rename** existing DB tables, columns, Livewire components, routes, or view files.
+2. **Do not delete** any existing fields, options, or validation rules.
+3. Only make **additive** changes:
+
+   * If “Other” text columns don’t exist, **add new nullable columns** (do not repurpose existing columns).
+4. Keep existing UI/flow intact; only fix:
+
+   * “Other” text not showing on listing display (2 fields)
+   * flashing/scroll jump on “Acceptable Property Conditions” during edit
+   * Next button needing multiple clicks
+   * label change: **Pet Weight (lbs)** everywhere
+
+---
+
+# 1) Fix: “Non-Negotiable Property Features & Amenities” — Other text not showing on actual listing
+
+### Goal
+
+If user selects **Other** and enters custom text, the **actual listing display** must show it.
+
+### Step A — Confirm where “Other” text is stored (or add storage safely)
+
+Search in your codebase for the field names used in Tenant flow. In Replit search, look for any of these patterns:
+
+* `non_negotiable_property_features`
+* `non_negotiable_amenities`
+* `non_negotiable_property_features_other`
+* `amenities_other`
+* `property_features_other`
+
+If you **do NOT** already have a dedicated “other text” column saved to the DB, add it.
+
+#### Migration (ADD ONLY — safe)
+
+Create a migration adding nullable columns (names can match your existing naming pattern—use the closest fit):
+
+```php
+// database/migrations/xxxx_xx_xx_xxxxxx_add_other_fields_to_tenant_auctions.php
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration {
+    public function up(): void {
+        Schema::table('tenant_agent_auctions', function (Blueprint $table) {
+            if (!Schema::hasColumn('tenant_agent_auctions', 'non_negotiable_features_amenities_other')) {
+                $table->text('non_negotiable_features_amenities_other')->nullable();
+            }
+        });
+    }
+
+    public function down(): void {
+        Schema::table('tenant_agent_auctions', function (Blueprint $table) {
+            if (Schema::hasColumn('tenant_agent_auctions', 'non_negotiable_features_amenities_other')) {
+                $table->dropColumn('non_negotiable_features_amenities_other');
+            }
+        });
+    }
+};
+```
+
+Run migrations.
+
+### Step B — Ensure Livewire saves the “Other” input
+
+In the Tenant create/edit Livewire component (commonly something like):
+
+* `TenantAgentAuction.php`
+* `TenantAgentAuctionEdit.php`
+* `TenantAgentAuctionDraft.php`
+
+Find the save/update method and ensure it persists the other text field:
+
+```php
+$auction->non_negotiable_features_amenities = $this->non_negotiable_features_amenities; // array or json
+$auction->non_negotiable_features_amenities_other = $this->non_negotiable_features_amenities_other; // string
+```
+
+Also ensure the field is loaded on edit:
+
+```php
+$this->non_negotiable_features_amenities = $auction->non_negotiable_features_amenities ?? [];
+$this->non_negotiable_features_amenities_other = $auction->non_negotiable_features_amenities_other ?? '';
+```
+
+### Step C — Fix the ACTUAL listing display blade
+
+Find the actual listing display view for Tenant listings (often something like):
+
+* `resources/views/.../tenant-agent-auctions/show.blade.php`
+  or a shared listing renderer partial.
+
+Where you render **Non-Negotiable Property Features & Amenities**, append the “Other” text when:
+
+* “Other” is selected **OR**
+* other text exists (safer, in case legacy saves didn’t store selection properly)
+
+```php
+@php
+  $items = is_array($auction->non_negotiable_features_amenities)
+      ? $auction->non_negotiable_features_amenities
+      : (json_decode($auction->non_negotiable_features_amenities ?? '[]', true) ?: []);
+
+  $otherText = trim($auction->non_negotiable_features_amenities_other ?? '');
+  $hasOtherSelected = in_array('Other', $items, true);
+@endphp
+
+<div>
+  <strong>Non-Negotiable Property Features & Amenities:</strong>
+  {{ count($items) ? implode(', ', array_values(array_filter($items))) : '—' }}
+  @if($otherText !== '')
+    {{-- Show other text regardless, but format nicely if "Other" is selected --}}
+    <span> (Other: {{ $otherText }})</span>
+  @endif
+</div>
+```
+
+✅ This guarantees the “Other” text finally shows on the listing even if the selection array is inconsistent.
+
+---
+
+# 2) Fix: “Offered Lease Term” — Other text not showing on actual listing
+
+Same pattern as above.
+
+### Step A — Add a nullable “other” column if missing
+
+```php
+// add to the same migration or create another additive migration
+Schema::table('tenant_agent_auctions', function (Blueprint $table) {
+    if (!Schema::hasColumn('tenant_agent_auctions', 'offered_lease_term_other')) {
+        $table->string('offered_lease_term_other', 255)->nullable();
+    }
+});
+```
+
+### Step B — Save/load it in Livewire
+
+```php
+$auction->offered_lease_term = $this->offered_lease_term; // could be string or array
+$auction->offered_lease_term_other = $this->offered_lease_term_other;
+```
+
+### Step C — Display it on actual listing
+
+```php
+@php
+  $leaseTerm = $auction->offered_lease_term;
+  $otherLease = trim($auction->offered_lease_term_other ?? '');
+@endphp
+
+<div>
+  <strong>Offered Lease Term:</strong>
+  {{ is_array($leaseTerm) ? implode(', ', $leaseTerm) : ($leaseTerm ?: '—') }}
+  @if($otherLease !== '')
+    <span> (Other: {{ $otherLease }})</span>
+  @endif
+</div>
+```
+
+---
+
+# 3) Fix: Edit Listing “Acceptable Property Conditions” flashes all options + causes tab to scroll/jump
+
+This is almost always Livewire re-render / Alpine init timing.
+
+### Required fix (high impact, low risk)
+
+1. Put the options list behind `x-cloak` so it can’t “flash” before Alpine finishes.
+2. Use **wire:model.defer** (not live) on the multi-select so changing state doesn’t trigger rapid rerenders.
+3. Make sure the container has a stable `wire:key` so Livewire doesn’t rebuild it.
+
+#### In the edit blade for that tab section:
+
+```html
+<div wire:key="acceptable-property-conditions-section">
+  <div x-data x-cloak>
+    <!-- Use wire:model.defer to prevent constant re-renders -->
+    <div class="your-options-wrapper">
+      <!-- Example checkbox list -->
+      @foreach($acceptablePropertyConditionsOptions as $opt)
+        <label class="block">
+          <input
+            type="checkbox"
+            wire:model.defer="acceptable_property_conditions"
+            value="{{ $opt }}"
+          >
+          <span>{{ $opt }}</span>
+        </label>
+      @endforeach
+    </div>
+  </div>
+</div>
+
+<style>[x-cloak]{ display:none !important; }</style>
+```
+
+### If you’re using Alpine show/hide logic
+
+Make sure you use `x-cloak` on the block that toggles, and avoid initial `x-show="true"` defaults that then flip.
+
+### Optional extra stabilization
+
+If that list is being rebuilt due to computed props, stop recomputing it every render. In the Livewire component:
+
+* build the options once in `mount()` and keep it in a public property like `$acceptablePropertyConditionsOptions`.
+
+---
+
+# 4) Change label everywhere: “Pet Weight Limit (Lbs):” → “Pet Weight (lbs):”
+
+You want this change in:
+
+* Create listing
+* Edit listing
+* Draft
+* Actual listing display
+
+### Step A — Search/replace labels only (do NOT rename DB columns)
+
+Search for:
+
+* `Pet Weight Limit`
+* `Weight Limit (Lbs)`
+* `Pet Weight Limit (Lbs):`
+
+Replace the visible label text with:
+
+* **Pet Weight (lbs):**
+
+✅ Keep the underlying variable/column names the same (ex: `pet_weight_limit_lbs`) so you don’t break data.
+
+Example:
+
+```html
+<label class="...">Pet Weight (lbs):</label>
+<input type="text" wire:model.defer="pet_weight_limit_lbs" ...>
+```
+
+And in actual listing display:
+
+```php
+<strong>Pet Weight (lbs):</strong> {{ $auction->pet_weight_limit_lbs ?? '—' }}
+```
+
+---
+
+# 5) Fix: Next button on edits requires multiple clicks
+
+This is typically caused by one of these:
+
+* button is inside a `<form>` but missing `type="button"` so it submits + rerenders
+* button has both `wire:click` and JS navigation fighting each other
+* an overlay/loading state captures the first click
+* scroll jump is re-focusing something and cancelling click
+
+### Safe standard fix (recommended)
+
+Make the Next button:
+
+* `type="button"`
+* `wire:click.prevent="goNextStep"`
+* disable during loading
+* add a small loading indicator if you want
+
+```html
+<button
+  type="button"
+  wire:click.prevent="goNextStep"
+  wire:loading.attr="disabled"
+  wire:target="goNextStep"
+  class="btn btn-primary"
+>
+  Next
+</button>
+
+<span wire:loading wire:target="goNextStep">Loading…</span>
+```
+
+### In Livewire component
+
+Make sure `goNextStep()`:
+
+* increments step once
+* does not reset tab state
+* does not dispatch multiple events that re-render twice
+
+```php
+public function goNextStep(): void
+{
+    // validate only what’s needed for this step if you do step-validation
+    // $this->validate([...]);
+
+    $this->step = min($this->step + 1, $this->maxStep);
+}
+```
+
+### Also do this if you have “scroll to top” logic
+
+If you’re calling JS to scroll to top on step change, remove it OR only run it once. That’s often what makes the UI feel like it “ignored” the first click.
+
+---
+
+## Quick Verification Checklist (must pass)
+
+1. On an existing Tenant listing where **Other** was entered:
+
+   * Non-Negotiable Features & Amenities shows: `(Other: …)`
+   * Offered Lease Term shows: `(Other: …)`
+2. On edit tab:
+
+   * Acceptable Property Conditions does **NOT** flash all options / does **NOT** scroll jump
+3. Next button:
+
+   * advances on **first click** consistently
+4. All screens show label:
+
+   * **Pet Weight (lbs):**
+
+---
+
+If you paste me your actual component/view names for Tenant (e.g., `TenantAgentAuctionEdit.php` + the listing show blade path), I can rewrite the same instructions with your **exact file paths + exact property names** so you can drop it in without hunting.
