@@ -1,0 +1,247 @@
+Added — below are **copy/paste Replit instructions with safeguards** for **Commercial Tenant listings** to:
+
+1. Add an **Other (text)** input for **Garage/Parking Features** (Commercial) and ensure it **shows on the actual listing**, and
+2. On the **actual listing display**, **merge** the two fields:
+
+   * `Garage/Parking Features`
+   * `Garage/Parking Features Needed`
+     into a single line:
+   * **Garage/Parking Features Needed: Yes (…bubbles…)**
+     If No → **Garage/Parking Features Needed: No**
+
+---
+
+# ✅ Replit Instructions (WITH SAFEGUARDS) — Commercial Garage/Parking Needed + Other Not Showing
+
+## SAFEGUARDS
+
+* **Do NOT rename** existing DB columns, Livewire props, blade filenames, routes.
+* **Do NOT delete** existing options.
+* Only **add** new nullable columns if missing.
+* Only change **ACTUAL LISTING DISPLAY** to merge the two fields (do not break forms).
+
+---
+
+## PART 1 — Add “Other” Text Input for Commercial Garage/Parking Features (Creation + Edit + Draft)
+
+### 1A) Confirm your Commercial Tenant flow stores these fields
+
+Search in Replit for:
+
+* `garage_parking_features`
+* `garage_parking_features_needed`
+* `parking_features`
+* `garage_parking_other`
+* `parking_other`
+
+You’re looking for the **Commercial** section inside the Tenant listing create/edit/draft components.
+
+---
+
+### 1B) Add a DB column for “Other” (ADD ONLY) if it doesn’t exist
+
+Create a migration (or append to your existing “tenant other” migration):
+
+```php
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration {
+    public function up(): void {
+        Schema::table('tenant_agent_auctions', function (Blueprint $table) {
+            if (!Schema::hasColumn('tenant_agent_auctions', 'garage_parking_features_other')) {
+                $table->string('garage_parking_features_other', 255)->nullable();
+            }
+        });
+    }
+
+    public function down(): void {
+        // non-destructive; optional
+    }
+};
+```
+
+Run migration.
+
+---
+
+### 1C) Livewire: add property + save/load (Creation/Edit/Draft)
+
+In the relevant Livewire components for Tenant Commercial listing:
+
+**Add public property:**
+
+```php
+public $garage_parking_features_other = '';
+```
+
+**On mount/edit load:**
+
+```php
+$this->garage_parking_features_other = $auction->garage_parking_features_other ?? '';
+```
+
+**On save/update:**
+
+```php
+$auction->garage_parking_features_other = $this->garage_parking_features_other ?: null;
+```
+
+---
+
+### 1D) Form UI: show “Other” text input only when “Other” is selected
+
+Where the checkbox/multi-select is rendered for Commercial Garage/Parking Features:
+
+* Keep your options list the same.
+* Add a conditional input.
+
+Example:
+
+```html
+@if(in_array('Other', (array) $garage_parking_features, true))
+  <div class="mt-2">
+    <label>Other (Garage/Parking Features):</label>
+    <input type="text"
+           class="form-input"
+           wire:model.defer="garage_parking_features_other"
+           placeholder="Example: Covered loading bay + reserved vendor parking">
+  </div>
+@endif
+```
+
+✅ Use `wire:model.defer` to prevent rerender flashing.
+
+---
+
+## PART 2 — ACTUAL LISTING DISPLAY: Merge “Garage/Parking Features” + “Garage/Parking Features Needed”
+
+### Desired Output (Commercial only)
+
+* If Needed = Yes:
+  **Garage/Parking Features Needed: Yes** + options (bubble format)
+  AND if Other text exists → include as bubble or appended
+* If Needed = No:
+  **Garage/Parking Features Needed: No**
+* Do **NOT** show “Garage/Parking Features:” as a separate line anymore (Commercial only)
+
+---
+
+### 2A) Edit the ACTUAL listing blade/partial used for Tenant listings
+
+Search and open the blade rendering the “actual listing” display (NOT the form):
+
+* `show.blade.php` or shared display partial.
+
+Search within it for:
+
+* `Garage/Parking Features`
+* `garage_parking_features`
+* `garage_parking_features_needed`
+
+---
+
+### 2B) Add safe decode helper (if not already added)
+
+If you don’t already have one in this blade:
+
+```php
+@php
+  $decodeToArray = function ($value) {
+      if (is_array($value)) return $value;
+      if (is_null($value) || $value === '') return [];
+      if (is_string($value)) {
+          $decoded = json_decode($value, true);
+          return is_array($decoded) ? $decoded : [$value];
+      }
+      return [];
+  };
+@endphp
+```
+
+---
+
+### 2C) Replace Commercial display block with merged logic
+
+**IMPORTANT:** Wrap this in your existing Commercial-only condition.
+(Use whatever you already use to detect commercial: property type, listing type, etc.)
+
+Example (adjust the commercial condition to match your code):
+
+```php
+@php
+  $isCommercial = ($auction->property_category ?? '') === 'Commercial'; // adjust to your real condition
+
+  $needed = $auction->garage_parking_features_needed ?? null; // typically 'Yes'/'No' or boolean
+  $features = $decodeToArray($auction->garage_parking_features ?? null);
+  $other = trim((string)($auction->garage_parking_features_other ?? ''));
+@endphp
+
+@if($isCommercial)
+  <div class="listing-row">
+    <strong>Garage/Parking Features Needed:</strong>
+
+    @if($needed === 'Yes' || $needed === 1 || $needed === true)
+      Yes
+
+      @php
+        // Build bubbles list; include Other text as an item if present
+        $bubbleItems = array_values(array_filter($features));
+        if ($other !== '') {
+            $bubbleItems[] = "Other: {$other}";
+        }
+      @endphp
+
+      @if(count($bubbleItems))
+        <div class="bubble-wrap mt-2">
+          @foreach($bubbleItems as $item)
+            <span class="bubble">{{ $item }}</span>
+          @endforeach
+        </div>
+      @endif
+
+    @else
+      No
+    @endif
+  </div>
+
+  {{-- SAFEGUARD: do NOT render the separate "Garage/Parking Features:" line for Commercial --}}
+@else
+  {{-- keep your existing Residential display behavior unchanged --}}
+@endif
+```
+
+✅ This guarantees:
+
+* Only **one** line/section shows for Commercial
+* “Other” text always shows if entered
+* Bubble format only appears when **Needed = Yes**
+
+---
+
+## PART 3 — Make sure bubble CSS exists (no style changes required)
+
+Use your existing bubble classes. If your Tenant bubbles use a specific class already, reuse it.
+Do **NOT** create new styling unless necessary.
+
+---
+
+## Verification Checklist
+
+1. Create Commercial Tenant listing:
+
+   * Set **Garage/Parking Features Needed = Yes**
+   * Select a few options + select **Other**, enter text “TEST PARKING”
+2. View actual listing:
+
+   * Must show **Garage/Parking Features Needed: Yes** with bubbles including `Other: TEST PARKING`
+   * Must NOT show a separate “Garage/Parking Features:” line for Commercial
+3. Set Needed = No:
+
+   * Must show **Garage/Parking Features Needed: No**
+   * Must NOT show bubbles
+
+---
+
+If you tell me the **exact DB column names** you’re currently using for these two fields (or paste the snippet from your tenant table / Livewire save method), I’ll rewrite the merged display block with **zero placeholders** and the exact property names so you can paste it in once and be done.
