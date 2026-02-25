@@ -713,6 +713,19 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </div>
                     @endif
 
+                    {{-- TEMP DEBUG — remove after confirming --}}
+                    @if(auth()->check())
+                    <div style="border:2px solid red;padding:8px;margin:8px 0;background:#fff;font-size:12px;">
+                        <b>DEBUG non_negotiable_amenities:</b>
+                        <pre style="white-space:pre-wrap;">raw = {{ json_encode(@$auction->get->non_negotiable_amenities) }}</pre>
+                        <pre style="white-space:pre-wrap;">other = {{ json_encode(@$auction->get->other_non_negotiable_amenities) }}</pre>
+                        <b>DEBUG lease_for:</b>
+                        <pre style="white-space:pre-wrap;">raw = {{ json_encode(@$auction->get->lease_for) }}</pre>
+                        <pre style="white-space:pre-wrap;">other = {{ json_encode(@$auction->get->other_lease_for) }}</pre>
+                    </div>
+                    @endif
+                    {{-- END TEMP DEBUG --}}
+
                     @php
                         $amenityItems = \App\Helpers\ListingDisplayHelper::normalizeListDeduped(@$auction->get->non_negotiable_amenities, @$auction->get->other_non_negotiable_amenities);
                     @endphp
