@@ -124,7 +124,9 @@ class ListingDisplayHelper
 
     public static function normalizeList($list, $otherText = null): array
     {
-        if (empty($list) && !self::hasValue($otherText)) return [];
+        $otherStr = is_string($otherText) ? trim(trim((string) $otherText), '"') : '';
+        $otherHasValue = $otherStr !== '' && $otherStr !== 'null';
+        if (empty($list) && !$otherHasValue) return [];
 
         $items = [];
         if (!empty($list)) {
@@ -151,18 +153,16 @@ class ListingDisplayHelper
             if (self::isNoneNa($val)) continue;
             if (strtolower($val) === 'other') {
                 $foundOther = true;
-                if (self::hasValue($otherText)) {
-                    $otherStr = trim((string) $otherText);
-                    $result[] = trim($otherStr, '"');
+                if ($otherHasValue) {
+                    $result[] = $otherStr;
                 }
                 continue;
             }
             $result[] = $val;
         }
 
-        if (!$foundOther && self::hasValue($otherText)) {
-            $otherStr = trim((string) $otherText);
-            $result[] = trim($otherStr, '"');
+        if (!$foundOther && $otherHasValue) {
+            $result[] = $otherStr;
         }
 
         return $result;
