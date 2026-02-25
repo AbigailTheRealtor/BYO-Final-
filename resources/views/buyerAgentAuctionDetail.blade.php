@@ -1488,6 +1488,7 @@
                                         </div>
                                     @endif
                                 @endif
+                                @endif
 
                                 @if (@$auction->get->seller_amortization_type)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
