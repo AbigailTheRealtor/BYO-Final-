@@ -1,0 +1,242 @@
+Got it — here’s a **more “do-this-exactly” Replit checklist** that forces the fix, even if your current “Other” values are being saved but your **listing renderer** is pulling the wrong field or decoding wrong.
+
+Everything below is **additive / non-destructive**.
+
+---
+
+# ✅ Replit Instructions (WITH SAFEGUARDS) — Hire a Tenant “Other” Not Showing + Flash/Scroll Bug
+
+## SAFEGUARDS
+
+* **Do NOT rename** any existing DB columns, component properties, routes, or blade filenames.
+* **Do NOT delete** options from arrays/enums.
+* Only **add** columns if missing, and only **append** display logic.
+* Keep the current listing UI exactly the same except for these fixes.
+
+---
+
+## PART A — “Other” still not showing on ACTUAL LISTING
+
+This is almost always because:
+
+1. “Other” text is saved in one place but the **actual listing display** is rendering from a *different* model/field, or
+2. the display code assumes **array**, but DB stores **JSON string**, or
+3. the display code filters out “Other” or never appends the `*_other` text.
+
+### A1) Find the exact blade that renders the **actual Tenant listing**
+
+In Replit search, search these (one at a time):
+
+* `Hire a Tenant`
+* `tenant_agent_auctions.show`
+* `Tenant Listing Details`
+* `non_negotiable`
+* `offered_lease_term`
+* `resources/views` + `tenant`
+
+**You MUST edit the blade/partial that renders the public/actual listing** (not the create/edit form).
+
+Typical locations:
+
+* `resources/views/tenant-agent-auctions/show.blade.php`
+* `resources/views/auctions/tenant/show.blade.php`
+* `resources/views/components/listing-display/*.blade.php`
+* a shared partial like `resources/views/partials/listing-fields.blade.php`
+
+> If you fix the form but not this blade/partial, it will “never show” no matter how many times you try.
+
+---
+
+### A2) Add a SAFE “decode helper” inline (no refactors)
+
+In the actual listing display blade, **right before** rendering those two fields, paste this:
+
+```php
+@php
+    $decodeToArray = function ($value) {
+        if (is_array($value)) return $value;
+        if (is_null($value) || $value === '') return [];
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            return is_array($decoded) ? $decoded : [$value];
+        }
+        return [];
+    };
+@endphp
+```
+
+This prevents the “it’s JSON but I treat it like an array” bug.
+
+---
+
+### A3) FORCE show “Other” text for **Non-Negotiable Property Features & Amenities**
+
+Replace your current display block for this field with the following (even if you already have something similar):
+
+```php
+@php
+    // Adjust these names ONLY if your model uses different ones.
+    $nn = $decodeToArray($auction->non_negotiable_features_amenities ?? $auction->non_negotiable_property_features_amenities ?? null);
+
+    $nnOther =
+        trim((string)($auction->non_negotiable_features_amenities_other
+        ?? $auction->non_negotiable_property_features_amenities_other
+        ?? $auction->non_negotiable_features_other
+        ?? $auction->non_negotiable_other
+        ?? ''));
+@endphp
+
+<div class="listing-row">
+    <strong>Non-Negotiable Property Features & Amenities:</strong>
+    {{ count($nn) ? implode(', ', array_values(array_filter($nn))) : '—' }}
+    @if($nnOther !== '')
+        <span> (Other: {{ $nnOther }})</span>
+    @endif
+</div>
+```
+
+✅ Why this works even when your naming is inconsistent:
+
+* It checks **multiple likely column names** without breaking anything.
+* It shows “Other: …” if the text exists **even if “Other” wasn’t stored in the array**.
+
+> If your DB column name is different, keep the fallback structure and just swap in your actual column name at the front.
+
+---
+
+### A4) FORCE show “Other” text for **Offered Lease Term**
+
+Replace your current lease-term display block with:
+
+```php
+@php
+    $leaseTerm = $decodeToArray($auction->offered_lease_term ?? $auction->lease_term ?? null);
+
+    $leaseOther =
+        trim((string)($auction->offered_lease_term_other
+        ?? $auction->lease_term_other
+        ?? $auction->offered_lease_other
+        ?? ''));
+@endphp
+
+<div class="listing-row">
+    <strong>Offered Lease Term:</strong>
+    {{ count($leaseTerm) ? implode(', ', array_values(array_filter($leaseTerm))) : '—' }}
+    @if($leaseOther !== '')
+        <span> (Other: {{ $leaseOther }})</span>
+    @endif
+</div>
+```
+
+---
+
+### A5) If “Other” text is NOT saved anywhere (additive migration)
+
+Only do this if you confirm your tenant table does **not** have “other” columns.
+
+Create migration (ADD ONLY):
+
+```php
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration {
+    public function up(): void {
+        Schema::table('tenant_agent_auctions', function (Blueprint $table) {
+            if (!Schema::hasColumn('tenant_agent_auctions', 'non_negotiable_features_amenities_other')) {
+                $table->text('non_negotiable_features_amenities_other')->nullable();
+            }
+            if (!Schema::hasColumn('tenant_agent_auctions', 'offered_lease_term_other')) {
+                $table->string('offered_lease_term_other', 255)->nullable();
+            }
+        });
+    }
+
+    public function down(): void {
+        Schema::table('tenant_agent_auctions', function (Blueprint $table) {
+            // keep down safe-ish, but optional to drop
+        });
+    }
+};
+```
+
+Then in your Tenant create/edit Livewire save:
+
+```php
+$auction->non_negotiable_features_amenities_other = $this->non_negotiable_features_amenities_other ?? null;
+$auction->offered_lease_term_other = $this->offered_lease_term_other ?? null;
+```
+
+---
+
+## PART B — Edit Listing “Acceptable Property Conditions” flashes + scrolls tab up/down
+
+This is caused by Livewire re-rendering the whole section quickly while Alpine/CSS loads.
+
+### B1) Wrap the options UI in `x-cloak` + stable `wire:key`
+
+In the EDIT tab blade where acceptable property conditions are shown:
+
+```html
+<div wire:key="tenant-acceptable-property-conditions">
+  <div x-data x-cloak>
+    {{-- your acceptable property conditions UI here --}}
+  </div>
+</div>
+
+<style>[x-cloak]{ display:none !important; }</style>
+```
+
+### B2) Stop rapid re-renders: use `wire:model.defer`
+
+If it’s checkboxes or multi-select, change from:
+
+* `wire:model` (or `wire:model.live`)
+  to:
+* `wire:model.defer`
+
+Example:
+
+```html
+<input type="checkbox"
+       wire:model.defer="acceptable_property_conditions"
+       value="{{ $opt }}">
+```
+
+### B3) If you’re using a JS plugin (select2/tomselect/etc.)
+
+Plugins often re-init and cause the “flash then scroll”. In that case you must isolate:
+
+```html
+<div wire:ignore>
+  <!-- plugin-controlled select here -->
+</div>
+```
+
+and then sync value manually via events. (Only do this if you confirm you’re using a JS plugin.)
+
+---
+
+## PART C — Quick “prove it’s fixed” test (must pass)
+
+1. Create a Tenant listing:
+
+   * select **Other** under Non-Negotiable, enter text “TEST123”
+   * select **Other** under Offered Lease Term, enter “TEST456”
+2. View the ACTUAL listing:
+
+   * it must display `(Other: TEST123)` and `(Other: TEST456)`
+3. Edit listing:
+
+   * Acceptable Property Conditions should NOT flash all options
+   * tab should NOT scroll jump
+
+---
+
+### If it STILL doesn’t show after doing A3/A4
+
+That means your “actual listing” is not rendering from `$auction` or not the table you think.
+Then the fix is: find the show blade and check what variable it uses (`$listing`, `$auction`, `$tenantAuction`, etc.). Replace `$auction->...` accordingly.
+
+If you paste the **exact blade path** you are viewing for the “actual listing” (the URL route name or file name), I’ll rewrite A3/A4 with the exact variable name so it’s a direct drop-in without guessing.
