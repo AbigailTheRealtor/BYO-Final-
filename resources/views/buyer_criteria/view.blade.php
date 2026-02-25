@@ -241,7 +241,7 @@
                             @endif
                         </div>
                         <div class="row align-items-center desired_price_and_terms">
-                            <h5>Desired Price and Terms:</h5>
+                            <h5>Purchasing Terms:</h5>
                             @if (@$auction->get->max_price != null)
                                 <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i> Maximum
                                     Budget:
@@ -252,6 +252,16 @@
                                 $buyerFinancingData = @$auction->get->financings;
                                 $buyerFinancingArr = is_array($buyerFinancingData) ? array_filter($buyerFinancingData) : [];
                                 $buyerFinancingPills = \App\Helpers\ListingDisplayHelper::normalizeList($buyerFinancingArr, @$auction->get->financingOther);
+                                $buyerFinancingOrder = ['Assumable','Cash','Conventional','Cryptocurrency','Exchange/Trade','FHA','Jumbo','Lease Option','Lease Purchase','No-Doc','Non-QM','NFT','Non-Fungible Token (NFT)','Seller Financing','USDA','VA'];
+                                usort($buyerFinancingPills, function($a, $b) use ($buyerFinancingOrder) {
+                                    $aIdx = array_search($a, $buyerFinancingOrder);
+                                    $bIdx = array_search($b, $buyerFinancingOrder);
+                                    if ($aIdx === false && strtolower($a) === 'other') return 1;
+                                    if ($bIdx === false && strtolower($b) === 'other') return -1;
+                                    if ($aIdx === false) $aIdx = 999;
+                                    if ($bIdx === false) $bIdx = 999;
+                                    return $aIdx - $bIdx;
+                                });
                             @endphp
                             @if (!empty($buyerFinancingPills))
                                 <div class="card-header section-header">
@@ -260,12 +270,35 @@
                                 <div class="row">
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Offered Currency/Financing:
-                                    @foreach ($buyerFinancingPills as $fp)
-                                        <span class="removeBold badge bg-secondary">{{ $fp }}</span>
-                                    @endforeach
+                                    @if (count($buyerFinancingPills) === 1)
+                                        <span class="removeBold">{{ $buyerFinancingPills[0] }}</span>
+                                    @else
+                                        @foreach ($buyerFinancingPills as $fp)
+                                            <span class="removeBold badge bg-secondary">{{ $fp }}</span>
+                                        @endforeach
+                                    @endif
                                 </div>
 
                                 @php $buyerFinancingOriginal = is_array($buyerFinancingData) ? array_filter($buyerFinancingData) : []; @endphp
+
+                                @php
+                                    $conventionalLoanTypes = ['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'];
+                                    $selectedLoanTypes = array_intersect($buyerFinancingOriginal, $conventionalLoanTypes);
+                                    $hasLoanData = count($selectedLoanTypes) > 0 && (@$auction->get->pre_approved || @$auction->get->pre_approval_amount);
+                                @endphp
+                                @if ($hasLoanData)
+                                    <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">Conventional / FHA / Jumbo / VA / No-Doc / Non-QM / USDA</h6></div>
+                                    @if (@$auction->get->pre_approved)
+                                        <div class="col-md-12 col-12 pt-1 fw-bold">Buyer Pre-Approved for a Loan:
+                                            <span class="removeBold">{{ str_replace('"', '', @$auction->get->pre_approved) }}</span>
+                                        </div>
+                                    @endif
+                                    @if (@$auction->get->pre_approved === 'Yes' && @$auction->get->pre_approval_amount)
+                                        <div class="col-md-12 col-12 pt-1 fw-bold">Buyer Pre-Approval Amount:
+                                            <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->pre_approval_amount)) }}</span>
+                                        </div>
+                                    @endif
+                                @endif
 
                                 @if (in_array('Seller Financing', $buyerFinancingOriginal) && !empty(@$auction->get->sellerFinancing))
                                 @php $sfItems = array_values(array_filter(@$auction->get->sellerFinancing, fn($v) => \App\Helpers\ListingDisplayHelper::hasValue($v))); @endphp
@@ -355,11 +388,14 @@
                                 @if (in_array('Balloon Payment', $buyerFinancingOriginal))
                                 <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">Balloon Payment</h6></div>
                                 @if (@$auction->get->balloon == 'Yes' && !empty(@$auction->get->balloonpyment))
-                                    @foreach (@$auction->get->balloonpyment as $bp)
-                                        @if (\App\Helpers\ListingDisplayHelper::hasValue($bp))
+                                    @php $bpItems = array_values(array_filter(@$auction->get->balloonpyment, fn($v) => \App\Helpers\ListingDisplayHelper::hasValue($v))); @endphp
+                                    @if (count($bpItems) === 1)
+                                        <div class="col-md-12 col-12 pt-1"><span class="removeBold">{{ $bpItems[0] }}</span></div>
+                                    @else
+                                        @foreach ($bpItems as $bp)
                                         <div class="col-md-12 col-12 pt-1"><span class="badge bg-secondary">{{ $bp }}</span></div>
-                                        @endif
-                                    @endforeach
+                                        @endforeach
+                                    @endif
                                 @elseif (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->balloon))
                                     <div class="col-md-12 col-12 pt-1"><span class="removeBold">{{ @$auction->get->balloon }}</span></div>
                                 @endif
@@ -558,7 +594,7 @@
                             </div>
                         @endif
                         <div class="row align-items-center Listing Information mt-4">
-                            <h5>Desired Features:</h5>
+                            <h5>Property Preferences:</h5>
                             @php
                                 $buyerPropertyStyles = \App\Helpers\ListingDisplayHelper::normalizeListDeduped(@$auction->get->property_items);
                             @endphp
@@ -865,27 +901,35 @@
                             @endif
                         </div>
                         <div class="row align-items-center Non-Negotiable mt-4">
-                            @if (($auction->get->nonNegotiableFactors ?? $auction->get->nonNegotiableFactorsRes) != null)
+                            @php
+                                $nnParent = $auction->get->nonNegotiableFactors ?? $auction->get->nonNegotiableFactorsRes ?? null;
+                            @endphp
+                            @if ($nnParent != null)
                                 <h5>Non-Negotiable Amenities or Property Features:</h5>
-                                <div class="col-md-12 col-12  fw-bold"><i class="fa-regular fa-check-square"></i>
+                                <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i>
                                     Non-Negotiable Amenities or Property Features:
-                                    @if ($auction->get->nonNegotiableFactors != null)
-                                        <span class="badge bg-secondary removeBold">{{ @$auction->get->nonNegotiableFactors }}</span>
-                                    @elseif ($auction->get->nonNegotiableFactorsRes != null)
-                                        <span class="badge bg-secondary removeBold">{{ @$auction->get->nonNegotiableFactorsRes }}</span>
-                                    @endif
-                                    @if (($auction->get->nonNegotiableFactors || $auction->get->nonNegotiableFactorsRes) == 'Yes')
-                                    @if (is_array(@$auction->get->nonNegotiable) && @$auction->get->nonNegotiable && @$auction->get->nonNegotiable !== null)
-                                        @foreach ( @$auction->get->nonNegotiable as $item)
-                                            <span class="d-inline-block badge bg-secondary removeBold">{{ $item }}</span>
-                                        @endforeach
+                                    <span class="removeBold">{{ $nnParent }}</span>
+                                </div>
+                                @if ($nnParent == 'Yes')
+                                    @php
+                                        $nnItems = \App\Helpers\ListingDisplayHelper::normalizeListDeduped(@$auction->get->nonNegotiable, @$auction->get->nonNegotiableOther);
+                                    @endphp
+                                    @if (!empty($nnItems))
+                                        <div class="col-md-12 col-12 fw-bold ps-4">
+                                            @if (count($nnItems) === 1)
+                                                <span class="removeBold">{{ $nnItems[0] }}</span>
+                                            @else
+                                                @foreach ($nnItems as $item)
+                                                    <span class="d-inline-block badge bg-secondary removeBold">{{ $item }}</span>
+                                                @endforeach
+                                            @endif
+                                        </div>
                                     @endif
                                 @endif
-                                </div>
                             @endif
                         </div>
                         <div class="row align-items-center Buyer’s Agent Representation mt-4">
-                            <h5>Buyer’s Agent Representation:</h5>
+                            <h5>Broker Compensation & Agency Agreement Terms:</h5>
                             @if (isset($auction->get->buyerHaveAgentRepresentation) || isset($auction->get->buyerHaveAgentRepresentationRes) || isset($auction->get->buyerHaveAgentRepresentationCom))
                                 <div class="row">
                                     <div class="col-md-12">

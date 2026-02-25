@@ -146,6 +146,34 @@ class ListingDownloadController extends Controller
                 $items = ListingExportFormatter::toList($v);
                 return array_values(array_unique(array_map([ListingExportFormatter::class, 'normalizeDuplex'], $items)));
             },
+            'financings' => function($v) {
+                $items = ListingExportFormatter::toList($v);
+                $order = ['Assumable','Cash','Conventional','Cryptocurrency','Exchange/Trade','FHA','Jumbo','Lease Option','Lease Purchase','No-Doc','Non-QM','NFT','Non-Fungible Token (NFT)','Seller Financing','USDA','VA'];
+                usort($items, function($a, $b) use ($order) {
+                    $aIdx = array_search($a, $order);
+                    $bIdx = array_search($b, $order);
+                    if ($aIdx === false && strtolower($a) === 'other') return 1;
+                    if ($bIdx === false && strtolower($b) === 'other') return -1;
+                    if ($aIdx === false) $aIdx = 999;
+                    if ($bIdx === false) $bIdx = 999;
+                    return $aIdx - $bIdx;
+                });
+                return $items;
+            },
+            'offered_financing' => function($v) {
+                $items = ListingExportFormatter::toList($v);
+                $order = ['Assumable','Cash','Conventional','Cryptocurrency','Exchange/Trade','FHA','Jumbo','Lease Option','Lease Purchase','No-Doc','Non-QM','NFT','Non-Fungible Token (NFT)','Seller Financing','USDA','VA'];
+                usort($items, function($a, $b) use ($order) {
+                    $aIdx = array_search($a, $order);
+                    $bIdx = array_search($b, $order);
+                    if ($aIdx === false && strtolower($a) === 'other') return 1;
+                    if ($bIdx === false && strtolower($b) === 'other') return -1;
+                    if ($aIdx === false) $aIdx = 999;
+                    if ($bIdx === false) $bIdx = 999;
+                    return $aIdx - $bIdx;
+                });
+                return $items;
+            },
             'maximum_budget' => fn($v) => ListingExportFormatter::fmtMoney($v),
             'purchase_price' => fn($v) => ListingExportFormatter::fmtMoney($v),
             'pre_approval_amount' => fn($v) => ListingExportFormatter::fmtMoney($v),

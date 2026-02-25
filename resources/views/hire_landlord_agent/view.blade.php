@@ -318,7 +318,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         @endif
                         @if (@$auction->get->working_with_agent != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Current Representation Status with Broker?
+                            Current Representation Status with Broker:
                             <span class="removeBold">{{ @$auction->get->working_with_agent }}</span>
                         </div>
                         @endif

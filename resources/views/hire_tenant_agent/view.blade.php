@@ -699,14 +699,18 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     @endif
 
                     @php
-                        $amenityItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->non_negotiable_amenities, @$auction->get->other_non_negotiable_amenities);
+                        $amenityItems = \App\Helpers\ListingDisplayHelper::normalizeListDeduped(@$auction->get->non_negotiable_amenities, @$auction->get->other_non_negotiable_amenities);
                     @endphp
                     @if (!empty($amenityItems))
                     <div class="col-md-12 col-12 pt-2 fw-bold">
                         Non-Negotiable Amenities and Property Features:
-                        @foreach ($amenityItems as $item)
-                            <span class="removeBold badge bg-secondary">{{ $item }}</span>
-                        @endforeach
+                        @if (count($amenityItems) === 1)
+                            <span class="removeBold">{{ $amenityItems[0] }}</span>
+                        @else
+                            @foreach ($amenityItems as $item)
+                                <span class="removeBold badge bg-secondary">{{ $item }}</span>
+                            @endforeach
+                        @endif
                     </div>
                     @endif
                 </div>
@@ -722,14 +726,18 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @endif
 
                 @php
-                    $leaseTermItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->lease_for, @$auction->get->other_lease_for);
+                    $leaseTermItems = \App\Helpers\ListingDisplayHelper::normalizeListDeduped(@$auction->get->lease_for, @$auction->get->other_lease_for);
                 @endphp
                 @if (!empty($leaseTermItems))
                 <div class="col-md-12 col-12 pt-2 fw-bold">
                     Offered Lease Term:
-                    @foreach ($leaseTermItems as $ltItem)
-                        <span class="removeBold badge bg-secondary">{{ $ltItem }}</span>
-                    @endforeach
+                    @if (count($leaseTermItems) === 1)
+                        <span class="removeBold">{{ $leaseTermItems[0] }}</span>
+                    @else
+                        @foreach ($leaseTermItems as $ltItem)
+                            <span class="removeBold badge bg-secondary">{{ $ltItem }}</span>
+                        @endforeach
+                    @endif
                 </div>
                 @endif
                 @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->lease_date))
