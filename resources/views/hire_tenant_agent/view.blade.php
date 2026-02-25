@@ -496,7 +496,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </div>
                     @endif
                     @php
-                        $propertyStyleItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->property_items);
+                        $propertyStyleItems = \App\Helpers\ListingDisplayHelper::normalizeListDeduped(@$auction->get->property_items);
                     @endphp
                     @if (!empty($propertyStyleItems))
                     <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -621,7 +621,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     @if (@$auction->get->property_type === 'Residential Property' && @$auction->get->tenant_require != null)
                     <div class="col-md-12 col-12 pt-2 fw-bold">
                         Furnishings Needed:
-                        <span class="removeBold badge bg-secondary">{{ @$auction->get->tenant_require }}</span>
+                        <span class="removeBold">{{ str_replace(' and ', ', ', @$auction->get->tenant_require) }}</span>
                     </div>
                     @endif
 
@@ -783,7 +783,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @endif
                 @if (\App\Helpers\ListingDisplayHelper::isParentYes(@$auction->get->pets))
                 @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->type_of_pets))
-                <div class="col-md-12 col-12 pt-2 fw-bold"> Pet Type:
+                <div class="col-md-12 col-12 pt-2 fw-bold"> Pet Types:
                     <span class="removeBold">{{ @$auction->get->type_of_pets }}</span>
                 </div>
                 @endif
@@ -813,17 +813,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @if (@$auction->get->screening_concerns != null)
                 <div class="col-md-12 col-12 pt-2 fw-bold">
                     Screening Concerns That May Affect Rental Approval:
-                    <span class="removeBold">
-                        {{ $auction->get->screening_concerns ?? '' }}</span>
+                    <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->screening_concerns, @$auction->get->screening_concerns_explanation) }}</span>
                 </div>
-                @endif
-                @if (@$auction->get->screening_concerns == 'Yes' && @$auction->get->screening_concerns_explanation)
-                <ul>
-
-                    <li style="font-size: 16px;">
-                        {{ @$auction->get->screening_concerns_explanation != '' ? @$auction->get->screening_concerns_explanation : '' }}
-                    </li>
-                </ul>
                 @endif
 
                 <hr>
@@ -855,7 +846,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                 <hr />
                 <div class="card-header section-header">
-                    <h4 class="section-title">Broker Compensation & Agency Agreement Terms</h4>
+                    <h4 class="section-title">Broker Compensation & Agency Agreement Terms:</h4>
                 </div>
 
                 <!-- Tenant's Broker Compensation Sub-section -->

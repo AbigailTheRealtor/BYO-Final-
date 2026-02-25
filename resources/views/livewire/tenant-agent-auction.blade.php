@@ -937,7 +937,7 @@ $property_items_seller = [
 
 $property_items_buyer = [
 // Residential (alphabetical order)
-['name' => '½ Duplex', 'class' => 'residential-length'],
+['name' => '1/2 Duplex', 'class' => 'residential-length'],
 // ['name' => '1/3 Triplex', 'class' => 'residential-length'],
 // ['name' => '1/4 Quadplex', 'class' => 'residential-length'],
 ['name' => 'Condo-Hotel', 'class' => 'residential-length'],

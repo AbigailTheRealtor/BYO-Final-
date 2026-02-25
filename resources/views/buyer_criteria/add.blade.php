@@ -588,7 +588,7 @@
                                     ['name' => 'Villa', 'class' => 'residential-length', 'target' => ''],
                                     ['name' => 'Condominium', 'class' => 'residential-length', 'target' => ''],
                                     ['name' => 'Condo-Hotel', 'class' => 'residential-length', 'target' => ''],
-                                    ['name' => '½ Duplex', 'class' => 'residential-length', 'target' => ''],
+                                    ['name' => '1/2 Duplex', 'class' => 'residential-length', 'target' => ''],
                                     ['name' => 'Dock-Rackominium', 'class' => 'residential-length', 'target' => ''],
                                     ['name' => 'Farm', 'class' => 'residential-length', 'target' => ''],
                                     ['name' => 'Garage Condo', 'class' => 'residential-length', 'target' => ''],

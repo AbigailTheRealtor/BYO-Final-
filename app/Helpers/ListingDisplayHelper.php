@@ -137,6 +137,7 @@ class ListingDisplayHelper
         foreach ($list as $item) {
             $val = trim((string) $item);
             if ($val === '' || self::isPlaceholder($val)) continue;
+            if (self::isNoneNa($val)) continue;
             if (strtolower($val) === 'other') {
                 if (self::hasValue($otherText)) {
                     $result[] = trim((string) $otherText);
@@ -212,5 +213,49 @@ class ListingDisplayHelper
             return preg_replace('/\s+Property$/i', '', $val);
         }
         return $val;
+    }
+
+    public static function stripStateSuffix($value): string
+    {
+        $val = trim((string) $value);
+        return preg_replace('/,\s*[A-Z]{2}$/', '', $val);
+    }
+
+    public static function normalizeDuplex($value): string
+    {
+        return str_replace('½', '1/2', (string) $value);
+    }
+
+    public static function isNoneNa($value): bool
+    {
+        if (is_null($value) || $value === '') return true;
+        $lower = strtolower(trim((string) $value));
+        return in_array($lower, ['none', 'n/a', 'na']);
+    }
+
+    public static function normalizeListDeduped($list, $otherText = null): array
+    {
+        $items = self::normalizeList($list, $otherText);
+        $items = array_map(function($item) {
+            return self::normalizeDuplex($item);
+        }, $items);
+        return array_values(array_unique($items));
+    }
+
+    public static function stripStateSuffixList(array $items): array
+    {
+        return array_map(function($item) {
+            return self::stripStateSuffix($item);
+        }, $items);
+    }
+
+    public static function formatYesParenthetical($parentVal, $detail): string
+    {
+        $yn = self::formatYesNo($parentVal);
+        if ($yn === 'Yes' && self::hasValue($detail)) {
+            $detailStr = trim((string) $detail);
+            return 'Yes (' . $detailStr . ')';
+        }
+        return $yn;
     }
 }

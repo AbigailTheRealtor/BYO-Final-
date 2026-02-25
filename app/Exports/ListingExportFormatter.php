@@ -33,7 +33,7 @@ class ListingExportFormatter
             }
         }
         if (is_array($value)) {
-            return array_values(array_filter(array_map('trim', self::flatten($value)), fn($v) => $v !== ''));
+            return array_values(array_filter(array_map('trim', self::flatten($value)), fn($v) => $v !== '' && !self::isNoneNa($v)));
         }
         $s = trim((string)$value);
         return $s === '' ? [] : [$s];
@@ -74,7 +74,28 @@ class ListingExportFormatter
             $result[] = $otherText;
         }
 
-        return array_values(array_unique(array_filter(array_map('trim', $result), fn($v) => $v !== '')));
+        return array_values(array_unique(array_filter(array_map('trim', $result), fn($v) => $v !== '' && !self::isNoneNa($v))));
+    }
+
+    public static function isNoneNa(?string $v): bool
+    {
+        if ($v === null || $v === '') return false;
+        return in_array(strtolower(trim($v)), ['none', 'n/a', 'na']);
+    }
+
+    public static function stripStateSuffix(string $v): string
+    {
+        return trim(preg_replace('/,\s*[A-Z]{2}$/', '', $v));
+    }
+
+    public static function stripStateSuffixList(array $items): array
+    {
+        return array_map([self::class, 'stripStateSuffix'], $items);
+    }
+
+    public static function normalizeDuplex(string $v): string
+    {
+        return str_replace('½', '1/2', $v);
     }
 
     public static function fmtMoney($value): ?string

@@ -255,7 +255,7 @@
                             @endphp
                             @if (!empty($buyerFinancingPills))
                                 <div class="card-header section-header">
-                                    <h4 class="section-title">Financing Details</h4>
+                                    <h4 class="section-title">Financing Details:</h4>
                                 </div>
                                 <div class="row">
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -268,57 +268,75 @@
                                 @php $buyerFinancingOriginal = is_array($buyerFinancingData) ? array_filter($buyerFinancingData) : []; @endphp
 
                                 @if (in_array('Seller Financing', $buyerFinancingOriginal) && !empty(@$auction->get->sellerFinancing))
+                                @php $sfItems = array_values(array_filter(@$auction->get->sellerFinancing, fn($v) => \App\Helpers\ListingDisplayHelper::hasValue($v))); @endphp
                                 <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">Seller Financing Terms</h6></div>
-                                @foreach (@$auction->get->sellerFinancing as $sf)
-                                    @if (\App\Helpers\ListingDisplayHelper::hasValue($sf))
+                                @if (count($sfItems) === 1)
+                                    <div class="col-md-12 col-12 pt-1"><span class="removeBold">{{ $sfItems[0] }}</span></div>
+                                @else
+                                    @foreach ($sfItems as $sf)
                                     <div class="col-md-12 col-12 pt-1"><span class="badge bg-secondary">{{ $sf }}</span></div>
-                                    @endif
-                                @endforeach
+                                    @endforeach
+                                @endif
                                 @endif
 
                                 @if (in_array('Assumable', $buyerFinancingOriginal) && !empty(@$auction->get->assumable))
+                                @php $asItems = array_values(array_filter(@$auction->get->assumable, fn($v) => \App\Helpers\ListingDisplayHelper::hasValue($v))); @endphp
                                 <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">Assumable Terms</h6></div>
-                                @foreach (@$auction->get->assumable as $at)
-                                    @if (\App\Helpers\ListingDisplayHelper::hasValue($at))
+                                @if (count($asItems) === 1)
+                                    <div class="col-md-12 col-12 pt-1"><span class="removeBold">{{ $asItems[0] }}</span></div>
+                                @else
+                                    @foreach ($asItems as $at)
                                     <div class="col-md-12 col-12 pt-1"><span class="badge bg-secondary">{{ $at }}</span></div>
-                                    @endif
-                                @endforeach
+                                    @endforeach
+                                @endif
                                 @endif
 
                                 @if (in_array('Exchange/Trade', $buyerFinancingOriginal) && !empty(@$auction->get->trade))
+                                @php $trItems = array_values(array_filter(@$auction->get->trade, fn($v) => \App\Helpers\ListingDisplayHelper::hasValue($v))); @endphp
                                 <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">Exchange/Trade Terms</h6></div>
-                                @foreach (@$auction->get->trade as $tr)
-                                    @if (\App\Helpers\ListingDisplayHelper::hasValue($tr))
+                                @if (count($trItems) === 1)
+                                    <div class="col-md-12 col-12 pt-1"><span class="removeBold">{{ $trItems[0] }}</span></div>
+                                @else
+                                    @foreach ($trItems as $tr)
                                     <div class="col-md-12 col-12 pt-1"><span class="badge bg-secondary">{{ $tr }}</span></div>
-                                    @endif
-                                @endforeach
+                                    @endforeach
+                                @endif
                                 @endif
 
                                 @if ((in_array('Lease Option', $buyerFinancingOriginal) || in_array('Lease Purchase', $buyerFinancingOriginal)) && !empty(@$auction->get->leaseOptions))
+                                @php $loItems = array_values(array_filter(@$auction->get->leaseOptions, fn($v) => \App\Helpers\ListingDisplayHelper::hasValue($v))); @endphp
                                 <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">Lease Option/Purchase Terms</h6></div>
-                                @foreach (@$auction->get->leaseOptions as $lo)
-                                    @if (\App\Helpers\ListingDisplayHelper::hasValue($lo))
+                                @if (count($loItems) === 1)
+                                    <div class="col-md-12 col-12 pt-1"><span class="removeBold">{{ $loItems[0] }}</span></div>
+                                @else
+                                    @foreach ($loItems as $lo)
                                     <div class="col-md-12 col-12 pt-1"><span class="badge bg-secondary">{{ $lo }}</span></div>
-                                    @endif
-                                @endforeach
+                                    @endforeach
+                                @endif
                                 @endif
 
                                 @if (in_array('Cryptocurrency', $buyerFinancingOriginal) && !empty(@$auction->get->cryptocurrency))
+                                @php $crItems = array_values(array_filter(@$auction->get->cryptocurrency, fn($v) => \App\Helpers\ListingDisplayHelper::hasValue($v))); @endphp
                                 <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">Cryptocurrency Terms</h6></div>
-                                @foreach (@$auction->get->cryptocurrency as $cr)
-                                    @if (\App\Helpers\ListingDisplayHelper::hasValue($cr))
+                                @if (count($crItems) === 1)
+                                    <div class="col-md-12 col-12 pt-1"><span class="removeBold">{{ $crItems[0] }}</span></div>
+                                @else
+                                    @foreach ($crItems as $cr)
                                     <div class="col-md-12 col-12 pt-1"><span class="badge bg-secondary">{{ $cr }}</span></div>
-                                    @endif
-                                @endforeach
+                                    @endforeach
+                                @endif
                                 @endif
 
                                 @if (in_array('NFT', $buyerFinancingOriginal) && !empty(@$auction->get->nft))
+                                @php $nfItems = array_values(array_filter(@$auction->get->nft, fn($v) => \App\Helpers\ListingDisplayHelper::hasValue($v))); @endphp
                                 <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">NFT Terms</h6></div>
-                                @foreach (array_filter(@$auction->get->nft) as $nf)
-                                    @if (\App\Helpers\ListingDisplayHelper::hasValue($nf))
+                                @if (count($nfItems) === 1)
+                                    <div class="col-md-12 col-12 pt-1"><span class="removeBold">{{ $nfItems[0] }}</span></div>
+                                @else
+                                    @foreach ($nfItems as $nf)
                                     <div class="col-md-12 col-12 pt-1"><span class="badge bg-secondary">{{ $nf }}</span></div>
-                                    @endif
-                                @endforeach
+                                    @endforeach
+                                @endif
                                 @endif
 
                                 @if (in_array('Prepayment Penalty', $buyerFinancingOriginal))
@@ -432,7 +450,7 @@
                                 <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i> Cities:
                                     @if (gettype(@$auction->get->cities) == 'array')
                                         @foreach (@$auction->get->cities as $city)
-                                            <span class="badge bg-secondary removeBold">{{ $city }}</span>
+                                            <span class="badge bg-secondary removeBold">{{ \App\Helpers\ListingDisplayHelper::stripStateSuffix($city) }}</span>
                                         @endforeach
                                     @endif
                                 </div>
@@ -441,7 +459,7 @@
                                 <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i> Counties:
                                     @if (gettype(@$auction->get->counties) == 'array')
                                         @foreach (@$auction->get->counties as $county)
-                                            <span class="badge bg-secondary removeBold">{{ $county }}</span>
+                                            <span class="badge bg-secondary removeBold">{{ \App\Helpers\ListingDisplayHelper::stripStateSuffix($county) }}</span>
                                         @endforeach
                                     @endif
                                 </div>
@@ -542,7 +560,7 @@
                         <div class="row align-items-center Listing Information mt-4">
                             <h5>Desired Features:</h5>
                             @php
-                                $buyerPropertyStyles = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->property_items);
+                                $buyerPropertyStyles = \App\Helpers\ListingDisplayHelper::normalizeListDeduped(@$auction->get->property_items);
                             @endphp
                             @if (!empty($buyerPropertyStyles))
                                 <div class="col-md-12 col-12 removeBold"><i class="fa-regular fa-check-square"></i>
@@ -550,9 +568,7 @@
                                     @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->property_type))
                                         <span class="removeBold">({{ \App\Helpers\ListingDisplayHelper::normalizePropertyType(@$auction->get->property_type) }})</span>
                                     @endif
-                                    @foreach ($buyerPropertyStyles as $psItem)
-                                        <span class="badge bg-secondary removeBold">{{ $psItem }}</span>
-                                    @endforeach
+                                    <span class="removeBold">{{ implode(', ', $buyerPropertyStyles) }}</span>
                                 </div>
                             @endif
                             @php
@@ -568,7 +584,7 @@
                             @endif
                             @if ($auction->get->property_type !== 'Vacant Land')
                                 @php
-                                    $conditionItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->prop_condition, @$auction->get->propConditionOther);
+                                    $conditionItems = \App\Helpers\ListingDisplayHelper::normalizeListDeduped(@$auction->get->prop_condition, @$auction->get->propConditionOther);
                                 @endphp
                                 @if (!empty($conditionItems))
                                 <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i>
@@ -806,7 +822,7 @@
                                 @if (\App\Helpers\ListingDisplayHelper::isParentYes(@$auction->get->petOptions))
                                     @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->petsType))
                                         <div class="col-md-12 col-12 fw-bold">
-                                            Pet Type:
+                                            Pet Types:
                                             <span class="removeBold">{{ @$auction->get->petsType }}</span>
                                         </div>
                                     @endif

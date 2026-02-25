@@ -134,6 +134,18 @@ class ListingDownloadController extends Controller
     {
         return [
             'property_type' => fn($v) => ListingExportFormatter::normalizePropertyType($v),
+            'cities' => function($v) {
+                $items = ListingExportFormatter::toList($v);
+                return ListingExportFormatter::stripStateSuffixList($items);
+            },
+            'counties' => function($v) {
+                $items = ListingExportFormatter::toList($v);
+                return ListingExportFormatter::stripStateSuffixList($items);
+            },
+            'property_items' => function($v) {
+                $items = ListingExportFormatter::toList($v);
+                return array_values(array_unique(array_map([ListingExportFormatter::class, 'normalizeDuplex'], $items)));
+            },
             'maximum_budget' => fn($v) => ListingExportFormatter::fmtMoney($v),
             'purchase_price' => fn($v) => ListingExportFormatter::fmtMoney($v),
             'pre_approval_amount' => fn($v) => ListingExportFormatter::fmtMoney($v),

@@ -740,7 +740,7 @@
                                 @if (\App\Helpers\ListingDisplayHelper::isParentYes(@$auction->get->pets))
                                     @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->type_of_pets))
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Pet Type:
+                                        Pet Types:
                                         <span class="removeBold">{{ @$auction->get->type_of_pets }}</span>
                                     </div>
                                     @endif
