@@ -1212,7 +1212,7 @@
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Option Fee Credit Toward Purchase Price:
-                                        <span class="removeBold badge bg-secondary">{{ $displayFeeCredit }}</span>
+                                        <span class="removeBold">{{ $displayFeeCredit }}</span>
                                     </div>
                                 @endif
 
@@ -1253,7 +1253,7 @@
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Maintenance / Repair Responsibility:
-                                        <span class="removeBold badge bg-secondary">{{ $displayMaintenance }}</span>
+                                        <span class="removeBold">{{ $displayMaintenance }}</span>
                                     </div>
                                 @endif
 
