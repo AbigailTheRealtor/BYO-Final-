@@ -76,6 +76,7 @@ class SellerFieldMap
                 'Breed of Pets' => 'breed_of_pets',
                 'Type of Pets' => 'type_of_pets',
                 'Weight of Pets' => 'weight_of_pets',
+                'Number of Occupants' => 'number_occupant',
             ],
 
             'Sale Terms' => [
@@ -98,6 +99,8 @@ class SellerFieldMap
                 'Credit Score Rating' => 'credit_scroe_rating',
                 'Prior Eviction' => 'prior_eviction',
                 'Eviction Explanation' => 'eviction_explanation',
+                'Prior Felony' => 'prior_felony',
+                'Prior Felony Explanation' => 'prior_felony_explanation',
             ],
 
             'Down Payment' => [
@@ -206,6 +209,9 @@ class SellerFieldMap
                 'Marketing: Market Groups Fee' => 'market_groups_fee',
                 'Marketing: Marketing Materials Fee' => 'marketing_materials_fee',
                 'Marketing: MLS Filter Fee' => 'mls_filter_fee',
+                'Marketing: Off-Market Search Fee' => 'off_market_search_fee',
+                'Marketing: Promote Social' => 'promote_social',
+                'Marketing: Promote Social Fee' => 'promote_social_fee',
                 'Marketing: Neighborhood Marketing Fee' => 'neighborhood_marketing_fee',
                 'Marketing: Neighborhood Materials Fee' => 'neighborhood_materials_fee',
                 'Flat Fee Services' => 'flat_fee_services',
@@ -298,6 +304,9 @@ class SellerFieldMap
                 'Time Zone' => 'meeting_details_time_zone',
                 'Meeting Instructions' => 'meeting_details_instructions',
                 'Additional Meeting Details' => 'meeting_details_additional_details',
+                'Service Completion Date' => 'service_completion_date',
+                'Service Completion Time' => 'service_completion_time',
+                'Service Time Zone' => 'service_time_zone',
             ],
 
             'Contact Information' => [
@@ -317,6 +326,7 @@ class SellerFieldMap
             'assets' => 'assets_other',
             'sale_provision' => 'sale_provision_other',
             'offered_financing' => 'other_financing',
+            'services' => 'other_services',
             'exchange_item' => 'other_exchange_item',
             'bathrooms' => 'other_bathrooms',
             'bedrooms' => 'other_bedrooms',

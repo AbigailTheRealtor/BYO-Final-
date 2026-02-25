@@ -989,6 +989,16 @@
 
                         @php
                             $financingPills = \App\Helpers\ListingDisplayHelper::normalizeList($financingArray, $displayOtherFinancing);
+                            $financingDisplayOrder = ['Assumable','Cash','Conventional','FHA','Jumbo','VA','No-Doc','Non-QM','USDA','Cryptocurrency','Exchange/Trade','Lease Option','Lease Purchase','Non-Fungible Token (NFT)','Seller Financing'];
+                            usort($financingPills, function($a, $b) use ($financingDisplayOrder) {
+                                $aIdx = array_search($a, $financingDisplayOrder);
+                                $bIdx = array_search($b, $financingDisplayOrder);
+                                if ($aIdx === false && strtolower($a) === 'other') return 1;
+                                if ($bIdx === false && strtolower($b) === 'other') return -1;
+                                if ($aIdx === false) $aIdx = 999;
+                                if ($bIdx === false) $bIdx = 999;
+                                return $aIdx - $bIdx;
+                            });
                         @endphp
                         @if (!empty($financingPills))
                             <hr>
@@ -999,9 +1009,13 @@
 
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Offered Financing/Currency:
-                                @foreach ($financingPills as $fp)
-                                    <span class="removeBold badge bg-secondary">{{ $fp }}</span>
-                                @endforeach
+                                @if (count($financingPills) === 1)
+                                    <span class="removeBold">{{ $financingPills[0] }}</span>
+                                @else
+                                    @foreach ($financingPills as $fp)
+                                        <span class="removeBold badge bg-secondary">{{ $fp }}</span>
+                                    @endforeach
+                                @endif
                             </div>
 
                             @php

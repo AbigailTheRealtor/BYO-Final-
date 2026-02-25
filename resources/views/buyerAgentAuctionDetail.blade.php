@@ -1009,14 +1009,7 @@
                                 @if (@$auction->get->pre_approved)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Buyer Pre-Approved for a Loan:
-                                        <span class="removeBold">{{ str_replace('"', '', @$auction->get->pre_approved) }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->pre_approved === 'Yes' && @$auction->get->pre_approval_amount)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Buyer Pre-Approval Amount:
-                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->pre_approval_amount)) }}</span>
+                                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->pre_approved, @$auction->get->pre_approval_amount ? '$' . number_format((float) str_replace(',', '', @$auction->get->pre_approval_amount)) : null) }}</span>
                                     </div>
                                 @endif
                             @endif
@@ -1129,22 +1122,11 @@
                                     </div>
                                 @endif
 
-                                {{-- 4. Offered Option Fee --}}
+                                {{-- 4. Offered Option Fee (inline with amount) --}}
                                 @if (@$auction->get->has_option_fee)
-                                    @php
-                                        $displayOptionFee = str_replace('"', '', @$auction->get->has_option_fee);
-                                    @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Offered Option Fee:
-                                        <span class="removeBold badge bg-secondary">{{ $displayOptionFee }}</span>
-                                    </div>
-                                @endif
-
-                                {{-- 4a. Option Fee Amount (conditional) --}}
-                                @if (@$auction->get->has_option_fee === 'Yes' && @$auction->get->option_fee_amount)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Option Fee Amount:
-                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->option_fee_amount)) }}</span>
+                                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->has_option_fee, @$auction->get->option_fee_amount ? '$' . number_format((float) str_replace(',', '', @$auction->get->option_fee_amount)) : null) }}</span>
                                     </div>
                                 @endif
 
@@ -1241,14 +1223,11 @@
                                     </div>
                                 @endif
 
-                                {{-- 4. Rent Credit Toward Purchase Price --}}
+                                {{-- 4. Rent Credit Toward Purchase Price (inline with amount) --}}
                                 @if (@$auction->get->lease_purchase_rent_credit)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Rent Credit Toward Purchase Price:
-                                        <span class="removeBold badge bg-secondary">{{ @$auction->get->lease_purchase_rent_credit }}</span>
-                                        @if (in_array(@$auction->get->lease_purchase_rent_credit, ['Yes', 'Partial']) && @$auction->get->lease_purchase_rent_credit_amount)
-                                            <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->lease_purchase_rent_credit_amount)) }}</span>
-                                        @endif
+                                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->lease_purchase_rent_credit, in_array(@$auction->get->lease_purchase_rent_credit, ['Yes', 'Partial']) && @$auction->get->lease_purchase_rent_credit_amount ? '$' . number_format((float) str_replace(',', '', @$auction->get->lease_purchase_rent_credit_amount)) : null) }}</span>
                                     </div>
                                 @endif
 
@@ -1483,41 +1462,22 @@
                                     </div>
                                 @endif
 
+                                {{-- Prepayment Penalty (inline with amount) --}}
                                 @if (@$auction->get->prepayment_penalty)
-                                    @php
-                                        $displayPrepayment = str_replace('"', '', @$auction->get->prepayment_penalty);
-                                    @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Prepayment Penalty:
-                                        <span class="removeBold badge bg-secondary">{{ $displayPrepayment }}</span>
+                                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->prepayment_penalty, @$auction->get->prepayment_penalty_amount ? '$' . number_format((float) str_replace(',', '', @$auction->get->prepayment_penalty_amount)) : null) }}</span>
                                     </div>
                                 @endif
 
-                                @if (@$auction->get->prepayment_penalty === 'Yes' && @$auction->get->prepayment_penalty_amount)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Prepayment Penalty Amount:
-                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->prepayment_penalty_amount)) }}</span>
-                                    </div>
-                                @endif
-
+                                {{-- Balloon Payment (inline with amount) --}}
                                 @if (@$auction->get->balloon_payment)
-                                    @php
-                                        $displayBalloon = str_replace('"', '', @$auction->get->balloon_payment);
-                                    @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Balloon Payment:
-                                        <span class="removeBold badge bg-secondary">{{ $displayBalloon }}</span>
+                                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->balloon_payment, @$auction->get->balloon_payment_amount ? '$' . number_format((float) str_replace(',', '', @$auction->get->balloon_payment_amount)) : null) }}</span>
                                     </div>
-                                @endif
 
                                 @if (@$auction->get->balloon_payment === 'Yes')
-                                    @if (@$auction->get->balloon_payment_amount)
-                                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            Balloon Payment Amount:
-                                            <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->balloon_payment_amount)) }}</span>
-                                        </div>
-                                    @endif
-
                                     @if (@$auction->get->balloon_payment_date)
                                         @php
                                             $displayBalloonDate = str_replace('"', '', @$auction->get->balloon_payment_date);

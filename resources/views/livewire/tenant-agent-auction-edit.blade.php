@@ -1369,15 +1369,6 @@
             'description' => 'Uses a traditional mortgage that meets standard underwriting guidelines.',
         ],
         [
-            'name' => 'Cryptocurrency',
-            'description' =>
-                'Uses digital currency (e.g., Bitcoin or Ethereum) as full or partial consideration, subject to Seller acceptance.',
-        ],
-        [
-            'name' => 'Exchange/Trade',
-            'description' => 'Includes another asset as part of the purchase consideration in a trade.',
-        ],
-        [
             'name' => 'FHA',
             'description' =>
                 'Uses a loan backed by the Federal Housing Administration, typically requiring the property to meet condition standards.',
@@ -1386,6 +1377,35 @@
             'name' => 'Jumbo',
             'description' =>
                 'Uses a loan that exceeds conforming loan limits and often requires stricter borrower qualifications.',
+        ],
+        [
+            'name' => 'VA',
+            'description' =>
+                'Uses a VA-backed loan available to eligible veterans and active-duty service members.',
+        ],
+        [
+            'name' => 'No-Doc',
+            'description' =>
+                'Uses a loan requiring limited or no income documentation.',
+        ],
+        [
+            'name' => 'Non-QM',
+            'description' =>
+                'Uses a Non-Qualified Mortgage that allows alternative income verification methods.',
+        ],
+        [
+            'name' => 'USDA',
+            'description' =>
+                'Uses a USDA-backed loan for eligible rural properties and qualifying buyers.',
+        ],
+        [
+            'name' => 'Cryptocurrency',
+            'description' =>
+                'Uses digital currency (e.g., Bitcoin or Ethereum) as full or partial consideration, subject to Seller acceptance.',
+        ],
+        [
+            'name' => 'Exchange/Trade',
+            'description' => 'Includes another asset as part of the purchase consideration in a trade.',
         ],
         [
             'name' => 'Lease Option',
@@ -1403,28 +1423,8 @@
                 'Uses a verified digital asset as full or partial consideration, subject to Seller approval.',
         ],
         [
-            'name' => 'No-Doc',
-            'description' =>
-                'Uses a loan requiring limited or no income documentation.',
-        ],
-        [
-            'name' => 'Non-QM',
-            'description' =>
-                'Uses a Non-Qualified Mortgage that allows alternative income verification methods.',
-        ],
-        [
             'name' => 'Seller Financing',
             'description' => 'Purchase price is financed in whole or in part directly by the Seller.',
-        ],
-        [
-            'name' => 'USDA',
-            'description' =>
-                'Uses a USDA-backed loan for eligible rural properties and qualifying buyers.',
-        ],
-        [
-            'name' => 'VA',
-            'description' =>
-                'Uses a VA-backed loan available to eligible veterans and active-duty service members.',
         ],
         [
             'name' => 'Other',

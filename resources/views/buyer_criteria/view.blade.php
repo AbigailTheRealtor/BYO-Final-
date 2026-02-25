@@ -290,12 +290,7 @@
                                     <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">Conventional / FHA / Jumbo / VA / No-Doc / Non-QM / USDA</h6></div>
                                     @if (@$auction->get->pre_approved)
                                         <div class="col-md-12 col-12 pt-1 fw-bold">Buyer Pre-Approved for a Loan:
-                                            <span class="removeBold">{{ str_replace('"', '', @$auction->get->pre_approved) }}</span>
-                                        </div>
-                                    @endif
-                                    @if (@$auction->get->pre_approved === 'Yes' && @$auction->get->pre_approval_amount)
-                                        <div class="col-md-12 col-12 pt-1 fw-bold">Buyer Pre-Approval Amount:
-                                            <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->pre_approval_amount)) }}</span>
+                                            <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->pre_approved, @$auction->get->pre_approval_amount ? '$' . number_format((float) str_replace(',', '', @$auction->get->pre_approval_amount)) : null) }}</span>
                                         </div>
                                     @endif
                                 @endif

@@ -19,6 +19,7 @@ class BuyerFieldMap
             ],
 
             'Location' => [
+                'Property Address' => 'address',
                 'Acceptable Cities' => 'cities',
                 'Acceptable Counties' => 'counties',
                 'State' => 'state',
@@ -69,6 +70,8 @@ class BuyerFieldMap
                 'Breed of Pets' => 'breed_of_pets',
                 'Type of Pets' => 'type_of_pets',
                 'Weight of Pets' => 'weight_of_pets',
+                'Monthly Income' => 'monthly_income',
+                'Number of Occupants' => 'number_occupant',
             ],
 
             'Sale Terms' => [
@@ -90,6 +93,8 @@ class BuyerFieldMap
                 'Credit Score Rating' => 'credit_scroe_rating',
                 'Prior Eviction' => 'prior_eviction',
                 'Eviction Explanation' => 'eviction_explanation',
+                'Prior Felony' => 'prior_felony',
+                'Prior Felony Explanation' => 'prior_felony_explanation',
             ],
 
             'Down Payment' => [
@@ -203,12 +208,21 @@ class BuyerFieldMap
                 'Marketing: Market Groups' => 'market_groups',
                 'Marketing: Market Groups Fee' => 'market_groups_fee',
                 'Marketing: Marketing Materials Fee' => 'marketing_materials_fee',
+                'Marketing: MLS Filter Fee' => 'mls_filter_fee',
+                'Marketing: Off-Market Search Fee' => 'off_market_search_fee',
+                'Marketing: Promote Social' => 'promote_social',
+                'Marketing: Promote Social Fee' => 'promote_social_fee',
+                'List Criteria' => 'list_criteria',
+                'List Criteria Fee' => 'list_criteria_fee',
                 'Flat Fee Services' => 'flat_fee_services',
                 'Schedule Showings' => 'schedule_showings',
                 'Schedule Showings Fee' => 'schedule_showings_fee',
+                'Number of Showings to Schedule' => 'number_of_showings_to_schedule',
                 'Attend Showings' => 'attend_showings',
+                'Number of Showings to Attend' => 'number_of_showings_to_attend',
                 'Attend Showings Fee' => 'attend_showings_fee',
                 'Provide Virtual Tours' => 'provide_virtual_tours',
+                'Number of Virtual Tours' => 'number_of_virtual_tours',
                 'Virtual Tours Fee' => 'virtual_tours_fee',
                 'Assist with Application' => 'assist_application',
                 'Assist Application Fee' => 'assist_application_fee',
@@ -233,6 +247,9 @@ class BuyerFieldMap
                 'Neighborhood Materials Fee' => 'neighborhood_materials_fee',
                 'Total Marketing Fee' => 'total_marketing_fee',
                 'Total Flat Fee' => 'total_flat_fee',
+                'Staging Duration' => 'staging_duration',
+                'Open House Count' => 'open_house_count',
+                'Virtual Showings Count' => 'virtual_showings_count',
             ],
 
             'Broker Compensation & Agency Agreement' => [
@@ -255,6 +272,8 @@ class BuyerFieldMap
                 'Purchase Fee (Flat)' => 'purchase_fee_flat',
                 'Purchase Fee % Combo' => 'purchase_fee_percentage_combo',
                 'Purchase Fee Flat Combo' => 'purchase_fee_flat_combo',
+                'Purchase Fee Flat (Exercised)' => 'purchase_fee_flat_exercised',
+                'Purchase Price (Commercial)' => 'purchase_pice_commercial',
                 'Purchase Fee Other' => 'purchase_fee_other',
                 'Lease Option Fee Type' => 'lease_option_fee_type',
                 'Lease Option Fee (Flat)' => 'lease_option_fee_flat',
@@ -295,6 +314,9 @@ class BuyerFieldMap
                 'Time Zone' => 'meeting_details_time_zone',
                 'Meeting Instructions' => 'meeting_details_instructions',
                 'Additional Meeting Details' => 'meeting_details_additional_details',
+                'Service Completion Date' => 'service_completion_date',
+                'Service Completion Time' => 'service_completion_time',
+                'Service Time Zone' => 'service_time_zone',
             ],
 
             'Contact Information' => [
@@ -315,6 +337,7 @@ class BuyerFieldMap
             'assets' => 'assets_other',
             'sale_provision' => 'sale_provision_other',
             'offered_financing' => 'other_financing',
+            'services' => 'other_services',
             'exchange_item' => 'other_exchange_item',
             'bathrooms' => 'other_bathrooms',
             'bedrooms' => 'other_bedrooms',
