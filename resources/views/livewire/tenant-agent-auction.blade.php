@@ -2460,20 +2460,10 @@ $lease_types = [
             safeLivewireSet('property_items', selectedValues);
         });
 
-        // Reinitialize Select2 after Livewire update
         Livewire.hook('message.processed', (message, component) => {
-            $('#property_items').select2({
-                placeholder: "Select",
-                allowClear: true,
-            });
-        });
-
-        // Initialize with any existing values
-        Livewire.hook('component.initialized', (component) => {
-            $('#property_items').select2({
-                placeholder: "Select",
-                allowClear: true,
-            });
+            if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
+                $('#property_items').select2({ placeholder: "Select", allowClear: true });
+            }
         });
 
 
@@ -2654,20 +2644,10 @@ $lease_types = [
             safeLivewireSet('credit_scroe_rating', selectedValues);
         });
 
-        // Reinitialize Select2 after Livewire update
         Livewire.hook('message.processed', (message, component) => {
-            $('#credit_scroe_rating').select2({
-                placeholder: "Select credit score rating(s) ",
-                allowClear: true,
-            });
-        });
-
-        // Initialize with any existing values
-        Livewire.hook('component.initialized', (component) => {
-            $('#credit_scroe_rating').select2({
-                placeholder: "Select credit score rating(s)",
-                allowClear: true,
-            });
+            if ($('#credit_scroe_rating').length && !$('#credit_scroe_rating').hasClass('select2-hidden-accessible')) {
+                $('#credit_scroe_rating').select2({ placeholder: "Select credit score rating(s)", allowClear: true });
+            }
         });
         // Initialize Select2 non_negotiable_amenities
         $('#non_negotiable_amenities')
@@ -2892,20 +2872,10 @@ $lease_types = [
             });
         }
 
-        // Re-initialize Select2 after Livewire updates
         Livewire.hook('message.processed', () => {
-            // Destroy Select2 to avoid duplication
-            if ($('#view_preference').hasClass('select2-hidden-accessible')) {
-                $('#view_preference').select2('destroy');
+            if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
+                initSelect2();
             }
-
-            // Reinitialize Select2
-            initSelect2();
-
-            // Sync selected values from Livewire to Select2
-            let selectedValues = window.livewire.find(component => component.serverMemo.data.view_preference)
-                ?.serverMemo.data.view_preference || [];
-            $('#view_preference').val(selectedValues).trigger('change');
         });
 
         // Initialize Select2 on load
@@ -2942,31 +2912,19 @@ $lease_types = [
             }
         });
 
-        // Reinitialize Select2 and check for "Other" on Livewire updates
         Livewire.hook('message.processed', () => {
-            const currentValues = $('#garage_parking_spaces_option').val();
-
-            // Reinitialize the Select2 dropdown
-            if ($('#garage_parking_spaces_option').hasClass('select2-hidden-accessible')) {
-                $('#garage_parking_spaces_option').select2('destroy');
+            if ($('#garage_parking_spaces_option').length && !$('#garage_parking_spaces_option').hasClass('select2-hidden-accessible')) {
+                $('#garage_parking_spaces_option').select2({
+                    placeholder: "Select Garage/Parking Features",
+                    allowClear: true,
+                    width: '100%',
+                });
             }
-
-            $('#garage_parking_spaces_option').select2({
-                placeholder: "Select Garage/Parking Features",
-                allowClear: true,
-                width: '100%',
-            });
-
-            // Restore selected values
-            if (currentValues) {
-                $('#garage_parking_spaces_option').val(currentValues).trigger('change');
-            }
-
-            // Ensure "Other" field visibility matches the current selection
-            if (currentValues && currentValues.includes('Other')) {
-                $('#other_parking_space_wrapper').show(); // Show "Other" input
+            var currentValues = $('#garage_parking_spaces_option').val() || [];
+            if (currentValues.includes('Other')) {
+                $('#other_parking_space_wrapper').show();
             } else {
-                $('#other_parking_space_wrapper').hide(); // Hide "Other" input
+                $('#other_parking_space_wrapper').hide();
             }
         });
 
