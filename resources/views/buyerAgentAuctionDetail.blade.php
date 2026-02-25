@@ -427,7 +427,7 @@
                                     @if (@$auction->get->property_type != null)
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
                                             Acceptable Property Type:
-                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->property_type }}</span>
+                                            <span class="removeBold">{{ @$auction->get->property_type }}</span>
                                         </div>
                                     @endif
 
@@ -950,150 +950,7 @@
                                 </div>
                             @endif
 
-                            @php
-                                $loanTypes = ['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'];
-                                $selectedLoanTypes = array_intersect($financingArray, $loanTypes);
-                                $hasAnyLoanType = count($selectedLoanTypes) > 0;
-                            @endphp
-                            @if ($hasAnyLoanType)
-                                <div class="col-12 mt-3 mb-1">
-                                    <h6 class="financing-subsection-header">Conventional / FHA / Jumbo / VA / No-Doc / Non-QM / USDA</h6>
-                                </div>
-                                @if (@$auction->get->pre_approved)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Buyer Pre-Approved for a Loan:
-                                        <span class="removeBold">{{ str_replace('"', '', @$auction->get->pre_approved) }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->pre_approved === 'Yes' && @$auction->get->pre_approval_amount)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Buyer Pre-Approval Amount:
-                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->pre_approval_amount)) }}</span>
-                                    </div>
-                                @endif
-                            @endif
-
-                            <!-- Seller Financing Details -->
-                            @if (in_array('Seller Financing', $financingArray) && $hasSellerFinancingData)
-                                <div class="col-12 mt-3 mb-1">
-                                    <h6 class="financing-subsection-header">Seller Financing Terms</h6>
-                                </div>
-                                @if (@$auction->get->purchase_price)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Desired Purchase Price:
-                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->purchase_price)) }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->down_payment_amount)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Desired Down Payment:
-                                        <span class="removeBold">{{ @$auction->get->down_payment_type === '%' ? '' : '$' }}{{ number_format((float) str_replace(',', '', @$auction->get->down_payment_amount)) }}{{ @$auction->get->down_payment_type === '%' ? '%' : '' }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->seller_financing_amount)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Desired Seller Financing Amount:
-                                        <span class="removeBold">{{ @$auction->get->seller_financing_type === '%' ? '' : '$' }}{{ number_format((float) str_replace(',', '', @$auction->get->seller_financing_amount)) }}{{ @$auction->get->seller_financing_type === '%' ? '%' : '' }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->interest_rate)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Desired Interest Rate:
-                                        <span class="removeBold">{{ @$auction->get->interest_rate }}%</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->loan_duration)
-                                    @php
-                                        $displayLoanDuration = str_replace('"', '', @$auction->get->loan_duration);
-                                    @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Desired Loan Duration:
-                                        <span class="removeBold">{{ $displayLoanDuration }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->prepayment_penalty)
-                                    @php
-                                        $displayPrepayment = str_replace('"', '', @$auction->get->prepayment_penalty);
-                                    @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Prepayment Penalty:
-                                        <span class="removeBold badge bg-secondary">{{ $displayPrepayment }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->prepayment_penalty === 'Yes' && @$auction->get->prepayment_penalty_amount)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Prepayment Penalty Amount:
-                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->prepayment_penalty_amount)) }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->balloon_payment)
-                                    @php
-                                        $displayBalloon = str_replace('"', '', @$auction->get->balloon_payment);
-                                    @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Balloon Payment:
-                                        <span class="removeBold badge bg-secondary">{{ $displayBalloon }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->balloon_payment === 'Yes')
-                                    @if (@$auction->get->balloon_payment_amount)
-                                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            Balloon Payment Amount:
-                                            <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->balloon_payment_amount)) }}</span>
-                                        </div>
-                                    @endif
-
-                                    @if (@$auction->get->balloon_payment_date)
-                                        @php
-                                            $displayBalloonDate = str_replace('"', '', @$auction->get->balloon_payment_date);
-                                        @endphp
-                                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                                            Balloon Payment Due Date:
-                                            <span class="removeBold">{{ $displayBalloonDate }}</span>
-                                        </div>
-                                    @endif
-                                @endif
-
-                                @if (@$auction->get->seller_amortization_type)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Amortization Type:
-                                        @if (@$auction->get->seller_amortization_type === 'Other' && @$auction->get->seller_amortization_other)
-                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->seller_amortization_other }}</span>
-                                        @else
-                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->seller_amortization_type }}</span>
-                                        @endif
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->seller_payment_frequency)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Payment Frequency:
-                                        @if (@$auction->get->seller_payment_frequency === 'Other' && @$auction->get->seller_payment_frequency_other)
-                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->seller_payment_frequency_other }}</span>
-                                        @else
-                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->seller_payment_frequency }}</span>
-                                        @endif
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->seller_late_fee_amount)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Late Payment Fee:
-                                        <span class="removeBold">{{ @$auction->get->seller_late_fee_amount }}</span>
-                                    </div>
-                                @endif
-                            @endif
-
-                            <!-- Assumable Financing Details - ONLY SHOW IF offered_financing IS "Assumable" -->
+                            <!-- Assumable Financing Details -->
                             @if (in_array('Assumable', $financingArray) && $hasAssumableData)
                                 <div class="col-12 mt-3 mb-1">
                                     <h6 class="financing-subsection-header">Assumable Terms</h6>
@@ -1136,6 +993,30 @@
                                         @else
                                             <span class="removeBold">${{ number_format((float) $gapValue) }}</span>
                                         @endif
+                                    </div>
+                                @endif
+                            @endif
+
+                            @php
+                                $loanTypes = ['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'];
+                                $selectedLoanTypes = array_intersect($financingArray, $loanTypes);
+                                $hasAnyLoanType = count($selectedLoanTypes) > 0;
+                            @endphp
+                            @if ($hasAnyLoanType)
+                                <div class="col-12 mt-3 mb-1">
+                                    <h6 class="financing-subsection-header">Conventional / FHA / Jumbo / VA / No-Doc / Non-QM / USDA</h6>
+                                </div>
+                                @if (@$auction->get->pre_approved)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Buyer Pre-Approved for a Loan:
+                                        <span class="removeBold">{{ str_replace('"', '', @$auction->get->pre_approved) }}</span>
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->pre_approved === 'Yes' && @$auction->get->pre_approval_amount)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Buyer Pre-Approval Amount:
+                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->pre_approval_amount)) }}</span>
                                     </div>
                                 @endif
                             @endif
@@ -1555,6 +1436,125 @@
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Transaction Fees Responsibility (Gas Fees):
                                         <span class="removeBold badge bg-secondary">{{ $displayNFTGasFees }}</span>
+                                    </div>
+                                @endif
+                            @endif
+
+                            <!-- Seller Financing Details -->
+                            @if (in_array('Seller Financing', $financingArray) && $hasSellerFinancingData)
+                                <div class="col-12 mt-3 mb-1">
+                                    <h6 class="financing-subsection-header">Seller Financing Terms</h6>
+                                </div>
+                                @if (@$auction->get->purchase_price)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Desired Purchase Price:
+                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->purchase_price)) }}</span>
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->down_payment_amount)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Desired Down Payment:
+                                        <span class="removeBold">{{ @$auction->get->down_payment_type === '%' ? '' : '$' }}{{ number_format((float) str_replace(',', '', @$auction->get->down_payment_amount)) }}{{ @$auction->get->down_payment_type === '%' ? '%' : '' }}</span>
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->seller_financing_amount)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Desired Seller Financing Amount:
+                                        <span class="removeBold">{{ @$auction->get->seller_financing_type === '%' ? '' : '$' }}{{ number_format((float) str_replace(',', '', @$auction->get->seller_financing_amount)) }}{{ @$auction->get->seller_financing_type === '%' ? '%' : '' }}</span>
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->interest_rate)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Desired Interest Rate:
+                                        <span class="removeBold">{{ @$auction->get->interest_rate }}%</span>
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->loan_duration)
+                                    @php
+                                        $displayLoanDuration = str_replace('"', '', @$auction->get->loan_duration);
+                                    @endphp
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Desired Loan Duration:
+                                        <span class="removeBold">{{ $displayLoanDuration }}</span>
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->prepayment_penalty)
+                                    @php
+                                        $displayPrepayment = str_replace('"', '', @$auction->get->prepayment_penalty);
+                                    @endphp
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Prepayment Penalty:
+                                        <span class="removeBold badge bg-secondary">{{ $displayPrepayment }}</span>
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->prepayment_penalty === 'Yes' && @$auction->get->prepayment_penalty_amount)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Prepayment Penalty Amount:
+                                        <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->prepayment_penalty_amount)) }}</span>
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->balloon_payment)
+                                    @php
+                                        $displayBalloon = str_replace('"', '', @$auction->get->balloon_payment);
+                                    @endphp
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Balloon Payment:
+                                        <span class="removeBold badge bg-secondary">{{ $displayBalloon }}</span>
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->balloon_payment === 'Yes')
+                                    @if (@$auction->get->balloon_payment_amount)
+                                        <div class="col-md-12 col-12 pt-2 fw-bold">
+                                            Balloon Payment Amount:
+                                            <span class="removeBold">${{ number_format((float) str_replace(',', '', @$auction->get->balloon_payment_amount)) }}</span>
+                                        </div>
+                                    @endif
+
+                                    @if (@$auction->get->balloon_payment_date)
+                                        @php
+                                            $displayBalloonDate = str_replace('"', '', @$auction->get->balloon_payment_date);
+                                        @endphp
+                                        <div class="col-md-12 col-12 pt-2 fw-bold">
+                                            Balloon Payment Due Date:
+                                            <span class="removeBold">{{ $displayBalloonDate }}</span>
+                                        </div>
+                                    @endif
+                                @endif
+
+                                @if (@$auction->get->seller_amortization_type)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Amortization Type:
+                                        @if (@$auction->get->seller_amortization_type === 'Other' && @$auction->get->seller_amortization_other)
+                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->seller_amortization_other }}</span>
+                                        @else
+                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->seller_amortization_type }}</span>
+                                        @endif
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->seller_payment_frequency)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Payment Frequency:
+                                        @if (@$auction->get->seller_payment_frequency === 'Other' && @$auction->get->seller_payment_frequency_other)
+                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->seller_payment_frequency_other }}</span>
+                                        @else
+                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->seller_payment_frequency }}</span>
+                                        @endif
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->seller_late_fee_amount)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Late Payment Fee:
+                                        <span class="removeBold">{{ @$auction->get->seller_late_fee_amount }}</span>
                                     </div>
                                 @endif
                             @endif

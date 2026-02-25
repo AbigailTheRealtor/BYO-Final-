@@ -896,7 +896,7 @@
             </div>
 
             <div class="form-group">
-                <label class="fw-bold">Type of Pets:</label>
+                <label class="fw-bold">Pet Types:</label>
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Enter the types of pets the Buyer has (e.g., Dog, Cat).">
                     <i class="fa-solid fa-circle-info"></i>
@@ -1178,9 +1178,9 @@
             <span class="error mt-2" id="number_of_pets_error"></span>
         </div>
 
-        {{-- Type of Pets --}}
+        {{-- Pet Types --}}
         <div class="form-group">
-            <label class="fw-bold">Type of Pets:</label>
+            <label class="fw-bold">Pet Types:</label>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Enter the types of pets the Buyer has (e.g., Dog, Cat).">
                 <i class="fa-solid fa-circle-info"></i>

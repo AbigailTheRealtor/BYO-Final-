@@ -300,18 +300,6 @@
                                     @endif
                                 @endif
 
-                                @if (in_array('Seller Financing', $buyerFinancingOriginal) && !empty(@$auction->get->sellerFinancing))
-                                @php $sfItems = array_values(array_filter(@$auction->get->sellerFinancing, fn($v) => \App\Helpers\ListingDisplayHelper::hasValue($v))); @endphp
-                                <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">Seller Financing Terms</h6></div>
-                                @if (count($sfItems) === 1)
-                                    <div class="col-md-12 col-12 pt-1"><span class="removeBold">{{ $sfItems[0] }}</span></div>
-                                @else
-                                    @foreach ($sfItems as $sf)
-                                    <div class="col-md-12 col-12 pt-1"><span class="badge bg-secondary">{{ $sf }}</span></div>
-                                    @endforeach
-                                @endif
-                                @endif
-
                                 @if (in_array('Assumable', $buyerFinancingOriginal) && !empty(@$auction->get->assumable))
                                 @php $asItems = array_values(array_filter(@$auction->get->assumable, fn($v) => \App\Helpers\ListingDisplayHelper::hasValue($v))); @endphp
                                 <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">Assumable Terms</h6></div>
@@ -368,6 +356,18 @@
                                 @else
                                     @foreach ($nfItems as $nf)
                                     <div class="col-md-12 col-12 pt-1"><span class="badge bg-secondary">{{ $nf }}</span></div>
+                                    @endforeach
+                                @endif
+                                @endif
+
+                                @if (in_array('Seller Financing', $buyerFinancingOriginal) && !empty(@$auction->get->sellerFinancing))
+                                @php $sfItems = array_values(array_filter(@$auction->get->sellerFinancing, fn($v) => \App\Helpers\ListingDisplayHelper::hasValue($v))); @endphp
+                                <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">Seller Financing Terms</h6></div>
+                                @if (count($sfItems) === 1)
+                                    <div class="col-md-12 col-12 pt-1"><span class="removeBold">{{ $sfItems[0] }}</span></div>
+                                @else
+                                    @foreach ($sfItems as $sf)
+                                    <div class="col-md-12 col-12 pt-1"><span class="badge bg-secondary">{{ $sf }}</span></div>
                                     @endforeach
                                 @endif
                                 @endif
