@@ -1,0 +1,351 @@
+Below are **complete Replit instructions with safeguards** to fix the **actual listing display** for **Hire a Buyer’s Agent** and **Hire a Tenant’s Agent** (and the couple items that must apply across all listing types). This is written so Replit makes **display-only changes** unless explicitly noted.
+
+---
+
+# ✅ REPLIT INSTRUCTIONS WITH SAFEGUARDS
+
+## 🔒 HARD SAFEGUARDS (DO NOT VIOLATE)
+
+* **Do NOT change database schema, migrations, or column names.**
+* **Do NOT change how values are saved** (arrays/JSON/strings).
+* **Do NOT change listing creation logic** unless explicitly requested below (only formatting/labels).
+* **Do NOT remove any options** from dropdowns/multi-select lists.
+* **Only update actual listing display templates/components** (and shared display helpers/components if needed).
+* **No regressions**: Seller/Landlord/Tenant listing displays must remain correct after Buyer/Tenant changes.
+
+---
+
+# ✅ GLOBAL DISPLAY RULES (applies everywhere unless overridden)
+
+1. **If a field has 1 selection/value → show plain text**
+2. **If a field has 2+ selections/values → show bubbles/chips**
+3. **Binary + detail should be single-line text**:
+
+   * Example: `Pets: Yes (3)`
+   * Example: `Screening Concerns…: Yes (Low Credit)`
+4. If a selection includes **“Other”**, display the **custom input text** instead of the word “Other”.
+5. If a selection includes **“None / N/A / NA”**, treat as empty and **do not show** the field in display or PDF export.
+
+---
+
+# PART A — HIRE A BUYER’S AGENT (Actual Listing Display Fixes)
+
+## A1) Fix punctuation in label
+
+Change label text on actual listing display from:
+
+* `Current Representation Status with Broker?`
+  to:
+* `Current Representation Status with Broker:`
+
+**Display-only. Do not change form label unless also present there.**
+
+---
+
+## A2) Add colons to section headers on actual listing display
+
+On Buyer listing display, update these section titles to include “:”
+
+* `Property Preferences:`
+* `Purchasing Terms:`
+* `Financing Details:`
+* `Broker Compensation & Agency Agreement Terms:`
+
+**Display-only. Do not create new tabs.**
+
+---
+
+## A3) Acceptable Property Style should be plain text (Buyer only)
+
+On Buyer listing actual display:
+
+* `Acceptable Property Styles:` should display as **plain text**, NOT bubbles, even if multiple.
+
+Format:
+
+* Single: `Acceptable Property Styles: Single Family Residence`
+* Multiple: `Acceptable Property Styles: Single Family Residence, Townhouse, Condo`
+
+**Do not change other preference fields. Only this one for Buyer.**
+
+---
+
+## A4) Standardize “1/2 Duplex” formatting (Buyer + Tenant creation + actual listing)
+
+Currently Buyer shows `½ Duplex` and Tenant shows `1/2 Duplex` (or vice versa).
+Standardize to **exactly**:
+
+* `1/2 Duplex`
+
+Apply to:
+
+* Buyer listing creation options
+* Buyer actual listing display
+* Tenant listing creation options
+* Tenant actual listing display
+
+**Do not change stored values already saved**; normalize at display-time:
+
+* If stored value equals `½ Duplex` → display `1/2 Duplex`.
+
+If the options list is hard-coded, update the option label too.
+
+---
+
+## A5) Add “Download Listing Snapshot (PDF)” to Buyer listings
+
+Buyer listing must have the same download button behavior as Seller/Landlord/Tenant.
+
+Implement:
+
+* Button under Edit button on Buyer listing show page
+* Route + controller method if not present
+* Use the same “complete listing download” logic (all filled fields only + Other resolution + hide None/N/A/NA)
+
+**Do not change existing Seller/Landlord/Tenant download logic. Reuse it.**
+
+---
+
+## A6) Acceptable Cities / Counties remove “, FL”
+
+In Buyer actual listing display:
+
+* For cities: show only the city name (strip trailing `, FL` or `, XX`)
+
+  * `Largo, FL` → `Largo`
+* For counties: show only the county name (strip trailing `, FL` or `, XX`)
+
+  * `Pinellas County, FL` → `Pinellas County`
+
+This should apply wherever those arrays are displayed (Buyer + Tenant).
+
+Implementation: display normalization only (do not rewrite stored values).
+
+---
+
+## A7) Acceptable Property Conditions duplicate “Updated/Renovated”
+
+Buyer listing actual display is repeating `Updated/Renovated` multiple times.
+
+Fix: Deduplicate at display-time.
+
+* Ensure the display helper does `unique()` on the array after normalization.
+* Also ensure the listing creation save step doesn’t push duplicates into the array (optional, only if easy, but do not break existing saving logic).
+
+Minimum requirement: **dedupe on display**, showing each selection once.
+
+---
+
+## A8) Carport Needed & Garage Needed formatting
+
+Buyer actual listing display:
+
+* `Spaces` must be capitalized exactly: `(3 Spaces)`
+* “Yes/No” must be plain text (not bubbles)
+
+Examples:
+
+* `Carport Needed: Yes (3 Spaces)`
+* `Garage Needed: No`
+
+---
+
+## A9) Pets section must match Tenant format
+
+Buyer actual listing display should show:
+
+* `Pets: Yes (3)`  OR  `Pets: No`
+* Do NOT show `Pets:` as a bubble.
+* Remove separate “Number of Pets:” line if it exists on Buyer listing display.
+
+Also rename:
+
+* `Types of Pets:` → `Pet Type:`
+
+---
+
+## A10) Global label change across all listing types
+
+On actual listing display for all roles (Seller/Buyer/Landlord/Tenant), update label:
+
+* `Types of Pets` → `Pet Types`
+
+(If you want it singular when one type exists, we can do that later; for now make it consistent: **Pet Types**.)
+
+---
+
+## A11) Financing Details sub-answers showing as bubbles incorrectly
+
+Buyer actual listing display under Financing Details:
+
+* Sub-question answers must follow global rule:
+
+  * 1 selection → plain text
+  * 2+ selections → bubbles/chips
+
+This includes nested answers inside Financing Details.
+
+---
+
+# PART B — HIRE A TENANT’S AGENT (Actual Listing Display Fixes)
+
+## B1) Furnishings Needed remove `" and "` between answers
+
+Tenant actual listing display currently renders something like:
+
+* `Furnished and Unfurnished`
+
+You want it to display as a clean list (comma-separated), consistent with the rule:
+
+* If 2+ values → chips or comma list depending on your preference.
+  Since you’ve been favoring spacing, do this:
+
+* If 1 value → plain text
+
+* If 2+ values → bubbles/chips (or comma-separated if you prefer for this field)
+
+But explicitly: **remove the literal “ and ” joiner**.
+Use:
+
+* `Furnished, Unfurnished` (text) or chips.
+
+---
+
+## B2) “Non-Negotiable Property Features and Amenities” must show Other custom input
+
+Tenant actual listing display:
+
+* If user selected “Other” + entered custom text, show the custom text instead of “Other”.
+* If both regular options + Other text exist, include both.
+
+---
+
+## B3) “Offered Lease Term” must show Other custom input
+
+Tenant actual listing display:
+
+* Same “Other resolution” rule must apply to Offered Lease Term.
+
+---
+
+## B4) Screening Concerns formatting
+
+Tenant actual listing display should show:
+
+* `Screening Concerns That May Affect Rental Approval: Yes (Low Credit)`
+
+Do NOT show:
+
+* `Yes` on one line and arrow bullet items underneath.
+
+If multiple concerns exist:
+
+* `Yes (Low Credit, Prior Eviction)`
+
+If none:
+
+* Do not show the concerns list
+* Show `No` or hide the whole field depending on your existing pattern (prefer: show `No` if the question exists).
+
+---
+
+## B5) Broker Compensation & Agency Agreement Terms colon + missing Calendar Days to Pay
+
+Tenant actual listing display:
+
+* Section header must be:
+
+  * `Broker Compensation & Agency Agreement Terms:`
+* Ensure `Calendar Days to Pay:` is included and prints the saved value.
+
+  * This is likely a missing field mapping / missing key in display component.
+
+Fix by:
+
+* locating the field key used in listing creation for “Calendar Days to Pay”
+* ensuring it is rendered in the display template for this section
+* ensuring it’s included in the Download Listing PDF field map
+
+---
+
+# PART C — DOWNLOAD LISTING SNAPSHOT MUST BE COMPLETE (ALL LISTING TYPES)
+
+The downloaded document must include:
+
+* Every field **that has a meaningful value**
+* No empty / None / N/A fields
+* “Other” replaced by custom text
+* Deduped multi-select arrays
+* City/County normalized (no “, FL”)
+* 1 selection = text, 2+ = list/bullets/chips (PDF can use bullets)
+
+Apply to:
+
+* Seller
+* Buyer
+* Landlord
+* Tenant
+
+Buyer currently missing download button: must be added (A5).
+
+---
+
+# ✅ IMPLEMENTATION GUIDANCE (How Replit should do this safely)
+
+1. Identify the shared display helper/component currently used for formatting arrays and chips (e.g., `x-value-display`).
+2. Extend it with:
+
+   * normalization helpers:
+
+     * strip `, XX` suffixes for city/county
+     * normalize `Residential Property` → `Residential`
+     * normalize `½ Duplex` → `1/2 Duplex`
+   * `unique()` dedupe after normalization
+   * hide values in `['none','n/a','na']`
+   * “Other” resolution: if an option contains `Other`, replace with corresponding `*_other_text` field
+3. Apply targeted overrides:
+
+   * Buyer Acceptable Property Styles = always plain text
+   * Seller/Landlord Property Style = always plain text (already requested previously)
+4. Fix specific missing fields by ensuring the correct key is rendered:
+
+   * Tenant Calendar Days to Pay
+
+---
+
+# ✅ ACCEPTANCE TESTS (Must pass)
+
+**Buyer listing display**
+
+* Labels and section headers end in `:`
+* Acceptable Property Styles shows text, not chips
+* Cities/Counties show without `, FL`
+* Conditions do not repeat values
+* Carport/Garage: `Yes (3 Spaces)` / `No` and no bubbles
+* Pets shows `Pets: Yes (3)` and `Pet Type:` label
+* Financing sub-answers obey 1=text / 2+=chips
+* Download Listing Snapshot button exists and downloads a complete packet
+
+**Tenant listing display**
+
+* Furnishings has no `" and "` joiner
+* Non-negotiable amenities show Other custom text
+* Offered lease term shows Other custom text
+* Screening concerns show `Yes (Low Credit)` format
+* Broker Compensation header has colon
+* Calendar Days to Pay shows saved value
+
+**Download**
+
+* Includes every filled field only
+* No `None / N/A` fields
+* “Other” replaced by custom input
+* No duplicates
+
+---
+
+If you want, paste the **actual field key name** (from your DB/model) for:
+
+* Tenant “Calendar Days to Pay”
+* Buyer “Acceptable Property Styles Other text” (if it exists)
+  …and I’ll add exact key mappings so Replit doesn’t guess.
