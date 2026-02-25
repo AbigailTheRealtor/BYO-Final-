@@ -1,0 +1,105 @@
+Got it — here are **copy/paste Replit instructions with safeguards** for **Hire a Buyer’s Agent** listings to change those fields to the combined format.
+
+---
+
+# Replit Instructions — Hire a Buyer’s Agent
+
+## Combine “Yes + Amount” Fields into One Line (Early Termination Fee + Retainer Fee)
+
+### Applies To
+
+* Login: `tenant@exp.com`
+* Flow: Dashboard → **Hire a Buyer’s Agent**
+* Must apply to:
+
+  * Create Listing review/summary (if shown)
+  * Save Draft → Reload Draft
+  * Edit Draft → Reload Edit
+  * Live Listing Display
+  * Download Listing Snapshot
+
+---
+
+## Goal
+
+Replace the current two-line display:
+
+* Early Termination Fee: Yes
+* Termination Fee Amount: $1,000
+* Retainer Fee: Yes
+* Retainer Fee Amount: $5,000
+
+With the combined one-line display:
+
+* **Early Termination Fee:** Yes ($1,000)
+* **Retainer Fee:** Yes ($5,000)
+
+---
+
+## Required Display Rules
+
+### 1) Early Termination Fee
+
+* If **Early Termination Fee = Yes** and Amount exists:
+  Render: **Early Termination Fee: Yes ($AMOUNT)**
+* If **Early Termination Fee = Yes** and Amount is missing/empty:
+  Render: **Early Termination Fee: Yes**
+* If **Early Termination Fee = No**:
+  Render: **Early Termination Fee: No**
+  AND do **NOT** render “Termination Fee Amount” as a separate line.
+
+### 2) Retainer Fee
+
+* If **Retainer Fee = Yes** and Amount exists:
+  Render: **Retainer Fee: Yes ($AMOUNT)**
+* If **Retainer Fee = Yes** and Amount is missing/empty:
+  Render: **Retainer Fee: Yes**
+* If **Retainer Fee = No**:
+  Render: **Retainer Fee: No**
+  AND do **NOT** render “Retainer Fee Amount” as a separate line.
+
+---
+
+## Implementation Notes (Non-Destructive Safeguards)
+
+1. **Display-only change**: Do not rename database fields/columns or change stored values.
+2. Do not alter Create/Edit form inputs — only change how the listing renders.
+3. Apply the same formatting logic in:
+
+   * Live listing view template/component
+   * Snapshot generator/template (must match live output)
+4. If the page uses shared rendering partials, update the shared formatter carefully so it doesn’t break Seller/Landlord/Tenant.
+
+---
+
+## QA Checklist (Must Pass)
+
+Using `tenant@exp.com`:
+
+1. Create Buyer listing with:
+
+   * Early Termination Fee = Yes, Amount = 1000
+   * Retainer Fee = Yes, Amount = 5000
+     ✅ Live listing shows:
+   * Early Termination Fee: Yes ($1,000)
+   * Retainer Fee: Yes ($5,000)
+
+2. Set both fees to **No**
+   ✅ Live listing shows:
+
+   * Early Termination Fee: No
+   * Retainer Fee: No
+     ✅ No separate “Amount” lines appear
+
+3. Save Draft → reload
+   ✅ formatting persists
+
+4. Edit Draft → reload
+   ✅ formatting persists
+
+5. Download Listing Snapshot
+   ✅ snapshot matches live listing formatting exactly
+
+---
+
+If you want, I can also add the same instruction for **Prepayment Penalty: Yes ($X)** so Buyer/Seller/Tenant/Landlord all follow one universal standard.

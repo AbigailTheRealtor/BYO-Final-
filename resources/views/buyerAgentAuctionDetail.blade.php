@@ -1765,28 +1765,16 @@
                         @if (@$auction->get->early_termination_fee_option != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Early Termination Fee:
-                            <span class="removeBold">{{ ucfirst(str_replace('"', '', @$auction->get->early_termination_fee_option)) }}</span>
+                            <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->early_termination_fee_option, @$auction->get->early_termination_fee_amount ? \App\Support\Format::money(@$auction->get->early_termination_fee_amount) : null) }}</span>
                         </div>
-                        @if (in_array(strtolower(@$auction->get->early_termination_fee_option), ['yes']) && @$auction->get->early_termination_fee_amount)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Termination Fee Amount:
-                            <span class="removeBold">{{ \App\Support\Format::money(@$auction->get->early_termination_fee_amount) }}</span>
-                        </div>
-                        @endif
                         @endif
 
                         @if (@$auction->get->retainer_fee_option != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Retainer Fee:
-                            <span class="removeBold">{{ ucfirst(str_replace('"', '', @$auction->get->retainer_fee_option)) }}</span>
+                            <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->retainer_fee_option, @$auction->get->retainer_fee_amount ? \App\Support\Format::money(@$auction->get->retainer_fee_amount) : null) }}</span>
                         </div>
                         @if (in_array(strtolower(@$auction->get->retainer_fee_option), ['yes']))
-                            @if (@$auction->get->retainer_fee_amount)
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Retainer Fee Amount:
-                                <span class="removeBold">{{ \App\Support\Format::money(@$auction->get->retainer_fee_amount) }}</span>
-                            </div>
-                            @endif
                             @if (@$auction->get->retainer_fee_application)
                             @php $formattedRetainer = \App\Support\CompensationFormatter::formatRetainerFeeApplication(@$auction->get->retainer_fee_application); @endphp
                             @if (!empty($formattedRetainer))
@@ -2610,28 +2598,16 @@
         @if (data_get($bid, 'get.early_termination_fee_option'))
         <div class="col-md-12 col-12 pt-2 fw-bold">
             Early Termination Fee:
-            <span class="removeBold">{{ ucfirst(data_get($bid, 'get.early_termination_fee_option')) }}</span>
+            <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(data_get($bid, 'get.early_termination_fee_option'), data_get($bid, 'get.early_termination_fee_amount') ? $fmtMoney(data_get($bid, 'get.early_termination_fee_amount')) : null) }}</span>
         </div>
-        @if (in_array(strtolower(data_get($bid, 'get.early_termination_fee_option')), ['yes']) && data_get($bid, 'get.early_termination_fee_amount'))
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Termination Fee Amount:
-            <span class="removeBold">{{ $fmtMoney(data_get($bid, 'get.early_termination_fee_amount')) }}</span>
-        </div>
-        @endif
         @endif
 
         @if (data_get($bid, 'get.retainer_fee_option'))
         <div class="col-md-12 col-12 pt-2 fw-bold">
             Retainer Fee:
-            <span class="removeBold">{{ ucfirst(data_get($bid, 'get.retainer_fee_option')) }}</span>
+            <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(data_get($bid, 'get.retainer_fee_option'), data_get($bid, 'get.retainer_fee_amount') ? $fmtMoney(data_get($bid, 'get.retainer_fee_amount')) : null) }}</span>
         </div>
         @if (in_array(strtolower(data_get($bid, 'get.retainer_fee_option')), ['yes']))
-            @if (data_get($bid, 'get.retainer_fee_amount'))
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                Retainer Fee Amount:
-                <span class="removeBold">{{ $fmtMoney(data_get($bid, 'get.retainer_fee_amount')) }}</span>
-            </div>
-            @endif
             @if (data_get($bid, 'get.retainer_fee_application'))
             @php $bidFormattedRetainer = \App\Support\CompensationFormatter::formatRetainerFeeApplication(data_get($bid, 'get.retainer_fee_application')); @endphp
             @if (!empty($bidFormattedRetainer))
@@ -3540,28 +3516,16 @@
         @if (!empty($allMeta['early_termination_fee_option']))
         <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px;">
             Early Termination Fee:
-            <span class="removeBold">{{ ucfirst($allMeta['early_termination_fee_option']) }}</span>
+            <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical($allMeta['early_termination_fee_option'], !empty($allMeta['early_termination_fee_amount']) ? \App\Support\Format::money($allMeta['early_termination_fee_amount']) : null) }}</span>
         </div>
-        @if (in_array(strtolower($allMeta['early_termination_fee_option']), ['yes']) && !empty($allMeta['early_termination_fee_amount']))
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px;">
-            Termination Fee Amount:
-            <span class="removeBold">{{ \App\Support\Format::money($allMeta['early_termination_fee_amount']) }}</span>
-        </div>
-        @endif
         @endif
 
         @if (!empty($allMeta['retainer_fee_option']))
         <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px;">
             Retainer Fee:
-            <span class="removeBold">{{ ucfirst($allMeta['retainer_fee_option']) }}</span>
+            <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical($allMeta['retainer_fee_option'], !empty($allMeta['retainer_fee_amount']) ? \App\Support\Format::money($allMeta['retainer_fee_amount']) : null) }}</span>
         </div>
         @if (in_array(strtolower($allMeta['retainer_fee_option']), ['yes']))
-            @if (!empty($allMeta['retainer_fee_amount']))
-            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px;">
-                Retainer Fee Amount:
-                <span class="removeBold">{{ \App\Support\Format::money($allMeta['retainer_fee_amount']) }}</span>
-            </div>
-            @endif
             @if (!empty($allMeta['retainer_fee_application']))
             @php $counterFormattedRetainer = \App\Support\CompensationFormatter::formatRetainerFeeApplication($allMeta['retainer_fee_application']); @endphp
             @if (!empty($counterFormattedRetainer))

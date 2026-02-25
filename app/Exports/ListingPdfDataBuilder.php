@@ -15,7 +15,12 @@ class ListingPdfDataBuilder
                 $value = self::getValue($meta, $key);
 
                 if (isset($normalizers[$key]) && is_callable($normalizers[$key])) {
-                    $value = $normalizers[$key]($value);
+                    $ref = new \ReflectionFunction($normalizers[$key]);
+                    if ($ref->getNumberOfParameters() >= 2) {
+                        $value = $normalizers[$key]($value, $meta);
+                    } else {
+                        $value = $normalizers[$key]($value);
+                    }
                 }
 
                 if (isset($otherPairs[$key])) {

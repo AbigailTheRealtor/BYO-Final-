@@ -202,8 +202,20 @@ class ListingDownloadController extends Controller
             'purchase_fee_flat' => fn($v) => ListingExportFormatter::fmtMoney($v),
             'purchase_fee_flat_combo' => fn($v) => ListingExportFormatter::fmtMoney($v),
             'lease_option_fee_flat' => fn($v) => ListingExportFormatter::fmtMoney($v),
-            'early_termination_fee_amount' => fn($v) => ListingExportFormatter::fmtMoney($v),
-            'retainer_fee_amount' => fn($v) => ListingExportFormatter::fmtMoney($v),
+            'early_termination_fee_option' => function($v, $meta) {
+                $yn = ListingExportFormatter::fmtYesNo($v);
+                if ($yn === 'Yes' && !empty($meta->early_termination_fee_amount)) {
+                    return 'Yes (' . ListingExportFormatter::fmtMoney($meta->early_termination_fee_amount) . ')';
+                }
+                return $yn;
+            },
+            'retainer_fee_option' => function($v, $meta) {
+                $yn = ListingExportFormatter::fmtYesNo($v);
+                if ($yn === 'Yes' && !empty($meta->retainer_fee_amount)) {
+                    return 'Yes (' . ListingExportFormatter::fmtMoney($meta->retainer_fee_amount) . ')';
+                }
+                return $yn;
+            },
             'lease_value' => fn($v) => ListingExportFormatter::fmtMoney($v),
             'purchase_value' => fn($v) => ListingExportFormatter::fmtMoney($v),
             'assumable_fee_amount' => fn($v) => ListingExportFormatter::fmtMoney($v),
