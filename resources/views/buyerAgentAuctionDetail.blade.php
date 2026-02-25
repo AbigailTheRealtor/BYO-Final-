@@ -1122,7 +1122,7 @@
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Condition of Exchange/Trade Item:
-                                        <span class="removeBold badge bg-secondary">{{ $displayExchangeCondition }}</span>
+                                        <span class="removeBold">{{ $displayExchangeCondition }}</span>
                                     </div>
                                 @endif
 
@@ -1153,7 +1153,7 @@
                                 @if (@$auction->get->exchange_liens)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Liens / Encumbrances Disclosure:
-                                        <span class="removeBold badge bg-secondary">{{ @$auction->get->exchange_liens }}</span>
+                                        <span class="removeBold">{{ @$auction->get->exchange_liens }}</span>
                                         @if (@$auction->get->exchange_liens === 'Yes' && @$auction->get->exchange_liens_details)
                                             <span class="removeBold">({{ @$auction->get->exchange_liens_details }})</span>
                                         @endif
@@ -1163,7 +1163,7 @@
                                 @if (@$auction->get->exchange_inspection_rights)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Inspection / Verification Rights:
-                                        <span class="removeBold badge bg-secondary">{{ @$auction->get->exchange_inspection_rights }}</span>
+                                        <span class="removeBold">{{ @$auction->get->exchange_inspection_rights }}</span>
                                     </div>
                                 @endif
                             @endif
