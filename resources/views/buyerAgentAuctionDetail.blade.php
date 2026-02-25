@@ -827,7 +827,7 @@
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Buyer Open to Purchasing an Assignment Contract:
-                                        <span class="removeBold badge bg-secondary">{{ $displayAssignment }}</span>
+                                        <span class="removeBold">{{ $displayAssignment }}</span>
                                     </div>
                                 @endif
 
@@ -1069,7 +1069,7 @@
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Transaction Fees Responsibility:
-                                        <span class="removeBold badge bg-secondary">{{ $displayCryptoFees }}</span>
+                                        <span class="removeBold">{{ $displayCryptoFees }}</span>
                                     </div>
                                 @endif
 
@@ -1102,9 +1102,9 @@
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Acceptable Exchange Item:
                                         @if (@$auction->get->exchange_item === 'Other' && @$auction->get->other_exchange_item)
-                                            <span class="removeBold badge bg-secondary">{{ $displayOtherExchange }}</span>
+                                            <span class="removeBold">{{ $displayOtherExchange }}</span>
                                         @else
-                                            <span class="removeBold badge bg-secondary">{{ $displayExchangeItem }}</span>
+                                            <span class="removeBold">{{ $displayExchangeItem }}</span>
                                         @endif
                                     </div>
                                 @endif
@@ -1343,7 +1343,7 @@
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Maintenance / Repair Responsibility:
-                                        <span class="removeBold badge bg-secondary">{{ $displayLPMaintenance }}</span>
+                                        <span class="removeBold">{{ $displayLPMaintenance }}</span>
                                     </div>
                                 @endif
 
@@ -1414,7 +1414,7 @@
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Transaction Fees Responsibility (Gas Fees):
-                                        <span class="removeBold badge bg-secondary">{{ $displayNFTGasFees }}</span>
+                                        <span class="removeBold">{{ $displayNFTGasFees }}</span>
                                     </div>
                                 @endif
                             @endif
@@ -1494,9 +1494,9 @@
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Amortization Type:
                                         @if (@$auction->get->seller_amortization_type === 'Other' && @$auction->get->seller_amortization_other)
-                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->seller_amortization_other }}</span>
+                                            <span class="removeBold">{{ @$auction->get->seller_amortization_other }}</span>
                                         @else
-                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->seller_amortization_type }}</span>
+                                            <span class="removeBold">{{ @$auction->get->seller_amortization_type }}</span>
                                         @endif
                                     </div>
                                 @endif
@@ -1505,9 +1505,9 @@
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Payment Frequency:
                                         @if (@$auction->get->seller_payment_frequency === 'Other' && @$auction->get->seller_payment_frequency_other)
-                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->seller_payment_frequency_other }}</span>
+                                            <span class="removeBold">{{ @$auction->get->seller_payment_frequency_other }}</span>
                                         @else
-                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->seller_payment_frequency }}</span>
+                                            <span class="removeBold">{{ @$auction->get->seller_payment_frequency }}</span>
                                         @endif
                                     </div>
                                 @endif

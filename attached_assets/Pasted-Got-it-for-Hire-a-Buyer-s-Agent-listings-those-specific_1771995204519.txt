@@ -1,0 +1,111 @@
+Got it — for **Hire a Buyer’s Agent** listings, those specific fields should render as **regular text (no bubble/pill UI)** on the **live listing display** (and **Snapshot**, if it mirrors the same component).
+
+Below are **copy/paste Replit instructions with safeguards**.
+
+---
+
+# Replit Instructions — Hire a Buyer’s Agent
+
+## Convert Specific Fields from Bubble/Pill to Regular Text (Live Listing + Snapshot)
+
+### Applies To
+
+* Login: `tenant@exp.com`
+* Flow: Dashboard → **Hire a Buyer’s Agent**
+* Affects:
+
+  * Live Listing Display (submitted listing view)
+  * Download Listing Snapshot (must match live output)
+  * (Optional if you also show a review screen before submit) Listing Review Summary
+
+---
+
+## Problem
+
+These fields are currently rendering as **bubble/pill UI**, but they must render as **plain text** for Buyer listings.
+
+---
+
+## Fields to Render as Regular Text (No Bubble)
+
+Update the live listing display so these render as plain text values:
+
+1. **Buyer Open to Purchasing an Assignment Contract:** (Yes/No)
+2. **Transaction Fees Responsibility:** (Buyer/Seller/Shared/etc.)
+3. **Acceptable Exchange Item:** (free-text input)
+4. **Maintenance / Repair Responsibility:** (Buyer/Seller/Shared/etc.)
+5. **Transaction Fees Responsibility (Gas Fees):** (Buyer/Seller/Shared/etc.)
+6. **Amortization Type:** (value)
+7. **Payment Frequency:** (value)
+
+---
+
+## Required Behavior
+
+### Display Rule (Buyer Listing Only)
+
+For the fields above:
+
+* Render as:
+  **Label:** `Value`
+* Use **regular text**, not pill/badge/bubble styling.
+
+Examples:
+
+* Buyer Open to Purchasing an Assignment Contract: **Yes**
+* Transaction Fees Responsibility: **Seller**
+* Acceptable Exchange Item: **(show the exact entered text)**
+* Amortization Type: **asdf**
+* Payment Frequency: **asdf**
+
+---
+
+## Implementation Instructions
+
+### A) Live Listing View
+
+1. Locate the Buyer live listing display template/component that renders the “Purchasing Terms / Financing Details” rows (where the bubble badges are being generated).
+2. Identify the helper/partial that wraps values in a pill/badge (commonly something like:
+
+   * `<span class="badge ...">value</span>`
+   * `<div class="pill">value</div>`
+   * `renderBubbleValue($value)`
+3. Add a **Buyer-only override** for the 7 fields above:
+
+   * If the field key matches one of the listed fields → render **plain text** instead of the bubble component.
+
+### B) Snapshot Output Must Match
+
+If Snapshot uses a separate template:
+
+* Apply the same Buyer-only override in the snapshot renderer/template so the PDF/snapshot shows **plain text** too.
+
+---
+
+## Safeguards (Mandatory)
+
+1. **Display-only change** — do not rename DB columns or change stored values.
+2. Do **not** remove bubbles globally; this change is only for the listed fields on **Hire a Buyer’s Agent** listings.
+3. Do **not** break multi-select fields that should remain bubbles elsewhere (e.g., multi-select property styles, etc.).
+4. Draft + Edit must continue to persist values normally — this is a render change only.
+5. Snapshot must match live listing formatting exactly for these fields.
+
+---
+
+## QA Checklist (Must Pass)
+
+Using `tenant@exp.com`:
+
+1. Create Buyer listing and set values for all 7 fields
+2. Submit → open live listing
+   ✅ All 7 fields show as **regular text**, not bubbles
+3. Save Draft → reload → submit
+   ✅ Still plain text on live listing
+4. Download Listing Snapshot
+   ✅ Snapshot matches live listing (plain text, no pills)
+
+---
+
+If you want, I can also give you a **single universal rule** to prevent this from happening again:
+**“Only multi-select values use bubbles; all single-select + free-text values render as plain text.”**
+(But I kept this instruction scoped exactly to the fields you flagged.)
