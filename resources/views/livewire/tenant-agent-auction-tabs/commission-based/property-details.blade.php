@@ -629,7 +629,7 @@
     </div>
 @endif
 <!-- Garage/Parking Spaces Type Dropdown -->
-<div class="form-group d-none" id="garage_parking_spaces_option_wrapper">
+<div class="form-group d-none" id="garage_parking_spaces_option_wrapper" wire:ignore>
     <label class="fw-bold">Garage/Parking Features:</label>
 
     <div class="input-cover">

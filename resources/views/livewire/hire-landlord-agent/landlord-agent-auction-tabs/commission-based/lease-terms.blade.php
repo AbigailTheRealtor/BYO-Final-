@@ -884,7 +884,7 @@
     @endif
 @endif --}}
 @if ($property_type === 'Commercial Property')
-    <div class="form-group">
+    <div class="form-group" wire:ignore>
         <label class="fw-bold">Tenant Pays:<span class="text-danger">*</span></label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -920,7 +920,7 @@
 </div>
 </div> --}}
 
-    <div class="form-group">
+    <div class="form-group" wire:ignore>
         <label class="fw-bold">Owner Pays:<span class="text-danger">*</span></label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
