@@ -26,7 +26,7 @@ The platform is built on Laravel 8.x, PHP 8.2.23, and PostgreSQL, with Node.js v
 
 **View Helpers and Components**: A `ListingDisplayHelper` standardizes field formatting and display across all listing view pages. Reusable Blade components like `accordion.blade.php`, `pills.blade.php`, and `kv-row.blade.php` enhance UI consistency. Services are displayed grouped by category, showing only selected items.
 
-**Listing Download**: `ListingDownloadController` generates PDF snapshots of listings using `barryvdh/laravel-dompdf`, rendering structured data with `ListingDisplayHelper` formatting.
+**Listing Download (Field-Map-Driven)**: `ListingDownloadController` generates complete PDF listing packets using `barryvdh/laravel-dompdf`. Each listing type (Seller, Buyer, Landlord, Tenant) has a dedicated field map class in `app/Exports/ListingFieldMaps/` that defines all sections, field labels, field keys, and "Other" text pairings. `ListingPdfDataBuilder` combines the meta data with the field map to produce structured section/row arrays. `ListingExportFormatter` handles value formatting (money, percent, lists) and "Other" text resolution. A single universal Blade template (`listing-download/packet.blade.php`) renders all listing types.
 
 ### System Design Choices
 The architecture prioritizes modularity, clear separation of concerns, and a database-first approach utilizing local database solutions. The system is optimized for production deployment, and existing database schema for fees is immutable, with display-only formatting updates.

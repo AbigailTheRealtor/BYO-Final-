@@ -1,0 +1,83 @@
+From that screenshot: **the font *looks* the same size**, but the **Seller version reads “larger” because it has more spacing** (line-height / margins), while the **Landlord version is tighter/denser**.
+
+### Which looks better?
+
+For your platform, **Seller’s format looks better**:
+
+* easier to scan
+* less “wall of text”
+* the chips breathe more
+* feels more premium / deliberate
+
+Landlord’s tighter spacing isn’t “wrong,” but it feels more cramped and makes chip-heavy sections look busy.
+
+---
+
+## Recommendation for consistency across all listing types
+
+Standardize everything to the **Seller spacing system** and apply it everywhere (Seller/Landlord/Buyer/Tenant).
+
+### Use one “Display Style Spec”
+
+Pick these rules and enforce them in the shared layout / partials:
+
+* **Base text:** `text-sm`
+* **Line height:** `leading-6` (this is the big difference you’re seeing)
+* **Row spacing:** `space-y-2`
+* **Section spacing:** `space-y-8`
+* **Section header:** `text-lg font-semibold mb-4`
+* **Chips container:** `flex flex-wrap gap-2 mt-2`
+* **Chip text:** `text-xs` (or `text-sm` if you want larger chips), but pick one
+
+---
+
+## Replit instructions to standardize (safeguarded)
+
+Paste this into Replit:
+
+### 🔒 SAFEGUARDS
+
+* Do not change form inputs or saved values.
+* Do not change database.
+* Only adjust listing display templates / shared components.
+* Do not redesign UI—just normalize typography + spacing.
+
+### TASK
+
+Make all listing display pages (Seller, Landlord, Buyer, Tenant) use the **same typography classes** as the Seller view:
+
+1. Ensure the main listing content wrapper uses:
+
+```html
+class="text-sm leading-6"
+```
+
+2. Ensure each section wrapper uses:
+
+```html
+class="border rounded-lg p-6 space-y-6"
+```
+
+3. Ensure rows use:
+
+```html
+class="space-y-2"
+```
+
+4. Ensure chips use:
+
+```html
+class="flex flex-wrap gap-2 mt-2"
+```
+
+5. If Landlord uses `leading-5`, `text-xs`, or tighter `mb-1`, update it to match Seller exactly.
+
+### ACCEPTANCE TEST
+
+* Seller and Landlord listing pages should have identical font size and spacing.
+* Buyer and Tenant should match the same base font and spacing.
+* Chips should wrap and space identically.
+
+---
+
+If you tell me which files control the Seller display vs Landlord display (the blade filenames), I can give you exact “replace these classes with these classes” instructions line-for-line.
