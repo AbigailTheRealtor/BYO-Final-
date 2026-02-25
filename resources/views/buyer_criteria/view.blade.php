@@ -861,7 +861,7 @@
                                     @endif
                                     @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->pet_breed))
                                         <div class="col-md-12 col-12 fw-bold">
-                                            Breed:
+                                            Breed of Pets:
                                             <span class="removeBold">{{ @$auction->get->pet_breed }}</span>
                                         </div>
                                     @endif

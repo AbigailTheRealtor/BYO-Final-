@@ -2460,11 +2460,7 @@ $lease_types = [
             safeLivewireSet('property_items', selectedValues);
         });
 
-        Livewire.hook('message.processed', (message, component) => {
-            if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
-                $('#property_items').select2({ placeholder: "Select", allowClear: true });
-            }
-        });
+        
 
 
         /////////////// business type
@@ -2644,11 +2640,7 @@ $lease_types = [
             safeLivewireSet('credit_scroe_rating', selectedValues);
         });
 
-        Livewire.hook('message.processed', (message, component) => {
-            if ($('#credit_scroe_rating').length && !$('#credit_scroe_rating').hasClass('select2-hidden-accessible')) {
-                $('#credit_scroe_rating').select2({ placeholder: "Select credit score rating(s)", allowClear: true });
-            }
-        });
+        
         // Initialize Select2 non_negotiable_amenities
         $('#non_negotiable_amenities')
             .select2({
@@ -2872,13 +2864,6 @@ $lease_types = [
             });
         }
 
-        Livewire.hook('message.processed', () => {
-            if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
-                initSelect2();
-            }
-        });
-
-        // Initialize Select2 on load
         initSelect2();
 
 
@@ -2912,21 +2897,7 @@ $lease_types = [
             }
         });
 
-        Livewire.hook('message.processed', () => {
-            if ($('#garage_parking_spaces_option').length && !$('#garage_parking_spaces_option').hasClass('select2-hidden-accessible')) {
-                $('#garage_parking_spaces_option').select2({
-                    placeholder: "Select Garage/Parking Features",
-                    allowClear: true,
-                    width: '100%',
-                });
-            }
-            var currentValues = $('#garage_parking_spaces_option').val() || [];
-            if (currentValues.includes('Other')) {
-                $('#other_parking_space_wrapper').show();
-            } else {
-                $('#other_parking_space_wrapper').hide();
-            }
-        });
+        
 
 
 
@@ -2957,18 +2928,6 @@ $lease_types = [
 
         // Initial initialization
         initializeAppliancesSelect2();
-
-        Livewire.hook('message.processed', () => {
-            if ($('#appliances').length && !$('#appliances').hasClass('select2-hidden-accessible')) {
-                initializeAppliancesSelect2();
-            }
-            var currentValues = $('#appliances').val() || [];
-            if (currentValues.includes('Other')) {
-                $('#other_appliances').show();
-            } else {
-                $('#other_appliances').hide();
-            }
-        });
         // End Preference
 
 
