@@ -618,10 +618,19 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     @endif
 
                     {{-- Furnishings Needed (Residential only) --}}
-                    @if (@$auction->get->property_type === 'Residential Property' && @$auction->get->tenant_require != null)
+                    @php
+                        $furnishingItems = \App\Helpers\ListingDisplayHelper::normalizeListDeduped(@$auction->get->tenant_require);
+                    @endphp
+                    @if (@$auction->get->property_type === 'Residential Property' && !empty($furnishingItems))
                     <div class="col-md-12 col-12 pt-2 fw-bold">
                         Furnishings Needed:
-                        <span class="removeBold">{{ str_replace(' and ', ', ', @$auction->get->tenant_require) }}</span>
+                        @if (count($furnishingItems) === 1)
+                            <span class="removeBold">{{ $furnishingItems[0] }}</span>
+                        @else
+                            @foreach ($furnishingItems as $fItem)
+                                <span class="removeBold badge bg-secondary">{{ $fItem }}</span>
+                            @endforeach
+                        @endif
                     </div>
                     @endif
 
@@ -931,10 +940,18 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </div>
                 @endif
 
-                @if (@$auction->get->broker_fee_days_from_rent != null || @$auction->get->broker_fee_days_after_lease != null || @$auction->get->broker_fee_days_after_rent != null)
+                @php
+                    $calendarDaysValue = collect([
+                        @$auction->get->broker_fee_days_from_rent,
+                        @$auction->get->broker_fee_days_after_lease,
+                        @$auction->get->broker_fee_days_after_rent,
+                        @$auction->get->broker_fee_days_after_due_event,
+                    ])->filter(fn($v) => $v !== null && $v !== '')->first();
+                @endphp
+                @if ($calendarDaysValue)
                 <div class="col-md-12 col-12 pt-2 fw-bold">
                     Calendar Days to Pay:
-                    <span class="removeBold">{{ @$auction->get->broker_fee_days_from_rent ?? @$auction->get->broker_fee_days_after_lease ?? @$auction->get->broker_fee_days_after_rent ?? '' }}</span>
+                    <span class="removeBold">{{ $calendarDaysValue }}</span>
                 </div>
                 @endif
 

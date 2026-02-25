@@ -112,7 +112,7 @@ class TenantFieldMap
             ],
 
             'Additional Property Preferences' => [
-                'Tenant Requirement' => 'tenant_require',
+                'Furnishings Needed' => 'tenant_require',
                 'Carport Needed' => 'carport_needed',
                 'Garage Needed' => 'garage_needed',
                 'Garage/Parking Spaces' => 'garage_parking_spaces',

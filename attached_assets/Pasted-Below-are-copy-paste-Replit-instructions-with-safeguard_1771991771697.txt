@@ -1,0 +1,189 @@
+Below are **copy/paste Replit instructions with safeguards** for your **Hire a Tenant** listing fixes. These are **display + mapping fixes only** (no DB changes) and focus on the **actual listing page** (and any shared “summary” partial used by the listing view).
+
+---
+
+## ✅ REPLIT INSTRUCTIONS (Hire a Tenant) — WITH SAFEGUARDS
+
+### 🔒 SAFEGUARDS (must follow)
+
+* **DO NOT** change database schema/migrations.
+* **DO NOT** rename any existing DB columns, request keys, Livewire properties, or form input names.
+* **DO NOT** change any validation rules or required-field logic.
+* **DO NOT** alter Seller/Buyer/Landlord flows.
+* **ONLY** modify **Hire a Tenant** listing display logic and/or the exact helper that formats “Other” values **if it is shared and safe**.
+* If a shared formatter is used by multiple roles, **extend it add-only** and verify it does not change outputs for other roles.
+
+---
+
+# 1) Furnishings Needed — remove `" and "` between answers (Display formatting)
+
+### ✅ Problem
+
+On the **actual Tenant listing**, the multi-select answer for **Furnishings Needed** is being rendered like:
+
+* `Fully Furnished and Partially Furnished`
+  (or something similar)
+
+### ✅ Requirement
+
+For multi-select answers, show either:
+
+* **Comma-separated**: `Fully Furnished, Partially Furnished`
+  OR
+* **Bubble format** if you use chips elsewhere
+
+But **do not** join with `" and "`.
+
+### ✅ Implementation Instructions
+
+* Locate the Tenant “actual listing” view code that prints **Furnishings Needed**.
+* Find the join/implode logic (commonly `implode(' and ', $values)`).
+* Change it **ONLY for Furnishings Needed** to:
+
+  * `implode(', ', $values)` (comma separation)
+* Keep the rest of the multi-select formatting rules unchanged.
+
+### 🔒 Safeguard note
+
+Do not change the global join behavior if other fields rely on it. Make this a **field-specific override** for Furnishings Needed.
+
+---
+
+# 2) Non-Negotiable Property Features and Amenities — “Other” selection not showing
+
+### ✅ Problem
+
+User selects **Other** and enters custom text, but the **actual listing** does not display the “Other” text.
+
+### ✅ Requirement
+
+When **Other** is selected, the listing display must show:
+
+* `Other: <user text>`
+  or include the custom value as its own bullet/chip.
+
+### ✅ Implementation Instructions
+
+1. Identify how this field is stored. It’s usually one of these patterns:
+
+   * `non_negotiable_features` (array) + `non_negotiable_features_other` (string)
+   * `non_negotiable_amenities` (array) + `non_negotiable_amenities_other` (string)
+   * A single JSON field with `other_text`
+
+2. In the **Tenant listing display**, when rendering that field:
+
+   * If selections include `"Other"` **AND** other text exists, append:
+
+     * `"Other: {$otherText}"`
+
+3. Ensure the display logic handles both:
+
+   * Multi-select list (chips/bullets)
+   * Plain text (comma-separated)
+
+### 🔒 Safeguard note
+
+Do not change how values are saved. Only **read existing keys** and display them.
+
+---
+
+# 3) Offered Lease Term — “Other” selection not showing
+
+### ✅ Problem
+
+Same issue: “Other” is selected + custom text entered, but the “Other” value doesn’t appear on the actual listing.
+
+### ✅ Requirement
+
+Display must include:
+
+* `Other: <custom lease term text>`
+
+### ✅ Implementation Instructions
+
+* Locate Tenant listing display section for **Offered Lease Term**.
+* Add conditional display:
+
+  * If lease term selections include `"Other"` and an `offered_lease_term_other` (or similarly named key) is present, append it as:
+
+    * `Other: <text>`
+
+### 🔒 Safeguard note
+
+Don’t rename the label. Only show the missing “Other” content.
+
+---
+
+# 4) Broker Compensation & Agency Agreement Terms — “Calendar Days to pay” answer missing
+
+### ✅ Problem
+
+Under **Broker Compensation & Agency Agreement Terms**, the field:
+
+* **Calendar Days to pay**
+  is displaying the label but **not showing the value**.
+
+### ✅ Likely Cause
+
+One of these is happening:
+
+* Wrong key is referenced in the view (ex: `calendar_days_to_pay` vs `calendar_days_to_pay_compensation`)
+* The value exists on the model but isn’t included in the view’s `$listing` select/serializer
+* Display logic is conditionally hiding it
+
+### ✅ Requirement
+
+Show the saved value exactly like other fields in that section:
+
+* `Calendar Days to pay: 3` (example)
+
+### ✅ Implementation Instructions
+
+1. Confirm the value exists in the listing record:
+
+   * Use dd/log temporarily or check the object in the view: ensure `$listing->...` includes it.
+2. Fix the display binding:
+
+   * Update the view to reference the **correct existing property name** (no renames).
+3. If the listing is fetched using a `select()` / projection / transformer:
+
+   * Add the existing field to the returned fields list (add-only).
+4. Ensure no conditional hides it (example: only shown if compensation type selected). If it should always show when present:
+
+   * `if (!empty($listing->calendar_days_to_pay))` render it.
+
+### 🔒 Safeguard note
+
+Do not make it “required” or change form logic. This is display-only.
+
+---
+
+## ✅ Replit AI Copy/Paste Prompt (single block)
+
+Use this exactly in Replit:
+
+```text
+Fix Hire a Tenant “actual listing” display issues with ADD-ONLY changes.
+
+SAFETY RULES:
+- Do NOT change DB schema, migrations, column names, or saved data.
+- Do NOT rename existing keys/properties.
+- Do NOT change validation rules or required-field logic.
+- Only adjust Tenant listing display and minimal read/serializer if it is not returning existing fields.
+
+TASKS:
+1) Furnishings Needed: remove the “ and ” join between multiple selected answers. Render as comma-separated text OR existing multi-select chip style, but NOT joined with “ and ”.
+2) Non-Negotiable Property Features and Amenities: when “Other” is selected and a custom Other text exists, display it on the actual listing (e.g., “Other: <text>”). Do not change saving logic.
+3) Offered Lease Term: when “Other” is selected and custom Other text exists, display it on the actual listing (e.g., “Other: <text>”).
+4) Under Broker Compensation & Agency Agreement Terms: “Calendar Days to pay” is missing the answer. Ensure the actual listing shows the saved value by binding to the correct existing field key. If the API/serializer/select list is omitting it, add that existing field to the returned data (add-only).
+
+QA:
+- Verify Furnishings Needed shows correctly for multi-select.
+- Verify Other text shows for both Non-Negotiable Features/Amenities and Offered Lease Term.
+- Verify Calendar Days to pay displays its value on the actual Tenant listing.
+- Confirm no other roles or flows are affected.
+```
+
+---
+
+If you paste **one screenshot** of the Tenant actual listing section (the part where these fields appear), I can tell you the **most likely exact key names** (so Replit doesn’t guess wrong and bind to the wrong property).
