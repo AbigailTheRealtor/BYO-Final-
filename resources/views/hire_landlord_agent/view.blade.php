@@ -91,6 +91,93 @@
         margin-bottom: 15px;
     }
 
+    /* Section Title Hierarchy - Larger, bold, spaced, more prominent */
+    .card-header h4,
+    .section-title {
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+        color: #0f1a24;
+    }
+
+    /* SECTION HEADER BAR — shorter + true vertical centering */
+    .card-header.section-header {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start;
+        padding: 12px 18px !important;
+        min-height: 0 !important;
+        margin-top: 1.25rem;
+    }
+
+    /* SECTION TITLE TEXT — remove default heading spacing */
+    .section-header .section-title {
+        margin: 0 !important;
+        padding: 0 !important;
+        line-height: 1 !important;
+        display: block;
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        color: #0f1a24;
+    }
+
+    /* Services section - extra breathing room before header */
+    .services-section-header {
+        margin-top: 0.75rem !important;
+    }
+
+    hr {
+        margin-top: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Field row styling - improved line-height for scan-readability */
+    .col-md-12.col-12.pt-2.fw-bold {
+        line-height: 1.6;
+        padding-top: 0.6rem !important;
+        padding-bottom: 0.2rem;
+    }
+
+    .field-row {
+        padding: 0.5rem 0;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    .field-label {
+        font-weight: 600;
+        color: #34465c;
+    }
+
+    .field-value {
+        font-weight: normal;
+        color: #34465c;
+    }
+
+    /* Broker Compensation subsection headers - breathing room */
+    h5.mt-3.mb-2 {
+        padding-top: 0.75rem;
+        margin-top: 1rem !important;
+    }
+
+    /* Fix blank space under section headers - reduce gap to first content */
+    .card-body {
+        padding-top: 12px !important;
+    }
+
+    .card-body > :first-child {
+        margin-top: 0 !important;
+    }
+
+    /* Broker Compensation section text - match other section text color */
+    .broker-compensation-section,
+    .broker-compensation-section p,
+    .broker-compensation-section .col-md-12,
+    .broker-compensation-section .fw-bold {
+        color: #34465c !important;
+    }
+
     ul {
         --icon-size: 1em;
         --gutter: .5em;
@@ -142,30 +229,6 @@
 
     .removeBold {
         font-weight: normal;
-    }
-
-    /* Section Title Hierarchy - Larger, bold, spaced, more prominent */
-    .card-header h4,
-    .section-title {
-        font-size: 1.5rem !important;
-        font-weight: 700 !important;
-        margin-top: 1.5rem;
-        margin-bottom: 0.75rem;
-        color: #0f1a24;
-    }
-
-    /* Broker Compensation subsection headers - breathing room */
-    h5.mt-3.mb-2 {
-        padding-top: 0.75rem;
-        margin-top: 1rem !important;
-    }
-
-    /* Broker Compensation section text - match other section text color */
-    .broker-compensation-section,
-    .broker-compensation-section p,
-    .broker-compensation-section .col-md-12,
-    .broker-compensation-section .fw-bold {
-        color: #34465c !important;
     }
 
     /* Base button style */
