@@ -3385,8 +3385,30 @@ class TenantAgentAuction extends Component
         return str_replace(',', '', $value);
     }
 
+    protected function normalizeOtherInArray(&$array, $otherText)
+    {
+        if (!is_array($array)) {
+            $array = [];
+        }
+        $hasOther = collect($array)->contains(fn($v) => strtolower(trim((string)$v)) === 'other');
+        $hasText = is_string($otherText) && trim($otherText) !== '';
+
+        if ($hasText && !$hasOther) {
+            $array[] = 'Other';
+        }
+        if (!$hasText && $hasOther) {
+            $array = array_values(array_filter($array, fn($v) => strtolower(trim((string)$v)) !== 'other'));
+        }
+    }
+
     protected function saveAllMetadata($auction)
     {
+        $this->normalizeOtherInArray($this->non_negotiable_amenities, $this->other_non_negotiable_amenities);
+        $this->normalizeOtherInArray($this->lease_for, $this->other_lease_for);
+        $this->normalizeOtherInArray($this->garage_parking_spaces_option, $this->other_parking_space_wrapper);
+        $this->normalizeOtherInArray($this->view_preference, $this->other_preferences);
+        $this->normalizeOtherInArray($this->appliances, $this->other_appliances);
+        $this->normalizeOtherInArray($this->condition_prop_buyer, $this->other_property_condition);
 
         $auction->saveMeta('service_type', $this->service_type);
         $auction->saveMeta('user_type', $this->user_type);
