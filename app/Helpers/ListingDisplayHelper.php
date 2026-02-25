@@ -128,7 +128,11 @@ class ListingDisplayHelper
 
         if (is_string($list)) {
             $decoded = json_decode($list, true);
-            $list = (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) ? $decoded : [$list];
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $list = is_array($decoded) ? $decoded : [$decoded];
+            } else {
+                $list = [$list];
+            }
         }
 
         if (!is_array($list)) return [];
@@ -136,11 +140,13 @@ class ListingDisplayHelper
         $result = [];
         foreach ($list as $item) {
             $val = trim((string) $item);
+            $val = trim($val, '"');
             if ($val === '' || self::isPlaceholder($val)) continue;
             if (self::isNoneNa($val)) continue;
             if (strtolower($val) === 'other') {
                 if (self::hasValue($otherText)) {
-                    $result[] = trim((string) $otherText);
+                    $otherStr = trim((string) $otherText);
+                    $result[] = trim($otherStr, '"');
                 }
                 continue;
             }
