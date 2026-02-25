@@ -1014,6 +1014,81 @@
                                 @endif
                             @endif
 
+                            <!-- Cryptocurrency Details - ONLY SHOW IF offered_financing IS "Cryptocurrency" -->
+                            @if (in_array('Cryptocurrency', $financingArray) && $hasCryptoData)
+                                <div class="col-12 mt-3 mb-1">
+                                    <h6 class="financing-subsection-header">Cryptocurrency Terms</h6>
+                                </div>
+                                @if (@$auction->get->cryptocurrency_type)
+                                    @php
+                                        $displayCryptoType = str_replace('"', '', @$auction->get->cryptocurrency_type);
+                                    @endphp
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Offered Cryptocurrency:
+                                        <span class="removeBold">{{ $displayCryptoType }}</span>
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->crypto_percentage)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Percentage of Purchase Price to be Paid with Cryptocurrency:
+                                        <span class="removeBold">{{ @$auction->get->crypto_percentage }}%</span>
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->cash_percentage_crypto)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Percentage of Purchase Price to be Paid with Cash:
+                                        <span class="removeBold">{{ @$auction->get->cash_percentage_crypto }}%</span>
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->crypto_exchange_method)
+                                    @php
+                                        $displayCryptoExchange = str_replace('"', '', @$auction->get->crypto_exchange_method);
+                                    @endphp
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Exchange / Conversion Method:
+                                        <span class="removeBold">{{ $displayCryptoExchange }}</span>
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->crypto_custodian_wallet)
+                                    @php
+                                        $displayCryptoCustodian = str_replace('"', '', @$auction->get->crypto_custodian_wallet);
+                                    @endphp
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Custodian / Wallet for Transfer:
+                                        <span class="removeBold">{{ $displayCryptoCustodian }}</span>
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->crypto_transaction_fees)
+                                    @php
+                                        $displayCryptoFees = str_replace('"', '', @$auction->get->crypto_transaction_fees);
+                                    @endphp
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Transaction Fees Responsibility:
+                                        <span class="removeBold badge bg-secondary">{{ $displayCryptoFees }}</span>
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->crypto_transfer_timing)
+                                    @php
+                                        $displayCryptoTiming = str_replace('"', '', @$auction->get->crypto_transfer_timing);
+                                        $displayCryptoTimingOther = str_replace('"', '', @$auction->get->crypto_transfer_timing_other ?? '');
+                                    @endphp
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Timing of Transfer:
+                                        @if (@$auction->get->crypto_transfer_timing === 'Other' && $displayCryptoTimingOther)
+                                            <span class="removeBold">{{ $displayCryptoTimingOther }}</span>
+                                        @else
+                                            <span class="removeBold badge bg-secondary">{{ $displayCryptoTiming }}</span>
+                                        @endif
+                                    </div>
+                                @endif
+                            @endif
+
                             <!-- Exchange/Trade Details - ONLY SHOW IF offered_financing IS "Exchange/Trade" -->
                             @if (in_array('Exchange/Trade', $financingArray) && $hasExchangeData)
                                 <div class="col-12 mt-3 mb-1">
@@ -1280,81 +1355,6 @@
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Extension Terms:
                                         <span class="removeBold">{{ $displayLPExtension }}</span>
-                                    </div>
-                                @endif
-                            @endif
-
-                            <!-- Cryptocurrency Details - ONLY SHOW IF offered_financing IS "Cryptocurrency" -->
-                            @if (in_array('Cryptocurrency', $financingArray) && $hasCryptoData)
-                                <div class="col-12 mt-3 mb-1">
-                                    <h6 class="financing-subsection-header">Cryptocurrency Terms</h6>
-                                </div>
-                                @if (@$auction->get->cryptocurrency_type)
-                                    @php
-                                        $displayCryptoType = str_replace('"', '', @$auction->get->cryptocurrency_type);
-                                    @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Offered Cryptocurrency:
-                                        <span class="removeBold">{{ $displayCryptoType }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->crypto_percentage)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Percentage of Purchase Price to be Paid with Cryptocurrency:
-                                        <span class="removeBold">{{ @$auction->get->crypto_percentage }}%</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->cash_percentage_crypto)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Percentage of Purchase Price to be Paid with Cash:
-                                        <span class="removeBold">{{ @$auction->get->cash_percentage_crypto }}%</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->crypto_exchange_method)
-                                    @php
-                                        $displayCryptoExchange = str_replace('"', '', @$auction->get->crypto_exchange_method);
-                                    @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Exchange / Conversion Method:
-                                        <span class="removeBold">{{ $displayCryptoExchange }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->crypto_custodian_wallet)
-                                    @php
-                                        $displayCryptoCustodian = str_replace('"', '', @$auction->get->crypto_custodian_wallet);
-                                    @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Custodian / Wallet for Transfer:
-                                        <span class="removeBold">{{ $displayCryptoCustodian }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->crypto_transaction_fees)
-                                    @php
-                                        $displayCryptoFees = str_replace('"', '', @$auction->get->crypto_transaction_fees);
-                                    @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Transaction Fees Responsibility:
-                                        <span class="removeBold badge bg-secondary">{{ $displayCryptoFees }}</span>
-                                    </div>
-                                @endif
-
-                                @if (@$auction->get->crypto_transfer_timing)
-                                    @php
-                                        $displayCryptoTiming = str_replace('"', '', @$auction->get->crypto_transfer_timing);
-                                        $displayCryptoTimingOther = str_replace('"', '', @$auction->get->crypto_transfer_timing_other ?? '');
-                                    @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Timing of Transfer:
-                                        @if (@$auction->get->crypto_transfer_timing === 'Other' && $displayCryptoTimingOther)
-                                            <span class="removeBold">{{ $displayCryptoTimingOther }}</span>
-                                        @else
-                                            <span class="removeBold badge bg-secondary">{{ $displayCryptoTiming }}</span>
-                                        @endif
                                     </div>
                                 @endif
                             @endif

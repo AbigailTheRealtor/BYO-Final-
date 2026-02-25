@@ -307,6 +307,18 @@
                                 @endif
                                 @endif
 
+                                @if (in_array('Cryptocurrency', $buyerFinancingOriginal) && !empty(@$auction->get->cryptocurrency))
+                                @php $crItems = array_values(array_filter(@$auction->get->cryptocurrency, fn($v) => \App\Helpers\ListingDisplayHelper::hasValue($v))); @endphp
+                                <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">Cryptocurrency Terms</h6></div>
+                                @if (count($crItems) === 1)
+                                    <div class="col-md-12 col-12 pt-1"><span class="removeBold">{{ $crItems[0] }}</span></div>
+                                @else
+                                    @foreach ($crItems as $cr)
+                                    <div class="col-md-12 col-12 pt-1"><span class="badge bg-secondary">{{ $cr }}</span></div>
+                                    @endforeach
+                                @endif
+                                @endif
+
                                 @if (in_array('Exchange/Trade', $buyerFinancingOriginal) && !empty(@$auction->get->trade))
                                 @php $trItems = array_values(array_filter(@$auction->get->trade, fn($v) => \App\Helpers\ListingDisplayHelper::hasValue($v))); @endphp
                                 <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">Exchange/Trade Terms</h6></div>
@@ -327,18 +339,6 @@
                                 @else
                                     @foreach ($loItems as $lo)
                                     <div class="col-md-12 col-12 pt-1"><span class="badge bg-secondary">{{ $lo }}</span></div>
-                                    @endforeach
-                                @endif
-                                @endif
-
-                                @if (in_array('Cryptocurrency', $buyerFinancingOriginal) && !empty(@$auction->get->cryptocurrency))
-                                @php $crItems = array_values(array_filter(@$auction->get->cryptocurrency, fn($v) => \App\Helpers\ListingDisplayHelper::hasValue($v))); @endphp
-                                <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">Cryptocurrency Terms</h6></div>
-                                @if (count($crItems) === 1)
-                                    <div class="col-md-12 col-12 pt-1"><span class="removeBold">{{ $crItems[0] }}</span></div>
-                                @else
-                                    @foreach ($crItems as $cr)
-                                    <div class="col-md-12 col-12 pt-1"><span class="badge bg-secondary">{{ $cr }}</span></div>
                                     @endforeach
                                 @endif
                                 @endif

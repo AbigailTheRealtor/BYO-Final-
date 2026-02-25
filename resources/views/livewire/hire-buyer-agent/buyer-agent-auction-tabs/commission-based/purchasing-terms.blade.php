@@ -873,6 +873,152 @@
     </div>
 
 @endif
+<!-- Cryptocurrency Option -->
+@if (in_array('Cryptocurrency', $offered_financing))
+<div wire:key="cryptocurrency-section">
+    <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
+        <h5 class="fw-bold text-primary mb-0">
+            <i class="fa-brands fa-bitcoin me-2"></i>Cryptocurrency
+        </h5>
+    </div>
+    <div class="form-group">
+        <label class="fw-bold">Offered Cryptocurrency:<span class="text-danger">*</span></label>
+
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the type of cryptocurrency the Buyer is offering (e.g., Bitcoin, Ethereum).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <input type="text" wire:model="cryptocurrency_type" class="form-control has-icon"
+                data-icon="fa-solid fa-money-bill-wave"
+                placeholder="Enter type of cryptocurrency (e.g., Bitcoin, Ethereum)" 
+               
+                required>
+        </div>
+
+
+        
+    </div>
+
+    <div class="form-group mt-3">
+        <label class="fw-bold">Percentage of Purchase Price to be Paid with Cryptocurrency:<span
+                class="text-danger">*</span></label>
+
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the percentage of the total purchase price to be paid in cryptocurrency.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-group">
+            <input type="text" wire:model="crypto_percentage" class="form-control"
+                placeholder="Enter percentage to be paid with cryptocurrency (e.g., 50)"
+                data-error-id="crypto_percentage_error"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
+                required>
+            <span class="input-group-text">%</span>
+        </div>
+        <span class="error mt-2" id="crypto_percentage_error"></span>
+
+    </div>
+
+    <div class="form-group mt-3">
+        <label class="fw-bold">Percentage of Purchase Price to be Paid with Cash:<span
+                class="text-danger">*</span></label>
+
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the percentage to be paid in cash. The two percentages should total 100%">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-group">
+            <input type="text" wire:model="cash_percentage_crypto" class="form-control"
+                placeholder="Enter percentage to be paid with cash (e.g., 50)"
+                data-error-id="cash_percentage_crypto_error"
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
+                required>
+            <span class="input-group-text">%</span>
+        </div>
+        <span class="error mt-2" id="cash_percentage_crypto_error"></span>
+
+    </div>
+
+    <!-- Exchange / Conversion Method -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Exchange / Conversion Method:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Specify how the cryptocurrency will be converted to U.S. dollars at closing. Most transactions use the spot exchange rate at a set time (e.g., date of transfer or settlement).">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <input type="text" wire:model="crypto_exchange_method" class="form-control has-icon"
+                data-icon="fa-solid fa-exchange-alt"
+                placeholder="Enter how crypto will be valued (e.g., Spot price at closing, Coinbase exchange rate)">
+        </div>
+    </div>
+
+    <!-- Custodian / Wallet for Transfer -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Custodian / Wallet for Transfer:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter the wallet, exchange, platform, or escrow service where cryptocurrency will be transferred. Examples include Coinbase, Binance, an escrow wallet address, or a crypto title/escrow provider such as Propy Title. This ensures both parties agree on the transfer method.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <input type="text" wire:model="crypto_custodian_wallet" class="form-control has-icon"
+                data-icon="fa-solid fa-wallet"
+                placeholder="Enter wallet, exchange, or escrow service (e.g., Coinbase, Escrow Wallet, Propy Title)">
+        </div>
+    </div>
+
+    <!-- Transaction Fees Responsibility -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Transaction Fees Responsibility:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select who will be responsible for blockchain transaction fees (miner/gas fees) associated with the crypto transfer.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <select wire:model="crypto_transaction_fees" class="form-control has-icon"
+                data-icon="fa-solid fa-money-bill-wave">
+                <option value="">Select</option>
+                <option value="Buyer">Buyer</option>
+                <option value="Seller">Seller</option>
+                <option value="Split">Split</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Timing of Transfer -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Timing of Transfer:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select when the cryptocurrency transfer will occur. Timing is important due to price volatility.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <select wire:model="crypto_transfer_timing" class="form-control has-icon"
+                data-icon="fa-regular fa-calendar-days">
+                <option value="">Select</option>
+                <option value="At Contract Signing">At Contract Signing</option>
+                <option value="At Closing">At Closing</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+    </div>
+
+    @if ($crypto_transfer_timing === 'Other')
+    <div class="form-group mt-2">
+        <div class="input-cover">
+            <input type="text" wire:model="crypto_transfer_timing_other" class="form-control has-icon"
+                data-icon="fa-regular fa-calendar-days"
+                placeholder="Enter timing of transfer (e.g., within 48 hours of contract acceptance, partial transfer at inspection period)">
+        </div>
+    </div>
+    @endif
+</div>
+@endif
 <!-- Exchange/Trade Option -->
 @if (in_array('Exchange/Trade', $offered_financing))
 <div wire:key="exchange-trade-section">
@@ -1411,153 +1557,6 @@
                 placeholder="Enter extension terms (e.g., Lease may be extended for 6 months with adjusted purchase price)">
         </div>
     </div>
-@endif
-
-<!-- Cryptocurrency Option -->
-@if (in_array('Cryptocurrency', $offered_financing))
-<div wire:key="cryptocurrency-section">
-    <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
-        <h5 class="fw-bold text-primary mb-0">
-            <i class="fa-brands fa-bitcoin me-2"></i>Cryptocurrency
-        </h5>
-    </div>
-    <div class="form-group">
-        <label class="fw-bold">Offered Cryptocurrency:<span class="text-danger">*</span></label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the type of cryptocurrency the Buyer is offering (e.g., Bitcoin, Ethereum).">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <input type="text" wire:model="cryptocurrency_type" class="form-control has-icon"
-                data-icon="fa-solid fa-money-bill-wave"
-                placeholder="Enter type of cryptocurrency (e.g., Bitcoin, Ethereum)" 
-               
-                required>
-        </div>
-
-
-        
-    </div>
-
-    <div class="form-group mt-3">
-        <label class="fw-bold">Percentage of Purchase Price to be Paid with Cryptocurrency:<span
-                class="text-danger">*</span></label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the percentage of the total purchase price to be paid in cryptocurrency.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-group">
-            <input type="text" wire:model="crypto_percentage" class="form-control"
-                placeholder="Enter percentage to be paid with cryptocurrency (e.g., 50)"
-                data-error-id="crypto_percentage_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
-                required>
-            <span class="input-group-text">%</span>
-        </div>
-        <span class="error mt-2" id="crypto_percentage_error"></span>
-
-    </div>
-
-    <div class="form-group mt-3">
-        <label class="fw-bold">Percentage of Purchase Price to be Paid with Cash:<span
-                class="text-danger">*</span></label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the percentage to be paid in cash. The two percentages should total 100%">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-group">
-            <input type="text" wire:model="cash_percentage_crypto" class="form-control"
-                placeholder="Enter percentage to be paid with cash (e.g., 50)"
-                data-error-id="cash_percentage_crypto_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
-                required>
-            <span class="input-group-text">%</span>
-        </div>
-        <span class="error mt-2" id="cash_percentage_crypto_error"></span>
-
-    </div>
-
-    <!-- Exchange / Conversion Method -->
-    <div class="form-group mt-3">
-        <label class="fw-bold">Exchange / Conversion Method:
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Specify how the cryptocurrency will be converted to U.S. dollars at closing. Most transactions use the spot exchange rate at a set time (e.g., date of transfer or settlement).">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-        </label>
-        <div class="input-cover">
-            <input type="text" wire:model="crypto_exchange_method" class="form-control has-icon"
-                data-icon="fa-solid fa-exchange-alt"
-                placeholder="Enter how crypto will be valued (e.g., Spot price at closing, Coinbase exchange rate)">
-        </div>
-    </div>
-
-    <!-- Custodian / Wallet for Transfer -->
-    <div class="form-group mt-3">
-        <label class="fw-bold">Custodian / Wallet for Transfer:
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the wallet, exchange, platform, or escrow service where cryptocurrency will be transferred. Examples include Coinbase, Binance, an escrow wallet address, or a crypto title/escrow provider such as Propy Title. This ensures both parties agree on the transfer method.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-        </label>
-        <div class="input-cover">
-            <input type="text" wire:model="crypto_custodian_wallet" class="form-control has-icon"
-                data-icon="fa-solid fa-wallet"
-                placeholder="Enter wallet, exchange, or escrow service (e.g., Coinbase, Escrow Wallet, Propy Title)">
-        </div>
-    </div>
-
-    <!-- Transaction Fees Responsibility -->
-    <div class="form-group mt-3">
-        <label class="fw-bold">Transaction Fees Responsibility:
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select who will be responsible for blockchain transaction fees (miner/gas fees) associated with the crypto transfer.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-        </label>
-        <div class="input-cover">
-            <select wire:model="crypto_transaction_fees" class="form-control has-icon"
-                data-icon="fa-solid fa-money-bill-wave">
-                <option value="">Select</option>
-                <option value="Buyer">Buyer</option>
-                <option value="Seller">Seller</option>
-                <option value="Split">Split</option>
-            </select>
-        </div>
-    </div>
-
-    <!-- Timing of Transfer -->
-    <div class="form-group mt-3">
-        <label class="fw-bold">Timing of Transfer:
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select when the cryptocurrency transfer will occur. Timing is important due to price volatility.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-        </label>
-        <div class="input-cover">
-            <select wire:model="crypto_transfer_timing" class="form-control has-icon"
-                data-icon="fa-regular fa-calendar-days">
-                <option value="">Select</option>
-                <option value="At Contract Signing">At Contract Signing</option>
-                <option value="At Closing">At Closing</option>
-                <option value="Other">Other</option>
-            </select>
-        </div>
-    </div>
-
-    @if ($crypto_transfer_timing === 'Other')
-    <div class="form-group mt-2">
-        <div class="input-cover">
-            <input type="text" wire:model="crypto_transfer_timing_other" class="form-control has-icon"
-                data-icon="fa-regular fa-calendar-days"
-                placeholder="Enter timing of transfer (e.g., within 48 hours of contract acceptance, partial transfer at inspection period)">
-        </div>
-    </div>
-    @endif
-</div>
 @endif
 
 <!-- NFT Option -->
