@@ -383,7 +383,7 @@
                         </div>
                           <hr>
                         <div class="card-header section-header">
-                            <h4 class="section-title">Property Preferences</h4>
+                            <h4 class="section-title">Property Preferences:</h4>
                         </div>
 
                         <div class="row" style="flex-wrap: wrap;">
@@ -393,7 +393,7 @@
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
                                             Acceptable Cities:
                                             @foreach (@$auction->get->cities as $item)
-                                                <span class="removeBold badge bg-secondary">{{ $item }}</span>
+                                                <span class="removeBold badge bg-secondary">{{ \App\Helpers\ListingDisplayHelper::stripStateSuffix($item) }}</span>
                                             @endforeach
                                         </div>
                                     @endif
@@ -402,7 +402,7 @@
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
                                             Acceptable Counties:
                                             @foreach (@$auction->get->counties as $item)
-                                                <span class="removeBold badge bg-secondary">{{ $item }}</span>
+                                                <span class="removeBold badge bg-secondary">{{ \App\Helpers\ListingDisplayHelper::stripStateSuffix($item) }}</span>
                                             @endforeach
                                         </div>
                                     @endif
@@ -431,15 +431,14 @@
                                         </div>
                                     @endif
 
-                                    @if (@$auction->get->property_items != null && count(@$auction->get->property_items) > 0)
+                                    @php
+                                        $detailPropertyStyles = \App\Helpers\ListingDisplayHelper::normalizeListDeduped(@$auction->get->property_items, @$auction->get->other_property_items);
+                                    @endphp
+                                    @if (!empty($detailPropertyStyles))
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
                                             Acceptable Property Styles:
-                                            @foreach (@$auction->get->property_items as $item)
-                                                @if ($item != 'Other')
-                                                    <span class="removeBold badge bg-secondary">{{ $item }}</span>
-                                                @elseif (@$auction->get->other_property_items)
-                                                    <span class="removeBold badge bg-secondary">{{ @$auction->get->other_property_items }}</span>
-                                                @endif
+                                            @foreach ($detailPropertyStyles as $item)
+                                                <span class="removeBold badge bg-secondary">{{ $item }}</span>
                                             @endforeach
                                         </div>
                                     @endif
@@ -460,17 +459,19 @@
                                         </div>
                                     @endif
 
-                                    <!-- Property Conditions -->
-                                    @if (@$auction->get->condition_prop_buyer != null && count(@$auction->get->condition_prop_buyer) > 0)
+                                    @php
+                                        $detailConditions = \App\Helpers\ListingDisplayHelper::normalizeListDeduped(@$auction->get->condition_prop_buyer, @$auction->get->other_property_condition);
+                                    @endphp
+                                    @if (!empty($detailConditions))
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
                                             Acceptable Property Conditions:
-                                            @foreach (@$auction->get->condition_prop_buyer as $item)
-                                                @if ($item != 'Other')
-                                                    <span class="removeBold badge bg-secondary">{{ $item }}</span>
-                                                @elseif (@$auction->get->other_property_condition)
-                                                    <span class="removeBold badge bg-secondary">{{ @$auction->get->other_property_condition }}</span>
-                                                @endif
-                                            @endforeach
+                                            @if (count($detailConditions) === 1)
+                                                <span class="removeBold">{{ $detailConditions[0] }}</span>
+                                            @else
+                                                @foreach ($detailConditions as $cItem)
+                                                    <span class="removeBold badge bg-secondary">{{ $cItem }}</span>
+                                                @endforeach
+                                            @endif
                                         </div>
                                     @endif
 
@@ -516,24 +517,17 @@
                                         </div>
                                     @endif
 
-                                    <!-- Carport and Garage -->
                                     @if (@$auction->get->carport_needed != null)
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
                                             Carport Needed:
-                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->carport_needed }}</span>
-                                            @if (@$auction->get->carport_needed == 'Yes' && @$auction->get->other_carport_needed)
-                                                <span class="removeBold">({{ @$auction->get->other_carport_needed }} spaces)</span>
-                                            @endif
+                                            <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->carport_needed, @$auction->get->other_carport_needed, 'Spaces') }}</span>
                                         </div>
                                     @endif
 
                                     @if (@$auction->get->garage_needed != null)
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
                                             Garage Needed:
-                                            <span class="removeBold badge bg-secondary">{{ @$auction->get->garage_needed }}</span>
-                                            @if (@$auction->get->garage_needed == 'Yes' && @$auction->get->other_garage_needed)
-                                                <span class="removeBold">({{ @$auction->get->other_garage_needed }} spaces)</span>
-                                            @endif
+                                            <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->garage_needed, @$auction->get->other_garage_needed, 'Spaces') }}</span>
                                         </div>
                                     @endif
 
@@ -630,38 +624,30 @@
                             </div>
                         @endif
 
-                        <!-- Pets Information for Income Property (immediately after Non-Negotiable Amenities) -->
                         @if (@$auction->get->property_type == 'Income' && @$auction->get->pets != null)
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Pets:
-                                <span class="removeBold badge bg-secondary">{{ @$auction->get->pets }}</span>
+                                <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->pets, @$auction->get->number_of_pets) }}</span>
                             </div>
 
-                            @if (@$auction->get->pets == 'Yes')
-                                @if (@$auction->get->number_of_pets)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Number of Pets:
-                                        <span class="removeBold">{{ @$auction->get->number_of_pets }}</span>
-                                    </div>
-                                @endif
-
+                            @if (\App\Helpers\ListingDisplayHelper::isParentYes(@$auction->get->pets))
                                 @if (@$auction->get->type_of_pets)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Type of Pets:
+                                        Pet Types:
                                         <span class="removeBold">{{ @$auction->get->type_of_pets }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->breed_of_pets)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Breed of Pets:
+                                        Breed:
                                         <span class="removeBold">{{ @$auction->get->breed_of_pets }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->weight_of_pets)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Weight of Pets:
+                                        Weight:
                                         <span class="removeBold">{{ @$auction->get->weight_of_pets }}</span>
                                     </div>
                                 @endif
@@ -749,39 +735,30 @@
                             </div>
                         @endif
 
-                        <!-- Pets Information for Non-Income Property Types (Residential, etc.) -->
-                        <!-- Note: Income property type has Pets displayed immediately after Non-Negotiable Amenities above -->
                         @if (@$auction->get->property_type != 'Income' && @$auction->get->pets != null)
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Pets:
-                                <span class="removeBold badge bg-secondary">{{ @$auction->get->pets }}</span>
+                                <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->pets, @$auction->get->number_of_pets) }}</span>
                             </div>
 
-                            @if (@$auction->get->pets == 'Yes')
-                                @if (@$auction->get->number_of_pets)
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Number of Pets:
-                                        <span class="removeBold">{{ @$auction->get->number_of_pets }}</span>
-                                    </div>
-                                @endif
-
+                            @if (\App\Helpers\ListingDisplayHelper::isParentYes(@$auction->get->pets))
                                 @if (@$auction->get->type_of_pets)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Type of Pets:
+                                        Pet Types:
                                         <span class="removeBold">{{ @$auction->get->type_of_pets }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->breed_of_pets)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Breed of Pets:
+                                        Breed:
                                         <span class="removeBold">{{ @$auction->get->breed_of_pets }}</span>
                                     </div>
                                 @endif
 
                                 @if (@$auction->get->weight_of_pets)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Weight of Pets:
+                                        Weight:
                                         <span class="removeBold">{{ @$auction->get->weight_of_pets }}</span>
                                     </div>
                                 @endif
@@ -813,7 +790,7 @@
                         </div>
                         <hr>
                             <div class="card-header section-header">
-                                <h4 class="section-title">Purchasing Terms</h4>
+                                <h4 class="section-title">Purchasing Terms:</h4>
                             </div>
 
                             <!-- Special Sale Provisions -->
@@ -930,7 +907,7 @@
                                 <hr>
                                 <div class="col-12">
                                     <div class="card-header section-header">
-                                        <h4 class="section-title">Financing Details</h4>
+                                        <h4 class="section-title">Financing Details:</h4>
                                     </div>
                                 </div>
                             @endif
@@ -938,19 +915,26 @@
                             <!-- Offered Financing/Currency - Now inside Financing Details section -->
                             @if (@$auction->get->offered_financing != null)
                                 @php
-                                    $financingRaw = @$auction->get->offered_financing;
-                                    $financingItems = is_array($financingRaw) ? $financingRaw : (is_string($financingRaw) ? json_decode($financingRaw, true) ?? [$financingRaw] : [$financingRaw]);
-                                    $displayOtherFinancing = str_replace('"', '', @$auction->get->other_financing ?? '');
+                                    $financingItems = \App\Helpers\ListingDisplayHelper::normalizeListDeduped(@$auction->get->offered_financing, @$auction->get->other_financing);
+                                    $financingOrder = ['Assumable','Cash','Conventional','Cryptocurrency','Exchange/Trade','FHA','Jumbo','Lease Option','Lease Purchase','No-Doc','Non-QM','NFT','Non-Fungible Token (NFT)','Seller Financing','USDA','VA'];
+                                    usort($financingItems, function($a, $b) use ($financingOrder) {
+                                        $aIdx = array_search($a, $financingOrder);
+                                        $bIdx = array_search($b, $financingOrder);
+                                        if ($aIdx === false && strtolower($a) === 'other') return 1;
+                                        if ($bIdx === false && strtolower($b) === 'other') return -1;
+                                        if ($aIdx === false) $aIdx = 999;
+                                        if ($bIdx === false) $bIdx = 999;
+                                        return $aIdx - $bIdx;
+                                    });
                                 @endphp
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Offered Financing/Currency:
-                                    @foreach ($financingItems as $financingItem)
-                                        @if ($financingItem != 'Other')
-                                            <span class="removeBold badge bg-secondary">{{ str_replace('"', '', $financingItem) }}</span>
-                                        @endif
-                                    @endforeach
-                                    @if (in_array('Other', $financingItems) && @$auction->get->other_financing)
-                                        <span class="removeBold badge bg-secondary">{{ $displayOtherFinancing }}</span>
+                                    @if (count($financingItems) === 1)
+                                        <span class="removeBold">{{ $financingItems[0] }}</span>
+                                    @else
+                                        @foreach ($financingItems as $fItem)
+                                            <span class="removeBold badge bg-secondary">{{ $fItem }}</span>
+                                        @endforeach
                                     @endif
                                 </div>
                             @endif
@@ -966,23 +950,19 @@
                                 </div>
                             @endif
 
-                            <!-- Loan Pre-Approval Details -->
                             @php
                                 $loanTypes = ['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'];
                                 $selectedLoanTypes = array_intersect($financingArray, $loanTypes);
-                                $hasLoanData = count($selectedLoanTypes) > 0 && (@$auction->get->pre_approved || @$auction->get->pre_approval_amount);
+                                $hasAnyLoanType = count($selectedLoanTypes) > 0;
                             @endphp
-                            @if ($hasLoanData)
+                            @if ($hasAnyLoanType)
                                 <div class="col-12 mt-3 mb-1">
-                                    <h6 class="financing-subsection-header">Loan Pre-Approval Status</h6>
+                                    <h6 class="financing-subsection-header">Conventional / FHA / Jumbo / VA / No-Doc / Non-QM / USDA</h6>
                                 </div>
                                 @if (@$auction->get->pre_approved)
-                                    @php
-                                        $displayPreApproved = str_replace('"', '', @$auction->get->pre_approved);
-                                    @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Buyer Pre-Approved for a Loan:
-                                        <span class="removeBold badge bg-secondary">{{ $displayPreApproved }}</span>
+                                        <span class="removeBold">{{ str_replace('"', '', @$auction->get->pre_approved) }}</span>
                                     </div>
                                 @endif
 
@@ -1679,7 +1659,7 @@
 
                         <hr />
                         <div class="card-header section-header">
-                            <h4 class="section-title">Broker Compensation & Agency Agreement Terms</h4>
+                            <h4 class="section-title">Broker Compensation & Agency Agreement Terms:</h4>
                         </div>
 
                         <!-- Buyer's Broker Compensation Sub-section -->

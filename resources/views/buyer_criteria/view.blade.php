@@ -284,9 +284,9 @@
                                 @php
                                     $conventionalLoanTypes = ['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'];
                                     $selectedLoanTypes = array_intersect($buyerFinancingOriginal, $conventionalLoanTypes);
-                                    $hasLoanData = count($selectedLoanTypes) > 0 && (@$auction->get->pre_approved || @$auction->get->pre_approval_amount);
+                                    $hasAnyLoanType = count($selectedLoanTypes) > 0;
                                 @endphp
-                                @if ($hasLoanData)
+                                @if ($hasAnyLoanType)
                                     <div class="col-12 mt-3 mb-1"><h6 class="fw-bold">Conventional / FHA / Jumbo / VA / No-Doc / Non-QM / USDA</h6></div>
                                     @if (@$auction->get->pre_approved)
                                         <div class="col-md-12 col-12 pt-1 fw-bold">Buyer Pre-Approved for a Loan:
@@ -604,7 +604,9 @@
                                     @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->property_type))
                                         <span class="removeBold">({{ \App\Helpers\ListingDisplayHelper::normalizePropertyType(@$auction->get->property_type) }})</span>
                                     @endif
-                                    <span class="removeBold">{{ implode(', ', $buyerPropertyStyles) }}</span>
+                                    @foreach ($buyerPropertyStyles as $bps)
+                                        <span class="badge bg-secondary removeBold">{{ $bps }}</span>
+                                    @endforeach
                                 </div>
                             @endif
                             @php
