@@ -1,0 +1,236 @@
+Below are **copy/paste Replit instructions with safeguards** for **Hire a Buyer’s Agent** (Residential + Income) covering your 3 edits.
+
+---
+
+# ✅ Replit Instructions (WITH SAFEGUARDS) — Hire a Buyer’s Agent Edits
+
+## SAFEGUARDS (NON-NEGOTIABLE)
+
+1. **Do NOT rename** database tables/columns, Livewire component names, routes, or view filenames.
+2. **Do NOT delete** any existing options or change stored values (only change labels/order/display).
+3. Make changes **in all 4 places** for Buyer listings:
+
+   * **Listing Creation**
+   * **Draft**
+   * **Edits**
+   * **Actual Listing Display**
+4. Keep logic/validation intact. Only adjust **label text**, **display labels**, and **option ordering/placement**.
+
+---
+
+## 1) Pets Section (Residential + Income): rename labels everywhere
+
+### Requirement
+
+When **Pets = Yes**, change:
+
+* **Weight** → **Pet Weight (lbs)**
+* **Breed** → **Breed of Pets**
+
+### Where to change
+
+Search the Buyer flow for label strings and field render blocks:
+
+* `Weight`
+* `Breed`
+* `Pets`
+* `pet_weight`
+* `weight_of_pets`
+* `pet_breed`
+* `breed`
+
+Likely files:
+
+* Buyer create Livewire blade tab (pets section)
+* Buyer edit Livewire blade tab
+* Buyer draft blade tab
+* Buyer actual listing show blade / shared listing renderer partial
+
+### What to change (labels only — DO NOT rename variables)
+
+**Before (example):**
+
+```html
+<label>Weight:</label>
+<input wire:model.defer="pet_weight" ...>
+
+<label>Breed:</label>
+<input wire:model.defer="pet_breed" ...>
+```
+
+**After:**
+
+```html
+<label>Pet Weight (lbs):</label>
+<input wire:model.defer="pet_weight" ...>
+
+<label>Breed of Pets:</label>
+<input wire:model.defer="pet_breed" ...>
+```
+
+### Actual listing display (labels only)
+
+**Before:**
+
+```php
+<strong>Weight:</strong> {{ $auction->pet_weight ?? '—' }}
+<strong>Breed:</strong> {{ $auction->pet_breed ?? '—' }}
+```
+
+**After:**
+
+```php
+<strong>Pet Weight (lbs):</strong> {{ $auction->pet_weight ?? '—' }}
+<strong>Breed of Pets:</strong> {{ $auction->pet_breed ?? '—' }}
+```
+
+✅ Repeat for **Residential + Income** buyer listings.
+
+---
+
+## 2) Offered Financing/Currency: listing creation option order must match actual listing
+
+### Requirement
+
+In **listing creation** (and keep consistent in draft/edits if the same options list is reused), the order must be:
+
+1. **Assumable**
+2. **Conventional / FHA / Jumbo / VA / No-Doc / Non-QM / USDA**
+3. **Cryptocurrency**
+4. **Exchange/Trade**
+5. **Lease Option**
+6. **Lease Purchase**
+7. **Non-Fungible Token**
+8. **Seller Financing**
+
+### Where to change
+
+This ordering is controlled by whichever file defines the options array for Buyer financing. Search for:
+
+* `offered_financing`
+* `Offered Financing/Currency`
+* `financingOptions`
+* `currencyOptions`
+* `NFT`
+* `Exchange/Trade`
+* `Cryptocurrency`
+* `Assumable`
+
+Common locations:
+
+* Buyer create component `mount()` options array
+* A shared config/constants file
+* A Blade partial that renders the list
+
+### What to change
+
+Reorder the **source array** that populates listing creation (and any shared components):
+
+```php
+$this->offeredFinancingOptions = [
+  'Assumable',
+  'Conventional / FHA / Jumbo / VA / No-Doc / Non-QM / USDA',
+  'Cryptocurrency',
+  'Exchange/Trade',
+  'Lease Option',
+  'Lease Purchase',
+  'Non-Fungible Token',
+  'Seller Financing',
+];
+```
+
+**Important safeguards:**
+
+* Do **NOT** change the stored values if they are already used elsewhere. If your stored values are different (e.g., `nft`, `crypto`, `exchange_trade`), then reorder the **display list** but keep the internal values the same.
+* If your options are key/value pairs, reorder the keys but keep the same keys.
+
+Example safe key/value ordering:
+
+```php
+$this->offeredFinancingOptions = [
+  'assumable' => 'Assumable',
+  'conventional_bundle' => 'Conventional / FHA / Jumbo / VA / No-Doc / Non-QM / USDA',
+  'cryptocurrency' => 'Cryptocurrency',
+  'exchange_trade' => 'Exchange/Trade',
+  'lease_option' => 'Lease Option',
+  'lease_purchase' => 'Lease Purchase',
+  'nft' => 'Non-Fungible Token',
+  'seller_financing' => 'Seller Financing',
+];
+```
+
+✅ This makes listing creation match the actual listing display order you already like.
+
+---
+
+## 3) Move “Provide referrals…” to last option under Offer & Contract Coordination
+
+### Requirement
+
+This item currently appears under **Additional Services**. It must be moved to the **last option** under:
+
+✅ **Offer & Contract Coordination**
+
+Item text (exact):
+
+> Provide referrals to Attorneys, Title Companies, Escrow Professionals, or Lenders (referrals only — no endorsement or warranty is made)
+
+### Where to change
+
+Find the services list definition for Buyer Agent services (full service / commission-based). Search:
+
+* `Offer & Contract Coordination`
+* `Additional Services`
+* `Provide referrals`
+* `Attorneys`
+* `Title Companies`
+
+This may exist:
+
+* As an array in Livewire component
+* In a shared services config / constants file
+* In a Blade partial rendering checkboxes
+
+### What to change
+
+1. Remove it from `Additional Services` list array
+2. Add it as the **last** element in `Offer & Contract Coordination`
+
+Example:
+
+```php
+// Offer & Contract Coordination (append at end)
+$offerContractCoordination = [
+  // ...existing options...
+  'Provide referrals to Attorneys, Title Companies, Escrow Professionals, or Lenders (referrals only — no endorsement or warranty is made)',
+];
+
+// Additional Services (remove from here)
+$additionalServices = [
+  // ...everything else...
+];
+```
+
+**Safeguard:** Do not change the saved values for users who already selected it.
+
+* If you use an internal key like `provide_referrals`, keep the same key and just move its category placement.
+* Ensure the submission still saves to the same underlying field/array.
+
+---
+
+## Final QA Checklist (must pass)
+
+1. Buyer listing **Create / Draft / Edit / Actual listing** shows:
+
+   * `Pet Weight (lbs):` (not Weight)
+   * `Breed of Pets:` (not Breed)
+2. Offered Financing/Currency on **listing creation** is ordered:
+
+   * Assumable → Conventional bundle → Cryptocurrency → Exchange/Trade → Lease Option → Lease Purchase → NFT → Seller Financing
+3. “Provide referrals…” is **no longer** under Additional Services
+4. “Provide referrals…” is the **last option** under Offer & Contract Coordination
+5. No DB changes, no broken saved listings, no lost selections
+
+---
+
+If you want, paste the **exact Buyer Livewire component names** you use for Create/Edit (even just the filenames), and I’ll rewrite this with the most likely exact file paths and search terms tailored to your repo structure.
