@@ -564,7 +564,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             $bedroomVal = \App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->other_bedrooms) ? @$auction->get->other_bedrooms : null;
                         }
                     @endphp
-                    @if (\App\Helpers\ListingDisplayHelper::hasValue($bedroomVal))
+                    @if (@$auction->get->property_type !== 'Commercial Property' && \App\Helpers\ListingDisplayHelper::hasValue($bedroomVal))
                     <div class="col-md-12 col-12 pt-2 fw-bold">
                         Minimum Bedrooms Needed:
                         <span class="removeBold">{{ $bedroomVal }}</span>
@@ -810,7 +810,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </div>
                 @endif
                 @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->weight_of_pets))
-                <div class="col-md-12 col-12 pt-2 fw-bold"> Weight:
+                <div class="col-md-12 col-12 pt-2 fw-bold"> Pet Weight Limit (lbs):
                     <span class="removeBold">{{ @$auction->get->weight_of_pets }} lbs</span>
                 </div>
                 @endif
@@ -928,15 +928,22 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @endif
 
                 @if (@$auction->get->broker_fee_timing != null)
+                @php
+                    $brokerTimingMap = [
+                        'full_execution' => 'Full amount upon execution of lease, sales contract, or other transfer agreement',
+                        'half_execution_half_occupancy' => '50% due upon execution, 50% due upon occupancy of premises',
+                        'half_execution_half_commencement' => '50% due upon execution, 50% due upon commencement of agreement',
+                    ];
+                    $rawBrokerTiming = @$auction->get->broker_fee_timing;
+                    if ($rawBrokerTiming === 'other') {
+                        $displayBrokerTiming = $auction->get->broker_fee_timing_other ?? '';
+                    } else {
+                        $displayBrokerTiming = $brokerTimingMap[$rawBrokerTiming] ?? str_replace('_', ' ', ucfirst($rawBrokerTiming ?? ''));
+                    }
+                @endphp
                 <div class="col-md-12 col-12 pt-2 fw-bold">
                     Payment Timing for Broker Fees:
-                    <span class="removeBold">
-                        @if (@$auction->get->broker_fee_timing === 'other')
-                            {{ $auction->get->broker_fee_timing_other ?? '' }}
-                        @else
-                            {{ $auction->get->broker_fee_timing ?? '' }}
-                        @endif
-                    </span>
+                    <span class="removeBold">{{ $displayBrokerTiming }}</span>
                 </div>
                 @endif
 
@@ -1048,28 +1055,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @if (@$auction->get->early_termination_fee_option != null)
                 <div class="col-md-12 col-12 pt-2 fw-bold">
                     Early Termination Fee:
-                    <span class="removeBold">{{ $auction->get->early_termination_fee_option ?? '' }}</span>
-                </div>
-                @endif
-
-                @if (@$auction->get->early_termination_fee_option === 'Yes' && @$auction->get->early_termination_fee_amount != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Termination Fee Amount:
-                    <span class="removeBold">${{ number_format((float)str_replace(',', '', $auction->get->early_termination_fee_amount), 0) }}</span>
+                    <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->early_termination_fee_option, @$auction->get->early_termination_fee_amount ? '$' . number_format((float)str_replace(',', '', @$auction->get->early_termination_fee_amount), 0) : null) }}</span>
                 </div>
                 @endif
 
                 @if (@$auction->get->retainer_fee_option != null)
                 <div class="col-md-12 col-12 pt-2 fw-bold">
                     Retainer Fee:
-                    <span class="removeBold">{{ $auction->get->retainer_fee_option ?? '' }}</span>
-                </div>
-                @endif
-
-                @if (@$auction->get->retainer_fee_option === 'Yes' && @$auction->get->retainer_fee_amount != null)
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Retainer Fee Amount:
-                    <span class="removeBold">${{ number_format((float)str_replace(',', '', $auction->get->retainer_fee_amount), 0) }}</span>
+                    <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->retainer_fee_option, @$auction->get->retainer_fee_amount ? '$' . number_format((float)str_replace(',', '', @$auction->get->retainer_fee_amount), 0) : null) }}</span>
                 </div>
                 @endif
 

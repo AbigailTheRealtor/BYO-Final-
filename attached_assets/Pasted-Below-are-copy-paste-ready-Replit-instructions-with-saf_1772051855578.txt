@@ -1,0 +1,296 @@
+Below are **copy/paste-ready Replit instructions with safeguards** for **Hire a Tenant’s Agent → Actual Listing Display + Edit/Draft UX fixes**.
+
+---
+
+# ✅ REPLIT INSTRUCTIONS (WITH SAFEGUARDS)
+
+## Scope
+
+**Module:** Hire a Tenant’s Agent
+**Applies to:** Residential + Commercial (where noted)
+**Areas:**
+
+1. Actual listing display rendering
+2. Edit + Draft persistence
+3. Label changes (“Pet Types”)
+4. Edit UI bug (Acceptable Property Conditions flashing)
+5. Next button requires multiple clicks
+6. Commercial-only display rules
+7. Commercial “Payment Timing for Broker Fees” label mapping
+
+---
+
+## 🔒 SAFEGUARDS (DO NOT BREAK EXISTING FLOWS)
+
+1. **Do NOT delete, rename, or repurpose** existing DB columns.
+2. **Do NOT remove** any existing tooltips, field order, or validation rules unless explicitly stated below.
+3. If any DB change is needed, use **add-only migrations** (new columns only).
+4. Keep **draft + edit + submit** using the **same source of truth** (same keys + same mapping arrays).
+5. Any display fix must be done in the **listing display view/component**, not by changing stored values (unless it’s a confirmed bad value).
+
+---
+
+# 1) FIX: “Other” not showing for these fields (Actual Listing Display)
+
+### A) Non-Negotiable Property Features & Amenities (Other input not rendering)
+
+**Problem:** User selects **Other** and types custom text, but actual listing display shows nothing (or only “Other”).
+
+**Fix Requirements:**
+
+* If “Other” is selected and user entered custom text, display the **custom text**, not the word “Other”.
+* If “Other” is selected but custom text is blank, display “Other”.
+
+**Implementation (Display Layer):**
+
+* Locate Tenant listing display rendering for:
+
+  * `non_negotiable_features_amenities` (multi-select array)
+  * `non_negotiable_features_amenities_other` (text input)
+* When building the display list:
+
+  * Replace `"other"` with the value from `*_other` if present.
+
+**Safeguard:** Do not alter stored array values; only transform for display.
+
+---
+
+### B) Offered Lease Term (Other input not rendering)
+
+**Fix Requirements:**
+
+* If `offered_lease_term` includes `"other"` and `offered_lease_term_other` has text → display that text.
+* Otherwise, show the selected standard option(s).
+
+**Safeguard:** Same as above—display transform only.
+
+---
+
+# 2) FIX: Edit screen “Acceptable Property Conditions” flashes all options
+
+**Problem:** On edit, the component briefly renders “all options” (likely unfiltered) then re-renders selected values, causing a flash.
+
+**Common Causes:**
+
+* Options list is being reloaded async after initial render
+* `wire:init` / lifecycle hydration causes temporary empty selected state
+* `selectedConditions` starts null, then updates
+
+**Fix Requirements:**
+
+* Prevent the “all options flash” by ensuring the selected values are hydrated **before** the options render or by hiding the block until hydration completes.
+
+**Implementation Options (pick one):**
+
+### Option 1 (Recommended): Gate UI until hydrated
+
+* Add a boolean like `public $hydrated = false;`
+* In `mount()`: load listing → set selected arrays → then `$this->hydrated = true;`
+* In Blade: wrap the conditions block:
+
+  * Only render options when `$hydrated === true`
+  * Otherwise render a skeleton/placeholder (or nothing)
+
+### Option 2: Use `wire:key` + prefilled defaults
+
+* Ensure the checkbox/radio group uses a stable `wire:key` tied to listing id
+* Ensure selected array defaults to `[]` not `null`
+
+**Safeguard:** Do not change the set of property condition options—only stop the flashing.
+
+---
+
+# 3) COPY CHANGE: Replace “Type of Pets” → “Pet Types” (Create + Edit + Draft)
+
+**Requirement:**
+
+* Everywhere the label currently says **“Type of Pets”**, change it to **“Pet Types”**
+* Applies to:
+
+  * Listing Creation form
+  * Edit form
+  * Draft form
+  * Actual listing display label
+
+**Safeguard:**
+
+* Do **NOT** rename DB field keys unless absolutely required.
+* This is a **label only** change (UI string change).
+
+---
+
+# 4) Listing Display: “Weight of Pets (lbs)” vs “Weight:”
+
+**Recommendation (matches your platform style):**
+✅ Show: **“Pet Weight Limit (lbs):”**
+Reason: It reads clearly and avoids confusion with “Weight” of what.
+
+If you want it shorter:
+
+* **“Pet Weight (lbs):”** is still clear.
+
+**Do NOT use** just “Weight:” (too vague on listings).
+
+---
+
+# 5) Combine Fee + Amount on Actual Listing Display (and anywhere else it applies)
+
+## A) Early Termination Fee
+
+**Current (bad):**
+
+* Early Termination Fee: Yes
+* Termination Fee Amount: $500
+
+**New Display Rule:**
+
+* If Yes and amount exists →
+  **Early Termination Fee:** Yes (**$500**)
+* If Yes and no amount →
+  **Early Termination Fee:** Yes
+* If No →
+  **Early Termination Fee:** No
+
+### Data fields involved (example names)
+
+* `early_termination_fee` (yes/no)
+* `termination_fee_amount` (currency)
+
+**Safeguard:** Do not remove the amount field; just combine in display.
+
+---
+
+## B) Retainer Fee
+
+**Current (bad):**
+
+* Retainer Fee: Yes
+* Retainer Fee Amount: $400
+
+**New Display Rule:**
+
+* If Yes and amount exists →
+  **Retainer Fee:** Yes (**$400**)
+* If Yes and no amount →
+  **Retainer Fee:** Yes
+* If No →
+  **Retainer Fee:** No
+
+### Data fields involved (example names)
+
+* `retainer_fee` (yes/no)
+* `retainer_fee_amount` (currency)
+
+---
+
+# 6) FIX: Next button on edit requires multiple clicks
+
+**Problem:** On edits, “Next” requires clicking twice (or more). Typically caused by:
+
+* Validation firing on first click but not showing error focus
+* `wire:click` and `type="submit"` both triggering
+* Button disabled/re-enabled due to loading state
+* DOM re-render causing lost click
+
+**Fix Requirements:**
+
+* Ensure Next triggers exactly **one** handler.
+* Ensure it is not blocked by Livewire loading state incorrectly.
+* Ensure validation errors show immediately.
+
+**Implementation Checklist:**
+
+1. Ensure the Next button is **either**:
+
+   * `type="button" wire:click="nextStep"`
+     **OR**
+   * `type="submit"` in a `<form wire:submit.prevent="nextStep">`
+     (Do not mix both.)
+2. Add `wire:loading.attr="disabled"` only if you also add a visible loading state.
+3. Confirm `nextStep()` does not early-return due to missing required fields without surfacing errors.
+4. If using Alpine/JS stepper, ensure it doesn’t intercept the first click.
+
+**Safeguard:** Do not remove existing validation—fix the trigger mechanics.
+
+---
+
+# 7) COMMERCIAL ONLY: Remove “Minimum Bedrooms Needed” from actual listing display
+
+**Requirement:**
+
+* For **Commercial Tenant listings only**, hide the entire “Minimum Bedrooms Needed” row/field on the actual listing display.
+
+**Implementation (Display Layer):**
+
+* Add a condition like:
+
+  * If listing property type is Commercial → do not render bedrooms line.
+* Do not remove from DB; do not remove from Residential display.
+
+---
+
+# 8) COMMERCIAL ONLY: Fix “Payment Timing for Broker Fees” showing wrong values
+
+**Problem:** The actual listing display shows raw enum keys like:
+
+* `full_execution`
+* `half_execution_half_occupancy`
+  …or maps the wrong label.
+
+**Fix Requirements:**
+
+* Display the correct human-readable label for each stored enum value.
+* Ensure values are distinct and correctly mapped.
+
+## Required Mapping (Commercial Tenant)
+
+Create/confirm a mapping array used **only for display**:
+
+* `full_execution` → **Full amount upon execution of lease, sales contract, or other transfer agreement**
+* `half_execution_half_occupancy` → **50% due upon execution, 50% due upon occupancy of premises**
+* `half_execution_half_commencement` → **50% due upon execution, 50% due upon commencement of agreement**
+
+**Important:** Your third case is currently displaying the wrong key in your note.
+You need **three unique stored keys**. If the DB currently stores the wrong duplicate key for the third option, fix the **save logic** to store the correct third key going forward.
+
+### Implementation Steps
+
+1. Find the select input options for Commercial “Payment Timing for Broker Fees”.
+2. Ensure each option has a unique `value`:
+
+   * `full_execution`
+   * `half_execution_half_occupancy`
+   * `half_execution_half_commencement`
+3. In actual listing display:
+
+   * Render label from mapping array
+   * If stored value not found in mapping → fallback to a prettified version (or “Not specified”)
+
+**Safeguard:**
+
+* Do not change historical saved values unless you confirm bad data exists.
+* If you must correct existing records, do it via a **one-time admin script/migration** that only updates the incorrect duplicated value where it can be confidently inferred.
+
+---
+
+# ✅ TEST PLAN (REQUIRED)
+
+Login: **[tenant@exp.com](mailto:tenant@exp.com)**
+Flow: **Hire a Tenant’s Agent → Create listing → Save Draft → Edit Draft → Submit → View Actual Listing**
+
+Test the following:
+
+1. Select “Other” for Non-Negotiable Features/Amenities + enter text → actual listing shows the text.
+2. Select “Other” for Offered Lease Term + enter text → actual listing shows the text.
+3. Edit listing → “Acceptable Property Conditions” does **not flash** all options.
+4. “Pet Types” label appears on create/edit/draft/listing display.
+5. Pet weight label reads **Pet Weight Limit (lbs):** (or your chosen label)
+6. Early Termination Fee displays as **Yes ($500)** when amount exists; **No** when no.
+7. Retainer Fee displays as **Yes ($400)** when amount exists; **No** when no.
+8. Edit Next button advances on **first click** consistently.
+9. Commercial listing: Minimum Bedrooms does **not** show.
+10. Commercial Payment Timing shows correct labels (never raw keys).
+
+---
+
+If you paste me the **exact Livewire component + blade filenames** you’re using for Tenant create/edit/display (even just the names), I’ll tailor these instructions to your exact file paths and field keys so your dev can implement with zero guessing.
