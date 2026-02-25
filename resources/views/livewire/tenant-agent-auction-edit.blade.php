@@ -2222,54 +2222,7 @@
 
 
 
-            $('#lease_for').select2({
-                placeholder: "Select",
-                allowClear: true,
-            });
-
-
-            // Function to toggle "Other" input visibility and validation
-            function toggleOtherLeaseInput() {
-                let selectedValues = $('#lease_for').val();
-                if (selectedValues && selectedValues.includes('Other')) {
-                    $('#other_lease_input_wrapper').removeClass('d-none'); // Show the input for "Other"
-                    $('#other_lease_for').attr('required', true); // Make input required
-                } else {
-                    $('#other_lease_input_wrapper').addClass('d-none'); // Hide the input for "Other"
-                    $('#other_lease_for').removeAttr('required'); // Remove required attribute
-                    $('#other_lease_length_error').text(''); // Clear any error messages
-                }
-            }
-
-            // Livewire updates on selection change
-            $('#lease_for').on('change', function(e) {
-                let selectedValues = $(this).val();
-                @this.set('lease_for', selectedValues); // Update Livewire property
-                toggleOtherLeaseInput(); // Show or hide the "Other" input
-            });
-
-            // Prevent form submission if "Other" is selected but the input is empty
-            $('form').on('submit', function(e) {
-                let selectedValues = $('#lease_for').val();
-                let otherLeaseValue = $('#other_lease_for').val().trim();
-
-                if (selectedValues && selectedValues.includes('Other') && !otherLeaseValue) {
-                    e.preventDefault(); // Stop form submission
-                    $('#other_lease_length_error').text('This field is required.'); // Show error message
-                }
-            });
-
-            // Livewire hook to process re-renders
-            Livewire.hook('message.processed', (message, component) => {
-                // Reinitialize Select2 (if needed)
-                $('#lease_for').select2({
-                    placeholder: "Select lease length",
-                    allowClear: true,
-                });
-
-                // Ensure "Other" input visibility is updated
-                toggleOtherLeaseInput();
-            });
+            
 
 
 
@@ -2520,15 +2473,21 @@
                     if (vals.includes('Other')) {
                         $('.other_non_negotiable_amenities').removeClass('d-none');
                     } else {
-                        // hide & clear the field
                         $('.other_non_negotiable_amenities')
                             .addClass('d-none')
                             .find('input').val('').trigger('input');
                         @this.set('other_non_negotiable_amenities', '');
                     }
-                    // sync back to Livewire if you need it:
                     @this.set('non_negotiable_amenities', vals);
                 });
+
+            var nnInitial = @this.get('non_negotiable_amenities') || [];
+            if (nnInitial.length) {
+                $('#non_negotiable_amenities').val(nnInitial).trigger('change.select2');
+                if (nnInitial.includes('Other')) {
+                    $('.other_non_negotiable_amenities').removeClass('d-none');
+                }
+            }
             // End to non_negotiable_amenities
 
 
@@ -3043,29 +3002,30 @@
             }
 
             function initSelect2LeaseFor() {
-                $('.lease_for').select2({
+                var $sel = $('.lease_for');
+                if ($sel.hasClass('select2-hidden-accessible')) {
+                    $sel.select2('destroy');
+                }
+
+                $sel.select2({
                     placeholder: "Select",
                     allowClear: true
                 });
 
-                // Restore selection and toggle UI after init
-                let selectedLease = $('.lease_for').val() || [];
-                toggleLease(selectedLease);
+                var lwValues = @this.get('lease_for') || [];
+                if (lwValues.length) {
+                    $sel.val(lwValues).trigger('change.select2');
+                }
+                toggleLease($sel.val() || []);
 
-                $('.lease_for').off('change').on('change', function() {
+                $sel.off('change').on('change', function() {
                     let selectedLease = $(this).val() || [];
                     @this.set('lease_for', selectedLease);
                     toggleLease(selectedLease);
                 });
             }
 
-            // Run on initial load
             initSelect2LeaseFor();
-
-            // Re-run after DOM is updated by Livewire
-            Livewire.hook('message.processed', (message, component) => {
-                initSelect2LeaseFor();
-            });
 
             // End lease_for
             //rent_includes
