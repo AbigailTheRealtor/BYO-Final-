@@ -1,0 +1,228 @@
+Below are **copy/paste-ready Replit instructions with safeguards** to fix the **Hire a Buyer’s Agent** listing **display order + section placement** issues (Residential, Income, Commercial, Business, Vacant Land). This is **display-only** unless you also want the checklist moved on the **create/edit** form (I’m keeping creation as the “source of truth” and making display match it).
+
+---
+
+# Replit Instructions (with safeguards)
+
+## Ticket: Hire a Buyer’s Agent — Fix misplaced services (move out of “Additional Services” into correct sections + correct order)
+
+### Scope
+
+* Applies to **Hire a Buyer’s Agent** listing **display views** (public/detail pages + any “preview” cards that show the service checklist).
+* Property types:
+
+  * **Residential**
+  * **Income**
+  * **Commercial**
+  * **Business**
+  * **Vacant Land**
+* Fix: Certain service lines currently render under **✍️ Additional Services** but must render under the correct section and in the correct order (matching listing creation).
+
+---
+
+## SAFEGUARDS (DO NOT BREAK EXISTING LISTINGS)
+
+1. **Do not rename DB columns** and **do not change stored values**.
+2. **Do not change service keys** used for saving (checkbox names / array keys).
+3. **Display only**: move where/how items render in the Blade display template(s).
+4. Ensure **backward compatibility**:
+
+   * If an older listing saved the service under an “additional_services” bucket, still show it in the correct section by checking the same underlying flag/key.
+5. If a service appears in two arrays/sections due to legacy saves, **dedupe display** (show it once in the correct section).
+
+---
+
+## Step 1 — Identify the display template(s) that render buyer services
+
+Search in Replit for these exact strings (they’re unique):
+
+* `Provide referrals to Attorneys, Title Companies`
+* `Post the Buyer’s criteria on Craigslist`
+* `Additional Services`
+* `Offer & Contract Coordination`
+
+Likely files (examples, adjust to your actual filenames):
+
+* `resources/views/buyerAgentAuctionDetail.blade.php`
+* `resources/views/livewire/buyer-agent-auction-detail.blade.php`
+* any partial like:
+
+  * `resources/views/partials/buyer_services_display.blade.php`
+  * `resources/views/components/services/buyer-*.blade.php`
+
+**Safeguard:** make changes in the **shared partial** if one exists, not in multiple duplicated templates.
+
+---
+
+## Step 2 — Remove the misplaced items from “✍️ Additional Services” rendering block
+
+In the **Additional Services** display section, locate the list items that match the following and **exclude them from rendering there**.
+
+### Commercial (remove from Additional Services display block)
+
+* `Post the Buyer’s criteria on Craigslist under “Real Estate Wanted – Commercial”`
+* `Provide referrals to Attorneys, Title Companies, Escrow Officers, Commercial Lenders, or 1031 Exchange Intermediaries (referrals only — no endorsement or warranty is made)`
+
+### Business (remove from Additional Services display block)
+
+* `Post the Buyer’s criteria on Craigslist under “Real Estate Wanted – Land”`
+* `Provide referrals to Attorneys, Title Companies, Escrow Officers, Surveyors, or Land Use Consultants (referrals only — no endorsement or warranty is made)`
+
+### Vacant Land (remove from Additional Services display block)
+
+* `Post the Buyer’s criteria on Craigslist under “Real Estate Wanted – Land”`
+* `Provide referrals to Attorneys, Title Companies, Escrow Officers, Surveyors, or Land Use Consultants (referrals only — no endorsement or warranty is made)`
+
+**Safeguard (dedupe):**
+
+* Add a simple `if` guard so these exact items cannot render under Additional Services even if the stored key says it’s “additional”.
+* Do NOT delete them from any arrays used for saving; just exclude from that section’s output.
+
+---
+
+## Step 3 — Add them to the correct section and correct position (display order)
+
+### A) Residential — Offer & Contract Coordination (last item)
+
+Move / render this as the **final line** under **Offer & Contract Coordination**:
+
+✅ **Residential (last under Offer & Contract Coordination):**
+
+* `Provide referrals to Attorneys, Title Companies, Escrow Professionals, or Lenders (referrals only — no endorsement or warranty is made)`
+
+**Placement rule:** must be the **last option** in that section.
+
+---
+
+### B) Income — Offer & Contract Coordination (last item)
+
+Move / render this as the **final line** under **Offer & Contract Coordination**:
+
+✅ **Income (last under Offer & Contract Coordination):**
+
+* `Provide referrals to Attorneys, Title Companies, Escrow Professionals, Lenders, or 1031 Exchange Intermediaries (referrals only — no endorsement or warranty is made)`
+
+**Placement rule:** must be the **last option** in that section.
+
+---
+
+### C) Commercial — place into correct section (not Additional Services) + order
+
+Add these to the **correct section** that matches your listing creation flow.
+
+✅ **Commercial:**
+
+1. `Post the Buyer’s criteria on Craigslist under “Real Estate Wanted – Commercial”`
+2. `Provide referrals to Attorneys, Title Companies, Escrow Officers, Commercial Lenders, or 1031 Exchange Intermediaries (referrals only — no endorsement or warranty is made)`
+
+**Placement rule:**
+
+* Put the “Craigslist – Commercial” line in the same section where you show other “post criteria / marketing distribution” items for Commercial.
+* Put the “Provide referrals…” line as the **last item** under **Offer & Contract Coordination** (if that section exists for Commercial in your create flow).
+
+  * If your Commercial create flow puts “Provide referrals…” under Offer & Contract Coordination, it must be last there.
+
+---
+
+### D) Business — place into correct section (not Additional Services) + order
+
+✅ **Business:**
+
+1. `Post the Buyer’s criteria on Craigslist under “Real Estate Wanted – Land”`
+2. `Provide referrals to Attorneys, Title Companies, Escrow Officers, Surveyors, or Land Use Consultants (referrals only — no endorsement or warranty is made)`
+
+**Placement rule:**
+
+* “Craigslist – Land” goes into the same “marketing/posting criteria” section used for Business.
+* “Provide referrals…” should be rendered in **Offer & Contract Coordination** as the **last item**, if that is how creation is structured.
+
+---
+
+### E) Vacant Land — place into correct section (not Additional Services) + order
+
+✅ **Vacant Land:**
+
+1. `Post the Buyer’s criteria on Craigslist under “Real Estate Wanted – Land”`
+2. `Provide referrals to Attorneys, Title Companies, Escrow Officers, Surveyors, or Land Use Consultants (referrals only — no endorsement or warranty is made)`
+
+**Placement rule:**
+
+* “Craigslist – Land” goes into the land marketing/posting section.
+* “Provide referrals…” must appear as the last item under **Offer & Contract Coordination** (if that’s where it is in creation).
+
+---
+
+## Step 4 — Make display order match listing creation (source of truth)
+
+### Required rule
+
+Within each property type’s display:
+
+* Render sections in the exact same order as listing creation.
+* Render items within each section in the exact same order as listing creation.
+
+**Implementation safeguard:**
+
+* Define a single `orderedServicesMap` for each property type:
+
+  * `ResidentialServicesOrder`
+  * `IncomeServicesOrder`
+  * `CommercialServicesOrder`
+  * `BusinessServicesOrder`
+  * `VacantLandServicesOrder`
+
+Then render by iterating over the ordered list and checking whether the listing has that service selected.
+
+This avoids future “misplaced service” regressions.
+
+---
+
+## Step 5 — Dedupe logic (prevents double display)
+
+Add a small dedupe set in the display renderer:
+
+* If a service key has already been displayed in its correct section, do not display it again under Additional Services.
+
+**Safeguard:** This must be **display only** (no DB writes).
+
+---
+
+## Step 6 — Test plan (must pass)
+
+Test **each property type** with a listing that has the affected services checked:
+
+1. **Residential**:
+
+   * Confirm “Provide referrals…” appears **last under Offer & Contract Coordination** and **not under Additional Services**.
+2. **Income**:
+
+   * Confirm “Provide referrals… 1031 …” appears **last under Offer & Contract Coordination** and **not under Additional Services**.
+3. **Commercial**:
+
+   * Confirm “Craigslist – Commercial” appears in the correct marketing/posting section (not Additional).
+   * Confirm “Provide referrals… Commercial Lenders/1031 …” appears in correct section, and not Additional.
+4. **Business**:
+
+   * Confirm “Craigslist – Land” and “Provide referrals… Surveyors/Land Use …” are not in Additional and appear in correct sections.
+5. **Vacant Land**:
+
+   * Same as Business.
+
+Also verify:
+
+* No services disappear.
+* No duplicates.
+* No changes to saving/editing.
+
+---
+
+## Notes for Replit (so they don’t “fix” the wrong thing)
+
+* This is **not** a wording change.
+* This is **not** a checkbox change.
+* This is a **display ordering + section mapping** fix only.
+* The “Additional Services” section is for true catch-all items and must not contain these defined service lines.
+
+---
+
+If you want, I can also give you a **very small “mapping snippet”** pattern (array-based renderer) that Replit can drop into the buyer display partial so this never happens again across any listing type—without touching your DB or Livewire.

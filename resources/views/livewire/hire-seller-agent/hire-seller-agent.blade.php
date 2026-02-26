@@ -1158,22 +1158,6 @@
                 @this.set('property_items', selectedValues);
             });
 
-            // Reinitialize Select2 after Livewire update
-            Livewire.hook('message.processed', (message, component) => {
-                Select2Manager.init('#property_items', {
-                    placeholder: "Select property style",
-                    allowClear: true,
-                });
-            });
-
-            // Initialize with any existing values
-            Livewire.hook('component.initialized', (component) => {
-                Select2Manager.init('#property_items', {
-                    placeholder: "Select property style",
-                    allowClear: true,
-                });
-            });
-
             // Initialize Select2 non_negotiable_amenities
             $('#non_negotiable_amenities').select2({
                 placeholder: "Select credit score rating(s)",
@@ -1186,21 +1170,6 @@
                 @this.set('non_negotiable_amenities', selectedValues);
             });
 
-            // Reinitialize Select2 after Livewire update
-            Livewire.hook('message.processed', (message, component) => {
-                Select2Manager.init('#non_negotiable_amenities', {
-                    placeholder: "Select amenities",
-                    allowClear: true,
-                });
-            });
-
-            // Initialize with any existing values
-            Livewire.hook('component.initialized', (component) => {
-                Select2Manager.init('#non_negotiable_amenities', {
-                    placeholder: "Select amenities",
-                    allowClear: true,
-                });
-            });
 
 
             // Function to toggle "auction time" input field
@@ -1384,22 +1353,6 @@
                 }
             });
 
-            // Reinitialize Select2 after Livewire updates the DOM
-            Livewire.hook('message.processed', () => {
-                Select2Manager.init('#view_preference', {
-                    placeholder: "Select Preference",
-                    allowClear: true
-                });
-
-                // Ensure the "Other" input field visibility is updated on re-render
-                let selectedValues = $('#view_preference').val();
-                if (selectedValues && selectedValues.includes('Other')) {
-                    $('#other_preferences').show();
-                } else {
-                    $('#other_preferences').hide();
-                }
-            });
-
             // Initialize Select2 for appliances multi-select
             $('#appliances').select2({
                 placeholder: "Select Appliances",
@@ -1413,22 +1366,6 @@
 
                 // Check if "Other" is in the selected values
                 if (selectedValues && selectedValues.includes('Other')) {
-                    $('#other_appliances').closest('.form-group').show();
-                } else {
-                    $('#other_appliances').closest('.form-group').hide();
-                }
-            });
-
-            // Reinitialize appliances Select2 after Livewire updates the DOM
-            Livewire.hook('message.processed', () => {
-                Select2Manager.init('#appliances', {
-                    placeholder: "Select Appliances",
-                    allowClear: true
-                });
-
-                // Ensure the "Other" input field visibility is updated on re-render
-                let selectedApplianceValues = $('#appliances').val();
-                if (selectedApplianceValues && selectedApplianceValues.includes('Other')) {
                     $('#other_appliances').closest('.form-group').show();
                 } else {
                     $('#other_appliances').closest('.form-group').hide();

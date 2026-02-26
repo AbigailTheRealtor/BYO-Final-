@@ -1238,22 +1238,6 @@ $tenantPays = [
                 @this.set('property_items', selectedValues);
             });
 
-            // Reinitialize Select2 after Livewire update
-            Livewire.hook('message.processed', (message, component) => {
-                Select2Manager.init('#property_items', {
-                    placeholder: "Select property style",
-                    allowClear: true,
-                });
-            });
-
-            // Initialize with any existing values
-            Livewire.hook('component.initialized', (component) => {
-                Select2Manager.init('#property_items', {
-                    placeholder: "Select property style",
-                    allowClear: true,
-                });
-            });
-
             // Initialize Select2 non_negotiable_amenities
             $('#non_negotiable_amenities').select2({
                 placeholder: "Select credit score rating(s)",
@@ -1265,23 +1249,6 @@ $tenantPays = [
                 let selectedValues = $(this).val();
                 @this.set('non_negotiable_amenities', selectedValues);
             });
-
-            // Reinitialize Select2 after Livewire update
-            Livewire.hook('message.processed', (message, component) => {
-                Select2Manager.init('#non_negotiable_amenities', {
-                    placeholder: "Select amenities",
-                    allowClear: true,
-                });
-            });
-
-            // Initialize with any existing values
-            Livewire.hook('component.initialized', (component) => {
-                Select2Manager.init('#non_negotiable_amenities', {
-                    placeholder: "Select amenities",
-                    allowClear: true,
-                });
-            });
-
 
             // Function to toggle "auction time" input field
             function toggleAuctionTime(selectElement) {
@@ -1464,21 +1431,6 @@ $tenantPays = [
                 }
             });
 
-            // Reinitialize Select2 after Livewire updates the DOM
-            Livewire.hook('message.processed', () => {
-                Select2Manager.init('#view_preference', {
-                    placeholder: "Select Preference",
-                    allowClear: true
-                });
-
-                // Ensure the "Other" input field visibility is updated on re-render
-                let selectedValues = $('#view_preference').val();
-                if (selectedValues.includes('Other')) {
-                    $('#other_preferences').show();
-                } else {
-                    $('#other_preferences').hide();
-                }
-            });
             // Function to toggle Non-Negotiable Amenities and Property Features:" input field
 
             function toggleOtherAmenities(selectElement) {
@@ -1725,22 +1677,6 @@ $tenantPays = [
                 @this.set('rent_includes', selectedValues);
             });
 
-            // Reinitialize Select2 after Livewire update
-            Livewire.hook('message.processed', (message, component) => {
-                Select2Manager.init('#rent_includes', {
-                    placeholder: "Select rent",
-                    allowClear: true,
-                });
-            });
-
-            // Initialize with any existing values
-            Livewire.hook('component.initialized', (component) => {
-                Select2Manager.init('#rent_includes', {
-                    placeholder: "Select rent",
-                    allowClear: true,
-                });
-            });
-
             /////////////terms_of_lease
              $('#terms_of_lease').select2({
                 placeholder: "Select terms of lease",
@@ -1751,22 +1687,6 @@ $tenantPays = [
             $('#terms_of_lease').on('change', function(e) {
                 let selectedValues = $(this).val();
                 @this.set('terms_of_lease', selectedValues);
-            });
-
-            // Reinitialize Select2 after Livewire update
-            Livewire.hook('message.processed', (message, component) => {
-                Select2Manager.init('#terms_of_lease', {
-                    placeholder: "Select terms of lease",
-                    allowClear: true,
-                });
-            });
-
-            // Initialize with any existing values
-            Livewire.hook('component.initialized', (component) => {
-                Select2Manager.init('#terms_of_lease', {
-                    placeholder: "Select terms of lease",
-                    allowClear: true,
-                });
             });
 
             /////////////tenant Pays
@@ -1781,21 +1701,6 @@ $tenantPays = [
                 @this.set('tenant_pays', selectedValues);
             });
 
-            // Reinitialize Select2 after Livewire update
-            Livewire.hook('message.processed', (message, component) => {
-                Select2Manager.init('#tenant_pays', {
-                    placeholder: "Select tenant pays",
-                    allowClear: true,
-                });
-            });
-
-            // Initialize with any existing values
-            Livewire.hook('component.initialized', (component) => {
-                Select2Manager.init('#tenant_pays', {
-                    placeholder: "Select tenant pays",
-                    allowClear: true,
-                });
-            });
             /////////////owner_pays
              $('#owner_pays').select2({
                 placeholder: "Select owner pays",
@@ -1807,24 +1712,6 @@ $tenantPays = [
                 let selectedValues = $(this).val();
                 @this.set('owner_pays', selectedValues);
             });
-
-            // Reinitialize Select2 after Livewire update
-            Livewire.hook('message.processed', (message, component) => {
-                Select2Manager.init('#owner_pays', {
-                    placeholder: "Select owner pays",
-                    allowClear: true,
-                });
-            });
-
-            // Initialize with any existing values
-            Livewire.hook('component.initialized', (component) => {
-                Select2Manager.init('#owner_pays', {
-                    placeholder: "Select owner pays",
-                    allowClear: true,
-                });
-            });
-
-
 
             const photoInput = document.getElementById("photo-input");
             const photoError = document.getElementById("photo-error");
@@ -2476,32 +2363,6 @@ $tenantPays = [
         Livewire.hook('message.processed', () => {
             addIconsToInputs();
             checkRepresentationStatus();
-
-            // Re-detect selected service type after DOM update
-            const fullServiceChecked = document.getElementById('fullService')?.checked;
-            const limitedServiceChecked = document.getElementById('limitedService')?.checked;
-
-            let newServiceType = null;
-            if (fullServiceChecked) {
-                newServiceType = 'full_service';
-            } else if (limitedServiceChecked) {
-                newServiceType = 'limited_service';
-            } else {
-                // Default to full service if no service type radio buttons found
-                newServiceType = 'full_service';
-            }
-
-            if (newServiceType !== currentServiceType) {
-                currentServiceType = newServiceType;
-            }
-
-            removeWizardEventListeners();
-
-            if (currentServiceType === 'full_service') {
-                initializeFullService();
-            } else if (currentServiceType === 'limited_service') {
-                initializeLimitedService();
-            }
         });
     </script>
 

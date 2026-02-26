@@ -1061,7 +1061,7 @@
         title="Select the lease term the Landlord prefers to offer.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
-    <div class="input-cover">
+    <div class="input-cover" wire:ignore>
         <select wire:model="desired_lease_length" class="lease_term_options form-control has-icon select2-multiple"
             data-icon="fas fa-calendar-alt input-icon2" multiple required>
             >

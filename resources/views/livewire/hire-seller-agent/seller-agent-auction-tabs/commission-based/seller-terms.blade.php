@@ -23,7 +23,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
 
-    <div class="input-cover">
+    <div class="input-cover" wire:ignore>
         <select wire:model="sale_provision" id="sale_provision" class="form-control has-icon select2-multiple"
             data-icon="fa-solid fa-screwdriver-wrench input-icon2" multiple required>
             @foreach ($seller_property as $row_pt)
@@ -250,7 +250,7 @@
     </div>
     <span class="error mt-2" id="offered_financing_error"></span> --}}
 
-    <div class="input-cover">
+    <div class="input-cover" wire:ignore>
         <select wire:model="offered_financing" id="offered_financing" class="form-control has-icon select2-multiple"
             data-icon="fa-solid fa-money-bill-wave input-icon2" multiple required>
             @foreach ($financing_options_seller as $option)
