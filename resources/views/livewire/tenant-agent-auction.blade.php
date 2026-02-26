@@ -2945,12 +2945,6 @@ $lease_types = [
             safeLivewireSet('leasing_spaces_tenant', $(this).val());
         });
 
-        Livewire.hook('message.processed', (message, component) => {
-            if ($('#leasing_spaces_tenant').length && !$('#leasing_spaces_tenant').hasClass('select2-hidden-accessible')) {
-                $('#leasing_spaces_tenant').select2({ placeholder: "Select", allowClear: true });
-            }
-        });
-
         ///////////////// End leasing_spaces
         ///tenant_pays
 
@@ -2982,13 +2976,6 @@ $lease_types = [
             // toggleOtherTenantField(selectedValues);
         });
 
-        Livewire.hook('message.processed', () => {
-            if ($('.tenant_pays').length && !$('.tenant_pays').hasClass('select2-hidden-accessible')) {
-                $('.tenant_pays').select2({ placeholder: "Select", allowClear: true });
-            }
-            let selectedValues = $('.tenant_pays').val() || [];
-            toggleOtherTenantField(selectedValues);
-        });
         $('.lease_term_options').select2({
             placeholder: "Select",
             allowClear: true
@@ -3100,13 +3087,6 @@ $lease_types = [
             safeLivewireSet('desired_lease_length', selectedValues);
         });
 
-        Livewire.hook('message.processed', () => {
-            if ($('.owner_pays').length && !$('.owner_pays').hasClass('select2-hidden-accessible')) {
-                $('.owner_pays').select2({ placeholder: "Select", allowClear: true });
-            }
-            let selectedValues = $('.owner_pays').val() || [];
-            toggleOwnerPaysOther(selectedValues);
-        });
 
         // End owner_pays
 
@@ -3178,13 +3158,6 @@ $lease_types = [
             //toggleOtherField(selectedValues);
         });
 
-        Livewire.hook('message.processed', (message, component) => {
-            if ($('.rent_includes').length && !$('.rent_includes').hasClass('select2-hidden-accessible')) {
-                $('.rent_includes').select2({ placeholder: "Select", allowClear: true });
-            }
-            let currentValues = $('.rent_includes').val() || [];
-            toggleOtherField(currentValues);
-        });
 
         // ENd rent_includes
 

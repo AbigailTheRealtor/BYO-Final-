@@ -61,7 +61,7 @@
     </label>
 
 
-    <div class="input-cover">
+    <div class="input-cover" wire:ignore>
         <i class="input-icon fa-solid fa-screwdriver-wrench input-icon2"></i>
         <select wire:model="sale_provision" id="sale_provision" class="form-control select2-multiple" multiple>
             @foreach ($seller_property as $row_pt)

@@ -921,22 +921,6 @@
                 @this.set('property_items', selectedValues);
             });
 
-            // Reinitialize Select2 after Livewire update
-            Livewire.hook('message.processed', (message, component) => {
-                $('#property_items').select2({
-                    placeholder: "Select property style",
-                    allowClear: true,
-                });
-            });
-
-            // Initialize with any existing values
-            Livewire.hook('component.initialized', (component) => {
-                $('#property_items').select2({
-                    placeholder: "Select property style",
-                    allowClear: true,
-                });
-            });
-
             // Initialize Select2 non_negotiable_amenities
             $('#non_negotiable_amenities').select2({
                 placeholder: "Select credit score rating(s)",
@@ -949,21 +933,6 @@
                 @this.set('non_negotiable_amenities', selectedValues);
             });
 
-            // Reinitialize Select2 after Livewire update
-            Livewire.hook('message.processed', (message, component) => {
-                $('#non_negotiable_amenities').select2({
-                    placeholder: "Select amenities",
-                    allowClear: true,
-                });
-            });
-
-            // Initialize with any existing values
-            Livewire.hook('component.initialized', (component) => {
-                $('#non_negotiable_amenities').select2({
-                    placeholder: "Select amenities",
-                    allowClear: true,
-                });
-            });
 
 
             // Function to toggle "auction time" input field
@@ -1147,21 +1116,6 @@
                 }
             });
 
-            // Reinitialize Select2 after Livewire updates the DOM
-            Livewire.hook('message.processed', () => {
-                $('#view_preference').select2({
-                    placeholder: "Select Preference",
-                    allowClear: true
-                });
-
-                // Ensure the "Other" input field visibility is updated on re-render
-                let selectedValues = $('#view_preference').val();
-                if (selectedValues.includes('Other')) {
-                    $('#other_preferences').show();
-                } else {
-                    $('#other_preferences').hide();
-                }
-            });
             // Function to toggle Non-Negotiable Amenities and Property Features:" input field
 
             function toggleOtherAmenities(selectElement) {

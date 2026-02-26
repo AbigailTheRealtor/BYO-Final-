@@ -2241,21 +2241,6 @@
                 @this.set('property_items', selectedValues);
             });
 
-            // Reinitialize Select2 after Livewire update
-            Livewire.hook('message.processed', (message, component) => {
-                $('#property_items').select2({
-                    placeholder: "Select",
-                    allowClear: true,
-                });
-            });
-
-            // Initialize with any existing values
-            Livewire.hook('component.initialized', (component) => {
-                $('#property_items').select2({
-                    placeholder: "Select",
-                    allowClear: true,
-                });
-            });
 
 
             /////////////// business type
@@ -2447,21 +2432,6 @@
                 @this.set('credit_scroe_rating', selectedValues);
             });
 
-            // Reinitialize Select2 after Livewire update
-            Livewire.hook('message.processed', (message, component) => {
-                $('#credit_scroe_rating').select2({
-                    placeholder: "Select credit score rating(s) ",
-                    allowClear: true,
-                });
-            });
-
-            // Initialize with any existing values
-            Livewire.hook('component.initialized', (component) => {
-                $('#credit_scroe_rating').select2({
-                    placeholder: "Select credit score rating(s)",
-                    allowClear: true,
-                });
-            });
             // Initialize Select2 non_negotiable_amenities
             $('#non_negotiable_amenities')
                 .select2({
@@ -2681,22 +2651,6 @@
                 });
             }
 
-            // Re-initialize Select2 after Livewire updates
-            Livewire.hook('message.processed', () => {
-                // Destroy Select2 to avoid duplication
-                if ($('#view_preference').hasClass('select2-hidden-accessible')) {
-                    $('#view_preference').select2('destroy');
-                }
-
-                // Reinitialize Select2
-                initSelect2();
-
-                // Sync selected values from Livewire to Select2
-                let selectedValues = window.livewire.find(component => component.serverMemo.data.view_preference)
-                    ?.serverMemo.data.view_preference || [];
-                $('#view_preference').val(selectedValues).trigger('change');
-            });
-
             // Initialize Select2 on load
             initSelect2();
 
@@ -2731,33 +2685,6 @@
                 }
             });
 
-            // Reinitialize Select2 and check for "Other" on Livewire updates
-            Livewire.hook('message.processed', () => {
-                const currentValues = $('#garage_parking_spaces_option').val();
-
-                // Reinitialize the Select2 dropdown
-                if ($('#garage_parking_spaces_option').hasClass('select2-hidden-accessible')) {
-                    $('#garage_parking_spaces_option').select2('destroy');
-                }
-
-                $('#garage_parking_spaces_option').select2({
-                    placeholder: "Select Garage/Parking Features",
-                    allowClear: true,
-                    width: '100%',
-                });
-
-                // Restore selected values
-                if (currentValues) {
-                    $('#garage_parking_spaces_option').val(currentValues).trigger('change');
-                }
-
-                // Ensure "Other" field visibility matches the current selection
-                if (currentValues && currentValues.includes('Other')) {
-                    $('#other_parking_space_wrapper').show(); // Show "Other" input
-                } else {
-                    $('#other_parking_space_wrapper').hide(); // Hide "Other" input
-                }
-            });
 
 
 
@@ -2789,31 +2716,6 @@
             // Initial initialization
             initializeAppliancesSelect2();
 
-            // Reinitialize Select2 after Livewire updates
-            Livewire.hook('message.processed', () => {
-                // Store current selected values
-                const currentValues = $('#appliances').val();
-
-                // Destroy existing Select2 instance
-                if ($('#appliances').hasClass('select2-hidden-accessible')) {
-                    $('#appliances').select2('destroy');
-                }
-
-                // Reinitialize Select2
-                initializeAppliancesSelect2();
-
-                // Restore selected values
-                if (currentValues) {
-                    $('#appliances').val(currentValues).trigger('change');
-                }
-
-                // Ensure "Other" field visibility matches current selection
-                if (currentValues && currentValues.includes('Other')) {
-                    $('#other_appliances').show();
-                } else {
-                    $('#other_appliances').hide();
-                }
-            });
             // End Preference
 
 
@@ -2829,14 +2731,6 @@
             // Update Livewire when Select2 changes
             $('#leasing_spaces_tenant').on('change', function(e) {
                 @this.set('leasing_spaces_tenant', $(this).val());
-            });
-
-            // Reinitialize Select2 when Livewire updates the DOM
-            Livewire.hook('message.processed', (message, component) => {
-                $('#leasing_spaces_tenant').select2({
-                    placeholder: "Select",
-                    allowClear: true
-                });
             });
 
             ///////////////// End leasing_spaces
@@ -2873,16 +2767,6 @@
                 // toggleOtherTenantField(selectedValues);
             });
 
-            // On Livewire update, reapply Select2 and check field
-            Livewire.hook('message.processed', () => {
-                $('.tenant_pays').select2({
-                    placeholder: "Select",
-                    allowClear: true
-                });
-
-                let selectedValues = $('.tenant_pays').val() || [];
-                toggleOtherTenantField(selectedValues);
-            });
 
 
 
@@ -2978,17 +2862,6 @@
                 @this.set('desired_lease_length', selectedValues);
             });
 
-            // Reinit after DOM update
-            Livewire.hook('message.processed', () => {
-                $('.owner_pays').select2({
-                    placeholder: "Select",
-                    allowClear: true
-                });
-
-                let selectedValues = $('.owner_pays').val() || [];
-                toggleOwnerPaysOther(selectedValues);
-            });
-
             // End owner_pays
 
             ///lease_for
@@ -3057,18 +2930,6 @@
                 }
                 @this.set('rent_includes', selectedValues);
                 //toggleOtherField(selectedValues);
-            });
-
-            // Reinitialize Select2 after Livewire DOM update
-            Livewire.hook('message.processed', (message, component) => {
-                $('.rent_includes').select2({
-                    placeholder: "Select",
-                    allowClear: true
-                });
-
-                // Ensure UI reflects state
-                let currentValues = $('.rent_includes').val() || [];
-                toggleOtherField(currentValues);
             });
 
             // ENd rent_includes

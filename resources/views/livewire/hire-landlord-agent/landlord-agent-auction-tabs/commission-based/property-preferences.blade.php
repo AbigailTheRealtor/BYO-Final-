@@ -543,7 +543,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
 
-    <div class="input-cover">
+    <div class="input-cover" wire:ignore>
         <select wire:model="appliances" id="appliances" class="form-control has-icon select2-multiple"
             data-icon="fa-solid fa-plug input-icon2" multiple>
             @foreach ($appliances as $row_pt)
@@ -772,7 +772,7 @@
     </div>
 @endif
 <!-- Non-Negotiable Amenities and Property Features -->
-<div class="form-group" wire:ignore.self>
+<div class="form-group" wire:ignore>
     <label class="fw-bold"> Amenities and Property Features:</label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"

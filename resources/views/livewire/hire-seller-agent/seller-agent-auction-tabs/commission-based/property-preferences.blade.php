@@ -938,7 +938,7 @@
 @if ($property_type != 'Vacant Land')
 
     <!-- Non-Negotiable Amenities and Property Features -->
-    <div class="form-group" wire:ignore.self>
+    <div class="form-group" wire:ignore>
         <label class="fw-bold">Amenities and Property Features:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1100,8 +1100,7 @@
                 <i class="fa-solid fa-circle-info"></i>
             </span>
 
-            <div class="input-cover">
-                {{-- no wire:ignore, wire:model binds directly --}}
+            <div class="input-cover" wire:ignore>
                 <select wire:model="assets" id="assets" class="form-control has-icon select2-multiple"
                     data-icon="fas fa-building input-icon2" multiple>
                     <option value="Goodwill and Business Name">Goodwill and Business Name</option>
