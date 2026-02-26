@@ -2241,6 +2241,21 @@
                 @this.set('property_items', selectedValues);
             });
 
+            // Reinitialize Select2 after Livewire update
+            Livewire.hook('message.processed', (message, component) => {
+                Select2Manager.init('#property_items', {
+                    placeholder: "Select",
+                    allowClear: true,
+                });
+            });
+
+            // Initialize with any existing values
+            Livewire.hook('component.initialized', (component) => {
+                Select2Manager.init('#property_items', {
+                    placeholder: "Select",
+                    allowClear: true,
+                });
+            });
 
 
             /////////////// business type
@@ -2432,6 +2447,21 @@
                 @this.set('credit_scroe_rating', selectedValues);
             });
 
+            // Reinitialize Select2 after Livewire update
+            Livewire.hook('message.processed', (message, component) => {
+                Select2Manager.init('#credit_scroe_rating', {
+                    placeholder: "Select credit score rating(s) ",
+                    allowClear: true,
+                });
+            });
+
+            // Initialize with any existing values
+            Livewire.hook('component.initialized', (component) => {
+                Select2Manager.init('#credit_scroe_rating', {
+                    placeholder: "Select credit score rating(s)",
+                    allowClear: true,
+                });
+            });
             // Initialize Select2 non_negotiable_amenities
             $('#non_negotiable_amenities')
                 .select2({
@@ -2651,6 +2681,16 @@
                 });
             }
 
+            // Re-initialize Select2 after Livewire updates
+            Livewire.hook('message.processed', () => {
+                if (!$('#view_preference').hasClass('select2-hidden-accessible')) {
+                    initSelect2();
+                    let selectedValues = window.livewire.find(component => component.serverMemo.data.view_preference)
+                        ?.serverMemo.data.view_preference || [];
+                    $('#view_preference').val(selectedValues).trigger('change');
+                }
+            });
+
             // Initialize Select2 on load
             initSelect2();
 
@@ -2685,6 +2725,27 @@
                 }
             });
 
+            // Reinitialize Select2 and check for "Other" on Livewire updates
+            Livewire.hook('message.processed', () => {
+                const currentValues = $('#garage_parking_spaces_option').val();
+
+                if (!$('#garage_parking_spaces_option').hasClass('select2-hidden-accessible')) {
+                    $('#garage_parking_spaces_option').select2({
+                        placeholder: "Select Garage/Parking Features",
+                        allowClear: true,
+                        width: '100%',
+                    });
+                    if (currentValues) {
+                        $('#garage_parking_spaces_option').val(currentValues).trigger('change');
+                    }
+                }
+
+                if (currentValues && currentValues.includes('Other')) {
+                    $('#other_parking_space_wrapper').show();
+                } else {
+                    $('#other_parking_space_wrapper').hide();
+                }
+            });
 
 
 
@@ -2716,6 +2777,23 @@
             // Initial initialization
             initializeAppliancesSelect2();
 
+            // Reinitialize Select2 after Livewire updates
+            Livewire.hook('message.processed', () => {
+                const currentValues = $('#appliances').val();
+
+                if (!$('#appliances').hasClass('select2-hidden-accessible')) {
+                    initializeAppliancesSelect2();
+                    if (currentValues) {
+                        $('#appliances').val(currentValues).trigger('change');
+                    }
+                }
+
+                if (currentValues && currentValues.includes('Other')) {
+                    $('#other_appliances').show();
+                } else {
+                    $('#other_appliances').hide();
+                }
+            });
             // End Preference
 
 
@@ -2731,6 +2809,14 @@
             // Update Livewire when Select2 changes
             $('#leasing_spaces_tenant').on('change', function(e) {
                 @this.set('leasing_spaces_tenant', $(this).val());
+            });
+
+            // Reinitialize Select2 when Livewire updates the DOM
+            Livewire.hook('message.processed', (message, component) => {
+                Select2Manager.init('#leasing_spaces_tenant', {
+                    placeholder: "Select",
+                    allowClear: true
+                });
             });
 
             ///////////////// End leasing_spaces
@@ -2767,6 +2853,16 @@
                 // toggleOtherTenantField(selectedValues);
             });
 
+            // On Livewire update, reapply Select2 and check field
+            Livewire.hook('message.processed', () => {
+                Select2Manager.init('.tenant_pays', {
+                    placeholder: "Select",
+                    allowClear: true
+                });
+
+                let selectedValues = $('.tenant_pays').val() || [];
+                toggleOtherTenantField(selectedValues);
+            });
 
 
 
@@ -2862,6 +2958,17 @@
                 @this.set('desired_lease_length', selectedValues);
             });
 
+            // Reinit after DOM update
+            Livewire.hook('message.processed', () => {
+                Select2Manager.init('.owner_pays', {
+                    placeholder: "Select",
+                    allowClear: true
+                });
+
+                let selectedValues = $('.owner_pays').val() || [];
+                toggleOwnerPaysOther(selectedValues);
+            });
+
             // End owner_pays
 
             ///lease_for
@@ -2930,6 +3037,18 @@
                 }
                 @this.set('rent_includes', selectedValues);
                 //toggleOtherField(selectedValues);
+            });
+
+            // Reinitialize Select2 after Livewire DOM update
+            Livewire.hook('message.processed', (message, component) => {
+                Select2Manager.init('.rent_includes', {
+                    placeholder: "Select",
+                    allowClear: true
+                });
+
+                // Ensure UI reflects state
+                let currentValues = $('.rent_includes').val() || [];
+                toggleOtherField(currentValues);
             });
 
             // ENd rent_includes

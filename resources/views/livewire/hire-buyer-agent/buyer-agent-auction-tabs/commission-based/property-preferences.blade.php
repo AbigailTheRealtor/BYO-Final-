@@ -682,7 +682,7 @@
 <!-- Garage/Parking Spaces Type Dropdown -->
 <div class="form-group d-none" id="garage_parking_spaces_option_wrapper">
     <label class="fw-bold">Garage/Parking Features:</label>
-    <div class="input-cover" wire:ignore>
+    <div class="input-cover">
 
         <select wire:model="garage_parking_spaces_option" id="garage_parking_spaces_option"
             class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse input-icon2" multiple>
@@ -755,8 +755,8 @@
     </label>
 
 
-    <div class="input-cover" wire:ignore>
-        <select wire:model="view_preference" id="view_preference"
+    <div class="input-cover">
+        <select wire:ignore wire:model="view_preference" id="view_preference"
             class="form-control has-icon select2-multiple" data-icon="fa-solid fa-tree input-icon2" multiple>
             @foreach ($preferences as $row_pt)
                 <option value="{{ $row_pt['name'] }}"
@@ -1016,7 +1016,7 @@
         </label>
 
 
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover">
             <select wire:model="assets" id="assets" class="form-control has-icon select2-multiple"
                 data-icon="fas fa-building input-icon2" multiple>
                 <option value="Goodwill and Business Name">
@@ -1319,7 +1319,7 @@
         </label>
 
 
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover">
             <select wire:model="number_of_unit_type"
                 class="number_of_unit_type form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-home input-icon2" multiple>

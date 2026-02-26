@@ -1054,7 +1054,7 @@
     @enderror
 </div>
 
-<div class="form-group" wire:ignore>
+<div class="form-group">
     <label class="fw-bold">Desired Lease Term: <span class="text-danger">*</span></label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1091,7 +1091,7 @@
 </div>
 
 @if ($property_type === 'Residential Property')
-    <div class="form-group" wire:ignore>
+    <div class="form-group">
         <label class="fw-bold">Rent Includes: <span class="text-danger">*</span></label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1101,7 +1101,7 @@
         </span>
         <div class="input-cover">
             <select wire:model="rent_includes" id="rent_includes" class="form-control has-icon select2-multiple rent_includes" multiple
-                data-icon="fas fa-home input-icon2" required>
+                data-icon="fas fa-home input-icon2" wire:ignore required>
                 @foreach ($rent_includes as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach
