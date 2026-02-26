@@ -910,28 +910,27 @@
         function initializeFullService() {
 
 
-            $('#property_items').select2({
-                placeholder: "Select property style",
-                allowClear: true,
-            });
+            if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
+                $('#property_items').select2({
+                    placeholder: "Select property style",
+                    allowClear: true,
+                });
+                $('#property_items').on('change', function(e) {
+                    let selectedValues = $(this).val();
+                    @this.set('property_items', selectedValues);
+                });
+            }
 
-            // Update Livewire property on change
-            $('#property_items').on('change', function(e) {
-                let selectedValues = $(this).val();
-                @this.set('property_items', selectedValues);
-            });
-
-            // Initialize Select2 non_negotiable_amenities
-            $('#non_negotiable_amenities').select2({
-                placeholder: "Select credit score rating(s)",
-                allowClear: true,
-            });
-
-            // Update Livewire property on change
-            $('#non_negotiable_amenities').on('change', function(e) {
-                let selectedValues = $(this).val();
-                @this.set('non_negotiable_amenities', selectedValues);
-            });
+            if ($('#non_negotiable_amenities').length && !$('#non_negotiable_amenities').hasClass('select2-hidden-accessible')) {
+                $('#non_negotiable_amenities').select2({
+                    placeholder: "Select credit score rating(s)",
+                    allowClear: true,
+                });
+                $('#non_negotiable_amenities').on('change', function(e) {
+                    let selectedValues = $(this).val();
+                    @this.set('non_negotiable_amenities', selectedValues);
+                });
+            }
 
 
 
@@ -1097,24 +1096,21 @@
                 toggleSpaceInput('garage-needed', 'other-garage-needed');
             });
 
-            // Initialize Select2 for multi-select
-            $('#view_preference').select2({
-                placeholder: "Select Preference",
-                allowClear: true
-            });
-
-            // Listen for changes on the dropdown and update Livewire
-            $('#view_preference').on('change', function() {
-                let selectedValues = $(this).val(); // Get selected values as an array
-                Livewire.emit('updatePreference', selectedValues); // Send to Livewire
-
-                // Check if "Other" is in the selected values
-                if (selectedValues.includes('Other')) {
-                    $('#other_preferences').show(); // Show the "Other" input field
-                } else {
-                    $('#other_preferences').hide(); // Hide the "Other" input field
-                }
-            });
+            if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
+                $('#view_preference').select2({
+                    placeholder: "Select Preference",
+                    allowClear: true
+                });
+                $('#view_preference').on('change', function() {
+                    let selectedValues = $(this).val();
+                    Livewire.emit('updatePreference', selectedValues);
+                    if (selectedValues.includes('Other')) {
+                        $('#other_preferences').show();
+                    } else {
+                        $('#other_preferences').hide();
+                    }
+                });
+            }
 
             // Function to toggle Non-Negotiable Amenities and Property Features:" input field
 
@@ -1830,12 +1826,6 @@
             }
 
             removeWizardEventListeners();
-
-            if (currentServiceType === 'full_service') {
-                initializeFullService();
-            } else if (currentServiceType === 'limited_service') {
-                initializeLimitedService();
-            }
         });
     </script>
 

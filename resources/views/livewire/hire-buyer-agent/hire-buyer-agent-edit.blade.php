@@ -2137,13 +2137,6 @@
                 currentServiceType = newServiceType;
             }
 
-            // No button cloning needed - delegated handlers at document level survive Livewire updates
-
-            if (currentServiceType === 'full_service') {
-                initializeFullService();
-            } else if (currentServiceType === 'limited_service') {
-                initializeLimitedService();
-            }
         });
     </script>
 

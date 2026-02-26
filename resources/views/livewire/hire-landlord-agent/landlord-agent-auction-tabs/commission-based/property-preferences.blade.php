@@ -658,8 +658,8 @@
             title="Select the type of garage or parking features available. If “Other” is selected, enter any additional garage or parking features in the provided field.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover">
-            <select wire:ignore wire:model="garage_parking_spaces_option" id="garage_parking_spaces_option_landlord"
+        <div class="input-cover" wire:ignore>
+            <select wire:model="garage_parking_spaces_option" id="garage_parking_spaces_option_landlord"
                 class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse input-icon2" multiple>
                 @foreach ($garage_parking_spaces as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -726,8 +726,8 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
 
-    <div class="input-cover">
-        <select wire:ignore wire:model="view_preference" id="view_preference"
+    <div class="input-cover" wire:ignore>
+        <select wire:model="view_preference" id="view_preference"
             class="form-control has-icon select2-multiple" data-icon="fa-solid fa-tree input-icon2" multiple>
             @foreach ($preferences as $row_pt)
                 <option value="{{ $row_pt['name'] }}"

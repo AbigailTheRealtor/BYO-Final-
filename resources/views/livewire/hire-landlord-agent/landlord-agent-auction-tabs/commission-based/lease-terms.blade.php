@@ -1099,9 +1099,9 @@
             <i class="fa-solid fa-circle-info"></i>
 
         </span>
-        <div class="input-cover">
+        <div class="input-cover" wire:ignore>
             <select wire:model="rent_includes" id="rent_includes" class="form-control has-icon select2-multiple rent_includes" multiple
-                data-icon="fas fa-home input-icon2" wire:ignore required>
+                data-icon="fas fa-home input-icon2" required>
                 @foreach ($rent_includes as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach
