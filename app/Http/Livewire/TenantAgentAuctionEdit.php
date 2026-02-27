@@ -2379,7 +2379,7 @@ class TenantAgentAuctionEdit extends Component
         }
 
         $auction = $auctionId
-            ? $auctionClass::find($auctionId)
+            ? $auctionClass::findOrFail($auctionId)
             : new $auctionClass();
 
         // $auction = HireTenantAgentAuction::findOrFail($auctionId);
