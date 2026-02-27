@@ -2744,22 +2744,21 @@
                         placeholder: "Select",
                         allowClear: true
                     });
+                    $(this).on('change', function() {
+                        let selectedValues = $(this).val() || [];
+
+                        Livewire.emit('updateTenantPays', selectedValues);
+                        if (selectedValues && selectedValues.includes('Other')) {
+                            $('.tenant_pays_other').show();
+                        } else {
+                            $('.tenant_pays_other').hide();
+                        }
+                        @this.set('tenant_pays', selectedValues);
+                    });
                 }
             });
 
             toggleOtherTenantField($('.tenant_pays').val() || []);
-
-            $('.tenant_pays').on('change', function() {
-                let selectedValues = $(this).val() || [];
-
-                Livewire.emit('updateTenantPays', selectedValues);
-                if (selectedValues && selectedValues.includes('Other')) {
-                    $('.tenant_pays_other').show();
-                } else {
-                    $('.tenant_pays_other').hide();
-                }
-                @this.set('tenant_pays', selectedValues);
-            });
 
 
 
@@ -2773,6 +2772,17 @@
                     $(this).select2({
                         placeholder: "Select",
                         allowClear: true
+                    });
+                    $(this).on('change', function() {
+                        let selectedValues = $(this).val() || [];
+                        Livewire.emit('updateLeaseTermOptions', selectedValues);
+                        if (selectedValues && selectedValues.includes('Other')) {
+                            $('.other_lease_term').show();
+                        } else {
+                            $('.other_lease_term').hide();
+                            @this.set('other_lease_term', null);
+                        }
+                        @this.set('desired_lease_length', selectedValues);
                     });
                 }
             });
@@ -2792,6 +2802,11 @@
                         allowClear: true,
                         width: '100%'
                     });
+                    $(this).on('change', function(e) {
+                        const selectedValues = $(this).val() || [];
+                        @this.set('terms_of_lease', selectedValues);
+                        toggleLeaseOther(selectedValues);
+                    });
                 }
             });
             if (termsOfLeaseValues && termsOfLeaseValues.length > 0) {
@@ -2808,12 +2823,6 @@
             }
 
             toggleLeaseOther($('.terms_of_lease').val() || []);
-
-            $('.terms_of_lease').on('change', function(e) {
-                const selectedValues = $(this).val() || [];
-                @this.set('terms_of_lease', selectedValues);
-                toggleLeaseOther(selectedValues);
-            });
 
             // End tenant_pays
             ///owner_pays
@@ -2832,35 +2841,21 @@
                         placeholder: "Select",
                         allowClear: true
                     });
+                    $(this).on('change', function() {
+                        let selectedValues = $(this).val() || [];
+                        Livewire.emit('updateOwnerPays', selectedValues);
+                        if (selectedValues && selectedValues.includes('Other')) {
+                            $('.other_owner_pays').show();
+                        } else {
+                            $('.other_owner_pays').hide();
+                            @this.set('other_owner_pays', null);
+                        }
+                        @this.set('owner_pays', selectedValues);
+                    });
                 }
             });
 
             toggleOwnerPaysOther($('.owner_pays').val() || []);
-
-            $('.owner_pays').on('change', function() {
-                let selectedValues = $(this).val() || [];
-                Livewire.emit('updateOwnerPays', selectedValues);
-                if (selectedValues && selectedValues.includes('Other')) {
-                    $('.other_owner_pays').show();
-                } else {
-                    $('.other_owner_pays').hide();
-                    @this.set('other_owner_pays', null);
-                }
-                @this.set('owner_pays', selectedValues);
-            });
-
-
-            $('.lease_term_options').on('change', function() {
-                let selectedValues = $(this).val() || [];
-                Livewire.emit('updateLeaseTermOptions', selectedValues);
-                if (selectedValues && selectedValues.includes('Other')) {
-                    $('.other_lease_term').show();
-                } else {
-                    $('.other_lease_term').hide();
-                    @this.set('other_lease_term', null);
-                }
-                @this.set('desired_lease_length', selectedValues);
-            });
 
             // End owner_pays
 
@@ -2916,19 +2911,18 @@
                         placeholder: "Select",
                         allowClear: true
                     });
+                    $(this).on('change', function() {
+                        let selectedValues = $(this).val() || [];
+                        Livewire.emit('updateRentIncludes', selectedValues);
+                        if (selectedValues && selectedValues.includes('Other')) {
+                            $('.other_rent_input_wrapper').show();
+                        } else {
+                            $('.other_rent_input_wrapper').hide();
+                            @this.set('other_rent_include', null);
+                        }
+                        @this.set('rent_includes', selectedValues);
+                    });
                 }
-            });
-
-            $('.rent_includes').on('change', function() {
-                let selectedValues = $(this).val() || [];
-                Livewire.emit('updateRentIncludes', selectedValues);
-                if (selectedValues && selectedValues.includes('Other')) {
-                    $('.other_rent_input_wrapper').show();
-                } else {
-                    $('.other_rent_input_wrapper').hide();
-                    @this.set('other_rent_include', null);
-                }
-                @this.set('rent_includes', selectedValues);
             });
 
             // ENd rent_includes
