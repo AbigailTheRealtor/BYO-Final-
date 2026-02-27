@@ -3531,6 +3531,10 @@
             }
 
             removeWizardEventListeners();
+
+            if (currentServiceType === 'full_service') {
+                initializeFullService();
+            }
         });
     </script>
 
