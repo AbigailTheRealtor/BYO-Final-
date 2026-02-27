@@ -2144,6 +2144,12 @@
                 currentServiceType = newServiceType;
             }
 
+            if (currentServiceType === 'full_service') {
+                initializeFullService();
+            } else if (currentServiceType === 'limited_service') {
+                initializeLimitedService();
+            }
+
         });
     </script>
 

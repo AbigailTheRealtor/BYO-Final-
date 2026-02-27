@@ -755,8 +755,8 @@
     </label>
 
 
-    <div class="input-cover">
-        <select wire:ignore wire:model="view_preference" id="view_preference"
+    <div class="input-cover" wire:ignore>
+        <select wire:model="view_preference" id="view_preference"
             class="form-control has-icon select2-multiple" data-icon="fa-solid fa-tree input-icon2" multiple>
             @foreach ($preferences as $row_pt)
                 <option value="{{ $row_pt['name'] }}"
