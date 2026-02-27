@@ -2355,12 +2355,6 @@ $tenantPays = [
         Livewire.hook('message.processed', () => {
             removeWizardEventListeners();
 
-            if (currentServiceType === 'full_service') {
-                initializeFullService();
-            } else if (currentServiceType === 'limited_service') {
-                initializeLimitedService();
-            }
-
             addIconsToInputs();
             checkRepresentationStatus();
         });
