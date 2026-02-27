@@ -1,0 +1,164 @@
+Understood. If Replit added `repairBrokenSelects()` and you’re **still** seeing the collapsed fields, that means one of these is true:
+
+1. **The cleanup isn’t actually running** on the pages/forms where the bug occurs (wrong script not loaded, loaded after Livewire, scoped incorrectly, or errors stop execution)
+2. The selects are being hidden by **something other than** `select2-hidden-accessible` (CSS/inline styles/parent wrapper collapse)
+3. The “collapsed fields” in your screenshots are **not `<select>` anymore** (they’re `<input>` or a wrapper div being height:0) so the Select2 repair won’t touch them
+4. Livewire morphing is mismatching, but the real fix is missing: **`wire:key` on the conditional blocks** so morphdom stops reusing the wrong nodes
+
+Let’s fix this in a way that **cannot fail**.
+
+---
+
+# ✅ FINAL FIX PLAN (platform-wide, all listing types)
+
+## Step 1 — Prove the script runs (non-negotiable)
+
+In `select2-stable.js` (or whatever file Replit added), add **one visible proof** that it’s running:
+
+### Add at top:
+
+```js
+console.log("select2-stable loaded");
+window.__select2StableLoaded = true;
+```
+
+### Add inside the Livewire hook where repair runs:
+
+```js
+console.log("repairBrokenSelects ran");
+```
+
+✅ Then reload the page and confirm you see both logs.
+
+**If you don’t see them, nothing else matters** — the fix isn’t executing on that form.
+
+**Safeguard:** remove logs after confirming.
+
+---
+
+## Step 2 — Expand the repair function (it’s currently too narrow)
+
+Right now Replit’s repair only fixes:
+
+* `select.select2-hidden-accessible` missing `.select2-container`
+
+But your screenshots show **regular fields** collapsing too (inputs/selects inside conditional blocks). So we must repair *any* “invisible/select collapsed” state after Livewire updates.
+
+### Replace/extend `repairBrokenSelects()` to also fix:
+
+### A) selects that have inline hide styles (not Select2 class)
+
+Fix if any of these exist:
+
+* `style="height:0"`
+* `style="display:none"`
+* `style="visibility:hidden"`
+* `style="opacity:0"`
+* `style="clip: rect(...)"`
+* `style="position:absolute"` with tiny size
+
+When detected, remove those inline styles for normal selects.
+
+### B) parent wrapper height collapse
+
+If the select exists but its parent has `height:0` or `overflow:hidden`, remove that too.
+
+✅ Key: **repair should target the “collapsed fields” container**, not only the select2 class.
+
+---
+
+## Step 3 — Add wire:key to every conditional block that contains form fields
+
+This is the “stop Livewire from mismatching nodes” fix.
+
+Where you have:
+
+```blade
+@if($property_type === 'Residential')
+   ... residential fields ...
+@endif
+
+@if($property_type === 'Commercial')
+   ... commercial fields ...
+@endif
+```
+
+Change to:
+
+```blade
+<div wire:key="tenant-property-details-{{ $property_type }}">
+  @if($property_type === 'Residential')
+     <div wire:key="tenant-residential-fields">
+        ... fields ...
+     </div>
+  @endif
+
+  @if($property_type === 'Commercial')
+     <div wire:key="tenant-commercial-fields">
+        ... fields ...
+     </div>
+  @endif
+</div>
+```
+
+Do the same for Buyer/Seller/Landlord/Tenant.
+
+**Why this matters:** without wire:key, morphdom reuses nodes in weird ways and can “carry over” hidden classes/styles from a Select2-enhanced select onto a normal select.
+
+---
+
+## Step 4 — Remove nested Livewire hooks inside init functions (stacking still exists)
+
+Replit admitted there are still nested hooks inside `initializeFullService()`.
+
+That means even if the repair runs, you are still accumulating:
+
+* multiple event handlers
+* multiple init calls
+* mid-interaction rerenders → flashing
+
+✅ Rule: There should be **exactly one** Livewire hook registration per page, in one file, not inside functions called multiple times.
+
+**Fix requirement:**
+
+* move ALL `Livewire.hook(...)` registrations to `select2-stable.js`
+* inside components, only call `Select2Manager.init()` (no new hooks)
+
+---
+
+## Step 5 — Make Select2 initialization opt-in only
+
+Even if Replit says it targets only certain fields, verify there is NO selector like:
+
+* `$('select').select2()`
+* `$('.form-control select')...`
+
+Only initialize:
+
+* `$('select.js-select2')`
+
+And make sure normal selects (Bedrooms/Bathrooms/Acreage) do **not** have that class.
+
+---
+
+# ✅ Acceptance Criteria (must pass)
+
+1. Switch Property Type Residential ↔ Commercial: no collapsed fields
+2. Multi-select fields: no flash, can select 10+ options quickly
+3. No “double click” Next
+4. Create, Edit, Draft all behave the same
+
+---
+
+# What I need from you (so I can give the exact fix instead of theory)
+
+Paste **just two things** (copy/paste text, not screenshots):
+
+1. The current contents (or relevant excerpt) of `select2-stable.js` showing:
+
+* where it hooks Livewire
+* `repairBrokenSelects()` implementation
+
+2. One of the blade sections where property type conditional renders Bedrooms/Bathrooms/Acreage
+
+With those two snippets, I’ll rewrite the exact `repairBrokenFields()` function + the exact `wire:key` placements + the exact hook structure so Replit can apply it once and this finally stops across all listing types.

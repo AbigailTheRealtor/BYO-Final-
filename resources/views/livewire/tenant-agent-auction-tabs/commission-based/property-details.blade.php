@@ -336,6 +336,7 @@
 </div>
 
 <!-- Minimum Bedrooms Needed -->
+<div wire:key="tenant-property-fields-{{ $property_type ?? 'none' }}">
 @if ($property_type === 'Residential Property')
     <div class="form-group">
         <label class="fw-bold">Minimum Bedrooms Needed:<span class="text-danger">*</span></label>
@@ -800,5 +801,4 @@
         </div>
         <span class="error mt-2" id="other_non_negotiable_amenities_error"></span>
     </div>
-
-
+</div>

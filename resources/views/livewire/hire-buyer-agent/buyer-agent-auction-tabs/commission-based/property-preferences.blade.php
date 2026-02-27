@@ -445,6 +445,7 @@
 @endif
 
 <!-- Minimum Bedrooms Needed -->
+<div wire:key="buyer-property-fields-{{ $property_type ?? 'none' }}">
 @if ($property_type === 'Residential')
     <div class="form-group">
         <label class="fw-bold"> Minimum Bedrooms Needed:<span class="text-danger">*</span>
@@ -1347,6 +1348,7 @@
     </div>
 </div>
 @endif
+</div>
 
 <script>
     document.addEventListener('livewire:load', function() {

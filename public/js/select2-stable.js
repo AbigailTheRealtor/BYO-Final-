@@ -28,6 +28,44 @@
                    });
             }
         });
+
+        $('.input-cover').each(function() {
+            var $cover = $(this);
+            var $controls = $cover.find('select.form-control, input.form-control');
+            $controls.each(function() {
+                var $ctrl = $(this);
+                if ($ctrl.hasClass('select2-hidden-accessible')) return;
+                if ($ctrl.hasClass('select2-multiple') || $ctrl.hasClass('select2')) return;
+                var el = this;
+                var style = el.style;
+                if (style.height === '0px' || style.height === '0' ||
+                    style.display === 'none' ||
+                    style.visibility === 'hidden' ||
+                    style.opacity === '0' ||
+                    style.position === 'absolute' ||
+                    (style.clip && style.clip !== 'auto')) {
+                    style.height = '';
+                    style.display = '';
+                    style.visibility = '';
+                    style.opacity = '';
+                    style.position = '';
+                    style.clip = '';
+                    style.clipPath = '';
+                    style.overflow = '';
+                    style.margin = '';
+                    style.padding = '';
+                    style.border = '';
+                    style.whiteSpace = '';
+                    style.width = '';
+                }
+            });
+
+            if (this.style.height === '0px' || this.style.height === '0' ||
+                this.style.overflow === 'hidden') {
+                this.style.height = '';
+                this.style.overflow = '';
+            }
+        });
     }
 
     function initUninitialized(container) {
