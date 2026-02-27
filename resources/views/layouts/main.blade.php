@@ -231,6 +231,7 @@
         const popoverList = [...popoverTriggerList].map((popoverTriggerEl) => new bootstrap.Popover(popoverTriggerEl));
     </script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.full.min.js"></script>
+    <script src="{{ asset('js/select2-stable.js') }}"></script>
     <script src="{{ asset('js/select2-manager.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.js"></script>
     <script src="https://cdn.datatables.net/v/bs5/dt-1.13.2/datatables.min.js"></script>

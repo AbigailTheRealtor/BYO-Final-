@@ -1166,48 +1166,45 @@
         function initializeFullService() {
 
 
-            $('#property_items').select2({
-                placeholder: "Select property style",
-                allowClear: true,
-            });
+            if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
+                $('#property_items').select2({
+                    placeholder: "Select property style",
+                    allowClear: true,
+                });
 
-            // Update Livewire property on change
-            $('#property_items').on('change', function(e) {
-                let selectedValues = $(this).val() || [];
-                
-                // Handle "All" selection - if "All" is selected, clear other selections
-                if (selectedValues.includes('All') && selectedValues.length > 1) {
-                    selectedValues = ['All'];
-                    $(this).val(selectedValues).trigger('change.select2');
-                }
-                
-                // Remove duplicates
-                selectedValues = [...new Set(selectedValues)];
-                
-                @this.set('property_items', selectedValues);
-            });
+                $('#property_items').on('change', function(e) {
+                    let selectedValues = $(this).val() || [];
+                    
+                    if (selectedValues.includes('All') && selectedValues.length > 1) {
+                        selectedValues = ['All'];
+                        $(this).val(selectedValues).trigger('change.select2');
+                    }
+                    
+                    selectedValues = [...new Set(selectedValues)];
+                    
+                    @this.set('property_items', selectedValues);
+                });
+            }
 
-            // Initialize Select2 non_negotiable_amenities
-            $('#non_negotiable_amenities').select2({
-                placeholder: "Select credit score rating(s)",
-                allowClear: true,
-            });
+            if ($('#non_negotiable_amenities').length && !$('#non_negotiable_amenities').hasClass('select2-hidden-accessible')) {
+                $('#non_negotiable_amenities').select2({
+                    placeholder: "Select credit score rating(s)",
+                    allowClear: true,
+                });
 
-            // Update Livewire property on change
-            $('#non_negotiable_amenities').on('change', function(e) {
-                let selectedValues = $(this).val() || [];
-                
-                // Handle "All" selection - if "All" is selected, clear other selections
-                if (selectedValues.includes('All') && selectedValues.length > 1) {
-                    selectedValues = ['All'];
-                    $(this).val(selectedValues).trigger('change.select2');
-                }
-                
-                // Remove duplicates
-                selectedValues = [...new Set(selectedValues)];
-                
-                @this.set('non_negotiable_amenities', selectedValues);
-            });
+                $('#non_negotiable_amenities').on('change', function(e) {
+                    let selectedValues = $(this).val() || [];
+                    
+                    if (selectedValues.includes('All') && selectedValues.length > 1) {
+                        selectedValues = ['All'];
+                        $(this).val(selectedValues).trigger('change.select2');
+                    }
+                    
+                    selectedValues = [...new Set(selectedValues)];
+                    
+                    @this.set('non_negotiable_amenities', selectedValues);
+                });
+            }
 
 
 
@@ -1374,59 +1371,59 @@
             });
 
             // Initialize Select2 for multi-select
-            $('#view_preference').select2({
-                placeholder: "Select Preference",
-                allowClear: true
-            });
+            if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
+                $('#view_preference').select2({
+                    placeholder: "Select Preference",
+                    allowClear: true
+                });
 
-            // Listen for changes on the dropdown and update Livewire
-            $('#view_preference').on('change', function() {
-                let selectedValues = $(this).val() || []; // Get selected values as an array
-                
-                // Handle "All" selection - if "All" is selected, clear other selections
-                if (selectedValues.includes('All') && selectedValues.length > 1) {
-                    // User just selected "All" - keep only "All"
-                    selectedValues = ['All'];
-                    $(this).val(selectedValues).trigger('change.select2');
-                }
-                
-                // Remove duplicates using array_unique pattern
-                selectedValues = [...new Set(selectedValues)];
-                
-                Livewire.emit('updatePreference', selectedValues); // Send to Livewire
+                $('#view_preference').on('change', function() {
+                    let selectedValues = $(this).val() || [];
+                    
+                    if (selectedValues.includes('All') && selectedValues.length > 1) {
+                        selectedValues = ['All'];
+                        $(this).val(selectedValues).trigger('change.select2');
+                    }
+                    
+                    selectedValues = [...new Set(selectedValues)];
+                    
+                    Livewire.emit('updatePreference', selectedValues);
 
-                // Check if "Other" is in the selected values
-                if (selectedValues.includes('Other')) {
-                    $('#other_preferences').show(); // Show the "Other" input field
-                } else {
-                    $('#other_preferences').hide(); // Hide the "Other" input field
-                }
-            });
+                    if (selectedValues.includes('Other')) {
+                        $('#other_preferences').show();
+                    } else {
+                        $('#other_preferences').hide();
+                    }
+                });
+            }
 
             // Initialize Select2 for sale_provision (Purchasing Terms tab)
-            $('#sale_provision').select2({
-                placeholder: "Select",
-                allowClear: true,
-            }).on('change', function() {
-                let selectedValues = $(this).val() || [];
-                @this.set('sale_provision', selectedValues);
-            });
+            if ($('#sale_provision').length && !$('#sale_provision').hasClass('select2-hidden-accessible')) {
+                $('#sale_provision').select2({
+                    placeholder: "Select",
+                    allowClear: true,
+                }).on('change', function() {
+                    let selectedValues = $(this).val() || [];
+                    @this.set('sale_provision', selectedValues);
+                });
+            }
 
             // Global flag to prevent Livewire sync during draft/edit load
             window.financingSyncInProgress = false;
             
             // Initialize Select2 for offered_financing (Purchasing Terms tab)
-            $('#offered_financing').select2({
-                placeholder: "Select",
-                allowClear: true,
-            }).on('change', function() {
-                // Skip Livewire sync if we're loading draft data (prevents updatedOfferedFinancing reset)
-                if (window.financingSyncInProgress) {
-                    return;
-                }
-                let selectedValues = $(this).val() || [];
-                @this.set('offered_financing', selectedValues);
-            });
+            if ($('#offered_financing').length && !$('#offered_financing').hasClass('select2-hidden-accessible')) {
+                $('#offered_financing').select2({
+                    placeholder: "Select",
+                    allowClear: true,
+                }).on('change', function() {
+                    if (window.financingSyncInProgress) {
+                        return;
+                    }
+                    let selectedValues = $(this).val() || [];
+                    @this.set('offered_financing', selectedValues);
+                });
+            }
 
             // Function to toggle Non-Negotiable Amenities and Property Features:" input field
 
@@ -2349,6 +2346,12 @@
             }
 
             removeWizardEventListeners();
+
+            if (currentServiceType === 'full_service') {
+                initializeFullService();
+            } else if (currentServiceType === 'limited_service') {
+                initializeLimitedService();
+            }
         });
     </script>
 

@@ -1227,28 +1227,27 @@ $tenantPays = [
         function initializeFullService() {
 
 
-            $('#property_items').select2({
-                placeholder: "Select property style",
-                allowClear: true,
-            });
+            if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
+                $('#property_items').select2({
+                    placeholder: "Select property style",
+                    allowClear: true,
+                });
+                $('#property_items').on('change', function(e) {
+                    let selectedValues = $(this).val();
+                    @this.set('property_items', selectedValues);
+                });
+            }
 
-            // Update Livewire property on change
-            $('#property_items').on('change', function(e) {
-                let selectedValues = $(this).val();
-                @this.set('property_items', selectedValues);
-            });
-
-            // Initialize Select2 non_negotiable_amenities
-            $('#non_negotiable_amenities').select2({
-                placeholder: "Select credit score rating(s)",
-                allowClear: true,
-            });
-
-            // Update Livewire property on change
-            $('#non_negotiable_amenities').on('change', function(e) {
-                let selectedValues = $(this).val();
-                @this.set('non_negotiable_amenities', selectedValues);
-            });
+            if ($('#non_negotiable_amenities').length && !$('#non_negotiable_amenities').hasClass('select2-hidden-accessible')) {
+                $('#non_negotiable_amenities').select2({
+                    placeholder: "Select credit score rating(s)",
+                    allowClear: true,
+                });
+                $('#non_negotiable_amenities').on('change', function(e) {
+                    let selectedValues = $(this).val();
+                    @this.set('non_negotiable_amenities', selectedValues);
+                });
+            }
 
             // Function to toggle "auction time" input field
             function toggleAuctionTime(selectElement) {
@@ -1412,24 +1411,21 @@ $tenantPays = [
                 toggleSpaceInput('garage-needed', 'other-garage-needed');
             });
 
-            // Initialize Select2 for multi-select
-            $('#view_preference').select2({
-                placeholder: "Select Preference",
-                allowClear: true
-            });
-
-            // Listen for changes on the dropdown and update Livewire
-            $('#view_preference').on('change', function() {
-                let selectedValues = $(this).val(); // Get selected values as an array
-                Livewire.emit('updatePreference', selectedValues); // Send to Livewire
-
-                // Check if "Other" is in the selected values
-                if (selectedValues.includes('Other')) {
-                    $('#other_preferences').show(); // Show the "Other" input field
-                } else {
-                    $('#other_preferences').hide(); // Hide the "Other" input field
-                }
-            });
+            if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
+                $('#view_preference').select2({
+                    placeholder: "Select Preference",
+                    allowClear: true
+                });
+                $('#view_preference').on('change', function() {
+                    let selectedValues = $(this).val();
+                    Livewire.emit('updatePreference', selectedValues);
+                    if (selectedValues.includes('Other')) {
+                        $('#other_preferences').show();
+                    } else {
+                        $('#other_preferences').hide();
+                    }
+                });
+            }
 
             // Function to toggle Non-Negotiable Amenities and Property Features:" input field
 
@@ -1665,53 +1661,49 @@ $tenantPays = [
             });
 
 
-            // ///// rent_includes
-            $('#rent_includes').select2({
-                placeholder: "Select rent",
-                allowClear: true,
-            });
+            if ($('#rent_includes').length && !$('#rent_includes').hasClass('select2-hidden-accessible')) {
+                $('#rent_includes').select2({
+                    placeholder: "Select rent",
+                    allowClear: true,
+                });
+                $('#rent_includes').on('change', function(e) {
+                    let selectedValues = $(this).val();
+                    @this.set('rent_includes', selectedValues);
+                });
+            }
 
-            // Update Livewire property on change
-            $('#rent_includes').on('change', function(e) {
-                let selectedValues = $(this).val();
-                @this.set('rent_includes', selectedValues);
-            });
+            if ($('#terms_of_lease').length && !$('#terms_of_lease').hasClass('select2-hidden-accessible')) {
+                $('#terms_of_lease').select2({
+                    placeholder: "Select terms of lease",
+                    allowClear: true,
+                });
+                $('#terms_of_lease').on('change', function(e) {
+                    let selectedValues = $(this).val();
+                    @this.set('terms_of_lease', selectedValues);
+                });
+            }
 
-            /////////////terms_of_lease
-             $('#terms_of_lease').select2({
-                placeholder: "Select terms of lease",
-                allowClear: true,
-            });
+            if ($('#tenant_pays').length && !$('#tenant_pays').hasClass('select2-hidden-accessible')) {
+                $('#tenant_pays').select2({
+                    placeholder: "Select tenant pays",
+                    allowClear: true,
+                });
+                $('#tenant_pays').on('change', function(e) {
+                    let selectedValues = $(this).val();
+                    @this.set('tenant_pays', selectedValues);
+                });
+            }
 
-            // Update Livewire property on change
-            $('#terms_of_lease').on('change', function(e) {
-                let selectedValues = $(this).val();
-                @this.set('terms_of_lease', selectedValues);
-            });
-
-            /////////////tenant Pays
-             $('#tenant_pays').select2({
-                placeholder: "Select tenant pays",
-                allowClear: true,
-            });
-
-            // Update Livewire property on change
-            $('#tenant_pays').on('change', function(e) {
-                let selectedValues = $(this).val();
-                @this.set('tenant_pays', selectedValues);
-            });
-
-            /////////////owner_pays
-             $('#owner_pays').select2({
-                placeholder: "Select owner pays",
-                allowClear: true,
-            });
-
-            // Update Livewire property on change
-            $('#owner_pays').on('change', function(e) {
-                let selectedValues = $(this).val();
-                @this.set('owner_pays', selectedValues);
-            });
+            if ($('#owner_pays').length && !$('#owner_pays').hasClass('select2-hidden-accessible')) {
+                $('#owner_pays').select2({
+                    placeholder: "Select owner pays",
+                    allowClear: true,
+                });
+                $('#owner_pays').on('change', function(e) {
+                    let selectedValues = $(this).val();
+                    @this.set('owner_pays', selectedValues);
+                });
+            }
 
             const photoInput = document.getElementById("photo-input");
             const photoError = document.getElementById("photo-error");
@@ -2361,6 +2353,12 @@ $tenantPays = [
         }
 
         Livewire.hook('message.processed', () => {
+            removeWizardEventListeners();
+            if (currentServiceType === 'full_service') {
+                initializeFullService();
+            } else if (currentServiceType === 'limited_service') {
+                initializeLimitedService();
+            }
             addIconsToInputs();
             checkRepresentationStatus();
         });
