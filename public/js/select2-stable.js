@@ -3,6 +3,33 @@
 
     $.fn.select2.defaults.set('width', '100%');
 
+    function repairBrokenSelects() {
+        $('select.select2-hidden-accessible').each(function() {
+            var $el = $(this);
+            var hasContainer = $el.siblings('.select2-container').length > 0 ||
+                               $el.parent().find('> .select2-container').length > 0 ||
+                               $el.next('.select2-container').length > 0;
+            if (!hasContainer) {
+                try { $el.select2('destroy'); } catch(e) {}
+                $el.removeClass('select2-hidden-accessible')
+                   .removeAttr('data-select2-id')
+                   .removeAttr('aria-hidden')
+                   .css({
+                       position: '',
+                       width: '',
+                       height: '',
+                       padding: '',
+                       margin: '',
+                       overflow: '',
+                       clip: '',
+                       'clip-path': '',
+                       'white-space': '',
+                       border: ''
+                   });
+            }
+        });
+    }
+
     function initUninitialized(container) {
         var $root = container ? $(container) : $(document);
         $root.find('select.select2-multiple, select.select2').each(function() {
@@ -35,9 +62,13 @@
 
     document.addEventListener('livewire:load', function() {
         Livewire.hook('message.processed', function() {
+            repairBrokenSelects();
             setTimeout(function() { initUninitialized(); }, 20);
         });
     });
 
-    window.Select2Stable = { initUninitialized: initUninitialized };
+    window.Select2Stable = {
+        initUninitialized: initUninitialized,
+        repairBrokenSelects: repairBrokenSelects
+    };
 })(jQuery);
