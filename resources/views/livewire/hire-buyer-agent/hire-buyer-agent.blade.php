@@ -1039,7 +1039,7 @@
                             </div>
                             <div>
 
-                                <button type="button" class="btn btn-outline-primary me-2" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="saveDraft">
+                                <button type="button" class="btn btn-outline-primary me-2" onclick="if(typeof syncBuyerSelect2BeforeSave==='function')syncBuyerSelect2BeforeSave()" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="saveDraft">
                                     <span wire:loading.remove wire:target="saveDraft"><i class="fas fa-save me-1"></i> Save Draft</span>
                                     <span wire:loading wire:target="saveDraft">Saving...</span>
                                 </button>
@@ -1194,6 +1194,27 @@
                 console.log('[JSON RESTORE ERROR]', e);
             }
         }
+
+        function syncBuyerSelect2BeforeSave() {
+            var cpb = $('#condition_prop_buyer').val() || [];
+            var nut = $('.number_of_unit_type').val() || [];
+            var pi = $('#property_items').val() || [];
+            cpb = [...new Set(cpb)];
+            nut = [...new Set(nut)];
+            pi = [...new Set(pi)];
+            @this.set('condition_prop_buyer', cpb);
+            @this.set('number_of_unit_type', nut);
+            @this.set('property_items', pi);
+            setJsonModel('condition_prop_buyer_json', cpb);
+            setJsonModel('number_of_unit_type_json', nut);
+            setJsonModel('property_items_json', pi);
+        }
+
+        document.addEventListener('submit', function(e) {
+            if (e.target && e.target.tagName === 'FORM') {
+                syncBuyerSelect2BeforeSave();
+            }
+        }, true);
 
         function initializeFullService() {
 
