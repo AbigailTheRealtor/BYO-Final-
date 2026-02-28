@@ -587,7 +587,7 @@
         ['name' => 'Other – Specify additional services as needed.'],
     ];
 
-    $property_items = [
+    $property_items_options = [
     // Residential (alphabetical order)
     ['name' => '½ Duplex', 'class' => 'residential-length'],
     ['name' => '1/3 Triplex', 'class' => 'residential-length'],

@@ -131,15 +131,6 @@
 <input type="hidden" wire:model.defer="number_of_unit_type_json">
 <input type="hidden" wire:model="property_items_json">
 
-<div wire:key="debug-readout" style="background:#111;color:#0f0;padding:10px;white-space:pre-wrap;font-family:monospace;font-size:12px;margin-bottom:10px;border-radius:4px;">
-condition_prop_buyer: {{ json_encode($condition_prop_buyer ?? null) }}
-number_of_unit_type: {{ json_encode($number_of_unit_type ?? null) }}
-property_items: {{ json_encode($property_items ?? null) }}
-condition_prop_buyer_json: {{ $condition_prop_buyer_json ?? 'null' }}
-number_of_unit_type_json: {{ $number_of_unit_type_json ?? 'null' }}
-property_items_json: {{ $property_items_json ?? 'null' }}
-</div>
-
 <h3>Property Preferences</h3>
 
 <div class="alert alert-info bg-light-info border-info mb-4">
