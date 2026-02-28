@@ -590,7 +590,6 @@ class BuyerAgentAuction extends Component
                 'nft_valuation_method', 'nft_transfer_method', 'nft_gas_fees'
             ],
             'Lease Option' => [
-                'interested_lease_option', 'interested_lease_option_agreement',
                 'lease_option_price', 'lease_option_terms', 'lease_option_duration',
                 'lease_option_payment', 'lease_option_conditions', 'lease_option_consideration',
                 'has_option_fee', 'option_fee_amount',
@@ -1599,6 +1598,8 @@ class BuyerAgentAuction extends Component
                 'credit_scroe_rating' => $this->credit_scroe_rating,
                 'flat_fee_services' => $this->flat_fee_services,
                 'number_of_unit_type' => $this->number_of_unit_type,
+                'condition_prop_buyer' => $this->condition_prop_buyer,
+                'property_items' => $this->property_items,
             ]);
             
             // Clear the loading flag after all data is loaded

@@ -370,7 +370,7 @@
 </div>
 
 <!-- Other Property Style Input (shown when "Other" is selected) -->
-@if ($this->is_property_items_other_visible)
+@if (is_array($property_items) && in_array('Other', $property_items))
 <div class="form-group" wire:key="other-property-items-wrapper">
     <div class="input-cover">
         <input type="text" wire:model="other_property_items" class="form-control has-icon"
@@ -1394,6 +1394,8 @@
         syncSelect2('#credit_scroe_rating', data.credit_scroe_rating);
         syncSelect2('#flat_fee_services', data.flat_fee_services);
         syncSelect2('.number_of_unit_type', data.number_of_unit_type);
+        syncSelect2('#condition_prop_buyer', data.condition_prop_buyer);
+        syncSelect2('#property_items', data.property_items);
         
         // Clear flag after a short delay to allow all change events to complete
         setTimeout(function() {

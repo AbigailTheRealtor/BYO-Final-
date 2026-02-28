@@ -588,7 +588,6 @@ class BuyerAgentAuctionEdit extends Component
                 'nft_valuation_method', 'nft_transfer_method', 'nft_gas_fees'
             ],
             'Lease Option' => [
-                'interested_lease_option', 'interested_lease_option_agreement',
                 'lease_option_price', 'lease_option_terms', 'lease_option_duration',
                 'lease_option_payment', 'lease_option_conditions', 'lease_option_consideration',
                 'has_option_fee', 'option_fee_amount',
@@ -1490,6 +1489,8 @@ class BuyerAgentAuctionEdit extends Component
                 'pool_type' => $this->pool_type,
                 'lease_for' => $this->lease_for,
                 'credit_scroe_rating' => $this->credit_scroe_rating,
+                'flat_fee_services' => $this->flat_fee_services,
+                'number_of_unit_type' => $this->number_of_unit_type,
             ]);
             
             // Note: isLoadingData flag will be cleared by updatedOfferedFinancing() 

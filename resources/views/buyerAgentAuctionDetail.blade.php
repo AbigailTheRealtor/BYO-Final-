@@ -537,7 +537,7 @@
                                             Garage Parking Features Needed:
                                             {{-- Skip "Other" in main value when custom text exists --}}
                                             @if (!(@$auction->get->garage_parking_spaces === 'Other' && @$auction->get->other_parking_space_wrapper))
-                                                <span class="removeBold badge bg-secondary">{{ @$auction->get->garage_parking_spaces }}</span>
+                                                <span class="removeBold">{{ @$auction->get->garage_parking_spaces }}</span>
                                             @endif
                                             @if (@$auction->get->garage_parking_spaces_option && count(@$auction->get->garage_parking_spaces_option) > 0)
                                                 @foreach (@$auction->get->garage_parking_spaces_option as $item)
@@ -714,9 +714,13 @@
                         @if (@$auction->get->number_of_unit_type != null && count(@$auction->get->number_of_unit_type) > 0)
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Acceptable Unit Type:
-                                @foreach (@$auction->get->number_of_unit_type as $item)
-                                    <span class="removeBold badge bg-secondary">{{ $item }}</span>
-                                @endforeach
+                                @if (count(@$auction->get->number_of_unit_type) === 1)
+                                    <span class="removeBold">{{ @$auction->get->number_of_unit_type[0] }}</span>
+                                @else
+                                    @foreach (@$auction->get->number_of_unit_type as $item)
+                                        <span class="removeBold badge bg-secondary">{{ $item }}</span>
+                                    @endforeach
+                                @endif
                             </div>
                         @endif
 
@@ -1083,7 +1087,7 @@
                                         @if (@$auction->get->crypto_transfer_timing === 'Other' && $displayCryptoTimingOther)
                                             <span class="removeBold">{{ $displayCryptoTimingOther }}</span>
                                         @else
-                                            <span class="removeBold badge bg-secondary">{{ $displayCryptoTiming }}</span>
+                                            <span class="removeBold">{{ $displayCryptoTiming }}</span>
                                         @endif
                                     </div>
                                 @endif
