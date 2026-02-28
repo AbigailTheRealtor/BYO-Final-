@@ -1,0 +1,363 @@
+Okay — if you’re **still** seeing:
+
+1. **Acceptable Property Conditions → “No preference (open to any condition)” doesn’t save** (create + draft + edit)
+2. **Income → Acceptable Unit Type acts like single select and disappears on edit/draft**
+3. **Vacant Land → selecting “Other” does NOT show the text input box (and text won’t save)**
+
+…then the recurring Select2 guard/restore approach is not your real bottleneck anymore.
+
+At this point the most reliable fix is to **stop depending on Select2 → Livewire syncing directly** (which is fragile with `wire:ignore`, morphdom, re-inits, and edit route switching), and instead use a **hidden JSON bridge** that Livewire always saves/loads correctly.
+
+This is the “bulletproof” pattern I use when Select2 refuses to behave:
+
+* Select2 controls the visible widget
+* JS writes the selection into a hidden input as **JSON**
+* Livewire saves the JSON string (always)
+* Livewire decodes JSON into the real array fields (always)
+* Blade uses the real array fields to decide whether to show “Other” input (always)
+
+Below is your **ONE COPY/PASTE Replit instruction block**.
+
+---
+
+## COPY/PASTE REPLIT INSTRUCTIONS (ONE BLOCK)
+
+### Goal
+
+Fix Buyer listings (Create + Save Draft + Edit) for:
+
+A) `condition_prop_buyer` “No preference (open to any condition)” not saving
+B) `number_of_unit_type` (Income) must allow multi-select + persist
+C) `property_items` (Vacant Land) selecting “Other” must show text box + persist `other_property_items`
+
+### Safeguards
+
+* Do NOT rename meta keys.
+* Do NOT remove Select2 globally.
+* Clear caches after changes:
+
+  * `php artisan optimize:clear`
+
+---
+
+# 1) Add 3 JSON bridge properties to BOTH components that can handle Buyer data
+
+You MUST add this to both:
+
+* `app/Http/Livewire/HireBuyerAgent/BuyerAgentAuction.php` (Buyer Create / Draft)
+* `app/Http/Livewire/TenantAgentAuctionEdit.php` (Buyer Edit route currently uses this)
+
+(If your Buyer Edit sometimes uses `BuyerAgentAuctionEdit.php`, add it there too — but start with the two above.)
+
+### Add these public properties near the top of the class
+
+```php
+public $condition_prop_buyer_json = '[]';
+public $number_of_unit_type_json = '[]';
+public $property_items_json = '[]';
+```
+
+### Add these helper methods inside the class
+
+```php
+private function decodeJsonArray($value): array
+{
+    if (is_array($value)) return $value;
+    if (!is_string($value) || trim($value) === '') return [];
+    $decoded = json_decode($value, true);
+    return is_array($decoded) ? $decoded : [];
+}
+
+private function encodeJsonArray($value): string
+{
+    $arr = is_array($value) ? $value : $this->decodeJsonArray($value);
+    $arr = array_values(array_filter($arr, fn($v) => $v !== null && $v !== '' ));
+    return json_encode($arr);
+}
+```
+
+### Add these updated handlers (CRITICAL)
+
+These make Livewire react even if Select2 is wire:ignore.
+
+```php
+public function updatedConditionPropBuyerJson($value)
+{
+    $this->condition_prop_buyer = $this->decodeJsonArray($value);
+}
+
+public function updatedNumberOfUnitTypeJson($value)
+{
+    $this->number_of_unit_type = $this->decodeJsonArray($value);
+}
+
+public function updatedPropertyItemsJson($value)
+{
+    $this->property_items = $this->decodeJsonArray($value);
+}
+```
+
+---
+
+# 2) Ensure LOAD sets BOTH the array fields AND the json bridge fields
+
+## 2A) BuyerAgentAuction.php (Create + Draft load)
+
+Wherever you load draft / mount values (often `loadDraft()` or `mount()`), AFTER you load:
+
+* `$this->condition_prop_buyer`
+* `$this->number_of_unit_type`
+* `$this->property_items`
+
+Add:
+
+```php
+$this->condition_prop_buyer_json = $this->encodeJsonArray($this->condition_prop_buyer ?? []);
+$this->number_of_unit_type_json  = $this->encodeJsonArray($this->number_of_unit_type ?? []);
+$this->property_items_json       = $this->encodeJsonArray($this->property_items ?? []);
+```
+
+## 2B) TenantAgentAuctionEdit.php (Buyer Edit loadAuctionData)
+
+In `loadAuctionData()` AFTER you load:
+
+* `$this->condition_prop_buyer`
+* `$this->number_of_unit_type`
+* `$this->property_items`
+* `$this->other_property_items`
+
+Add the same:
+
+```php
+$this->condition_prop_buyer_json = $this->encodeJsonArray($this->condition_prop_buyer ?? []);
+$this->number_of_unit_type_json  = $this->encodeJsonArray($this->number_of_unit_type ?? []);
+$this->property_items_json       = $this->encodeJsonArray($this->property_items ?? []);
+```
+
+This is the “restore” that does NOT depend on Select2.
+
+---
+
+# 3) Ensure SAVE uses the array fields (and normalizes “Other”)
+
+In BOTH save methods (where you call saveMeta), BEFORE saving buyer meta keys, add:
+
+```php
+// Always decode from JSON bridge (source of truth)
+$this->condition_prop_buyer = $this->decodeJsonArray($this->condition_prop_buyer_json);
+$this->number_of_unit_type  = $this->decodeJsonArray($this->number_of_unit_type_json);
+$this->property_items       = $this->decodeJsonArray($this->property_items_json);
+
+// Normalize "Other" token for property_items
+$items = $this->property_items ?? [];
+$items = array_values(array_filter($items));
+$otherText = trim((string)($this->other_property_items ?? ''));
+
+if ($otherText !== '' && !in_array('Other', $items)) {
+    $items[] = 'Other';
+}
+if ($otherText === '' && in_array('Other', $items)) {
+    $items = array_values(array_diff($items, ['Other']));
+}
+$this->property_items = $items;
+$this->property_items_json = $this->encodeJsonArray($items);
+```
+
+Then save meta like normal:
+
+* `condition_prop_buyer`
+* `number_of_unit_type`
+* `property_items`
+* `other_property_items`
+
+This prevents the “listing shows Other but not the custom text” problem.
+
+---
+
+# 4) Blade: add hidden JSON inputs + make Select2 write into them
+
+### File:
+
+`resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/property-preferences.blade.php`
+
+## 4A) Add hidden JSON inputs (outside any wire:ignore)
+
+Place near the top of that section:
+
+```php
+<input type="hidden" wire:model.defer="condition_prop_buyer_json">
+<input type="hidden" wire:model.defer="number_of_unit_type_json">
+<input type="hidden" wire:model.defer="property_items_json">
+```
+
+## 4B) Property Conditions select: keep Select2 but sync to JSON
+
+Where your `condition_prop_buyer` select exists (it likely has `wire:ignore`), keep it, but ensure it has an id:
+
+* `id="condition_prop_buyer"`
+* `multiple`
+
+## 4C) Acceptable Unit Type select (Income): MUST be multiple
+
+Make sure it is:
+
+* `class="number_of_unit_type"`
+* `multiple`
+
+If it’s missing `multiple`, add it. If it’s present but still single-select, Select2 is being initialized in single mode — we will force multiple in JS.
+
+## 4D) Property Items select: ensure it has id and multiple
+
+* `id="property_items"`
+* `multiple`
+
+## 4E) “Other” input visibility must be based on $property_items (array)
+
+Ensure the “Other” input block is OUTSIDE wire:ignore and uses:
+
+```php
+@if(is_array($property_items) && in_array('Other', $property_items))
+    <input type="text" wire:model.defer="other_property_items" ...>
+@endif
+```
+
+---
+
+# 5) JS: On change, write JSON into hidden Livewire models (not @this.set arrays)
+
+In BOTH:
+
+* `resources/views/livewire/hire-buyer-agent/hire-buyer-agent.blade.php`
+* `resources/views/livewire/hire-buyer-agent/hire-buyer-agent-edit.blade.php`
+
+Inside `initializeFullService()` (or equivalent), add these THREE bindings (namespaced to avoid stacking):
+
+```js
+function setJsonModel(modelName, arr) {
+    const json = JSON.stringify(arr || []);
+    // Update the hidden input bound to wire:model
+    const $input = $(`input[wire\\:model\\.defer="${modelName}"]`);
+    if ($input.length) {
+        $input.val(json).trigger('input');
+    } else {
+        // fallback if defer selector differs
+        @this.set(modelName, json);
+    }
+    console.log('[JSON SET]', modelName, json);
+}
+
+// CONDITIONS
+if ($('#condition_prop_buyer').length) {
+    if (!$('#condition_prop_buyer').hasClass('select2-hidden-accessible')) {
+        $('#condition_prop_buyer').select2({ width: '100%' });
+    }
+    $('#condition_prop_buyer').off('change.jsonCond').on('change.jsonCond', function () {
+        setJsonModel('condition_prop_buyer_json', $('#condition_prop_buyer').val() || []);
+    });
+}
+
+// INCOME UNIT TYPE
+$('.number_of_unit_type').each(function () {
+    const $el = $(this);
+    if (!$el.hasClass('select2-hidden-accessible')) {
+        $el.attr('multiple', 'multiple'); // force
+        $el.select2({ width: '100%' });
+    }
+    $el.off('change.jsonUnit').on('change.jsonUnit', function () {
+        setJsonModel('number_of_unit_type_json', $el.val() || []);
+    });
+});
+
+// PROPERTY ITEMS
+if ($('#property_items').length) {
+    if (!$('#property_items').hasClass('select2-hidden-accessible')) {
+        $('#property_items').select2({ width: '100%' });
+    }
+    $('#property_items').off('change.jsonItems').on('change.jsonItems', function () {
+        setJsonModel('property_items_json', $('#property_items').val() || []);
+    });
+}
+```
+
+### IMPORTANT
+
+Keep your existing Select2 init guards if you want, but these JSON writes MUST exist.
+
+---
+
+# 6) Force restore Select2 UI from JSON every time (works on edit/draft)
+
+Still in both buyer create + buyer edit blade JS, add at end of initializeFullService():
+
+```js
+try {
+    const cond = JSON.parse(@this.get('condition_prop_buyer_json') || '[]');
+    $('#condition_prop_buyer').val(cond).trigger('change.select2');
+
+    const units = JSON.parse(@this.get('number_of_unit_type_json') || '[]');
+    $('.number_of_unit_type').each(function(){ $(this).val(units).trigger('change.select2'); });
+
+    const items = JSON.parse(@this.get('property_items_json') || '[]');
+    $('#property_items').val(items).trigger('change.select2');
+
+    console.log('[JSON RESTORE OK]', {cond, units, items});
+} catch(e) {
+    console.log('[JSON RESTORE ERROR]', e);
+}
+```
+
+And ensure initializeFullService runs after every Livewire update:
+
+```js
+document.addEventListener('livewire:load', function () {
+    initializeFullService();
+    Livewire.hook('message.processed', () => initializeFullService());
+});
+```
+
+---
+
+# 7) Final step: clear cache and TEST
+
+Run:
+
+* `php artisan optimize:clear`
+
+Then test:
+
+### Test A: Conditions “No preference…”
+
+Select it → Save Draft → refresh → Edit
+Must persist and show on listing detail.
+
+### Test B: Income Unit Type
+
+Select Income Property type → select 2+ unit types → Save Draft → Edit
+Must still be selected and show on listing.
+
+### Test C: Vacant Land “Other”
+
+Select Other → text box must appear immediately → type → Save Draft → Edit
+Text must persist and listing must show custom text (not just “Other”).
+
+---
+
+## Why this works when the other attempts didn’t
+
+Because now Livewire isn’t trying to “understand” Select2 at all.
+
+* Select2 only controls the UI
+* Livewire only saves a hidden JSON string (always reliable)
+* Livewire derives the arrays from JSON (always reliable)
+* The “Other” visibility is driven by the array (always reliable)
+
+---
+
+If you paste this in and it STILL doesn’t work, then the only remaining explanation is you’re editing different components than you think.
+
+So after you apply the above, do this quick confirmation:
+
+* In the Buyer Edit page, temporarily `dd($this->condition_prop_buyer_json, $this->number_of_unit_type_json, $this->property_items_json);` at the start of the save method.
+* If they’re empty even after selection, then the hidden inputs aren’t present in that rendered view (meaning the edit route is using a different Blade partial than expected).
+
+If you want, tell me which exact URL you use for Buyer CREATE and Buyer EDIT, and I’ll tell you which component/view must contain the hidden JSON inputs.
