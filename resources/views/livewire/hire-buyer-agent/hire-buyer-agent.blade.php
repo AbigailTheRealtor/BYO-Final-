@@ -1170,7 +1170,8 @@
                 $input = $('input[wire\\:model="' + modelName + '"]');
             }
             if ($input.length) {
-                $input.val(json).trigger('input');
+                $input.val(json);
+                $input[0].dispatchEvent(new Event('input', { bubbles: true }));
             } else {
                 @this.set(modelName, json);
             }
