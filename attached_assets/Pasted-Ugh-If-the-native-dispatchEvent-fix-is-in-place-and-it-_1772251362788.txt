@@ -1,0 +1,170 @@
+Ugh. If the native `dispatchEvent()` fix is in place and it’s **still** not working, then the problem is **not** “events aren’t firing” anymore.
+
+At this point, it’s almost always one of these 3 things:
+
+1. **Your selector isn’t finding the hidden input** (so you’re dispatching events on `null`).
+2. The hidden input is found, but **Livewire isn’t reacting** because it’s **`wire:model.defer`** and nothing is causing a request/re-render at the moment you expect.
+3. Even if Livewire receives it, **your backend isn’t converting the JSON into the actual array properties** that your Blade `@if(in_array('Other', $property_items))` depends on.
+
+So here’s the fix that stops all of this guessing:
+
+## The reliable fix: “Dual-sync” (Direct Livewire set + JSON bridge)
+
+Instead of relying only on the hidden JSON bridge, we **also** set the actual Livewire array property immediately. This makes the UI react instantly (Other text box appears), and the JSON bridge remains as backup for draft/save.
+
+### A) Replace `setJsonModel()` with this more robust version (Buyer Create + Buyer Edit)
+
+Paste this in BOTH buyer scripts where the function currently exists:
+
+```js
+function findWireModelInput(modelName) {
+  // Support wire:model, wire:model.defer, wire:model.lazy
+  return (
+    document.querySelector(`input[wire\\:model="${modelName}"]`) ||
+    document.querySelector(`input[wire\\:model\\.defer="${modelName}"]`) ||
+    document.querySelector(`input[wire\\:model\\.lazy="${modelName}"]`)
+  );
+}
+
+function setJsonModel(modelName, arr) {
+  const json = JSON.stringify(arr || []);
+  const input = findWireModelInput(modelName);
+
+  // Debug proof (leave this in until everything is fixed)
+  console.log('[JSON BRIDGE]', modelName, 'found?', !!input, 'value:', json);
+
+  if (input) {
+    input.value = json;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  // IMPORTANT: also force a Livewire request-side update (instant UI correctness)
+  if (typeof @this !== 'undefined' && @this) {
+    @this.set(modelName, json); // keeps JSON property in sync too
+  }
+}
+```
+
+Why this matters:
+
+* If the hidden input is missing, you’ll SEE it in console: `found? false`
+* Even if `wire:model.defer` delays DOM changes, the `@this.set()` makes Livewire aware immediately.
+
+---
+
+### B) Update your change handlers to set the REAL array properties too
+
+Right now you’re setting `*_json`. That’s not enough if the backend isn’t converting JSON → array right away.
+
+Do this pattern:
+
+#### 1) Acceptable Property Conditions (`condition_prop_buyer`)
+
+```js
+$('#condition_prop_buyer')
+  .off('change.jsonCond')
+  .on('change.jsonCond', function () {
+    const vals = $('#condition_prop_buyer').val() || [];
+
+    // 1) Set the real Livewire array (this is what the listing + UI conditions rely on)
+    @this.set('condition_prop_buyer', vals);
+
+    // 2) Also set the JSON bridge (draft/save fallback)
+    setJsonModel('condition_prop_buyer_json', vals);
+  });
+```
+
+#### 2) Income Acceptable Unit Type (`number_of_unit_type`)
+
+```js
+$('.number_of_unit_type').each(function () {
+  const $el = $(this);
+
+  $el.off('change.jsonUnits').on('change.jsonUnits', function () {
+    const vals = $el.val() || [];
+
+    @this.set('number_of_unit_type', vals);
+    setJsonModel('number_of_unit_type_json', vals);
+  });
+});
+```
+
+#### 3) Vacant Land Acceptable Property Style (`property_items`) + show “Other” input
+
+```js
+$('#property_items')
+  .off('change.jsonItems')
+  .on('change.jsonItems', function () {
+    const vals = $('#property_items').val() || [];
+
+    @this.set('property_items', vals);
+    setJsonModel('property_items_json', vals);
+  });
+```
+
+This one change alone should make:
+
+* selecting **Other** immediately flip `$property_items` on the server → the Blade `@if(in_array('Other'...))` becomes true → the text input appears.
+
+---
+
+## C) One backend requirement (only if you do not already have this)
+
+Your Livewire component MUST have these properties declared:
+
+* `public $condition_prop_buyer = [];`
+* `public $number_of_unit_type = [];`
+* `public $property_items = [];`
+* `public $other_property_items = '';`
+
+And `saveAllMetadata()` must save **the array properties**, not only the JSON strings.
+
+If you want a quick safeguard: right before saving, normalize arrays:
+
+```php
+$this->condition_prop_buyer = is_array($this->condition_prop_buyer) ? $this->condition_prop_buyer : [];
+$this->number_of_unit_type = is_array($this->number_of_unit_type) ? $this->number_of_unit_type : [];
+$this->property_items = is_array($this->property_items) ? $this->property_items : [];
+```
+
+---
+
+## D) Clear caches (must)
+
+Run:
+
+```bash
+php artisan optimize:clear
+```
+
+Then hard refresh (Ctrl+F5).
+
+---
+
+# What to look for immediately (so we stop wasting cycles)
+
+Open console after changing a field:
+
+You MUST see logs like:
+
+* `[JSON BRIDGE] property_items_json found? true value: [...]`
+
+If you see `found? false` then your hidden inputs are not in the DOM where the script runs, or the attribute name doesn’t match.
+
+---
+
+## Why this approach works when everything else fails
+
+Because it removes the dependency on:
+
+* the hidden input existing
+* defer timing quirks
+* backend updated*Json handlers
+* Livewire deciding when to re-render
+
+By doing `@this.set('property_items', vals)` you force the **actual** server-side state that your Blade conditions depend on.
+
+---
+
+If you paste this in and you still can’t get the “Other” textbox to appear, then the only remaining explanation is structural: the `@if(in_array('Other'...))` block is still inside something Livewire isn’t re-rendering (often inside `wire:ignore` or a keyed block that isn’t changing). In that case, tell me exactly which file contains the “Other text input” block and I’ll give you the precise wrapper change (but try the dual-sync first — it’s the fastest true fix).

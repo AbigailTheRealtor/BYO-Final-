@@ -1206,7 +1206,8 @@
                 input.value = json;
                 input.dispatchEvent(new Event('input', { bubbles: true }));
                 input.dispatchEvent(new Event('change', { bubbles: true }));
-            } else {
+            }
+            if (typeof @this !== 'undefined' && @this) {
                 @this.set(modelName, json);
             }
             console.log('[JSON BRIDGE]', modelName, json, 'input found?', !!input);
@@ -1248,6 +1249,7 @@
                     
                     selectedValues = [...new Set(selectedValues)];
                     
+                    @this.set('property_items', selectedValues);
                     setJsonModel('property_items_json', selectedValues);
                 });
             }
@@ -1281,6 +1283,7 @@
                 $('#condition_prop_buyer').off('change.cpbSync').on('change.cpbSync', function(e) {
                     let selectedValues = $(this).val() || [];
                     selectedValues = [...new Set(selectedValues)];
+                    @this.set('condition_prop_buyer', selectedValues);
                     setJsonModel('condition_prop_buyer_json', selectedValues);
                 });
             }
@@ -1297,6 +1300,7 @@
                     $el.off('change.nutSync').on('change.nutSync', function(e) {
                         let selectedValues = $el.val() || [];
                         selectedValues = [...new Set(selectedValues)];
+                        @this.set('number_of_unit_type', selectedValues);
                         setJsonModel('number_of_unit_type_json', selectedValues);
                     });
                 }
