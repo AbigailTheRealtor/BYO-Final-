@@ -1676,9 +1676,26 @@ class BuyerAgentAuction extends Component
         // Property Details
         $auction->saveMeta('property_type', $this->property_type);
 
-        $this->condition_prop_buyer = $this->decodeJsonArray($this->condition_prop_buyer_json);
-        $this->number_of_unit_type = $this->decodeJsonArray($this->number_of_unit_type_json);
-        $this->property_items = $this->decodeJsonArray($this->property_items_json);
+        $fromJsonCpb = $this->decodeJsonArray($this->condition_prop_buyer_json);
+        if (!empty($fromJsonCpb)) {
+            $this->condition_prop_buyer = $fromJsonCpb;
+        } elseif (!is_array($this->condition_prop_buyer)) {
+            $this->condition_prop_buyer = [];
+        }
+
+        $fromJsonNut = $this->decodeJsonArray($this->number_of_unit_type_json);
+        if (!empty($fromJsonNut)) {
+            $this->number_of_unit_type = $fromJsonNut;
+        } elseif (!is_array($this->number_of_unit_type)) {
+            $this->number_of_unit_type = [];
+        }
+
+        $fromJsonPi = $this->decodeJsonArray($this->property_items_json);
+        if (!empty($fromJsonPi)) {
+            $this->property_items = $fromJsonPi;
+        } elseif (!is_array($this->property_items)) {
+            $this->property_items = [];
+        }
 
         $items = is_array($this->property_items) ? $this->property_items : [];
         $items = array_values(array_filter($items));
