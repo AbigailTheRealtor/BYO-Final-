@@ -1200,17 +1200,16 @@
 
         function setJsonModel(modelName, arr) {
             var json = JSON.stringify(arr || []);
-            var $input = $('input[wire\\:model\\.defer="' + modelName + '"]');
-            if (!$input.length) {
-                $input = $('input[wire\\:model="' + modelName + '"]');
-            }
-            if ($input.length) {
-                $input.val(json);
-                $input[0].dispatchEvent(new Event('input', { bubbles: true }));
+            var input = document.querySelector('input[wire\\:model\\.defer="' + modelName + '"]')
+                     || document.querySelector('input[wire\\:model="' + modelName + '"]');
+            if (input) {
+                input.value = json;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
             } else {
                 @this.set(modelName, json);
             }
-            console.log('[JSON SET]', modelName, json);
+            console.log('[JSON BRIDGE]', modelName, json, 'input found?', !!input);
         }
 
         function jsonRestoreSelect2() {
