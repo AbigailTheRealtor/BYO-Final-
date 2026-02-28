@@ -1246,7 +1246,31 @@
                 });
             }
 
+            if ($('#condition_prop_buyer').length && !$('#condition_prop_buyer').hasClass('select2-hidden-accessible')) {
+                $('#condition_prop_buyer').select2({
+                    placeholder: "Select property conditions",
+                    allowClear: true,
+                });
 
+                $('#condition_prop_buyer').on('change', function(e) {
+                    let selectedValues = $(this).val() || [];
+                    selectedValues = [...new Set(selectedValues)];
+                    @this.set('condition_prop_buyer', selectedValues);
+                });
+            }
+
+            if ($('.number_of_unit_type').length && !$('.number_of_unit_type').hasClass('select2-hidden-accessible')) {
+                $('.number_of_unit_type').select2({
+                    placeholder: "Select unit types",
+                    allowClear: true,
+                });
+
+                $('.number_of_unit_type').on('change', function(e) {
+                    let selectedValues = $(this).val() || [];
+                    selectedValues = [...new Set(selectedValues)];
+                    @this.set('number_of_unit_type', selectedValues);
+                });
+            }
 
             // Function to toggle "auction time" input field
             function toggleAuctionTime(selectElement) {
