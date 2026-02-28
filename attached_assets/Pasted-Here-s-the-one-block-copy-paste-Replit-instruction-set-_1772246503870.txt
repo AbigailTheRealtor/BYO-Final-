@@ -1,0 +1,265 @@
+Here’s the **one-block, copy/paste Replit instruction set** that fixes **exactly the 3 remaining issues**:
+
+1. **Vacant Land → Acceptable Property Style → “Other” selected but the text input box does NOT show**
+2. **All property types → Acceptable Property Conditions → “No preference (open to any condition)” won’t save/show**
+3. **Income → Acceptable Unit Type (number_of_unit_type) acts like single-select + doesn’t persist to draft/edit/listing**
+
+I’m writing this so your dev can follow it step-by-step and you don’t get “it’s done” without the actual fix.
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS
+
+### Buyer Agent (Remaining Issues Only)
+
+### Do NOT rename meta keys or delete any data
+
+### 0) Safeguards
+
+1. Run: `php artisan optimize:clear`
+2. Confirm you are editing the real files (NOT “copy” files):
+
+   * `resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/property-preferences.blade.php`
+   * `resources/views/livewire/hire-buyer-agent/hire-buyer-agent.blade.php`
+   * `resources/views/livewire/hire-buyer-agent/hire-buyer-agent-edit.blade.php`
+3. Any Select2 init must follow:
+
+   * initialize only if not already `.select2-hidden-accessible`
+   * bind `.on('change')` inside the guard
+   * never destroy/recreate Select2 on each Livewire update
+
+---
+
+# 1) Vacant Land: “Other” selected but text input doesn’t appear
+
+### Goal
+
+When user selects **Other** under **Acceptable Property Style** (`property_items`), the text input for `other_property_items` must:
+
+* **show immediately**
+* allow typing
+* **save and persist** on Draft / Submit / Edit
+
+### 1A) Fix the UI toggle (this is why your input isn’t showing)
+
+File:
+`resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/property-preferences.blade.php`
+
+Find the **Other** text input block for property style (it should be `wire:model="other_property_items"`).
+Replace ANY visibility logic that is NOT directly tied to the selected array.
+
+Use this EXACT condition:
+
+* Show the input when **Other is in the property_items array**:
+
+```php
+@if(is_array($property_items) && in_array('Other', $property_items))
+    <div class="form-group mt-2">
+        <label>Acceptable Property Style Other:</label>
+        <input type="text"
+               class="form-control"
+               wire:model.defer="other_property_items"
+               placeholder="Example: Waterfront lot, Horse property, etc.">
+    </div>
+@endif
+```
+
+Important:
+
+* use `wire:model.defer` (prevents Livewire from thrashing while typing)
+* do not use a missing boolean like `is_property_items_other_visible`
+* do not rely on JS to show/hide this input; Blade must handle it
+
+### 1B) Make sure Select2 selection actually updates Livewire (so Blade can show the input)
+
+Still in the same partial, confirm the `<select>` for property_items is wrapped in wire:ignore:
+
+```php
+<div wire:ignore>
+    <select id="property_items" class="form-control" multiple>
+        ...
+    </select>
+</div>
+```
+
+Now ensure your JS (in buyer create + buyer edit) sets Livewire whenever property_items changes.
+
+---
+
+# 2) “No preference (open to any condition)” doesn’t save / doesn’t show
+
+### Goal
+
+Selecting “No preference (open to any condition)” under **Acceptable Property Conditions** must:
+
+* persist on Draft
+* persist on Edit
+* display on listing detail view
+
+This is almost always caused by **missing restore after init** and/or **missing sync on change**.
+
+### 2A) Force condition_prop_buyer to sync to Livewire (CREATE + EDIT)
+
+File (Create):
+`resources/views/livewire/hire-buyer-agent/hire-buyer-agent.blade.php`
+
+Inside your existing `initializeFullService()` add/confirm:
+
+```js
+if ($('#condition_prop_buyer').length && !$('#condition_prop_buyer').hasClass('select2-hidden-accessible')) {
+    $('#condition_prop_buyer').select2({ width: '100%' });
+
+    $('#condition_prop_buyer').off('change.buyerCond').on('change.buyerCond', function () {
+        let selected = $(this).val() || [];
+        @this.set('condition_prop_buyer', selected);
+    });
+}
+
+// RESTORE after init (critical for drafts/edits showing properly)
+let condVal = @this.get('condition_prop_buyer') || [];
+if ($('#condition_prop_buyer').length) {
+    $('#condition_prop_buyer').val(condVal).trigger('change.select2');
+}
+```
+
+File (Edit):
+`resources/views/livewire/hire-buyer-agent/hire-buyer-agent-edit.blade.php`
+
+Add the SAME logic inside its `initializeFullService()`.
+
+### 2B) Confirm the listing display is not filtering “No preference”
+
+File:
+`app/Helpers/ListingDisplayHelper.php` (or wherever you normalize lists)
+
+Find your “filter NA” logic (often `isNoneNa()`).
+
+Make sure it ONLY filters:
+
+* `none`
+* `n/a`
+* `na`
+* empty string
+
+It must NOT filter strings containing:
+
+* `No preference`
+* `open to any condition`
+
+If you see code that filters anything with “preference”, remove that filter.
+
+---
+
+# 3) Income: Acceptable Unit Type only lets one selection + doesn’t persist
+
+### Goal
+
+`number_of_unit_type` must behave like Required Property/Business Assets:
+
+* allow multiple selections
+* save on Draft/Submit
+* reload on Edit without disappearing
+* show on listing
+
+### 3A) Ensure HTML is actually multi-select
+
+File:
+`resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/property-preferences.blade.php`
+
+Find the select for `wire:model="number_of_unit_type"` and enforce:
+
+```html
+<select class="form-control number_of_unit_type" multiple="multiple" name="number_of_unit_type[]">
+```
+
+### 3B) Fix Select2 init pattern (class selector MUST use .each) + sync + restore
+
+File (Create):
+`resources/views/livewire/hire-buyer-agent/hire-buyer-agent.blade.php`
+
+Inside `initializeFullService()`:
+
+```js
+$('.number_of_unit_type').each(function () {
+    let $el = $(this);
+
+    if (!$el.hasClass('select2-hidden-accessible')) {
+        $el.select2({ width: '100%' });
+
+        $el.off('change.unitType').on('change.unitType', function () {
+            let selected = $el.val() || [];
+            @this.set('number_of_unit_type', selected);
+        });
+    }
+});
+
+// RESTORE after init (critical)
+let unitTypeVal = @this.get('number_of_unit_type') || [];
+if ($('.number_of_unit_type').length) {
+    $('.number_of_unit_type').val(unitTypeVal).trigger('change.select2');
+}
+```
+
+File (Edit):
+`resources/views/livewire/hire-buyer-agent/hire-buyer-agent-edit.blade.php`
+
+Use the SAME `.each()` logic (do not use a flat `if($('.number_of_unit_type').length...)` check).
+
+### 3C) Ensure edit route loads number_of_unit_type (buyer edit uses shared edit component)
+
+File:
+`app/Http/Livewire/TenantAgentAuctionEdit.php`
+
+In `loadAuctionData()` confirm you load and normalize to array:
+
+* `number_of_unit_type` must become an array even if stored as JSON string
+
+Example required logic:
+
+```php
+$raw = $auction->info('number_of_unit_type');
+
+if (is_string($raw)) {
+    $decoded = json_decode($raw, true);
+    $this->number_of_unit_type = is_array($decoded) ? $decoded : [];
+} elseif (is_array($raw)) {
+    $this->number_of_unit_type = $raw;
+} else {
+    $this->number_of_unit_type = [];
+}
+```
+
+---
+
+# 4) REQUIRED VERIFICATION (Dev must do this exactly)
+
+### Vacant Land Other input
+
+1. Select property type that triggers Vacant Land style
+2. Select **Other** under Acceptable Property Style
+3. Confirm input appears immediately
+4. Type text
+5. Save Draft → reload draft → input still visible with saved text
+6. Submit → open listing → display shows your text (not just “Other”)
+7. Edit listing → Other still selected and input visible with text
+
+### Conditions No Preference
+
+1. Select ONLY “No preference (open to any condition)”
+2. Save Draft → reload → still selected
+3. Submit → listing displays it
+4. Edit → still selected
+
+### Unit Type
+
+1. Select Income Property type option
+2. Select multiple Unit Types
+3. Save Draft → reload → still selected
+4. Submit → listing shows them
+5. Edit → still selected
+
+---
+
+## One quick question I will NOT ask again:
+
+If you paste me the exact HTML snippet for the **property_items “Other” input block** from `property-preferences.blade.php`, I can tell you in 5 seconds why it’s not showing (it’s always the conditional or it’s inside wire:ignore incorrectly).

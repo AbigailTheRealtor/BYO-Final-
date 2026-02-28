@@ -373,7 +373,7 @@
 @if (is_array($property_items) && in_array('Other', $property_items))
 <div class="form-group" wire:key="other-property-items-wrapper">
     <div class="input-cover">
-        <input type="text" wire:model="other_property_items" class="form-control has-icon"
+        <input type="text" wire:model.defer="other_property_items" class="form-control has-icon"
             data-icon="fa-solid fa-home"
             placeholder="Enter other land use (e.g., Solar Farm, RV Park, Conservation Easement)">
     </div>

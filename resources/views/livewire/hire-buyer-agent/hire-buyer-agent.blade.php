@@ -1172,7 +1172,7 @@
                     allowClear: true,
                 });
 
-                $('#property_items').on('change', function(e) {
+                $('#property_items').off('change.piSync').on('change.piSync', function(e) {
                     let selectedValues = $(this).val() || [];
                     
                     if (selectedValues.includes('All') && selectedValues.length > 1) {
@@ -1184,7 +1184,8 @@
                     
                     @this.set('property_items', selectedValues);
                 });
-
+            }
+            if ($('#property_items').length) {
                 let piVals = @this.get('property_items') || [];
                 if (piVals.length) {
                     $('#property_items').val(piVals).trigger('change.select2');
@@ -1197,7 +1198,7 @@
                     allowClear: true,
                 });
 
-                $('#non_negotiable_amenities').on('change', function(e) {
+                $('#non_negotiable_amenities').off('change.nnaSync').on('change.nnaSync', function(e) {
                     let selectedValues = $(this).val() || [];
                     
                     if (selectedValues.includes('All') && selectedValues.length > 1) {
@@ -1217,12 +1218,13 @@
                     allowClear: true,
                 });
 
-                $('#condition_prop_buyer').on('change', function(e) {
+                $('#condition_prop_buyer').off('change.cpbSync').on('change.cpbSync', function(e) {
                     let selectedValues = $(this).val() || [];
                     selectedValues = [...new Set(selectedValues)];
                     @this.set('condition_prop_buyer', selectedValues);
                 });
-
+            }
+            if ($('#condition_prop_buyer').length) {
                 let cpbVals = @this.get('condition_prop_buyer') || [];
                 if (cpbVals.length) {
                     $('#condition_prop_buyer').val(cpbVals).trigger('change.select2');
@@ -1230,25 +1232,26 @@
             }
 
             $('.number_of_unit_type').each(function() {
-                if (!$(this).hasClass('select2-hidden-accessible')) {
-                    $(this).select2({
+                var $el = $(this);
+                if (!$el.hasClass('select2-hidden-accessible')) {
+                    $el.select2({
                         placeholder: "Select unit types",
                         allowClear: true,
                     });
 
-                    $(this).on('change', function(e) {
-                        let selectedValues = $(this).val() || [];
+                    $el.off('change.nutSync').on('change.nutSync', function(e) {
+                        let selectedValues = $el.val() || [];
                         selectedValues = [...new Set(selectedValues)];
                         @this.set('number_of_unit_type', selectedValues);
                     });
                 }
             });
-            (function() {
+            if ($('.number_of_unit_type').length) {
                 let nutVals = @this.get('number_of_unit_type') || [];
                 if (nutVals.length) {
                     $('.number_of_unit_type').val(nutVals).trigger('change.select2');
                 }
-            })();
+            }
 
             // Function to toggle "auction time" input field
             function toggleAuctionTime(selectElement) {
