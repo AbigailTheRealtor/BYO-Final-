@@ -1,0 +1,226 @@
+You’re not crazy — your symptoms **do not match** Replit’s “we loaded the fields” conclusion, because you’re still seeing:
+
+1. **Acceptable Property Conditions “Open to any condition”** not showing on the listing (even though you selected it)
+2. **Acceptable Unit Type** still behaving like single-select and disappearing on edit/draft
+3. **Vacant Land Property Style “Other”** can’t be clicked in edit/draft (clicks then goes away), and the Other text input doesn’t appear or persist
+
+That means there are still **two core categories of bugs** Replit didn’t actually fix:
+
+## The real root causes (what’s still broken)
+
+### Root cause #1: The field is being saved under one meta key, but the listing view is reading another key (or not reading it at all)
+
+This perfectly explains:
+“I selected it, but I can’t see it on the listing.”
+
+If `condition_prop_buyer` is being saved but `buyerAgentAuctionDetail.blade.php` is rendering a different variable/key (or has a conditional that hides it), it will never appear.
+
+### Root cause #2: The Edit/Draft UI Select2 is still being re-rendered / reinitialized wrong
+
+This explains:
+“Other disappears when I click it,” “I can’t click any fields in edit/draft,” “it flashes and goes away.”
+
+That’s classic Livewire + Select2 when:
+
+* the select is **NOT inside wire:ignore**, or
+* it is inside wire:ignore but **init is destroyed/recreated repeatedly**, or
+* the change handler is duplicated and immediately triggers a reset, or
+* the “Other input visibility” is controlled by a condition that’s evaluating false because the data type is wrong (string vs array)
+
+---
+
+# ✅ Here are the Replit instructions that will actually fix it (copy/paste)
+
+## A) Fix “Acceptable Property Conditions: Open to any condition” not saving / not showing
+
+### 1) Confirm the field is saved
+
+In the Livewire save method (Buyer create + TenantAgentAuctionEdit buyer path), log:
+
+* `condition_prop_buyer`
+* `other_property_condition`
+
+### 2) Fix Listing Display key mismatch (this is usually the real issue)
+
+Open:
+`resources/views/buyerAgentAuctionDetail.blade.php`
+
+Find the Acceptable Property Conditions display section and confirm it is reading:
+
+* `condition_prop_buyer`
+
+If it is reading a different key (example: `condition_property_buyer`, `property_condition`, `condition_prop`, etc.), update it to **exactly**:
+
+* `condition_prop_buyer`
+
+Also confirm it does NOT hide when value equals “Open to any type of property condition”.
+
+✅ Expected behavior:
+If user selects only “Open to any type of property condition” then listing should show:
+
+Acceptable Property Conditions: Open to any type of property condition
+
+NOT blank.
+
+### 3) Fix Draft + Edit persistence
+
+Buyer edit goes through `TenantAgentAuctionEdit`, so ensure loadAuctionData hydrates:
+
+```php
+$this->condition_prop_buyer = $this->asArrayMeta($auction->info('condition_prop_buyer'));
+$this->other_property_condition = $auction->info('other_property_condition') ?? '';
+```
+
+And saving persists those exact keys.
+
+---
+
+## B) Fix Buyer Income “Acceptable Unit Type” (multi-select + persistence)
+
+Replit already identified these wire:model names:
+
+* Income Property Criteria → `property_criteria` (string)
+* Acceptable Number of Units → `unit_size` (string)
+* Units Other → `unit_size_other` (string)
+* Acceptable Unit Type → `number_of_unit_type` (array, multi-select)
+
+### 1) Fix multi-select behavior (the “only one at a time” bug)
+
+Open the blade where Acceptable Unit Type is rendered (Buyer property-preferences partial).
+Confirm the select has:
+
+* `multiple`
+* name ends with `[]` (optional but recommended)
+* wire:model is bound to `number_of_unit_type`
+
+Example:
+
+```html
+<select multiple wire:model="number_of_unit_type" id="number_of_unit_type">
+```
+
+If `multiple` is missing, it will behave like single-select forever.
+
+### 2) Fix Select2 init to preserve multi-select
+
+Where Select2 initializes number_of_unit_type, enforce:
+
+* do not destroy/recreate on every Livewire update
+* on change, set array:
+
+```js
+$('#number_of_unit_type').on('change', function () {
+  @this.set('number_of_unit_type', $(this).val() || []);
+});
+```
+
+### 3) Fix edit/draft load (the “disappears” bug)
+
+In `TenantAgentAuctionEdit::loadAuctionData()`, load:
+
+```php
+$this->property_criteria = $auction->info('property_criteria') ?? '';
+$this->unit_size = $auction->info('unit_size') ?? '';
+$this->unit_size_other = $auction->info('unit_size_other') ?? '';
+$this->number_of_unit_type = $this->asArrayMeta($auction->info('number_of_unit_type'));
+```
+
+### 4) Fix listing display
+
+In `buyerAgentAuctionDetail.blade.php`, ensure it displays `number_of_unit_type`, `property_criteria`, and `unit_size` correctly.
+
+---
+
+## C) Fix Vacant Land Property Style “Other” (can’t click, input doesn’t appear, text doesn’t save)
+
+This is almost certainly a Select2 + Livewire rerender bug.
+
+### 1) Put the Property Style select inside wire:ignore wrapper
+
+In the Buyer property-preferences partial:
+
+```html
+<div wire:ignore>
+  <select id="property_items" multiple>...</select>
+</div>
+```
+
+If Livewire touches that `<select>`, Select2 will collapse/glitch on interaction.
+
+### 2) Initialize Select2 ONCE with guard
+
+```js
+if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
+  $('#property_items').select2({ width: '100%' });
+
+  $('#property_items').on('change', function () {
+    @this.set('property_items', $(this).val() || []);
+  });
+}
+```
+
+### 3) Make the “Other text input” show rule bulletproof
+
+The input must show when “Other” is in the selected array.
+
+In Blade:
+
+```php
+@if(is_array($property_items) && in_array('Other', $property_items))
+  <input type="text" wire:model="other_property_items">
+@endif
+```
+
+If you are checking the wrong variable or the variable is a string, the box will never show.
+
+### 4) Ensure Edit loads BOTH values
+
+In `TenantAgentAuctionEdit::loadAuctionData()`:
+
+```php
+$this->property_items = $this->asArrayMeta($auction->info('property_items'));
+$this->other_property_items = $auction->info('other_property_items') ?? '';
+```
+
+### 5) Fix listing display so it doesn’t show only “Other”
+
+Listing display must resolve “Other” to the typed text.
+
+In `buyerAgentAuctionDetail.blade.php`, when rendering `property_items`, pass the other text (other_property_items) into your normalize helper so “Other” gets replaced.
+
+---
+
+# The one thing Replit MUST NOT ignore
+
+Replit keeps finding “saved but not loaded” issues. That’s real — but your biggest symptom (“selected but not shown on listing”) is usually:
+
+✅ **Display is reading the wrong meta key**
+or
+✅ **Display is hiding the value because it thinks it’s empty** (string vs array, or missing decode)
+
+So the fix must include **buyerAgentAuctionDetail.blade.php** verification for:
+
+* `condition_prop_buyer`
+* `number_of_unit_type`
+* `property_items + other_property_items`
+
+---
+
+## Quick sanity check you can do immediately
+
+Pick ONE listing where you selected the condition “Open to any condition.”
+On the database/meta table, confirm there is a meta row:
+
+* key = `condition_prop_buyer`
+* value contains `"Open to any type of property condition"` (or similar)
+
+If it exists but listing doesn’t show it, that’s 100% a **display key mismatch**.
+
+---
+
+If you paste one screenshot of:
+
+1. The Buyer “Acceptable Property Conditions” area in your create/edit UI
+2. The section where it should show on the detail view
+
+I can tell you exactly which key mismatch or conditional is hiding it, and what line to change.

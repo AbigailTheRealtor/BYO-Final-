@@ -3037,6 +3037,17 @@ $lease_types = [
                     placeholder: "Select",
                     allowClear: true
                 });
+                $(this).on('change', function() {
+                    let selectedValues = $(this).val() || [];
+                    Livewire.emit('updateLeaseTermOptions', selectedValues);
+                    if (selectedValues && selectedValues.includes('Other')) {
+                        $('.other_lease_term').show();
+                    } else {
+                        $('.other_lease_term').hide();
+                        safeLivewireSet('other_lease_term', null);
+                    }
+                    safeLivewireSet('desired_lease_length', selectedValues);
+                });
             }
         });
 
@@ -3135,19 +3146,6 @@ $lease_types = [
                     safeLivewireSet('owner_pays', selectedValues);
                 });
             }
-        });
-
-
-        $('.lease_term_options').on('change', function() {
-            let selectedValues = $(this).val() || [];
-            Livewire.emit('updateLeaseTermOptions', selectedValues);
-            if (selectedValues && selectedValues.includes('Other')) {
-                $('.other_lease_term').show();
-            } else {
-                $('.other_lease_term').hide();
-                safeLivewireSet('other_lease_term', null);
-            }
-            safeLivewireSet('desired_lease_length', selectedValues);
         });
 
 
