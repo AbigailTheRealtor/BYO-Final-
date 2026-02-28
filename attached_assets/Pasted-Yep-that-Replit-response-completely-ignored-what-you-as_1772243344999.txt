@@ -1,0 +1,196 @@
+Yep — that Replit response completely ignored what you asked, again. It went back to the Select2 “8 tasks” script and did **nothing** about the Buyer fields that are disappearing on **draft/edit**.
+
+At this point, the only way you get this fixed is to force Replit to address the **real root cause**:
+
+### The Buyer Edit route is (or can be) going through `TenantAgentAuctionEdit::class`
+
+You already have this line:
+
+`Route::get('/agent/auction/edit/{auctionId}/{user_type?}', TenantAgentAuctionEdit::class)`
+
+That means Buyer edits can absolutely be handled by the Tenant edit component. If that component does not load/save Buyer-specific meta keys, your Buyer fields will “save” on create, then disappear on edit/draft — exactly what you’re seeing.
+
+So here are **hard, Buyer-only** instructions that Replit cannot answer with “already complete.”
+
+---
+
+## ✅ COPY/PASTE INTO REPLIT (BUYER DRAFT/EDIT DISAPPEARING FIELDS FIX)
+
+### Scope Lock
+
+Stop working on Select2 flashing.
+Stop running “8 tasks.”
+This request is ONLY: Buyer fields not saving in **Draft + Edit** and not showing on **Detail**.
+
+### The fields that MUST persist
+
+1. Acceptable Property Conditions “Open to any condition” (No Preferences)
+2. Income: Income Property Criteria
+3. Income: Acceptable Number of Units
+4. Income: Acceptable Unit Type (must be multi-select)
+5. Vacant Land: Acceptable Property Style Other text
+6. Interested in a Lease Agreement (must persist on edit and drafts)
+
+---
+
+# Step 1 — PROVE which Livewire class handles Buyer EDIT
+
+In the edit link you click from the Buyer listing, capture the exact URL path.
+
+Then in `routes/web.php`, locate the matching route and print:
+
+* the route line
+* the Livewire class (or controller)
+* if it includes `{user_type?}`
+
+✅ If Buyer edit uses:
+`/agent/auction/edit/{auctionId}/{user_type?}`
+then Buyer edit is going through `TenantAgentAuctionEdit::class` unless you have a Buyer-specific override.
+
+This must be confirmed in the response.
+
+---
+
+# Step 2 — If Buyer EDIT uses TenantAgentAuctionEdit, you MUST add Buyer save/load support there
+
+Open:
+`app/Http/Livewire/TenantAgentAuctionEdit.php`
+(or the exact class file for TenantAgentAuctionEdit)
+
+## A) Add these public properties if missing
+
+They must exist so Livewire can hydrate them:
+
+```php
+public $condition_prop_buyer = [];
+public $income_property_criteria = [];
+public $acceptable_number_of_units = [];
+public $number_of_unit_type = [];
+public $property_items = [];
+public $other_property_items = '';
+public $interested_lease_option = '';
+public $other_property_condition = '';
+```
+
+(If your project uses different property names, use the exact ones the Buyer create form uses, but they must match the meta keys saved.)
+
+## B) In loadAuctionData / mount / hydration (where it loads meta)
+
+Add:
+
+If `user_type === 'buyer'` then load these keys from meta into those properties:
+
+* condition_prop_buyer
+* other_property_condition
+* income_property_criteria
+* acceptable_number_of_units
+* number_of_unit_type
+* property_items
+* other_property_items
+* interested_lease_option
+
+If these keys are stored as JSON strings sometimes, normalize:
+
+* if string and looks like JSON → decode to array
+* if plain string but should be array → wrap into `[string]`
+
+## C) In saveAllMetadata (or the actual save method)
+
+Add:
+
+If `user_type === 'buyer'` then saveMeta these keys back:
+
+* condition_prop_buyer
+* other_property_condition
+* income_property_criteria
+* acceptable_number_of_units
+* number_of_unit_type
+* property_items
+* other_property_items
+* interested_lease_option
+
+This is the missing link that makes data disappear after edit/draft.
+
+---
+
+# Step 3 — Fix Income “Acceptable Unit Type” multi-select for the actual rendered blade
+
+Find the select in the Buyer Income section (the one you interact with).
+
+Confirm it has:
+
+* `multiple`
+* wire:model points to `$number_of_unit_type` (array)
+
+Then verify the same data structure is used as “Required Property or Business Assets”, since that one works.
+
+If Required Assets saves as JSON array meta, Acceptable Unit Type must do the same.
+
+---
+
+# Step 4 — Fix Vacant Land “Other” text
+
+Ensure BOTH keys are saved/loaded on edit/draft:
+
+* property_items (array includes “Other”)
+* other_property_items (string)
+
+Also ensure edit hydration shows the Other input when “Other” is present.
+
+---
+
+# Step 5 — Fix Interested in a Lease Agreement not saving on edits/drafts
+
+This will be fixed automatically if Step 2C saves it in the edit component actually used.
+
+---
+
+# Step 6 — Provide proof (REQUIRED)
+
+Add temporary logging inside the edit save method ONLY when user_type is buyer:
+
+```php
+logger()->info('BUYER_EDIT_SAVE', [
+  'auctionId' => $this->auctionId ?? null,
+  'user_type' => $this->user_type ?? null,
+  'condition_prop_buyer' => $this->condition_prop_buyer,
+  'income_property_criteria' => $this->income_property_criteria,
+  'acceptable_number_of_units' => $this->acceptable_number_of_units,
+  'number_of_unit_type' => $this->number_of_unit_type,
+  'property_items' => $this->property_items,
+  'other_property_items' => $this->other_property_items,
+  'interested_lease_option' => $this->interested_lease_option,
+]);
+```
+
+Then:
+
+* Edit a Buyer listing
+* Save
+* Confirm log shows non-empty values
+* Confirm detail view shows them
+
+Remove logger after confirmed.
+
+---
+
+## Required response format
+
+When done, reply with:
+
+1. The exact Buyer edit route URL and the Livewire class used
+2. The exact file paths changed
+3. The exact meta keys saved/loaded
+4. Confirmation you tested: Save Draft → reopen → still present, and Edit → still present
+
+---
+
+### Why this is the correct fix
+
+You can add Select2 change handlers all day — but if Buyer edit/drafts are being saved by `TenantAgentAuctionEdit`, and that component doesn’t save Buyer meta keys, your values will keep disappearing.
+
+This is the only explanation that matches every symptom you listed.
+
+---
+
+If you want to shortcut this: tell me the **exact URL** you land on when you click “Edit” from a Buyer listing (copy it from the browser). I’ll tell you immediately which route it hits and exactly which Livewire component must be patched.

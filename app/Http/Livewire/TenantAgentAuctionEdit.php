@@ -2473,8 +2473,11 @@ class TenantAgentAuctionEdit extends Component
             // Otherwise, treat $this->property_items as JSON and decode it
             $this->property_items = json_decode($auction->info('property_items'), true) ?? [];
         }
+        $this->other_property_items = $auction->info('other_property_items') ?? '';
         $rawConditionPropBuyer = json_decode($auction->info('condition_prop_buyer'), true) ?? [];
         $this->condition_prop_buyer = $this->mapLegacyPropertyConditions($rawConditionPropBuyer);
+        $numUnitTypeRaw = $auction->info('number_of_unit_type') ?? null;
+        $this->number_of_unit_type = $numUnitTypeRaw ? (is_string($numUnitTypeRaw) ? json_decode($numUnitTypeRaw, true) ?? [] : (array)$numUnitTypeRaw) : [];
         $this->tenant_pays = json_decode($auction->info('tenant_pays'), true) ?? [];
         $this->other_tenant_pays = $auction->info('other_tenant_pays');
 
@@ -2789,6 +2792,7 @@ class TenantAgentAuctionEdit extends Component
         $this->lease_fee_percentage_combo_net = $auction->info('lease_fee_percentage_combo_net');
         $this->lease_fee_other = $auction->info('lease_fee_other');
         $this->interested_purchase_fee_type = $auction->info('interested_purchase_fee_type');
+        $this->interested_lease_option = $auction->info('interested_lease_option') ?? '';
         $this->interested_lease_option_agreement = $auction->info('interested_lease_option_agreement');
 
 
