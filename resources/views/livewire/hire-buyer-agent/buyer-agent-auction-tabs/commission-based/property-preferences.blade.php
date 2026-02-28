@@ -323,7 +323,7 @@
     </label>
 
 
-    <div class="input-cover">
+    <div class="input-cover" wire:ignore wire:key="property-items-{{ $property_type }}">
         <select wire:model="property_items" id="property_items" class="form-control has-icon select2-multiple"
             data-icon="fa-solid fa-home input-icon2" @if (!$property_type) disabled @endif multiple
             required>

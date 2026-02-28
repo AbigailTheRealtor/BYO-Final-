@@ -3009,10 +3009,17 @@ class TenantAgentAuctionEdit extends Component
                 // Save it as a string
                 $auction->saveMeta('property_items', $this->property_items);
             } else {
-                // Otherwise, treat $this->property_items as JSON and decode it
                 $this->property_items = is_string($this->property_items) ? json_decode($this->property_items, true) ?? [] : (array)$this->property_items;
 
-                // Save it as a JSON string
+                $otherText = is_string($this->other_property_items) ? trim($this->other_property_items) : '';
+                if ($otherText !== '' && !in_array('Other', $this->property_items)) {
+                    $this->property_items[] = 'Other';
+                }
+                if ($otherText === '') {
+                    $this->property_items = array_values(array_filter($this->property_items, fn($v) => $v !== 'Other'));
+                    $this->other_property_items = '';
+                }
+
                 $auction->saveMeta('property_items', json_encode($this->property_items));
             }
             $auction->saveMeta('other_property_items', $this->other_property_items);

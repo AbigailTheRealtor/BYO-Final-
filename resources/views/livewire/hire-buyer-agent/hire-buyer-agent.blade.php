@@ -1184,6 +1184,11 @@
                     
                     @this.set('property_items', selectedValues);
                 });
+
+                let piVals = @this.get('property_items') || [];
+                if (piVals.length) {
+                    $('#property_items').val(piVals).trigger('change.select2');
+                }
             }
 
             if ($('#non_negotiable_amenities').length && !$('#non_negotiable_amenities').hasClass('select2-hidden-accessible')) {
@@ -1217,6 +1222,11 @@
                     selectedValues = [...new Set(selectedValues)];
                     @this.set('condition_prop_buyer', selectedValues);
                 });
+
+                let cpbVals = @this.get('condition_prop_buyer') || [];
+                if (cpbVals.length) {
+                    $('#condition_prop_buyer').val(cpbVals).trigger('change.select2');
+                }
             }
 
             $('.number_of_unit_type').each(function() {
@@ -1233,6 +1243,12 @@
                     });
                 }
             });
+            (function() {
+                let nutVals = @this.get('number_of_unit_type') || [];
+                if (nutVals.length) {
+                    $('.number_of_unit_type').val(nutVals).trigger('change.select2');
+                }
+            })();
 
             // Function to toggle "auction time" input field
             function toggleAuctionTime(selectElement) {

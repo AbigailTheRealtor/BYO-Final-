@@ -1210,20 +1210,22 @@
                 $('#property_items').on('change', function(e) {
                     let selectedValues = $(this).val() || [];
                     
-                    // Handle "All" selection - if "All" is selected, clear other selections
                     if (selectedValues.includes('All') && selectedValues.length > 1) {
                         selectedValues = ['All'];
                         $(this).val(selectedValues).trigger('change.select2');
                     }
                     
-                    // Remove duplicates
                     selectedValues = [...new Set(selectedValues)];
                     
                     @this.set('property_items', selectedValues);
                 });
+
+                let piVals = @this.get('property_items') || [];
+                if (piVals.length) {
+                    $('#property_items').val(piVals).trigger('change.select2');
+                }
             }
 
-            // Initialize Select2 non_negotiable_amenities
             if ($('#non_negotiable_amenities').length && !$('#non_negotiable_amenities').hasClass('select2-hidden-accessible')) {
                 $('#non_negotiable_amenities').select2({
                     placeholder: "Select credit score rating(s)",
@@ -1233,13 +1235,11 @@
                 $('#non_negotiable_amenities').on('change', function(e) {
                     let selectedValues = $(this).val() || [];
                     
-                    // Handle "All" selection - if "All" is selected, clear other selections
                     if (selectedValues.includes('All') && selectedValues.length > 1) {
                         selectedValues = ['All'];
                         $(this).val(selectedValues).trigger('change.select2');
                     }
                     
-                    // Remove duplicates
                     selectedValues = [...new Set(selectedValues)];
                     
                     @this.set('non_negotiable_amenities', selectedValues);
@@ -1257,20 +1257,33 @@
                     selectedValues = [...new Set(selectedValues)];
                     @this.set('condition_prop_buyer', selectedValues);
                 });
+
+                let cpbVals = @this.get('condition_prop_buyer') || [];
+                if (cpbVals.length) {
+                    $('#condition_prop_buyer').val(cpbVals).trigger('change.select2');
+                }
             }
 
-            if ($('.number_of_unit_type').length && !$('.number_of_unit_type').hasClass('select2-hidden-accessible')) {
-                $('.number_of_unit_type').select2({
-                    placeholder: "Select unit types",
-                    allowClear: true,
-                });
+            $('.number_of_unit_type').each(function() {
+                if (!$(this).hasClass('select2-hidden-accessible')) {
+                    $(this).select2({
+                        placeholder: "Select unit types",
+                        allowClear: true,
+                    });
 
-                $('.number_of_unit_type').on('change', function(e) {
-                    let selectedValues = $(this).val() || [];
-                    selectedValues = [...new Set(selectedValues)];
-                    @this.set('number_of_unit_type', selectedValues);
-                });
-            }
+                    $(this).on('change', function(e) {
+                        let selectedValues = $(this).val() || [];
+                        selectedValues = [...new Set(selectedValues)];
+                        @this.set('number_of_unit_type', selectedValues);
+                    });
+                }
+            });
+            (function() {
+                let nutVals = @this.get('number_of_unit_type') || [];
+                if (nutVals.length) {
+                    $('.number_of_unit_type').val(nutVals).trigger('change.select2');
+                }
+            })();
 
             // Function to toggle "auction time" input field
             function toggleAuctionTime(selectElement) {

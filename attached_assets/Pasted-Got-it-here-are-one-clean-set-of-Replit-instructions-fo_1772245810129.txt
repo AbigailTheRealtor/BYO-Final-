@@ -1,0 +1,347 @@
+Got it — here are **one clean set of Replit instructions** for **ONLY the remaining 3 issues**, with **safeguards**, and written so you can paste as one block.
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS
+
+### Scope: Hire a Buyer’s Agent (ONLY remaining issues)
+
+### Do NOT: rename DB/meta keys, remove tables, delete data, or change routes.
+
+---
+
+# 0) SAFEGUARDS (DO FIRST)
+
+1. Run: `php artisan optimize:clear`
+2. **Do not edit any files with “copy” in the name.**
+3. Any Select2 init must follow this rule everywhere:
+
+   * **Guard**: initialize only if NOT already `.select2-hidden-accessible`
+   * Bind `.on('change')` **inside** the guard
+   * Never destroy/recreate Select2 on every Livewire update
+
+---
+
+# 1) FIX: Buyer All Property Types
+
+## “No preference (open to any condition)” under Acceptable Property Conditions does not save / does not show
+
+### What’s really happening (most likely)
+
+This is almost always one of these:
+
+* The Select2 value is not syncing back to Livewire (wire:ignore needs manual `@this.set`)
+* The value saves, but the **detail view filters it out** (treating “No preference” as NA)
+* Edit/Draft load is missing the meta key (loads blank, then overwrites)
+
+We’ll fix **all 3** safely.
+
+---
+
+## 1A) ENSURE Select2 → Livewire SYNC for condition_prop_buyer (CREATE + EDIT)
+
+### File 1 (Create view):
+
+`resources/views/livewire/hire-buyer-agent/hire-buyer-agent.blade.php`
+
+### File 2 (Edit view):
+
+`resources/views/livewire/hire-buyer-agent/hire-buyer-agent-edit.blade.php`
+
+Inside the existing `initializeFullService()` (or your buyer init function), add/verify this exact pattern:
+
+* Selector must match the element ID: `#condition_prop_buyer`
+* Guard: `!hasClass('select2-hidden-accessible')`
+* Change handler inside guard:
+
+**Required behavior:**
+When user selects chips (including No preference), it must run:
+`@this.set('condition_prop_buyer', selectedArray)`
+
+Also, after initializing Select2, force a restore from Livewire state (so edit/draft loads show correctly):
+
+* `let v = @this.get('condition_prop_buyer') || [];`
+* `$('#condition_prop_buyer').val(v).trigger('change.select2');`
+
+(Do NOT call `.trigger('change')` without the `.select2` namespace; you don’t want to re-fire Livewire sets twice.)
+
+---
+
+## 1B) ENSURE DRAFT + EDIT LOADS condition_prop_buyer (BACKEND)
+
+Buyer Edit route is using the shared edit component (per your earlier routing).
+
+### File:
+
+`app/Http/Livewire/TenantAgentAuctionEdit.php`
+
+In `loadAuctionData()` confirm you load:
+
+* `condition_prop_buyer`
+* `other_property_condition` (even if not used here, keep parity)
+
+**Required load rule:**
+
+* if meta is JSON string → decode to array
+* if meta is already array → use it
+* else → []
+
+---
+
+## 1C) ENSURE DETAIL PAGE DOES NOT FILTER “No preference”
+
+Your screenshot shows it selected on the form but missing on detail.
+That means your display helper is filtering it out.
+
+### File:
+
+`app/Helpers/ListingDisplayHelper.php` (or wherever your list normalization is)
+
+Find the function that removes “none / n/a / no preference”.
+Typical names:
+
+* `isNoneNa()`
+* `normalizeList()`
+* `normalizeListDeduped()`
+
+**Fix rule:**
+Only filter:
+
+* `none`, `n/a`, `na`, empty strings
+
+**Do NOT filter strings containing:**
+
+* “No preference”
+* “open to any condition”
+
+After change:
+
+* “No preference (open to any condition)” must display like any other selection.
+
+---
+
+# 2) FIX: Buyer Income
+
+## Acceptable Unit Type (number_of_unit_type) only lets one selection + doesn’t save/load
+
+This issue is nearly always:
+
+* missing `multiple` attribute
+* Select2 not syncing to Livewire
+* Edit/Draft load missing `number_of_unit_type`
+
+---
+
+## 2A) FORCE MULTI-SELECT IN THE PARTIAL (HTML)
+
+### File:
+
+`resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/property-preferences.blade.php`
+
+Find the `<select>` for:
+`wire:model="number_of_unit_type"`
+
+**Must have:**
+
+* `multiple="multiple"`
+* (and if you use name=) `name="number_of_unit_type[]"`
+
+If it’s missing `multiple`, Select2 will behave like single-select.
+
+---
+
+## 2B) Select2 → Livewire SYNC for number_of_unit_type (CREATE + EDIT)
+
+### File 1:
+
+`resources/views/livewire/hire-buyer-agent/hire-buyer-agent.blade.php`
+
+### File 2:
+
+`resources/views/livewire/hire-buyer-agent/hire-buyer-agent-edit.blade.php`
+
+In `initializeFullService()`:
+
+Use class selector if that’s how it’s written in the blade (some builds use `.number_of_unit_type`):
+
+* Apply the guard per element via `.each()` (important)
+* Bind `.on('change')` inside the guard
+* Set Livewire array:
+  `@this.set('number_of_unit_type', selectedArray)`
+
+Also restore existing values after init:
+
+* `let v = @this.get('number_of_unit_type') || [];`
+* set `.val(v).trigger('change.select2')`
+
+---
+
+## 2C) EDIT LOAD MUST INCLUDE number_of_unit_type (BACKEND)
+
+### File:
+
+`app/Http/Livewire/TenantAgentAuctionEdit.php`
+
+In `loadAuctionData()` ensure:
+
+* `number_of_unit_type` is loaded and normalized to array
+
+If this is missing or loads as string, the edit form will appear blank and overwrite on save.
+
+---
+
+## 2D) DETAIL PAGE MUST DISPLAY number_of_unit_type
+
+### File:
+
+`resources/views/buyerAgentAuctionDetail.blade.php`
+
+Where Acceptable Unit Type renders, ensure it uses the same helper you use for other multi-selects.
+If it currently prints raw meta without decoding, fix to normalize list.
+
+(You already referenced “Required Property or Business Assets” as the gold standard — match that pattern exactly.)
+
+---
+
+# 3) FIX: Buyer Vacant Land
+
+## “Other” can’t be clicked in Edit/Draft (click flashes away), text doesn’t save, listing shows only “Other”, input box doesn’t appear
+
+This is classic Select2 instability + missing “Other” state restoration.
+
+We fix it in 3 layers: UI toggle, save normalization, and edit load + Select2 stability.
+
+---
+
+## 3A) Ensure property_items is treated like a real Select2 field (wire:ignore + stable init)
+
+### File:
+
+`resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/property-preferences.blade.php`
+
+Wrap the **property_items** select in a `wire:ignore` container (same as your working multi-selects).
+Example pattern:
+
+* `<div wire:ignore>`
+
+  * `<select id="property_items" ...>`
+* `</div>`
+
+This prevents Livewire morphdom from replacing the select and causing the “click goes away” behavior.
+
+---
+
+## 3B) Fix “Other” input visibility logic (must show input when Other selected)
+
+Same file (`property-preferences.blade.php`):
+
+The text input for `other_property_items` must show when:
+
+* `is_array($property_items) && in_array('Other', $property_items)`
+
+If it’s referencing a non-existent boolean like `is_property_items_other_visible`, replace it with the array check above.
+
+---
+
+## 3C) Select2 → Livewire SYNC for property_items + stability fix (CREATE + EDIT)
+
+### File 1:
+
+`resources/views/livewire/hire-buyer-agent/hire-buyer-agent.blade.php`
+
+### File 2:
+
+`resources/views/livewire/hire-buyer-agent/hire-buyer-agent-edit.blade.php`
+
+In `initializeFullService()` add/verify:
+
+* init `#property_items` with guard
+* change handler inside guard:
+  `@this.set('property_items', selectedArray)`
+* after init restore values:
+  `let v = @this.get('property_items') || [];`
+  `$('#property_items').val(v).trigger('change.select2');`
+
+And **after any Livewire re-render**, do NOT destroy/recreate.
+If you have a `message.processed` hook, it must only call `initializeFullService()` which is guarded.
+
+---
+
+## 3D) SAVE NORMALIZATION (FORCES “Other” TOKEN WHEN TEXT EXISTS)
+
+### File:
+
+`app/Http/Livewire/HireBuyerAgent/BuyerAgentAuction.php` (create/draft save path)
+and
+`app/Http/Livewire/TenantAgentAuctionEdit.php` (edit save path)
+
+Right before saving meta, enforce:
+
+* If `other_property_items` has text and `property_items` does NOT contain “Other” → push “Other”
+* If `other_property_items` is empty and array contains “Other” → remove “Other”
+
+This prevents “Other” text from orphaning or the chip disappearing.
+
+---
+
+## 3E) EDIT LOAD MUST INCLUDE other_property_items
+
+### File:
+
+`app/Http/Livewire/TenantAgentAuctionEdit.php`
+
+In `loadAuctionData()` confirm it loads:
+
+* `property_items` (array)
+* `other_property_items` (string)
+
+If `other_property_items` is not loaded, the input won’t show even if “Other” is selected.
+
+---
+
+## 3F) DETAIL PAGE MUST REPLACE “Other” WITH TEXT
+
+### File:
+
+`resources/views/buyerAgentAuctionDetail.blade.php`
+
+Ensure property style display runs through your list normalizer that resolves:
+
+* If “Other” selected, replace with `other_property_items` text (or append it)
+
+If your helper already does this, then the issue is 100% that `other_property_items` is not saving/loading.
+
+---
+
+# 4) FINAL TEST SCRIPT (DO EXACTLY THIS)
+
+## Test 1: Conditions
+
+* Create Buyer listing
+* Select only: “No preference (open to any condition)”
+* Save Draft → reload draft → confirm still selected
+* Submit → open detail page → confirm it shows
+
+## Test 2: Income Unit Type
+
+* Ensure Acceptable Property Type includes “Income Property”
+* Select multiple Acceptable Unit Types
+* Save Draft → reload → confirm all selected
+* Submit → Edit → confirm all selected
+* Detail page shows the selections
+
+## Test 3: Vacant Land Other
+
+* Select “Other” under property styles
+* Type text into other_property_items
+* Save Draft → reload → “Other” still selected and text still there
+* Submit → detail page shows typed text instead of word “Other”
+* Edit → input box visible and populated
+
+---
+
+If you want, paste these 3 snippets (just the relevant parts) and I’ll tell you exactly where your current build is breaking:
+
+1. The `<select id="condition_prop_buyer">` HTML block
+2. The `<select ... number_of_unit_type ...>` HTML block
+3. The `property_items` + `other_property_items` HTML block
