@@ -1198,23 +1198,34 @@
         // removeWizardEventListeners() DELETED - was causing buttons to be replaced
         // and breaking the delegated click handlers
 
-        function buyerForceRestoreSelect2(selector, lwKey, isClass) {
+        function setJsonModel(modelName, arr) {
+            var json = JSON.stringify(arr || []);
+            var $input = $('input[wire\\:model\\.defer="' + modelName + '"]');
+            if (!$input.length) {
+                $input = $('input[wire\\:model="' + modelName + '"]');
+            }
+            if ($input.length) {
+                $input.val(json).trigger('input');
+            } else {
+                @this.set(modelName, json);
+            }
+            console.log('[JSON SET]', modelName, json);
+        }
+
+        function jsonRestoreSelect2() {
             try {
-                var $el = $(selector);
-                if (!$el.length) return;
-                var val = @this.get(lwKey);
-                if (val === null || typeof val === 'undefined') val = [];
-                if (!Array.isArray(val)) {
-                    try { val = JSON.parse(val); } catch(e) { val = [val].filter(Boolean); }
-                }
-                if (isClass) {
-                    $el.each(function() { $(this).val(val).trigger('change.select2'); });
-                } else {
-                    $el.val(val).trigger('change.select2');
-                }
-                console.log('[BUYER RESTORE]', lwKey, val);
-            } catch (e) {
-                console.log('[BUYER RESTORE ERROR]', lwKey, e);
+                var cond = JSON.parse(@this.get('condition_prop_buyer_json') || '[]');
+                if (cond.length) $('#condition_prop_buyer').val(cond).trigger('change.select2');
+
+                var units = JSON.parse(@this.get('number_of_unit_type_json') || '[]');
+                if (units.length) $('.number_of_unit_type').each(function(){ $(this).val(units).trigger('change.select2'); });
+
+                var items = JSON.parse(@this.get('property_items_json') || '[]');
+                if (items.length) $('#property_items').val(items).trigger('change.select2');
+
+                console.log('[JSON RESTORE OK]', {cond: cond, units: units, items: items});
+            } catch(e) {
+                console.log('[JSON RESTORE ERROR]', e);
             }
         }
 
@@ -1237,11 +1248,9 @@
                     
                     selectedValues = [...new Set(selectedValues)];
                     
-                    @this.set('property_items', selectedValues);
-                    console.log('[BUYER SET] property_items', selectedValues);
+                    setJsonModel('property_items_json', selectedValues);
                 });
             }
-            buyerForceRestoreSelect2('#property_items', 'property_items', false);
 
             if ($('#non_negotiable_amenities').length && !$('#non_negotiable_amenities').hasClass('select2-hidden-accessible')) {
                 $('#non_negotiable_amenities').select2({
@@ -1272,15 +1281,14 @@
                 $('#condition_prop_buyer').off('change.cpbSync').on('change.cpbSync', function(e) {
                     let selectedValues = $(this).val() || [];
                     selectedValues = [...new Set(selectedValues)];
-                    @this.set('condition_prop_buyer', selectedValues);
-                    console.log('[BUYER SET] condition_prop_buyer', selectedValues);
+                    setJsonModel('condition_prop_buyer_json', selectedValues);
                 });
             }
-            buyerForceRestoreSelect2('#condition_prop_buyer', 'condition_prop_buyer', false);
 
             $('.number_of_unit_type').each(function() {
                 var $el = $(this);
                 if (!$el.hasClass('select2-hidden-accessible')) {
+                    $el.attr('multiple', 'multiple');
                     $el.select2({
                         placeholder: "Select unit types",
                         allowClear: true,
@@ -1289,12 +1297,12 @@
                     $el.off('change.nutSync').on('change.nutSync', function(e) {
                         let selectedValues = $el.val() || [];
                         selectedValues = [...new Set(selectedValues)];
-                        @this.set('number_of_unit_type', selectedValues);
-                        console.log('[BUYER SET] number_of_unit_type', selectedValues);
+                        setJsonModel('number_of_unit_type_json', selectedValues);
                     });
                 }
             });
-            buyerForceRestoreSelect2('.number_of_unit_type', 'number_of_unit_type', true);
+
+            jsonRestoreSelect2();
 
             // Function to toggle "auction time" input field
             function toggleAuctionTime(selectElement) {

@@ -69,6 +69,10 @@ class TenantAgentAuctionEdit extends Component
     public $condition_prop_buyer = [];
     public $condition_prop = '';
 
+    public $condition_prop_buyer_json = '[]';
+    public $number_of_unit_type_json = '[]';
+    public $property_items_json = '[]';
+
     public $leasing_spaces = '';
 
     public $leasing_spaces_tenant = [];
@@ -2478,6 +2482,11 @@ class TenantAgentAuctionEdit extends Component
         $this->condition_prop_buyer = $this->mapLegacyPropertyConditions($rawConditionPropBuyer);
         $numUnitTypeRaw = $auction->info('number_of_unit_type') ?? null;
         $this->number_of_unit_type = $numUnitTypeRaw ? (is_string($numUnitTypeRaw) ? json_decode($numUnitTypeRaw, true) ?? [] : (array)$numUnitTypeRaw) : [];
+
+        $this->condition_prop_buyer_json = $this->encodeJsonArray($this->condition_prop_buyer ?? []);
+        $this->number_of_unit_type_json = $this->encodeJsonArray($this->number_of_unit_type ?? []);
+        $this->property_items_json = $this->encodeJsonArray($this->property_items ?? []);
+
         $this->property_criteria = $auction->info('property_criteria') ?? '';
         $this->unit_size = $auction->info('unit_size') ?? '';
         $this->unit_size_other = $auction->info('unit_size_other') ?? '';
@@ -2952,6 +2961,36 @@ class TenantAgentAuctionEdit extends Component
         return str_replace(',', '', $value);
     }
 
+    private function decodeJsonArray($value): array
+    {
+        if (is_array($value)) return $value;
+        if (!is_string($value) || trim($value) === '') return [];
+        $decoded = json_decode($value, true);
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    private function encodeJsonArray($value): string
+    {
+        $arr = is_array($value) ? $value : $this->decodeJsonArray($value);
+        $arr = array_values(array_filter($arr, fn($v) => $v !== null && $v !== ''));
+        return json_encode($arr);
+    }
+
+    public function updatedConditionPropBuyerJson($value)
+    {
+        $this->condition_prop_buyer = $this->decodeJsonArray($value);
+    }
+
+    public function updatedNumberOfUnitTypeJson($value)
+    {
+        $this->number_of_unit_type = $this->decodeJsonArray($value);
+    }
+
+    public function updatedPropertyItemsJson($value)
+    {
+        $this->property_items = $this->decodeJsonArray($value);
+    }
+
     public function update()
 
     {
@@ -3015,26 +3054,27 @@ class TenantAgentAuctionEdit extends Component
             $auction->saveMeta('property_type', $this->property_type);
             $auction->saveMeta('zip_code', $this->zip_code);
 
-            // Check if the user type is 'seller'
-            // Check user type and set property_items accordingly
-            if ($this->user_type === 'seller' || $this->user_type === 'landlord') {
-                // If user type is seller, keep $this->property_items as a string
-                // Ensure property_items is a string for 'seller'
-                $this->property_items = is_string($this->property_items) ? $this->property_items : '';
+            if ($this->user_type === 'buyer' || $this->user_type === 'tenant') {
+                $this->condition_prop_buyer = $this->decodeJsonArray($this->condition_prop_buyer_json);
+                $this->number_of_unit_type = $this->decodeJsonArray($this->number_of_unit_type_json);
+                $this->property_items = $this->decodeJsonArray($this->property_items_json);
+            }
 
-                // Save it as a string
+            if ($this->user_type === 'seller' || $this->user_type === 'landlord') {
+                $this->property_items = is_string($this->property_items) ? $this->property_items : '';
                 $auction->saveMeta('property_items', $this->property_items);
             } else {
-                $this->property_items = is_string($this->property_items) ? json_decode($this->property_items, true) ?? [] : (array)$this->property_items;
-
-                $otherText = is_string($this->other_property_items) ? trim($this->other_property_items) : '';
-                if ($otherText !== '' && !in_array('Other', $this->property_items)) {
-                    $this->property_items[] = 'Other';
+                $items = is_array($this->property_items) ? $this->property_items : [];
+                $items = array_values(array_filter($items));
+                $otherText = trim((string)($this->other_property_items ?? ''));
+                if ($otherText !== '' && !in_array('Other', $items)) {
+                    $items[] = 'Other';
                 }
                 if ($otherText === '') {
-                    $this->property_items = array_values(array_filter($this->property_items, fn($v) => $v !== 'Other'));
-                    $this->other_property_items = '';
+                    $items = array_values(array_diff($items, ['Other']));
                 }
+                $this->property_items = $items;
+                $this->property_items_json = $this->encodeJsonArray($items);
 
                 $auction->saveMeta('property_items', json_encode($this->property_items));
             }

@@ -47,6 +47,10 @@ class BuyerAgentAuction extends Component
     public $other_property_items = '';
     public $condition_prop = '';
     public $condition_prop_buyer = [];
+
+    public $condition_prop_buyer_json = '[]';
+    public $number_of_unit_type_json = '[]';
+    public $property_items_json = '[]';
     public $leasing_space = '';
     public $other_property_condition = '';
     public $bathrooms = '';
@@ -1401,6 +1405,10 @@ class BuyerAgentAuction extends Component
             $this->minimum_annual_net_income = $auction->get->minimum_annual_net_income ?? '';
             $this->leasing_55_plus = $auction->get->leasing_55_plus ?? '';
 
+            $this->condition_prop_buyer_json = $this->encodeJsonArray($this->condition_prop_buyer ?? []);
+            $this->number_of_unit_type_json = $this->encodeJsonArray($this->number_of_unit_type ?? []);
+            $this->property_items_json = $this->encodeJsonArray($this->property_items ?? []);
+
             $nonNegotiableRaw = $auction->get->non_negotiable_amenities ?? null;
             $this->non_negotiable_amenities = $nonNegotiableRaw ? (is_string($nonNegotiableRaw) ? json_decode($nonNegotiableRaw, true) ?? [] : (array)$nonNegotiableRaw) : [];
 
@@ -1616,6 +1624,36 @@ class BuyerAgentAuction extends Component
         return str_replace(',', '', $value);
     }
 
+    private function decodeJsonArray($value): array
+    {
+        if (is_array($value)) return $value;
+        if (!is_string($value) || trim($value) === '') return [];
+        $decoded = json_decode($value, true);
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    private function encodeJsonArray($value): string
+    {
+        $arr = is_array($value) ? $value : $this->decodeJsonArray($value);
+        $arr = array_values(array_filter($arr, fn($v) => $v !== null && $v !== ''));
+        return json_encode($arr);
+    }
+
+    public function updatedConditionPropBuyerJson($value)
+    {
+        $this->condition_prop_buyer = $this->decodeJsonArray($value);
+    }
+
+    public function updatedNumberOfUnitTypeJson($value)
+    {
+        $this->number_of_unit_type = $this->decodeJsonArray($value);
+    }
+
+    public function updatedPropertyItemsJson($value)
+    {
+        $this->property_items = $this->decodeJsonArray($value);
+    }
+
     protected function saveAllMetadata($auction)
     {
         \Log::info('[saveAllMetadata CALLED]', ['auction_id' => $auction->id]);
@@ -1637,15 +1675,23 @@ class BuyerAgentAuction extends Component
 
         // Property Details
         $auction->saveMeta('property_type', $this->property_type);
-        $this->property_items = is_array($this->property_items) ? $this->property_items : [];
-        $otherText = is_string($this->other_property_items) ? trim($this->other_property_items) : '';
-        if ($otherText !== '' && !in_array('Other', $this->property_items)) {
-            $this->property_items[] = 'Other';
+
+        $this->condition_prop_buyer = $this->decodeJsonArray($this->condition_prop_buyer_json);
+        $this->number_of_unit_type = $this->decodeJsonArray($this->number_of_unit_type_json);
+        $this->property_items = $this->decodeJsonArray($this->property_items_json);
+
+        $items = is_array($this->property_items) ? $this->property_items : [];
+        $items = array_values(array_filter($items));
+        $otherText = trim((string)($this->other_property_items ?? ''));
+        if ($otherText !== '' && !in_array('Other', $items)) {
+            $items[] = 'Other';
         }
         if ($otherText === '') {
-            $this->property_items = array_values(array_filter($this->property_items, fn($v) => $v !== 'Other'));
-            $this->other_property_items = '';
+            $items = array_values(array_diff($items, ['Other']));
         }
+        $this->property_items = $items;
+        $this->property_items_json = $this->encodeJsonArray($items);
+
         $auction->saveMeta('property_items', json_encode($this->property_items));
         $auction->saveMeta('leasing_space', $this->leasing_space);
         $auction->saveMeta('other_property_items', $this->other_property_items);

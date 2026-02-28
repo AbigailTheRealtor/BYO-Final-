@@ -126,6 +126,11 @@
         font-size: 1rem !important;
     }
 </style>
+
+<input type="hidden" wire:model="condition_prop_buyer_json">
+<input type="hidden" wire:model.defer="number_of_unit_type_json">
+<input type="hidden" wire:model="property_items_json">
+
 <h3>Property Preferences</h3>
 
 <div class="alert alert-info bg-light-info border-info mb-4">
