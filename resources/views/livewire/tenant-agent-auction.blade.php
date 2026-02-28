@@ -2114,6 +2114,41 @@ $lease_types = [
         addIconsToInputs();
         checkRepresentationStatus();
     });
+
+    Livewire.hook('message.processed', () => {
+        addIconsToInputs();
+        checkRepresentationStatus();
+
+        const fullServiceChecked = document.getElementById('fullService')?.checked;
+        const limitedServiceChecked = document.getElementById('limitedService')?.checked;
+
+        let newServiceType = null;
+        if (fullServiceChecked) {
+            newServiceType = 'full_service';
+        } else if (limitedServiceChecked) {
+            newServiceType = 'limited_service';
+        } else {
+            newServiceType = 'full_service';
+        }
+
+        if (newServiceType !== currentServiceType) {
+            currentServiceType = newServiceType;
+        }
+
+        removeWizardEventListeners();
+
+        if (currentServiceType === 'full_service') {
+            initializeFullService();
+        } else if (currentServiceType === 'limited_service') {
+            initializeLimitedService();
+        }
+
+        setTimeout(function() {
+            if (typeof syncSelect2MultiSelects === 'function') {
+                syncSelect2MultiSelects();
+            }
+        }, 100);
+    });
     
     // Sync select element values from Livewire component data
     // This fixes the issue where DOM select values don't match Livewire state after draft load

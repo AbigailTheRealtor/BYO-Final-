@@ -2067,6 +2067,35 @@
             checkRepresentationStatus();
         });
 
+        Livewire.hook('message.processed', () => {
+            addIconsToInputs();
+            checkRepresentationStatus();
+
+            const fullServiceChecked = document.getElementById('fullService')?.checked;
+            const limitedServiceChecked = document.getElementById('limitedService')?.checked;
+
+            let newServiceType = null;
+            if (fullServiceChecked) {
+                newServiceType = 'full_service';
+            } else if (limitedServiceChecked) {
+                newServiceType = 'limited_service';
+            } else {
+                newServiceType = 'full_service';
+            }
+
+            if (newServiceType !== currentServiceType) {
+                currentServiceType = newServiceType;
+            }
+
+            removeWizardEventListeners();
+
+            if (currentServiceType === 'full_service') {
+                initializeFullService();
+            } else if (currentServiceType === 'limited_service') {
+                initializeLimitedService();
+            }
+        });
+
         function selectService(serviceType) {
             if (currentServiceType === serviceType) return;
 

@@ -1,0 +1,162 @@
+You’re not crazy — Replit is claiming it fixed the Buyer issues, but you’re seeing **zero change** because one of these is happening:
+
+1. It edited the **wrong file** (you’re viewing a different blade than the one being rendered)
+2. You’re hitting a **cached view / compiled asset** (JS/CSS not rebuilt, views cached)
+3. There are **duplicate “copy.php / copy 2.php” blades** and the route is using the original, not the edited one
+4. The route is rendering a **different detail blade** than `resources/views/buyerAgentAuctionDetail.blade.php`
+5. Livewire is serving **stale compiled assets** (public/js not updated or cached)
+6. You’re testing a listing that’s stored under **different meta keys** than the ones they “fixed”
+
+So the next instructions must force Replit to **prove** the correct file is used, and clear caching.
+
+Below is a **copy/paste Replit instruction set** that will make the changes show up immediately (and reveal what file is really being used).
+
+---
+
+# ✅ REPLIT INSTRUCTIONS WITH SAFEGUARDS
+
+## IMPORTANT
+
+Do **NOT** work on Select2 plans, landlord/tenant, PDF system, or anything else.
+This task is **ONLY**: “Buyer fixes show no changes” → identify why + make the changes appear.
+
+## Safeguards
+
+1. Do not rename DB/meta keys
+2. Do not delete “copy” files yet
+3. Make no functional refactors outside Buyer views/components
+4. Every step must include proof output
+
+---
+
+## STEP 1 — Confirm which Buyer detail blade is actually being rendered (PROOF REQUIRED)
+
+In the controller/route that renders Buyer auction detail (the page you are viewing), add a temporary HTML comment at the very top of the rendered view:
+
+Example:
+
+```blade
+{{-- DEBUG_VIEW: buyerAgentAuctionDetail.blade.php --}}
+```
+
+If the route does not use this file, add the same comment to:
+
+* `buyerAgentAuctionDetail.blade copy.php`
+* `buyerAgentAuctionDetail.blade copy 2.php`
+* Any other buyer detail blade used by the route
+
+✅ Then reload the page and confirm which debug comment appears in page source.
+
+**If none appears, you are not editing the right blade at all.**
+
+After confirming, remove the debug comments.
+
+---
+
+## STEP 2 — Clear ALL caches (this is likely the reason you see no change)
+
+Run these commands in Replit shell:
+
+```bash
+php artisan optimize:clear
+php artisan view:clear
+php artisan cache:clear
+php artisan config:clear
+php artisan route:clear
+```
+
+If you are compiling assets:
+
+* also clear/build whatever pipeline you use (Vite/Mix)
+* hard refresh browser (Ctrl+F5)
+
+---
+
+## STEP 3 — Confirm the JS file is the one actually loaded (PROOF REQUIRED)
+
+In the buyer property-preferences blade JS (where `syncSelect2('#condition_prop_buyer'...)` is), add:
+
+```js
+console.log("BUYER property-preferences.js loaded v2");
+```
+
+Reload the page and confirm the log appears.
+
+If it does not appear:
+
+* the blade partial is not included
+* or a cached compiled view is used
+* or you’re editing the wrong file
+
+---
+
+## STEP 4 — Fix #1 “No Preferences doesn’t save” by verifying the correct option value
+
+Replit said the option value is “Open to any type of property condition” not “No Preferences”.
+So you must:
+
+* print the `<option value="...">` for that option from the blade
+* print the saved meta value for `condition_prop_buyer` for a listing where you selected it
+
+✅ Add temporary debug dump in the save method:
+
+```php
+logger()->info('condition_prop_buyer saving', ['value' => $this->condition_prop_buyer]);
+```
+
+And in the detail view:
+
+```blade
+{{-- DEBUG_META condition_prop_buyer: {{ json_encode($auction->get->condition_prop_buyer ?? null) }} --}}
+```
+
+Reload and check logs/page source.
+
+Then fix either:
+
+* value not syncing from Select2 to Livewire, OR
+* saveMeta not called for that key, OR
+* edit/draft hydration overwriting it
+
+---
+
+## STEP 5 — Fix “Acceptable Unit Type only allows one + doesn’t display” by confirming field type
+
+Verify in the blade:
+
+* the `<select>` has `multiple`
+* the Livewire property is an array
+* JS sync includes it on create + edit
+* detail view reads the same meta key
+
+Add temporary debug on detail view to print:
+
+* `number_of_unit_type` and `unit_size` and `property_criteria`
+
+If display still blank, you’re reading wrong key.
+
+---
+
+## STEP 6 — Remove duplicate “copy” confusion once verified (optional but recommended)
+
+After Step 1 confirms the correct view, delete or archive unused `copy` blades (or rename them out of views folder), because they keep causing this exact “no changes” issue.
+
+---
+
+# ✅ REQUIRED DELIVERABLES (Replit must respond with these)
+
+1. The exact route/controller method that renders Buyer detail, and which blade it uses
+2. Proof comment that shows in page source
+3. Confirmation all caches cleared
+4. One screenshot or log line proving the updated JS is loaded
+5. Confirmation that selecting the condition option now saves and displays in meta
+
+---
+
+## Why this will work
+
+Right now, Replit is “making changes” but you’re not seeing them because you’re likely not even viewing the modified blade, or you’re viewing a cached/compiled version. These steps force the truth and fix it immediately.
+
+---
+
+If you want, tell me **which exact page you’re testing** (Buyer detail vs edit vs create) and I’ll tailor the debug markers to that exact route so you don’t waste time.

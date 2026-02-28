@@ -1,5 +1,4 @@
 @extends('layouts.main')
-
 {{-- Combined Fee Display Helper Functions (display-only, no storage changes) --}}
 @php
   $fmtMoney = function($v) {
