@@ -1,0 +1,282 @@
+Got it. If Replit is saying **“we fixed it”** but you’re still seeing **(a) Vacant Land Other input not showing**, **(b) No preference not persisting**, and/or **(c) Income Unit Type not persisting / acting single-select**, then the ONLY way that happens is one of these is still true somewhere:
+
+1. **The Select2 change handler is not actually firing** (Livewire never receives the array update)
+2. **Livewire receives it, but an `updated*` method resets/normalizes it back**
+3. **The value is saved, but the EDIT component loads the wrong key or overwrites it with default**
+4. **The “Other input” is inside a `wire:ignore` block or the condition is tied to the wrong variable**
+
+So the fix now must be a **hard, guaranteed sync + restore + proof instrumentation** on the exact 3 fields, and it must run on:
+
+* initial render
+* every Livewire update
+* draft load
+* edit load
+
+Below is the **single copy/paste instruction block** you can drop into Replit. It includes **visible proof markers** so you can confirm in your browser console that the value is really being set and restored.
+
+---
+
+## COPY/PASTE REPLIT INSTRUCTIONS (ONE BLOCK)
+
+### Fix remaining Buyer issues:
+
+### 1) Conditions “No preference…” not persisting
+
+### 2) Income Unit Type multi-select not persisting
+
+### 3) Vacant Land Property Style “Other” input not showing/saving
+
+### SAFEGUARDS (do first)
+
+1. Do NOT rename any meta keys.
+2. Do NOT delete any “copy” files, just edit the real ones.
+3. Run: `php artisan optimize:clear`
+4. Hard refresh browser: Ctrl+F5.
+
+---
+
+# A) PROOF-FIRST: add console proof + forced restore that runs EVERY time
+
+### Files:
+
+* `resources/views/livewire/hire-buyer-agent/hire-buyer-agent.blade.php`
+* `resources/views/livewire/hire-buyer-agent/hire-buyer-agent-edit.blade.php`
+
+### Step A1: Add these helper functions ONCE in each file (near your existing JS)
+
+Paste this exactly (same in create + edit):
+
+```js
+function buyerForceRestoreSelect2(idOrClass, lwKey, isClass = false) {
+    try {
+        let $el = isClass ? $(idOrClass) : $(idOrClass);
+        if (!$el.length) return;
+
+        let val = @this.get(lwKey);
+
+        // Normalize to array for multi-selects
+        if (val === null || typeof val === 'undefined') val = [];
+        if (!Array.isArray(val)) {
+            try { val = JSON.parse(val); } catch(e) { val = [val].filter(Boolean); }
+        }
+
+        // If class selector, apply to all
+        if (isClass) {
+            $el.each(function () {
+                $(this).val(val).trigger('change.select2');
+            });
+        } else {
+            $el.val(val).trigger('change.select2');
+        }
+
+        console.log('[BUYER RESTORE]', lwKey, val);
+    } catch (e) {
+        console.log('[BUYER RESTORE ERROR]', lwKey, e);
+    }
+}
+
+function buyerBindSelect2Sync($el, lwKey) {
+    // Namespaced to avoid stacking
+    $el.off('change.buyerSync').on('change.buyerSync', function () {
+        let selected = $el.val() || [];
+        @this.set(lwKey, selected);
+        console.log('[BUYER SET]', lwKey, selected);
+    });
+}
+```
+
+### Step A2: In initializeFullService(), make these 3 fields guaranteed
+
+Inside your `initializeFullService()` in BOTH files, add/ensure:
+
+#### 1) Acceptable Property Conditions (`#condition_prop_buyer`)
+
+```js
+if ($('#condition_prop_buyer').length && !$('#condition_prop_buyer').hasClass('select2-hidden-accessible')) {
+    $('#condition_prop_buyer').select2({ width: '100%' });
+    buyerBindSelect2Sync($('#condition_prop_buyer'), 'condition_prop_buyer');
+}
+buyerForceRestoreSelect2('#condition_prop_buyer', 'condition_prop_buyer');
+```
+
+#### 2) Income Acceptable Unit Type (`.number_of_unit_type`) MUST be .each
+
+```js
+$('.number_of_unit_type').each(function () {
+    let $el = $(this);
+    if (!$el.hasClass('select2-hidden-accessible')) {
+        $el.select2({ width: '100%' });
+        // IMPORTANT: bind per element
+        $el.off('change.buyerUnitType').on('change.buyerUnitType', function () {
+            let selected = $el.val() || [];
+            @this.set('number_of_unit_type', selected);
+            console.log('[BUYER SET]', 'number_of_unit_type', selected);
+        });
+    }
+});
+buyerForceRestoreSelect2('.number_of_unit_type', 'number_of_unit_type', true);
+```
+
+#### 3) Vacant Land Property Style (`#property_items`)
+
+```js
+if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
+    $('#property_items').select2({ width: '100%' });
+    buyerBindSelect2Sync($('#property_items'), 'property_items');
+}
+buyerForceRestoreSelect2('#property_items', 'property_items');
+```
+
+### Step A3: Force initializeFullService() after every Livewire update
+
+In BOTH files, add/confirm a SINGLE hook:
+
+```js
+document.addEventListener('livewire:load', function () {
+    // initial
+    if (typeof initializeFullService === 'function') initializeFullService();
+
+    Livewire.hook('message.processed', (message, component) => {
+        if (typeof initializeFullService === 'function') initializeFullService();
+    });
+});
+```
+
+This guarantees the restore runs even when the guard skips init.
+
+---
+
+# B) Vacant Land “Other” input must show immediately when Other selected
+
+### File:
+
+`resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/property-preferences.blade.php`
+
+### Step B1: Confirm the Other input is NOT inside wire:ignore
+
+The `wire:ignore` should wrap ONLY the `<select>` for `property_items`, NOT the whole block.
+
+Use this structure:
+
+```php
+<div class="form-group">
+    <label>Acceptable Property Style:</label>
+
+    <div wire:ignore wire:key="property-items-{{ $property_type }}">
+        <select id="property_items" class="form-control" multiple>
+            @foreach($property_items_buyer as $opt)
+                <option value="{{ $opt }}">{{ $opt }}</option>
+            @endforeach
+        </select>
+    </div>
+
+    @if(is_array($property_items) && in_array('Other', $property_items))
+        <div class="form-group mt-2">
+            <label>Acceptable Property Style Other:</label>
+            <input type="text"
+                class="form-control"
+                wire:model.defer="other_property_items"
+                placeholder="Example: Waterfront lot, Horse property, etc.">
+        </div>
+    @endif
+</div>
+```
+
+If your `@if(...)` is currently inside the wire:ignore wrapper, move it OUT exactly like above.
+That is the #1 reason the input never appears.
+
+---
+
+# C) Backend “Other token” normalization (prevents “Other shows but text missing”)
+
+You need this on BOTH save paths that can touch Buyer listings:
+
+### File 1:
+
+`app/Http/Livewire/HireBuyerAgent/BuyerAgentAuction.php` (CREATE)
+
+### File 2:
+
+`app/Http/Livewire/TenantAgentAuctionEdit.php` (because Buyer edit route uses this)
+
+### Step C1: Right before saving meta, normalize property_items + other_property_items
+
+Add this logic right before you call `saveMeta('property_items', ...)`:
+
+```php
+// Normalize "Other" token for property_items
+$items = $this->property_items ?? [];
+if (is_string($items)) {
+    $decoded = json_decode($items, true);
+    $items = is_array($decoded) ? $decoded : [];
+}
+$items = array_values(array_filter($items));
+
+$otherText = trim((string)($this->other_property_items ?? ''));
+
+if ($otherText !== '' && !in_array('Other', $items)) {
+    $items[] = 'Other';
+}
+if ($otherText === '' && in_array('Other', $items)) {
+    $items = array_values(array_diff($items, ['Other']));
+}
+
+$this->property_items = $items;
+```
+
+Then save meta as normal.
+
+---
+
+# D) REQUIRED TEST (this will prove what’s failing)
+
+After you paste changes, do this and watch console:
+
+### Test 1: Conditions No preference
+
+1. Select only “No preference (open to any condition)”
+2. Click Save Draft
+3. Refresh page and Edit
+4. Console must show:
+
+   * `[BUYER SET] condition_prop_buyer [...]`
+   * `[BUYER RESTORE] condition_prop_buyer [...]`
+5. Listing detail must show it.
+
+### Test 2: Income Unit Type multi-select
+
+1. Select Income Property under Acceptable Property Type
+2. Pick 2+ options for Acceptable Unit Type
+3. Save Draft → Edit
+4. Console must show:
+
+   * `[BUYER SET] number_of_unit_type [...]`
+   * `[BUYER RESTORE] number_of_unit_type [...]`
+
+### Test 3: Vacant Land Other input
+
+1. Select Vacant Land property type
+2. Choose Other under Acceptable Property Style
+3. Input box must appear immediately
+4. Type text, Save Draft, Edit
+5. Console must show:
+
+   * `[BUYER SET] property_items [...]` includes “Other”
+   * `[BUYER RESTORE] property_items [...]` includes “Other”
+6. Listing must show your typed text (not just “Other”).
+
+---
+
+## Why this fixes what Replit keeps missing
+
+* If restore is inside the guard, it won’t run after draft/edit because Select2 is already initialized.
+* If `@if(in_array('Other'...))` is inside wire:ignore, the input will never appear.
+* If edit saves without loading `other_property_items`, it will overwrite with blank.
+* If “Other” token isn’t in the array, your display helper will print “Other” instead of custom text.
+
+This instruction set forces all 3 layers:
+**sync → restore → normalize** with console proof.
+
+---
+
+If you want, paste me just ONE snippet from your current `property-preferences.blade.php` around the `property_items` select and the “Other” input, and I’ll tell you immediately which of the four failure points you still have.

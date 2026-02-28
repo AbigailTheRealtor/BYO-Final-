@@ -1163,6 +1163,26 @@
             if (backBtn && backClone) backBtn.parentNode.replaceChild(backClone, backBtn);
         }
 
+        function buyerForceRestoreSelect2(selector, lwKey, isClass) {
+            try {
+                var $el = $(selector);
+                if (!$el.length) return;
+                var val = @this.get(lwKey);
+                if (val === null || typeof val === 'undefined') val = [];
+                if (!Array.isArray(val)) {
+                    try { val = JSON.parse(val); } catch(e) { val = [val].filter(Boolean); }
+                }
+                if (isClass) {
+                    $el.each(function() { $(this).val(val).trigger('change.select2'); });
+                } else {
+                    $el.val(val).trigger('change.select2');
+                }
+                console.log('[BUYER RESTORE]', lwKey, val);
+            } catch (e) {
+                console.log('[BUYER RESTORE ERROR]', lwKey, e);
+            }
+        }
+
         function initializeFullService() {
 
 
@@ -1183,14 +1203,10 @@
                     selectedValues = [...new Set(selectedValues)];
                     
                     @this.set('property_items', selectedValues);
+                    console.log('[BUYER SET] property_items', selectedValues);
                 });
             }
-            if ($('#property_items').length) {
-                let piVals = @this.get('property_items') || [];
-                if (piVals.length) {
-                    $('#property_items').val(piVals).trigger('change.select2');
-                }
-            }
+            buyerForceRestoreSelect2('#property_items', 'property_items', false);
 
             if ($('#non_negotiable_amenities').length && !$('#non_negotiable_amenities').hasClass('select2-hidden-accessible')) {
                 $('#non_negotiable_amenities').select2({
@@ -1222,14 +1238,10 @@
                     let selectedValues = $(this).val() || [];
                     selectedValues = [...new Set(selectedValues)];
                     @this.set('condition_prop_buyer', selectedValues);
+                    console.log('[BUYER SET] condition_prop_buyer', selectedValues);
                 });
             }
-            if ($('#condition_prop_buyer').length) {
-                let cpbVals = @this.get('condition_prop_buyer') || [];
-                if (cpbVals.length) {
-                    $('#condition_prop_buyer').val(cpbVals).trigger('change.select2');
-                }
-            }
+            buyerForceRestoreSelect2('#condition_prop_buyer', 'condition_prop_buyer', false);
 
             $('.number_of_unit_type').each(function() {
                 var $el = $(this);
@@ -1243,15 +1255,11 @@
                         let selectedValues = $el.val() || [];
                         selectedValues = [...new Set(selectedValues)];
                         @this.set('number_of_unit_type', selectedValues);
+                        console.log('[BUYER SET] number_of_unit_type', selectedValues);
                     });
                 }
             });
-            if ($('.number_of_unit_type').length) {
-                let nutVals = @this.get('number_of_unit_type') || [];
-                if (nutVals.length) {
-                    $('.number_of_unit_type').val(nutVals).trigger('change.select2');
-                }
-            }
+            buyerForceRestoreSelect2('.number_of_unit_type', 'number_of_unit_type', true);
 
             // Function to toggle "auction time" input field
             function toggleAuctionTime(selectElement) {

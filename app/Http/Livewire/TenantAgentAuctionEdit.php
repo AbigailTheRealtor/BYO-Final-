@@ -2920,6 +2920,22 @@ class TenantAgentAuctionEdit extends Component
         $this->is_update_lease_term_option_visible = is_array($this->desired_lease_length) && in_array('Other', $this->desired_lease_length);
         $this->is_rent_include_visible = is_array($this->rent_includes) && in_array('Other', $this->rent_includes);
 
+        if ($this->user_type === 'buyer') {
+            $this->dispatchBrowserEvent('buyer-agent-select2-sync', [
+                'view_preference' => $this->view_preference,
+                'non_negotiable_amenities' => $this->non_negotiable_amenities,
+                'pool_type' => $this->pool_type,
+                'offered_financing' => $this->offered_financing,
+                'services' => $this->services,
+                'lease_for' => $this->lease_for,
+                'credit_scroe_rating' => $this->credit_scroe_rating,
+                'flat_fee_services' => $this->flat_fee_services,
+                'number_of_unit_type' => $this->number_of_unit_type,
+                'condition_prop_buyer' => $this->condition_prop_buyer,
+                'property_items' => $this->property_items,
+            ]);
+        }
+
         } catch (\Exception $e) {
             \Log::error('loadAuctionData error: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
             throw $e;
