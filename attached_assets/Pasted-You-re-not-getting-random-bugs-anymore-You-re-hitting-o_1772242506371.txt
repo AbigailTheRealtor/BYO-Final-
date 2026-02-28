@@ -1,0 +1,192 @@
+You’re not getting “random bugs” anymore. You’re hitting one core problem that explains ALL of this:
+
+Your Buyer EDIT and Buyer DRAFT flows are still going through Tenant code in at least one place, so even if Buyer CREATE saves correctly, the moment you Save Draft or click Edit, the Tenant edit component loads, hydrates, and overwrites Buyer fields with blanks or never saves those Buyer meta keys at all.
+
+You literally pasted the smoking gun:
+
+Route (line 429): Route::get('/agent/auction/edit/{auctionId}/{user_type?}', TenantAgentAuctionEdit::class)
+
+That means Buyer edits are being handled by TenantAgentAuctionEdit, unless your app routes Buyer edits elsewhere. That alone can cause:
+
+Acceptable Property Conditions not saving on edit/draft
+Income criteria fields disappearing on edit
+Other text not saving on edit/draft
+Interested in a Lease Agreement not saving on edit/draft
+
+Because the wrong Livewire component is saving and loading.
+
+So the fix is not more Select2 handlers. The fix is making Buyer edit and draft hydration use the Buyer save and load pipeline.
+
+Below are copy paste Replit instructions that fix this at the source.
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS
+
+Scope Buyer only, do not touch Select2 global plans, do not touch Tenant, Landlord, Seller except where Buyer is incorrectly routed through TenantAgentAuctionEdit and must be corrected.
+
+### Safeguards
+
+Do not rename meta keys
+Do not rename DB fields
+Fix must work for listing creation, save draft, edit, and actual listing display
+You must output the exact files and exact line numbers changed
+
+---
+
+## Step 1 Fix the Buyer EDIT route so Buyer edits use BuyerAgentAuctionEdit, not TenantAgentAuctionEdit
+
+In routes file where this exists:
+
+Route::get('/agent/auction/edit/{auctionId}/{user_type?}', TenantAgentAuctionEdit::class)
+
+Replace it with a user_type switch OR a dedicated Buyer edit route. Choose one.
+
+### Option A Best
+
+Create separate routes so Buyer does not share Tenant edit route.
+
+Example pattern
+Buyer edit route
+/ buyer / agent / auction / edit / {auctionId}
+uses BuyerAgentAuctionEdit::class
+
+Tenant edit route stays tenant only
+
+Then update every link that takes you to edit a Buyer auction to use the Buyer edit route.
+
+This is required because right now Buyer edit is routed into Tenant edit.
+
+---
+
+## Step 2 If you cannot change routes, then Buyer fields MUST be saved and loaded inside TenantAgentAuctionEdit when user_type is buyer
+
+If you keep the combined route, do this:
+
+In TenantAgentAuctionEdit.php
+Wherever loadAuctionData or mount reads user_type, add:
+
+If user_type equals buyer then load Buyer meta keys into Livewire properties
+If user_type equals buyer then save Buyer meta keys in saveAllMetadata
+
+This must cover Create Draft Edit.
+
+### Buyer keys you MUST load and save
+
+Acceptable Property Conditions
+condition_prop_buyer
+other_property_condition if you have an other text field
+
+Income criteria fields
+income_property_criteria
+acceptable_number_of_units
+number_of_unit_type
+
+Vacant Land Other text
+property_items
+other_property_items
+
+Lease Agreement question
+interested_lease_option
+and any related field your UI uses
+
+### Important
+
+These properties must exist on the component and default correctly
+Arrays must default to []
+Strings must default to ''
+
+Example
+public $condition_prop_buyer = [];
+public $income_property_criteria = [];
+public $acceptable_number_of_units = [];
+public $number_of_unit_type = [];
+public $property_items = [];
+public $other_property_items = '';
+public $interested_lease_option = '';
+
+Then in saveAllMetadata, add saveMeta calls for each key above when user_type is buyer.
+
+Then in loadAuctionData and loadDraft, add getMeta reads for the same keys when user_type is buyer.
+
+---
+
+## Step 3 Fix the Income Acceptable Unit Type input to be truly multi select and persist
+
+In the Buyer Income blade partial that renders Acceptable Unit Type:
+
+Ensure select has multiple attribute
+Ensure wire:model points to an array property
+Ensure it is not accidentally using a single select style or a different property name
+
+The correct pattern must match how Required Property or Business Assets works since you said that one saves correctly. Copy the exact same pattern:
+
+Same wire:model type
+Same saveMeta call pattern
+Same load hydration pattern
+Same display pattern
+
+If Required Assets uses JSON array meta, then store Acceptable Unit Type the same way.
+
+---
+
+## Step 4 Fix No Preferences not appearing on listing even though selected
+
+This typically happens for one of two reasons:
+
+The value is being stored as a string not an array
+OR the detail view is reading a different meta key than the form saves
+
+In Buyer detail blade buyerAgentAuctionDetail.blade.php confirm the display is reading the exact same meta key that the form saves.
+
+Example must match exactly
+Form saves condition_prop_buyer
+Detail reads $auction->get->condition_prop_buyer
+
+If it reads something else, update the detail view to the correct key.
+
+Also ensure that condition_prop_buyer is stored as an array, not a plain string. If it sometimes stores as string, normalize on save:
+
+If value is string, wrap into array [value]
+
+---
+
+## Step 5 Fix Vacant Land Other text not saving
+
+This is almost always because other_property_items is not included in the edit and draft save pipeline.
+
+Make sure both create and edit saveAllMetadata include:
+
+saveMeta other_property_items
+and loadDraft and loadAuctionData restore it
+
+Also ensure the Other input field is not being hidden incorrectly on edit.
+
+---
+
+## Step 6 Fix Interested in a Lease Agreement not saving on edits and drafts
+
+Same root issue. It must be saved and loaded in the component that handles Buyer edit and draft.
+
+If Buyer edit is routed into TenantAgentAuctionEdit, you must add it there under buyer user_type.
+
+---
+
+## Required proof output
+
+After changes, you must provide in your reply:
+
+1 Files changed with full paths
+2 Exact line numbers for the route change
+3 Exact line numbers where each buyer meta key is saved and loaded
+4 Confirmation that Buyer edit route no longer uses TenantAgentAuctionEdit, or if it does, that TenantAgentAuctionEdit now supports buyer user_type saving and loading for those keys
+
+---
+
+### Why this will finally fix it
+
+Because right now your Buyer edit and draft state is being wiped or never saved by the wrong component. You can add Select2 handlers forever, but if TenantAgentAuctionEdit is the one saving the record for Buyer edits, those fields will keep disappearing.
+
+If you want the fastest win, do Option A and route Buyer edits to BuyerAgentAuctionEdit only. That is the clean fix.
+
+If you want, paste your actual edit link URL you click from the Buyer listing page, and I’ll tell you instantly which route is being hit and which component must be patched.
