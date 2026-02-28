@@ -2478,6 +2478,9 @@ class TenantAgentAuctionEdit extends Component
         $this->condition_prop_buyer = $this->mapLegacyPropertyConditions($rawConditionPropBuyer);
         $numUnitTypeRaw = $auction->info('number_of_unit_type') ?? null;
         $this->number_of_unit_type = $numUnitTypeRaw ? (is_string($numUnitTypeRaw) ? json_decode($numUnitTypeRaw, true) ?? [] : (array)$numUnitTypeRaw) : [];
+        $this->property_criteria = $auction->info('property_criteria') ?? '';
+        $this->unit_size = $auction->info('unit_size') ?? '';
+        $this->unit_size_other = $auction->info('unit_size_other') ?? '';
         $this->tenant_pays = json_decode($auction->info('tenant_pays'), true) ?? [];
         $this->other_tenant_pays = $auction->info('other_tenant_pays');
 
