@@ -1,0 +1,170 @@
+I see what’s happening: Replit is *again* mixing “it’s all working” with “I changed two files,” but it’s using **different file paths than the ones your project actually uses** (it referenced `resources/views/livewire/hire-buyer-agent/hire-buyer-agent.blade.php` and `...-edit.blade.php`, while your actual view files in your tree are `addBuyerAgentAuction.blade.php`, `editBuyerAgentAuction.blade.php`, and the tab partials under `resources/views/livewire/hire-buyer-agent/.../property-preferences.blade.php`).
+
+So even if it added handlers, it likely added them to **a blade that isn’t even rendered**, which is why you see “no changes.”
+
+You need to force Replit to:
+
+1. **touch the files that are actually in use**, and
+2. add a **proof marker** to the live page so we know it’s the right file, and
+3. clear caches, and
+4. implement the missing Select2→Livewire sync handlers in the correct Buyer blades/partials.
+
+Below is the exact Replit instruction set that will fix this, using the file names that exist in your project tree.
+
+---
+
+## ✅ COPY/PASTE INTO REPLIT (BUYER FIXES ONLY, CORRECT FILES, PROOF REQUIRED)
+
+### Scope Lock
+
+Do NOT touch Tenant/Landlord/Seller, Select2 global plans, PDFs, or replit.md.
+This task is ONLY Buyer Agent.
+
+### Safeguards
+
+* Do NOT rename meta keys.
+* Changes must work for Create + Draft + Edit + Detail display.
+* You must provide **diffs** and **proof markers**.
+
+---
+
+# Step 1 — Confirm the actual Buyer Create/Edit blades in use (print which views are rendered)
+
+In the controller method that returns Buyer create and edit pages, print the exact views it returns (view names).
+
+Then add a temporary HTML marker **visible in page source** to these two files (not Blade comments):
+
+1. `resources/views/addBuyerAgentAuction.blade.php`
+   Add at top:
+
+```html
+<!-- BUYER_DEBUG_VIEW: addBuyerAgentAuction.blade.php -->
+```
+
+2. `resources/views/editBuyerAgentAuction.blade.php`
+   Add at top:
+
+```html
+<!-- BUYER_DEBUG_VIEW: editBuyerAgentAuction.blade.php -->
+```
+
+Reload both pages and confirm these appear in **View Page Source**.
+
+Do NOT proceed until confirmed.
+
+---
+
+# Step 2 — Clear all caches
+
+Run:
+
+```bash
+php artisan optimize:clear
+php artisan view:clear
+php artisan cache:clear
+php artisan config:clear
+php artisan route:clear
+```
+
+---
+
+# Step 3 — Fix “Acceptable Property Conditions” and “Acceptable Unit Type” not saving
+
+## Root cause we are targeting
+
+Fields are inside `wire:ignore` + Select2, so they will NOT save unless there is an explicit `.on('change')` → `@this.set(...)`.
+
+### Required implementation locations
+
+You MUST implement the Select2 init + change handlers in the Buyer create/edit pages that are actually used:
+
+* `resources/views/addBuyerAgentAuction.blade.php`
+* `resources/views/editBuyerAgentAuction.blade.php`
+
+AND/OR in the shared partial used by those views (whichever is actually included):
+
+* `resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/property-preferences.blade.php`
+
+### Required fields to sync
+
+Add explicit Select2 init + `.on('change')` handlers for:
+
+1. `#condition_prop_buyer`
+2. `#number_of_unit_type` (or `.number_of_unit_type` if that’s the selector in your DOM)
+3. Confirm `#property_items` already has a handler; if not, add it too.
+
+### Exact behavior required
+
+When selection changes, push arrays into Livewire:
+
+```js
+$('#condition_prop_buyer').off('change.buyer').on('change.buyer', function () {
+  let data = $(this).val() || [];
+  @this.set('condition_prop_buyer', data, true);
+});
+```
+
+Do the same for `number_of_unit_type`:
+
+* ensure it is a MULTI select (`multiple` attribute)
+* push array to `@this.set('number_of_unit_type', data, true)`
+
+---
+
+# Step 4 — Income: “Acceptable Unit Type” must be multi-select + show on listing
+
+In the Income form section:
+
+* ensure the `<select>` for Acceptable Unit Type includes `multiple`
+* ensure backend treats it as array
+* ensure it renders in `buyerAgentAuctionDetail.blade.php` using 1=text / 2+=badges
+
+Add a temporary debug marker to detail view:
+
+```html
+<!-- BUYER_DEBUG_number_of_unit_type: {{ json_encode($auction->get->number_of_unit_type ?? null) }} -->
+```
+
+---
+
+# Step 5 — “No Preferences (open to any condition)” must save
+
+Confirm the actual option value used in the `<option value="...">`.
+
+Add a temp debug marker in detail view:
+
+```html
+<!-- BUYER_DEBUG_condition_prop_buyer: {{ json_encode($auction->get->condition_prop_buyer ?? null) }} -->
+```
+
+Test: select “No Preferences” + save draft + reopen + confirm it persists.
+
+---
+
+# Step 6 — Remove temp markers and provide proof
+
+After fixes:
+
+1. Remove the temp debug HTML comments
+2. Provide a diff of the exact changed files
+3. Provide a test report:
+
+* Create listing → save → persists
+* Save draft → reopen → persists
+* Edit listing → save → persists
+
+---
+
+## Why this will finally work
+
+Because Replit keeps editing the wrong Blade files (ones not used by your routes), and then claiming success. These steps force it to confirm the exact view files in use and make the Select2 sync changes inside those files/partials.
+
+---
+
+### One more thing (important)
+
+If the Buyer create/edit pages are Livewire components (not the plain views), Replit must instead add the debug markers + handlers to the Livewire view that actually renders them. That’s why Step 1 is mandatory: prove the real template.
+
+---
+
+If you paste this into Replit, it won’t be able to dodge into Tenant/Select2 again, and it will have to make changes in the files you’re actually using.
