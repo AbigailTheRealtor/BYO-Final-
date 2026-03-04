@@ -2235,10 +2235,17 @@
 
 
             $('.number_of_unit_type').each(function() {
-                if (!$(this).hasClass('select2-hidden-accessible')) {
-                    $(this).select2({
+                var $el = $(this);
+                if (!$el.hasClass('select2-hidden-accessible')) {
+                    $el.select2({
                         placeholder: "Select",
                         allowClear: true,
+                    });
+
+                    $el.on('change', function(e) {
+                        let selectedValues = $(this).val() || [];
+                        selectedValues = [...new Set(selectedValues)];
+                        @this.set('number_of_unit_type', selectedValues);
                     });
                 }
             });
