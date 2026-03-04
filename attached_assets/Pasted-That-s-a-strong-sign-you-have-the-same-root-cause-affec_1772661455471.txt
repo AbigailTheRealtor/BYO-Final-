@@ -1,0 +1,169 @@
+That’s a strong sign you have **the same root cause affecting multiple Select2 fields** (unit type *and* property condition): a **Livewire ↔ Select2 re-render / event loop** or **duplicate init/handlers**.
+
+So yes — fix it once, and it will stabilize both fields.
+
+Here are **copy-paste Replit instructions with safeguards** to stop the **flash → disappear → reappear** behavior for BOTH:
+
+* `number_of_unit_type` (Acceptable Unit Type)
+* `condition_prop_buyer` (Acceptable Property Conditions)
+
+without triggering Replit into a giant refactor.
+
+---
+
+## Replit Instructions With Safeguards
+
+### Fix Select2 flashing/resetting for Buyer Income fields
+
+**Fields affected:** `#number_of_unit_type`, `#condition_prop_buyer`
+**Symptom:** select → flashes → disappears → reappears (selection temporarily resets)
+
+### Safeguards
+
+* Do **not** rename DB columns or Livewire properties
+* Do **not** change option lists
+* Do **not** add new background sync timers
+* Make changes only to Select2 init/binding and Livewire hooks
+
+### Files to apply (because Buyer draft/edit routes through Tenant shared pages)
+
+Apply the exact same fixes in:
+
+1. `resources/views/livewire/tenant-agent-auction.blade.php` (draft/resume)
+2. `resources/views/livewire/tenant-agent-auction-edit.blade.php` (edit)
+
+If the issue also happens on Buyer create page, apply the same changes in:
+3) `resources/views/livewire/hire-buyer-agent.blade.php` (create)
+
+---
+
+# Step 1 — Ensure both selects are wrapped with wire:ignore (prevents Livewire DOM diff)
+
+For BOTH fields, wrap the `<select>` in a parent element with `wire:ignore`:
+
+* `#number_of_unit_type`
+* `#condition_prop_buyer`
+
+**Reason:** Livewire re-renders the select markup, which causes Select2 to detach/reset → flash.
+
+---
+
+# Step 2 — Guard Select2 init so it never re-initializes repeatedly
+
+Create a small init function for each field, and **return early** if already initialized:
+
+### Required guard:
+
+If the select already has class `select2-hidden-accessible`, do nothing.
+
+Apply to both fields.
+
+**Reason:** repeated init/destroy causes the “disappear/reappear” behavior.
+
+---
+
+# Step 3 — Namespace + de-duplicate change handlers
+
+Before binding change handlers, always:
+
+* `.off('change.<namespace>')`
+* then `.on('change.<namespace>', ...)`
+
+Use distinct namespaces:
+
+* `change.unitType`
+* `change.propCondition`
+
+**Reason:** When init runs more than once, you stack handlers, and the field gets set/cleared/set quickly → flash.
+
+---
+
+# Step 4 — STOP triggering Select2 change events inside message.processed
+
+Search in these blades for any of the following **inside** `Livewire.hook('message.processed')`:
+
+* `syncSelect2MultiSelects()`
+* `.trigger('change')`
+* `.trigger('change.select2')`
+* `.val(x).trigger(...)`
+
+✅ Remove those from `message.processed`
+
+Allowed in `message.processed`:
+
+* calling a guarded init function (Step 2)
+
+Not allowed:
+
+* triggering change events or syncing values that fires change handlers
+
+**Reason:** This is the classic infinite loop chain:
+`message.processed` → trigger change → Livewire update → `message.processed` → repeat
+Even if it’s not infinite, it causes repeated resets/flash.
+
+---
+
+# Step 5 — If these selects are in hidden tabs, init only when the tab becomes visible
+
+If either field is inside a tab/accordion that is hidden on load:
+
+Initialize Select2 on:
+
+* `shown.bs.tab` (Bootstrap tabs)
+  or
+* the event you use when the tab/step becomes active
+
+Keep the Step 2 guard so it won’t re-init.
+
+**Reason:** hidden init causes Select2 to render incorrectly, then reflow later → “flash”.
+
+---
+
+# Step 6 — (Optional but recommended) Use JSON bridge inputs and update DOM value, not @this.set during background sync
+
+For stability and fewer Livewire calls:
+
+* Keep hidden inputs:
+
+  * `number_of_unit_type_json`
+  * `condition_prop_buyer_json`
+    with `wire:model.defer`
+
+On change handlers:
+
+* update the DOM value of the hidden input to `JSON.stringify(vals)`
+* (optional) set the Livewire array property too, but avoid doing it in message.processed
+
+**Reason:** reduces Livewire chatter and prevents race-y updates that reset the UI.
+
+---
+
+## QA Test (Must Pass)
+
+1. On edit page: select a unit type → it stays selected immediately (no flash reset)
+2. Select “No preference (open to any condition)” → it stays selected immediately (no flash reset)
+3. Sit idle for 20 seconds with Network tab open → **no repeating Livewire requests**
+4. Save → reload listing → selections persist and display
+
+---
+
+## The tight Replit prompt (so it doesn’t run for 15 minutes)
+
+Use **Lite mode**, App testing OFF, Code optimization OFF. Paste:
+
+“Fix Select2 flashing/resetting for `#number_of_unit_type` and `#condition_prop_buyer`. The selection flashes/disappears/reappears. In tenant-agent-auction.blade.php and tenant-agent-auction-edit.blade.php (and hire-buyer-agent.blade.php only if the issue occurs on create), do ONLY:
+
+1. Ensure both selects are inside wire:ignore wrappers.
+2. Guard Select2 init: if select2-hidden-accessible exists, do not re-init.
+3. Bind change handlers with namespaces and `.off()` first to prevent duplicates.
+4. Remove any `.trigger('change')` or `.trigger('change.select2')` / syncSelect2MultiSelects() calls from Livewire.hook('message.processed').
+5. If fields are in hidden tabs, init on tab shown event.
+   Do not refactor, do not change DB columns, do not modify other fields.”
+
+---
+
+If you answer this one detail, I can point to the most likely single culprit:
+**Do Livewire network requests keep firing while you’re idle on that page?**
+
+* If **yes**, it’s a loop in `message.processed` / sync function (Step 4 is the fix).
+* If **no**, it’s almost certainly duplicate init/handlers or hidden-tab init (Steps 2–3–5).

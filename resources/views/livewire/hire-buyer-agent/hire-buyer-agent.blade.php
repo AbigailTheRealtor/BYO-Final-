@@ -1641,42 +1641,28 @@
 
 
 
-            function toggleOtherPropertyItems(selectElement) {
-                const otherConditionItemDiv = document.querySelector('.other_property_items');
-
-                if (!otherConditionItemDiv) {
-                    return;
-                }
-
-                // Show the "Other" input field if "Other" is selected
-                if (selectElement.value === 'Other') {
-                    otherConditionItemDiv.classList.remove('d-none'); // Show the "Other" input field
+            function toggleVacantLandOther(clearOnDeselect) {
+                var vals = $('#property_items').val() || [];
+                var otherDiv = document.querySelector('.other_property_items');
+                if (!otherDiv) return;
+                if (vals.includes('Other')) {
+                    otherDiv.classList.remove('d-none');
                 } else {
-                    otherConditionItemDiv.classList.add('d-none'); // Hide the "Other" input field
+                    otherDiv.classList.add('d-none');
+                    if (clearOnDeselect) {
+                        @this.set('other_property_items', '');
+                    }
                 }
             }
 
-            // Function to attach the event listener to the condition dropdown
-            function attachItemConditionDropdownListener() {
-                const conditionDropdownItem = document.getElementById('property_items');
-                if (conditionDropdownItem) {
-                    conditionDropdownItem.addEventListener('change', function() {
-                        toggleOtherPropertyItems(this);
-                    });
+            toggleVacantLandOther(false);
 
-                    // Manually trigger the toggle function on page load or after Livewire re-renders
-                    toggleOtherPropertyItems(conditionDropdownItem);
-                }
-            }
-
-            // Attach the event listener initially
-            document.addEventListener('DOMContentLoaded', () => {
-                attachItemConditionDropdownListener();
+            $('#property_items').off('change.vacantOther').on('change.vacantOther', function() {
+                toggleVacantLandOther(true);
             });
 
-            // Re-attach the event listener after Livewire re-renders the DOM
             Livewire.hook('message.processed', () => {
-                attachItemConditionDropdownListener();
+                toggleVacantLandOther(false);
             });
 
             const photoInput = document.getElementById("photo-input");

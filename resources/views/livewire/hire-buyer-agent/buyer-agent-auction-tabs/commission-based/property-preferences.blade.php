@@ -375,8 +375,7 @@
 </div>
 
 <!-- Other Property Style Input (shown when "Other" is selected) -->
-@if (is_array($property_items) && in_array('Other', $property_items))
-<div class="form-group" wire:key="other-property-items-wrapper">
+<div class="form-group other_property_items @if (!is_array($property_items) || !in_array('Other', $property_items)) d-none @endif" wire:key="other-property-items-wrapper">
     <div class="input-cover">
         <input type="text" wire:model.defer="other_property_items" class="form-control has-icon"
             data-icon="fa-solid fa-home"
@@ -384,7 +383,6 @@
     </div>
     <span class="error mt-2" id="other_property_items_error"></span>
 </div>
-@endif
 
 {{-- Business Type - shown inline when Business is selected as Property Type --}}
 @if ($property_type === 'Business')

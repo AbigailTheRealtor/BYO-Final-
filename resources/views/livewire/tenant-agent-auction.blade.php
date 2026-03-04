@@ -2103,8 +2103,6 @@ $lease_types = [
 
         var fields = [
             { sel: '.condition_prop_buyer', field: 'condition_prop_buyer', multi: true },
-            { sel: '.number_of_unit_type', field: 'number_of_unit_type', multi: true },
-            { sel: '#property_items', field: 'property_items', multi: true },
             { sel: '#sale_provision', field: 'sale_provision', multi: false },
             { sel: '#offered_financing', field: 'offered_financing', multi: false },
             { sel: '#garage_parking_spaces_option_landlord', field: 'garage_parking_spaces_option', multi: true },
@@ -2120,6 +2118,31 @@ $lease_types = [
                 safeLivewireSet(f.field, val);
             }
         });
+
+        var $numUnit = $('.number_of_unit_type');
+        if ($numUnit.length && $numUnit.hasClass('select2-hidden-accessible')) {
+            var nuVals = $numUnit.first().val() || [];
+            nuVals = [...new Set(nuVals)];
+            safeLivewireSet('number_of_unit_type', nuVals);
+            var nutJsonInput = document.querySelector('input[wire\\:model\\.defer="number_of_unit_type_json"]');
+            if (nutJsonInput) {
+                nutJsonInput.value = JSON.stringify(nuVals);
+                nutJsonInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            safeLivewireSet('number_of_unit_type_json', JSON.stringify(nuVals));
+        }
+
+        var $pi = $('#property_items');
+        if ($pi.length && $pi.hasClass('select2-hidden-accessible')) {
+            var piVals = $pi.val() || [];
+            safeLivewireSet('property_items', piVals);
+            var piJsonInput = document.querySelector('input[wire\\:model="property_items_json"]');
+            if (piJsonInput) {
+                piJsonInput.value = JSON.stringify(piVals);
+                piJsonInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            safeLivewireSet('property_items_json', JSON.stringify(piVals));
+        }
     }
 
     document.addEventListener('submit', function(e) {
@@ -2178,19 +2201,17 @@ $lease_types = [
             currentServiceType = newServiceType;
         }
 
-        removeWizardEventListeners();
+        var now = Date.now();
+        if (now - _lastInitTime > 300) {
+            _lastInitTime = now;
+            removeWizardEventListeners();
 
-        if (currentServiceType === 'full_service') {
-            initializeFullService();
-        } else if (currentServiceType === 'limited_service') {
-            initializeLimitedService();
-        }
-
-        setTimeout(function() {
-            if (typeof syncSelect2MultiSelects === 'function') {
-                syncSelect2MultiSelects();
+            if (currentServiceType === 'full_service') {
+                initializeFullService();
+            } else if (currentServiceType === 'limited_service') {
+                initializeLimitedService();
             }
-        }, 100);
+        }
     });
     
     // Sync select element values from Livewire component data
@@ -2226,6 +2247,7 @@ $lease_types = [
         setTimeout(function() {
             syncSelectValues();
             syncSelect2MultiSelects();
+            if (typeof toggleVacantLand === 'function') toggleVacantLand();
             if (typeof window.updateSaveButton === 'function') {
                 window.updateSaveButton();
             }
@@ -2593,8 +2615,12 @@ $lease_types = [
         // initialize on page load
         toggleVacantLand();
 
-        // watch for changes
+        // watch for changes — clear other_property_items only on explicit user change
         $('#property_items').on('change', function() {
+            var vals = $(this).val() || [];
+            if (!vals.includes('Other')) {
+                safeLivewireSet('other_property_items', '');
+            }
             toggleVacantLand();
         });
 

@@ -2074,11 +2074,24 @@
                 var nuVals = $numUnit.val() || [];
                 nuVals = [...new Set(nuVals)];
                 @this.set('number_of_unit_type', nuVals);
+                var nutJsonInput = document.querySelector('input[wire\\:model\\.defer="number_of_unit_type_json"]');
+                if (nutJsonInput) {
+                    nutJsonInput.value = JSON.stringify(nuVals);
+                    nutJsonInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+                @this.set('number_of_unit_type_json', JSON.stringify(nuVals));
             }
 
             var $pi = $('#property_items');
             if ($pi.length && $pi.hasClass('select2-hidden-accessible')) {
-                @this.set('property_items', $pi.val());
+                var piVals = $pi.val() || [];
+                @this.set('property_items', piVals);
+                var piJsonInput = document.querySelector('input[wire\\:model="property_items_json"]');
+                if (piJsonInput) {
+                    piJsonInput.value = JSON.stringify(piVals);
+                    piJsonInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+                @this.set('property_items_json', JSON.stringify(piVals));
             }
 
             var $sp = $('#sale_provision');
@@ -2149,6 +2162,7 @@
         Livewire.hook('message.processed', () => {
             addIconsToInputs();
             checkRepresentationStatus();
+            if (typeof toggleVacantLand === 'function') toggleVacantLand();
 
             const fullServiceChecked = document.getElementById('fullService')?.checked;
             const limitedServiceChecked = document.getElementById('limitedService')?.checked;
@@ -2404,8 +2418,12 @@
             // initialize on page load
             toggleVacantLand();
 
-            // watch for changes
+            // watch for changes — clear other_property_items only on explicit user change
             $('#property_items').on('change', function() {
+                var vals = $(this).val() || [];
+                if (!vals.includes('Other')) {
+                    @this.set('other_property_items', '');
+                }
                 toggleVacantLand();
             });
 
