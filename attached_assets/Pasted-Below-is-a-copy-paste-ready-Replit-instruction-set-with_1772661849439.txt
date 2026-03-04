@@ -1,0 +1,277 @@
+Below is a copy paste ready Replit instruction set, with non destructive safeguards, to fix these issues for **Hire a Buyer’s Agent, Residential listings**, and to apply the same display fixes to **Hire a Seller’s Agent** where you noted the same problems.
+
+---
+
+## Safeguards, do these first, do not skip
+
+1. Create a new git branch, for example `fix buyer residential listing display 0227`
+2. Do not rename existing database columns
+3. Do not delete any rows, do not truncate any tables
+4. Any database change must be additive only, new columns only if truly required
+5. Before changing any save logic, confirm the current column names used for each field, and confirm they are being filled on create, draft save, and edit save
+6. For all “not showing on actual listing” issues, treat this as a display mapping problem first, only change save logic if the DB values are actually null
+
+---
+
+## Part A, Fix fields not showing on the actual listing
+
+### A1, Property Condition not showing
+
+1. Locate the Buyer Residential listing display view, usually something like:
+
+   1. `resources/views/.../listing-show.blade.php` or a partial like `partials/listing-details.blade.php`
+   2. Or a Livewire render view `resources/views/livewire/...buyer...show.blade.php`
+2. Find how other fields are rendered, especially ones in the same tab or section
+3. Add the missing display row for Property Condition using the exact stored field name, for example:
+
+   * If stored as `property_condition`, display it as `Property Condition: <value>`
+4. If Property Condition is stored as an array or JSON, render it as plain text joined by comma, not bubbles
+
+Validation check
+Open an existing listing where Property Condition was selected, confirm DB has value, confirm listing show page prints it
+
+---
+
+### A2, Appliances Included, None not showing
+
+This is almost always because the display code hides empty like values, or treats “None” as falsey
+
+1. In the display helper or Blade conditional, remove any logic like:
+   `if (!empty($appliances))`
+   if the value can legitimately be `None`
+2. Treat `None` as a valid explicit selection and display it
+
+Implementation rule
+If the saved value equals `"None"` or contains `"None"` in an array, it must still render
+
+---
+
+### A3, Special Sale Provision, None not showing
+
+Same fix pattern as Appliances Included
+
+1. Find the display mapping for `special_sale_provision` or similar
+2. Ensure “None” is rendered as a normal value and not filtered out
+
+---
+
+### A4, Personal Video link not showing
+
+1. Confirm the listing record actually stores the video URL in a column like `personal_video_url` or `personal_video`
+2. Add a display row that shows a clickable link
+
+   * Label: `Personal Video:`
+   * Value: render as an anchor tag using the URL, and also show the raw URL text if that is your style elsewhere
+
+---
+
+### A5, Additional Details tab missing
+
+This is usually one of these:
+The tab is not included in the tabs array
+The partial exists but is not referenced
+The permission condition hides it
+
+Fix steps
+
+1. Find the tabs config for Buyer Residential listing show page
+2. Ensure there is an entry for `Additional Details`
+3. Ensure the tab content partial is included and renders the correct fields
+4. Confirm it appears on actual listing display for:
+   listing creation preview, draft, and edit view
+
+---
+
+## Part B, Ordering and label changes on actual listing display
+
+### B1, Carport should be before Garage
+
+1. In the listing show view, locate the “Parking” or “Property Details” block
+2. Reorder the render lines so Carport prints before Garage
+3. Do not change data structure, only change display ordering
+
+---
+
+### B2, Rename labels on listing display only
+
+Update labels in the actual listing display output, do not rename DB fields
+
+1. Change `Pet Types:` to `Acceptable Pet Types:`
+2. Change `Pet Weight (lbs):` to `Maximum Weight Per Pet (lbs):`
+
+Make sure this is applied consistently across:
+listing show page, listing preview, PDF or download snapshot if you have one
+
+---
+
+## Part C, Force regular text display, remove bubble format for specific fields
+
+You listed these fields that must always be regular text, not bubbles, even if they are multi select:
+Occupancy Requirement
+Transaction Fees Responsibility
+Timing of Transfer
+Acceptable Exchange Item
+Acceptable Condition of Exchange Trade Item
+Liens Encumbrances Disclosure
+Inspection Verification Rights
+Offered Option Fee
+Option Fee Credit Toward Purchase Price
+Maintenance Repair Responsibility
+Rent Credit Toward Purchase Price
+Transaction Fees Responsibility Gas Fees
+Balloon Payment
+Amortization Type
+Payment Frequency
+
+### C1, Implement a single display helper and a whitelist
+
+Right now you likely have a generic renderer that shows bubbles when value is array or multi select. Replace that behavior for a whitelist of keys.
+
+1. Create a helper function used by the listing show renderer, for example:
+   `formatListingValue($key, $value)`
+2. Add a whitelist array inside it, something like:
+   `force_plain_text_keys = [ 'occupancy_requirement', 'transaction_fees_responsibility', ... ]`
+3. If `$key` is in that whitelist:
+
+   * If value is array, join by comma and space
+   * If value is JSON string, decode then join
+   * Output plain text string, no chips, no bubbles
+4. Keep existing bubble behavior for other fields
+
+### C2, Special case, Liens Encumbrances Disclosure Yes No must be plain text
+
+Even if your UI treats it like a “pill” yes no, override it with the whitelist above so it prints as:
+`Liens / Encumbrances Disclosure: Yes` or `No`
+
+---
+
+## Part D, Combine Yes No with Amount in one line for listing display
+
+You want these to display as a single line:
+Offered Option Fee, Prepayment Penalty, Balloon Payment, Early Termination Fee, Retainer Fee
+
+### D1, Create a reusable formatter for Yes No amount
+
+Create a function used only for display, for example:
+`formatYesNoAmount($yesNoValue, $amountValue)`
+
+Rules
+
+1. If yesNoValue is No, return `No`
+2. If yesNoValue is Yes:
+
+   * If amount exists, return `Yes ($X)`
+   * If amount missing, return `Yes` only
+3. Amount formatting:
+
+   * Use your existing currency formatter
+   * Include commas, no extra labels
+
+### D2, Apply it to each field on the listing show output
+
+1. Offered Option Fee display
+   Replace the two line output:
+   Offered Option Fee: Yes
+   Option Fee Amount: 50000
+   With one line:
+   Offered Option Fee: Yes ($50,000)
+   If No:
+   Offered Option Fee: No
+
+2. Prepayment Penalty display
+   Prepayment Penalty: Yes ($5,000) or No
+
+3. Balloon Payment display
+   Balloon Payment: Yes ($50,000) or No
+
+4. Early Termination Fee display
+   Early Termination Fee: Yes ($400) or No
+
+5. Retainer Fee display
+   Retainer Fee: Yes ($400) or No
+
+Important
+Do not delete the amount fields, keep them stored as is
+This is display only
+
+---
+
+## Part E, Buyer’s Broker Commission Structure logic, hide fee when No Compensation is selected
+
+Problem
+You switched to “No Compensation Offered to the Buyer’s Broker” but the old Buyer’s Broker Commission Fee still shows
+
+This needs two fixes, save side and display side
+
+### E1, Display side, do not show the fee when structure is No Compensation
+
+In the listing show renderer:
+
+1. If `buyers_broker_commission_structure` equals “No Compensation Offered to the Buyer’s Broker”
+2. Do not render `buyers_broker_commission_fee` at all, even if it exists in DB
+
+This prevents legacy values from showing
+
+### E2, Save side, clear stale fee when structure changes to No Compensation
+
+In the Livewire save method for Buyer Residential:
+
+1. Detect if commission structure changed to No Compensation
+2. Set fee fields to null, or set them to empty string consistently with your DB type
+3. Save
+
+Safeguard
+Only clear fee fields when the selected structure is No Compensation
+Do not clear anything for other structures
+
+Also apply this to:
+Save Draft, Update Listing, Edit Save
+
+---
+
+## Part F, Personal Photo must persist across multiple edits
+
+This is almost always caused by update logic setting the photo field to null when no new file is uploaded
+
+### F1, Update logic rule
+
+In the Buyer Residential edit save method:
+
+1. If a new photo upload is provided, store it and update the DB column
+2. If no new upload is provided, do not touch the existing DB column
+3. Do not set it to null during validation normalization or mass assignment
+
+### F2, Confirm the edit form does not reset the stored photo
+
+1. When loading the edit form, set the preview image URL from the DB value
+2. If the form re renders, keep showing the stored value unless user explicitly removes it
+
+Optional, recommended
+Add an explicit “Remove photo” checkbox, only if checked do you clear the stored photo
+
+---
+
+## Part G, Quick verification checklist, must pass all three flows
+
+For each item below, test with a listing that has real saved values
+
+1. Create new listing, submit, view actual listing
+2. Save draft, reopen draft, view actual listing
+3. Edit existing listing, save, refresh, view actual listing
+
+Checklist
+Property Condition appears
+Appliances Included shows None when selected
+Special Sale Provision shows None when selected
+Carport displays before Garage
+Acceptable Pet Types label is correct
+Maximum Weight Per Pet label is correct
+All specified fields render as regular text, no bubbles
+Liens Encumbrances Disclosure yes no is regular text
+Option Fee, Prepayment Penalty, Balloon Payment show Yes with amount in parentheses on one line
+Early Termination Fee, Retainer Fee show Yes with amount in parentheses on one line
+When No Compensation offered is selected, Buyer’s Broker Commission Fee never shows
+Personal Video link shows on listing
+Personal Photo persists after multiple edits
+Additional Details tab appears and renders content
+

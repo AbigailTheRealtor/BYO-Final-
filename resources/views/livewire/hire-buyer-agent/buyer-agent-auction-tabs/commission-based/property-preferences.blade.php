@@ -269,7 +269,7 @@
 
 
     <div class="input-cover position-relative">
-        <input type="text" wire:model="state" wire:keydown.enter.prevent="selectStateSuggestion"
+        <input type="text" wire:model.defer="state" wire:keydown.enter.prevent="selectStateSuggestion"
             wire:keydown.arrow-up="decrementHighlight('state')" wire:keydown.arrow-down="incrementHighlight('state')"
             class="form-control has-icon @error('state') is-invalid @enderror" data-icon="fa-solid fa-flag-usa"
             autocomplete="off" placeholder="Enter state" required>
