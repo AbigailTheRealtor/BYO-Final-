@@ -408,7 +408,7 @@
 @if (($business_type_selected ?? '') === 'Other')
 <div class="form-group" wire:key="business-type-other">
     <div class="input-cover">
-        <input type="text" wire:model="other_business_type" class="form-control has-icon"
+        <input type="text" wire:model.defer="other_business_type" class="form-control has-icon"
             data-icon="fa-solid fa-briefcase"
             placeholder="Enter other business type (e.g., Recording Studio, Event Venue, Repair Shop)">
     </div>
@@ -442,7 +442,7 @@
 <div class="form-group" wire:key="other-property-condition-wrapper">
     <label class="fw-bold">Other Property Condition:</label>
     <div class="input-cover">
-        <input type="text" wire:model="other_property_condition" class="form-control has-icon"
+        <input type="text" wire:model.defer="other_property_condition" class="form-control has-icon"
             data-icon="fa-solid fa-home">
     </div>
     <span class="error mt-2" id="other_property_condition_error"></span>
@@ -475,7 +475,7 @@
     @if ($bedrooms === 'Other')
         <div class="form-group">
             <div class="input-cover">
-                <input type="number" wire:model="other_bedrooms" class="form-control has-icon"
+                <input type="number" wire:model.defer="other_bedrooms" class="form-control has-icon"
                     data-icon="fa-solid fa-bed" placeholder="Enter minimum bedrooms needed (e.g., 11)">
             </div>
             <span class="error mt-2" id="other_bedrooms_error"></span>
@@ -507,7 +507,7 @@
     <!-- Other Bathrooms Input (Hidden by Default) -->
     <div class="form-group other_bathrooms d-none">
         <div class="input-cover">
-            <input type="number" wire:model="other_bathrooms" class="form-control has-icon"
+            <input type="number" wire:model.defer="other_bathrooms" class="form-control has-icon"
                 data-icon="fa-solid fa-bath" placeholder="Enter minimum bathrooms needed (e.g., 11)">
         </div>
         <span class="error mt-2" id="other_bathrooms_error"></span>
@@ -527,7 +527,7 @@
 
 
         <div class="input-cover">
-            <input type="text" wire:model="minimum_heated_square" class="form-control has-icon"
+            <input type="text" wire:model.defer="minimum_heated_square" class="form-control has-icon"
                 data-icon="fa-solid fa-ruler" placeholder="Enter minimum heated square footage needed (e.g., 1000)"
                  data-error-id="minimum_heated_square_error" oninput="validateInput(this)"
                 onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -541,7 +541,7 @@
     <div class="form-group">
         <label class="fw-bold">Minimum Net Leasable SqFt Needed:</label>
         <div class="input-cover">
-            <input type="number" wire:model="minimum_leaseable" class="form-control has-icon"
+            <input type="number" wire:model.defer="minimum_leaseable" class="form-control has-icon"
                 data-icon="fa-solid fa-ruler" placeholder="Enter net leasable square footage (e.g., 1500)">
         </div>
         <span class="error mt-2" id="minimum_leaseable_error"></span>
@@ -620,7 +620,7 @@
 
         </label>
         <div class="input-cover">
-            <input type="number" min="1" wire:model="other_carport_needed" class="form-control has-icon"
+            <input type="number" min="1" wire:model.defer="other_carport_needed" class="form-control has-icon"
                 data-icon="fa-solid fa-warehouse" placeholder="Enter number of carport spaces needed (e.g., 1)">
         </div>
         <span class="error mt-2" id="other_carport_needed_error"></span>
@@ -654,7 +654,7 @@
     <div class="form-group d-none" id="other-garage-needed">
         <label class="fw-bold">Number of Garage Spaces Needed:</label>
         <div class="input-cover">
-            <input type="number" min="1" wire:model="other_garage_needed" class="form-control has-icon"
+            <input type="number" min="1" wire:model.defer="other_garage_needed" class="form-control has-icon"
                 data-icon="fa-solid fa-warehouse" placeholder="Enter number of garage spaces needed (e.g., 1)">
         </div>
         <span class="error mt-2" id="other_garage_needed_error"></span>
@@ -705,7 +705,7 @@
 <div class="form-group d-none" id="other_parking_space_wrapper">
     <div class="input-cover">
 
-        <input type="text" wire:model="other_parking_space_wrapper" id="other_parking_space"
+        <input type="text" wire:model.defer="other_parking_space_wrapper" id="other_parking_space"
             class="form-control has-icon" data-icon="fa-solid fa-warehouse"
             placeholder="Enter garage/parking features needed (e.g., Tandem Parking, Gated Entry, Shared Driveway) ">
     </div>
@@ -778,7 +778,7 @@
 <!-- Other Preferences Input (Hidden or Visible based on Livewire state) -->
 <div class="form-group" id="other_preferences" style="display: {{ $this->is_other_visible ? 'block' : 'none' }}">
     <div class="input-cover">
-        <input type="text" wire:model="other_preferences" class="form-control has-icon"
+        <input type="text" wire:model.defer="other_preferences" class="form-control has-icon"
             data-icon="fa-solid fa-tree" placeholder="Enter view preference (e.g., Lake, Desert, Courtyard)">
     </div>
     <span class="error mt-2" id="other_preferences_error"></span>
@@ -851,11 +851,11 @@
     <div class="input-cover">
 
         @if ($property_type === 'Residential' or $property_type === 'Income')
-            <input type="text" wire:model="other_non_negotiable_amenities" class="form-control has-icon"
+            <input type="text" wire:model.defer="other_non_negotiable_amenities" class="form-control has-icon"
                 data-icon="fa-solid fa-lock"
                 placeholder="Enter non-negotiable amenities or features (e.g., Sauna, EV Charger, Outdoor Kitchen)">
         @elseif ($property_type === 'Commercial' or $property_type === 'Business')
-            <input type="text" wire:model="other_non_negotiable_amenities" class="form-control has-icon"
+            <input type="text" wire:model.defer="other_non_negotiable_amenities" class="form-control has-icon"
                 data-icon="fa-solid fa-lock"
                 placeholder="Enter non-negotiable amenities or features (e.g., Rooftop Access, Backup Generator, Freight Elevator) ">
         @endif
@@ -895,7 +895,7 @@
                 </span>
             </label>
                 <div class="input-cover">
-                    <input type="number" wire:model="number_of_pets" class="form-control has-icon"
+                    <input type="number" wire:model.defer="number_of_pets" class="form-control has-icon"
                         data-icon="fa-solid fa-hashtag" placeholder="Enter number of pets (e.g., 2)">
                 </div>
                 <span class="error mt-2" id="number_of_pets_error"></span>
@@ -909,7 +909,7 @@
                 </span>
             </label>
                 <div class="input-cover">
-                    <input type="text" wire:model="type_of_pets" class="form-control has-icon"
+                    <input type="text" wire:model.defer="type_of_pets" class="form-control has-icon"
                         data-icon="fa-solid fa-cat" placeholder="Enter types of pets (e.g., Dog, Cat)">
                 </div>
                 <span class="error mt-2" id="type_of_pets_error"></span>
@@ -923,7 +923,7 @@
                 </span>
             </label>
                 <div class="input-cover">
-                    <input type="text" wire:model="breed_of_pets" class="form-control has-icon"
+                    <input type="text" wire:model.defer="breed_of_pets" class="form-control has-icon"
                         data-icon="fa-solid fa-dog" placeholder="Enter breeds of pets (e.g., Labrador, Siamese)">
                 </div>
                 <span class="error mt-2" id="breed_of_pets_error"></span>
@@ -937,7 +937,7 @@
                 </span>
             </label>
                 <div class="input-cover">
-                    <input type="text" wire:model="weight_of_pets" class="form-control has-icon"
+                    <input type="text" wire:model.defer="weight_of_pets" class="form-control has-icon"
                         data-icon="fa-solid fa-weight" placeholder="Enter the weight of pets (e.g., 30 lbs, 50 lbs)">
                 </div>
                 <span class="error mt-2" id="weight_of_pets_error"></span>
@@ -1056,7 +1056,7 @@
 @if (in_array($property_type, ['Income', 'Commercial', 'Business']) && is_array($assets ?? []) && in_array('Other', $assets ?? []))
 <div class="form-group" wire:key="other-assets-wrapper">
     <div class="input-cover">
-        <input type="text" wire:model="assets_other" class="form-control has-icon" data-icon="fas fa-building"
+        <input type="text" wire:model.defer="assets_other" class="form-control has-icon" data-icon="fas fa-building"
             placeholder="Enter any included assets (e.g., Inventory, Customer Lists, Trademarks, Software Rights)">
     </div>
     <span class="error mt-2" id="assets_other_error"></span>
@@ -1075,7 +1075,7 @@
             </span>
         </label>
         <div class="input-cover">
-            <input type="text" wire:model="property_criteria" class="form-control has-icon"
+            <input type="text" wire:model.defer="property_criteria" class="form-control has-icon"
                 data-icon="fas fa-building" placeholder="Enter investment preferences or deal characteristics">
         </div>
     </div>
@@ -1102,7 +1102,7 @@
     @if ($unit_size === 'Other')
         <div class="form-group" wire:key="unit-size-other-wrapper">
             <div class="input-cover">
-                <input type="text" wire:model="unit_size_other" class="form-control has-icon"
+                <input type="text" wire:model.defer="unit_size_other" class="form-control has-icon"
                     data-icon="fas fa-building" placeholder="Enter acceptable number of units (e.g., 15 Units)">
             </div>
         </div>
@@ -1132,7 +1132,7 @@
         <div class="form-group">
             <label class="fw-bold">Enter Minimum Total Units:</label>
             <div class="input-cover">
-                <input type="number" wire:model="number_of_unit_other" class="form-control has-icon"
+                <input type="number" wire:model.defer="number_of_unit_other" class="form-control has-icon"
                     data-icon="fa-solid fa-home" placeholder="Enter minimum number of units needed (e.g., 4)">
             </div>
             <span class="error mt-2" id="number_of_unit_error"></span>
@@ -1178,7 +1178,7 @@
         </label>
 
             <div class="input-cover">
-                <input type="number" wire:model="number_of_pets" class="form-control has-icon"
+                <input type="number" wire:model.defer="number_of_pets" class="form-control has-icon"
                     data-icon="fa-solid fa-hashtag" placeholder="Enter number of pets (e.g., 2)">
             </div>
             <span class="error mt-2" id="number_of_pets_error"></span>
@@ -1194,7 +1194,7 @@
         </label>
 
             <div class="input-cover">
-                <input type="text" wire:model="type_of_pets" class="form-control has-icon"
+                <input type="text" wire:model.defer="type_of_pets" class="form-control has-icon"
                     data-icon="fa-solid fa-cat" placeholder="Enter types of pets (e.g., Dog, Cat)">
             </div>
             <span class="error mt-2" id="type_of_pets_error"></span>
@@ -1210,7 +1210,7 @@
         </label>
 
             <div class="input-cover">
-                <input type="text" wire:model="breed_of_pets" class="form-control has-icon"
+                <input type="text" wire:model.defer="breed_of_pets" class="form-control has-icon"
                     data-icon="fa-solid fa-dog" placeholder="Enter breeds of pets (e.g., Labrador, Siamese)">
             </div>
             <span class="error mt-2" id="breed_of_pets_error"></span>
@@ -1226,7 +1226,7 @@
         </label>
 
             <div class="input-cover">
-                <input type="text" wire:model="weight_of_pets" class="form-control has-icon"
+                <input type="text" wire:model.defer="weight_of_pets" class="form-control has-icon"
                     data-icon="fa-solid fa-weight" placeholder="Enter the weight of pets (e.g., 30 lbs, 50 lbs)">
             </div>
             <span class="error mt-2" id="weight_of_pets_error"></span>
@@ -1287,7 +1287,7 @@
             <div class="input-cover">
                 <span class="input-group-text-seller">$</span>
 
-                <input type="text" wire:model="minimum_annual_net_income" class="form-control"
+                <input type="text" wire:model.defer="minimum_annual_net_income" class="form-control"
                     placeholder="Enter minimum annual net income needed (e.g., 50000)"
                     data-error-id="minimum_annual_net_income_error" oninput="validateInput(this)"
                     onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -1306,7 +1306,7 @@
                 </span>
             </label>
             <div class="input-cover">
-                <input type="text" wire:model="minimum_cap_rate" class="form-control" style="padding-left: 12px;"
+                <input type="text" wire:model.defer="minimum_cap_rate" class="form-control" style="padding-left: 12px;"
                     placeholder="Enter minimum cap rate needed (e.g., 6.5)"
                     data-error-id="minimum_cap_rate_error" oninput="validateInput(this)"
                     onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -1348,7 +1348,7 @@
 
 
     <div class="input-cover">
-        <textarea wire:model="preferance_details" class="form-control" rows="4"
+        <textarea wire:model.defer="preferance_details" class="form-control" rows="4"
             style="padding: 10px; font-size: 16px;" placeholder="Enter any additional preferences "></textarea>
     </div>
 </div>

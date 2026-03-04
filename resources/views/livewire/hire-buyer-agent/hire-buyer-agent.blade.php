@@ -1058,6 +1058,15 @@
 @push('scripts')
     <script>
         let currentServiceType = null;
+        let _s2Timers = {};
+        let _lastInitTime = 0;
+
+        function debouncedSet(field, value, delay) {
+            clearTimeout(_s2Timers[field]);
+            _s2Timers[field] = setTimeout(function() {
+                @this.set(field, value);
+            }, delay || 200);
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             // Detect which service is preselected on load
@@ -1189,15 +1198,30 @@
         }
 
         function syncBuyerSelect2BeforeSave() {
+            Object.keys(_s2Timers).forEach(function(k) { clearTimeout(_s2Timers[k]); });
+            _s2Timers = {};
+
             var cpb = $('#condition_prop_buyer').val() || [];
             var nut = $('.number_of_unit_type').val() || [];
             var pi = $('#property_items').val() || [];
+            var nna = $('#non_negotiable_amenities').val() || [];
+            var sp = $('#sale_provision').val() || [];
+            var of = $('#offered_financing').val() || [];
+
             cpb = [...new Set(cpb)];
             nut = [...new Set(nut)];
             pi = [...new Set(pi)];
+            nna = [...new Set(nna)];
+            sp = [...new Set(sp)];
+            of = [...new Set(of)];
+
             @this.set('condition_prop_buyer', cpb);
             @this.set('number_of_unit_type', nut);
             @this.set('property_items', pi);
+            @this.set('non_negotiable_amenities', nna);
+            @this.set('sale_provision', sp);
+            @this.set('offered_financing', of);
+
             setJsonModel('condition_prop_buyer_json', cpb);
             setJsonModel('number_of_unit_type_json', nut);
             setJsonModel('property_items_json', pi);
@@ -1228,7 +1252,7 @@
                     
                     selectedValues = [...new Set(selectedValues)];
                     
-                    @this.set('property_items', selectedValues);
+                    debouncedSet('property_items', selectedValues);
                     setJsonModel('property_items_json', selectedValues);
                 });
             }
@@ -1249,7 +1273,7 @@
                     
                     selectedValues = [...new Set(selectedValues)];
                     
-                    @this.set('non_negotiable_amenities', selectedValues);
+                    debouncedSet('non_negotiable_amenities', selectedValues);
                 });
             }
 
@@ -1262,7 +1286,7 @@
                 $('#condition_prop_buyer').off('change.cpbSync').on('change.cpbSync', function(e) {
                     let selectedValues = $(this).val() || [];
                     selectedValues = [...new Set(selectedValues)];
-                    @this.set('condition_prop_buyer', selectedValues);
+                    debouncedSet('condition_prop_buyer', selectedValues);
                     setJsonModel('condition_prop_buyer_json', selectedValues);
                 });
             }
@@ -1279,7 +1303,7 @@
                     $el.off('change.nutSync').on('change.nutSync', function(e) {
                         let selectedValues = $el.val() || [];
                         selectedValues = [...new Set(selectedValues)];
-                        @this.set('number_of_unit_type', selectedValues);
+                        debouncedSet('number_of_unit_type', selectedValues);
                         setJsonModel('number_of_unit_type_json', selectedValues);
                     });
                 }
@@ -1483,7 +1507,7 @@
                     allowClear: true,
                 }).on('change', function() {
                     let selectedValues = $(this).val() || [];
-                    @this.set('sale_provision', selectedValues);
+                    debouncedSet('sale_provision', selectedValues);
                 });
             }
 
@@ -1500,7 +1524,7 @@
                         return;
                     }
                     let selectedValues = $(this).val() || [];
-                    @this.set('offered_financing', selectedValues);
+                    debouncedSet('offered_financing', selectedValues);
                 });
             }
 
@@ -2424,12 +2448,16 @@
                 currentServiceType = newServiceType;
             }
 
-            removeWizardEventListeners();
+            var now = Date.now();
+            if (now - _lastInitTime > 300) {
+                _lastInitTime = now;
+                removeWizardEventListeners();
 
-            if (currentServiceType === 'full_service') {
-                initializeFullService();
-            } else if (currentServiceType === 'limited_service') {
-                initializeLimitedService();
+                if (currentServiceType === 'full_service') {
+                    initializeFullService();
+                } else if (currentServiceType === 'limited_service') {
+                    initializeLimitedService();
+                }
             }
         });
     </script>

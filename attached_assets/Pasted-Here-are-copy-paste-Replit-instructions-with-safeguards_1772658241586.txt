@@ -1,0 +1,192 @@
+Here are **copy-paste Replit instructions (with safeguards)** to fix the **lag / “system is behind”** problem specifically for **Hire a Buyer’s Agent** so you can actually test whether the fixes worked. This focuses on **performance + Livewire/Select2 stability**, not changing your business logic.
+
+---
+
+## Replit Instructions With Safeguards
+
+### Hire a Buyer’s Agent is lagging behind so user can’t test fixes
+
+**Goal:** Make Buyer create/edit/draft screens responsive again (stop delayed UI updates, flashing selects, missed saves).
+
+### Safeguards
+
+* Do **not** rename DB columns or Livewire properties.
+* Do **not** remove existing fields/tooltips/logic.
+* Do **not** change Select2 option lists.
+* Only add **performance guards**, **debounce**, and **reduce rerenders**.
+
+---
+
+# 1) Stop Livewire from re-rendering Select2 blocks constantly
+
+**Symptom:** dropdown selections “flash”, revert, or feel delayed because Livewire keeps re-rendering the DOM.
+
+### Required changes (Buyer pages + shared tenant pages that handle buyer draft/edit)
+
+For every Select2 field on Hire Buyer pages (including `condition_prop_buyer`, `number_of_unit_type`, property styles, etc.):
+
+✅ Ensure the `<select>` is inside a `wire:ignore` wrapper:
+
+* `wire:ignore` must be on the parent wrapper that contains the `<select>`.
+
+**Safeguard:** Do not remove the field; just ensure Livewire doesn’t try to diff Select2 DOM.
+
+---
+
+# 2) Debounce “change” handlers so Livewire isn’t hammered
+
+**Symptom:** every click sends too many Livewire updates, causing the whole form to lag.
+
+### Required
+
+In the Select2 `.on('change')` handlers, wrap `@this.set()` calls with a debounce timer.
+
+Example pattern:
+
+* Keep a `let timers = {};`
+* On change:
+
+  * clearTimeout(timers[fieldName])
+  * timers[fieldName] = setTimeout(() => { @this.set(...) }, 150)
+
+**Use 150–250ms** debounce.
+
+**Safeguard:** This must still set values before Save. (Step 4 ensures pre-save sync.)
+
+---
+
+# 3) Only initialize Select2 once per field per render (guarded init)
+
+**Symptom:** slow + glitchy because Select2 is being re-initialized repeatedly.
+
+### Required
+
+Before calling `$(selector).select2(...)`, add this guard:
+
+* If element already has class `select2-hidden-accessible`, **do not re-init**.
+
+Example:
+
+* `if (!$(selector).hasClass('select2-hidden-accessible')) { init }`
+
+**Safeguard:** If you destroy/recreate Select2 anywhere, you must reattach handlers. Prefer NOT destroying.
+
+---
+
+# 4) Add a “syncAllSelect2BeforeSave()” that runs immediately on Save
+
+**Reason:** Debounce improves performance but can delay updates. Pre-save sync guarantees the server receives the current values.
+
+### Required
+
+Right before calling Livewire save action (Create/Draft/Edit):
+
+* Read each Select2 value (`.val() || []`)
+* Push to Livewire using `@this.set()` immediately (no debounce)
+* If you use JSON bridges, set them too
+
+This ensures:
+✅ form remains fast during interaction
+✅ save is always accurate
+
+**Safeguard:** This sync function must only set fields related to the form, not trigger extra renders.
+
+---
+
+# 5) Reduce Livewire updates from normal text inputs (big lag source)
+
+**Symptom:** typing feels delayed because Livewire sends requests on every keystroke.
+
+### Required
+
+On Buyer forms, change text inputs that do not need instant validation from:
+
+* `wire:model="field"`
+
+to:
+
+* `wire:model.defer="field"`
+
+Or at minimum:
+
+* `wire:model.lazy="field"`
+
+**Safeguard:** Do not change fields that rely on instant conditional logic (if any). Start with large text areas and “Other” inputs first.
+
+---
+
+# 6) Disable expensive Livewire hooks while typing/selecting
+
+**Symptom:** message.processed hooks + initializeFullService() re-run too often, causing lag.
+
+### Required
+
+Inside your `Livewire.hook('message.processed', ...)`:
+
+* Only call `initializeFullService()` when:
+
+  * the relevant tab is active OR
+  * the component actually changed (not every processed message)
+
+Practical guard:
+
+* Track the last initialized `wire:id` or a timestamp and avoid repeated init within 300ms.
+* Or check if the form container exists and is visible before initializing.
+
+**Safeguard:** Do not remove the hook; only guard it.
+
+---
+
+# 7) Quick health checks (to confirm lag root cause)
+
+Have Replit AI do these checks:
+
+### A) Browser Console
+
+* Check for repeating errors or warnings (especially Select2 + Livewire)
+* Check for repeated logs firing continuously
+
+### B) Network tab
+
+* If Livewire requests are firing continuously while idle, there’s a loop.
+  Fix by:
+* ensuring hooks don’t trigger additional state changes
+* ensuring no `@this.set()` runs inside `message.processed` unless needed
+
+### C) Laravel logs
+
+* Look for repeated update calls every second (loop)
+* If found, identify which hook/event triggers them
+
+---
+
+# 8) “Lag proof” test plan
+
+After the changes:
+
+1. Load Hire Buyer page and do nothing for 10 seconds
+   ✅ no Livewire requests firing repeatedly
+
+2. Select multi-select options quickly
+   ✅ no flashing, no forced resets
+
+3. Click Save immediately after selecting
+   ✅ saved values persist (pre-save sync catches last selection)
+
+---
+
+## What to tell Replit AI (copy/paste)
+
+“Hire a Buyer’s Agent listing pages are lagging and delayed, making it impossible to test whether fixes worked. Do not change business logic or fields. Implement performance fixes only:
+
+1. Ensure all Select2 fields are inside wire:ignore wrappers so Livewire does not re-render them.
+2. Debounce Select2 change handlers (150–250ms) so @this.set is not spammed.
+3. Add guarded Select2 initialization (do not re-init if select2-hidden-accessible already exists).
+4. Add syncAllSelect2BeforeSave() that force-syncs all Select2 values immediately on Save (no debounce).
+5. Convert non-critical text inputs to wire:model.defer (especially “Other” text fields).
+6. Guard message.processed hooks to avoid re-running initializeFullService excessively or when tab is hidden.
+7. Verify no idle Livewire request loop exists (network tab). Fix any loops caused by hooks calling @this.set during message.processed.”
+
+---
+
+If you want, paste **one screenshot of your Network tab** showing repeated Livewire calls (or tell me whether requests keep firing even when you’re not clicking). I’ll tell you which of the above is most likely causing the “lag behind” feeling and what to prioritize first.

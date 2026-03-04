@@ -2093,9 +2093,38 @@ $lease_types = [
 </script>
 <script>
     let currentServiceType = null;
+    let _s2Timers = {};
+    let _lastInitTime = 0;
+    function debouncedSet(field, value, delay) { clearTimeout(_s2Timers[field]); _s2Timers[field] = setTimeout(function() { safeLivewireSet(field, value); }, delay || 200); }
+
+    function syncAllSelect2BeforeSave() {
+        Object.keys(_s2Timers).forEach(function(k) { clearTimeout(_s2Timers[k]); });
+        _s2Timers = {};
+
+        var fields = [
+            { sel: '.condition_prop_buyer', field: 'condition_prop_buyer', multi: true },
+            { sel: '.number_of_unit_type', field: 'number_of_unit_type', multi: true },
+            { sel: '#property_items', field: 'property_items', multi: true },
+            { sel: '#sale_provision', field: 'sale_provision', multi: false },
+            { sel: '#offered_financing', field: 'offered_financing', multi: false },
+            { sel: '#garage_parking_spaces_option_landlord', field: 'garage_parking_spaces_option', multi: true },
+            { sel: '#leasing_spaces_tenant', field: 'leasing_spaces_tenant', multi: false },
+            { sel: '.tenant_pays', field: 'tenant_pays', multi: true },
+            { sel: '.lease_term_options', field: 'desired_lease_length', multi: true },
+        ];
+        fields.forEach(function(f) {
+            var $el = $(f.sel);
+            if ($el.length && $el.hasClass('select2-hidden-accessible')) {
+                var val = $el.first().val();
+                if (f.multi && Array.isArray(val)) { val = [...new Set(val)]; }
+                safeLivewireSet(f.field, val);
+            }
+        });
+    }
 
     document.addEventListener('submit', function(e) {
         if (e.target && e.target.tagName === 'FORM') {
+            syncAllSelect2BeforeSave();
             var $cpb = $('.condition_prop_buyer');
             if ($cpb.length && $cpb.hasClass('select2-hidden-accessible')) {
                 var cpbVals = $cpb.val() || [];
@@ -2398,8 +2427,7 @@ $lease_types = [
                 placeholder: "Select",
                 allowClear: true,
             }).on('change', function() {
-                // Update the model in Livewire (or any other reactive framework you're using)
-                safeLivewireSet('sale_provision', $(this).val());
+                debouncedSet('sale_provision', $(this).val());
 
                 // Add tooltips to selected options dynamically
                 $(this).find('option:selected').each(function() {
@@ -2426,8 +2454,7 @@ $lease_types = [
                 placeholder: "Select",
                 allowClear: true,
             }).on('change', function() {
-                // Update the model in Livewire (or any other reactive framework you're using)
-                safeLivewireSet('offered_financing', $(this).val());
+                debouncedSet('offered_financing', $(this).val());
 
                 // Reapply tooltips to all options dynamically
                 $(this).find('option').each(function() {
@@ -2489,7 +2516,7 @@ $lease_types = [
 
             selectEl.on('change', function() {
                 let selectedValues = $(this).val();
-                safeLivewireSet('garage_parking_spaces_option', selectedValues);
+                debouncedSet('garage_parking_spaces_option', selectedValues);
 
                 if (selectedValues && selectedValues.includes('Other')) {
                     $('#other_garage_parking_spaces_option_landlord').removeClass('d-none').show();
@@ -2509,7 +2536,7 @@ $lease_types = [
                 $el.on('change', function(e) {
                     let selectedValues = $(this).val() || [];
                     selectedValues = [...new Set(selectedValues)];
-                    safeLivewireSet('number_of_unit_type', selectedValues);
+                    debouncedSet('number_of_unit_type', selectedValues);
                 });
             }
         });
@@ -2523,10 +2550,9 @@ $lease_types = [
                 allowClear: true,
             });
 
-            // Update Livewire property on change
             $('#property_items').on('change', function(e) {
                 let selectedValues = $(this).val();
-                safeLivewireSet('property_items', selectedValues);
+                debouncedSet('property_items', selectedValues);
             });
         }
 
@@ -3023,9 +3049,8 @@ $lease_types = [
                 allowClear: true
             });
 
-            // Update Livewire when Select2 changes
             $('#leasing_spaces_tenant').on('change', function(e) {
-                safeLivewireSet('leasing_spaces_tenant', $(this).val());
+                debouncedSet('leasing_spaces_tenant', $(this).val());
             });
         }
 
@@ -3058,7 +3083,7 @@ $lease_types = [
                     } else {
                         $('.tenant_pays_other').hide();
                     }
-                    safeLivewireSet('tenant_pays', selectedValues);
+                    debouncedSet('tenant_pays', selectedValues);
                     // toggleOtherTenantField(selectedValues);
                 });
             }
@@ -3079,7 +3104,7 @@ $lease_types = [
                         $('.other_lease_term').hide();
                         safeLivewireSet('other_lease_term', null);
                     }
-                    safeLivewireSet('desired_lease_length', selectedValues);
+                    debouncedSet('desired_lease_length', selectedValues);
                 });
             }
         });
@@ -3956,10 +3981,14 @@ $lease_types = [
 
         removeWizardEventListeners();
 
-        if (currentServiceType === 'full_service') {
-            initializeFullService();
-        } else if (currentServiceType === 'limited_service') {
-            initializeLimitedService();
+        var now = Date.now();
+        if (now - _lastInitTime > 300) {
+            _lastInitTime = now;
+            if (currentServiceType === 'full_service') {
+                initializeFullService();
+            } else if (currentServiceType === 'limited_service') {
+                initializeLimitedService();
+            }
         }
 
         setTimeout(function() {

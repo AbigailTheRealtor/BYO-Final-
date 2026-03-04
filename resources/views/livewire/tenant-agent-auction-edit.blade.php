@@ -2048,9 +2048,74 @@
     </script>
     <script>
         let currentServiceType = null;
+        let _s2Timers = {};
+        let _lastInitTime = 0;
+
+        function debouncedSet(field, value, delay) {
+            clearTimeout(_s2Timers[field]);
+            _s2Timers[field] = setTimeout(function() {
+                @this.set(field, value);
+            }, delay || 200);
+        }
+
+        function syncAllSelect2BeforeSave() {
+            Object.keys(_s2Timers).forEach(function(k) { clearTimeout(_s2Timers[k]); });
+            _s2Timers = {};
+
+            var $cpb = $('.condition_prop_buyer');
+            if ($cpb.length && $cpb.hasClass('select2-hidden-accessible')) {
+                var cpbVals = $cpb.val() || [];
+                cpbVals = [...new Set(cpbVals)];
+                @this.set('condition_prop_buyer', cpbVals);
+            }
+
+            var $numUnit = $('.number_of_unit_type');
+            if ($numUnit.length && $numUnit.hasClass('select2-hidden-accessible')) {
+                var nuVals = $numUnit.val() || [];
+                nuVals = [...new Set(nuVals)];
+                @this.set('number_of_unit_type', nuVals);
+            }
+
+            var $pi = $('#property_items');
+            if ($pi.length && $pi.hasClass('select2-hidden-accessible')) {
+                @this.set('property_items', $pi.val());
+            }
+
+            var $sp = $('#sale_provision');
+            if ($sp.length && $sp.hasClass('select2-hidden-accessible')) {
+                @this.set('sale_provision', $sp.val());
+            }
+
+            var $of = $('#offered_financing');
+            if ($of.length && $of.hasClass('select2-hidden-accessible')) {
+                @this.set('offered_financing', $of.val());
+            }
+
+            var $gps = $('#garage_parking_spaces_option_landlord');
+            if ($gps.length && $gps.hasClass('select2-hidden-accessible')) {
+                @this.set('garage_parking_spaces_option', $gps.val());
+            }
+
+            var $ls = $('#leasing_spaces_tenant');
+            if ($ls.length && $ls.hasClass('select2-hidden-accessible')) {
+                @this.set('leasing_spaces_tenant', $ls.val());
+            }
+
+            var $tp = $('.tenant_pays');
+            if ($tp.length && $tp.hasClass('select2-hidden-accessible')) {
+                @this.set('tenant_pays', $tp.val() || []);
+            }
+
+            var $dll = $('.lease_term_options');
+            if ($dll.length && $dll.hasClass('select2-hidden-accessible')) {
+                @this.set('desired_lease_length', $dll.val() || []);
+            }
+        }
 
         document.addEventListener('submit', function(e) {
             if (e.target && e.target.tagName === 'FORM') {
+                syncAllSelect2BeforeSave();
+
                 var $cpb = $('.condition_prop_buyer');
                 if ($cpb.length && $cpb.hasClass('select2-hidden-accessible')) {
                     var cpbVals = $cpb.val() || [];
@@ -2101,12 +2166,17 @@
                 currentServiceType = newServiceType;
             }
 
-            removeWizardEventListeners();
+            var now = Date.now();
+            if (now - _lastInitTime > 300) {
+                _lastInitTime = now;
 
-            if (currentServiceType === 'full_service') {
-                initializeFullService();
-            } else if (currentServiceType === 'limited_service') {
-                initializeLimitedService();
+                removeWizardEventListeners();
+
+                if (currentServiceType === 'full_service') {
+                    initializeFullService();
+                } else if (currentServiceType === 'limited_service') {
+                    initializeLimitedService();
+                }
             }
         });
 
@@ -2155,7 +2225,7 @@
                     placeholder: "Select",
                     allowClear: true,
                 }).on('change', function() {
-                    @this.set('sale_provision', $(this).val());
+                    debouncedSet('sale_provision', $(this).val());
 
                     $(this).find('option:selected').each(function() {
                         var description = $(this).attr(
@@ -2179,7 +2249,7 @@
                     placeholder: "Select",
                     allowClear: true,
                 }).on('change', function() {
-                    @this.set('offered_financing', $(this).val());
+                    debouncedSet('offered_financing', $(this).val());
 
                     $(this).find('option').each(function() {
                         var description = $(this).attr('title');
@@ -2245,7 +2315,7 @@
 
                 selectEl.on('change', function() {
                     let selectedValues = $(this).val();
-                    @this.set('garage_parking_spaces_option', selectedValues);
+                    debouncedSet('garage_parking_spaces_option', selectedValues);
 
                     if (selectedValues && selectedValues.includes('Other')) {
                         $('#other_garage_parking_spaces_option_landlord').removeClass('d-none').show();
@@ -2271,7 +2341,7 @@
                     $el.on('change', function(e) {
                         let selectedValues = $(this).val() || [];
                         selectedValues = [...new Set(selectedValues)];
-                        @this.set('number_of_unit_type', selectedValues);
+                        debouncedSet('number_of_unit_type', selectedValues);
                     });
                 }
             });
@@ -2294,7 +2364,7 @@
 
                 $('#property_items').on('change', function(e) {
                     let selectedValues = $(this).val();
-                    @this.set('property_items', selectedValues);
+                    debouncedSet('property_items', selectedValues);
                 });
             }
 
@@ -2785,7 +2855,7 @@
                 });
 
                 $('#leasing_spaces_tenant').on('change', function(e) {
-                    @this.set('leasing_spaces_tenant', $(this).val());
+                    debouncedSet('leasing_spaces_tenant', $(this).val());
                 });
             }
 
@@ -2815,7 +2885,7 @@
                         } else {
                             $('.tenant_pays_other').hide();
                         }
-                        @this.set('tenant_pays', selectedValues);
+                        debouncedSet('tenant_pays', selectedValues);
                     });
                 }
             });
@@ -2844,7 +2914,7 @@
                             $('.other_lease_term').hide();
                             @this.set('other_lease_term', null);
                         }
-                        @this.set('desired_lease_length', selectedValues);
+                        debouncedSet('desired_lease_length', selectedValues);
                     });
                 }
             });
