@@ -1184,31 +1184,10 @@ class TenantAgentAuctionEdit extends Component
     public function conditionUpdated($value)
     {
         $this->condition_prop_buyer = $value['value'];
-        $this->enforceNoPreferenceExclusivity();
     }
 
     public function updatedConditionPropBuyer($value)
     {
-        $this->enforceNoPreferenceExclusivity();
-    }
-
-    protected function enforceNoPreferenceExclusivity()
-    {
-        $noPreferenceValue = 'No preference (open to any condition)';
-        
-        if (!is_array($this->condition_prop_buyer) || empty($this->condition_prop_buyer)) {
-            return;
-        }
-        
-        $hasNoPreference = in_array($noPreferenceValue, $this->condition_prop_buyer);
-        $count = count($this->condition_prop_buyer);
-        
-        if ($hasNoPreference && $count > 1) {
-            $this->condition_prop_buyer = array_values(array_diff(
-                $this->condition_prop_buyer,
-                [$noPreferenceValue]
-            ));
-        }
     }
 
 

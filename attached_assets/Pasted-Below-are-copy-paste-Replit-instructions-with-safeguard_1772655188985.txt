@@ -1,0 +1,194 @@
+Below are **copy-paste Replit instructions (with safeguards)** to fix **Acceptable Property Conditions** for **Hire a Buyer’s Agent** so the user can select **all 4 options** in **Create, Edit, and Draft**, and **all selected options always show on the actual listing**.
+
+---
+
+## Replit Instructions With Safeguards
+
+### Fix “No preference (open to any condition)” not selecting + ensure all 4 display everywhere
+
+**Applies to:** Hire a Buyer’s Agent (login example: `tenant@exp.com` → selects “Hire a Buyer’s Agent”)
+
+---
+
+## Goal (Must Pass)
+
+1. In **Create Listing**, the user can select **any 1 or multiple** of these 4 options:
+
+   * Updated / Renovated
+   * Partially updated (some older finishes OK)
+   * Older but clean & well maintained
+   * No preference (open to any condition)
+2. In **Edit Listing**, the same multi-select works and selections persist.
+3. In **Draft**, the same multi-select works and selections persist.
+4. On the **Actual Listing Display**, **every selected option renders** (including “No preference…”).
+5. **No special logic** is allowed that auto-removes “No preference…” when other options are selected (user must be able to select all 4).
+
+---
+
+## Safeguard Rule #1 (Most Common Root Cause)
+
+### Ensure “No preference…” is NOT treated as a placeholder/empty/clear value
+
+**Search the Buyer Hire flow code for any of these and remove/disable them:**
+
+* any logic that says:
+
+  * “if selected includes ‘No preference’ then clear others”
+  * “if any other selected then remove ‘No preference’”
+  * “if ‘No preference’ selected then set array to []”
+* any Select2 config using placeholder/allowClear that maps “No preference…” to empty
+
+✅ **No preference must be a normal selectable option with a real string value**, not `""`, not `null`, not `0`.
+
+---
+
+## Step 1 — Make option values consistent (Create + Edit + Draft)
+
+### In the Buyer “Acceptable Property Conditions” dropdown options array:
+
+**Confirm the option “value” is exactly the same string you want saved.**
+
+**Required option strings (use these exact values everywhere):**
+
+* `Updated / Renovated`
+* `Partially updated (some older finishes OK)`
+* `Older but clean & well maintained`
+* `No preference (open to any condition)`
+
+**Safeguard:** Do not shorten it in one file (example: “No preference”) and use the long version elsewhere. Mismatched strings = it “won’t select” or “won’t re-render”.
+
+---
+
+## Step 2 — Fix Select2 → Livewire syncing (Create, Edit, Draft)
+
+This issue is usually caused by **Select2 visually selecting**, but **Livewire not receiving/saving** the correct array value (or receiving it, then normalization wipes it).
+
+### Required behavior
+
+When the user selects/unselects options, you must update:
+
+1. The real Livewire array property (example: `condition_prop_buyer`)
+   AND
+2. Any JSON bridge hidden input (if you use one)
+
+### Implementation requirement (safest approach)
+
+In the Select2 `change` handler for this field, do BOTH:
+
+* Set the Livewire property directly using `@this.set('condition_prop_buyer', valuesArray)`
+* If you use a hidden JSON field, also update it: `@this.set('condition_prop_buyer_json', JSON.stringify(valuesArray))`
+
+**Safeguard:** Do not rely on only the hidden JSON input OR only DOM events. Do both, every time, in all 3 modes: create / edit / draft.
+
+---
+
+## Step 3 — Remove any “No preference” cleanup logic (if present)
+
+### Search in ALL Buyer Hire JS files for:
+
+* `No preference`
+* `open to any condition`
+* `condition_prop_buyer`
+* `condition_prop`
+* `acceptable property condition`
+
+If you find code that:
+
+* removes “No preference…” when other conditions are selected
+* forces “No preference…” to be exclusive
+* converts it to empty / clears the selection
+
+✅ **Delete that logic** (or comment it out), because your requirement is: **user can select all 4**.
+
+---
+
+## Step 4 — Backend save normalization safeguard (Create + Edit + Draft saves)
+
+In the Livewire component save method (the one that writes to DB for Buyer hire listings):
+
+### Add/confirm these safeguards BEFORE saving:
+
+1. If the field is JSON in a “_json” property, decode it safely into the real array property.
+2. Ensure the final value is always an array of strings.
+3. Do **not** run any filter that could remove valid strings.
+
+**Specifically avoid:**
+
+* `array_filter($arr)` with no callback (sometimes devs add it; it can remove unintended values depending on how values are shaped)
+* logic that says if “No preference…” then set `[]`
+
+✅ **Allowed normalization:**
+
+* trim strings
+* remove duplicates
+* reindex array values (`array_values`)
+* keep all valid strings
+
+---
+
+## Step 5 — Listing display must render ALL selections (including “No preference…”)
+
+On the actual listing view template that displays “Acceptable Property Conditions”:
+
+### Required behavior
+
+* If the saved field is an array, loop through and display each label.
+* Do NOT map “No preference…” to blank.
+* Do NOT hide it if other items exist.
+
+**Safeguard checklist for display code:**
+
+* ✅ Display logic checks `is_array()` and `count() > 0`
+* ✅ Loops through values and prints each one
+* ✅ Uses exact saved string as the label (or uses a mapping table that includes all 4 keys)
+* ❌ No special-case that excludes “No preference…”
+
+---
+
+## Step 6 — Confirm Create/Edit/Draft are all using the same source of truth
+
+**Common bug:** Create uses one options list, Edit uses another list, Draft uses another list.
+
+### Safeguard requirement
+
+Create a single **shared constant / shared options array** for property condition options in the Buyer Hire flow, and reuse it in:
+
+* Create blade
+* Edit blade
+* Draft blade (if separate)
+
+If your project structure makes it hard to share code, then at minimum:
+
+* **copy/paste the same 4 strings exactly**
+* keep ordering consistent
+
+---
+
+## QA Test (must pass exactly like this)
+
+Login as: `tenant@exp.com`
+Flow: Hire a Buyer’s Agent → Create Listing
+
+1. Select each option one-by-one until all 4 appear as selected chips:
+
+   * Updated / Renovated
+   * Partially updated (some older finishes OK)
+   * Older but clean & well maintained
+   * No preference (open to any condition)
+2. Save as Draft → reopen Draft → confirm all 4 remain selected.
+3. Publish/Save → view actual listing → confirm all 4 display under “Acceptable Property Conditions”.
+4. Edit listing → confirm all 4 appear selected → remove 1 → save → confirm display updates correctly.
+5. Re-add “No preference…” while other 2–3 are selected → confirm it stays selected and persists.
+
+---
+
+## Final Safeguards (Do Not Break Other Stuff)
+
+* Do **not** rename DB columns.
+* Do **not** change existing saved values in the database.
+* Do **not** add exclusivity rules for “No preference…”.
+* Do **not** change other dropdowns—only fix this field’s option value consistency + sync + display.
+
+---
+
+If you paste me the **file names** for your Buyer “create blade”, “edit blade”, and the **Livewire component** that saves Buyer listings, I’ll rewrite this into **exact line-by-line edit instructions referencing those exact files/sections** (still copy/paste-ready for Replit).

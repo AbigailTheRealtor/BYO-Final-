@@ -319,17 +319,10 @@
     $property_types = [['name' => 'Residential Property'], ['name' => 'Commercial Property']];
 
     $property_condition = [
-        ['name' => 'Completely Updated: No updates needed'],
-        ['name' => 'Currently Being Built'],
-        ['name' => 'New Construction'],
-        ['name' => 'Not Updated: Requires a complete update'],
-        ['name' => 'Open to any type of property condition'],
-        ['name' => 'Pre-Construction'],
-        ['name' => 'Semi-updated: Needs minor updates'],
-        ['name' => 'Tear Down: Requires complete demolition and reconstruction'],
-        // ['name' => 'Open to any type of property condition.'],
-        // ['name' => 'Semi-updated: Needs minor updates.'],
-        // ['name' => 'Other'],
+        ['name' => 'Updated / Renovated'],
+        ['name' => 'Partially updated (some older finishes OK)'],
+        ['name' => 'Older but clean & well maintained'],
+        ['name' => 'No preference (open to any condition)'],
     ];
 
     $bedroomsRes = [
