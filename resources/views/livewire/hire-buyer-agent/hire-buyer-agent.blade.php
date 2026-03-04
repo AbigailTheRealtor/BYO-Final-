@@ -1309,8 +1309,6 @@
                 }
             });
 
-            jsonRestoreSelect2();
-
             // Function to toggle "auction time" input field
             function toggleAuctionTime(selectElement) {
                 const auctionTimeDiv = document.querySelector('.auction_time');

@@ -4017,11 +4017,6 @@ $lease_types = [
             }
         }
 
-        setTimeout(function() {
-            if (typeof syncSelect2MultiSelects === 'function') {
-                syncSelect2MultiSelects();
-            }
-        }, 100);
     });
 </script>
 
