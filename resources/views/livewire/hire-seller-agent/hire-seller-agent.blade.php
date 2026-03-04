@@ -998,6 +998,35 @@
 @push('scripts')
     <script>
         let currentServiceType = null;
+        let _s2Timers = {};
+        let _lastInitTime = 0;
+
+        function debouncedSet(field, value, delay) {
+            clearTimeout(_s2Timers[field]);
+            _s2Timers[field] = setTimeout(function() {
+                @this.set(field, value);
+            }, delay || 200);
+        }
+
+        function syncAllSelect2BeforeSave() {
+            Object.keys(_s2Timers).forEach(function(k) { clearTimeout(_s2Timers[k]); });
+            _s2Timers = {};
+            var fields = {
+                property_items: '#property_items',
+                non_negotiable_amenities: '#non_negotiable_amenities',
+                appliances: '#appliances',
+            };
+            Object.entries(fields).forEach(function([field, selector]) {
+                var el = $(selector);
+                if (el.length && el.hasClass('select2-hidden-accessible')) {
+                    @this.set(field, el.val() || []);
+                }
+            });
+        }
+
+        document.addEventListener('submit', function(e) {
+            syncAllSelect2BeforeSave();
+        }, true);
 
         // Initialize Bootstrap tooltips and handle Livewire re-renders
         function initializeTooltips() {
@@ -1154,7 +1183,7 @@
                 });
                 $('#property_items').on('change', function(e) {
                     let selectedValues = $(this).val();
-                    @this.set('property_items', selectedValues);
+                    debouncedSet('property_items', selectedValues);
                 });
             }
 
@@ -1165,7 +1194,7 @@
                 });
                 $('#non_negotiable_amenities').on('change', function(e) {
                     let selectedValues = $(this).val();
-                    @this.set('non_negotiable_amenities', selectedValues);
+                    debouncedSet('non_negotiable_amenities', selectedValues);
                 });
             }
 
@@ -1356,7 +1385,7 @@
                 });
                 $('#appliances').on('change', function() {
                     let selectedValues = $(this).val();
-                    @this.set('appliances', selectedValues);
+                    debouncedSet('appliances', selectedValues);
                     if (selectedValues && selectedValues.includes('Other')) {
                         $('#other_appliances').closest('.form-group').show();
                     } else {
@@ -2199,10 +2228,14 @@
 
             removeWizardEventListeners();
 
-            if (currentServiceType === 'full_service') {
-                initializeFullService();
-            } else if (currentServiceType === 'limited_service') {
-                initializeLimitedService();
+            var _now = Date.now();
+            if (_now - _lastInitTime > 300) {
+                _lastInitTime = _now;
+                if (currentServiceType === 'full_service') {
+                    initializeFullService();
+                } else if (currentServiceType === 'limited_service') {
+                    initializeLimitedService();
+                }
             }
         });
     </script>
