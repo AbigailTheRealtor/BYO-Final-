@@ -64,6 +64,7 @@ class TenantAgentAuction extends Component
     public $property_items = [];
     public $other_property_items = '';
     public $condition_prop_buyer = [];
+    public $condition_prop_buyer_json = '[]';
     public $condition_prop = '';
 
     public $leasing_spaces = '';
@@ -1262,31 +1263,19 @@ class TenantAgentAuction extends Component
     public function conditionUpdated($value)
     {
         $this->condition_prop_buyer = $value['value'];
-        $this->enforceNoPreferenceExclusivity();
     }
 
     public function updatedConditionPropBuyer($value)
     {
         if ($this->isLoadingData) return;
-        $this->enforceNoPreferenceExclusivity();
     }
 
-    protected function enforceNoPreferenceExclusivity()
+    public function updatedConditionPropBuyerJson($value)
     {
-        $noPreferenceValue = 'No preference (open to any condition)';
-        
-        if (!is_array($this->condition_prop_buyer) || empty($this->condition_prop_buyer)) {
-            return;
-        }
-        
-        $hasNoPreference = in_array($noPreferenceValue, $this->condition_prop_buyer);
-        $count = count($this->condition_prop_buyer);
-        
-        if ($hasNoPreference && $count > 1) {
-            $this->condition_prop_buyer = array_values(array_diff(
-                $this->condition_prop_buyer,
-                [$noPreferenceValue]
-            ));
+        if ($this->isLoadingData) return;
+        $decoded = json_decode($value, true);
+        if (is_array($decoded) && !empty($decoded)) {
+            $this->condition_prop_buyer = array_values(array_unique(array_map('trim', $decoded)));
         }
     }
 
@@ -2697,6 +2686,7 @@ class TenantAgentAuction extends Component
             $this->other_property_items = $auction->get->other_property_items;
             $rawConditionPropBuyer = is_string($auction->get->condition_prop_buyer) ? json_decode($auction->get->condition_prop_buyer, true) ?? [] : (array)$auction->get->condition_prop_buyer;
             $this->condition_prop_buyer = $this->mapLegacyPropertyConditions($rawConditionPropBuyer);
+            $this->condition_prop_buyer_json = json_encode($this->condition_prop_buyer ?? []);
 
             $rawConditionProp = $auction->info('condition_prop') ?? '';
             $this->condition_prop = ($this->user_type === 'seller' || $this->user_type === 'landlord')
@@ -3409,6 +3399,13 @@ class TenantAgentAuction extends Component
         $this->normalizeOtherInArray($this->view_preference, $this->other_preferences);
         $this->normalizeOtherInArray($this->appliances, $this->other_appliances);
         $this->normalizeOtherInArray($this->condition_prop_buyer, $this->other_property_condition);
+
+        $fromJsonCpb = json_decode($this->condition_prop_buyer_json, true);
+        if (is_array($fromJsonCpb) && !empty($fromJsonCpb)) {
+            $this->condition_prop_buyer = array_values(array_unique(array_map('trim', $fromJsonCpb)));
+        } elseif (!is_array($this->condition_prop_buyer)) {
+            $this->condition_prop_buyer = [];
+        }
 
         $auction->saveMeta('service_type', $this->service_type);
         $auction->saveMeta('user_type', $this->user_type);

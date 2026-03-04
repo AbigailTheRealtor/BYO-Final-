@@ -2094,6 +2094,20 @@ $lease_types = [
 <script>
     let currentServiceType = null;
 
+    document.addEventListener('submit', function(e) {
+        if (e.target && e.target.tagName === 'FORM') {
+            var $cpb = $('.condition_prop_buyer');
+            if ($cpb.length && $cpb.hasClass('select2-hidden-accessible')) {
+                var cpbVals = $cpb.val() || [];
+                cpbVals = [...new Set(cpbVals)];
+                safeLivewireSet('condition_prop_buyer', cpbVals);
+                if (typeof syncConditionJsonBridge === 'function') {
+                    syncConditionJsonBridge(cpbVals);
+                }
+            }
+        }
+    }, true);
+
     document.addEventListener('DOMContentLoaded', () => {
         // Sync select values from their selected options (fixes draft loading issue)
         syncSelectValues();
@@ -2432,6 +2446,16 @@ $lease_types = [
 
         ///////////////////   condition_prop_buyer
 
+        function syncConditionJsonBridge(values) {
+            var json = JSON.stringify(values || []);
+            var input = document.querySelector('input[wire\\:model="condition_prop_buyer_json"]');
+            if (input) {
+                input.value = json;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            safeLivewireSet('condition_prop_buyer_json', json);
+        }
+
         function initConditionSelect2() {
             var $sel = $('.condition_prop_buyer');
             if ($sel.hasClass('select2-hidden-accessible')) return;
@@ -2441,9 +2465,11 @@ $lease_types = [
                 allowClear: true
             });
 
-            $sel.on('change', function(e) {
-                let data = $(this).val();
-                safeLivewireSet('condition_prop_buyer', data, true);
+            $sel.off('change.cpbSync').on('change.cpbSync', function(e) {
+                let data = $(this).val() || [];
+                data = [...new Set(data)];
+                safeLivewireSet('condition_prop_buyer', data);
+                syncConditionJsonBridge(data);
             });
         }
 

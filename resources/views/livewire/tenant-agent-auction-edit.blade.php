@@ -2049,6 +2049,20 @@
     <script>
         let currentServiceType = null;
 
+        document.addEventListener('submit', function(e) {
+            if (e.target && e.target.tagName === 'FORM') {
+                var $cpb = $('.condition_prop_buyer');
+                if ($cpb.length && $cpb.hasClass('select2-hidden-accessible')) {
+                    var cpbVals = $cpb.val() || [];
+                    cpbVals = [...new Set(cpbVals)];
+                    @this.set('condition_prop_buyer', cpbVals);
+                    if (typeof syncConditionJsonBridge === 'function') {
+                        syncConditionJsonBridge(cpbVals);
+                    }
+                }
+            }
+        }, true);
+
         document.addEventListener('DOMContentLoaded', () => {
             // Detect which service is preselected on load
             if (document.getElementById('fullService')?.checked) {
@@ -2183,6 +2197,16 @@
 
             ///////////////////   condition_prop_buyer
 
+            function syncConditionJsonBridge(values) {
+                var json = JSON.stringify(values || []);
+                var input = document.querySelector('input[wire\\:model="condition_prop_buyer_json"]');
+                if (input) {
+                    input.value = json;
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+                @this.set('condition_prop_buyer_json', json);
+            }
+
             function initConditionSelect2() {
                 var $sel = $('.condition_prop_buyer');
                 if ($sel.hasClass('select2-hidden-accessible')) return;
@@ -2192,14 +2216,16 @@
                     allowClear: true
                 });
 
-                $sel.on('change', function(e) {
-                    let data = $(this).val();
-                    @this.set('condition_prop_buyer', data, true);
+                $sel.off('change.cpbSync').on('change.cpbSync', function(e) {
+                    let data = $(this).val() || [];
+                    data = [...new Set(data)];
+                    @this.set('condition_prop_buyer', data);
+                    syncConditionJsonBridge(data);
                 });
 
                 var current = @this.get('condition_prop_buyer');
                 if (current && current.length) {
-                    $sel.val(current).trigger('change');
+                    $sel.val(current).trigger('change.select2');
                 }
             }
 
