@@ -1103,10 +1103,10 @@ $tenantPays = [
                         <!-- Navigation Buttons -->
                         <div class="d-flex justify-content-between form-group mt-4">
                             <div>
-                                <button type="button" class="btn btn-secondary wizard-step-back">Back</button>
+                                <button type="button" class="btn btn-secondary wizard-step-back" wire:loading.attr="disabled">Back</button>
                             </div>
                             <div>
-                                <button type="button" class="btn btn-primary wizard-step-next">Next</button>
+                                <button type="button" class="btn btn-primary wizard-step-next" wire:loading.attr="disabled">Next</button>
 
                                 <button type="submit" class="btn btn-success wizard-step-finish disabled"
                                     id="save-button">
@@ -1278,15 +1278,7 @@ $tenantPays = [
                 }
             }
 
-            // Attach the event listener initially
-            document.addEventListener('DOMContentLoaded', () => {
-                attachAuctionDropdownListener();
-            });
-
-            // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachAuctionDropdownListener();
-            });
+            attachAuctionDropdownListener();
 
 
             // Function to toggle "Other Bathrooms" input field
@@ -1317,13 +1309,7 @@ $tenantPays = [
                 }
             }
 
-            // Attach the event listener initially
             attachBathroomsDropdownListener();
-
-            // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachBathroomsDropdownListener();
-            });
 
 
 
@@ -1353,13 +1339,7 @@ $tenantPays = [
                 }
             }
 
-            // Initialize on page load
             toggleGarageOptions();
-
-            // Listen for Livewire updates
-            Livewire.hook('message.processed', () => {
-                toggleGarageOptions();
-            });
 
             // Add event listeners
             let garageSelect = document.getElementById('garage_parking_spaces');
@@ -1402,15 +1382,8 @@ $tenantPays = [
                 }
             }
 
-            // Attach event listeners
             toggleSpaceInput('carport-needed', 'other-carport-needed');
             toggleSpaceInput('garage-needed', 'other-garage-needed');
-
-            // Reinitialize after Livewire updates
-            Livewire.hook('message.processed', () => {
-                toggleSpaceInput('carport-needed', 'other-carport-needed');
-                toggleSpaceInput('garage-needed', 'other-garage-needed');
-            });
 
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
                 $('#view_preference').select2({
@@ -1455,13 +1428,7 @@ $tenantPays = [
                 }
             }
 
-            // Attach the event listener initially
             attachAmenitiesDropdownListener();
-
-            // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachAmenitiesDropdownListener();
-            });
 
             // Function to toggle "Other Bedrooms" input field
             function toggleOtherBedrooms(selectElement) {
@@ -1491,13 +1458,7 @@ $tenantPays = [
                 }
             }
 
-            // Attach the event listener initially
             attachBedroomsDropdownListener();
-
-            // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachBedroomsDropdownListener();
-            });
 
             // Function to toggle "Other Property Condition" input field
             function toggleOtherCondition(selectElement) {
@@ -1528,15 +1489,7 @@ $tenantPays = [
                 }
             }
 
-            // Attach the event listener initially
-            document.addEventListener('DOMContentLoaded', () => {
-                attachConditionDropdownListener();
-            });
-
-            // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachConditionDropdownListener();
-            });
+            attachConditionDropdownListener();
 
 
 
@@ -1569,15 +1522,7 @@ $tenantPays = [
                 }
             }
 
-            // Attach the event listener initially
-            document.addEventListener('DOMContentLoaded', () => {
-                attachItemConditionDropdownListener();
-            });
-
-            // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachItemConditionDropdownListener();
-            });
+            attachItemConditionDropdownListener();
 
 
 
@@ -1609,15 +1554,7 @@ $tenantPays = [
                 }
             }
 
-            // Attach the event listener initially
-            document.addEventListener('DOMContentLoaded', () => {
-                attachOccupantTypesDropdownListener();
-            });
-
-            // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachOccupantTypesDropdownListener();
-            });
+            attachOccupantTypesDropdownListener();
 
 
 ////////////    Desired Rental Amount
@@ -1651,15 +1588,7 @@ $tenantPays = [
                 }
             }
 
-            // Attach the event listener initially
-            document.addEventListener('DOMContentLoaded', () => {
-                attachDesiredRentalAmountDropdownListener();
-            });
-
-            // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachDesiredRentalAmountDropdownListener();
-            });
+            attachDesiredRentalAmountDropdownListener();
 
 
             if ($('#rent_includes').length && !$('#rent_includes').hasClass('select2-hidden-accessible')) {
@@ -2039,14 +1968,7 @@ $tenantPays = [
                     const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector(
                         '.nav-link');
                     if (nextTab) {
-                        const tabs = document.querySelectorAll('.nav-link');
-                        if (tabs) {
-                            const tabIndex = Array.from(tabs).indexOf(nextTab);
-                            if (tabIndex !== -1) {
-                                Livewire.emit('setActiveTab', tabIndex);
-                                nextTab.click();
-                            }
-                        }
+                        nextTab.click();
                     }
                 }
 
@@ -2062,8 +1984,6 @@ $tenantPays = [
                 const currentTab = document.querySelector('.nav-tabs .nav-link.active');
                 const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
                 if (prevTab) {
-                    Livewire.emit('setActiveTab', Array.from(document.querySelectorAll('.nav-link'))
-                        .indexOf(prevTab));
                     prevTab.click();
                 }
             });
@@ -2279,14 +2199,7 @@ $tenantPays = [
                     const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector(
                         '.nav-link');
                     if (nextTab) {
-                        const tabs = document.querySelectorAll('.nav-link');
-                        if (tabs) {
-                            const tabIndex = Array.from(tabs).indexOf(nextTab);
-                            if (tabIndex !== -1) {
-                                Livewire.emit('setActiveTab', tabIndex);
-                                nextTab.click();
-                            }
-                        }
+                        nextTab.click();
                     }
                 }
 
@@ -2302,8 +2215,6 @@ $tenantPays = [
                 const currentTab = document.querySelector('.nav-tabs .nav-link.active');
                 const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
                 if (prevTab) {
-                    Livewire.emit('setActiveTab', Array.from(document.querySelectorAll('.nav-link'))
-                        .indexOf(prevTab));
                     prevTab.click();
                 }
             });
@@ -2355,7 +2266,7 @@ $tenantPays = [
 
         Livewire.hook('message.processed', () => {
             var now = Date.now();
-            if (now - _lastInitTime > 300) {
+            if (now - _lastInitTime > 400) {
                 _lastInitTime = now;
                 removeWizardEventListeners();
 

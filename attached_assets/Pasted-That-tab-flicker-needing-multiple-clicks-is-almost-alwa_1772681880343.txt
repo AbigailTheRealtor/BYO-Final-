@@ -1,0 +1,147 @@
+That tab **flicker + needing multiple clicks** is almost always caused by **Livewire re-render + Select2 init hooks firing during the tab change**, which can:
+
+* steal focus
+* re-trigger the “show tab” event
+* re-render the DOM mid-click
+* or even create an idle loop that keeps “processing” while you try to navigate
+
+Here are **copy-paste Replit instructions with safeguards** to fix the **Edit → Next tab flicker** for **Hire a Landlord’s Agent** (and this pattern can be reused for Buyer/Seller later).
+
+---
+
+## Replit Instructions With Safeguards
+
+### Hire a Landlord’s Agent Edit — “Next Tab” flickers and requires multiple clicks
+
+**Do NOT rename or delete any database columns.**
+**Do NOT delete or modify any existing listings, drafts, or agent bids.**
+**Do NOT change labels, tooltips, or option values.**
+**Only modify tab navigation + Select2 init timing/guards (no business logic changes).**
+
+---
+
+# 1) Stop Select2 re-initialization from fighting tab changes
+
+### Problem pattern
+
+On tab click, Livewire updates → `message.processed` runs → Select2 init runs again → tab flickers / resets.
+
+### Required change
+
+In the **Landlord edit blade** (the file actually used for landlord edits), find the:
+
+* `Livewire.hook('message.processed', ...)`
+* any `initializeFullService()` / `initSelect2()` calls
+
+✅ Add a **hard guard** so init runs at most once every ~400ms and never repeatedly during rapid tab switching:
+
+* Track a global `window.__landlordInitLock` timestamp
+* If `Date.now() - lock < 400` → return
+* Else set lock and proceed
+
+**Safeguard:** Do not remove init entirely—just throttle it.
+
+---
+
+# 2) Initialize Select2 only for the active/visible tab
+
+### Required change
+
+When initializing Select2 fields, only initialize selects that are currently visible:
+
+* Skip selects inside hidden tabs (not `:visible`)
+* Or initialize only inside the currently active tab pane
+
+**Safeguard:** Do not destroy/recreate Select2 on tab change. Only init what’s needed.
+
+---
+
+# 3) De-duplicate tab click handlers (common cause of double-firing)
+
+If you have JS that binds tab click events inside `initializeFullService()` or inside `message.processed`, it can bind multiple times.
+
+### Required change
+
+Any tab handler binding must be namespaced and de-duped:
+
+* `$('.next-tab').off('click.nextTab').on('click.nextTab', ...)`
+
+Same for Bootstrap tab events:
+
+* `$(document).off('shown.bs.tab.landlord').on('shown.bs.tab.landlord', ...)`
+
+**Safeguard:** Do not bind event handlers inside functions that run repeatedly without `.off()`.
+
+---
+
+# 4) Prevent Livewire from hijacking the tab click
+
+If your “Next” button is:
+
+* inside a `<form>`
+* or is a `<button>` without type specified
+
+then it may be submitting or triggering Livewire actions unintentionally during navigation.
+
+### Required change
+
+Ensure Next/Prev buttons are:
+
+* `<button type="button">Next</button>`
+
+and if there’s any `wire:click` on Next that triggers Livewire, remove it unless absolutely necessary.
+
+**Safeguard:** Navigation should not trigger server calls. Only Save/Submit should.
+
+---
+
+# 5) Fix race condition: tab change happening while Livewire is “loading”
+
+If Livewire is processing, clicks can be dropped or re-fired.
+
+### Required change
+
+Disable “Next” button while Livewire is busy:
+
+* add `wire:loading.attr="disabled"` to the Next button
+* optional: add a small spinner
+
+**Safeguard:** Do not block the whole UI; just disable Next during processing.
+
+---
+
+# 6) Add a single source of truth for current tab (prevents flicker resets)
+
+If Livewire re-renders, it might revert to the default tab.
+
+### Required change
+
+Store current tab in one place:
+
+* a Livewire property like `activeTab`
+  OR
+* a JS variable persisted to `sessionStorage`
+
+Then on render, always restore the active tab once (not repeatedly).
+
+**Safeguard:** Do not add new database fields—this is only UI state.
+
+---
+
+## QA Test (must pass)
+
+1. Edit Hire a Landlord’s Agent listing
+2. Click Next through tabs quickly
+   ✅ No flicker
+   ✅ One click advances one tab
+   ✅ No unexpected Livewire requests on tab navigation (Network tab idle unless saving)
+
+---
+
+## Copy/Paste prompt for Replit (tight scope)
+
+“Fix Hire a Landlord’s Agent EDIT tab navigation flicker where Next requires multiple clicks. Do not change DB columns, labels, tooltips, or option values. Only adjust tab navigation + Select2 init timing/guards. Add throttling/lock to Livewire message.processed select2 init, init Select2 only for visible/active tab, dedupe all tab click/shown handlers using .off().on() namespacing, ensure Next buttons are type=button and do not trigger Livewire, add wire:loading.attr=disabled on Next during Livewire processing, and ensure active tab state persists across rerenders (restore once). Verify no Livewire network calls occur on tab navigation unless saving.”
+
+---
+
+If you tell me **which exact flow** this happens on (Hire Landlord edit only, or also Buyer/Seller/Tenant), I can word the prompt to limit it to just that edit blade so Replit touches the correct file and doesn’t wander.
