@@ -498,16 +498,21 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </div>
                     @endif --}}
                     @php
+                        $rawLandlordCondition = @$auction->get->condition_prop_buyer;
+                        if (empty($rawLandlordCondition)) {
+                            $rawLandlordCondition = @$auction->get->condition_prop;
+                        }
                         $landlordConditionItems = \App\Helpers\ListingDisplayHelper::normalizeList(
-                            @$auction->get->condition_prop_buyer ?? @$auction->get->condition_prop,
+                            $rawLandlordCondition,
                             @$auction->get->other_property_condition
                         );
+                        if (empty($landlordConditionItems) && !empty($rawLandlordCondition)) {
+                            $landlordConditionItems = is_array($rawLandlordCondition) ? $rawLandlordCondition : [$rawLandlordCondition];
+                        }
                     @endphp
                     @if (!empty($landlordConditionItems))
                     <div class="col-md-12 col-12 pt-2 fw-bold"> Property Condition:
-                        @foreach ($landlordConditionItems as $cItem)
-                            <span class="removeBold badge bg-secondary">{{ $cItem }}</span>
-                        @endforeach
+                        <span class="removeBold">{{ implode(', ', $landlordConditionItems) }}</span>
                     </div>
                     @endif
 
@@ -764,12 +769,12 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             @endif
             @if (\App\Helpers\ListingDisplayHelper::isParentYes(@$auction->get->pets))
             @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->type_of_pets))
-            <div class="col-md-12 col-12 pt-2 fw-bold"> Pet Types:
+            <div class="col-md-12 col-12 pt-2 fw-bold"> Acceptable Pet Types:
                 <span class="removeBold">{{ @$auction->get->type_of_pets }}</span>
             </div>
             @endif
             @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->weight_of_pets))
-            <div class="col-md-12 col-12 pt-2 fw-bold"> Pet Weight (lbs):
+            <div class="col-md-12 col-12 pt-2 fw-bold"> Maximum Weight Per Pet (lbs):
                 <span class="removeBold">{{ @$auction->get->weight_of_pets }} lbs</span>
             </div>
             @endif
@@ -1073,9 +1078,18 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
         @php
-            $rentIncludesItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->rent_includes, @$auction->get->other_rent_include);
+            $rawRentIncludes = @$auction->get->rent_includes;
+            $rawRentIncludesStr = is_string($rawRentIncludes) ? trim(str_replace('"', '', $rawRentIncludes)) : '';
+            $isRentNone = (is_array($rawRentIncludes) && count($rawRentIncludes) === 1 && strtolower(trim($rawRentIncludes[0])) === 'none')
+                || strtolower($rawRentIncludesStr) === 'none'
+                || (is_string($rawRentIncludes) && json_decode($rawRentIncludes, true) === ['None']);
+            $rentIncludesItems = $isRentNone ? [] : \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->rent_includes, @$auction->get->other_rent_include);
         @endphp
-        @if (!empty($rentIncludesItems))
+        @if ($isRentNone)
+        <div class="col-md-12 col-12 pt-2 fw-bold"> Rent Includes:
+            <span class="removeBold">None</span>
+        </div>
+        @elseif (!empty($rentIncludesItems))
         <div class="col-md-12 col-12 pt-2 fw-bold"> Rent Includes:
             @foreach ($rentIncludesItems as $item)
                 <span class="removeBold badge bg-secondary">{{ $item }}</span>
@@ -1312,21 +1326,18 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             ];
         @endphp
         @if (!empty($photoEnhancements))
-        <div class="col-md-12 col-12 pt-2">
-            <div class="mt-3">
-                <strong>📸 Digital Photo Enhancements</strong>
-                <ul class="services">
-                    @foreach ($enhancementOrder as $enhancement)
-                        @if (in_array($enhancement, $photoEnhancements))
-                            @if ($enhancement === 'Other' && !empty($customEnhancement))
-                                <li style="font-size: 16px;">{{ $customEnhancement }}</li>
-                            @elseif ($enhancement !== 'Other')
-                                <li style="font-size: 16px;">{{ $enhancement }}</li>
-                            @endif
+        <div class="col-md-12 col-12 pt-2 fw-bold"> Provide digital photo enhancements:
+            <ul class="services" style="margin-top: 4px; margin-bottom: 0;">
+                @foreach ($enhancementOrder as $enhancement)
+                    @if (in_array($enhancement, $photoEnhancements))
+                        @if ($enhancement === 'Other' && !empty($customEnhancement))
+                            <li style="font-size: 16px; font-weight: normal;">{{ $customEnhancement }}</li>
+                        @elseif ($enhancement !== 'Other')
+                            <li style="font-size: 16px; font-weight: normal;">{{ $enhancement }}</li>
                         @endif
-                    @endforeach
-                </ul>
-            </div>
+                    @endif
+                @endforeach
+            </ul>
         </div>
         @endif
         <hr>
@@ -1421,7 +1432,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
 
-        @if (@$auction->get->tenant_broker_commission_structure != 'no_compensation')
+        @if (@$auction->get->tenant_broker_commission_structure != 'no_compensation' && @$auction->get->tenant_broker_commission_structure != "No Compensation Offered to the Tenant's Broker")
         @php
             // Build combined Tenant's Broker Fee display
             $tenantFeeType = $canon(@$auction->get->tenant_broker_fee_structure ?? '');
@@ -1458,6 +1469,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @if (@$auction->get->broker_fee_timing != null)
         @php
             $paymentTimingDisplay = @$auction->get->broker_fee_timing;
+            
+            $paymentTimingMap = [
+                'full_execution' => 'Full amount upon execution of lease, sales contract, or other transfer agreement',
+            ];
+            if (isset($paymentTimingMap[$paymentTimingDisplay])) {
+                $paymentTimingDisplay = $paymentTimingMap[$paymentTimingDisplay];
+            }
             
             if ($paymentTimingDisplay === 'other' || $paymentTimingDisplay === 'Other') {
                 $paymentTimingDisplay = @$auction->get->broker_fee_timing_other ?? '';
@@ -1680,14 +1698,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @if ($isResidential && @$auction->get->early_termination_fee_option != null)
         <div class="col-md-12 col-12 pt-2 fw-bold">
             Early Termination Fee:
-            <span class="removeBold">{{ $auction->get->early_termination_fee_option == 'yes' ? 'Yes' : 'No' }}</span>
-        </div>
-        @endif
-
-        @if ($isResidential && @$auction->get->early_termination_fee_option == 'yes' && @$auction->get->early_termination_fee_amount != null)
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Termination Fee Amount:
-            <span class="removeBold">{{ $fmtMoney($auction->get->early_termination_fee_amount) }}</span>
+            <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(
+                $auction->get->early_termination_fee_option == 'yes' ? 'Yes' : 'No',
+                $auction->get->early_termination_fee_option == 'yes' && @$auction->get->early_termination_fee_amount ? $fmtMoney($auction->get->early_termination_fee_amount) : null
+            ) }}</span>
         </div>
         @endif
 

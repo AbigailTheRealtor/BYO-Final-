@@ -1,0 +1,88 @@
+Hire a Landlord Edits:  i need instructions with safeguards
+
+Property Condition is not showing on listing
+
+
+instead of Pet Types: It should be Acceptable Pet Types: on listing 
+Instead of Pet Weight (lbs): it should be Maximum Weight Per Pet (lbs): 
+
+Rent Includes: Even though None was selected it doesn't show on listing 
+
+
+Digital Photo Enhancements section should be direction under Provide digital photo enhancement like it is on the actual listing. These are sub questions of Provide digital photo enhancements  Take format from Seller listings as its same options 
+
+
+Early Termination Fee: if user selects yes on actual listing it should just show 
+Yes ($400) 
+
+instead of 
+
+ Early Termination Fee: Yes
+Termination Fee Amount: $400 
+
+if user selects No it should just show No with no amount.
+
+Tenant's Broker Commission Structure:
+if user selects No Compensation Offered to Tenant's Broker then Tenant's Broker Commission Fee should not show on listing. Right now i previously filled that out but changed selections and it still showed that
+
+
+
+Additional Details Tab is missing on Actual listing 
+
+
+Payment Timing for Broker Fees:
+
+Although I selected Full amount upon execution of lease, sales contract, or other transfer agreement on actual listing it shows:
+ full_execution
+
+
+it needs to be changed to what is selected which is  Full amount upon execution of lease, sales contract, or other transfer agreement
+
+
+
+Fix the actual listing display for Hire a Landlord’s Agent listings (Commercial only) when Leasing Space is selected. Do not rename or delete any database columns. Do not delete or modify any existing listings, drafts, or agent bids. Do not change labels, tooltips, or option values. Only modify the display logic for Hire a Landlord’s Agent listings.
+
+In the Hire a Landlord’s Agent listing display row builder, remove any logic that merges leasing-space row sets or prints all non-empty leasing-space fields. Add strict gating based on leasing_space.
+
+If leasing_space = Single Room, display only these fields in this exact order:
+Leasing Space,
+Guests are,
+Restrictions Include,
+Shared Areas Available,
+Maintenance and Repairs Are Handled By,
+Maintenance Response Time,
+Utilities,
+Common Area Maintenance,
+Included Storage Space,
+Storage Space Size,
+Bathroom Facilities,
+Approximate Room Size.
+
+Do not display Shared Amenities Include, Building Hours, 24/7 Access Available, Zoning Allows, Space Features, or Neighboring Tenants Include for Single Room.
+
+If leasing_space = Entire Property, display only these fields in this exact order:
+Leasing Space,
+Restrictions Include,
+Maintenance and Repairs Are Handled By,
+Maintenance Response Time,
+Included Storage Space,
+Storage Space Size,
+Shared Amenities Include,
+Building Hours,
+24/7 Access Available,
+Zoning Allows,
+Space Features,
+Neighboring Tenants Include.
+
+Do not display Guests are, Shared Areas Available, Utilities, Common Area Maintenance, Bathroom Facilities, or Approximate Room Size for Entire Property.
+
+Implement deduping by storing rows in an associative array keyed by stable field keys so each field can render only once. Ensure Restrictions Include is pulled from the same saved field used by the form and renders only once. Do not modify any other listing types or workflows.
+
+---
+
+That makes it crystal clear this is:
+
+Hire a Landlord’s Agent
+Commercial only
+Display logic only
+Non destructive
