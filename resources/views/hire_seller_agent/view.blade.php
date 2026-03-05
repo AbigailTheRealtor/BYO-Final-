@@ -452,7 +452,6 @@
                                 </div>
                             @endif
 
-                            @if ($propType !== 'Vacant Land')
                             @php
                                 $condRaw = @$auction->get->condition_prop_buyer ?? @$auction->get->condition_prop;
                                 $condOther = @$auction->get->other_property_condition;
@@ -483,7 +482,6 @@
                                 Property Condition:
                                 <span class="removeBold">{{ implode(', ', $conditionItems) }}</span>
                             </div>
-                            @endif
                             @endif
 
                             @if (in_array($propType, ['Residential']))
@@ -1171,8 +1169,28 @@
                                                                 $otherVal = $field['other_value'] ?? 'Other';
                                                                 $otherKey = $field['other_key'] ?? '';
                                                                 $otherText = $getVal($otherKey);
+                                                                $isMultiBadge = !empty($field['multi']);
+                                                                $badgeItems = [];
+                                                                if ($isMultiBadge) {
+                                                                    $rawB = $fieldVal;
+                                                                    if (is_string($rawB)) {
+                                                                        $decodedB = json_decode(str_replace('&quot;', '"', $rawB), true);
+                                                                        $badgeItems = is_array($decodedB) ? $decodedB : ($rawB !== '' ? [$rawB] : []);
+                                                                    } else {
+                                                                        $badgeItems = is_array($rawB) ? $rawB : [];
+                                                                    }
+                                                                }
                                                             @endphp
-                                                            @if ($fieldVal === $otherVal && !empty($otherText))
+                                                            @if ($isMultiBadge)
+                                                                @foreach ($badgeItems as $bItem)
+                                                                    @php $bItem = trim(str_replace('"', '', (string) $bItem)); @endphp
+                                                                    @if ($bItem === $otherVal && !empty($otherText))
+                                                                        <span class="removeBold badge bg-secondary">{{ trim($otherText) }}</span>
+                                                                    @elseif ($bItem !== '')
+                                                                        <span class="removeBold badge bg-secondary">{{ $bItem }}</span>
+                                                                    @endif
+                                                                @endforeach
+                                                            @elseif ($fieldVal === $otherVal && !empty($otherText))
                                                                 <span class="removeBold badge bg-secondary">{{ $otherText }}</span>
                                                             @else
                                                                 <span class="removeBold badge bg-secondary">{{ str_replace('"', '', $fieldVal) }}</span>
@@ -2152,6 +2170,14 @@
                                     <span class="removeBold">
                                         <img src="{{ asset('storage/auction/images/' . $auction->get->photo) }}"
                                             style="width:100%;height:29vh;" />
+                                    </span>
+                                </div>
+                            @endif
+
+                            @if (!empty($auction->get->video_link))
+                                <div class="col-md-12 col-12 pt-2 fw-bold">Personal Video:
+                                    <span class="removeBold">
+                                        <a href="{{ $auction->get->video_link }}" target="_blank" rel="noopener noreferrer">{{ $auction->get->video_link }}</a>
                                     </span>
                                 </div>
                             @endif

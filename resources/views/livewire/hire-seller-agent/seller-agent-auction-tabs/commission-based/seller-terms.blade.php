@@ -701,8 +701,8 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
 
-        <div class="input-cover">
-            <select wire:model="exchange_item" class="form-control has-icon" data-icon="fa-solid fa-exchange-alt" multiple size="4">
+        <div class="input-cover" wire:ignore>
+            <select wire:model="exchange_item" id="exchange_item" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-exchange-alt" multiple>
                 <option value="Another Home">Another Home</option>
                 <option value="Artwork">Artwork</option>
                 <option value="Boat">Boat</option>

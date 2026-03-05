@@ -78,7 +78,7 @@ return [
                 [
                     'key' => 'exchange_item',
                     'label' => 'Acceptable Exchange Item',
-                    'format' => 'text_or_other',
+                    'format' => 'badge_or_other',
                     'other_value' => 'Other',
                     'other_key' => 'other_exchange_item',
                     'multi' => true,

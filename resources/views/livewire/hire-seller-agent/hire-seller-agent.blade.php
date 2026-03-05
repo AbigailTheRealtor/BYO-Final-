@@ -1015,6 +1015,7 @@
                 property_items: '#property_items',
                 non_negotiable_amenities: '#non_negotiable_amenities',
                 appliances: '#appliances',
+                exchange_item: '#exchange_item',
             };
             Object.entries(fields).forEach(function([field, selector]) {
                 var el = $(selector);

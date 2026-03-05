@@ -871,6 +871,7 @@
             var fields = {
                 property_items: '#property_items',
                 non_negotiable_amenities: '#non_negotiable_amenities',
+                exchange_item: '#exchange_item',
             };
             Object.entries(fields).forEach(function([field, selector]) {
                 var el = $(selector);

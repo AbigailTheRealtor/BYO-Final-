@@ -1,0 +1,159 @@
+Copy/paste this to Replit — it’s the **Seller-only “finish what’s missing” revision**, with your updated requirements (including **Acceptable Exchange Item = same selection UI as Special Sale Provision**, and **bubble format on listing view**).
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS (SELLER ONLY) — FINISH REMAINING ITEMS
+
+### SAFEGUARDS (HARD RULES)
+
+1. Apply changes **ONLY** to **Hire A Seller’s Agent** create/edit/show + Seller listing display.
+2. **Do NOT modify Tenant, Buyer, or Landlord flows.**
+3. **Do NOT rename or delete any database columns.**
+4. **Do NOT delete or modify existing listings, drafts, or agent bids.**
+5. **Do NOT change labels, tooltips, or option values.**
+6. No global UI refactors. Only targeted fixes below.
+7. Backwards compatible with existing saved data (string/JSON/array).
+
+---
+
+# 1) FIX: Property Condition not showing on actual Seller listing display
+
+### Goal
+
+Property Condition must render on the Seller public listing view whenever a value exists.
+
+### Requirements
+
+* Identify the Seller listing display template that outputs fields (same template where Special Sale Provision displays).
+* Add/restore a “Property Condition” row.
+* Must support existing stored formats:
+
+  * If stored as string: display it
+  * If stored as JSON string: decode to array and display
+  * If stored as array/cast: display
+* Output formatting:
+
+  * Use the same **plain text** style used for normal fields (not bubble unless the rest of that section uses bubbles).
+* Confirm it appears for BOTH Residential and other Seller property types.
+
+**Acceptance test:** Open a Seller listing that has Property Condition saved → it must show.
+
+---
+
+# 2) CHANGE: Acceptable Exchange Item selection UI must match Special Sale Provision (Seller create/edit)
+
+### Goal
+
+On Seller listing creation/edit screens, **Acceptable Exchange Item** must use the **exact same input type/UX pattern** as **Special Sale Provision**.
+
+### Requirements
+
+* Do NOT invent a new selection component.
+* Reuse the same selection style:
+
+  * If Special Sale Provision is a checkbox list → make Acceptable Exchange Item the same kind of checkbox list.
+  * If Special Sale Provision is a multi-select dropdown → make Acceptable Exchange Item the same.
+  * If Special Sale Provision uses Select2 multi → do the same.
+* Keep all option values unchanged; only change the control type.
+
+### Saving requirements (critical)
+
+* Ensure Acceptable Exchange Item saves and loads correctly in:
+
+  * create
+  * drafts
+  * edit
+* Store format must remain compatible with current data:
+
+  * if currently stored as JSON array, keep it
+  * normalize on save:
+
+    * null → `[]`
+    * JSON string → decode to array
+    * string single-value → convert to `[string]` if needed for consistency (but do NOT break old data)
+
+**Acceptance test:** Create Seller listing, select multiple exchange items, save, reload edit → selections remain checked/selected.
+
+---
+
+# 3) DISPLAY: Acceptable Exchange Item must be bubble format on actual Seller listing view
+
+### Goal
+
+On the Seller public listing display, show Acceptable Exchange Item as **bubbles/chips**, like the listings that use bubble formatting.
+
+### Requirements
+
+* In Seller listing display template:
+
+  * Decode Acceptable Exchange Item into an array of strings
+  * Render each item as a bubble/chip using the **same markup/classes** used by bubble fields elsewhere (the same bubble style used on that view for other bubble fields).
+* If no values, do not show the row.
+
+**Acceptance test:** Listing view shows Acceptable Exchange Item as bubbles (not plain text).
+
+---
+
+# 4) FIX: Additional Details tab is missing (Seller create/edit)
+
+### Goal
+
+Restore the **Additional Details** tab in the Seller listing workflow.
+
+### Requirements
+
+* Restore BOTH:
+
+  1. the tab navigation button
+  2. the tab content panel
+* Ensure the tab appears in Seller create AND Seller edit.
+* Ensure tab target id/href matches the panel id.
+* Do NOT change tab order or other tab logic; just restore what’s missing.
+
+**Acceptance test:** Seller create/edit shows the Additional Details tab and it opens normally.
+
+---
+
+# 5) FIX: Personal Video not showing on listing display even though saved
+
+### Goal
+
+If a Personal Video link was entered and saved, it must show on the Seller public listing view.
+
+### Requirements
+
+1. Confirm the field is actually being saved:
+
+   * On save, do NOT overwrite the video URL with null/blank if user doesn’t re-enter it on edit.
+   * Preserve existing value unless user explicitly replaces it.
+
+2. Listing display:
+
+   * If Personal Video URL exists, render it as a clickable link (open in new tab).
+   * If the UI elsewhere supports embedding, embedding is optional — link display is required.
+
+3. Backwards compatibility:
+
+   * If older listings stored it under a different key, support both keys (only if such a key exists in codebase — don’t guess new schema).
+
+**Acceptance test:** Create listing with a video URL → listing view shows “Personal Video” with clickable link. Edit listing without touching video → still shows.
+
+---
+
+# FINAL ACCEPTANCE CHECKLIST
+
+After changes, verify on a real Seller listing:
+
+* ✅ Property Condition shows
+* ✅ Acceptable Exchange Item uses same selection UI as Special Sale Provision on create/edit
+* ✅ Acceptable Exchange Item displays as bubbles on listing view
+* ✅ Additional Details tab appears and works
+* ✅ Personal Video shows on listing view and persists through multiple edits
+
+---
+
+If you want to make Replit **fail-safe**, add this line at the top of your prompt:
+
+**“Before coding, identify the Seller listing display template by locating where ‘Special Sale Provision’ is rendered on the public listing view, and implement Acceptable Exchange Item + Property Condition in that same template. Do not touch Tenant templates.”**
+
+That one sentence forces it into the correct context without you having to name files.
