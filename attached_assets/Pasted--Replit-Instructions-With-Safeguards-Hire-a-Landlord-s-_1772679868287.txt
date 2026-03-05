@@ -1,0 +1,165 @@
+## Replit Instructions With Safeguards
+
+### Hire a Landlord’s Agent — **Commercial** Listing Display (Leasing Space = Single Room) fix order + show missing fields
+
+**Do NOT rename or delete any database columns.**
+**Do NOT delete or modify any existing listings, drafts, or agent bids.**
+**Do NOT change labels, tooltips, or option values.**
+**Only modify the actual listing display logic for Hire a Landlord’s Agent listings (Commercial only).**
+
+---
+
+# Problem (current incorrect output)
+
+For Commercial Single Room, the listing is currently showing:
+
+* Leasing Space (this is fine)
+* Guests are (shows)
+* Maintenance/Repairs (shows)
+* Maintenance Response Time (shows)
+* Utilities (shows)
+* Included Storage Space (shows)
+* Storage Space Size (shows)
+* Bathroom Facilities (shows)
+* Approx Room Size (shows)
+
+But it is **missing**:
+
+* **Restrictions Include**
+* **Shared Areas Available**
+* **Common Area Maintenance**
+
+And the order must match your required creation order.
+
+---
+
+# Correct Required Order (Commercial — Single Room)
+
+When `leasing_space = "Single Room"` on **Commercial** Hire a Landlord’s Agent listing display, show fields in this exact order:
+
+1. **Leasing Space** (keep this first as the header row)
+2. **Guests are**
+3. **Restrictions Include**
+4. **Shared Areas Available**
+5. **Maintenance and Repairs Are Handled By**
+6. **Maintenance Response Time**
+7. **Utilities**
+8. **Common Area Maintenance**
+9. **Included Storage Space**
+10. **Storage Space Size**
+11. **Bathroom Facilities**
+12. **Approximate Room Size**
+
+---
+
+# Implementation Requirements (Display Row Builder Only)
+
+## Step 1 — Strict gating for Commercial + Single Room
+
+In the Hire a Landlord’s Agent **Commercial listing display row builder** (Leasing Space section):
+
+* Add strict conditional:
+
+  * If listing is **Commercial** AND `leasing_space === 'Single Room'`
+  * Then render ONLY from the fixed ordered list (Step 3)
+
+**Safeguard:** Do not affect Residential or other leasing_space values.
+
+---
+
+## Step 2 — Remove “print non-empty leasing fields” and any merged row logic
+
+Remove any logic that:
+
+* loops all leasing-space fields and prints non-empty ones
+* merges multiple leasing-space row sets
+* appends “remaining” fields after the ordered ones
+
+**Reason:** This is what causes wrong order and missing fields.
+
+---
+
+## Step 3 — Implement deduping rows keyed by stable field keys
+
+Build `$rows = [];` as an associative array.
+
+For each field:
+
+* compute the value from the **same saved property used by the form**
+* add it once:
+
+  * `if (!isset($rows[$key]) && filled($value)) { $rows[$key] = ['label'=>..., 'value'=>...]; }`
+
+**Safeguard:** This prevents duplicate render and makes order deterministic.
+
+---
+
+## Step 4 — Force exact order via an explicit ordered key list
+
+Create the explicit order list for Commercial Single Room:
+
+`$order = [`
+
+* `leasing_space,`
+* `guests_are,`
+* `restrictions_include,`
+* `shared_areas_available,`
+* `maintenance_repairs_handled_by,`
+* `maintenance_response_time,`
+* `utilities,`
+* `common_area_maintenance,`
+* `included_storage_space,`
+* `storage_space_size,`
+* `bathroom_facilities,`
+* `approx_room_size`
+  `];`
+
+Render by iterating `$order` only.
+
+**Safeguard:** Do not sort. Do not auto-append other fields.
+
+---
+
+## Step 5 — Fix the three missing fields by mapping to the correct saved properties
+
+The listing is missing these three, which almost always means the display is referencing the wrong property names (or not including them in the Commercial Single Room block):
+
+### Must render when filled:
+
+* **Restrictions Include**
+* **Shared Areas Available**
+* **Common Area Maintenance**
+
+**Replit must:**
+
+1. Locate the exact form-bound properties for these in the Commercial Single Room creation/edit UI (the Livewire property names used in the blade).
+2. Use those exact same properties in the display builder mapping.
+
+**Safeguards**
+
+* Do not rename DB columns
+* Do not change the form
+* Only change which properties the display reads
+
+---
+
+# Validation / QA (must pass)
+
+1. Create or edit a **Commercial** landlord listing:
+
+* Leasing Space = Single Room
+* Fill **Restrictions Include**, **Shared Areas Available**, **Common Area Maintenance**
+
+2. View listing:
+   ✅ All fields show
+   ✅ Order matches exactly
+   ✅ No duplicates
+   ✅ No extra leasing-space fields appear
+
+---
+
+## Copy/Paste Prompt for Replit AI
+
+“Commercial only: Fix Hire a Landlord’s Agent listing display when leasing_space = ‘Single Room’. Do not rename/delete DB columns, do not modify listings/drafts/bids, do not change labels/tooltips/option values. In the landlord listing display row builder, remove any logic that merges leasing-space row sets or prints all non-empty leasing-space fields. Add strict gating for Commercial + leasing_space = Single Room, implement deduping via associative array keyed by stable field keys, and render ONLY in this exact order: Leasing Space, Guests are, Restrictions Include, Shared Areas Available, Maintenance and Repairs Are Handled By, Maintenance Response Time, Utilities, Common Area Maintenance, Included Storage Space, Storage Space Size, Bathroom Facilities, Approximate Room Size. Ensure Restrictions Include, Shared Areas Available, and Common Area Maintenance are pulled from the same saved properties used by the form so they are not missing.”
+
+If you paste the **field names used in the form** for those 3 missing items (the Livewire property names), I can make the prompt even tighter by explicitly telling Replit which property to read for each label, so it doesn’t guess wrong.
