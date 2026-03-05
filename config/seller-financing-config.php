@@ -43,7 +43,7 @@ return [
                 [
                     'key' => 'assumable_occupancy_requirement',
                     'label' => 'Occupancy Requirement',
-                    'format' => 'badge_or_other',
+                    'format' => 'text_or_other',
                     'other_value' => 'Other',
                     'other_key' => 'assumable_occupancy_other',
                 ],
@@ -64,7 +64,7 @@ return [
                 [
                     'key' => 'crypto_transfer_timing',
                     'label' => 'Timing of Transfer',
-                    'format' => 'badge_or_other',
+                    'format' => 'text_or_other',
                     'other_value' => 'Other',
                     'other_key' => 'crypto_transfer_timing_other',
                 ],
@@ -78,9 +78,10 @@ return [
                 [
                     'key' => 'exchange_item',
                     'label' => 'Acceptable Exchange Item',
-                    'format' => 'badge_or_other',
+                    'format' => 'text_or_other',
                     'other_value' => 'Other',
                     'other_key' => 'other_exchange_item',
+                    'multi' => true,
                 ],
                 ['key' => 'exchange_item_value', 'label' => 'Estimated Value of Exchange/Trade Item', 'format' => 'money'],
                 ['key' => 'exchange_item_condition', 'label' => 'Acceptable Condition of Exchange/Trade Item', 'format' => 'text'],

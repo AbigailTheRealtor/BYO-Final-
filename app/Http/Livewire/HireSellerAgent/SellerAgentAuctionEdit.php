@@ -88,7 +88,7 @@ class SellerAgentAuctionEdit extends Component
     public $gap_payment_amount = '';
 
     // Exchange/Trade Properties
-    public $exchange_item = '';
+    public $exchange_item = [];
     public $other_exchange_item = '';
     public $exchange_item_value = '';
     public $exchange_item_condition = '';
@@ -1054,7 +1054,13 @@ class SellerAgentAuctionEdit extends Component
             $this->gap_payment_amount = $auction->get->gap_payment_amount;
 
             // Exchange/Trade
-            $this->exchange_item = $auction->get->exchange_item;
+            $rawExchangeItem = $auction->get->exchange_item ?? '';
+            if (is_string($rawExchangeItem)) {
+                $decoded = json_decode($rawExchangeItem, true);
+                $this->exchange_item = is_array($decoded) ? $decoded : ($rawExchangeItem !== '' ? [$rawExchangeItem] : []);
+            } else {
+                $this->exchange_item = (array) $rawExchangeItem;
+            }
             $this->other_exchange_item = $auction->get->other_exchange_item;
             $this->exchange_item_value = $auction->get->exchange_item_value;
             $this->exchange_item_condition = $auction->get->exchange_item_condition;
@@ -1199,6 +1205,7 @@ class SellerAgentAuctionEdit extends Component
             $this->email = $auction->get->email;
             $this->video_link = $auction->get->video_link;
             $this->photo = $auction->get->photo ?? null;
+            $this->video = $auction->get->video ?? null;
 
             // Location and meeting details
             $this->person_meeting = $auction->get->person_meeting;
@@ -1384,7 +1391,10 @@ class SellerAgentAuctionEdit extends Component
         $auction->saveMeta('gap_payment_amount', $this->gap_payment_amount);
 
         // Exchange / Trade
-        $auction->saveMeta('exchange_item', $this->exchange_item);
+        $exchangeItemVal = $this->exchange_item;
+        if (is_null($exchangeItemVal)) $exchangeItemVal = [];
+        if (is_string($exchangeItemVal)) $exchangeItemVal = json_decode($exchangeItemVal, true) ?? [];
+        $auction->saveMeta('exchange_item', json_encode(array_values(array_filter((array) $exchangeItemVal))));
         $auction->saveMeta('other_exchange_item', $this->other_exchange_item);
         $auction->saveMeta('exchange_item_value', $this->exchange_item_value);
         $auction->saveMeta('exchange_item_condition', $this->exchange_item_condition);

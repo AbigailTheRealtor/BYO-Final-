@@ -702,8 +702,7 @@
         </span>
 
         <div class="input-cover">
-            <select wire:model="exchange_item" class="form-control has-icon" data-icon="fa-solid fa-exchange-alt">
-                <option value="">Select</option>
+            <select wire:model="exchange_item" class="form-control has-icon" data-icon="fa-solid fa-exchange-alt" multiple size="4">
                 <option value="Another Home">Another Home</option>
                 <option value="Artwork">Artwork</option>
                 <option value="Boat">Boat</option>
@@ -715,7 +714,7 @@
         </div>
     </div>
 
-    @if ($exchange_item === 'Other')
+    @if (is_array($exchange_item) ? in_array('Other', $exchange_item) : $exchange_item === 'Other')
         <div class="form-group">
             <div class="input-cover">
                 <input type="text" wire:model="other_exchange_item" class="form-control has-icon"

@@ -1183,8 +1183,30 @@
                                                                 $otherVal = $field['other_value'] ?? 'Other';
                                                                 $otherKey = $field['other_key'] ?? '';
                                                                 $otherText = $getVal($otherKey);
+                                                                $isMulti = !empty($field['multi']);
+                                                                $multiItems = [];
+                                                                if ($isMulti) {
+                                                                    $raw = $fieldVal;
+                                                                    if (is_string($raw)) {
+                                                                        $decoded = json_decode(str_replace('&quot;', '"', $raw), true);
+                                                                        $multiItems = is_array($decoded) ? $decoded : ($raw !== '' ? [$raw] : []);
+                                                                    } else {
+                                                                        $multiItems = is_array($raw) ? $raw : [];
+                                                                    }
+                                                                    $displayItems = [];
+                                                                    foreach ($multiItems as $mi) {
+                                                                        $mi = trim(str_replace('"', '', (string) $mi));
+                                                                        if ($mi === $otherVal && !empty($otherText)) {
+                                                                            $displayItems[] = trim($otherText);
+                                                                        } elseif ($mi !== '') {
+                                                                            $displayItems[] = $mi;
+                                                                        }
+                                                                    }
+                                                                }
                                                             @endphp
-                                                            @if ($fieldVal === $otherVal && !empty($otherText))
+                                                            @if ($isMulti)
+                                                                <span class="removeBold">{{ implode(', ', $displayItems) }}</span>
+                                                            @elseif ($fieldVal === $otherVal && !empty($otherText))
                                                                 <span class="removeBold">{{ $otherText }}</span>
                                                             @else
                                                                 <span class="removeBold">{{ str_replace('"', '', $fieldVal) }}</span>
