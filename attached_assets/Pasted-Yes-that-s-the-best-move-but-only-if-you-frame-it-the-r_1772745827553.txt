@@ -1,0 +1,103 @@
+Yes — **that’s the best move**, but only if you frame it the right way so Replit doesn’t go on another 24-minute expedition.
+
+The goal isn’t “go study Special Sale Provision.” The goal is:
+
+**“Copy the exact working pattern (input name → request key → save normalization → edit preload) used by Special Sale Provision, and apply that same pattern to Acceptable Exchange Item — Seller only.”**
+
+Here’s the exact **copy-paste** prompt to use (tight + cost-controlled):
+
+---
+
+## REPLIT INSTRUCTIONS (SELLER ONLY) — Make “Acceptable Exchange Item” behave exactly like “Special Sale Provision” in Create/Draft/Edit
+
+### HARD SAFEGUARDS
+
+1. **Do NOT trace architecture, routes, or components.**
+2. **Do NOT touch Tenant/Buyer/Landlord.**
+3. **Do NOT change financing logic or any other fields.**
+4. **Do NOT change DB schema.**
+5. **Touch only the minimum code needed** to make Acceptable Exchange Item **save + preload** exactly like Special Sale Provision.
+6. If you can’t implement using the Special Sale Provision pattern in **≤ 10 minutes**, **STOP** and report what prevented it.
+
+---
+
+### TASK
+
+**Acceptable Exchange Item is still blank on Edit** even when previously saved.
+**Special Sale Provision correctly autopopulates** in drafts/edits.
+
+### WHAT TO DO (SINGLE BUG, SINGLE PATTERN COPY)
+
+1. In the **Seller create/edit** code, locate the **exact field implementation for “Special Sale Provision”**:
+
+   * the input `name=...` (or Livewire property)
+   * how it is saved (request key / metadata key)
+   * how it is preloaded on edit (old() fallback, metadata decode, etc.)
+
+2. Without changing Special Sale Provision, **mirror that exact pattern** for:
+
+   * **Acceptable Exchange Item** (Exchange/Trade section)
+
+3. Specifically verify these 4 things match the working pattern:
+
+   * **Input name** matches what the save handler reads
+   * Save handler writes to the **same key** edit form reads
+   * Saved format matches what edit expects (string vs array vs JSON)
+   * Edit uses the same “old() / fallback / decode” method that Special Sale Provision uses
+
+---
+
+### IMPORTANT CONSTRAINT (THIS IS WHY IT’S STILL BROKEN)
+
+Do **NOT** assume the problem is “wipe on hidden.”
+Instead, treat it like a **key mismatch or format mismatch**, because:
+
+* If the edit blade truly preloads correctly, it would show *something*.
+* If it shows blank, either:
+
+  * edit is reading the wrong key, OR
+  * the saved value is in a different format than the edit expects, OR
+  * the input name isn’t the one being saved/loaded.
+
+So the fix must be: **make Acceptable Exchange Item identical to Special Sale Provision end-to-end**.
+
+---
+
+### ACCEPTANCE TEST (MUST PASS)
+
+1. Create Seller listing, choose Acceptable Exchange Item, save.
+2. Edit listing.
+   ✅ Acceptable Exchange Item shows the saved selection(s) just like Special Sale Provision.
+3. Save edit without touching it.
+4. Edit again.
+   ✅ Still autopopulates.
+
+---
+
+### STOP RULE
+
+If Special Sale Provision is implemented in a different flow than Acceptable Exchange Item (e.g., Livewire vs controller) and copying the pattern would require rewiring flows, **STOP** and report:
+
+* where Special Sale Provision is saved/loaded
+* where Acceptable Exchange Item is saved/loaded
+* the mismatch (key/format/binding)
+  No refactors, no additional fixes.
+
+---
+
+### One thing to add (optional, but powerful)
+
+Ask Replit to output a tiny “diff summary” at the end:
+
+* “Changed Acceptable Exchange Item: input name = X, saves key = Y, edit loads key = Y, storage format = Z”
+  Nothing else.
+
+---
+
+If you want to *guarantee* Replit nails this in one shot, paste me **two screenshots or snippets**:
+
+1. the Seller edit form HTML for **Special Sale Provision**
+2. the Seller edit form HTML for **Acceptable Exchange Item**
+   (Just those blocks.)
+
+Then I’ll give you a **single-line key/format diagnosis** and an even more bulletproof prompt that tells Replit exactly what to change and nothing else.
