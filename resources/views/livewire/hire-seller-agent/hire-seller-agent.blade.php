@@ -973,7 +973,7 @@
                     </div>
                     <div>
 
-                        <button type="button" class="btn btn-outline-primary me-2" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="saveDraft">
+                        <button type="button" class="btn btn-outline-primary me-2" onclick="syncAllSelect2BeforeSave(); @this.call('saveDraft');" wire:loading.attr="disabled" wire:target="saveDraft">
                             <span wire:loading.remove wire:target="saveDraft"><i class="fas fa-save me-1"></i> Save Draft</span>
                             <span wire:loading wire:target="saveDraft">Saving...</span>
                         </button>
@@ -1209,16 +1209,14 @@
                     $('#exchange_item').val(savedExchangeItems).trigger('change.select2');
                 }
                 $('#exchange_item').on('change', function(e) {
-                    let selectedValues = $(this).val();
-                    debouncedSet('exchange_item', selectedValues);
+                    var selectedValues = $(this).val() || [];
+                    @this.set('exchange_item', selectedValues);
                 });
             } else if ($('#exchange_item').length && $('#exchange_item').hasClass('select2-hidden-accessible')) {
                 var savedExchangeItems = @this.get('exchange_item') || [];
-                if (savedExchangeItems.length > 0) {
-                    var currentVal = $('#exchange_item').val() || [];
-                    if (currentVal.length === 0) {
-                        $('#exchange_item').val(savedExchangeItems).trigger('change.select2');
-                    }
+                var currentVal = $('#exchange_item').val() || [];
+                if (savedExchangeItems.length > 0 && currentVal.length === 0) {
+                    $('#exchange_item').val(savedExchangeItems).trigger('change.select2');
                 }
             }
 

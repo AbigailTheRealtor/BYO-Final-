@@ -968,16 +968,14 @@
                     $('#exchange_item').val(savedExchangeItems).trigger('change.select2');
                 }
                 $('#exchange_item').on('change', function(e) {
-                    let selectedValues = $(this).val();
-                    debouncedSet('exchange_item', selectedValues);
+                    var selectedValues = $(this).val() || [];
+                    @this.set('exchange_item', selectedValues);
                 });
             } else if ($('#exchange_item').length && $('#exchange_item').hasClass('select2-hidden-accessible')) {
                 var savedExchangeItems = @this.get('exchange_item') || [];
-                if (savedExchangeItems.length > 0) {
-                    var currentVal = $('#exchange_item').val() || [];
-                    if (currentVal.length === 0) {
-                        $('#exchange_item').val(savedExchangeItems).trigger('change.select2');
-                    }
+                var currentVal = $('#exchange_item').val() || [];
+                if (savedExchangeItems.length > 0 && currentVal.length === 0) {
+                    $('#exchange_item').val(savedExchangeItems).trigger('change.select2');
                 }
             }
 
