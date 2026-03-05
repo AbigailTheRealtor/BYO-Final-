@@ -1,0 +1,148 @@
+If it’s **still** not working after that “don’t wipe if missing” guard, it usually means one of these is true:
+
+1. The edit input’s **name=** does **not** match what the controller reads (`exchange_item` vs `exchange_item[]` vs `acceptable_exchange_item`, etc.)
+2. The Exchange/Trade section is hidden and the browser **still submits an empty value**, so `$request->has('exchange_item')` is true but it’s empty → you still end up overwriting
+3. The controller saves to one metadata key, but the edit blade reads from a **different key**
+
+Here are **surgical Replit instructions v2** that fix all 3 without “tracing architecture” or editing a bunch of files.
+
+---
+
+## REPLIT INSTRUCTIONS (SELLER ONLY) — Acceptable Exchange/Trade Edit autopopulate + no wipe
+
+### HARD SAFEGUARDS
+
+* **Do not trace routes/components.**
+* **Do not touch Tenant/Buyer/Landlord.**
+* **Do not change financing logic or other keys.**
+* Touch **ONLY**:
+
+  1. Seller edit blade line(s) for the Acceptable Exchange Item input
+  2. Seller update controller save block for exchange fields
+
+---
+
+## 1) Fix the SAVE logic so it NEVER overwrites unless user truly submitted a real value
+
+In `SellerAgentAuctionController::updateSellerAgentHireAuction()` (or the Seller update method you’re using), find the block that writes `exchange_item`.
+
+Replace the current logic with this pattern (this is the important part):
+
+```php
+// ---- Exchange/Trade: DO NOT WIPE EXISTING VALUES ----
+
+// Pull existing metadata array safely
+$metadata = is_array($auction->metadata ?? null) ? $auction->metadata : (json_decode($auction->metadata ?? '[]', true) ?: []);
+
+// Key name used in metadata (keep consistent everywhere)
+$key = 'exchange_item';
+
+// Determine if the request truly contains a meaningful exchange_item update
+$hasKey = $request->has($key);
+$raw = $request->input($key); // may be string, array, null
+
+// Normalize "empty" submissions (hidden section often submits "" or [] / "[]")
+$isMeaningful =
+    $hasKey &&
+    !($raw === null) &&
+    !(is_string($raw) && trim($raw) === '') &&
+    !(is_array($raw) && count(array_filter($raw, fn($v) => trim((string)$v) !== '')) === 0) &&
+    !(is_string($raw) && trim($raw) === '[]');
+
+if ($isMeaningful) {
+    // Normalize into array OR keep string depending on how your UI expects it
+    if (is_string($raw)) {
+        // If it's JSON array string, decode; otherwise treat as single string value
+        $decoded = json_decode($raw, true);
+        $value = is_array($decoded) ? $decoded : [$raw];
+    } elseif (is_array($raw)) {
+        $value = array_values(array_filter(array_map('trim', $raw), fn($v) => $v !== ''));
+    } else {
+        $value = [];
+    }
+
+    // Save in same format your display expects (recommended: JSON array)
+    $metadata[$key] = $value;
+    $auction->metadata = $metadata;
+    $auction->save();
+}
+
+// If NOT meaningful, do nothing (preserve existing saved value)
+```
+
+**Why this works:** even if the section is hidden and the browser submits `exchange_item=""` or `exchange_item=[]` or `exchange_item="[]"`, it will **NOT** overwrite the stored value.
+
+---
+
+## 2) Fix the EDIT input so it reads the exact same key and always preloads
+
+In the Seller edit blade where “Acceptable Exchange Item” renders, do **NOT** rely on `json_decode($val) ?? []` (that breaks legacy `"Other"`).
+
+Use this pattern:
+
+```php
+@php
+  $meta = $auction->metadata ?? [];
+  if (!is_array($meta)) { $meta = json_decode($meta, true) ?: []; }
+
+  $raw = $meta['exchange_item'] ?? null;
+
+  // Normalize saved value (array OR legacy string)
+  if (is_string($raw)) {
+      $try = json_decode($raw, true);
+      $items = is_array($try) ? $try : [$raw];
+  } elseif (is_array($raw)) {
+      $items = $raw;
+  } else {
+      $items = [];
+  }
+
+  // For a text input, show comma-separated
+  $exchangeItemText = implode(', ', array_filter(array_map('trim', $items)));
+@endphp
+```
+
+Then set the input value like:
+
+```html
+<input
+  type="text"
+  name="exchange_item"
+  value="{{ old('exchange_item', $exchangeItemText) }}"
+  class="form-control"
+/>
+```
+
+✅ This guarantees the edit field uses the **same key** (`exchange_item`) and always preloads, even if older data is stored as `"Other"`.
+
+---
+
+## 3) One-line consistency rule (prevents “wrong key” forever)
+
+* The edit input `name="exchange_item"`
+* The controller reads `$request->input('exchange_item')`
+* The metadata key is `$metadata['exchange_item']`
+
+All three must match exactly.
+
+---
+
+## Acceptance test
+
+1. Open a Seller listing that already has exchange_item saved
+2. Click Edit → field is populated
+3. Save without touching Exchange/Trade → value remains
+4. Edit again → still populated
+
+---
+
+### If it STILL doesn’t populate after this
+
+That almost certainly means the edit form’s input is not named `exchange_item` (or there are multiple inputs with same label but different names).
+
+Tell Replit to do **this one microscopic check only** (no repo-wide search):
+
+* In the Seller edit blade, find the “Acceptable Exchange Item” label and paste the **exact `<input ...>` line** (or `<select ...>` line) it corresponds to.
+  Then we’ll align the key in exactly one spot.
+
+But the code above is the tightest “won’t wipe + will preload” fix without letting it wander.

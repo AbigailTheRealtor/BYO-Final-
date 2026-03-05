@@ -382,12 +382,16 @@ class SellerAgentAuctionController extends Controller
             $auction->saveMeta('financings', json_encode($request->financings));
             $auction->saveMeta('offered_financing', json_encode($request->financings));
 
-            if ($request->has('exchange_item') && !empty($request->exchange_item)) {
-                $exchangeItems = $request->exchange_item;
-                if (is_array($exchangeItems)) {
-                    $exchangeItems = array_values(array_filter($exchangeItems));
-                }
-                $auction->saveMeta('exchange_item', json_encode($exchangeItems));
+            $rawExchange = $request->input('exchange_item');
+            $isMeaningful = false;
+            if (is_array($rawExchange)) {
+                $filtered = array_values(array_filter(array_map('trim', $rawExchange), fn($v) => $v !== ''));
+                $isMeaningful = count($filtered) > 0;
+            } elseif (is_string($rawExchange)) {
+                $isMeaningful = trim($rawExchange) !== '' && trim($rawExchange) !== '[]';
+            }
+            if ($isMeaningful) {
+                $auction->saveMeta('exchange_item', json_encode($filtered ?? [$rawExchange]));
                 $auction->saveMeta('other_exchange_item', $request->other_exchange_item);
                 $auction->saveMeta('exchange_item_value', $request->exchange_item_value);
                 $auction->saveMeta('exchange_item_condition', $request->exchange_item_condition);
