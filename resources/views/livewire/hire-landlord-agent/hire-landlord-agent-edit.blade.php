@@ -1126,6 +1126,7 @@ $tenantPays = [
 @push('scripts')
     <script>
         let currentServiceType = null;
+        let _lastInitTime = 0;
 
         window.addEventListener('force-redirect', function(event) {
             if (event.detail && event.detail.url) {
@@ -2353,15 +2354,19 @@ $tenantPays = [
         }
 
         Livewire.hook('message.processed', () => {
-            removeWizardEventListeners();
+            var now = Date.now();
+            if (now - _lastInitTime > 300) {
+                _lastInitTime = now;
+                removeWizardEventListeners();
 
-            if (currentServiceType === 'full_service') {
-                initializeFullService();
-            } else if (currentServiceType === 'limited_service') {
-                initializeLimitedService();
+                if (currentServiceType === 'full_service') {
+                    initializeFullService();
+                } else if (currentServiceType === 'limited_service') {
+                    initializeLimitedService();
+                }
+
+                addIconsToInputs();
             }
-
-            addIconsToInputs();
             checkRepresentationStatus();
         });
     </script>
@@ -2402,6 +2407,14 @@ $tenantPays = [
             }
 
             function isFieldValid(field) {
+                // Skip validation for fields inside hidden containers (conditional sections)
+                var el = field;
+                while (el && el !== document.body) {
+                    var style = window.getComputedStyle(el);
+                    if (style.display === 'none' || style.visibility === 'hidden') return true;
+                    if (el.classList && el.classList.contains('d-none')) return true;
+                    el = el.parentElement;
+                }
                 if (field.type === 'checkbox' || field.type === 'radio') {
                     return field.checked;
                 }
