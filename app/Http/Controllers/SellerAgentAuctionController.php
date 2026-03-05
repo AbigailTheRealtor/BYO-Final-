@@ -382,20 +382,22 @@ class SellerAgentAuctionController extends Controller
             $auction->saveMeta('financings', json_encode($request->financings));
             $auction->saveMeta('offered_financing', json_encode($request->financings));
 
-            $exchangeItems = $request->exchange_item;
-            if (is_array($exchangeItems)) {
-                $exchangeItems = array_values(array_filter($exchangeItems));
+            if ($request->has('exchange_item') && !empty($request->exchange_item)) {
+                $exchangeItems = $request->exchange_item;
+                if (is_array($exchangeItems)) {
+                    $exchangeItems = array_values(array_filter($exchangeItems));
+                }
+                $auction->saveMeta('exchange_item', json_encode($exchangeItems));
+                $auction->saveMeta('other_exchange_item', $request->other_exchange_item);
+                $auction->saveMeta('exchange_item_value', $request->exchange_item_value);
+                $auction->saveMeta('exchange_item_condition', $request->exchange_item_condition);
+                $auction->saveMeta('additional_cash', $request->additional_cash);
+                $auction->saveMeta('value_determination', $request->value_determination);
+                $auction->saveMeta('exchange_transfer_method', $request->exchange_transfer_method);
+                $auction->saveMeta('exchange_liens_disclosure', $request->exchange_liens_disclosure);
+                $auction->saveMeta('exchange_liens_details', $request->exchange_liens_details);
+                $auction->saveMeta('exchange_inspection_rights', $request->exchange_inspection_rights);
             }
-            $auction->saveMeta('exchange_item', json_encode($exchangeItems ?? []));
-            $auction->saveMeta('other_exchange_item', $request->other_exchange_item);
-            $auction->saveMeta('exchange_item_value', $request->exchange_item_value);
-            $auction->saveMeta('exchange_item_condition', $request->exchange_item_condition);
-            $auction->saveMeta('additional_cash', $request->additional_cash);
-            $auction->saveMeta('value_determination', $request->value_determination);
-            $auction->saveMeta('exchange_transfer_method', $request->exchange_transfer_method);
-            $auction->saveMeta('exchange_liens_disclosure', $request->exchange_liens_disclosure);
-            $auction->saveMeta('exchange_liens_details', $request->exchange_liens_details);
-            $auction->saveMeta('exchange_inspection_rights', $request->exchange_inspection_rights);
 
             $auction->saveMeta('description', $request->description);
             $auction->saveMeta('important_info', $request->important_info);
