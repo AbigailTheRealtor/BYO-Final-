@@ -657,14 +657,48 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
             @if ($isCommercial)
             @php
-                $parkingItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->garage_parking_spaces_option, @$auction->get->other_parking_space_wrapper);
+                $parkingRaw = @$auction->get->garage_parking_spaces_option;
+                $parkingOther = @$auction->get->other_parking_space_wrapper;
+                $parkingOtherStr = is_string($parkingOther) ? trim(trim((string)$parkingOther), '"') : '';
+                $parkingOtherHasValue = $parkingOtherStr !== '' && $parkingOtherStr !== 'null';
+                $parkingItems = [];
+                if (!empty($parkingRaw)) {
+                    if (is_string($parkingRaw)) {
+                        $decoded = json_decode($parkingRaw, true);
+                        $parkingItems = (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) ? $decoded : [$parkingRaw];
+                    } elseif (is_array($parkingRaw)) {
+                        $parkingItems = $parkingRaw;
+                    }
+                }
+                $parkingResult = [];
+                $foundParkingOther = false;
+                foreach ($parkingItems as $pItem) {
+                    $pVal = trim((string)$pItem);
+                    $pVal = trim($pVal, '"');
+                    if ($pVal === '' || \App\Helpers\ListingDisplayHelper::isPlaceholder($pVal)) continue;
+                    if (strtolower($pVal) === 'other') {
+                        $foundParkingOther = true;
+                        if ($parkingOtherHasValue) {
+                            $parkingResult[] = $parkingOtherStr;
+                        }
+                        continue;
+                    }
+                    $parkingResult[] = $pVal;
+                }
+                if (!$foundParkingOther && $parkingOtherHasValue) {
+                    $parkingResult[] = $parkingOtherStr;
+                }
             @endphp
-            @if (!empty($parkingItems))
+            @if (!empty($parkingResult))
             <div class="col-md-12 col-12 pt-2 fw-bold">
                 Garage/Parking Features:
-                @foreach ($parkingItems as $feature)
+                @if (count($parkingResult) === 1)
+                <span class="removeBold">{{ $parkingResult[0] }}</span>
+                @else
+                @foreach ($parkingResult as $feature)
                 <span class="removeBold badge bg-secondary">{{ $feature }}</span>
                 @endforeach
+                @endif
             </div>
             @endif
             @endif
