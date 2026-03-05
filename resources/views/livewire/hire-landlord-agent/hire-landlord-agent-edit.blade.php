@@ -997,7 +997,6 @@ $tenantPays = [
                                 @foreach (['Listing Details', 'Property Preferences', 'Leasing Terms', 'Services', 'Additional Details', 'Broker Compensation', 'LandLord Information'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
-                                            wire:click="setActiveTab({{ $index }})"
                                             id="{{ str_replace(' ', '-', strtolower($tab)) }}-tab" data-bs-toggle="tab"
                                             data-bs-target="#{{ str_replace(' ', '-', strtolower($tab)) }}"
                                             type="button" role="tab"
@@ -1013,7 +1012,6 @@ $tenantPays = [
                                 @foreach (['Listing Details', 'Location and Meeting Details', 'Service Selection and Pricing', 'Additional Details'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
-                                            wire:click="setActiveTab({{ $index }})"
                                             id="{{ str_replace(' ', '-', strtolower($tab)) }}-tab" data-bs-toggle="tab"
                                             data-bs-target="#{{ str_replace(' ', '-', strtolower($tab)) }}"
                                             type="button" role="tab"
@@ -1027,7 +1025,7 @@ $tenantPays = [
                                 <!-- Dynamic Information Tab Based on User Type -->
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(4)" id="information-tab" data-bs-toggle="tab"
+                                        id="information-tab" data-bs-toggle="tab"
                                         data-bs-target="#information" type="button" role="tab"
                                         aria-controls="information"
                                         aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
@@ -1127,12 +1125,26 @@ $tenantPays = [
     <script>
         let currentServiceType = null;
         let _lastInitTime = 0;
+        var __tabNavLock = false;
+        var __tabRestoreGuard = false;
 
         window.addEventListener('force-redirect', function(event) {
             if (event.detail && event.detail.url) {
                 window.location.href = event.detail.url;
             }
         });
+
+        (function() {
+            var tabList = document.querySelector('#myTab');
+            if (tabList) {
+                tabList.addEventListener('shown.bs.tab', function(e) {
+                    var tabId = e.target.getAttribute('id');
+                    if (tabId) {
+                        sessionStorage.setItem('landlord_edit_active_tab', tabId);
+                    }
+                });
+            }
+        })();
 
         document.addEventListener('DOMContentLoaded', () => {
             // Detect which service is preselected on load
@@ -1870,8 +1882,11 @@ $tenantPays = [
 
                 return isValid;
             }
-            // MODIFY your existing next button click handler like this:
             document.querySelector('.wizard-step-next')?.addEventListener('click', function() {
+                if (__tabNavLock) return;
+                __tabNavLock = true;
+                setTimeout(function() { __tabNavLock = false; }, 250);
+
                 const currentTab = document.querySelector('.nav-tabs .nav-link.active');
                 if (!currentTab) return;
 
@@ -1880,7 +1895,6 @@ $tenantPays = [
 
                 let isValid = true;
 
-                // Validate all required fields in the current tab (your existing code)
                 const requiredFields = currentTabContent.querySelectorAll(
                     'input[required], select[required], textarea[required]');
                 if (requiredFields) {
@@ -1914,7 +1928,6 @@ $tenantPays = [
                     });
                 }
 
-                // Validate cities array (your existing code)
                 const citiesContainer = currentTabContent.querySelector('.cities-container');
                 if (citiesContainer) {
                     const cityBadges = citiesContainer.querySelectorAll('.badge');
@@ -1936,7 +1949,6 @@ $tenantPays = [
                     }
                 }
 
-                // Validate counties array (your existing code)
                 const countiesContainer = currentTabContent.querySelector('.counties-container');
                 if (countiesContainer) {
                     const countyBadges = countiesContainer.querySelectorAll('.badge');
@@ -1958,33 +1970,35 @@ $tenantPays = [
                     }
                 }
 
-                // ADD THIS: Validate services tab if it's the current tab
                 if (currentTabContent.id === 'services') {
                     isValid = isValid && validateServicesTab(currentTabContent);
                 }
 
-                // If all fields are valid, proceed to the next tab (your existing code)
                 if (isValid) {
-                    const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector(
+                    const nextTabEl = currentTab.parentElement?.nextElementSibling?.querySelector(
                         '.nav-link');
-                    if (nextTab) {
-                        nextTab.click();
+                    if (nextTabEl) {
+                        var bsTab = new bootstrap.Tab(nextTabEl);
+                        bsTab.show();
                     }
                 }
 
-                // Update save button state after validation (your existing code)
                 const saveButton = document.querySelector('.wizard-step-finish');
                 if (saveButton) {
                     saveButton.disabled = !isValid;
                 }
             });
 
-            // Handle back button click (new implementation that works with your code)
             document.querySelector('.wizard-step-back')?.addEventListener('click', function() {
+                if (__tabNavLock) return;
+                __tabNavLock = true;
+                setTimeout(function() { __tabNavLock = false; }, 250);
+
                 const currentTab = document.querySelector('.nav-tabs .nav-link.active');
-                const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
-                if (prevTab) {
-                    prevTab.click();
+                const prevTabEl = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
+                if (prevTabEl) {
+                    var bsTab = new bootstrap.Tab(prevTabEl);
+                    bsTab.show();
                 }
             });
 
@@ -2084,8 +2098,11 @@ $tenantPays = [
                 return allValid;
             }
 
-            // MODIFY your existing next button click handler like this:
             document.querySelector('.wizard-step-next')?.addEventListener('click', function() {
+                if (__tabNavLock) return;
+                __tabNavLock = true;
+                setTimeout(function() { __tabNavLock = false; }, 250);
+
                 const currentTab = document.querySelector('.nav-tabs .nav-link.active');
                 if (!currentTab) return;
 
@@ -2094,7 +2111,6 @@ $tenantPays = [
 
                 let isValid = true;
 
-                // Validate all required fields in the current tab (your existing code)
                 const requiredFields = currentTabContent.querySelectorAll(
                     'input[required], select[required], textarea[required]');
                 if (requiredFields) {
@@ -2128,7 +2144,6 @@ $tenantPays = [
                     });
                 }
 
-                // Validate cities array (your existing code)
                 const citiesContainer = currentTabContent.querySelector('.cities-container');
                 if (citiesContainer) {
                     const cityBadges = citiesContainer.querySelectorAll('.badge');
@@ -2150,7 +2165,6 @@ $tenantPays = [
                     }
                 }
 
-                // Validate counties array (your existing code)
                 const countiesContainer = currentTabContent.querySelector('.counties-container');
                 if (countiesContainer) {
                     const countyBadges = countiesContainer.querySelectorAll('.badge');
@@ -2190,32 +2204,31 @@ $tenantPays = [
                     }
                 }
 
-                // In your validation function
-
-
-
-                // If all fields are valid, proceed to the next tab (your existing code)
                 if (isValid) {
-                    const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector(
+                    const nextTabEl = currentTab.parentElement?.nextElementSibling?.querySelector(
                         '.nav-link');
-                    if (nextTab) {
-                        nextTab.click();
+                    if (nextTabEl) {
+                        var bsTab = new bootstrap.Tab(nextTabEl);
+                        bsTab.show();
                     }
                 }
 
-                // Update save button state after validation (your existing code)
                 const saveButton = document.querySelector('.wizard-step-finish');
                 if (saveButton) {
                     saveButton.disabled = !isValid;
                 }
             });
 
-            // Handle back button click (new implementation that works with your code)
             document.querySelector('.wizard-step-back')?.addEventListener('click', function() {
+                if (__tabNavLock) return;
+                __tabNavLock = true;
+                setTimeout(function() { __tabNavLock = false; }, 250);
+
                 const currentTab = document.querySelector('.nav-tabs .nav-link.active');
-                const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
-                if (prevTab) {
-                    prevTab.click();
+                const prevTabEl = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
+                if (prevTabEl) {
+                    var bsTab = new bootstrap.Tab(prevTabEl);
+                    bsTab.show();
                 }
             });
 
@@ -2279,6 +2292,19 @@ $tenantPays = [
                 addIconsToInputs();
             }
             checkRepresentationStatus();
+
+            if (!__tabRestoreGuard) {
+                __tabRestoreGuard = true;
+                var savedTabId = sessionStorage.getItem('landlord_edit_active_tab');
+                if (savedTabId) {
+                    var tabEl = document.getElementById(savedTabId);
+                    if (tabEl && !tabEl.classList.contains('active')) {
+                        var bsTab = new bootstrap.Tab(tabEl);
+                        bsTab.show();
+                    }
+                }
+                setTimeout(function() { __tabRestoreGuard = false; }, 200);
+            }
         });
     </script>
 
