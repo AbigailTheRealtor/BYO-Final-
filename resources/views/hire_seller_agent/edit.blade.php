@@ -904,9 +904,10 @@
                                         <div class="select2-parent">
                                             <select name="financings[]" class="grid-picker" multiple>
                                                 <option value=""></option>
+                                                @php $financingsForSelected = @$auction->get->financings ?? @$auction->get->offered_financing; @endphp
                                                 @foreach ($financings as $financing)
                                                     <option value="{{ $financing['name'] }}" data-target=""
-                                                        {{ selected_in($financing['name'], @$auction->get->financings) }}
+                                                        {{ selected_in($financing['name'], $financingsForSelected) }}
                                                         class="card flex-column fw-bold" style="width:calc(20% - 10px);"
                                                         data-icon='<i class="fa-regular fa-check-circle" style="font-size:24px;"></i>'>
                                                         {{ $financing['name'] }}
@@ -918,6 +919,120 @@
                                             cryptocurrency
                                             can be converted to cash at closing. This will open up the market to more
                                             international buyers.</span>
+                                    </div>
+                                </div>
+
+                                @php
+                                    $savedFinancings = @$auction->get->financings ?? @$auction->get->offered_financing;
+                                    $financingsArr = [];
+                                    if (!empty($savedFinancings)) {
+                                        $financingsArr = is_string($savedFinancings) ? (json_decode(str_replace('&quot;', '"', $savedFinancings), true) ?? []) : (array)$savedFinancings;
+                                    }
+                                    $showExchange = in_array('Exchange/Trade', $financingsArr);
+
+                                    $savedExchangeItem = @$auction->get->exchange_item;
+                                    $exchangeItemArr = [];
+                                    if (!empty($savedExchangeItem)) {
+                                        if (is_string($savedExchangeItem)) {
+                                            $decoded = json_decode(str_replace('&quot;', '"', $savedExchangeItem), true);
+                                            $exchangeItemArr = is_array($decoded) ? $decoded : [$savedExchangeItem];
+                                        } else {
+                                            $exchangeItemArr = (array)$savedExchangeItem;
+                                        }
+                                    }
+                                @endphp
+                                <div id="exchange-trade-section" class="{{ $showExchange ? '' : 'd-none' }}">
+                                    <div class="mt-4 mb-3 pb-2 border-bottom">
+                                        <h5 class="fw-bold text-primary mb-0">
+                                            <i class="fa-solid fa-exchange-alt me-2"></i>Exchange/Trade
+                                        </h5>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="form-group mt-3 col-md-12">
+                                            <label class="fw-bold">Acceptable Exchange Item:</label>
+                                            <select name="exchange_item[]" id="edit_exchange_item" class="form-control" multiple>
+                                                @foreach (['Another Home', 'Artwork', 'Boat', 'Jewelry', 'Motorhome', 'Vehicle', 'Other'] as $opt)
+                                                    <option value="{{ $opt }}" {{ in_array($opt, $exchangeItemArr) ? 'selected' : '' }}>{{ $opt }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="row {{ in_array('Other', $exchangeItemArr) ? '' : 'd-none' }}" id="other_exchange_item_row">
+                                        <div class="form-group mt-3 col-md-12">
+                                            <label class="fw-bold">Other Exchange Item:</label>
+                                            <input type="text" name="other_exchange_item" class="form-control"
+                                                placeholder="Enter exchange item (e.g., Private Jet, Yacht, Luxury RV)"
+                                                value="{{ @$auction->get->other_exchange_item }}">
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="form-group mt-3 col-md-6">
+                                            <label class="fw-bold">Estimated Value of Exchange/Trade Item:</label>
+                                            <input type="text" name="exchange_item_value" class="form-control"
+                                                placeholder="Enter estimated item value (e.g., 75000)"
+                                                value="{{ @$auction->get->exchange_item_value }}">
+                                        </div>
+                                        <div class="form-group mt-3 col-md-6">
+                                            <label class="fw-bold">Additional Cash Seller Will Require:</label>
+                                            <input type="text" name="additional_cash" class="form-control"
+                                                placeholder="Enter additional cash required (e.g., 25000)"
+                                                value="{{ @$auction->get->additional_cash }}">
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="form-group mt-3 col-md-6">
+                                            <label class="fw-bold">Acceptable Condition of Exchange/Trade Item:</label>
+                                            <select name="exchange_item_condition" class="form-control">
+                                                <option value="">Select</option>
+                                                @foreach (['New', 'Excellent', 'Very Good', 'Good', 'Fair', 'Repair', 'Salvage Condition'] as $cond)
+                                                    <option value="{{ $cond }}" {{ @$auction->get->exchange_item_condition == $cond ? 'selected' : '' }}>{{ $cond }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="form-group mt-3 col-md-6">
+                                            <label class="fw-bold">Value of Exchange/Trade Item Determined:</label>
+                                            <input type="text" name="value_determination" class="form-control"
+                                                placeholder="e.g., Licensed Appraisal, Online Valuation, Mutual Agreement"
+                                                value="{{ @$auction->get->value_determination }}">
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="form-group mt-3 col-md-6">
+                                            <label class="fw-bold">Transfer Method / Logistics:</label>
+                                            <input type="text" name="exchange_transfer_method" class="form-control"
+                                                placeholder="e.g., Title transfer, Bill of Sale, Delivery at closing"
+                                                value="{{ @$auction->get->exchange_transfer_method }}">
+                                        </div>
+                                        <div class="form-group mt-3 col-md-6">
+                                            <label class="fw-bold">Inspection / Verification Rights:</label>
+                                            <select name="exchange_inspection_rights" class="form-control">
+                                                <option value="">Select</option>
+                                                <option value="Yes" {{ @$auction->get->exchange_inspection_rights == 'Yes' ? 'selected' : '' }}>Yes</option>
+                                                <option value="No" {{ @$auction->get->exchange_inspection_rights == 'No' ? 'selected' : '' }}>No</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="form-group mt-3 col-md-6">
+                                            <label class="fw-bold">Liens / Encumbrances Disclosure:</label>
+                                            <select name="exchange_liens_disclosure" class="form-control" id="edit_exchange_liens">
+                                                <option value="">Select</option>
+                                                <option value="Yes" {{ @$auction->get->exchange_liens_disclosure == 'Yes' ? 'selected' : '' }}>Yes</option>
+                                                <option value="No" {{ @$auction->get->exchange_liens_disclosure == 'No' ? 'selected' : '' }}>No</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group mt-3 col-md-6" id="edit_liens_details_row" style="{{ @$auction->get->exchange_liens_disclosure == 'Yes' ? '' : 'display:none;' }}">
+                                            <label class="fw-bold">Lien / Encumbrance Details:</label>
+                                            <input type="text" name="exchange_liens_details" class="form-control"
+                                                placeholder="Enter lien/encumbrance details"
+                                                value="{{ @$auction->get->exchange_liens_details }}">
+                                        </div>
                                     </div>
                                 </div>
 
@@ -1236,6 +1351,36 @@
             });
             // setTimeout(check_custom, 500);
         }
+
+        $(function() {
+            var financingsSelect = $('select[name="financings[]"]');
+            function toggleExchangeSection() {
+                var vals = financingsSelect.val() || [];
+                if (vals.indexOf('Exchange/Trade') !== -1) {
+                    $('#exchange-trade-section').removeClass('d-none');
+                } else {
+                    $('#exchange-trade-section').addClass('d-none');
+                }
+            }
+            financingsSelect.on('change', toggleExchangeSection);
+
+            $('#edit_exchange_item').on('change', function() {
+                var vals = $(this).val() || [];
+                if (vals.indexOf('Other') !== -1) {
+                    $('#other_exchange_item_row').removeClass('d-none');
+                } else {
+                    $('#other_exchange_item_row').addClass('d-none');
+                }
+            });
+
+            $('#edit_exchange_liens').on('change', function() {
+                if ($(this).val() === 'Yes') {
+                    $('#edit_liens_details_row').show();
+                } else {
+                    $('#edit_liens_details_row').hide();
+                }
+            });
+        });
     </script>
 
     <script>
