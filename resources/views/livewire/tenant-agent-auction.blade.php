@@ -2491,24 +2491,28 @@ $lease_types = [
             });
         }
 
-        if ($('#exchange_item').length && !$('#exchange_item').hasClass('select2-hidden-accessible')) {
-            $('#exchange_item').select2({
-                placeholder: "Select acceptable exchange items",
-                allowClear: true,
-            });
-            var savedExchangeItems = @this.get('exchange_item') || [];
-            if (savedExchangeItems.length > 0) {
-                $('#exchange_item').val(savedExchangeItems).trigger('change.select2');
+        if ($('#exchange_item').length) {
+            var $exEl = $('#exchange_item');
+            if (!$exEl.hasClass('select2-hidden-accessible')) {
+                $exEl.select2({
+                    placeholder: "Select acceptable exchange items",
+                    allowClear: true,
+                });
             }
-            $('#exchange_item').on('change', function(e) {
-                var selectedValues = $(this).val() || [];
-                @this.set('exchange_item', selectedValues);
-            });
-        } else if ($('#exchange_item').length && $('#exchange_item').hasClass('select2-hidden-accessible')) {
-            var savedExchangeItems = @this.get('exchange_item') || [];
-            var currentVal = $('#exchange_item').val() || [];
-            if (savedExchangeItems.length > 0 && currentVal.length === 0) {
-                $('#exchange_item').val(savedExchangeItems).trigger('change.select2');
+            var savedExchangeItems = [];
+            try { savedExchangeItems = JSON.parse($exEl.attr('data-selected') || '[]'); } catch(e) {}
+            if (!savedExchangeItems.length) {
+                savedExchangeItems = @this.get('exchange_item') || [];
+            }
+            if (savedExchangeItems.length > 0) {
+                $exEl.val(savedExchangeItems).trigger('change.select2');
+            }
+            if (!$exEl.data('exchange-change-bound')) {
+                $exEl.on('change', function(e) {
+                    var selectedValues = $(this).val() || [];
+                    @this.set('exchange_item', selectedValues);
+                });
+                $exEl.data('exchange-change-bound', true);
             }
         }
 
