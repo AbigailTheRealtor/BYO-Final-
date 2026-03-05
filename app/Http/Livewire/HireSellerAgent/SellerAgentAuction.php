@@ -1912,7 +1912,10 @@ class SellerAgentAuction extends Component
         $exchangeItemVal = $this->exchange_item;
         if (is_null($exchangeItemVal)) $exchangeItemVal = [];
         if (is_string($exchangeItemVal)) $exchangeItemVal = json_decode($exchangeItemVal, true) ?? [];
-        $auction->saveMeta('exchange_item', json_encode(array_values(array_filter((array) $exchangeItemVal))));
+        $filteredExchangeItems = array_values(array_filter((array) $exchangeItemVal));
+        if (!empty($filteredExchangeItems) || in_array('Exchange/Trade', is_array($this->offered_financing) ? $this->offered_financing : [])) {
+            $auction->saveMeta('exchange_item', json_encode($filteredExchangeItems));
+        }
         $auction->saveMeta('other_exchange_item', $this->other_exchange_item);
         $auction->saveMeta('exchange_item_value', $this->stripCommas($this->exchange_item_value));
         $auction->saveMeta('exchange_item_condition', $this->exchange_item_condition);

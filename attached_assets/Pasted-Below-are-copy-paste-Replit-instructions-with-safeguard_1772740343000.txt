@@ -1,0 +1,160 @@
+Below are **copy-paste Replit instructions with safeguards** for the **Hire a Seller’s Agent** listing edits. I’m not naming files—these are **implementation-only instructions**.
+
+---
+
+## Replit Instructions with Safeguards (Hire a Seller’s Agent)
+
+### Safeguards (DO NOT VIOLATE)
+
+* **Do NOT rename, delete, or repurpose any existing database columns.**
+* **Do NOT delete or modify existing listings, drafts, or agent bids.**
+* **Do NOT change any option values already stored in the DB** (only adjust labels/placeholder text + UI rendering).
+* **Do NOT remove existing Livewire properties** (only add guards / preserve state).
+* All changes must work for: **Create**, **Edit**, and **Draft/Resume Draft**.
+
+---
+
+# 1) Loan Term Remaining label + placeholder (Create flow)
+
+### Goal
+
+* Change label from **“Loan Term Remaining (Years):”** to **“Loan Term Remaining:”**
+* Update placeholder to: **“Enter remaining loan term (e.g., 25 Years)”**
+* Allow user to type **Months or Years** (free text).
+
+### Instructions
+
+* Update the form label text to **Loan Term Remaining:** (remove “(Years)”).
+* Change the input placeholder to **Enter remaining loan term (e.g., 25 Years)**.
+* Ensure this field is treated as a **string/text input**, not numeric-only.
+* Ensure validation (if any) does **not** force numeric-only input; allow formats like:
+
+  * `25 Years`
+  * `18 Months`
+  * `5 Years 6 Months`
+
+---
+
+# 2) Acceptable Exchange Item must persist on Edit + Draft (no clearing)
+
+### Goal
+
+The **Acceptable Exchange Item** selections must **stay saved and re-load correctly** when:
+
+* user saves draft
+* user edits listing later
+* user refreshes page or navigates tabs
+
+### Instructions (State Persistence / No Delete)
+
+* Identify where **Acceptable Exchange Item** is initialized/hydrated on:
+
+  * mount / hydrate / edit-load logic
+* Ensure the component loads the saved value into the UI **every time** the edit/draft screen opens.
+* Ensure no code path sets this field to `null`, `[]`, or empty string **unless the user explicitly clears it**.
+* If you use any “Other” conditional input, persist the “Other” text separately and rehydrate it too.
+* If it uses Select2 (or any JS plugin):
+
+  * implement a **single source of truth** (Livewire property),
+  * and a **sync guard** so Select2 re-init does not overwrite the property with blank during re-render.
+* Add a safeguard in save/update:
+
+  * If the incoming request payload for this field is missing/undefined due to a UI render timing issue, **do not overwrite the existing stored value**. Only overwrite when the field is explicitly present.
+
+---
+
+# 3) Lease Option listing display formatting for Proposed Duration of Lease
+
+### Goal
+
+On the **actual listing display**, show:
+
+* **Proposed Duration of Lease (Months): 12**
+  NOT:
+* **Proposed Duration of Lease (Months): 12 months**
+
+### Instructions
+
+* In the listing view rendering logic for this field:
+
+  * If the label already includes **(Months)**, the value should render as **raw number only** (no unit suffix).
+* Confirm the value is stored as numeric/string “12” and displayed without appending “months”.
+* Apply only to this field (do not change other fields unless they follow the same rule intentionally).
+
+---
+
+# 4) Balloon Payment UI behavior + tooltip + nested amount formatting
+
+## 4A) Remove “Balloon Payment Amount:” label and show amount box directly under “Yes”
+
+### Goal
+
+When user selects **Balloon Payment = Yes**:
+
+* Do **NOT** show an extra labeled field row “Balloon Payment Amount:”
+* Instead show the **$ amount input directly underneath** the Yes/No choice (same visual pattern as your “Rent Credit Toward Purchase Price” behavior).
+
+### Instructions
+
+* Keep the underlying stored data structure the same (no DB changes).
+* Replace the conditional UI block:
+
+  * remove the separate label row for “Balloon Payment Amount”
+  * render the existing amount input directly under the Balloon Payment selector when “Yes”
+* Ensure the amount input:
+
+  * stays editable
+  * persists in draft/edit
+  * does not clear when toggling tabs
+  * if user switches to “No”, decide whether to keep amount stored but hidden **or** clear it—**do not clear unless that’s already your platform standard**. (Preferred: keep stored but hidden to avoid accidental data loss.)
+
+## 4B) Add tooltip to Balloon Payment (field label tooltip)
+
+### Tooltip text (exact)
+
+**Balloon Payment:**
+*Enter the date when the remaining loan balance must be paid in full if the financing includes a balloon payment.*
+
+### Instructions
+
+* Add the tooltip icon next to “Balloon Payment” label.
+* Tooltip should display exactly the text above.
+* Do not duplicate placeholder content; this tooltip should appear on hover/click like your other tooltips.
+
+> Note: Your tooltip text references a **due date**, so make sure the “Balloon Payment Due Date” field is the one this tooltip is attached to **if your UI separates Balloon Payment (Yes/No) vs Due Date**. If you have both fields:
+
+* Tooltip on **Balloon Payment Due Date** is most correct.
+* If you only have one Balloon Payment section, attach tooltip to the section label.
+
+---
+
+# 5) Additional Terms missing on actual listing (position requirement)
+
+### Goal
+
+On the **actual listing view**, display **Additional Terms** immediately **after**:
+**Brokerage Relationship:**
+
+### Instructions
+
+* In the listing display rendering:
+
+  * Insert **Additional Terms** directly after the Brokerage Relationship block.
+* Ensure it renders only when not empty:
+
+  * If blank, either hide the row or show “None” based on your global listing display rule.
+* Do not change stored content; only fix listing view ordering and visibility.
+
+---
+
+## Quick Self-Test Checklist (must pass)
+
+1. Create listing: Loan Term Remaining shows new label + placeholder and accepts “18 Months”.
+2. Save draft → refresh → resume: Acceptable Exchange Item selections remain.
+3. Edit listing: Acceptable Exchange Item selections remain (no clearing).
+4. Listing display: Proposed Duration of Lease shows “(Months): 12” with no “months” suffix.
+5. Balloon Payment: selecting Yes shows $ input directly underneath (no “Balloon Payment Amount:” label).
+6. Tooltip appears on Balloon Payment (or Due Date field if separated) with the exact text.
+7. Listing display: Additional Terms appears right after Brokerage Relationship.
+
+If you paste me your current Balloon Payment section layout (screenshot of create/edit fields), I can tell you **exactly** whether that tooltip belongs on **Balloon Payment** or **Balloon Payment Due Date** so it matches the field logic perfectly.

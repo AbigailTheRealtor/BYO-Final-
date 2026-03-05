@@ -446,16 +446,16 @@
 
     <!-- Loan Term Remaining -->
     <div class="form-group mt-3">
-        <label class="fw-bold">Loan Term Remaining (Years):
+        <label class="fw-bold">Loan Term Remaining:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the number of years remaining on the existing loan term. This helps Buyers understand how long payments will continue before the loan is fully paid off.">
+                title="Enter the remaining loan term. This helps Buyers understand how long payments will continue before the loan is fully paid off.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
         <div class="input-cover">
             <input type="text" wire:model="assumable_loan_term_remaining" class="form-control has-icon"
                 data-icon="fa-regular fa-calendar-days"
-                placeholder="Enter years remaining (e.g., 26)">
+                placeholder="Enter remaining loan term (e.g., 25 Years)">
         </div>
     </div>
 
@@ -1492,8 +1492,7 @@
     </div>
 
     @if ($balloon_payment === 'Yes')
-        <div class="form-group">
-            <label class="fw-bold">Balloon Payment Amount:</label>
+        <div class="form-group mt-2">
             <div class="input-cover">
                 <span class="input-group-text-seller">$</span>
 
@@ -1507,11 +1506,16 @@
 
         </div>
 
-        <div class="form-group">
-            <label class="fw-bold">Balloon Payment Due Date:</label>
+        <div class="form-group mt-3">
+            <label class="fw-bold">Balloon Payment Due Date:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                    title="Enter the date when the remaining loan balance must be paid in full if the financing includes a balloon payment.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
             <div class="input-cover">
                 <input type="text" wire:model="balloon_payment_date" class="form-control has-icon"
-                    data-icon="fa-regular fa-calendar-days" placeholder="Enter ballon payment date (e.g., 5 Years)">
+                    data-icon="fa-regular fa-calendar-days" placeholder="Enter balloon payment date (e.g., 5 Years)">
 
             </div>
         </div>

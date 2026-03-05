@@ -105,7 +105,7 @@ return [
             'fields' => [
                 ['key' => 'lease_option_price', 'label' => "Seller's Desired Offering Price for Lease Option", 'format' => 'money'],
                 ['key' => 'lease_option_payment', 'label' => 'Monthly Payment the Seller Will Accept', 'format' => 'money'],
-                ['key' => 'lease_option_duration', 'label' => 'Proposed Duration of Lease (Months)', 'format' => 'text_with_suffix', 'suffix' => ' months'],
+                ['key' => 'lease_option_duration', 'label' => 'Proposed Duration of Lease (Months)', 'format' => 'text'],
                 ['key' => 'has_option_fee', 'label' => 'Offered Option Fee', 'format' => 'yes_parenthetical', 'amount_key' => 'option_fee_amount', 'amount_format' => 'money'],
                 ['key' => 'option_fee_amount', 'label' => 'Option Fee Amount', 'format' => 'money', 'show_when' => ['key' => 'has_option_fee', 'value' => '__suppress__']],
                 ['key' => 'lease_option_fee', 'label' => 'Option Fee', 'format' => 'money', 'show_when' => ['key' => 'has_option_fee', 'value' => null]],
