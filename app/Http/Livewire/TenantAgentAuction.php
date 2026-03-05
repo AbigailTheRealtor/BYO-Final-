@@ -271,7 +271,7 @@ class TenantAgentAuction extends Component
     public $commission_structure_type_fee_other = '';
 
 
-    public $exchange_item = '';
+    public $exchange_item = [];
     public $exchange_item_condition = '';
     public $has_option_fee  = '';
     public $lease_purchase_option_fee = '';
@@ -2900,7 +2900,15 @@ class TenantAgentAuction extends Component
             $this->outstanding_balance = $auction->get->outstanding_balance ?? '';
             $this->gap_payment_type = $auction->get->gap_payment_type ?? '';
             $this->gap_payment_amount = $auction->get->gap_payment_amount ?? '';
-            $this->exchange_item = $auction->get->exchange_item ?? '';
+            $rawExchangeItem = $auction->get->exchange_item ?? '';
+            if (is_array($rawExchangeItem)) {
+                $this->exchange_item = $rawExchangeItem;
+            } elseif (is_string($rawExchangeItem) && trim($rawExchangeItem) !== '') {
+                $decoded = json_decode(str_replace('&quot;', '"', $rawExchangeItem), true);
+                $this->exchange_item = is_array($decoded) ? $decoded : [$rawExchangeItem];
+            } else {
+                $this->exchange_item = [];
+            }
             $this->other_exchange_item = $auction->get->other_exchange_item ?? '';
             $this->exchange_item_value = $auction->get->exchange_item_value ?? '';
             $this->exchange_item_condition = $auction->get->exchange_item_condition ?? '';
@@ -3632,7 +3640,8 @@ class TenantAgentAuction extends Component
         $auction->saveMeta('outstanding_balance', $this->outstanding_balance);
         $auction->saveMeta('gap_payment_type', $this->gap_payment_type);
         $auction->saveMeta('gap_payment_amount', $this->stripCommas($this->gap_payment_amount));
-        $auction->saveMeta('exchange_item', $this->exchange_item);
+        $exchangeItemVal = is_array($this->exchange_item) ? array_values(array_filter((array) $this->exchange_item)) : (is_string($this->exchange_item) && trim($this->exchange_item) !== '' ? [$this->exchange_item] : []);
+        $auction->saveMeta('exchange_item', json_encode($exchangeItemVal));
         $auction->saveMeta('other_exchange_item', $this->other_exchange_item);
         $auction->saveMeta('exchange_item_value', $this->exchange_item_value);
         $auction->saveMeta('exchange_item_condition', $this->exchange_item_condition);

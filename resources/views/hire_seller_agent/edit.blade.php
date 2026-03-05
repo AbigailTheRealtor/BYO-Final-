@@ -930,16 +930,32 @@
                                     }
                                     $showExchange = in_array('Exchange/Trade', $financingsArr);
 
-                                    $savedExchangeItem = @$auction->get->exchange_item;
-                                    $exchangeItemArr = [];
-                                    if (!empty($savedExchangeItem)) {
-                                        if (is_string($savedExchangeItem)) {
-                                            $decoded = json_decode(str_replace('&quot;', '"', $savedExchangeItem), true);
-                                            $exchangeItemArr = is_array($decoded) ? $decoded : [$savedExchangeItem];
+                                    $rawSaved = @$auction->get->exchange_item;
+                                    $savedArr = [];
+                                    if (is_array($rawSaved)) {
+                                        $savedArr = $rawSaved;
+                                    } elseif (is_string($rawSaved) && trim($rawSaved) !== '') {
+                                        $try = json_decode(str_replace('&quot;', '"', $rawSaved), true);
+                                        if (is_array($try)) {
+                                            $savedArr = $try;
                                         } else {
-                                            $exchangeItemArr = (array)$savedExchangeItem;
+                                            $savedArr = array_map('trim', explode(',', $rawSaved));
                                         }
                                     }
+                                    $savedArr = array_values(array_filter($savedArr, fn($v) => is_string($v) && trim($v) !== ''));
+
+                                    $oldRaw = old('exchange_item');
+                                    $oldArr = null;
+                                    if (is_array($oldRaw)) {
+                                        $tmp = array_values(array_filter(array_map('trim', $oldRaw), fn($v) => $v !== ''));
+                                        $oldArr = count($tmp) ? $tmp : null;
+                                    } elseif (is_string($oldRaw) && trim($oldRaw) !== '') {
+                                        $oldArr = [trim($oldRaw)];
+                                    }
+
+                                    $selectedArr = $oldArr ?? $savedArr;
+                                    $selectedNorm = array_map(fn($v) => mb_strtolower(trim($v)), $selectedArr);
+                                    $exchangeItemArr = $selectedArr;
                                 @endphp
                                 <div id="exchange-trade-section" class="{{ $showExchange ? '' : 'd-none' }}">
                                     <div class="mt-4 mb-3 pb-2 border-bottom">
@@ -953,7 +969,8 @@
                                             <label class="fw-bold">Acceptable Exchange Item:</label>
                                             <select name="exchange_item[]" id="edit_exchange_item" class="form-control" multiple>
                                                 @foreach (['Another Home', 'Artwork', 'Boat', 'Jewelry', 'Motorhome', 'Vehicle', 'Other'] as $opt)
-                                                    <option value="{{ $opt }}" {{ in_array($opt, $exchangeItemArr) ? 'selected' : '' }}>{{ $opt }}</option>
+                                                    @php $optNorm = mb_strtolower(trim($opt)); @endphp
+                                                    <option value="{{ $opt }}" {{ in_array($optNorm, $selectedNorm, true) ? 'selected' : '' }}>{{ $opt }}</option>
                                                 @endforeach
                                             </select>
                                         </div>

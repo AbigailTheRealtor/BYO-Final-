@@ -1125,11 +1125,30 @@
             console.log('[DraftLoaded] Event received - syncing select values');
             setTimeout(function() {
                 syncSelectValues();
+                rehydrateSelect2MultiFields();
                 if (typeof window.updateSaveButton === 'function') {
                     window.updateSaveButton();
                 }
             }, 100);
         });
+
+        function rehydrateSelect2MultiFields() {
+            var multiFields = {
+                '#exchange_item': 'exchange_item',
+                '#non_negotiable_amenities': 'non_negotiable_amenities'
+            };
+            Object.keys(multiFields).forEach(function(selector) {
+                var $el = $(selector);
+                if ($el.length && $el.hasClass('select2-hidden-accessible')) {
+                    var prop = multiFields[selector];
+                    var saved = @this.get(prop) || [];
+                    if (saved.length > 0) {
+                        $el.val(saved).trigger('change.select2');
+                        console.log('[DraftLoaded] Rehydrated ' + prop + ':', saved);
+                    }
+                }
+            });
+        }
 
         // Listen for force-redirect event to ensure redirect works after submit
         window.addEventListener('force-redirect', function(event) {
@@ -1256,6 +1275,26 @@
             // Re-attach the event listener after Livewire re-renders the DOM
             Livewire.hook('message.processed', () => {
                 attachAuctionDropdownListener();
+                if ($('#exchange_item').length && !$('#exchange_item').hasClass('select2-hidden-accessible')) {
+                    $('#exchange_item').select2({
+                        placeholder: "Select acceptable exchange items",
+                        allowClear: true,
+                    });
+                    var saved = @this.get('exchange_item') || [];
+                    if (saved.length > 0) {
+                        $('#exchange_item').val(saved).trigger('change.select2');
+                    }
+                    $('#exchange_item').on('change', function(e) {
+                        var selectedValues = $(this).val() || [];
+                        @this.set('exchange_item', selectedValues);
+                    });
+                } else if ($('#exchange_item').length && $('#exchange_item').hasClass('select2-hidden-accessible')) {
+                    var saved = @this.get('exchange_item') || [];
+                    var current = $('#exchange_item').val() || [];
+                    if (saved.length > 0 && current.length === 0) {
+                        $('#exchange_item').val(saved).trigger('change.select2');
+                    }
+                }
             });
 
 
