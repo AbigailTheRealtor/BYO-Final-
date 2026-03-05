@@ -720,10 +720,9 @@
                         @if ($service_type === 'full_service')
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Services', 'Additional Details', 'Broker Compensation', 'Buyer Information'] as $index => $tab)
+                                @foreach (['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Services', 'Additional Details', 'Broker Compensation', 'Seller Information'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
-                                            wire:click="setActiveTab({{ $index }})"
                                             id="{{ str_replace(' ', '-', strtolower($tab)) }}-tab" data-bs-toggle="tab"
                                             data-bs-target="#{{ str_replace(' ', '-', strtolower($tab)) }}"
                                             type="button" role="tab"
@@ -739,7 +738,6 @@
                                 @foreach (['Listing Details', 'Location and Meeting Details', 'Service Selection and Pricing', 'Additional Details'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
-                                            wire:click="setActiveTab({{ $index }})"
                                             id="{{ str_replace(' ', '-', strtolower($tab)) }}-tab" data-bs-toggle="tab"
                                             data-bs-target="#{{ str_replace(' ', '-', strtolower($tab)) }}"
                                             type="button" role="tab"
@@ -750,10 +748,9 @@
                                     </li>
                                 @endforeach
 
-                                <!-- Dynamic Information Tab Based on User Type -->
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(4)" id="information-tab" data-bs-toggle="tab"
+                                        id="information-tab" data-bs-toggle="tab"
                                         data-bs-target="#information" type="button" role="tab"
                                         aria-controls="information"
                                         aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
@@ -822,7 +819,7 @@
 
                                 <!-- Seller Info Tab -->
                                 <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
-                                    id="tenant-info" role="tabpanel" aria-labelledby="tenant-info-tab">
+                                    id="seller-information" role="tabpanel" aria-labelledby="seller-information-tab">
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-info')
                                 </div>
                             @elseif($service_type === 'limited_service')
@@ -1568,52 +1565,36 @@
                     isValid = isValid && validateServicesTab(currentTabContent);
                 }
 
-                // If all fields are valid, proceed to the next tab (your existing code)
                 if (isValid) {
                     const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector(
                         '.nav-link');
                     if (nextTab) {
-                        const tabs = document.querySelectorAll('.nav-link');
-                        if (tabs) {
-                            const tabIndex = Array.from(tabs).indexOf(nextTab);
-                            if (tabIndex !== -1) {
-                                Livewire.emit('setActiveTab', tabIndex);
-                                nextTab.click();
-                            }
-                        }
+                        new bootstrap.Tab(nextTab).show();
                     }
                 }
 
-                // Update save button state after validation (your existing code)
                 const saveButton = document.querySelector('.wizard-step-finish');
                 if (saveButton) {
                     saveButton.disabled = !isValid;
                 }
             });
 
-            // Handle back button click (new implementation that works with your code)
             document.querySelector('.wizard-step-back')?.addEventListener('click', function() {
                 const currentTab = document.querySelector('.nav-tabs .nav-link.active');
                 const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
                 if (prevTab) {
-                    Livewire.emit('setActiveTab', Array.from(document.querySelectorAll('.nav-link'))
-                        .indexOf(prevTab));
-                    prevTab.click();
+                    new bootstrap.Tab(prevTab).show();
                 }
             });
 
-            // Add event listeners to update save button state when fields change
             document.addEventListener('DOMContentLoaded', function() {
-                // Initial check
                 checkFormValidity();
 
-                // Update on any input change
                 document.querySelectorAll('input, select, textarea').forEach(field => {
                     field.addEventListener('change', checkFormValidity);
                     field.addEventListener('keyup', checkFormValidity);
                 });
 
-                // Special handling for Livewire-updated fields
                 document.addEventListener('livewire:update', function() {
                     setTimeout(checkFormValidity, 100);
                 });
@@ -1756,52 +1737,36 @@
 
 
 
-                // If all fields are valid, proceed to the next tab (your existing code)
                 if (isValid) {
                     const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector(
                         '.nav-link');
                     if (nextTab) {
-                        const tabs = document.querySelectorAll('.nav-link');
-                        if (tabs) {
-                            const tabIndex = Array.from(tabs).indexOf(nextTab);
-                            if (tabIndex !== -1) {
-                                Livewire.emit('setActiveTab', tabIndex);
-                                nextTab.click();
-                            }
-                        }
+                        new bootstrap.Tab(nextTab).show();
                     }
                 }
 
-                // Update save button state after validation (your existing code)
                 const saveButton = document.querySelector('.wizard-step-finish');
                 if (saveButton) {
                     saveButton.disabled = !isValid;
                 }
             });
 
-            // Handle back button click (new implementation that works with your code)
             document.querySelector('.wizard-step-back')?.addEventListener('click', function() {
                 const currentTab = document.querySelector('.nav-tabs .nav-link.active');
                 const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
                 if (prevTab) {
-                    Livewire.emit('setActiveTab', Array.from(document.querySelectorAll('.nav-link'))
-                        .indexOf(prevTab));
-                    prevTab.click();
+                    new bootstrap.Tab(prevTab).show();
                 }
             });
 
-            // Add event listeners to update save button state when fields change
             document.addEventListener('DOMContentLoaded', function() {
-                // Initial check
                 checkFormValidity();
 
-                // Update on any input change
                 document.querySelectorAll('input, select, textarea').forEach(field => {
                     field.addEventListener('change', checkFormValidity);
                     field.addEventListener('keyup', checkFormValidity);
                 });
 
-                // Special handling for Livewire-updated fields
                 document.addEventListener('livewire:update', function() {
                     setTimeout(checkFormValidity, 100);
                 });
@@ -1835,15 +1800,23 @@
             }
         }
 
+        document.querySelectorAll('#myTab .nav-link').forEach(function(tabEl) {
+            tabEl.addEventListener('shown.bs.tab', function(e) {
+                var targetId = e.target.getAttribute('data-bs-target') || e.target.getAttribute('id');
+                if (targetId) {
+                    sessionStorage.setItem('seller_edit_active_tab', targetId);
+                }
+            });
+        });
+
         Livewire.hook('message.processed', () => {
             addIconsToInputs();
             checkRepresentationStatus();
 
-            // Re-detect selected service type after DOM update
-            const fullServiceChecked = document.getElementById('fullService')?.checked;
-            const limitedServiceChecked = document.getElementById('limitedService')?.checked;
+            var fullServiceChecked = document.getElementById('fullService')?.checked;
+            var limitedServiceChecked = document.getElementById('limitedService')?.checked;
 
-            let newServiceType = null;
+            var newServiceType = null;
             if (fullServiceChecked) {
                 newServiceType = 'full_service';
             } else if (limitedServiceChecked) {
@@ -1865,6 +1838,27 @@
                     initializeLimitedService();
                 }
             }
+
+            var savedTab = sessionStorage.getItem('seller_edit_active_tab');
+            if (savedTab) {
+                var tabTrigger = document.querySelector('#myTab .nav-link[data-bs-target="' + savedTab + '"]');
+                if (tabTrigger && !tabTrigger.classList.contains('active')) {
+                    new bootstrap.Tab(tabTrigger).show();
+                }
+            }
+
+            document.querySelectorAll('#myTab .nav-link').forEach(function(tabEl) {
+                tabEl.removeEventListener('shown.bs.tab', window.__sellerTabPersist);
+            });
+            window.__sellerTabPersist = function(e) {
+                var targetId = e.target.getAttribute('data-bs-target') || e.target.getAttribute('id');
+                if (targetId) {
+                    sessionStorage.setItem('seller_edit_active_tab', targetId);
+                }
+            };
+            document.querySelectorAll('#myTab .nav-link').forEach(function(tabEl) {
+                tabEl.addEventListener('shown.bs.tab', window.__sellerTabPersist);
+            });
         });
     </script>
 
@@ -1885,12 +1879,12 @@
                     '#services',
                     '#additional-details',
                     '#broker-compensation',
-                    '#tenant-info'
+                    '#seller-information'
                 ] : [
                     '#listing-details',
                     '#location-and-meeting-details',
                     '#service-selection-and-pricing',
-                    '#tenant-info'
+                    '#seller-information'
                 ];
 
                 tabSelector.forEach(selector => {

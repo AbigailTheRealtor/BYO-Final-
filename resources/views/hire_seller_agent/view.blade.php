@@ -453,7 +453,14 @@
                             @endif
 
                             @php
-                                $condRaw = @$auction->get->condition_prop_buyer ?? @$auction->get->condition_prop;
+                                $condRawBuyer = @$auction->get->condition_prop_buyer;
+                                if (is_string($condRawBuyer)) {
+                                    $condRawBuyerDecoded = json_decode(str_replace('&quot;', '"', $condRawBuyer), true);
+                                    if (empty($condRawBuyerDecoded) || (is_array($condRawBuyerDecoded) && count($condRawBuyerDecoded) === 0)) {
+                                        $condRawBuyer = null;
+                                    }
+                                }
+                                $condRaw = !empty($condRawBuyer) ? $condRawBuyer : (@$auction->get->condition_prop ?? null);
                                 $condOther = @$auction->get->other_property_condition;
                                 $conditionItems = [];
                                 if (!empty($condRaw)) {
@@ -2175,11 +2182,64 @@
                             @endif
 
                             @if (!empty($auction->get->video_link))
-                                <div class="col-md-12 col-12 pt-2 fw-bold">Personal Video:
-                                    <span class="removeBold">
-                                        <a href="{{ $auction->get->video_link }}" target="_blank" rel="noopener noreferrer">{{ $auction->get->video_link }}</a>
-                                    </span>
-                                </div>
+                                @if (filter_var($auction->get->video_link, FILTER_VALIDATE_URL))
+                                    @php
+                                        $videoLink = $auction->get->video_link;
+                                    @endphp
+
+                                    @if (strpos($videoLink, 'youtube.com') !== false || strpos($videoLink, 'youtu.be') !== false)
+                                        @php
+                                            if (strpos($videoLink, 'watch?v=') !== false) {
+                                                $youtubeEmbedUrl = str_replace('watch?v=', 'embed/', $videoLink);
+                                            } elseif (strpos($videoLink, 'youtu.be/') !== false) {
+                                                $videoId = basename(parse_url($videoLink, PHP_URL_PATH));
+                                                $youtubeEmbedUrl = "https://www.youtube.com/embed/{$videoId}";
+                                            } else {
+                                                $youtubeEmbedUrl = $videoLink;
+                                            }
+                                            $youtubeEmbedUrl .=
+                                                (strpos($youtubeEmbedUrl, '?') === false ? '?' : '&') .
+                                                'autoplay=1&mute=1';
+                                        @endphp
+
+                                        <div class="col-md-6 col-6 pt-2 fw-bold">Personal Video:
+                                            <span class="removeBold">
+                                                <iframe width="100%" height="315" src="{{ $youtubeEmbedUrl }}"
+                                                    frameborder="0"
+                                                    allow="autoplay; encrypted-media; gyroscope; picture-in-picture"
+                                                    allowfullscreen>
+                                                </iframe>
+                                            </span>
+                                        </div>
+                                    @elseif (strpos($videoLink, 'vimeo.com') !== false)
+                                        @php
+                                            preg_match('/vimeo\.com\/(?:.*\/)?(\d+)/', $videoLink, $matches);
+                                            $vimeoVideoId =
+                                                $matches[1] ?? basename(parse_url($videoLink, PHP_URL_PATH));
+                                            $vimeoEmbedUrl = "https://player.vimeo.com/video/{$vimeoVideoId}?autoplay=1&muted=1";
+                                        @endphp
+
+                                        <div class="col-md-6 col-6 pt-2 fw-bold">Personal Video:
+                                            <span class="removeBold">
+                                                <iframe src="{{ $vimeoEmbedUrl }}" width="100%" height="315"
+                                                    frameborder="0"
+                                                    allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+                                                    allowfullscreen>
+                                                </iframe>
+                                            </span>
+                                        </div>
+                                    @else
+                                        <div class="col-md-12 col-12 pt-2 fw-bold">Personal Video:
+                                            <span class="removeBold">
+                                                <a href="{{ $videoLink }}" target="_blank" rel="noopener noreferrer">{{ $videoLink }}</a>
+                                            </span>
+                                        </div>
+                                    @endif
+                                @else
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">Personal Video:
+                                        <span class="removeBold">{{ $auction->get->video_link }}</span>
+                                    </div>
+                                @endif
                             @endif
                         </div>
                     </div>
