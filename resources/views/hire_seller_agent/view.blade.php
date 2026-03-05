@@ -454,17 +454,34 @@
 
                             @if ($propType !== 'Vacant Land')
                             @php
-                                $conditionItems = \App\Helpers\ListingDisplayHelper::normalizeList(
-                                    @$auction->get->condition_prop_buyer ?? @$auction->get->condition_prop,
-                                    @$auction->get->other_property_condition
-                                );
+                                $condRaw = @$auction->get->condition_prop_buyer ?? @$auction->get->condition_prop;
+                                $condOther = @$auction->get->other_property_condition;
+                                $conditionItems = [];
+                                if (!empty($condRaw)) {
+                                    $decoded = is_string($condRaw) ? json_decode(str_replace('"', '"', $condRaw), true) : (array) $condRaw;
+                                    if (is_array($decoded)) {
+                                        foreach ($decoded as $v) {
+                                            $v = is_string($v) ? trim(str_replace('"', '', $v)) : $v;
+                                            if ($v !== '' && $v !== null) {
+                                                if (strtolower($v) === 'other' && !empty($condOther)) {
+                                                    $conditionItems[] = trim($condOther);
+                                                } else {
+                                                    $conditionItems[] = $v;
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        $v = trim(str_replace('"', '', $condRaw));
+                                        if ($v !== '') {
+                                            $conditionItems[] = $v;
+                                        }
+                                    }
+                                }
                             @endphp
                             @if (!empty($conditionItems))
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Property Condition:
-                                @foreach ($conditionItems as $cItem)
-                                    <span class="removeBold badge bg-secondary">{{ $cItem }}</span>
-                                @endforeach
+                                <span class="removeBold">{{ implode(', ', $conditionItems) }}</span>
                             </div>
                             @endif
                             @endif
@@ -564,21 +581,6 @@
                             @endif
 
                             @if (in_array($propType, ['Residential', 'Income']))
-                                @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->garageOptions))
-                                    @php
-                                        $garageVal = @$auction->get->garageOptions;
-                                        $garageSpaces = @$auction->get->custom_garage;
-                                        if (in_array($garageVal, ['Yes', 'Optional']) && \App\Helpers\ListingDisplayHelper::hasValue($garageSpaces)) {
-                                            $garageDisplay = $garageVal . ' (' . $garageSpaces . ' Spaces)';
-                                        } else {
-                                            $garageDisplay = $garageVal;
-                                        }
-                                    @endphp
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Garage:
-                                        <span class="removeBold">{{ $garageDisplay }}</span>
-                                    </div>
-                                @endif
                                 @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->carportOptions))
                                     @php
                                         $carportVal = @$auction->get->carportOptions;
@@ -592,6 +594,21 @@
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Carport:
                                         <span class="removeBold">{{ $carportDisplay }}</span>
+                                    </div>
+                                @endif
+                                @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->garageOptions))
+                                    @php
+                                        $garageVal = @$auction->get->garageOptions;
+                                        $garageSpaces = @$auction->get->custom_garage;
+                                        if (in_array($garageVal, ['Yes', 'Optional']) && \App\Helpers\ListingDisplayHelper::hasValue($garageSpaces)) {
+                                            $garageDisplay = $garageVal . ' (' . $garageSpaces . ' Spaces)';
+                                        } else {
+                                            $garageDisplay = $garageVal;
+                                        }
+                                    @endphp
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Garage:
+                                        <span class="removeBold">{{ $garageDisplay }}</span>
                                     </div>
                                 @endif
                             @endif
@@ -618,17 +635,40 @@
 
                             @if (in_array($propType, ['Residential', 'Income']))
                                 @php
-                                    $applianceItems = \App\Helpers\ListingDisplayHelper::normalizeList(
-                                        @$auction->get->appliances,
-                                        @$auction->get->other_appliances
-                                    );
+                                    $appRaw = @$auction->get->appliances;
+                                    $appOther = @$auction->get->other_appliances;
+                                    $applianceItems = [];
+                                    if (!empty($appRaw)) {
+                                        $decoded = is_string($appRaw) ? json_decode(str_replace('"', '"', $appRaw), true) : (array) $appRaw;
+                                        if (is_array($decoded)) {
+                                            foreach ($decoded as $v) {
+                                                $v = is_string($v) ? trim(str_replace('"', '', $v)) : $v;
+                                                if ($v !== '' && $v !== null) {
+                                                    if (strtolower($v) === 'other' && !empty($appOther)) {
+                                                        $applianceItems[] = trim($appOther);
+                                                    } else {
+                                                        $applianceItems[] = $v;
+                                                    }
+                                                }
+                                            }
+                                        } else {
+                                            $v = trim(str_replace('"', '', $appRaw));
+                                            if ($v !== '') {
+                                                $applianceItems[] = $v;
+                                            }
+                                        }
+                                    }
                                 @endphp
                                 @if (!empty($applianceItems))
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Appliances Included:
-                                        @foreach ($applianceItems as $appItem)
-                                            <span class="removeBold badge bg-secondary">{{ $appItem }}</span>
-                                        @endforeach
+                                        @if (count($applianceItems) === 1)
+                                            <span class="removeBold">{{ $applianceItems[0] }}</span>
+                                        @else
+                                            @foreach ($applianceItems as $appItem)
+                                                <span class="removeBold badge bg-secondary">{{ $appItem }}</span>
+                                            @endforeach
+                                        @endif
                                     </div>
                                 @endif
                             @endif
@@ -673,16 +713,16 @@
                             @endif
 
                             @if (in_array($propType, ['Residential', 'Income']))
-                                @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->garage_needed))
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Garage:
-                                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->garage_needed, @$auction->get->other_garage_needed, 'Spaces') }}</span>
-                                    </div>
-                                @endif
                                 @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->carport_needed))
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Carport:
                                         <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->carport_needed, @$auction->get->other_carport_needed, 'Spaces') }}</span>
+                                    </div>
+                                @endif
+                                @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->garage_needed))
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Garage:
+                                        <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesCount(@$auction->get->garage_needed, @$auction->get->other_garage_needed, 'Spaces') }}</span>
                                     </div>
                                 @endif
                             @endif
@@ -740,14 +780,14 @@
                                 @if (\App\Helpers\ListingDisplayHelper::isParentYes(@$auction->get->pets))
                                     @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->type_of_pets))
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Pet Types:
+                                        Acceptable Pet Types:
                                         <span class="removeBold">{{ @$auction->get->type_of_pets }}</span>
                                     </div>
                                     @endif
 
                                     @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->weight_of_pets))
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Pet Weight (lbs):
+                                        Maximum Weight Per Pet (lbs):
                                         <span class="removeBold">{{ @$auction->get->weight_of_pets }} lbs</span>
                                     </div>
                                     @endif
@@ -904,16 +944,39 @@
                         </div>
 
                         @php
-                            $saleProvisionItems = \App\Helpers\ListingDisplayHelper::normalizeList(
-                                @$auction->get->sale_provision,
-                                @$auction->get->sale_provision_other
-                            );
+                            $spRaw = @$auction->get->sale_provision;
+                            $spOther = @$auction->get->sale_provision_other;
+                            $saleProvisionItems = [];
+                            if (!empty($spRaw)) {
+                                $decoded = is_string($spRaw) ? json_decode(str_replace('"', '"', $spRaw), true) : (array) $spRaw;
+                                if (is_array($decoded)) {
+                                    foreach ($decoded as $v) {
+                                        $v = is_string($v) ? trim(str_replace('"', '', $v)) : $v;
+                                        if ($v !== '' && $v !== null) {
+                                            if (strtolower($v) === 'other' && !empty($spOther)) {
+                                                $saleProvisionItems[] = trim($spOther);
+                                            } else {
+                                                $saleProvisionItems[] = $v;
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    $v = trim(str_replace('"', '', $spRaw));
+                                    if ($v !== '') {
+                                        $saleProvisionItems[] = $v;
+                                    }
+                                }
+                            }
                         @endphp
                         @if (!empty($saleProvisionItems))
                             <div class="col-md-12 col-12 pt-2 fw-bold">Special Sale Provision:
-                                @foreach ($saleProvisionItems as $spItem)
-                                    <span class="removeBold badge bg-secondary">{{ $spItem }}</span>
-                                @endforeach
+                                @if (count($saleProvisionItems) === 1)
+                                    <span class="removeBold">{{ $saleProvisionItems[0] }}</span>
+                                @else
+                                    @foreach ($saleProvisionItems as $spItem)
+                                        <span class="removeBold badge bg-secondary">{{ $spItem }}</span>
+                                    @endforeach
+                                @endif
                             </div>
                         @endif
 
@@ -1115,6 +1178,18 @@
                                                                 <span class="removeBold badge bg-secondary">{{ str_replace('"', '', $fieldVal) }}</span>
                                                             @endif
                                                             @break
+                                                        @case('text_or_other')
+                                                            @php
+                                                                $otherVal = $field['other_value'] ?? 'Other';
+                                                                $otherKey = $field['other_key'] ?? '';
+                                                                $otherText = $getVal($otherKey);
+                                                            @endphp
+                                                            @if ($fieldVal === $otherVal && !empty($otherText))
+                                                                <span class="removeBold">{{ $otherText }}</span>
+                                                            @else
+                                                                <span class="removeBold">{{ str_replace('"', '', $fieldVal) }}</span>
+                                                            @endif
+                                                            @break
                                                         @case('badge_with_details')
                                                             <span class="removeBold badge bg-secondary">{{ str_replace('"', '', $fieldVal) }}</span>
                                                             @php
@@ -1129,6 +1204,34 @@
                                                                 @else
                                                                     <span class="removeBold">({{ $detailVal }})</span>
                                                                 @endif
+                                                            @endif
+                                                            @break
+                                                        @case('text_with_details')
+                                                            <span class="removeBold">{{ str_replace('"', '', $fieldVal) }}</span>
+                                                            @php
+                                                                $detailTrigger = $field['detail_trigger'] ?? 'Yes';
+                                                                $detailKey = $field['detail_key'] ?? '';
+                                                                $detailVal = $getVal($detailKey);
+                                                                $triggers = is_array($detailTrigger) ? $detailTrigger : [$detailTrigger];
+                                                            @endphp
+                                                            @if (in_array($fieldVal, $triggers) && !empty($detailVal))
+                                                                @if (isset($field['detail_format']) && $field['detail_format'] === 'money')
+                                                                    <span class="removeBold">({!! $fmtMoneyVal($detailVal) !!})</span>
+                                                                @else
+                                                                    <span class="removeBold">({{ $detailVal }})</span>
+                                                                @endif
+                                                            @endif
+                                                            @break
+                                                        @case('yes_parenthetical')
+                                                            @php
+                                                                $amtKey = $field['amount_key'] ?? '';
+                                                                $amtVal = $getVal($amtKey);
+                                                                $cleanVal = str_replace('"', '', $fieldVal);
+                                                            @endphp
+                                                            @if (strtolower($cleanVal) === 'yes' && !empty($amtVal))
+                                                                <span class="removeBold">Yes ({!! $fmtMoneyVal($amtVal) !!})</span>
+                                                            @else
+                                                                <span class="removeBold">{{ $cleanVal }}</span>
                                                             @endif
                                                             @break
                                                         @default
@@ -1747,7 +1850,7 @@
                         </div>
                         @endif
 
-                        @if (@$auction->get->commission_structure_type != null)
+                        @if (@$auction->get->commission_structure_type != null && str_replace('"', '', @$auction->get->commission_structure) !== "No Compensation Offered to the Buyer's Broker")
                         @php
                             $buyerBrokerFeeType = @$auction->get->commission_structure_type ?? '';
                             $buyerBrokerFee = '—';
@@ -1915,28 +2018,16 @@
                         @if (@$auction->get->early_termination_fee_option != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Early Termination Fee:
-                            <span class="removeBold">{{ ucfirst(strtolower(@$auction->get->early_termination_fee_option)) }}</span>
+                            <span class="removeBold">{!! \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->early_termination_fee_option, $fmtMoney(@$auction->get->early_termination_fee_amount)) !!}</span>
                         </div>
-                        @if (in_array(strtolower(@$auction->get->early_termination_fee_option ?? ''), ['yes', '1', 'true']) && @$auction->get->early_termination_fee_amount)
-                        <div class="col-md-12 col-12 pt-2 fw-bold">
-                            Termination Fee Amount:
-                            <span class="removeBold">{{ $fmtMoney(@$auction->get->early_termination_fee_amount) }}</span>
-                        </div>
-                        @endif
                         @endif
 
                         @if (!empty(@$auction->get->retainer_fee_option))
                         <div class="col-md-12 col-12 pt-2 fw-bold">
                             Retainer Fee:
-                            <span class="removeBold">{{ in_array(strtolower(@$auction->get->retainer_fee_option ?? ''), ['yes']) ? 'Yes' : 'No' }}</span>
+                            <span class="removeBold">{!! \App\Helpers\ListingDisplayHelper::formatYesParenthetical(@$auction->get->retainer_fee_option, $fmtMoney(@$auction->get->retainer_fee_amount)) !!}</span>
                         </div>
                         @if (in_array(strtolower(@$auction->get->retainer_fee_option ?? ''), ['yes']))
-                            @if (!empty(@$auction->get->retainer_fee_amount))
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Retainer Fee Amount:
-                                <span class="removeBold">{{ $fmtMoney(@$auction->get->retainer_fee_amount) }}</span>
-                            </div>
-                            @endif
                             @if (!empty(@$auction->get->retainer_fee_application))
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Retainer Fee Application:

@@ -1,0 +1,226 @@
+## Replit Instructions With Safeguards
+
+### Hire a Seller’s Agent — Actual Listing Display + Tabs + Formatting + Media persistence fixes
+
+**Do NOT rename or delete any database columns.**
+**Do NOT delete or modify any existing listings, drafts, or agent bids.**
+**Do NOT change dropdown option values or tooltips.**
+**Only modify: (1) Hire a Seller’s Agent actual listing display logic, (2) tab rendering for actual listing, and (3) non-destructive edit-save persistence for Personal Photo/Video fields.**
+
+---
+
+# A) Missing fields on actual listing when value is “None” (must show “None”)
+
+### Issues
+
+* **Property Condition** not showing
+* **Appliances Included: None** not showing
+* **Special Sale Provision: None** not showing
+
+### Required fix (display logic only)
+
+In the Hire a Seller’s Agent listing display row builder:
+
+1. For each of these fields, treat `"None"` as a **valid display value** (do not filter it out).
+2. Remove/override any `filled()` / `!empty()` / `array_filter()` checks that hide the row when the value equals `"None"` (or its stored token such as `none`).
+
+**Safeguard:** Only change the condition for these specific fields, not global filtering.
+
+---
+
+# B) Carport must show before Garage (ordering)
+
+### Issue
+
+* Carport appears after Garage
+
+### Required fix
+
+In the Seller listing display “Parking” block:
+
+* Ensure display order is:
+
+  1. **Carport**
+  2. **Garage**
+* Do not rely on “non-empty” loop order; use an explicit ordered list of keys.
+
+**Safeguard:** Only affects Hire a Seller’s Agent listing display.
+
+---
+
+# C) Label changes on listing display (text only)
+
+### Issues
+
+* “Pet Types” must display as **Acceptable Pet Types**
+* “Pet Weight (lbs)” must display as **Maximum Weight Per Pet (lbs)**
+
+### Required fix
+
+In the listing display label map:
+
+* Change label text only (do not change stored field name)
+* Ensure it renders the same saved values.
+
+**Safeguard:** Do not change form labels/tooltips—display-only.
+
+---
+
+# D) Convert specific answers from bubble format to regular text (display-only)
+
+### Requirement
+
+These fields must render as **regular text** even if they are currently rendered as “bubble tags”:
+
+* Occupancy Requirement
+* Transaction Fees Responsibility
+* Timing of Transfer
+* Acceptable Exchange Item
+* Acceptable Condition of Exchange/Trade Item
+* Liens / Encumbrances Disclosure
+* Inspection / Verification Rights
+* Offered Option Fee
+* Option Fee Credit Toward Purchase Price
+* Maintenance / Repair Responsibility
+* Rent Credit Toward Purchase Price
+* Transaction Fees Responsibility (Gas Fees)
+* Balloon Payment
+* Amortization Type
+* Payment Frequency
+* (also: Prepayment Penalty should be regular text Yes/No)
+
+### Required fix
+
+In the Seller listing display renderer:
+
+1. For these keys, bypass the “bubble” renderer and use a plain text renderer:
+
+   * If value is array → join with comma, or newline list
+   * If scalar → print as-is
+
+**Safeguard:** Do not change bubble rendering globally—only override for these specific fields.
+
+---
+
+# E) Combine Yes/No + Amount into a single line (display-only)
+
+### Must be one line:
+
+* **Offered Option Fee:** show `Yes ($50,000)` or `No`
+* **Prepayment Penalty:** show `Yes ($5,000)` or `No`
+* **Balloon Payment:** show `Yes ($50,000)` or `No`
+* **Early Termination Fee:** show `Yes ($400)` or `No`
+* **Retainer Fee:** show `Yes ($400)` or `No`
+
+### Required fix
+
+For each pair of fields (boolean + amount):
+
+1. Display only the parent row
+2. If parent = Yes and amount exists → append ` ($amount)` inline
+3. Do **not** render the separate “Amount” row when parent = Yes
+4. If parent = No → display only `No` and suppress amount row entirely
+
+**Safeguard:** Do not change stored values—display-only. Keep exact label text for the parent row.
+
+---
+
+# F) Buyer’s Broker Commission Structure gating (hide fee row when “No compensation” selected)
+
+### Issue
+
+If user selects:
+
+* **No Compensation Offered to the Buyer’s Broker**
+  Then **Buyer’s Broker Commission Fee** must NOT show.
+
+### Required fix
+
+In Seller listing display:
+
+1. Read the saved value of `buyers_broker_commission_structure` (exact field name used in your system)
+2. If it equals the “no compensation” option value, then:
+
+   * do not render the Buyer’s Broker Commission Fee row
+   * do not render any dependent buyer broker fee sub-rows
+
+**Safeguard:** Use the actual stored option value, not the label, and do not change dropdown values.
+
+---
+
+# G) Additional Details tab missing (actual listing)
+
+### Required fix
+
+In the Hire a Seller’s Agent actual listing view:
+
+1. Ensure the tab navigation includes **Additional Details**
+2. Ensure the tab content includes the correct partial/section and is passed the listing data
+3. Confirm it renders for all Seller listing property types where it exists
+
+**Safeguard:** Do not rename tabs. Only restore missing render.
+
+---
+
+# H) Personal Video not showing + Personal Photo/Video must persist across edits
+
+### Issues
+
+* Personal Video link exists but does not display
+* Personal Photo disappears after multiple edits
+* Both must persist regardless of how many edits
+
+### Required fix (non-destructive persistence)
+
+1. **Listing display**
+
+   * Ensure the Personal Video field is rendered if a valid URL exists (do not hide due to `filled()` quirks)
+   * Render as a clickable link or embedded video section (whatever your current standard is)
+
+2. **Edit save persistence**
+
+   * Confirm edit save logic does NOT overwrite these fields to null/empty when user doesn’t change them.
+   * If the edit form does not re-send these values every time, the update method must preserve existing values:
+
+     * If incoming value is empty AND existing DB value is not empty → keep existing DB value
+   * If Personal Photo is a stored file path:
+
+     * Only replace it if a new upload occurred
+     * Otherwise keep existing stored path
+
+**Safeguards**
+
+* Do not delete stored media files.
+* Do not change upload mechanisms.
+* Only add “preserve existing value if no new value provided” logic for these two fields.
+
+---
+
+# QA Checklist (must pass)
+
+1. Property Condition shows when selected
+2. Appliances Included shows “None” when selected None
+3. Special Sale Provision shows “None” when selected None
+4. Carport displays before Garage
+5. Labels display as:
+
+   * Acceptable Pet Types
+   * Maximum Weight Per Pet (lbs)
+6. Listed fields render as regular text (not bubbles)
+7. Offered Option Fee / Prepayment Penalty / Balloon Payment / Early Termination Fee / Retainer Fee render as:
+
+   * Yes ($amount) OR No
+   * no separate amount rows
+8. If Buyer’s Broker Commission Structure = “No Compensation…” then Buyer’s Broker Commission Fee is hidden
+9. Additional Details tab appears and renders content
+10. Personal Video displays if URL exists
+11. Personal Photo and Personal Video persist through multiple edits without disappearing
+
+---
+
+## Copy/Paste Prompt for Replit AI
+
+“Hire a Seller’s Agent fixes with safeguards: Do not rename/delete DB columns, do not modify listings/drafts/bids, do not change option values or tooltips. Only modify Hire a Seller’s Agent actual listing display logic + restore Additional Details tab rendering + preserve Personal Photo/Video fields on edit saves.
+Fix: (1) Property Condition must display; (2) Appliances Included and Special Sale Provision must display ‘None’ when selected; treat ‘None’ as valid value; (3) Carport must render before Garage; (4) Change display labels: ‘Pet Types’ -> ‘Acceptable Pet Types’, ‘Pet Weight (lbs)’ -> ‘Maximum Weight Per Pet (lbs)’; (5) Render these answers as regular text (not bubbles): Occupancy Requirement, Transaction Fees Responsibility, Timing of Transfer, Acceptable Exchange Item, Acceptable Condition of Exchange/Trade Item, Liens/Encumbrances Disclosure (Yes/No as text), Inspection/Verification Rights, Offered Option Fee, Option Fee Credit Toward Purchase Price, Maintenance/Repair Responsibility, Rent Credit Toward Purchase Price (Yes/No as text), Transaction Fees Responsibility (Gas Fees), Balloon Payment, Amortization Type, Payment Frequency; (6) Combine Yes/No + amount inline and suppress separate amount rows: Offered Option Fee -> Yes ($amount)/No, Prepayment Penalty -> Yes ($amount)/No, Balloon Payment -> Yes ($amount)/No, Early Termination Fee -> Yes ($amount)/No, Retainer Fee -> Yes ($amount)/No; (7) If Buyer’s Broker Commission Structure = ‘No Compensation Offered to the Buyer’s Broker’, hide Buyer’s Broker Commission Fee and dependent fee rows; (8) Personal Video must display if URL exists; Personal Photo and Personal Video must persist across multiple edits by preserving existing DB values when edit submit does not provide new values (only overwrite if user uploads/changes).”
+
+If you want this to be extra fast/cheap in Replit, run it in **Lite mode** with **App testing OFF** and tell it to touch only the Seller listing display blade + Seller edit update method where media fields are saved.
