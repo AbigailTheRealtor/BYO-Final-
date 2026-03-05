@@ -1,3 +1,7 @@
+{{-- LEGACY EDIT FORM (DO NOT USE)
+All Seller edits must go through TenantAgentAuction.php via /hire/agent/auction/seller/{id}
+This page should redirect and never be used.
+--}}
 @extends('layouts.main')
 @push('styles')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bbbootstrap/libraries@main/choices.min.css">

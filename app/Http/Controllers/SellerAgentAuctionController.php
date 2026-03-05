@@ -300,16 +300,7 @@ class SellerAgentAuctionController extends Controller
 
     public function editSellerAgentHireAuction($id)
     {
-        $page_data['auction'] = $auction = SellerAgentAuction::whereId($id)->first();
-        $page_data['title'] = 'Edit Seller\'s Agent Auction ' . $auction->address;
-        $page_data['cities'] = City::where('state_id', '3930')->get();
-        $page_data['states'] = State::where('country_id', '231')->where('id', '3930')->get();
-        $page_data['counties'] = County::all();
-        $page_data['bedrooms'] = Bedroom::all();
-        $page_data['bathrooms'] = Bathroom::all();
-        $page_data['financings'] = Financing::orderBy('sort', 'ASC')->get();
-        $page_data['id'] = $id;
-        return view('hire_seller_agent.edit', $page_data);
+        return redirect("/hire/agent/auction/seller/{$id}");
     }
 
     public function updateSellerAgentHireAuction(Request $request)

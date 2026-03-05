@@ -70,7 +70,7 @@
                                                             @if (!@$auction->is_approved)
                                                                 <li>
                                                                     <a class="dropdown-item"
-                                                                        href="{{ route('editSellerAgentHireAuction', @$auction->id) }}">
+                                                                        href="/hire/agent/auction/seller/{{ @$auction->id }}">
                                                                         <i class="fa-solid fa-pencil"
                                                                             style="font-size:14px;"></i>
                                                                         <span style="font-size:14px;">Edit</span>
