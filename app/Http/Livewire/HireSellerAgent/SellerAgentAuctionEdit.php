@@ -206,6 +206,7 @@ class SellerAgentAuctionEdit extends Component
     public $agency_agreement_timeframe = '';
     public $agency_agreement_custom = '';
     public $brokerage_relationship = '';
+    public $additional_details_broker = '';
 
     // Personal information
     public $first_name = '';
@@ -1197,6 +1198,7 @@ class SellerAgentAuctionEdit extends Component
             $this->agency_agreement_timeframe = $auction->get->agency_agreement_timeframe;
             $this->agency_agreement_custom = $auction->get->agency_agreement_custom;
             $this->brokerage_relationship = $auction->get->brokerage_relationship;
+            $this->additional_details_broker = $auction->get->additional_details_broker ?? '';
 
             // Personal information
             $this->first_name = $auction->get->first_name;
@@ -1519,6 +1521,7 @@ class SellerAgentAuctionEdit extends Component
         $auction->saveMeta('agency_agreement_timeframe', $this->agency_agreement_timeframe);
         $auction->saveMeta('agency_agreement_custom', $this->agency_agreement_custom);
         $auction->saveMeta('brokerage_relationship', $this->brokerage_relationship);
+        $auction->saveMeta('additional_details_broker', $this->additional_details_broker);
 
         // 2nd tab limited services
         // Meeting details
