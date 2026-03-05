@@ -2072,6 +2072,31 @@ $lease_types = [
             tab.addEventListener('shown.bs.tab', function() {
                 // Small delay to ensure tab content is visible
                 setTimeout(initializeTooltips, 50);
+                setTimeout(function() {
+                    if ($('#exchange_item').length) {
+                        var $exEl = $('#exchange_item');
+                        if (!$exEl.hasClass('select2-hidden-accessible')) {
+                            $exEl.select2({ placeholder: "Select acceptable exchange items", allowClear: true });
+                        }
+                        var saved = [];
+                        try { saved = JSON.parse($exEl.attr('data-selected') || '[]'); } catch(e) {}
+                        if (!saved.length) {
+                            try { saved = @this.get('exchange_item') || []; } catch(e) {}
+                        }
+                        if (saved.length > 0) {
+                            var current = $exEl.val() || [];
+                            if (current.length === 0) {
+                                $exEl.val(saved).trigger('change.select2');
+                            }
+                        }
+                        if (!$exEl.data('exchange-change-bound')) {
+                            $exEl.on('change', function(e) {
+                                @this.set('exchange_item', $(this).val() || []);
+                            });
+                            $exEl.data('exchange-change-bound', true);
+                        }
+                    }
+                }, 100);
             });
         });
     });

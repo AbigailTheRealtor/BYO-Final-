@@ -1,0 +1,157 @@
+Here are **copy-paste Replit instructions with hard safeguards** for exactly what you listed. These are written to keep Replit from wandering into legacy Seller files and to focus on the **shared Livewire flow**.
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS — Hire a Seller’s Agent (Shared Livewire Only)
+
+### HARD SAFEGUARDS (NON-NEGOTIABLE)
+
+1. Apply changes **ONLY** to the **Hire a Seller’s Agent create/edit + listing display** that runs through **`TenantAgentAuction.php`** with user_type = **Seller**.
+2. **DO NOT** edit legacy Seller controller/blades (`/hire/agent/seller/edit/{id}` flow) unless the listing display you are fixing is confirmed to come from that legacy route.
+3. **DO NOT** rename/delete any DB columns, tables, or migrations.
+4. **DO NOT** change option values, labels, tooltips, or business logic not listed below.
+5. Keep edits **surgical**: only adjust **field ordering**, **conditional visibility**, and **display formatting** for the compensation fields.
+
+---
+
+# A) Income Only — Field Order + Remove Age Restricted Community
+
+## A1) Move “Total Acreage” above “Appliances Included” (Income only)
+
+### Goal
+
+On **Income** Seller listings (create/edit UI and/or display—wherever these appear), the field **Total Acreage** must render **above** **Appliances Included**.
+
+### Instructions
+
+1. In the Seller **Income** property details rendering (the section that outputs Total Acreage + Appliances Included), reorder the output so:
+
+   * `Total Acreage`
+   * then `Appliances Included`
+2. Do not change the fields themselves—only the **order**.
+3. Make sure this applies to:
+
+   * Create listing
+   * Edit listing
+   * Draft resume
+   * Actual listing view (if this section is shown there)
+
+**Acceptance test:** Create an Income Seller listing with both fields filled → view shows Total Acreage above Appliances Included.
+
+---
+
+## A2) Remove “Age Restricted Community” from Income listings
+
+### Goal
+
+**Age Restricted Community** must **not appear** anywhere for **Income** Seller listings.
+
+### Instructions
+
+1. Add a condition so the field renders **only if property type is NOT Income**.
+2. This must apply to:
+
+   * Create
+   * Edit
+   * Drafts
+   * Listing display
+
+✅ Do not delete the field globally; just hide it under Income.
+
+**Acceptance test:** Open an Income Seller listing create/edit and listing view → no Age Restricted Community field.
+
+---
+
+# B) Income Property Details — Remove Carport + Garage from Property Details (Income only)
+
+### Goal
+
+Under **Property Details** for **Income** Seller listings, **Carport** and **Garage** must not show.
+
+### Instructions
+
+1. In the Seller “Property Details” section for Income type, remove/hide the rows for:
+
+   * Carport
+   * Garage
+2. Do not remove Carport/Garage globally—only suppress them when property type = Income.
+3. If Carport/Garage are still needed elsewhere (Residential), leave them intact.
+
+**Acceptance test:** Income listing → Property Details does not show Carport or Garage. Residential listing still shows as expected.
+
+---
+
+# C) All Seller Property Types — Lease-Option Compensation shows $ even when % selected (Display fix)
+
+### Problem
+
+For these two fields:
+
+* **Compensation for Creating the Lease-Option Agreement**
+* **Compensation if Purchase Option is Exercised**
+
+You selected **%** input, but on the **actual listing** it displays as **$**.
+
+### Goal
+
+On listing display, these must render using the **correct unit**:
+
+* If type = percent → show `%`
+* If type = currency → show `$`
+* If user selected “percent of ___” (if applicable), keep that wording as you already do elsewhere
+
+### Instructions (surgical)
+
+1. Find the Seller listing display code that renders these two Lease-Option compensation lines.
+2. Identify how the saved data is stored:
+
+   * there is usually a “type” selector saved (e.g., `lease_option_comp_type` = `percent` or `dollar`)
+   * and the numeric value field (e.g., `lease_option_comp_amount`)
+3. Fix the display formatter so it does **not hardcode `$`**.
+4. Implement a helper/conditional:
+
+   * If saved type is `%` / `percent` → render like `10%`
+   * Else → render like `$10,000`
+5. Apply the same logic to both fields.
+
+### Edge cases to handle
+
+* Values stored as strings like `"10"` should still show `10%`.
+* If value already includes `%` or `$`, do not double-prefix.
+* If type is missing/legacy:
+
+  * default to the symbol that matches the stored value if it contains `%`
+  * otherwise default to `$` (but only as a fallback)
+
+**Acceptance test:** Create/edit a Seller listing, set both fields to Percent, save, view listing → both show `%` (not `$`).
+
+---
+
+# Required Verification (must do before marking complete)
+
+1. Test with an **Income** Seller listing:
+
+   * Total Acreage above Appliances Included ✅
+   * Age Restricted Community not present ✅
+   * Carport/Garage removed from Property Details ✅
+2. Test with a **Residential** Seller listing:
+
+   * Carport/Garage still appear if they should ✅
+   * Age Restricted Community behaves normally ✅
+3. Test Lease-Option compensation display on actual listing:
+
+   * Percent selections show `%` ✅
+   * Dollar selections show `$` ✅
+
+---
+
+## If Replit tries to edit old Seller files again (STOP RULE)
+
+If Replit starts modifying `SellerAgentAuctionController` or legacy `hire_seller_agent/edit.blade.php` without proof the active Seller flow uses them, **STOP immediately** and instead update only:
+
+* `TenantAgentAuction.php`
+* the shared Seller listing display template used by that Livewire flow
+
+---
+
+If you want, paste a screenshot of the **actual listing area** where the Lease-Option comp is showing `$` (and the label right above it). I can tell you the most likely display function/partial that’s hardcoding the currency symbol so Replit touches exactly one spot.
