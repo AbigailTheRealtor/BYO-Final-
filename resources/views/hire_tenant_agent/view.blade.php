@@ -1126,7 +1126,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </span>
                 </div>
                 @endif
-
                 <div class="row">
                     {{-- @if (isset($auction->get->video))
                                 <div class="col-md-6 col-6 pt-2 fw-bold">Video:
