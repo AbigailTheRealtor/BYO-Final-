@@ -2153,6 +2153,11 @@
                 @this.set('garage_parking_spaces_option', $gps.val());
             }
 
+            var $gpsT = $('#garage_parking_spaces_option');
+            if ($gpsT.length && $gpsT.hasClass('select2-hidden-accessible')) {
+                @this.set('garage_parking_spaces_option', $gpsT.val() || []);
+            }
+
             var $ls = $('#leasing_spaces_tenant');
             if ($ls.length && $ls.hasClass('select2-hidden-accessible')) {
                 @this.set('leasing_spaces_tenant', $ls.val() || []);
@@ -2171,6 +2176,16 @@
             var $dll = $('.lease_term_options');
             if ($dll.length && $dll.hasClass('select2-hidden-accessible')) {
                 @this.set('desired_lease_length', $dll.val() || []);
+            }
+
+            var $lf = $('.lease_for');
+            if ($lf.length && $lf.hasClass('select2-hidden-accessible')) {
+                @this.set('lease_for', $lf.val() || []);
+            }
+
+            var $nna = $('#non_negotiable_amenities');
+            if ($nna.length && $nna.hasClass('select2-hidden-accessible')) {
+                @this.set('non_negotiable_amenities', $nna.val() || []);
             }
         }
 
@@ -2267,7 +2282,7 @@
                 { sel: '#pool_type', prop: 'pool_type' },
                 { sel: '#non_negotiable_amenities', prop: 'non_negotiable_amenities' },
                 { sel: '#credit_scroe_rating', prop: 'credit_scroe_rating' },
-                { sel: '#lease_for', prop: 'lease_for' },
+                { sel: '.lease_for', prop: 'lease_for' },
                 { sel: '.number_of_unit_type', prop: 'number_of_unit_type' },
                 { sel: '#tenant_require', prop: 'tenant_require' },
                 { sel: '#owner_pays', prop: 'owner_pays' },
@@ -2435,17 +2450,34 @@
 
 
 
-            if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
-                $('#property_items').select2({
+            var _lastPropertyTypeForPI = @this.get('property_type') || '';
+            function initPropertyItemsSelect2() {
+                var $pi = $('#property_items');
+                if (!$pi.length) return;
+                if ($pi.hasClass('select2-hidden-accessible')) {
+                    $pi.select2('destroy');
+                }
+                $pi.select2({
                     placeholder: "Select",
                     allowClear: true,
                 });
-
-                $('#property_items').on('change', function(e) {
+                var lwVals = @this.get('property_items') || [];
+                if (lwVals.length) {
+                    $pi.val(lwVals).trigger('change.select2');
+                }
+                $pi.off('change').on('change', function(e) {
                     let selectedValues = $(this).val();
                     debouncedSet('property_items', selectedValues);
                 });
             }
+            initPropertyItemsSelect2();
+            Livewire.hook('message.processed', () => {
+                var currentPT = @this.get('property_type') || '';
+                if (currentPT !== _lastPropertyTypeForPI) {
+                    _lastPropertyTypeForPI = currentPT;
+                    initPropertyItemsSelect2();
+                }
+            });
 
 
 
@@ -2641,9 +2673,13 @@
                 });
             }
 
-            if ($('#non_negotiable_amenities').length && !$('#non_negotiable_amenities').hasClass('select2-hidden-accessible')) {
-                $('#non_negotiable_amenities')
-                    .select2({
+            function initNonNegotiableAmenitiesSelect2() {
+                var $nn = $('#non_negotiable_amenities');
+                if (!$nn.length) return;
+                if ($nn.hasClass('select2-hidden-accessible')) {
+                    $nn.select2('destroy');
+                }
+                $nn.select2({
                         placeholder: "Select",
                         allowClear: true
                     })
@@ -2659,15 +2695,23 @@
                         }
                         @this.set('non_negotiable_amenities', vals);
                     });
-
-                var nnInitial = @this.get('non_negotiable_amenities') || [];
-                if (nnInitial.length) {
-                    $('#non_negotiable_amenities').val(nnInitial).trigger('change.select2');
-                    if (nnInitial.includes('Other')) {
+                var nnVals = @this.get('non_negotiable_amenities') || [];
+                if (nnVals.length) {
+                    $nn.val(nnVals).trigger('change.select2');
+                    if (nnVals.includes('Other')) {
                         $('.other_non_negotiable_amenities').removeClass('d-none');
                     }
                 }
             }
+            var _lastPropertyTypeForNN = @this.get('property_type') || '';
+            initNonNegotiableAmenitiesSelect2();
+            Livewire.hook('message.processed', () => {
+                var currentPT = @this.get('property_type') || '';
+                if (currentPT !== _lastPropertyTypeForNN) {
+                    _lastPropertyTypeForNN = currentPT;
+                    initNonNegotiableAmenitiesSelect2();
+                }
+            });
             // End to non_negotiable_amenities
 
 
@@ -3564,15 +3608,16 @@
 
             const countiesContainer = currentTabContent.querySelector('.counties-container');
             const countiesErrorSpan = currentTabContent.querySelector('#counties_error');
-            const countiesOptionalForTab = ['buyer', 'tenant'];
-            if (countiesContainer && !countiesOptionalForTab.includes(CURRENT_USER_TYPE)) {
+            if (countiesContainer) {
                 const countyBadges = countiesContainer.querySelectorAll('.badge');
                 if (!countyBadges || countyBadges.length === 0) {
                     isValid = false;
+                    countiesContainer.classList.add('is-invalid');
                     if (countiesErrorSpan) {
                         countiesErrorSpan.textContent = 'This field is required.';
                     }
                 } else {
+                    countiesContainer.classList.remove('is-invalid');
                     if (countiesErrorSpan) {
                         countiesErrorSpan.textContent = '';
                     }
@@ -3631,11 +3676,15 @@
                 const errorContainers = currentTabContent.querySelectorAll('.error');
                 errorContainers.forEach(ec => {
                     const text = ec.textContent.trim();
-                    if (text && !seen.has(text)) {
-                        seen.add(text);
-                        const li = document.createElement('li');
-                        li.textContent = text;
-                        errorList.appendChild(li);
+                    if (text && text !== 'This field is required.' && !seen.has(text)) {
+                        const label = ec.closest('.form-group')?.querySelector('label');
+                        const fieldName = label ? label.textContent.replace(/[*:]/g, '').trim() : null;
+                        if (fieldName && !seen.has(fieldName)) {
+                            seen.add(fieldName);
+                            const li = document.createElement('li');
+                            li.textContent = fieldName;
+                            errorList.appendChild(li);
+                        }
                     }
                 });
             }
@@ -3893,8 +3942,7 @@
                     }
 
                     const countiesContainer = document.querySelector('.counties-container');
-                    const countiesOptionalFor = ['buyer', 'tenant'];
-                    if (countiesContainer && !countiesOptionalFor.includes(CURRENT_USER_TYPE_LOCAL)) {
+                    if (countiesContainer) {
                         const countyBadges = countiesContainer.querySelectorAll('.badge');
                         if (!countyBadges || countyBadges.length === 0) {
                             const tab = countiesContainer.closest('.tab-pane');

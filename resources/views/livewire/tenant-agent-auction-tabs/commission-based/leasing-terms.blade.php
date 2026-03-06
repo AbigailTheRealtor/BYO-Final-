@@ -36,11 +36,17 @@
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true" title="Select the Tenant's preferred lease term length.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
+    @php
+        $selectedLeaseFor = $this->lease_for ?? [];
+        if (is_string($selectedLeaseFor)) {
+            $selectedLeaseFor = json_decode($selectedLeaseFor, true) ?? [];
+        }
+    @endphp
     <div class="input-cover">
-        <select wire:model="lease_for"  class="lease_for form-control has-icon select2-multiple"
+        <select class="lease_for form-control has-icon select2-multiple"
             data-icon="fa-solid fa-file-pen input-icon2" multiple required>
             @foreach ($lease_for_res as $row_pt)
-                <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
+                <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $selectedLeaseFor) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
             @endforeach
         </select>
     </div>
@@ -57,11 +63,17 @@
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true" title="Select the Tenant's preferred lease term length.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
+    @php
+        $selectedLeaseForCom = $this->lease_for ?? [];
+        if (is_string($selectedLeaseForCom)) {
+            $selectedLeaseForCom = json_decode($selectedLeaseForCom, true) ?? [];
+        }
+    @endphp
     <div class="input-cover">
-        <select wire:model="lease_for"  class="lease_for form-control has-icon select2-multiple"
+        <select class="lease_for form-control has-icon select2-multiple"
             data-icon="fa-solid fa-file-pen input-icon2" multiple required>
             @foreach ($lease_for_com as $row_pt)
-                <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
+                <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $selectedLeaseForCom) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
             @endforeach
         </select>
     </div>

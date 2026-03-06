@@ -31,7 +31,7 @@
             'Launch hyperlocal digital ads targeting the Tenant’s preferred rental areas'
         ] as $service)
             <div class="form-check service-item">
-                <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
+                <input class="form-check-input" type="checkbox" wire:model.defer="services" value="{{ $service }}"
                     id="marketing-{{ Str::slug($service) }}">
                 <label class="form-check-label" for="marketing-{{ Str::slug($service) }}">
                     {{ $service }}
@@ -51,7 +51,7 @@
             'Evaluate properties with the Tenant and provide insights on pricing, lease terms, and overall fit'
         ] as $service)
             <div class="form-check service-item">
-                <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
+                <input class="form-check-input" type="checkbox" wire:model.defer="services" value="{{ $service }}"
                     id="search-{{ Str::slug($service) }}">
                 <label class="form-check-label" for="search-{{ Str::slug($service) }}">
                     {{ $service }}
@@ -72,7 +72,7 @@
             'Provide factual observations on property layout and condition'
         ] as $service)
             <div class="form-check service-item">
-                <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
+                <input class="form-check-input" type="checkbox" wire:model.defer="services" value="{{ $service }}"
                     id="showings-{{ Str::slug($service) }}">
                 <label class="form-check-label" for="showings-{{ Str::slug($service) }}">
                     {{ $service }}
@@ -96,7 +96,7 @@
             'Answer questions about the application process, screening timelines, and required documentation'
         ] as $service)
             <div class="form-check service-item">
-                <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
+                <input class="form-check-input" type="checkbox" wire:model.defer="services" value="{{ $service }}"
                     id="application-{{ Str::slug($service) }}">
                 <label class="form-check-label" for="application-{{ Str::slug($service) }}">
                     {{ $service }}
@@ -117,7 +117,7 @@
             'Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties',
         ] as $service)
             <div class="form-check service-item">
-                <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
+                <input class="form-check-input" type="checkbox" wire:model.defer="services" value="{{ $service }}"
                     id="lease-{{ Str::slug($service) }}">
                 <label class="form-check-label" for="lease-{{ Str::slug($service) }}">
                     {{ $service }}
@@ -138,7 +138,7 @@
             'Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods'
         ] as $service)
             <div class="form-check service-item">
-                <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
+                <input class="form-check-input" type="checkbox" wire:model.defer="services" value="{{ $service }}"
                     id="move-in-{{ Str::slug($service) }}">
                 <label class="form-check-label" for="move-in-{{ Str::slug($service) }}">
                     {{ $service }}
@@ -159,7 +159,7 @@
             'Provide general guidance on lease clauses, payment terms, and renewal options',
         ] as $service)
             <div class="form-check service-item">
-                <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
+                <input class="form-check-input" type="checkbox" wire:model.defer="services" value="{{ $service }}"
                     id="leasing-{{ Str::slug($service) }}">
                 <label class="form-check-label" for="leasing-{{ Str::slug($service) }}">
                     {{ $service }}
@@ -194,7 +194,7 @@
             'Launch hyperlocal digital ads targeting the Tenant’s preferred leasing areas'
         ] as $service)
             <div class="form-check service-item">
-                <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
+                <input class="form-check-input" type="checkbox" wire:model.defer="services" value="{{ $service }}"
                     id="marketing-{{ Str::slug($service) }}">
                 <label class="form-check-label" for="marketing-{{ Str::slug($service) }}">
                     {{ $service }}
@@ -215,7 +215,7 @@
             'Evaluate properties for layout efficiency, building specs, logistics, zoning fit, and operational alignment'
         ] as $service)
             <div class="form-check service-item">
-                <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
+                <input class="form-check-input" type="checkbox" wire:model.defer="services" value="{{ $service }}"
                     id="search-{{ Str::slug($service) }}">
                 <label class="form-check-label" for="search-{{ Str::slug($service) }}">
                     {{ $service }}
@@ -235,7 +235,7 @@
             'Provide factual notes on layout, access, parking, visibility, and other operational considerations'
         ] as $service)
             <div class="form-check service-item">
-                <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
+                <input class="form-check-input" type="checkbox" wire:model.defer="services" value="{{ $service }}"
                     id="showings-{{ Str::slug($service) }}">
                 <label class="form-check-label" for="showings-{{ Str::slug($service) }}">
                     {{ $service }}
@@ -255,7 +255,7 @@
             'Submit complete and organized application packages to the Landlord’s Agent, Landlord, or Property Manager'
         ] as $service)
             <div class="form-check service-item">
-                <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
+                <input class="form-check-input" type="checkbox" wire:model.defer="services" value="{{ $service }}"
                     id="application-{{ Str::slug($service) }}">
                 <label class="form-check-label" for="application-{{ Str::slug($service) }}">
                     {{ $service }}
@@ -278,7 +278,7 @@
             'Track required deposits, rent commencement, and key lease dates to ensure move-in readiness'
         ] as $service)
             <div class="form-check service-item">
-                <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
+                <input class="form-check-input" type="checkbox" wire:model.defer="services" value="{{ $service }}"
                     id="lease-{{ Str::slug($service) }}">
                 <label class="form-check-label" for="lease-{{ Str::slug($service) }}">
                     {{ $service }}
@@ -299,7 +299,7 @@
             'Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods'
         ] as $service)
             <div class="form-check service-item">
-                <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
+                <input class="form-check-input" type="checkbox" wire:model.defer="services" value="{{ $service }}"
                     id="move-in-{{ Str::slug($service) }}">
                 <label class="form-check-label" for="move-in-{{ Str::slug($service) }}">
                     {{ $service }}
@@ -320,7 +320,7 @@
             'Provide general guidance on lease clauses, escalation terms, and space usage considerations',
         ] as $service)
             <div class="form-check service-item">
-                <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
+                <input class="form-check-input" type="checkbox" wire:model.defer="services" value="{{ $service }}"
                     id="leasing-{{ Str::slug($service) }}">
                 <label class="form-check-label" for="leasing-{{ Str::slug($service) }}">
                     {{ $service }}

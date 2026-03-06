@@ -2150,10 +2150,13 @@ $lease_types = [
             { sel: '#sale_provision', field: 'sale_provision', multi: false },
             { sel: '#offered_financing', field: 'offered_financing', multi: false },
             { sel: '#garage_parking_spaces_option_landlord', field: 'garage_parking_spaces_option', multi: true },
+            { sel: '#garage_parking_spaces_option', field: 'garage_parking_spaces_option', multi: true },
             { sel: '#leasing_spaces_tenant', field: 'leasing_spaces_tenant', multi: true },
             { sel: '#view_preference', field: 'view_preference', multi: true },
             { sel: '.tenant_pays', field: 'tenant_pays', multi: true },
             { sel: '.lease_term_options', field: 'desired_lease_length', multi: true },
+            { sel: '.lease_for', field: 'lease_for', multi: true },
+            { sel: '#non_negotiable_amenities', field: 'non_negotiable_amenities', multi: true },
         ];
         fields.forEach(function(f) {
             var $el = $(f.sel);
@@ -2298,7 +2301,7 @@ $lease_types = [
             { id: '#sale_provision', prop: 'sale_provision' },
             { id: '#offered_financing', prop: 'offered_financing' },
             { id: '.condition_prop_buyer', prop: 'condition_prop_buyer' },
-            { id: '#lease_for', prop: 'lease_for' },
+            { id: '.lease_for', prop: 'lease_for' },
             { id: '#property_items', prop: 'property_items' },
             { id: '#view_preference', prop: 'view_preference' },
             { id: '#appliances', prop: 'appliances' },
@@ -2620,17 +2623,34 @@ $lease_types = [
 
 
         
-        if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
-            $('#property_items').select2({
+        var _lastPropertyTypeForPI = @this.get('property_type') || '';
+        function initPropertyItemsSelect2() {
+            var $pi = $('#property_items');
+            if (!$pi.length) return;
+            if ($pi.hasClass('select2-hidden-accessible')) {
+                $pi.select2('destroy');
+            }
+            $pi.select2({
                 placeholder: "Select",
                 allowClear: true,
             });
-
-            $('#property_items').on('change', function(e) {
+            var lwVals = @this.get('property_items') || [];
+            if (lwVals.length) {
+                $pi.val(lwVals).trigger('change.select2');
+            }
+            $pi.off('change').on('change', function(e) {
                 let selectedValues = $(this).val();
                 debouncedSet('property_items', selectedValues);
             });
         }
+        initPropertyItemsSelect2();
+        Livewire.hook('message.processed', () => {
+            var currentPT = @this.get('property_type') || '';
+            if (currentPT !== _lastPropertyTypeForPI) {
+                _lastPropertyTypeForPI = currentPT;
+                initPropertyItemsSelect2();
+            }
+        });
 
         
 
@@ -2821,10 +2841,13 @@ $lease_types = [
         }
 
         
-        // Initialize Select2 non_negotiable_amenities
-        if ($('#non_negotiable_amenities').length && !$('#non_negotiable_amenities').hasClass('select2-hidden-accessible')) {
-            $('#non_negotiable_amenities')
-                .select2({
+        function initNonNegotiableAmenitiesSelect2() {
+            var $nn = $('#non_negotiable_amenities');
+            if (!$nn.length) return;
+            if ($nn.hasClass('select2-hidden-accessible')) {
+                $nn.select2('destroy');
+            }
+            $nn.select2({
                     placeholder: "Select",
                     allowClear: true
                 })
@@ -2840,15 +2863,24 @@ $lease_types = [
                     }
                     safeLivewireSet('non_negotiable_amenities', vals);
                 });
-        }
-
-        var nnInitial = @this.get('non_negotiable_amenities') || [];
-        if (nnInitial.length) {
-            $('#non_negotiable_amenities').val(nnInitial).trigger('change.select2');
-            if (nnInitial.includes('Other')) {
-                $('.other_non_negotiable_amenities').removeClass('d-none');
+            var nnVals = @this.get('non_negotiable_amenities') || [];
+            if (nnVals.length) {
+                $nn.val(nnVals).trigger('change.select2');
+                if (nnVals.includes('Other')) {
+                    $('.other_non_negotiable_amenities').removeClass('d-none');
+                }
             }
         }
+        var _lastPropertyTypeForNN = @this.get('property_type') || '';
+        initNonNegotiableAmenitiesSelect2();
+        Livewire.hook('message.processed', () => {
+            var currentPT = @this.get('property_type') || '';
+            if (currentPT !== _lastPropertyTypeForNN) {
+                _lastPropertyTypeForNN = currentPT;
+                initNonNegotiableAmenitiesSelect2();
+            }
+        });
+
         // End to non_negotiable_amenities
 
 
@@ -3674,15 +3706,16 @@ $lease_types = [
 
         const countiesContainer = currentTabContent.querySelector('.counties-container');
         const countiesErrorSpan = currentTabContent.querySelector('#counties_error');
-        const countiesOptionalForTab = ['buyer', 'tenant'];
-        if (countiesContainer && !countiesOptionalForTab.includes(CURRENT_USER_TYPE)) {
+        if (countiesContainer) {
             const countyBadges = countiesContainer.querySelectorAll('.badge');
             if (!countyBadges || countyBadges.length === 0) {
                 isValid = false;
+                countiesContainer.classList.add('is-invalid');
                 if (countiesErrorSpan) {
                     countiesErrorSpan.textContent = 'This field is required.';
                 }
             } else {
+                countiesContainer.classList.remove('is-invalid');
                 if (countiesErrorSpan) {
                     countiesErrorSpan.textContent = '';
                 }
@@ -3786,11 +3819,15 @@ $lease_types = [
             const errorContainers = currentTabContent.querySelectorAll('.error');
             errorContainers.forEach(ec => {
                 const text = ec.textContent.trim();
-                if (text && !seen.has(text)) {
-                    seen.add(text);
-                    const li = document.createElement('li');
-                    li.textContent = text;
-                    errorList.appendChild(li);
+                if (text && text !== 'This field is required.' && !seen.has(text)) {
+                    const label = ec.closest('.form-group')?.querySelector('label');
+                    const fieldName = label ? label.textContent.replace(/[*:]/g, '').trim() : null;
+                    if (fieldName && !seen.has(fieldName)) {
+                        seen.add(fieldName);
+                        const li = document.createElement('li');
+                        li.textContent = fieldName;
+                        errorList.appendChild(li);
+                    }
                 }
             });
         }
@@ -4269,8 +4306,7 @@ $lease_types = [
                 }
 
                 const countiesContainer = document.querySelector('.counties-container');
-                const countiesOptionalFor = ['buyer', 'tenant'];
-                if (countiesContainer && !countiesOptionalFor.includes(CURRENT_USER_TYPE_LOCAL)) {
+                if (countiesContainer) {
                     const countyBadges = countiesContainer.querySelectorAll('.badge');
                     if (!countyBadges || countyBadges.length === 0) {
                         const tab = countiesContainer.closest('.tab-pane');

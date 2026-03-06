@@ -94,7 +94,7 @@
 </div> --}}
 
 <div class="form-group mb-3">
-    <label class="fw-bold">Acceptable Cities:<span class="text-danger">*</span></label>
+    <label class="fw-bold">Acceptable Cities:</label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Enter the cities where the Tenant is willing to lease a property.<br>Selecting a city will automatically populate the associated county and state when available.">
@@ -264,19 +264,25 @@
 
     <div class="input-cover">
 
-        <select wire:model="property_items" id="property_items" class="form-control has-icon select2-multiple"
+        <select id="property_items" class="form-control has-icon select2-multiple"
             data-icon="fa-solid fa-home input-icon2" @if (!$property_type) disabled @endif multiple
             required>
+            @php
+                $selectedPropertyItems = $this->property_items ?? [];
+                if (is_string($selectedPropertyItems)) {
+                    $selectedPropertyItems = json_decode($selectedPropertyItems, true) ?? [];
+                }
+            @endphp
             @if ($property_type === 'Residential Property')
                 @foreach ($property_items as $item)
                     @if (str_contains($item['class'], 'residential-length'))
-                        <option value="{{ $item['name'] }}">{{ $item['name'] }}</option>
+                        <option value="{{ $item['name'] }}" {{ in_array($item['name'], $selectedPropertyItems) ? 'selected' : '' }}>{{ $item['name'] }}</option>
                     @endif
                 @endforeach
             @elseif ($property_type === 'Commercial Property')
                 @foreach ($property_items as $item)
                     @if (str_contains($item['class'], 'commercial-length'))
-                        <option value="{{ $item['name'] }}">{{ $item['name'] }}</option>
+                        <option value="{{ $item['name'] }}" {{ in_array($item['name'], $selectedPropertyItems) ? 'selected' : '' }}>{{ $item['name'] }}</option>
                     @endif
                 @endforeach
             @endif
@@ -360,7 +366,7 @@
 @endif
 
 <!-- Other Bedrooms Input (Hidden by Default) -->
-<div class="form-group other_bedrooms d-none">
+<div class="form-group other_bedrooms @if (($this->bedrooms ?? '') !== 'Other') d-none @endif">
     {{-- <label class="fw-bold">Minimum Bedrooms Needed:</label> --}}
     <div class="input-cover">
         <input type="number" wire:model="other_bedrooms" class="form-control has-icon" data-icon="fa-solid fa-bed"
@@ -392,7 +398,7 @@
 </div>
 
 <!-- Other Bathrooms Input (Hidden by Default) -->
-<div class="form-group other_bathrooms d-none">
+<div class="form-group other_bathrooms @if (($this->bathrooms ?? '') !== 'Other') d-none @endif">
     {{-- <label class="fw-bold">Minimum Bathrooms Needed:</label> --}}
     <div class="input-cover">
         <input type="number" wire:model="other_bathrooms" class="form-control has-icon"
@@ -518,7 +524,7 @@
 <!-- Furnishings Needed -->
 @if ($property_type === 'Residential Property')
     <div class="form-group">
-        <label class="fw-bold">Furnishings Needed:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Furnishings Needed:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select whether the Tenant requires the property to be furnished, optional, partially furnished, turnkey, or unfurnished.">
@@ -527,7 +533,7 @@
 
         <div class="input-cover">
             <select wire:model="tenant_require" id="tenant_require" class="form-control has-icon"
-                data-icon="fa-solid fa-couch" required>
+                data-icon="fa-solid fa-couch">
                 <option value="">Select</option>
                 @foreach ($tenant_require as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -610,7 +616,7 @@
 <!-- Garage/Parking Spaces Needed -->
 @if ($property_type === 'Commercial Property')
     <div class="form-group">
-        <label class="fw-bold">Garage/Parking Features Needed:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Garage/Parking Features Needed:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the garage or parking features the Tenant requires.">
@@ -619,7 +625,7 @@
 
         <div class="input-cover">
             <select wire:model="garage_parking_spaces" id="garage_parking_spaces" class="form-control has-icon"
-                data-icon="fa-solid fa-warehouse" required>
+                data-icon="fa-solid fa-warehouse">
                 <option value="">Select</option>
                 <option value="Yes">Yes</option>
                 <option value="No">No</option>
@@ -635,11 +641,17 @@
 
     <div class="input-cover">
 
-        <select wire:model="garage_parking_spaces_option" id="garage_parking_spaces_option"
+        @php
+            $selectedGarageOptions = $this->garage_parking_spaces_option ?? [];
+            if (is_string($selectedGarageOptions)) {
+                $selectedGarageOptions = json_decode($selectedGarageOptions, true) ?? [];
+            }
+        @endphp
+        <select id="garage_parking_spaces_option"
             class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse input-icon2" multiple>
 
             @foreach ($garage_parking_spaces as $row_pt)
-                <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
+                <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $selectedGarageOptions) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
             @endforeach
         </select>
     </div>
@@ -731,8 +743,7 @@
 <!-- Eligibility/Interest in Leasing in 55-and-Over Communities -->
 @if ($property_type === 'Residential Property')
     <div class="form-group">
-        <label class="fw-bold">Age-Restricted Community:<span
-                class="text-danger">*</span></label>
+        <label class="fw-bold">Age-Restricted Community:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Indicate whether the Tenant is eligible for and interested in leasing in an age-restricted community under federal housing laws. 55+ communities typically require at least one occupant to be 55 or older, while 62+ communities require all occupants to be 62 or older.">
@@ -741,7 +752,7 @@
 
         <div class="input-cover">
             <select wire:model="leasing_55_plus" id="purchasing_props" class="form-control has-icon"
-                data-icon="fa-solid fa-users" required>
+                data-icon="fa-solid fa-users">
                 <option value="">Select</option>
                 @foreach ($purchasing_props as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -764,21 +775,26 @@
         </label>
 
 
+        @php
+            $selectedAmenities = $this->non_negotiable_amenities ?? [];
+            if (is_string($selectedAmenities)) {
+                $selectedAmenities = json_decode($selectedAmenities, true) ?? [];
+            }
+        @endphp
         <div class="input-cover">
-            <select wire:model="non_negotiable_amenities" id="non_negotiable_amenities"
+            <select id="non_negotiable_amenities"
                 class="form-control has-icon select2-multiple" data-icon="fa-solid fa-lock input-icon2"
                 @if (!$property_type) disabled @endif multiple>
-                <option value="">Select</option>
                 @if (in_array($property_type, ['Residential Property']))
                     @foreach ($non_negotialble_terms as $item)
                         @if (str_contains($item['class'], 'residential-length'))
-                            <option value="{{ $item['name'] }}">{{ $item['name'] }}</option>
+                            <option value="{{ $item['name'] }}" {{ in_array($item['name'], $selectedAmenities) ? 'selected' : '' }}>{{ $item['name'] }}</option>
                         @endif
                     @endforeach
                 @elseif(in_array($property_type, ['Commercial Property']))
                     @foreach ($non_negotialble_terms as $item)
                         @if (str_contains($item['class'], 'commercial-length'))
-                            <option value="{{ $item['name'] }}">{{ $item['name'] }}</option>
+                            <option value="{{ $item['name'] }}" {{ in_array($item['name'], $selectedAmenities) ? 'selected' : '' }}>{{ $item['name'] }}</option>
                         @endif
                     @endforeach
                 @endif
