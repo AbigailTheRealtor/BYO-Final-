@@ -279,7 +279,7 @@ class TenantAgentAuctionEdit extends Component
     public $commission_structure_type_fee_other = '';
 
 
-    public $exchange_item = '';
+    public $exchange_item = [];
     public $exchange_item_condition = '';
     public $has_option_fee  = '';
     public $lease_purchase_option_fee = '';
@@ -2579,7 +2579,15 @@ class TenantAgentAuctionEdit extends Component
         $this->assumable_occupancy_requirement = $auction->info('assumable_occupancy_requirement') ?? '';
         $this->assumable_occupancy_other = $auction->info('assumable_occupancy_other') ?? '';
         $this->current_status = $auction->info('current_status') ?? '';
-        $this->exchange_item = $auction->info('exchange_item');
+        $rawExchangeItem = $auction->info('exchange_item');
+        if (is_string($rawExchangeItem)) {
+            $decoded = json_decode($rawExchangeItem, true);
+            $this->exchange_item = is_array($decoded) ? $decoded : ($rawExchangeItem !== '' && $rawExchangeItem !== null ? [$rawExchangeItem] : []);
+        } elseif (is_array($rawExchangeItem)) {
+            $this->exchange_item = $rawExchangeItem;
+        } else {
+            $this->exchange_item = [];
+        }
         $this->other_exchange_item = $auction->info('other_exchange_item');
         $this->exchange_item_value = $auction->info('exchange_item_value');
         $this->exchange_item_condition = $auction->info('exchange_item_condition');
@@ -3246,7 +3254,8 @@ class TenantAgentAuctionEdit extends Component
             $auction->saveMeta('gap_payment_amount', $this->gap_payment_amount);
             $auction->saveMeta('assumable_occupancy_requirement', $this->assumable_occupancy_requirement);
             $auction->saveMeta('assumable_occupancy_other', $this->assumable_occupancy_other);
-            $auction->saveMeta('exchange_item', $this->exchange_item);
+            $exchangeItemToSave = is_array($this->exchange_item) ? json_encode(array_values(array_filter($this->exchange_item))) : $this->exchange_item;
+            $auction->saveMeta('exchange_item', $exchangeItemToSave);
             $auction->saveMeta('other_exchange_item', $this->other_exchange_item);
             $auction->saveMeta('exchange_item_value', $this->exchange_item_value);
             $auction->saveMeta('exchange_item_condition', $this->exchange_item_condition);
