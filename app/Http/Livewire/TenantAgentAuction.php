@@ -2669,6 +2669,19 @@ class TenantAgentAuction extends Component
             $this->property_zip = $auction->info('property_zip') ?: '';
             $this->property_county = $auction->info('property_county') ?: '';
 
+            if (!empty($this->cities)) {
+                $this->cityFieldVisible = true;
+            }
+            if (!empty($this->state)) {
+                $this->stateFieldVisible = true;
+            }
+            if (!empty($this->zip_code) || !empty($this->zipCodes)) {
+                $this->zipCodeFieldVisible = true;
+            }
+            if (!empty($this->counties)) {
+                $this->countyFieldVisible = true;
+            }
+
             // Property details
 
             // $this->property_items = is_string($auction->get->property_items) ? json_decode($auction->get->property_items, true) ?? [] : (array)$auction->get->property_items;

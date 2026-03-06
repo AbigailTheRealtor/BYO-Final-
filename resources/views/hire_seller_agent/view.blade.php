@@ -739,7 +739,7 @@
                             @endphp
                             @if (!empty($viewPrefItems))
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    View Preference:
+                                    View:
                                     @foreach ($viewPrefItems as $item)
                                         <span class="removeBold badge bg-secondary">{{ $item }}</span>
                                     @endforeach

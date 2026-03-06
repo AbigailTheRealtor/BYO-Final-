@@ -61,7 +61,7 @@ class SellerFieldMap
                 'Garage/Parking Spaces Option' => 'garage_parking_spaces_option',
                 'Pool Needed' => 'pool_needed',
                 'Pool Type' => 'pool_type',
-                'View Preference' => 'view_preference',
+                'View' => 'view_preference',
                 'Real Estate Purchase' => 'real_estate_purchase',
                 'Number of Units' => 'number_of_unit',
                 'Unit Number' => 'unit_number',

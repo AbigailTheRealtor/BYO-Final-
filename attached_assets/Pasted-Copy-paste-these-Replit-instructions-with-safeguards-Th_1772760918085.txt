@@ -1,0 +1,125 @@
+Copy/paste these **Replit instructions with safeguards**. This is a **simple label change**, but written to prevent Replit from editing the wrong files.
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — Change “View Preference” to “View” (Hire a Seller’s Agent)
+
+### HARD SAFEGUARDS (NON-NEGOTIABLE)
+
+1. **First check which route I’m on.**
+
+   * If URL contains **`/auction/edit/`** → apply change in **`TenantAgentAuctionEdit.php`** and **`tenant-agent-auction-edit.blade.php`**.
+   * If URL contains **`/auction/`** without `/edit/` → apply change in **`TenantAgentAuction.php`** and its blade.
+2. **Do NOT touch any legacy seller files** (SellerAgentAuctionController, hire_seller_agent/edit.blade.php, etc).
+3. **Do NOT rename database columns or property keys.**
+4. **Do NOT change the saved data key** (the field should still save to whatever key currently stores view preference).
+5. Only change the **display label text**.
+
+---
+
+# GOAL
+
+On **all Hire a Seller’s Agent listings** (create, edit, and actual listing display):
+
+Change the label:
+
+```
+View Preference
+```
+
+to:
+
+```
+View
+```
+
+This must apply to:
+
+* Residential
+* Income
+* Commercial
+* Business
+* Vacant Land
+
+---
+
+# STEP 1 — Change the field label in the form (create + edit)
+
+Locate the label where the View field is rendered in the Seller listing forms.
+
+Replace:
+
+```
+View Preference
+```
+
+with:
+
+```
+View
+```
+
+Important:
+
+* Do not change the `wire:model`, `name=`, or saved key.
+* Only change the visible label text.
+
+---
+
+# STEP 2 — Change the label on the actual listing display
+
+Find where the View Preference field is rendered on the **public listing display** for Seller listings.
+
+Replace:
+
+```
+View Preference:
+```
+
+with:
+
+```
+View:
+```
+
+Do not change the data key used to retrieve the value.
+
+---
+
+# STEP 3 — Confirm consistency across property types
+
+Check the display logic for:
+
+* Residential
+* Income
+* Commercial / Business
+* Vacant Land
+
+Ensure they all render the label **View** instead of **View Preference**.
+
+---
+
+# ACCEPTANCE TEST
+
+Create or edit Seller listings for each type:
+
+1️⃣ Residential
+2️⃣ Income
+3️⃣ Commercial / Business
+4️⃣ Vacant Land
+
+Verify:
+
+* Form label shows **View**
+* Listing display shows **View**
+* Data still saves and loads correctly.
+
+---
+
+# STOP RULE
+
+If the label **View Preference** appears in multiple shared components, update **only the Seller listing context** and do not change labels used for Buyer/Tenant flows.
+
+---
+
+If you want, I can also give you a **very small “global safe replace rule”** that will change it everywhere **only within Seller flows** in about **10 seconds without touching other roles**.

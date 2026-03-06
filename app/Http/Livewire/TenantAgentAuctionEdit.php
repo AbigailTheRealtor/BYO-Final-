@@ -2418,6 +2418,25 @@ class TenantAgentAuctionEdit extends Component
         $this->property_zip = $auction->info('property_zip') ?: '';
         $this->property_county = $auction->info('property_county') ?: '';
         $this->zip_code = $auction->info('zip_code');
+
+        $rawZipCodes = $auction->info('zipCodes');
+        if ($rawZipCodes) {
+            $this->zipCodes = is_string($rawZipCodes) ? json_decode($rawZipCodes, true) ?? [] : (array)$rawZipCodes;
+        }
+
+        if (!empty($this->cities)) {
+            $this->cityFieldVisible = true;
+        }
+        if (!empty($this->state)) {
+            $this->stateFieldVisible = true;
+        }
+        if (!empty($this->zip_code) || !empty($this->zipCodes)) {
+            $this->zipCodeFieldVisible = true;
+        }
+        if (!empty($this->counties)) {
+            $this->countyFieldVisible = true;
+        }
+
         $this->leasing_space = $auction->info('leasing_space');
         $this->restrictions = $auction->info('restrictions');
         $this->common_areas_access = $auction->info('common_areas_access');
@@ -3035,6 +3054,8 @@ class TenantAgentAuctionEdit extends Component
             $auction->saveMeta('property_state', $this->property_state);
             $auction->saveMeta('property_zip', $this->property_zip);
             $auction->saveMeta('property_county', $this->property_county);
+
+            $auction->saveMeta('zipCodes', json_encode($this->zipCodes));
 
             // Property Details
             $auction->saveMeta('property_type', $this->property_type);

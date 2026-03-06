@@ -1617,7 +1617,12 @@
 
                 <div id="wizard-form-container" class="container pt-5 pb-5" data-service-type="{{ $service_type }}">
 
-                    <form wire:submit.prevent="update">
+                    <div id="submit-error-banner" class="alert alert-danger d-none" role="alert" style="position: sticky; top: 0; z-index: 1050;">
+                        <strong>Please complete the required fields before submitting.</strong>
+                        <ul id="submit-error-list" class="mb-0 mt-2"></ul>
+                    </div>
+
+                    <form id="edit-auction-form" wire:submit.prevent="update">
                         <!-- Tab Navigation -->
  <!-- Tab Navigation -->
 
@@ -3843,6 +3848,97 @@
                         setupGlobalListeners();
                         updateSaveButton();
                     }, 300);
+                });
+            }
+
+            const editForm = document.getElementById('edit-auction-form');
+            if (editForm) {
+                editForm.addEventListener('submit', function(e) {
+                    const banner = document.getElementById('submit-error-banner');
+                    const errorList = document.getElementById('submit-error-list');
+                    banner.classList.add('d-none');
+                    errorList.innerHTML = '';
+
+                    const requiredFields = getAllRequiredFields();
+                    let invalidItems = [];
+
+                    requiredFields.forEach(field => {
+                        if (typeof isElementVisible === 'function' && !isElementVisible(field)) {
+                            return;
+                        }
+                        if (!isFieldValid(field)) {
+                            const tab = field.closest('.tab-pane');
+                            const label = field.closest('.form-group')?.querySelector('label');
+                            let fieldName = '';
+                            if (label) {
+                                fieldName = label.textContent.replace(/[*:]/g, '').trim();
+                            } else {
+                                fieldName = field.getAttribute('placeholder') || field.name || field.id || 'Unknown field';
+                            }
+                            invalidItems.push({ field, tab, fieldName });
+                        }
+                    });
+
+                    const citiesContainer = document.querySelector('.cities-container');
+                    const CURRENT_USER_TYPE_LOCAL = typeof CURRENT_USER_TYPE !== 'undefined' ? CURRENT_USER_TYPE : '';
+                    const citiesOptionalFor = ['buyer', 'tenant'];
+                    if (citiesContainer && !citiesOptionalFor.includes(CURRENT_USER_TYPE_LOCAL)) {
+                        const cityBadges = citiesContainer.querySelectorAll('.badge');
+                        if (!cityBadges || cityBadges.length === 0) {
+                            const tab = citiesContainer.closest('.tab-pane');
+                            invalidItems.push({ field: citiesContainer, tab, fieldName: 'City' });
+                        }
+                    }
+
+                    const countiesContainer = document.querySelector('.counties-container');
+                    if (countiesContainer) {
+                        const countyBadges = countiesContainer.querySelectorAll('.badge');
+                        if (!countyBadges || countyBadges.length === 0) {
+                            const tab = countiesContainer.closest('.tab-pane');
+                            invalidItems.push({ field: countiesContainer, tab, fieldName: 'County' });
+                        }
+                    }
+
+                    if (invalidItems.length > 0) {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        const seen = new Set();
+                        invalidItems.forEach(item => {
+                            if (!seen.has(item.fieldName)) {
+                                seen.add(item.fieldName);
+                                const li = document.createElement('li');
+                                li.textContent = item.fieldName;
+                                errorList.appendChild(li);
+                            }
+                        });
+                        banner.classList.remove('d-none');
+
+                        const firstItem = invalidItems[0];
+                        if (firstItem.tab) {
+                            const tabId = firstItem.tab.id;
+                            const tabTrigger = document.querySelector('[data-bs-target="#' + tabId + '"], [href="#' + tabId + '"]');
+                            if (tabTrigger) {
+                                const bsTab = new bootstrap.Tab(tabTrigger);
+                                bsTab.show();
+                            }
+                        }
+
+                        setTimeout(() => {
+                            if (firstItem.field) {
+                                firstItem.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                if (typeof firstItem.field.focus === 'function' && firstItem.field.tagName !== 'DIV') {
+                                    firstItem.field.focus();
+                                }
+                                firstItem.field.classList.add('is-invalid');
+                            }
+                            banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 300);
+
+                        return false;
+                    }
+
+                    banner.classList.add('d-none');
                 });
             }
         });
