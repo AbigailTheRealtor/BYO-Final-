@@ -2242,11 +2242,11 @@ $lease_types = [
 
         if (newServiceType !== currentServiceType) {
             currentServiceType = newServiceType;
-        }
 
-        var now = Date.now();
-        if (now - _lastInitTime > 300) {
-            _lastInitTime = now;
+            if (typeof isNavigating !== 'undefined' && isNavigating) {
+                return;
+            }
+
             removeWizardEventListeners();
 
             if (currentServiceType === 'full_service') {
@@ -3612,304 +3612,261 @@ $lease_types = [
             return allValid;
         }
 
-        // Add this function to validate services tab
-        function validateServicesTab(tabContent) {
-            if (!tabContent || tabContent.id !== 'services') return true;
+    }
 
-            let isValid = true;
+    // === WIZARD NAVIGATION (global scope — survives Livewire DOM morphing) ===
 
-            // Check at least one service is selected (excluding "Other" checkbox)
-            const hasServices = tabContent.querySelectorAll(
-                'input[type="checkbox"][wire\\:model="services"]:checked:not(#other-services-checkbox)'
-            ).length > 0;
+    function validateServicesTab(tabContent) {
+        if (!tabContent || tabContent.id !== 'services') return true;
+        return true;
+    }
 
-            // Check "Other Services" if enabled
-            const otherCheckbox = tabContent.querySelector('#other-services-checkbox');
-            const otherTextarea = tabContent.querySelector('#other-services-input');
-            const hasOtherDescription = otherTextarea && otherTextarea.value.trim() !== '';
-
-            // Clear previous errors
-            const existingErrors = tabContent.querySelectorAll('.service-error');
-            if (existingErrors) {
-                existingErrors.forEach(el => el.remove());
+    // AUTHORITATIVE TAB ORDER - Dynamically derived from actual DOM
+    function getTabOrder() {
+        const tabLinks = document.querySelectorAll('.nav-tabs .nav-link');
+        const order = [];
+        tabLinks.forEach(link => {
+            const target = link.getAttribute('data-bs-target');
+            if (target) {
+                order.push(target.replace('#', ''));
             }
-            if (otherTextarea) otherTextarea.classList.remove('is-invalid');
+        });
+        return order;
+    }
 
-            // Services validation removed - selecting services is now optional
-            // No validation error will be shown if no services are selected
-
-            /*   if (otherCheckbox && otherCheckbox.checked && (!otherTextarea || !hasOtherDescription)) {
-                            isValid = false;
-                            const errorDiv = document.createElement('div');
-                            errorDiv.className = 'service-error error mt-2';
-                            errorDiv.textContent = 'Please describe the additional services you require.';
-
-                            if (otherTextarea) {
-                                otherTextarea.classList.add('is-invalid');
-                                const container = otherTextarea.closest('.mb-3') || otherTextarea.parentNode;
-                                if (container) {
-                                    container.appendChild(errorDiv);
-                                }
-                            }
-                        }
-        */
-            return isValid;
+    let TAB_ORDER = null;
+    function ensureTabOrder() {
+        if (!TAB_ORDER || TAB_ORDER.length === 0) {
+            TAB_ORDER = getTabOrder();
         }
+        return TAB_ORDER;
+    }
 
-        // AUTHORITATIVE TAB ORDER - Dynamically derived from actual DOM to ensure correctness
-        // This reads the actual tab order from the rendered page, so it works for all user types
-        function getTabOrder() {
-            const tabLinks = document.querySelectorAll('.nav-tabs .nav-link');
-            const order = [];
-            tabLinks.forEach(link => {
-                const target = link.getAttribute('data-bs-target');
-                if (target) {
-                    order.push(target.replace('#', ''));
+    function validateCurrentTab(currentTabContent) {
+        if (!currentTabContent) return true;
+
+        let isValid = true;
+
+        const requiredFields = currentTabContent.querySelectorAll(
+            'input[required], select[required], textarea[required]');
+        if (requiredFields) {
+            requiredFields.forEach(function(input) {
+                if (!isElementVisible(input)) {
+                    input.classList.remove('is-invalid');
+                    return;
                 }
-            });
-            console.log('Tab order derived from DOM:', order);
-            return order;
-        }
-        
-        // Cache the tab order once on page load
-        let TAB_ORDER = null;
-        function ensureTabOrder() {
-            if (!TAB_ORDER || TAB_ORDER.length === 0) {
-                TAB_ORDER = getTabOrder();
-            }
-            return TAB_ORDER;
-        }
 
-        // Validate current tab content - returns true if valid
-        function validateCurrentTab(currentTabContent) {
-            if (!currentTabContent) return true;
-            
-            let isValid = true;
-
-            // Validate all required fields in the current tab (skip hidden/disabled fields)
-            const requiredFields = currentTabContent.querySelectorAll(
-                'input[required], select[required], textarea[required]');
-            if (requiredFields) {
-                requiredFields.forEach(function(input) {
-                    // Skip hidden or disabled fields - they should not block navigation
-                    if (!isElementVisible(input)) {
-                        input.classList.remove('is-invalid');
-                        return;
-                    }
-                    
-                    if (!input.value) {
-                        isValid = false;
-                        input.classList.add('is-invalid');
-
-                        const formGroup = input.closest('.form-group');
-                        if (formGroup) {
-                            const errorMessageContainer = formGroup.querySelector('.error');
-                            if (!errorMessageContainer) {
-                                const errorMessage = document.createElement('div');
-                                errorMessage.className = 'error mt-2';
-                                errorMessage.textContent = 'This field is required.';
-                                formGroup.appendChild(errorMessage);
-                            } else {
-                                errorMessageContainer.textContent = 'This field is required.';
-                            }
-                        }
-                    } else {
-                        input.classList.remove('is-invalid');
-                        const formGroup = input.closest('.form-group');
-                        if (formGroup) {
-                            const errorMessageContainer = formGroup.querySelector('.error');
-                            if (errorMessageContainer) {
-                                errorMessageContainer.remove();
-                            }
-                        }
-                    }
-                });
-            }
-
-            // Validation matrix: Cities and Counties requirements by user type
-            // Buyer: Cities=OPTIONAL, Counties=REQUIRED, State=REQUIRED
-            // Tenant: Cities=OPTIONAL, Counties=REQUIRED, State=REQUIRED
-            // Seller/Landlord: Cities=REQUIRED, Counties=REQUIRED, State=REQUIRED
-            const citiesOptionalFor = ['buyer', 'tenant'];
-            
-            // Validate cities array - SKIP for buyer and tenant (cities optional)
-            const citiesContainer = currentTabContent.querySelector('.cities-container');
-            if (citiesContainer) {
-                const cityBadges = citiesContainer.querySelectorAll('.badge');
-                // For buyer/tenant user types, cities are OPTIONAL - skip validation
-                if (!citiesOptionalFor.includes(CURRENT_USER_TYPE)) {
-                    if (!cityBadges || cityBadges.length === 0) {
-                        isValid = false;
-                        const existingError = citiesContainer.parentNode.querySelector('.error');
-                        if (!existingError) {
-                            const citiesError = document.createElement('div');
-                            citiesError.className = 'error';
-                            citiesError.textContent = 'At least one city is required.';
-                            citiesContainer.parentNode.insertBefore(citiesError, citiesContainer
-                                .nextSibling);
-                        }
-                    } else {
-                        const existingError = citiesContainer.parentNode.querySelector('.error');
-                        if (existingError) {
-                            existingError.remove();
+                if (!input.value) {
+                    isValid = false;
+                    input.classList.add('is-invalid');
+                    const formGroup = input.closest('.form-group');
+                    if (formGroup) {
+                        const errorMessageContainer = formGroup.querySelector('.error');
+                        if (!errorMessageContainer) {
+                            const errorMessage = document.createElement('div');
+                            errorMessage.className = 'error mt-2';
+                            errorMessage.textContent = 'This field is required.';
+                            formGroup.appendChild(errorMessage);
+                        } else {
+                            errorMessageContainer.textContent = 'This field is required.';
                         }
                     }
                 } else {
-                    // For buyer/tenant, always remove any existing city error
+                    input.classList.remove('is-invalid');
+                    const formGroup = input.closest('.form-group');
+                    if (formGroup) {
+                        const errorMessageContainer = formGroup.querySelector('.error');
+                        if (errorMessageContainer) {
+                            errorMessageContainer.remove();
+                        }
+                    }
+                }
+            });
+        }
+
+        const citiesOptionalFor = ['buyer', 'tenant'];
+
+        const citiesContainer = currentTabContent.querySelector('.cities-container');
+        if (citiesContainer) {
+            const cityBadges = citiesContainer.querySelectorAll('.badge');
+            if (!citiesOptionalFor.includes(CURRENT_USER_TYPE)) {
+                if (!cityBadges || cityBadges.length === 0) {
+                    isValid = false;
                     const existingError = citiesContainer.parentNode.querySelector('.error');
-                    if (existingError && existingError.textContent.includes('city')) {
+                    if (!existingError) {
+                        const citiesError = document.createElement('div');
+                        citiesError.className = 'error';
+                        citiesError.textContent = 'At least one city is required.';
+                        citiesContainer.parentNode.insertBefore(citiesError, citiesContainer
+                            .nextSibling);
+                    }
+                } else {
+                    const existingError = citiesContainer.parentNode.querySelector('.error');
+                    if (existingError) {
                         existingError.remove();
                     }
                 }
+            } else {
+                const existingError = citiesContainer.parentNode.querySelector('.error');
+                if (existingError && existingError.textContent.includes('city')) {
+                    existingError.remove();
+                }
             }
+        }
 
-            // Validate counties array - REQUIRED for ALL user types
-            const countiesContainer = currentTabContent.querySelector('.counties-container');
-            const countiesErrorSpan = currentTabContent.querySelector('#counties_error');
-            if (countiesContainer) {
-                const countyBadges = countiesContainer.querySelectorAll('.badge');
-                if (!countyBadges || countyBadges.length === 0) {
-                    isValid = false;
-                    if (countiesErrorSpan) {
-                        countiesErrorSpan.textContent = 'This field is required.';
-                    }
+        const countiesContainer = currentTabContent.querySelector('.counties-container');
+        const countiesErrorSpan = currentTabContent.querySelector('#counties_error');
+        if (countiesContainer) {
+            const countyBadges = countiesContainer.querySelectorAll('.badge');
+            if (!countyBadges || countyBadges.length === 0) {
+                isValid = false;
+                if (countiesErrorSpan) {
+                    countiesErrorSpan.textContent = 'This field is required.';
+                }
+            } else {
+                if (countiesErrorSpan) {
+                    countiesErrorSpan.textContent = '';
+                }
+            }
+        }
+
+        if (currentTabContent.id === 'services') {
+            isValid = isValid && validateServicesTab(currentTabContent);
+        }
+
+        if (currentServiceType === 'limited_service' && currentTabContent.id === 'service-selection-and-pricing') {
+            const understandTerms = currentTabContent.querySelector('#understandTerms');
+            if (understandTerms && !understandTerms.checked) {
+                isValid = false;
+                const existingError = understandTerms.parentNode.querySelector('.error');
+                if (!existingError) {
+                    const termsError = document.createElement('div');
+                    termsError.className = 'error text-danger mt-2';
+                    termsError.textContent = 'You must accept the terms to continue';
+                    understandTerms.parentNode.appendChild(termsError);
+                }
+            } else if (understandTerms) {
+                const existingError = understandTerms.parentNode.querySelector('.error');
+                if (existingError) {
+                    existingError.remove();
+                }
+            }
+        }
+
+        return isValid;
+    }
+
+    let isNavigating = false;
+
+    function goToNextTab() {
+        if (isNavigating) {
+            return false;
+        }
+        isNavigating = true;
+
+        const tabOrder = ensureTabOrder();
+        const activeTab = document.querySelector('.nav-link.active');
+        if (!activeTab) { isNavigating = false; return false; }
+
+        const currentTarget = activeTab.getAttribute('data-bs-target')?.replace('#', '');
+        const currentIndex = tabOrder.indexOf(currentTarget);
+        if (currentIndex === -1) { isNavigating = false; return false; }
+
+        const nextTabId = tabOrder[currentIndex + 1];
+        if (!nextTabId) { isNavigating = false; return false; }
+
+        const nextTabEl = document.querySelector(`[data-bs-target="#${nextTabId}"]`);
+        if (!nextTabEl) { isNavigating = false; return false; }
+
+        bootstrap.Tab.getOrCreateInstance(nextTabEl).show();
+        Livewire.emit('setActiveTab', currentIndex + 1);
+
+        setTimeout(() => { isNavigating = false; }, 500);
+        return true;
+    }
+
+    function goToPrevTab() {
+        const tabOrder = ensureTabOrder();
+        const activeTab = document.querySelector('.nav-link.active');
+        if (!activeTab) return false;
+
+        const currentTarget = activeTab.getAttribute('data-bs-target')?.replace('#', '');
+        const currentIndex = tabOrder.indexOf(currentTarget);
+
+        if (currentIndex === -1 || currentIndex === 0) {
+            return false;
+        }
+
+        const prevTabId = tabOrder[currentIndex - 1];
+        const prevTabEl = document.querySelector(`[data-bs-target="#${prevTabId}"]`);
+        if (!prevTabEl) return false;
+
+        bootstrap.Tab.getOrCreateInstance(prevTabEl).show();
+        Livewire.emit('setActiveTab', currentIndex - 1);
+        return true;
+    }
+
+    function showValidationBanner(currentTabContent) {
+        const banner = document.getElementById('submit-error-banner');
+        if (!banner) return;
+        const errorList = document.getElementById('submit-error-list');
+        if (errorList) {
+            errorList.innerHTML = '';
+            const invalidFields = currentTabContent.querySelectorAll('.is-invalid');
+            const seen = new Set();
+            invalidFields.forEach(f => {
+                const label = f.closest('.form-group')?.querySelector('label');
+                const name = label ? label.textContent.replace(/[*:]/g, '').trim() : (f.placeholder || f.name || 'Required field');
+                if (!seen.has(name)) {
+                    seen.add(name);
+                    const li = document.createElement('li');
+                    li.textContent = name;
+                    errorList.appendChild(li);
+                }
+            });
+            const errorContainers = currentTabContent.querySelectorAll('.error');
+            errorContainers.forEach(ec => {
+                const text = ec.textContent.trim();
+                if (text && !seen.has(text)) {
+                    seen.add(text);
+                    const li = document.createElement('li');
+                    li.textContent = text;
+                    errorList.appendChild(li);
+                }
+            });
+        }
+        banner.querySelector('strong').textContent = 'Please complete the required fields before continuing.';
+        banner.classList.remove('d-none');
+        banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Delegated click handlers — attached once to document, survive Livewire DOM morphing
+    if (!window.__wizardDelegatedHandlersBound) {
+        window.__wizardDelegatedHandlersBound = true;
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.wizard-step-next')) {
+                const activeTab = document.querySelector('.nav-link.active');
+                if (!activeTab) return;
+
+                const currentTabContent = document.querySelector(activeTab.getAttribute('data-bs-target'));
+                if (!currentTabContent) return;
+
+                const banner = document.getElementById('submit-error-banner');
+                if (banner) banner.classList.add('d-none');
+
+                const isValid = validateCurrentTab(currentTabContent);
+
+                if (isValid) {
+                    goToNextTab();
                 } else {
-                    if (countiesErrorSpan) {
-                        countiesErrorSpan.textContent = '';
-                    }
+                    showValidationBanner(currentTabContent);
                 }
             }
 
-            // Validate services tab if it's the current tab
-            if (currentTabContent.id === 'services') {
-                isValid = isValid && validateServicesTab(currentTabContent);
-            }
-
-            return isValid;
-        }
-
-        // Navigation guard to prevent double-firing from multiple event listeners
-        let isNavigating = false;
-
-        // GO TO NEXT TAB - Uses dynamically derived tab order (NO sibling logic)
-        function goToNextTab() {
-            // Prevent double-fire from multiple event listeners
-            if (isNavigating) {
-                console.log('Navigation already in progress, skipping');
-                return false;
-            }
-            isNavigating = true;
-
-            const tabOrder = ensureTabOrder();
-            const activeTab = document.querySelector('.nav-link.active');
-            if (!activeTab) {
-                isNavigating = false;
-                return false;
-            }
-
-            const currentTarget = activeTab.getAttribute('data-bs-target')?.replace('#', '');
-            const currentIndex = tabOrder.indexOf(currentTarget);
-
-            if (currentIndex === -1) {
-                console.log('Current tab not found in TAB_ORDER:', currentTarget, 'Available:', tabOrder);
-                isNavigating = false;
-                return false;
-            }
-
-            const nextTabId = tabOrder[currentIndex + 1];
-            if (!nextTabId) {
-                console.log('Already on last tab');
-                isNavigating = false;
-                return false;
-            }
-
-            const nextTabEl = document.querySelector(`[data-bs-target="#${nextTabId}"]`);
-            if (!nextTabEl) {
-                console.log('Next tab element not found for ID:', nextTabId);
-                isNavigating = false;
-                return false;
-            }
-
-            console.log('Navigating from', currentTarget, 'to', nextTabId);
-            bootstrap.Tab.getOrCreateInstance(nextTabEl).show();
-            Livewire.emit('setActiveTab', currentIndex + 1);
-            
-            // Release guard after a short delay to allow navigation to complete
-            setTimeout(() => { isNavigating = false; }, 100);
-            return true;
-        }
-
-        // GO TO PREVIOUS TAB - Uses dynamically derived tab order (NO sibling logic)
-        function goToPrevTab() {
-            const tabOrder = ensureTabOrder();
-            const activeTab = document.querySelector('.nav-link.active');
-            if (!activeTab) return false;
-
-            const currentTarget = activeTab.getAttribute('data-bs-target')?.replace('#', '');
-            const currentIndex = tabOrder.indexOf(currentTarget);
-
-            if (currentIndex === -1 || currentIndex === 0) {
-                console.log('Already on first tab or tab not found');
-                return false;
-            }
-
-            const prevTabId = tabOrder[currentIndex - 1];
-            const prevTabEl = document.querySelector(`[data-bs-target="#${prevTabId}"]`);
-            if (!prevTabEl) {
-                console.log('Previous tab element not found for ID:', prevTabId);
-                return false;
-            }
-
-            console.log('Navigating from', currentTarget, 'to', prevTabId);
-            bootstrap.Tab.getOrCreateInstance(prevTabEl).show();
-            Livewire.emit('setActiveTab', currentIndex - 1);
-            return true;
-        }
-
-        // NEXT BUTTON HANDLER - Validates then navigates using ID-based order
-        document.querySelector('.wizard-step-next')?.addEventListener('click', function() {
-            const activeTab = document.querySelector('.nav-link.active');
-            if (!activeTab) return;
-
-            const currentTabContent = document.querySelector(activeTab.getAttribute('data-bs-target'));
-            if (!currentTabContent) return;
-
-            const isValid = validateCurrentTab(currentTabContent);
-
-            if (isValid) {
-                goToNextTab();
-            }
-
-            // Update save button state after validation
-            const saveButton = document.querySelector('.wizard-step-finish');
-            if (saveButton) {
-                saveButton.disabled = !isValid;
+            if (e.target.closest('.wizard-step-back')) {
+                goToPrevTab();
             }
         });
-
-        // BACK BUTTON HANDLER - Uses ID-based order (NO sibling logic)
-        document.querySelector('.wizard-step-back')?.addEventListener('click', function() {
-            goToPrevTab();
-        });
-
-        // Add event listeners to update save button state when fields change
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initial check
-            checkFormValidity();
-
-            // Update on any input change
-            document.querySelectorAll('input, select, textarea').forEach(field => {
-                field.addEventListener('change', checkFormValidity);
-                field.addEventListener('keyup', checkFormValidity);
-            });
-
-            // Special handling for Livewire-updated fields
-            document.addEventListener('livewire:update', function() {
-                setTimeout(checkFormValidity, 100);
-            });
-        });
-
-
     }
 
     function initializeLimitedService() {
@@ -3940,50 +3897,7 @@ $lease_types = [
             return allValid;
         }
 
-        // LIMITED SERVICE: NEXT BUTTON HANDLER - Uses shared ID-based navigation
-        document.querySelector('.wizard-step-next')?.addEventListener('click', function() {
-            const activeTab = document.querySelector('.nav-link.active');
-            if (!activeTab) return;
-
-            const currentTabContent = document.querySelector(activeTab.getAttribute('data-bs-target'));
-            if (!currentTabContent) return;
-
-            let isValid = validateCurrentTab(currentTabContent);
-
-            // Additional validation for service-selection-and-pricing tab
-            if (currentTabContent.id === 'service-selection-and-pricing') {
-                const understandTerms = currentTabContent.querySelector('#understandTerms');
-                if (understandTerms && !understandTerms.checked) {
-                    isValid = false;
-                    const existingError = understandTerms.parentNode.querySelector('.error');
-                    if (!existingError) {
-                        const termsError = document.createElement('div');
-                        termsError.className = 'error text-danger mt-2';
-                        termsError.textContent = 'You must accept the terms to continue';
-                        understandTerms.parentNode.appendChild(termsError);
-                    }
-                } else if (understandTerms) {
-                    const existingError = understandTerms.parentNode.querySelector('.error');
-                    if (existingError) {
-                        existingError.remove();
-                    }
-                }
-            }
-
-            if (isValid) {
-                goToNextTab();
-            }
-
-            const saveButton = document.querySelector('.wizard-step-finish');
-            if (saveButton) {
-                saveButton.disabled = !isValid;
-            }
-        });
-
-        // LIMITED SERVICE: BACK BUTTON HANDLER - Uses shared ID-based navigation
-        document.querySelector('.wizard-step-back')?.addEventListener('click', function() {
-            goToPrevTab();
-        });
+        // Next/Back handlers are now delegated at document level (global scope)
 
         // Add event listeners to update save button state when fields change
         document.addEventListener('DOMContentLoaded', function() {
@@ -4034,6 +3948,10 @@ $lease_types = [
         addIconsToInputs();
         checkRepresentationStatus();
 
+        if (typeof isNavigating !== 'undefined' && isNavigating) {
+            return;
+        }
+
         // Re-detect selected service type after DOM update
         const fullServiceChecked = document.getElementById('fullService')?.checked;
         const limitedServiceChecked = document.getElementById('limitedService')?.checked;
@@ -4049,13 +3967,13 @@ $lease_types = [
 
         if (newServiceType !== currentServiceType) {
             currentServiceType = newServiceType;
-        }
 
-        removeWizardEventListeners();
+            if (typeof isNavigating !== 'undefined' && isNavigating) {
+                return;
+            }
 
-        var now = Date.now();
-        if (now - _lastInitTime > 300) {
-            _lastInitTime = now;
+            removeWizardEventListeners();
+
             if (currentServiceType === 'full_service') {
                 initializeFullService();
             } else if (currentServiceType === 'limited_service') {

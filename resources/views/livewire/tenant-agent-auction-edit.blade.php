@@ -2206,35 +2206,6 @@
             addIconsToInputs();
             checkRepresentationStatus();
             if (typeof toggleVacantLand === 'function') toggleVacantLand();
-
-            const fullServiceChecked = document.getElementById('fullService')?.checked;
-            const limitedServiceChecked = document.getElementById('limitedService')?.checked;
-
-            let newServiceType = null;
-            if (fullServiceChecked) {
-                newServiceType = 'full_service';
-            } else if (limitedServiceChecked) {
-                newServiceType = 'limited_service';
-            } else {
-                newServiceType = 'full_service';
-            }
-
-            if (newServiceType !== currentServiceType) {
-                currentServiceType = newServiceType;
-            }
-
-            var now = Date.now();
-            if (now - _lastInitTime > 300) {
-                _lastInitTime = now;
-
-                removeWizardEventListeners();
-
-                if (currentServiceType === 'full_service') {
-                    initializeFullService();
-                } else if (currentServiceType === 'limited_service') {
-                    initializeLimitedService();
-                }
-            }
         });
 
         function selectService(serviceType) {
@@ -3520,156 +3491,184 @@
         }
 
         function initializeWizardNavigation() {
-            // Always remove old handlers first to prevent duplicates
-            removeWizardEventListeners();
-            
-            // Mark as initialized
-            wizardNavigationInitialized = true;
-
-            // Re-derive tab order after DOM changes (service type switch, etc.)
             EDIT_TAB_ORDER = getEditTabOrder();
-            
-            // Shared validation function
-            function validateCurrentTab(currentTabContent) {
-                let isValid = true;
-                
-                // Validate all required fields in the current tab
-                const requiredFields = currentTabContent.querySelectorAll(
-                    'input[required], select[required], textarea[required]');
-                if (requiredFields) {
-                    requiredFields.forEach(function(input) {
-                        if (!isElementVisible(input)) {
-                            return;
-                        }
-                        if (!input.value) {
-                            isValid = false;
-                            input.classList.add('is-invalid');
+            wizardNavigationInitialized = true;
+        }
 
-                            const formGroup = input.closest('.form-group');
-                            if (formGroup) {
-                                const errorMessageContainer = formGroup.querySelector('.error');
-                                if (!errorMessageContainer) {
-                                    const errorMessage = document.createElement('div');
-                                    errorMessage.className = 'error mt-2';
-                                    errorMessage.textContent = 'This field is required.';
-                                    formGroup.appendChild(errorMessage);
-                                } else {
-                                    errorMessageContainer.textContent = 'This field is required.';
-                                }
-                            }
-                        } else {
-                            input.classList.remove('is-invalid');
-                            const formGroup = input.closest('.form-group');
-                            if (formGroup) {
-                                const errorMessageContainer = formGroup.querySelector('.error');
-                                if (errorMessageContainer) {
-                                    errorMessageContainer.remove();
-                                }
+        function validateCurrentTab(currentTabContent) {
+            let isValid = true;
+
+            const requiredFields = currentTabContent.querySelectorAll(
+                'input[required], select[required], textarea[required]');
+            if (requiredFields) {
+                requiredFields.forEach(function(input) {
+                    if (!isElementVisible(input)) {
+                        return;
+                    }
+                    if (!input.value) {
+                        isValid = false;
+                        input.classList.add('is-invalid');
+                        const formGroup = input.closest('.form-group');
+                        if (formGroup) {
+                            const errorMessageContainer = formGroup.querySelector('.error');
+                            if (!errorMessageContainer) {
+                                const errorMessage = document.createElement('div');
+                                errorMessage.className = 'error mt-2';
+                                errorMessage.textContent = 'This field is required.';
+                                formGroup.appendChild(errorMessage);
+                            } else {
+                                errorMessageContainer.textContent = 'This field is required.';
                             }
                         }
-                    });
-                }
+                    } else {
+                        input.classList.remove('is-invalid');
+                        const formGroup = input.closest('.form-group');
+                        if (formGroup) {
+                            const errorMessageContainer = formGroup.querySelector('.error');
+                            if (errorMessageContainer) {
+                                errorMessageContainer.remove();
+                            }
+                        }
+                    }
+                });
+            }
 
-                // Validation matrix: Cities optional for buyer/tenant, Counties required for all
-                const citiesOptionalFor = ['buyer', 'tenant'];
-                
-                // Validate cities array - SKIP for buyer and tenant (cities optional)
-                const citiesContainer = currentTabContent.querySelector('.cities-container');
-                if (citiesContainer) {
-                    const cityBadges = citiesContainer.querySelectorAll('.badge');
-                    if (!citiesOptionalFor.includes(CURRENT_USER_TYPE)) {
-                        if (!cityBadges || cityBadges.length === 0) {
-                            isValid = false;
-                            const existingError = citiesContainer.parentNode.querySelector('.error');
-                            if (!existingError) {
-                                const citiesError = document.createElement('div');
-                                citiesError.className = 'error';
-                                citiesError.textContent = 'At least one city is required.';
-                                citiesContainer.parentNode.insertBefore(citiesError, citiesContainer.nextSibling);
-                            }
-                        } else {
-                            const existingError = citiesContainer.parentNode.querySelector('.error');
-                            if (existingError) {
-                                existingError.remove();
-                            }
+            const citiesOptionalFor = ['buyer', 'tenant'];
+
+            const citiesContainer = currentTabContent.querySelector('.cities-container');
+            if (citiesContainer) {
+                const cityBadges = citiesContainer.querySelectorAll('.badge');
+                if (!citiesOptionalFor.includes(CURRENT_USER_TYPE)) {
+                    if (!cityBadges || cityBadges.length === 0) {
+                        isValid = false;
+                        const existingError = citiesContainer.parentNode.querySelector('.error');
+                        if (!existingError) {
+                            const citiesError = document.createElement('div');
+                            citiesError.className = 'error';
+                            citiesError.textContent = 'At least one city is required.';
+                            citiesContainer.parentNode.insertBefore(citiesError, citiesContainer.nextSibling);
                         }
                     } else {
                         const existingError = citiesContainer.parentNode.querySelector('.error');
-                        if (existingError && existingError.textContent.includes('city')) {
-                            existingError.remove();
-                        }
-                    }
-                }
-
-                // Validate counties array - REQUIRED for ALL user types
-                const countiesContainer = currentTabContent.querySelector('.counties-container');
-                const countiesErrorSpan = currentTabContent.querySelector('#counties_error');
-                if (countiesContainer) {
-                    const countyBadges = countiesContainer.querySelectorAll('.badge');
-                    if (!countyBadges || countyBadges.length === 0) {
-                        isValid = false;
-                        if (countiesErrorSpan) {
-                            countiesErrorSpan.textContent = 'This field is required.';
-                        }
-                    } else {
-                        if (countiesErrorSpan) {
-                            countiesErrorSpan.textContent = '';
-                        }
-                    }
-                }
-
-                // Validate services tab
-                if (currentTabContent.id === 'services') {
-                    isValid = isValid && validateServicesTab(currentTabContent);
-                }
-                
-                // Validate limited service terms checkbox
-                if (currentTabContent.id === 'service-selection-and-pricing') {
-                    const understandTerms = currentTabContent.querySelector('#understandTerms');
-                    if (understandTerms && !understandTerms.checked) {
-                        isValid = false;
-                        const existingError = understandTerms.parentNode.querySelector('.error');
-                        if (!existingError) {
-                            const termsError = document.createElement('div');
-                            termsError.className = 'error text-danger mt-2';
-                            termsError.textContent = 'You must accept the terms to continue';
-                            understandTerms.parentNode.appendChild(termsError);
-                        }
-                    } else if (understandTerms) {
-                        const existingError = understandTerms.parentNode.querySelector('.error');
                         if (existingError) {
                             existingError.remove();
                         }
                     }
+                } else {
+                    const existingError = citiesContainer.parentNode.querySelector('.error');
+                    if (existingError && existingError.textContent.includes('city')) {
+                        existingError.remove();
+                    }
                 }
-                
-                return isValid;
             }
-            
-            // Shared services tab validation
-            function validateServicesTab(tabContent) {
-                if (!tabContent || tabContent.id !== 'services') return true;
-                return true; // Services validation is optional per previous code
-            }
-            
-            // Next button handler — uses ID-based tab order + navigation guard (no .click())
-            document.querySelector('.wizard-step-next')?.addEventListener('click', function(e) {
-                const activeTab = document.querySelector('.nav-link.active');
-                if (!activeTab) return;
 
-                const currentTabContent = document.querySelector(activeTab.getAttribute('data-bs-target'));
-                if (!currentTabContent) return;
-
-                const isValid = validateCurrentTab(currentTabContent);
-
-                if (isValid) {
-                    goToNextEditTab();
+            const countiesContainer = currentTabContent.querySelector('.counties-container');
+            const countiesErrorSpan = currentTabContent.querySelector('#counties_error');
+            if (countiesContainer) {
+                const countyBadges = countiesContainer.querySelectorAll('.badge');
+                if (!countyBadges || countyBadges.length === 0) {
+                    isValid = false;
+                    if (countiesErrorSpan) {
+                        countiesErrorSpan.textContent = 'This field is required.';
+                    }
+                } else {
+                    if (countiesErrorSpan) {
+                        countiesErrorSpan.textContent = '';
+                    }
                 }
-            });
+            }
 
-            // Back button handler — uses ID-based tab order (no .click())
-            document.querySelector('.wizard-step-back')?.addEventListener('click', function() {
-                goToPrevEditTab();
+            if (currentTabContent.id === 'services') {
+                isValid = isValid && validateServicesTab(currentTabContent);
+            }
+
+            if (currentTabContent.id === 'service-selection-and-pricing') {
+                const understandTerms = currentTabContent.querySelector('#understandTerms');
+                if (understandTerms && !understandTerms.checked) {
+                    isValid = false;
+                    const existingError = understandTerms.parentNode.querySelector('.error');
+                    if (!existingError) {
+                        const termsError = document.createElement('div');
+                        termsError.className = 'error text-danger mt-2';
+                        termsError.textContent = 'You must accept the terms to continue';
+                        understandTerms.parentNode.appendChild(termsError);
+                    }
+                } else if (understandTerms) {
+                    const existingError = understandTerms.parentNode.querySelector('.error');
+                    if (existingError) {
+                        existingError.remove();
+                    }
+                }
+            }
+
+            return isValid;
+        }
+
+        function validateServicesTab(tabContent) {
+            if (!tabContent || tabContent.id !== 'services') return true;
+            return true;
+        }
+
+        function showValidationBanner(currentTabContent) {
+            const banner = document.getElementById('submit-error-banner');
+            if (!banner) return;
+            const errorList = document.getElementById('submit-error-list');
+            if (errorList) {
+                errorList.innerHTML = '';
+                const invalidFields = currentTabContent.querySelectorAll('.is-invalid');
+                const seen = new Set();
+                invalidFields.forEach(f => {
+                    const label = f.closest('.form-group')?.querySelector('label');
+                    const name = label ? label.textContent.replace(/[*:]/g, '').trim() : (f.placeholder || f.name || 'Required field');
+                    if (!seen.has(name)) {
+                        seen.add(name);
+                        const li = document.createElement('li');
+                        li.textContent = name;
+                        errorList.appendChild(li);
+                    }
+                });
+                const errorContainers = currentTabContent.querySelectorAll('.error');
+                errorContainers.forEach(ec => {
+                    const text = ec.textContent.trim();
+                    if (text && !seen.has(text)) {
+                        seen.add(text);
+                        const li = document.createElement('li');
+                        li.textContent = text;
+                        errorList.appendChild(li);
+                    }
+                });
+            }
+            banner.querySelector('strong').textContent = 'Please complete the required fields before continuing.';
+            banner.classList.remove('d-none');
+            banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Delegated click handlers — attached once to document, survive Livewire DOM morphing
+        if (!window.__wizardDelegatedHandlersBound) {
+            window.__wizardDelegatedHandlersBound = true;
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.wizard-step-next')) {
+                    const activeTab = document.querySelector('.nav-link.active');
+                    if (!activeTab) return;
+
+                    const currentTabContent = document.querySelector(activeTab.getAttribute('data-bs-target'));
+                    if (!currentTabContent) return;
+
+                    const banner = document.getElementById('submit-error-banner');
+                    if (banner) banner.classList.add('d-none');
+
+                    const isValid = validateCurrentTab(currentTabContent);
+
+                    if (isValid) {
+                        goToNextEditTab();
+                    } else {
+                        showValidationBanner(currentTabContent);
+                    }
+                }
+
+                if (e.target.closest('.wizard-step-back')) {
+                    goToPrevEditTab();
+                }
             });
         }
         
@@ -3719,12 +3718,14 @@
 
             if (newServiceType !== currentServiceType) {
                 currentServiceType = newServiceType;
-            }
 
-            removeWizardEventListeners();
+                removeWizardEventListeners();
 
-            if (currentServiceType === 'full_service') {
-                initializeFullService();
+                if (currentServiceType === 'full_service') {
+                    initializeFullService();
+                } else if (currentServiceType === 'limited_service') {
+                    initializeLimitedService();
+                }
             }
         });
     </script>
