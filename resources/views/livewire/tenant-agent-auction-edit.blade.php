@@ -2158,6 +2158,11 @@
                 @this.set('leasing_spaces_tenant', $ls.val() || []);
             }
 
+            var $vp = $('#view_preference');
+            if ($vp.length && $vp.hasClass('select2-hidden-accessible')) {
+                @this.set('view_preference', $vp.val() || []);
+            }
+
             var $tp = $('.tenant_pays');
             if ($tp.length && $tp.hasClass('select2-hidden-accessible')) {
                 @this.set('tenant_pays', $tp.val() || []);

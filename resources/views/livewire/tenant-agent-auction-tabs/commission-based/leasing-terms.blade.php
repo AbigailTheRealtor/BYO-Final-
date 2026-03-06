@@ -100,11 +100,12 @@
         <i class="fas fa-circle-info"></i>
     </span>
     <div class="input-cover">
-  <select wire:model="leasing_spaces_tenant" id="leasing_spaces_tenant" class="form-control has-icon select2-multiple"
+  <select id="leasing_spaces_tenant" class="form-control has-icon select2-multiple"
             data-icon="fas fa-building input-icon2" multiple>
 
             @foreach ($acceptable_leasing_space as $row_pt)
-                <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
+                <option value="{{ $row_pt['name'] }}"
+                    {{ in_array($row_pt['name'], $leasing_spaces_tenant ?? []) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
             @endforeach
         </select>
     </div>

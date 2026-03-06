@@ -1,0 +1,299 @@
+Yes — since you showed the picker is actually opening and the freeze happens **after selecting the file**, this means the earlier prompt was still too broad.
+
+Your screenshot strongly suggests this is **not just a file dialog issue**. It is more likely one of these:
+
+* the file input `change` event is firing twice
+* Livewire rerenders the component immediately after file selection
+* the upload property/update hook is causing a loop
+* preview JS is trying to process the file and freezing
+* the same uploader exists twice in the DOM
+* the file input is inside a reactive block that gets replaced the moment a file is chosen
+
+So you need a **much more surgical Replit prompt** focused on the **post-selection freeze**, not the file picker opening.
+
+Copy/paste this version instead:
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS — Listing photo freezes immediately after selecting file (Tenant + Landlord)
+
+### HARD SAFEGUARDS (NON-NEGOTIABLE)
+
+1. **Before editing anything, identify the active route, active Livewire component, active blade, and the exact file input ID/name for the listing photo field.**
+2. If URL contains **`/auction/edit/`** → edit only:
+
+   * `TenantAgentAuctionEdit.php`
+   * `tenant-agent-auction-edit.blade.php`
+   * directly included partials used by that blade
+3. If URL contains **`/auction/`** without `/edit/`** → edit only:
+
+   * `TenantAgentAuction.php`
+   * its active blade
+   * directly included partials used by that blade
+4. Apply only to shared flows used by:
+
+   * **Hire a Tenant’s Agent**
+   * **Hire a Landlord’s Agent**
+5. **Do NOT touch legacy files**
+6. **Do NOT redesign the uploader**
+7. **Do NOT change unrelated fields**
+8. Goal is only:
+
+   * stop freeze after file selection
+   * allow upload to complete
+   * preserve photo in draft/edit
+
+---
+
+# WHAT’S ACTUALLY BROKEN
+
+The file picker opens normally.
+After a file is selected and Open is clicked:
+
+* browser/app freezes
+* selected file does not continue uploading
+* user cannot proceed
+
+This means the bug is likely in the **file input change/upload lifecycle**, not in opening the picker.
+
+---
+
+# FIX THIS AS A POST-SELECTION FREEZE BUG
+
+## STEP 1 — Inspect the exact file input and its change lifecycle
+
+For the active Tenant/Landlord photo input, determine:
+
+* exact `<input type="file">`
+* exact `wire:model` property name
+* whether there is:
+
+  * `updated<Property>()`
+  * `upload` hook
+  * JS `change` listener
+  * preview logic
+  * temporary preview rendering
+  * duplicate uploader block in the DOM
+
+Print those exact findings first before making changes.
+
+---
+
+## STEP 2 — Ensure there is only ONE active file input in the rendered DOM
+
+For the active page only:
+
+* there must be only one real file input for the listing photo field
+* if duplicate hidden file inputs exist for the same property, remove the duplicate from the active route only
+
+Do not search or fix old files.
+
+---
+
+## STEP 3 — Remove duplicate change handling
+
+For the active uploader only, check whether the file input is being handled by more than one of these at the same time:
+
+* Livewire `wire:model`
+* JS `change` listener
+* custom preview handler
+* custom `click()` trigger
+* `updated<Property>()` method
+* another upload watcher
+
+### Requirement
+
+After file selection, the file should be processed **once only**.
+
+If both JS preview handling and Livewire upload handling are running, remove the duplicate path and keep the simplest stable one.
+
+---
+
+## STEP 4 — Prevent rerender/rebind loop immediately after file selection
+
+This is the most likely freeze source.
+
+### Fix
+
+Stabilize the uploader block so the actual file input is not replaced immediately after selection:
+
+* give the uploader container a stable `wire:key`
+* do not reinitialize or rebuild the uploader inside `message.processed`
+* do not attach change listeners repeatedly after every render
+* do not put the file input in a block that conditionally disappears/reappears on upload start
+
+### Important
+
+Do not use `wire:ignore` on the actual file input if Livewire must receive the file.
+Instead, make the container stable and stop repeated JS rebinding.
+
+---
+
+## STEP 5 — Check for `updated<Property>()` or upload hooks causing the freeze
+
+In:
+
+* `TenantAgentAuction.php`
+* `TenantAgentAuctionEdit.php`
+
+Search for the exact photo upload property and inspect:
+
+* `updated<Property>()`
+* `updated()`
+* file validation hooks
+* preview generation
+* image processing
+* metadata writes during selection
+
+### Requirement
+
+Do not do expensive processing immediately on file selection.
+If there is image processing, defer it until save if possible.
+
+### Important
+
+If the code writes draft/meta/database state immediately when a file is selected, remove that immediate write and only keep lightweight validation + temp preview.
+
+---
+
+## STEP 6 — Separate temporary upload from saved photo path
+
+If the same Livewire property is being used for both:
+
+* uploaded temporary file object
+* saved photo path/url string
+
+split them in the active component only.
+
+### Example pattern
+
+* one property for new file upload
+* one property for already-saved photo path
+
+### Rule
+
+If no new file is chosen, keep existing saved photo on draft/edit save.
+
+This prevents type conflicts that can freeze or break rerenders.
+
+---
+
+## STEP 7 — Disable custom click relay if label already targets input
+
+If uploader uses both:
+
+* `<label for="photo_input">`
+* and JS calling `document.getElementById('photo_input').click()`
+
+remove one path.
+
+### Rule
+
+Only one trigger may open the file picker.
+
+Since the picker already opens, focus on preventing post-selection duplicate handling.
+
+---
+
+## STEP 8 — Add temporary debug logging around file selection
+
+For the active route only, add temporary console logging around:
+
+* file input `change`
+* Livewire upload start
+* Livewire upload finish
+* upload error
+* rerender after selection
+
+### Goal
+
+Confirm whether freeze happens:
+
+1. before Livewire receives file
+2. during upload start
+3. during rerender
+4. during preview code
+
+Then fix only that point.
+
+Remove debug logs after confirming.
+
+---
+
+## STEP 9 — Keep upload validation simple
+
+For the active photo upload:
+
+* validate only file type + size
+* do not do extra processing on selection
+* if invalid, show visible error message instead of freezing
+
+---
+
+# DRAFT / EDIT PERSISTENCE RULE
+
+Once upload works:
+
+* if user saves draft without choosing a new photo, keep existing photo
+* if user edits listing without replacing photo, keep existing photo
+* only replace photo when a new file is actually selected
+
+---
+
+# ACCEPTANCE TESTS (MUST PASS)
+
+## Tenant
+
+1. Click photo field
+   ✅ picker opens once
+2. Select image and click Open
+   ✅ no freeze
+   ✅ file is accepted
+   ✅ page remains responsive
+3. Save draft
+   ✅ photo persists
+4. Edit listing
+   ✅ existing photo remains
+
+## Landlord
+
+Repeat same
+✅ no freeze
+✅ photo persists
+
+---
+
+# STOP RULE
+
+If this cannot be fixed inside:
+
+* active Livewire component
+* active blade
+* directly included uploader partial
+
+then STOP and report exactly which one is happening:
+
+1. duplicate file input exists in active DOM
+2. duplicate change/click handlers exist
+3. Livewire rerender replaces input after selection
+4. upload property is shared with saved path property
+5. updated<Property>() or preview logic is causing loop/freeze
+
+Do not expand to legacy files.
+
+---
+
+## Add this line at the very top
+
+**Treat this as a post-file-selection freeze bug, not a file-picker-open bug. The picker already opens. Find what happens immediately after the input change event and fix only that in the active shared Livewire route files.**
+
+---
+
+This version is much better because it tells Replit where the freeze actually is.
+
+Also, based on your screenshot, I’d personally suspect either:
+
+* a duplicate `change` handler
+* or the same property being used for both temp upload and saved file path
+
+Those are the two most common causes.

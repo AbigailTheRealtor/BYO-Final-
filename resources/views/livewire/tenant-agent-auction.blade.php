@@ -2151,6 +2151,7 @@ $lease_types = [
             { sel: '#offered_financing', field: 'offered_financing', multi: false },
             { sel: '#garage_parking_spaces_option_landlord', field: 'garage_parking_spaces_option', multi: true },
             { sel: '#leasing_spaces_tenant', field: 'leasing_spaces_tenant', multi: true },
+            { sel: '#view_preference', field: 'view_preference', multi: true },
             { sel: '.tenant_pays', field: 'tenant_pays', multi: true },
             { sel: '.lease_term_options', field: 'desired_lease_length', multi: true },
         ];
