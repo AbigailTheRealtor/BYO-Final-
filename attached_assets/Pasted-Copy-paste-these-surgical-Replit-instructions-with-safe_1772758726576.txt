@@ -1,0 +1,136 @@
+Copy/paste these **surgical Replit instructions with safeguards**. They’re written for the exact route in your screenshot (`/hire/agent/auction/edit/{id}/landlord`) and will also cover the create route.
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS — Hire a Landlord’s Agent: City/State/County/ZIP must auto-populate
+
+### HARD SAFEGUARDS (NON-NEGOTIABLE)
+
+1. **First check which route I’m on.**
+
+   * If URL contains **`/auction/edit/`** → apply fixes in **`TenantAgentAuctionEdit.php`** and **`tenant-agent-auction-edit.blade.php`**.
+   * If URL contains **`/auction/`** without `/edit/` → apply fixes in **`TenantAgentAuction.php`** and its blade.
+2. **Do NOT touch any legacy Landlord files** outside these flows.
+3. **Do NOT rename/delete any DB columns or change schema.**
+4. Only fix: **autofill for City, State, County, ZIP** on edit/create using existing saved listing data.
+5. Keep changes minimal and role-scoped (Landlord only).
+
+---
+
+# WHAT’S BROKEN
+
+On Hire a Landlord’s Agent Edit, the **Street Address** shows saved value, but **City, State, County, ZIP** are blank and must auto-populate from the same listing record.
+
+This usually means:
+
+* the edit component is not loading these fields in `mount()/loadAuctionData()`, OR
+* the blade inputs are bound to different properties than what’s being loaded, OR
+* draft/metadata load is overwriting them with empty values.
+
+---
+
+# GOAL
+
+When you open an existing Landlord listing (edit route), the fields must display the saved values:
+
+* City
+* State
+* County
+* ZIP Code
+
+And they must persist through:
+
+* Edit
+* Save draft
+* Save listing
+
+---
+
+# STEP A — FIX THE EDIT FLOW (`/auction/edit/.../landlord`)
+
+### File: `TenantAgentAuctionEdit.php`
+
+1. Locate where the listing/auction is loaded (usually `mount($id, $user_type)` or `loadAuctionData()`).
+2. Confirm Street Address is being assigned; then add/confirm assignments for:
+
+* `$this->city`
+* `$this->state`
+* `$this->county`
+* `$this->zip_code` (or `$this->zip` — use the exact property names used by the blade)
+
+3. Pull values from the **same source** that Street Address uses:
+
+* If Street Address comes from `$auction->street_address`, use `$auction->city`, `$auction->state`, `$auction->county`, `$auction->zip_code`
+* If Street Address comes from metadata (`$auction->get->street_address`), then use the corresponding metadata keys for city/state/county/zip as stored today.
+
+✅ IMPORTANT: Do not guess new keys. Use the existing keys already saved in the database for the Landlord listing.
+
+4. Add a **non-wipe guard** so blanks don’t overwrite saved values during edit hydration:
+
+* Only set the Livewire property to blank if the stored value is actually blank.
+* If a “defaults” initializer runs after load, ensure it does not reset these fields.
+
+---
+
+# STEP B — VERIFY BINDINGS IN THE EDIT BLADE
+
+### File: `tenant-agent-auction-edit.blade.php`
+
+1. Find the inputs for City, State, County, ZIP.
+2. Confirm their bindings match the Livewire properties you loaded:
+
+* e.g. `wire:model.defer="city"` must match `$this->city` exactly
+* same for state/county/zip
+
+3. If any of these fields are using a different property name (example: blade uses `wire:model="property_city"` but PHP sets `$this->city`), fix the mismatch **only for these four inputs**.
+
+✅ Do not change formatting, required indicators, tooltips, or icons—only binding names if mismatched.
+
+---
+
+# STEP C — APPLY SAME FIX TO CREATE FLOW (IF NEEDED)
+
+### If the create route (`/auction/.../landlord`) also fails to retain these fields:
+
+Repeat the same “load + binding match” check in:
+
+* `TenantAgentAuction.php` and its blade
+
+(But prioritize the edit route first, since that’s what your screenshot shows.)
+
+---
+
+# STEP D — DRAFT SAVE/LOAD MUST NOT CLEAR THESE FIELDS
+
+In whichever component handles draft load for Landlord (Edit component for `/auction/edit/` and Create component for `/auction/`):
+
+1. Find the draft load method.
+2. Ensure it does not set `city/state/county/zip` to empty when draft payload is missing those keys.
+3. Use “only overwrite when incoming value is non-empty” logic for these 4 fields.
+
+---
+
+# ACCEPTANCE TEST (MUST PASS)
+
+1. Open `/hire/agent/auction/edit/25/landlord`
+   ✅ Street Address, City, State, County, ZIP are all filled in immediately.
+
+2. Click Save Draft
+   ✅ Reload edit page → still filled.
+
+3. Make an unrelated change and Save
+   ✅ Reload edit page → still filled.
+
+---
+
+# STOP RULE
+
+If the DB does not contain city/state/county/zip for that listing, STOP and report:
+
+* which columns/metadata keys exist for Landlord address data
+* whether only Street Address is stored
+  Do not implement geocoding or auto-deriving from Street Address unless explicitly requested.
+
+---
+
+If you paste the **wire:model lines** for City/State/County/ZIP from that edit page (just those 4 inputs), I can tailor the property names in these instructions so Replit won’t accidentally load into the wrong variables.

@@ -1,0 +1,155 @@
+Copy/paste these **surgical Replit instructions with safeguards**. They’re designed specifically for the symptom you described:
+
+✅ **You select an Acceptable Exchange Item → it flashes, then disappears** (create, edit, and save draft)
+
+That’s almost always a **Select2 ↔ Livewire re-render sync problem** (Livewire updates the DOM, Select2 resets, and the selected values aren’t re-applied).
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS — Acceptable Exchange Item flashes then deletes (Create + Edit + Draft)
+
+### HARD SAFEGUARDS (NON-NEGOTIABLE)
+
+1. **First check which route I’m on.**
+
+   * If URL contains **`/auction/edit/`** → apply fix in **`TenantAgentAuctionEdit.php`** and **`tenant-agent-auction-edit.blade.php`**.
+   * If URL contains **`/auction/`** without `/edit/` → apply fix in **`TenantAgentAuction.php`** and its blade.
+2. **Do NOT touch any legacy seller files** (no SellerAgentAuctionController, no hire_seller_agent/edit.blade.php, etc).
+3. **Do NOT rename/delete any DB columns or tables.**
+4. **Do NOT change option values, labels, tooltips, or the UI layout.**
+5. Only fix: **Select2 initialization + Livewire syncing so selections persist**.
+6. Keep changes minimal: **only exchange_item**. No global refactors.
+
+---
+
+# WHAT’S HAPPENING (THE BUG)
+
+When a user selects an exchange item, it appears briefly then disappears because:
+
+* Livewire re-renders after the change
+* Select2 gets destroyed/rebuilt or loses state
+* The Livewire property doesn’t reliably receive the array values (or values aren’t rehydrated back into Select2)
+
+---
+
+# REQUIRED FIX (APPLY TO BOTH CREATE + EDIT FLOWS)
+
+You must implement the same stable pattern for **exchange_item** in both blades.
+
+## 1) Ensure exchange_item is NOT bound directly to Select2 DOM
+
+### Goal
+
+Stop Livewire from fighting Select2.
+
+### Blade change (both create blade + edit blade)
+
+Wrap the `<select id="exchange_item" ...>` in `wire:ignore` and use a hidden input bridge.
+
+**Pattern**
+
+* Select2 `<select>` is `wire:ignore` (Livewire won’t mutate it)
+* On change, JS updates Livewire property via `@this.set('exchange_item', valuesArray)`
+* Also store values in a hidden input if you already have a pattern like JSON bridge
+
+✅ This prevents the “flash then clear” behavior caused by Livewire DOM replacement.
+
+---
+
+## 2) Add a single reusable JS function: initExchangeItemSelect2()
+
+### Blade change (both create + edit blades)
+
+Add:
+
+### Requirements
+
+* Destroy existing Select2 instance if present (to prevent duplicates)
+* Init select2
+* Immediately set Select2 value from Livewire state
+* On change, push selected values into Livewire with `@this.set()`
+* On Livewire update, reapply the selected values to Select2 (rehydrate)
+
+**Implementation rules**
+
+* Use ONE ID: `#exchange_item`
+* Treat values as array always
+* Must be safe if element doesn’t exist (e.g., section hidden)
+
+---
+
+## 3) Rehydrate after every Livewire update AND after tab becomes visible
+
+### Blade change (both create + edit blades)
+
+Add these hooks:
+
+* `Livewire.hook('message.processed', ...)` → call `initExchangeItemSelect2()` and then reapply values
+* `shown.bs.tab` handler → call `initExchangeItemSelect2()` when the user switches tabs (Select2 in hidden tabs often breaks)
+
+---
+
+## 4) Draft save/load must not reset the property
+
+### PHP change (TenantAgentAuction.php + TenantAgentAuctionEdit.php)
+
+Confirm:
+
+* `public $exchange_item = [];`
+* Load logic decodes JSON and assigns an array (never a string)
+* SaveDraft/save metadata uses array (do not stringify right before saving)
+
+**Critical rule:**
+When saving drafts, do not overwrite `$this->exchange_item` with `''` or `null` during normalization.
+
+---
+
+# ACCEPTANCE TEST (MUST PASS)
+
+### Create route `/auction/...` (no /edit/)
+
+1. Select one exchange item
+   ✅ It stays selected (does not flash-disappear)
+2. Save draft
+   ✅ Reopen draft → still selected
+3. Save listing
+   ✅ Still selected afterward
+
+### Edit route `/auction/edit/...`
+
+1. Select one exchange item
+   ✅ It stays selected
+2. Save draft and Save changes
+   ✅ Reopen edit → still selected
+
+---
+
+# STOP RULE (VERY IMPORTANT)
+
+If Replit cannot fix this by implementing:
+
+* `wire:ignore` + `@this.set()` sync
+* `message.processed` + `shown.bs.tab` rehydration
+  …then STOP and report exactly which event causes the value to clear (change handler, livewire render, tab switch, or draft load). Do not touch other fields.
+
+---
+
+## Extra safety note (to prevent “it still clears”)
+
+When using Select2 + `wire:ignore`, the *only* way Livewire gets the values is via `@this.set('exchange_item', valuesArray)`.
+
+So ensure the JS change handler uses:
+
+* `const values = $('#exchange_item').val() || [];`
+* `@this.set('exchange_item', values)`
+
+…and that’s it.
+
+---
+
+If you want me to make this **even more bulletproof**, paste:
+
+1. the `<select ...>` line for `exchange_item` from the create blade
+2. the `<select ...>` line from the edit blade
+
+…and I’ll rewrite the above as an exact “replace these blocks” patch so Replit can’t improvise.

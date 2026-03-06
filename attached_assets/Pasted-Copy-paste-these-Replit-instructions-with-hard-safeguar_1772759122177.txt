@@ -1,0 +1,203 @@
+Copy/paste these **Replit instructions with hard safeguards**. They follow your rule about **/auction/edit/** vs **/auction/** and prevent Replit from touching legacy Seller files.
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS — Hire a Seller’s Agent (Shared Livewire Only)
+
+### HARD SAFEGUARDS (NON-NEGOTIABLE)
+
+1. **First check which route I’m on.**
+
+   * If the URL contains **`/auction/edit/`** → apply fixes in **`TenantAgentAuctionEdit.php`** and **`tenant-agent-auction-edit.blade.php`**.
+   * If the URL contains **`/auction/`** without `/edit/` → apply fixes in **`TenantAgentAuction.php`** and its blade (the shared create/draft flow).
+2. **Do NOT touch any legacy seller files** (no SellerAgentAuctionController, no hire_seller_agent/edit.blade.php, no standalone seller components).
+3. **Do NOT rename/delete DB columns or tables.**
+4. **Do NOT change option values, labels, or tooltips.**
+5. Only do: **field ordering**, **conditional show/hide by property type**, **simple display formatting**, and **tab navigation stability**.
+6. Keep changes surgical and localized. No refactors.
+
+---
+
+# 1) INCOME ONLY — Total Acreage above Appliances Included
+
+### Goal
+
+On **Income** Seller listings, display order must be:
+**Total Acreage** (first) → **Appliances Included** (immediately after)
+
+### Instructions
+
+* In the Seller listing display block for **Income property type**, move the “Total Acreage” row above “Appliances Included”.
+* Ensure Appliances Included still renders (not removed).
+* Apply on **actual listing view** and keep create/edit fields unchanged unless they also need the same order.
+
+**Acceptance:** Income listing shows Total Acreage directly above Appliances Included.
+
+---
+
+# 2) INCOME ONLY — Remove Age Restricted Community
+
+### Goal
+
+**Age Restricted Community** must not show on Income listings.
+
+### Instructions
+
+* Add a condition around the display (and form field if it appears there) so it renders only when property type is **NOT Income**.
+* Do not delete the field globally.
+
+**Acceptance:** Income listing does not show Age Restricted Community anywhere.
+
+---
+
+# 3) INCOME ONLY — Remove Carport + Garage from “Property Details”
+
+### Goal
+
+Under **Property Details** for Income listings, **Carport** and **Garage** must not appear.
+
+### Instructions
+
+* In the Seller listing display under “Property Details”, wrap Carport and Garage output in:
+
+  * show only if property type is NOT Income
+* Do not affect Residential.
+
+**Acceptance:** Income listing Property Details does not show Carport/Garage; Residential still does.
+
+---
+
+# 4) ALL PROPERTY TYPES — Additional Details spacing after colon
+
+### Problem
+
+It currently renders like: `Additional Details:dsdsf`
+Needs: `Additional Details: dsdsf`
+
+### Instructions
+
+* In the listing display template where Additional Details is printed, ensure a literal space exists after the colon.
+* Do not change the label, only formatting.
+
+**Acceptance:** “Additional Details: ” always has a space before the text.
+
+---
+
+# 5) ALL PROPERTY TYPES — Lease-Option compensation shows $ when % selected
+
+### Fields
+
+* Compensation for Creating the Lease-Option Agreement
+* Compensation if Purchase Option is Exercised
+
+### Goal
+
+If user selected **percent**, listing must show **%**, not `$`.
+
+### Instructions
+
+* In the Seller listing display formatter for these two fields:
+
+  1. Read the saved “type” selector that indicates percent vs dollar (whatever key exists today).
+  2. If type indicates **percent**, render value as `X%` (no `$`).
+  3. If type indicates **currency**, render as `$X`.
+  4. If legacy data has no type, infer:
+
+     * if the stored string contains `%` → treat as percent
+     * else default to `$` (fallback only)
+
+Apply to both fields identically.
+
+**Acceptance:** Choose % in form → listing shows `%` for both fields.
+
+---
+
+# 6) COMMERCIAL & BUSINESS — Missing Appliances Included and View in listing display
+
+### Requirements (actual listing view)
+
+* **Appliances Included** must display **right after Total Acreage**
+* **View** must display **right after Garage/Parking Features**
+
+### Instructions
+
+* In the Seller listing display for Commercial & Business:
+
+  * Insert/render Appliances Included row immediately after Total Acreage row
+  * Insert/render View row immediately after Garage/Parking Features row
+* Use existing stored keys (do not invent new schema).
+
+**Acceptance:** Commercial/Business listing shows those fields in the required positions.
+
+---
+
+# 7) VACANT LAND — Remove Property Condition + Add View after Total Acreage
+
+### Requirements
+
+* **Property Condition** must NOT show for Vacant Land listings
+* **View** must show **right after Total Acreage** on listing display
+
+### Instructions
+
+* Wrap Property Condition display in:
+
+  * show only if property type is NOT Vacant Land
+* Ensure View row renders for Vacant Land and position it right after Total Acreage.
+
+**Acceptance:** Vacant Land listing has no Property Condition; View appears directly after Total Acreage.
+
+---
+
+# 8) EDIT LISTING — Tab 1 “Next” button flashes and needs multiple clicks
+
+### Goal
+
+In Seller edit flow, Tab 1 Next button should work on first click (no flicker, no multiple clicks).
+
+### Instructions (surgical)
+
+* This is almost always caused by Livewire re-render + Select2 init firing during tab change.
+* Implement a guarded tab navigation fix ONLY in the **active route’s blade**:
+
+  * If URL is `/auction/edit/` → fix in `tenant-agent-auction-edit.blade.php`
+  * If URL is `/auction/` → fix in create blade
+
+**Required fix pattern**
+
+1. Add a “tab transition lock” boolean in JS:
+
+   * When Next is clicked, disable Next for ~400ms and prevent double firing.
+2. Ensure Select2 init functions do NOT re-run while a tab transition is in progress (guard with the lock).
+3. Ensure Livewire hooks (`message.processed`) do not force tab back to previous tab.
+
+✅ Only apply guards for tab navigation + select init timing. No other logic changes.
+
+**Acceptance:** On Seller edit Tab 1, clicking Next switches tabs reliably on first click.
+
+---
+
+# MUST DO: Apply changes to BOTH create and edit flows when applicable
+
+After implementing each change, confirm whether the issue exists in:
+
+* Create/Draft route (`TenantAgentAuction.php` + create blade)
+* Edit route (`TenantAgentAuctionEdit.php` + edit blade)
+
+If the issue is visible in both, apply the same fix to both.
+
+---
+
+# FINAL ACCEPTANCE TEST LIST
+
+Test one listing of each type in **Seller**:
+
+* Income ✅ (ordering + hides)
+* Commercial/Business ✅ (missing fields)
+* Vacant Land ✅ (hide condition + view)
+* Any type ✅ (Additional Details spacing + lease-option % display)
+* Edit Tab 1 ✅ (Next click works first time)
+
+---
+
+If you want to save cost: tell Replit to **fix only the edit route first** (since you explicitly mentioned the Next button on edit), then port the same display logic to create route only if the bug reproduces there too.

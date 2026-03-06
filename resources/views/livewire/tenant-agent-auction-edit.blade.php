@@ -2018,12 +2018,22 @@
             });
         }
 
-        function initExchangeItemSelect2(forceRebuild) {
+        function initExchangeItemSelect2(mode) {
             var $exEl = $('#exchange_item');
             if (!$exEl.length) return;
+
+            if (mode === 'rehydrate') {
+                if (!$exEl.hasClass('select2-hidden-accessible')) return;
+                var current = [];
+                try { current = @this.get('exchange_item') || []; } catch(e) {}
+                $exEl.val(current).trigger('change.select2');
+                return;
+            }
+
             var isVisible = $exEl.closest('.tab-pane').hasClass('active') || $exEl.is(':visible');
-            if (!isVisible && !forceRebuild) return;
-            if (forceRebuild && $exEl.hasClass('select2-hidden-accessible')) {
+            if (!isVisible && mode !== 'force') return;
+
+            if (mode === 'force' && $exEl.hasClass('select2-hidden-accessible')) {
                 $exEl.select2('destroy');
                 $exEl.data('exchange-change-bound', false);
             }
@@ -2054,7 +2064,7 @@
             document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
                 tab.addEventListener('shown.bs.tab', function() {
                     setTimeout(initializeTooltips, 50);
-                    setTimeout(function() { initExchangeItemSelect2(true); }, 150);
+                    setTimeout(function() { initExchangeItemSelect2('force'); }, 150);
                 });
             });
         });
@@ -2065,8 +2075,8 @@
         });
 
         Livewire.hook('message.processed', (message, component) => {
-            // Wait for Livewire to finish DOM updates
             setTimeout(initializeTooltips, 10);
+            setTimeout(function() { initExchangeItemSelect2('rehydrate'); }, 50);
         });
 
         // Handle Turbolinks if you're using it
