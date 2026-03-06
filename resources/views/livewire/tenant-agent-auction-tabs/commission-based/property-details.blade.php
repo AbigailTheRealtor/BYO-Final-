@@ -255,18 +255,17 @@
 
 <!-- Property Items Dropdown -->
 <div class="form-group mt-3">
-    <label class="fw-bold"> Acceptable Property Styles:<span class="text-danger">*</span></label>
+    <label class="fw-bold"> Acceptable Property Styles:</label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Select the Tenant’s preferred architectural or structural styles.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
 
-    <div class="input-cover">
+    <div class="input-cover" wire:ignore>
 
         <select id="property_items" class="form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-home input-icon2" @if (!$property_type) disabled @endif multiple
-            required>
+            data-icon="fa-solid fa-home input-icon2" @if (!$property_type) disabled @endif multiple>
             @php
                 $selectedPropertyItems = $this->property_items ?? [];
                 if (is_string($selectedPropertyItems)) {
@@ -365,6 +364,7 @@
     </div>
 @endif
 
+@if ($property_type === 'Residential Property')
 <!-- Other Bedrooms Input (Hidden by Default) -->
 <div class="form-group other_bedrooms @if (($this->bedrooms ?? '') !== 'Other') d-none @endif">
     {{-- <label class="fw-bold">Minimum Bedrooms Needed:</label> --}}
@@ -374,6 +374,7 @@
     </div>
     <span class="error mt-2" id="other_bedrooms_error"></span>
 </div>
+@endif
 
 <!-- Minimum Bathrooms Needed -->
 <div class="form-group">
@@ -397,6 +398,7 @@
     <span class="error mt-2" id="bathrooms_error"></span>
 </div>
 
+@if ($property_type === 'Residential Property')
 <!-- Other Bathrooms Input (Hidden by Default) -->
 <div class="form-group other_bathrooms @if (($this->bathrooms ?? '') !== 'Other') d-none @endif">
     {{-- <label class="fw-bold">Minimum Bathrooms Needed:</label> --}}
@@ -406,6 +408,7 @@
     </div>
     <span class="error mt-2" id="other_bathrooms_error"></span>
 </div>
+@endif
 
 <!-- Minimum Heated Sqft Needed -->
 @if ($property_type === 'Residential Property')

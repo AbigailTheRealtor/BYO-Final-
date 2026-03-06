@@ -867,6 +867,27 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </div>
                 @endif
 
+                @php
+                    $brokerSectionHasData = (
+                        !empty(@$auction->get->commission_structure) ||
+                        !empty(@$auction->get->lease_fee_type) ||
+                        !empty(@$auction->get->broker_fee_timing) ||
+                        !empty(@$auction->get->broker_fee_days_from_rent) ||
+                        !empty(@$auction->get->broker_fee_days_after_lease) ||
+                        !empty(@$auction->get->broker_fee_days_after_rent) ||
+                        !empty(@$auction->get->broker_fee_days_after_due_event) ||
+                        !empty(@$auction->get->interested_purchase_fee_type) ||
+                        !empty(@$auction->get->interested_lease_option_agreement) ||
+                        !empty(@$auction->get->protection_period) ||
+                        !empty(@$auction->get->early_termination_fee_option) ||
+                        !empty(@$auction->get->retainer_fee_option) ||
+                        !empty(@$auction->get->agency_agreement_timeframe) ||
+                        !empty(@$auction->get->brokerage_relationship) ||
+                        \App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->additional_details_broker)
+                    );
+                @endphp
+
+                @if ($brokerSectionHasData)
                 <hr />
                 <div class="card-header section-header">
                     <h4 class="section-title">Broker Compensation & Agency Agreement Terms:</h4>
@@ -1114,6 +1135,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @endif
 
                 </div> <!-- end broker-compensation-section -->
+                @endif
+
                 <hr />
                 <div class="card-header section-header">
                     <h4 class="section-title">Tenant's Info </h4>

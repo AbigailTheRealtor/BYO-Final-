@@ -2116,6 +2116,7 @@ $lease_types = [
                 setTimeout(initializeTooltips, 50);
                 setTimeout(function() { initExchangeItemSelect2('force'); }, 150);
                 setTimeout(syncSelect2MultiSelects, 200);
+                setTimeout(window._updateNextSubmitButtons, 50);
             });
         });
     });
@@ -2139,7 +2140,7 @@ $lease_types = [
     let currentServiceType = null;
     let _s2Timers = {};
     let _lastInitTime = 0;
-    function debouncedSet(field, value, delay) { clearTimeout(_s2Timers[field]); _s2Timers[field] = setTimeout(function() { safeLivewireSet(field, value); }, delay || 200); }
+    function debouncedSet(field, value, delay) { clearTimeout(_s2Timers[field]); _s2Timers[field] = setTimeout(function() { safeLivewireSet(field, value, true); }, delay || 200); }
 
     function syncAllSelect2BeforeSave() {
         Object.keys(_s2Timers).forEach(function(k) { clearTimeout(_s2Timers[k]); });
@@ -2573,7 +2574,7 @@ $lease_types = [
             $sel.off('change.cpbSync').on('change.cpbSync', function(e) {
                 let data = $(this).val() || [];
                 data = [...new Set(data)];
-                safeLivewireSet('condition_prop_buyer', data);
+                safeLivewireSet('condition_prop_buyer', data, true);
                 syncConditionJsonBridge(data);
             });
         }
@@ -2859,9 +2860,9 @@ $lease_types = [
                         $('.other_non_negotiable_amenities')
                             .addClass('d-none')
                             .find('input').val('').trigger('input');
-                        safeLivewireSet('other_non_negotiable_amenities', '');
+                        safeLivewireSet('other_non_negotiable_amenities', '', true);
                     }
-                    safeLivewireSet('non_negotiable_amenities', vals);
+                    safeLivewireSet('non_negotiable_amenities', vals, true);
                 });
             var nnVals = @this.get('non_negotiable_amenities') || [];
             if (nnVals.length) {
@@ -3349,7 +3350,7 @@ $lease_types = [
 
             $sel.off('change').on('change', function() {
                 let selectedLease = $(this).val() || [];
-                safeLivewireSet('lease_for', selectedLease);
+                safeLivewireSet('lease_for', selectedLease, true);
                 toggleLease(selectedLease);
             });
         }
@@ -3631,6 +3632,20 @@ $lease_types = [
         }
         return TAB_ORDER;
     }
+
+    window._updateNextSubmitButtons = function() {
+        var tabOrder = getTabOrder();
+        var activeTab = document.querySelector('.nav-link.active');
+        if (!activeTab) return;
+        var currentTarget = (activeTab.getAttribute('data-bs-target') || '').replace('#', '');
+        var currentIndex = tabOrder.indexOf(currentTarget);
+        var isLastTab = (currentIndex === tabOrder.length - 1);
+        var nextBtn = document.querySelector('.wizard-step-next');
+        var submitBtn = document.querySelector('.wizard-step-finish');
+        if (nextBtn) nextBtn.style.display = isLastTab ? 'none' : '';
+        if (submitBtn) submitBtn.style.display = isLastTab ? '' : 'none';
+    };
+    setTimeout(window._updateNextSubmitButtons, 300);
 
     function validateCurrentTab(currentTabContent) {
         if (!currentTabContent) return true;
@@ -3943,6 +3958,9 @@ $lease_types = [
     Livewire.hook('message.processed', () => {
         addIconsToInputs();
         checkRepresentationStatus();
+        if (typeof window._updateNextSubmitButtons === 'function') {
+            setTimeout(window._updateNextSubmitButtons, 50);
+        }
 
         if (typeof isNavigating !== 'undefined' && isNavigating) {
             return;
@@ -4106,6 +4124,16 @@ $lease_types = [
                 return field.value && field.value.trim() !== '' && field.value !== '[]';
             }
             
+            // For Select2 multi-selects: the original <select> is hidden by Select2,
+            // so check if the Select2 container is visible and validate via Livewire state
+            if (field.tagName === 'SELECT' && field.multiple && $(field).hasClass('select2-hidden-accessible')) {
+                var s2Container = $(field).next('.select2-container');
+                if (s2Container.length && s2Container.is(':visible')) {
+                    var selectedVals = $(field).val() || [];
+                    return selectedVals.length > 0;
+                }
+            }
+
             // Skip any field that is not visible - regardless of which tab it's in
             // This includes fields hidden by CSS, conditional rendering, inactive tabs, etc.
             if (!isFieldVisible(field)) {
@@ -4172,6 +4200,33 @@ $lease_types = [
                 }
             });
 
+            try {
+                var wireEl = document.querySelector('[wire\\:id]');
+                if (wireEl && typeof Livewire !== 'undefined') {
+                    var comp = Livewire.find(wireEl.getAttribute('wire:id'));
+                    if (comp && comp.get) {
+                        var serviceType = formContainer.getAttribute('data-service-type');
+                        var curUserType = (typeof CURRENT_USER_TYPE !== 'undefined') ? CURRENT_USER_TYPE : 'tenant';
+                        if (serviceType === 'full_service') {
+                            var lwChecks = [
+                                { prop: 'property_type', label: 'Property Type' },
+                            ];
+                            if (curUserType === 'tenant' || curUserType === 'landlord') {
+                                lwChecks.push({ prop: 'lease_for', label: 'Offered Lease Term', isArray: true });
+                                lwChecks.push({ prop: 'leasing_spaces_tenant', label: 'Leasing Space', isArray: true });
+                            }
+                            lwChecks.forEach(function(chk) {
+                                var val = comp.get(chk.prop);
+                                var isEmpty = chk.isArray ? (!Array.isArray(val) || val.length === 0) : (!val || val === '');
+                                if (isEmpty) {
+                                    invalidFields.push({ tab: 0, field: chk.prop, value: '', visible: true });
+                                }
+                            });
+                        }
+                    }
+                }
+            } catch(e) { }
+
             if (invalidFields.length > 0) {
                 // Debug: Log which fields are blocking submit - use table for better visibility
                 console.log('[Submit Debug] Invalid fields blocking submission (' + invalidFields.length + ' fields):');
@@ -4205,22 +4260,14 @@ $lease_types = [
         }
 
         function updateSaveButton() {
-            // TEMPORARILY DISABLED: Always keep button enabled for testing
-            // const allValid = validateAllTabsStrictly();
-            // if (allValid) {
-            //     saveButton.classList.remove('disabled');
-            //     saveButton.removeAttribute('disabled');
-            // } else {
-            //     saveButton.classList.add('disabled');
-            //     saveButton.setAttribute('disabled', 'disabled');
-            // }
-            
-            // Force button enabled for testing
-            saveButton.classList.remove('disabled');
-            saveButton.removeAttribute('disabled');
-            
-            // Still run validation to show debug info
-            validateAllTabsStrictly();
+            const allValid = validateAllTabsStrictly();
+            if (allValid) {
+                saveButton.classList.remove('disabled');
+                saveButton.removeAttribute('disabled');
+            } else {
+                saveButton.classList.add('disabled');
+                saveButton.setAttribute('disabled', 'disabled');
+            }
         }
         
         // Expose updateSaveButton globally for draftLoaded event
@@ -4313,6 +4360,33 @@ $lease_types = [
                         invalidItems.push({ field: countiesContainer, tab, fieldName: 'County' });
                     }
                 }
+
+                try {
+                    var wireEl = document.querySelector('[wire\\:id]');
+                    if (wireEl && typeof Livewire !== 'undefined') {
+                        var comp = Livewire.find(wireEl.getAttribute('wire:id'));
+                        if (comp && comp.get) {
+                            var svcType = formContainer.getAttribute('data-service-type');
+                            var curUT = (typeof CURRENT_USER_TYPE !== 'undefined') ? CURRENT_USER_TYPE : 'tenant';
+                            if (svcType === 'full_service') {
+                                var lwReqs = [
+                                    { prop: 'property_type', label: 'Property Type' },
+                                ];
+                                if (curUT === 'tenant' || curUT === 'landlord') {
+                                    lwReqs.push({ prop: 'lease_for', label: 'Offered Lease Term', isArray: true });
+                                    lwReqs.push({ prop: 'leasing_spaces_tenant', label: 'Leasing Space', isArray: true });
+                                }
+                                lwReqs.forEach(function(chk) {
+                                    var val = comp.get(chk.prop);
+                                    var isEmpty = chk.isArray ? (!Array.isArray(val) || val.length === 0) : (!val || val === '');
+                                    if (isEmpty) {
+                                        invalidItems.push({ field: document.body, tab: null, fieldName: chk.label });
+                                    }
+                                });
+                            }
+                        }
+                    }
+                } catch(e) { }
 
                 if (invalidItems.length > 0) {
                     e.preventDefault();

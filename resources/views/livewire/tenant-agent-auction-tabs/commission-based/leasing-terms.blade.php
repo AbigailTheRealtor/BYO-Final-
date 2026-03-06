@@ -82,7 +82,11 @@
 @endif
 
 <!-- Other Lease Input (Hidden by Default) -->
-<div class="form-group d-none other_lease_for">
+@php
+    $leaseForArr = $this->lease_for ?? [];
+    if (is_string($leaseForArr)) { $leaseForArr = json_decode($leaseForArr, true) ?? []; }
+@endphp
+<div class="form-group other_lease_for @if(!in_array('Other', $leaseForArr)) d-none @endif">
     <div class="input-cover">
         <input type="text" wire:model="other_lease_for"  class="form-control has-icon"
             data-icon="fa-solid fa-file-pen" placeholder="Enter offered lease term (e.g., 8 Months)">
@@ -113,7 +117,7 @@
     </span>
     <div class="input-cover">
   <select id="leasing_spaces_tenant" class="form-control has-icon select2-multiple"
-            data-icon="fas fa-building input-icon2" multiple>
+            data-icon="fas fa-building input-icon2" multiple required>
 
             @foreach ($acceptable_leasing_space as $row_pt)
                 <option value="{{ $row_pt['name'] }}"
