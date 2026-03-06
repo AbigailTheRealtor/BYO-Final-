@@ -1,0 +1,439 @@
+Here is a **clean, complete version you can copy and paste directly into Replit**.
+It includes **all safeguards, the full QA pass, and the display rules** so your **Hire a Tenant’s Agent listings work end-to-end without bugs**.
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — FINAL QA + FIX PASS FOR HIRE A TENANT’S AGENT LISTINGS
+
+## CRITICAL SAFEGUARDS (NON-NEGOTIABLE)
+
+Before editing anything:
+
+1. **Print the active route, active Livewire component, blade, and partials used by the Hire a Tenant’s Agent page.**
+
+2. **Determine which route is active:**
+
+If the URL contains `/auction/edit/`
+→ Only edit:
+
+* `TenantAgentAuctionEdit.php`
+* `tenant-agent-auction-edit.blade.php`
+* partials used directly by that blade
+
+If the URL contains `/auction/` without `/edit/`
+→ Only edit:
+
+* `TenantAgentAuction.php`
+* its blade
+* partials used directly by that blade
+
+3. **Do NOT modify legacy files.**
+
+4. **Do NOT modify other roles** (Seller, Buyer, Landlord).
+
+5. **Do NOT rename or delete database columns, tables, or migrations.**
+
+6. **Do NOT change labels, tooltips, or option values unless fixing a bug.**
+
+7. This is a **final stabilization and QA pass** for **Hire a Tenant’s Agent listings only**.
+
+---
+
+# IMPORTANT RULE
+
+Do not apply quick patches to individual fields.
+
+Instead:
+
+Identify the **underlying pattern causing fields to flicker, reset, fail validation, or not save**, and fix that pattern across all Tenant fields.
+
+---
+
+# GOAL
+
+Make **Hire a Tenant’s Agent listings fully production ready**.
+
+The listing workflow must work perfectly for:
+
+* create
+* save draft
+* edit
+* submit
+* final listing display
+
+This must work for both:
+
+* Residential listings
+* Commercial listings
+
+---
+
+# REQUIRED FINAL BEHAVIOR
+
+## 1. CREATE LISTING
+
+All fields must behave correctly.
+
+Requirements:
+
+* Every field must select or input correctly on the first click.
+* No field should flicker or delete its value.
+* Select fields must not reset themselves.
+* Conditional fields must appear when triggered.
+* Conditional fields must not block submission unless visible and required.
+* Multi-select fields must retain selections.
+
+---
+
+## 2. SAVE DRAFT
+
+When a user clicks **Save Draft**:
+
+* All entered data must persist.
+* No field values should disappear.
+* Multi-select selections must save.
+* File uploads must persist if uploaded.
+* Video links must persist.
+* Conditional fields must restore correctly.
+
+When reopening the draft:
+
+All previously entered values must populate automatically.
+
+---
+
+## 3. EDIT LISTING
+
+When editing an existing listing:
+
+* Every saved field must auto-populate.
+* Updating one field must not clear other fields.
+* Conditional sections must reopen correctly.
+* No values should disappear after saving.
+
+---
+
+## 4. SUBMIT LISTING
+
+Submission must work correctly.
+
+Requirements:
+
+* Submit should succeed when all required visible fields are completed.
+* Validation must match the correct property names.
+* No false errors like:
+
+```
+Please select an item in the list
+```
+
+when the item is already selected.
+
+If submission fails:
+
+* Show a visible error banner.
+* Identify missing fields.
+* Automatically open the tab containing the first invalid field.
+* Scroll to the field.
+
+No silent failures.
+
+---
+
+# FIELD STABILITY AUDIT
+
+Audit **every Tenant input field** in both Residential and Commercial forms.
+
+This includes:
+
+* text inputs
+* textareas
+* dropdowns
+* multi-select fields
+* Select2 fields
+* radio buttons
+* checkboxes
+* conditional inputs
+* file uploads
+* video links
+
+For every field verify:
+
+1. It selects or inputs correctly on the first click.
+2. It does not flicker or reset.
+3. It saves in drafts.
+4. It auto-populates in edits.
+5. It displays correctly on the final listing if filled.
+6. It does not display on the final listing if empty.
+
+---
+
+# VALIDATION AUDIT
+
+For all required fields:
+
+* Validation keys must match the actual bound Livewire property.
+* Validation rules must match the field type.
+
+Examples:
+
+Single select → string
+Multi select → array with at least one item
+
+If a field is conditionally hidden:
+
+It must not block submission unless it is visible and required.
+
+---
+
+# SAVE / LOAD CONSISTENCY
+
+For every field:
+
+* Property type must match control type.
+* Load logic must normalize saved values correctly.
+* Draft save must preserve values.
+* Final save must preserve values.
+* Edit load must restore values correctly.
+
+Values should never be overwritten with empty values unless the user explicitly clears them.
+
+---
+
+# FINAL LISTING DISPLAY RULES
+
+The final listing must display cleanly.
+
+## SHOW FILLED DATA ONLY
+
+Fields must display **only if they contain data**.
+
+Examples:
+
+Text fields display only if text exists.
+Select fields display only if an option is selected.
+Multi-select fields display only if values exist.
+
+---
+
+## HIDE EMPTY FIELDS
+
+Do NOT render empty fields like:
+
+```
+View:
+Garage/Parking:
+Amenities:
+```
+
+If a field has no value, the field must not display.
+
+---
+
+## HIDE EMPTY SECTION TITLES
+
+If an entire section contains no filled fields:
+
+The section title and divider must not display.
+
+Example:
+
+If no amenities are selected, do not show:
+
+```
+Amenities
+---------
+```
+
+The entire section should be hidden.
+
+---
+
+## MULTI-SELECT DISPLAY
+
+Multi-select values should display clearly.
+
+Example:
+
+```
+Garage/Parking: Covered Parking, Assigned Parking
+```
+
+---
+
+## CONDITIONAL SECTIONS
+
+Conditional sections should only appear when relevant.
+
+Examples:
+
+* Lease option details appear only if lease option is selected.
+* Commercial sections appear only on commercial listings.
+
+---
+
+## MEDIA DISPLAY
+
+Media should display only if present.
+
+Rules:
+
+* Photos display if uploaded.
+* Video links embed if supported.
+* If no media exists, the media section should not appear.
+
+---
+
+# TEST SCENARIOS
+
+## RESIDENTIAL TENANT LISTING
+
+1. Fill all tabs.
+2. Save draft.
+3. Reopen draft.
+
+Expected:
+
+All fields restore correctly.
+
+4. Submit listing.
+
+Expected:
+
+Submission succeeds.
+
+5. View final listing.
+
+Expected:
+
+Filled fields display.
+Empty fields do not display.
+
+6. Edit listing.
+
+Expected:
+
+All values auto-populate.
+Save works correctly.
+
+---
+
+## COMMERCIAL TENANT LISTING
+
+1. Fill all tabs including:
+
+* Leasing Space
+* View Preference
+* Garage/Parking
+
+2. Save draft.
+3. Reopen draft.
+
+Expected:
+
+All fields restore.
+
+4. Submit listing.
+
+Expected:
+
+No false validation errors.
+
+5. View final listing.
+
+Expected:
+
+Only filled fields display.
+
+6. Edit listing.
+
+Expected:
+
+All fields auto-populate and persist.
+
+---
+
+# FIX RULE
+
+Do not patch one field and stop.
+
+Audit the entire Tenant listing workflow and fix all issues discovered.
+
+---
+
+# REQUIRED OUTPUT FROM REPLIT
+
+After completion provide:
+
+### 1. Files Changed
+
+List only the active Tenant route files and partials modified.
+
+### 2. Tenant Field Audit Summary
+
+For each issue fixed list:
+
+* field label
+* property name
+* issue type
+* fixed yes/no
+
+### 3. QA Results
+
+Confirm successful testing of:
+
+* create
+* save draft
+* edit
+* submit
+* final listing display
+
+for both:
+
+* Residential
+* Commercial
+
+### 4. Remaining Blockers
+
+If any issue remains, list:
+
+* field name
+* property name
+* exact cause
+
+---
+
+# STOP RULE
+
+If the issue cannot be resolved within:
+
+* the active Tenant Livewire component
+* its blade
+* directly included partials
+
+STOP and report the blocker.
+
+Do not modify legacy files or other roles.
+
+---
+
+# FINAL INSTRUCTION
+
+Treat this as the **final production readiness pass for Hire a Tenant’s Agent listings**.
+
+The task is complete only when:
+
+* create works
+* draft save works
+* edit works
+* submit works
+* final listing display works
+
+for both Residential and Commercial listings.
+
+All selected fields must display.
+All empty fields and empty sections must remain hidden.
+
+---
+
+If you want, I can also show you the **one small sentence that prevents 90% of Livewire flicker/reset bugs**, which might be the root of the issues you've been seeing.

@@ -1622,7 +1622,7 @@
                         <ul id="submit-error-list" class="mb-0 mt-2"></ul>
                     </div>
 
-                    <form id="edit-auction-form" wire:submit.prevent="update">
+                    <form id="edit-auction-form" wire:submit.prevent="update" novalidate>
                         <!-- Tab Navigation -->
  <!-- Tab Navigation -->
 
@@ -3564,7 +3564,8 @@
 
             const countiesContainer = currentTabContent.querySelector('.counties-container');
             const countiesErrorSpan = currentTabContent.querySelector('#counties_error');
-            if (countiesContainer) {
+            const countiesOptionalForTab = ['buyer', 'tenant'];
+            if (countiesContainer && !countiesOptionalForTab.includes(CURRENT_USER_TYPE)) {
                 const countyBadges = countiesContainer.querySelectorAll('.badge');
                 if (!countyBadges || countyBadges.length === 0) {
                     isValid = false;
@@ -3892,7 +3893,8 @@
                     }
 
                     const countiesContainer = document.querySelector('.counties-container');
-                    if (countiesContainer) {
+                    const countiesOptionalFor = ['buyer', 'tenant'];
+                    if (countiesContainer && !countiesOptionalFor.includes(CURRENT_USER_TYPE_LOCAL)) {
                         const countyBadges = countiesContainer.querySelectorAll('.badge');
                         if (!countyBadges || countyBadges.length === 0) {
                             const tab = countiesContainer.closest('.tab-pane');

@@ -1670,7 +1670,7 @@ $lease_types = [
                     <ul id="submit-error-list" class="mb-0 mt-2"></ul>
                 </div>
 
-                <form id="create-auction-form" wire:submit.prevent="store">
+                <form id="create-auction-form" wire:submit.prevent="store" novalidate>
                     <!-- Tab Navigation -->
 
                     @if ($service_type === 'full_service')
@@ -2169,24 +2169,12 @@ $lease_types = [
             var nuVals = $numUnit.first().val() || [];
             nuVals = [...new Set(nuVals)];
             safeLivewireSet('number_of_unit_type', nuVals);
-            var nutJsonInput = document.querySelector('input[wire\\:model\\.defer="number_of_unit_type_json"]');
-            if (nutJsonInput) {
-                nutJsonInput.value = JSON.stringify(nuVals);
-                nutJsonInput.dispatchEvent(new Event('input', { bubbles: true }));
-            }
-            safeLivewireSet('number_of_unit_type_json', JSON.stringify(nuVals));
         }
 
         var $pi = $('#property_items');
         if ($pi.length && $pi.hasClass('select2-hidden-accessible')) {
             var piVals = $pi.val() || [];
             safeLivewireSet('property_items', piVals);
-            var piJsonInput = document.querySelector('input[wire\\:model="property_items_json"]');
-            if (piJsonInput) {
-                piJsonInput.value = JSON.stringify(piVals);
-                piJsonInput.dispatchEvent(new Event('input', { bubbles: true }));
-            }
-            safeLivewireSet('property_items_json', JSON.stringify(piVals));
         }
     }
 
@@ -3686,7 +3674,8 @@ $lease_types = [
 
         const countiesContainer = currentTabContent.querySelector('.counties-container');
         const countiesErrorSpan = currentTabContent.querySelector('#counties_error');
-        if (countiesContainer) {
+        const countiesOptionalForTab = ['buyer', 'tenant'];
+        if (countiesContainer && !countiesOptionalForTab.includes(CURRENT_USER_TYPE)) {
             const countyBadges = countiesContainer.querySelectorAll('.badge');
             if (!countyBadges || countyBadges.length === 0) {
                 isValid = false;
@@ -4280,7 +4269,8 @@ $lease_types = [
                 }
 
                 const countiesContainer = document.querySelector('.counties-container');
-                if (countiesContainer) {
+                const countiesOptionalFor = ['buyer', 'tenant'];
+                if (countiesContainer && !countiesOptionalFor.includes(CURRENT_USER_TYPE_LOCAL)) {
                     const countyBadges = countiesContainer.querySelectorAll('.badge');
                     if (!countyBadges || countyBadges.length === 0) {
                         const tab = countiesContainer.closest('.tab-pane');

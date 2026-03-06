@@ -15,7 +15,7 @@
 
     <div class="input-cover">
         <input type="text" wire:model="first_name" class="form-control has-icon" data-icon="fa-solid fa-user"
-            placeholder="Enter first name" id="listing_title" required>
+            placeholder="Enter first name" id="first_name" required>
     </div>
 
 
