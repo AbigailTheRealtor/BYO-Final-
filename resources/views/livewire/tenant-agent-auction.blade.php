@@ -2115,6 +2115,7 @@ $lease_types = [
             tab.addEventListener('shown.bs.tab', function() {
                 setTimeout(initializeTooltips, 50);
                 setTimeout(function() { initExchangeItemSelect2('force'); }, 150);
+                setTimeout(syncSelect2MultiSelects, 200);
             });
         });
     });
@@ -2149,7 +2150,7 @@ $lease_types = [
             { sel: '#sale_provision', field: 'sale_provision', multi: false },
             { sel: '#offered_financing', field: 'offered_financing', multi: false },
             { sel: '#garage_parking_spaces_option_landlord', field: 'garage_parking_spaces_option', multi: true },
-            { sel: '#leasing_spaces_tenant', field: 'leasing_spaces_tenant', multi: false },
+            { sel: '#leasing_spaces_tenant', field: 'leasing_spaces_tenant', multi: true },
             { sel: '.tenant_pays', field: 'tenant_pays', multi: true },
             { sel: '.lease_term_options', field: 'desired_lease_length', multi: true },
         ];
@@ -2485,6 +2486,23 @@ $lease_types = [
         }
     }
 
+    function rehydrateSelect2FromLivewire(selector, prop) {
+        try {
+            var wireEl = document.querySelector('[wire\\:id]');
+            if (!wireEl) return;
+            var component = Livewire.find(wireEl.getAttribute('wire:id'));
+            if (!component) return;
+            var $el = $(selector);
+            if (!$el.length || !$el.hasClass('select2-hidden-accessible')) return;
+            var val = component.get(prop);
+            if (val && ((Array.isArray(val) && val.length > 0) || (!Array.isArray(val) && val))) {
+                $el.val(val).trigger('change.select2');
+            }
+        } catch(e) {
+            console.warn('[rehydrateSelect2] Error for', prop, e);
+        }
+    }
+
     function initializeFullService() {
 
 
@@ -2570,6 +2588,7 @@ $lease_types = [
 
         $(document).ready(function() {
             initConditionSelect2();
+            rehydrateSelect2FromLivewire('.condition_prop_buyer', 'condition_prop_buyer');
         });
 
         /////////////////////condition_prop_buyer
@@ -3016,10 +3035,6 @@ $lease_types = [
 
 
 
-        // Initialize Select2
-
-
-        // Initialize Select2
         function initSelect2() {
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
                 $('#view_preference').select2({
@@ -3027,17 +3042,19 @@ $lease_types = [
                     allowClear: true
                 });
 
-                // Listen for changes on the select dropdown
                 $('#view_preference').on('change', function() {
                     let selectedValues = $(this).val() || [];
-                    Livewire.emit('updatePreference', selectedValues); // Emit selected values to Livewire
+                    debouncedSet('view_preference', selectedValues);
 
-                    // Clear the other preferences input if "Other" is deselected
-                    if (!selectedValues.includes('Other')) {
-                        Livewire.emit('updateOtherPreferences', ''); // Clear the "Other" field in Livewire
+                    if (selectedValues.includes('Other')) {
+                        $('#other_preferences').show();
+                    } else {
+                        $('#other_preferences').hide();
+                        safeLivewireSet('other_preferences', '');
                     }
                 });
             }
+            rehydrateSelect2FromLivewire('#view_preference', 'view_preference');
         }
 
         initSelect2();
@@ -3122,9 +3139,10 @@ $lease_types = [
             });
 
             $('#leasing_spaces_tenant').on('change', function(e) {
-                debouncedSet('leasing_spaces_tenant', $(this).val());
+                debouncedSet('leasing_spaces_tenant', $(this).val() || []);
             });
         }
+        rehydrateSelect2FromLivewire('#leasing_spaces_tenant', 'leasing_spaces_tenant');
 
         ///////////////// End leasing_spaces
         ///tenant_pays
@@ -3553,18 +3571,11 @@ $lease_types = [
             showLoaderForMinimumTime();
         }
 
-        // Function to handle photo upload
         function handlePhotoUpload(event) {
             const file = event.target.files[0];
-
             if (!validatePhoto(file)) return;
-
-            // Trigger Livewire photo upload and show the loader
-            Livewire.emit("upload:start");
-            showLoaderForMinimumTime();
         }
 
-        // Attach event listeners for photo and video uploads
         if (photoInput) {
             photoInput.addEventListener("change", handlePhotoUpload);
         }

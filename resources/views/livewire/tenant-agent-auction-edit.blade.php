@@ -2070,6 +2070,7 @@
                 tab.addEventListener('shown.bs.tab', function() {
                     setTimeout(initializeTooltips, 50);
                     setTimeout(function() { initExchangeItemSelect2('force'); }, 150);
+                    setTimeout(rehydrateAllSelect2Fields, 200);
                 });
             });
         });
@@ -2154,7 +2155,7 @@
 
             var $ls = $('#leasing_spaces_tenant');
             if ($ls.length && $ls.hasClass('select2-hidden-accessible')) {
-                @this.set('leasing_spaces_tenant', $ls.val());
+                @this.set('leasing_spaces_tenant', $ls.val() || []);
             }
 
             var $tp = $('.tenant_pays');
@@ -2243,6 +2244,49 @@
 
             if (nextBtn && nextClone) nextBtn.parentNode.replaceChild(nextClone, nextBtn);
             if (backBtn && backClone) backBtn.parentNode.replaceChild(backClone, backBtn);
+        }
+
+        function rehydrateAllSelect2Fields() {
+            var fields = [
+                { sel: '.condition_prop_buyer', prop: 'condition_prop_buyer' },
+                { sel: '#view_preference', prop: 'view_preference' },
+                { sel: '#leasing_spaces_tenant', prop: 'leasing_spaces_tenant' },
+                { sel: '#exchange_item', prop: 'exchange_item' },
+                { sel: '#sale_provision', prop: 'sale_provision' },
+                { sel: '#offered_financing', prop: 'offered_financing' },
+                { sel: '#property_items', prop: 'property_items' },
+                { sel: '#appliances', prop: 'appliances' },
+                { sel: '#garage_parking_spaces_option', prop: 'garage_parking_spaces_option' },
+                { sel: '#garage_parking_spaces_option_landlord', prop: 'garage_parking_spaces_option' },
+                { sel: '.tenant_pays', prop: 'tenant_pays' },
+                { sel: '#pool_type', prop: 'pool_type' },
+                { sel: '#non_negotiable_amenities', prop: 'non_negotiable_amenities' },
+                { sel: '#credit_scroe_rating', prop: 'credit_scroe_rating' },
+                { sel: '#lease_for', prop: 'lease_for' },
+                { sel: '.number_of_unit_type', prop: 'number_of_unit_type' },
+                { sel: '#tenant_require', prop: 'tenant_require' },
+                { sel: '#owner_pays', prop: 'owner_pays' },
+                { sel: '#rent_includes', prop: 'rent_includes' },
+                { sel: '#desired_lease_length', prop: 'desired_lease_length' },
+                { sel: '#terms_of_lease', prop: 'terms_of_lease' },
+                { sel: '#garage_parking_spaces_option_buyer', prop: 'garage_parking_spaces_option_buyer' },
+            ];
+            fields.forEach(function(f) {
+                rehydrateSelect2FromLivewire(f.sel, f.prop);
+            });
+        }
+
+        function rehydrateSelect2FromLivewire(selector, prop) {
+            try {
+                var $el = $(selector);
+                if (!$el.length || !$el.hasClass('select2-hidden-accessible')) return;
+                var val = @this.get(prop);
+                if (val && ((Array.isArray(val) && val.length > 0) || (!Array.isArray(val) && val))) {
+                    $el.val(val).trigger('change.select2');
+                }
+            } catch(e) {
+                console.warn('[rehydrateSelect2] Error for', prop, e);
+            }
         }
 
         function initializeFullService() {
@@ -2790,10 +2834,6 @@
 
 
 
-            // Initialize Select2
-
-
-            // Initialize Select2
             function initSelect2() {
                 if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
                     $('#view_preference').select2({
@@ -2803,16 +2843,19 @@
 
                     $('#view_preference').on('change', function() {
                         let selectedValues = $(this).val() || [];
-                        Livewire.emit('updatePreference', selectedValues);
+                        debouncedSet('view_preference', selectedValues);
 
-                        if (!selectedValues.includes('Other')) {
-                            Livewire.emit('updateOtherPreferences', '');
+                        if (selectedValues.includes('Other')) {
+                            $('#other_preferences').show();
+                        } else {
+                            $('#other_preferences').hide();
+                            @this.set('other_preferences', '');
                         }
                     });
                 }
+                rehydrateSelect2FromLivewire('#view_preference', 'view_preference');
             }
 
-            // Initialize Select2 on load
             initSelect2();
 
 
@@ -2889,9 +2932,10 @@
                 });
 
                 $('#leasing_spaces_tenant').on('change', function(e) {
-                    debouncedSet('leasing_spaces_tenant', $(this).val());
+                    debouncedSet('leasing_spaces_tenant', $(this).val() || []);
                 });
             }
+            rehydrateSelect2FromLivewire('#leasing_spaces_tenant', 'leasing_spaces_tenant');
 
             ///////////////// End leasing_spaces
             ///tenant_pays
@@ -3290,18 +3334,11 @@
                 showLoaderForMinimumTime();
             }
 
-            // Function to handle photo upload
             function handlePhotoUpload(event) {
                 const file = event.target.files[0];
-
                 if (!validatePhoto(file)) return;
-
-                // Trigger Livewire photo upload and show the loader
-                Livewire.emit("upload:start");
-                showLoaderForMinimumTime();
             }
 
-            // Attach event listeners for photo and video uploads
             if (photoInput) {
                 photoInput.addEventListener("change", handlePhotoUpload);
             }

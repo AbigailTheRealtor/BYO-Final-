@@ -1196,12 +1196,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </div>
                 @elseif (strpos($videoLink, 'vimeo.com') !== false)
                 @php
-                // Extract Vimeo video ID from any kind of URL (e.g. /channels/staffpicks/1120141041)
                 preg_match('/vimeo\.com\/(?:.*\/)?(\d+)/', $videoLink, $matches);
                 $vimeoVideoId =
                 $matches[1] ?? basename(parse_url($videoLink, PHP_URL_PATH));
 
-                // Vimeo autoplay embed URL
                 $vimeoEmbedUrl = "https://player.vimeo.com/video/{$vimeoVideoId}?autoplay=1&muted=1";
                 @endphp
 
@@ -1212,6 +1210,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
                             allowfullscreen>
                         </iframe>
+                    </span>
+                </div>
+                @else
+                <div class="col-md-6 col-6 pt-2 fw-bold">Video Link:
+                    <span class="removeBold">
+                        <a href="{{ $videoLink }}" target="_blank" rel="noopener noreferrer">
+                            <i class="fa fa-video me-1"></i> Watch Video
+                        </a>
                     </span>
                 </div>
                 @endif

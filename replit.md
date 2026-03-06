@@ -30,6 +30,13 @@ The platform is built on Laravel 8.x, PHP 8.2.23, and PostgreSQL, with Node.js v
 - **Submit/Next validation error banner**: Both create and edit blades include a `#submit-error-banner` div (hidden by default with `d-none`) above the form. When Next is clicked with missing required fields, the banner shows with a list of missing field labels and the page stays on the current tab. When Submit is clicked, the same banner pattern validates all tabs and jumps to the first tab with errors.
 - **Address field auto-population**: `loadAuctionData()` (edit) and `loadDraft()` (create) now set `cityFieldVisible`, `stateFieldVisible`, `zipCodeFieldVisible`, and `countyFieldVisible` to `true` when the corresponding data is non-empty. `zipCodes` array is loaded from and saved to metadata in both flows.
 
+#### Tenant Agent Auction - Key Implementation Notes
+- **Select2 rehydration pattern**: A `rehydrateSelect2FromLivewire(selector, prop)` helper exists in both create and edit blades. It reads Livewire state via `@this.get(prop)` and sets the Select2 value. Called after Select2 init for `view_preference`, `leasing_spaces_tenant`, and `condition_prop_buyer`. Also called on `shown.bs.tab` and `draftLoaded` events. The `view_preference` change handler uses `debouncedSet` (not `Livewire.emit('updatePreference')`) to avoid full re-renders that clear Select2 state.
+- **leasing_spaces_tenant**: Multi-select field. `syncAllSelect2BeforeSave` in create blade correctly uses `multi: true`.
+- **Photo upload**: File input (`wire:model="photo"`) is wrapped in `wire:ignore` to prevent Livewire DOM morphing from destroying it mid-upload. The JS `handlePhotoUpload` only validates (no `Livewire.emit('upload:start')` or loader calls). The photo preview section is outside `wire:ignore` so it re-renders normally. The `wire:loading wire:target="photo"` overlay provides upload feedback.
+- **Video link display**: Tenant view embeds YouTube/Vimeo links as iframes. Non-YouTube/Vimeo URLs fall back to clickable "Watch Video" links. Uploaded videos use HTML5 `<video>` tag.
+- **Video embed rehydration**: `loadDraft()` (create) and `loadAuctionData()` (edit) now compute `embedUrl` via `getEmbedUrl()` when `video_link` is non-empty, so video preview renders immediately on draft resume or edit load.
+
 ### System Design Choices
 The architecture prioritizes modularity, clear separation of concerns, and a database-first approach utilizing local database solutions. The system is optimized for production deployment, and existing database schema for fees is immutable, with display-only formatting updates.
 

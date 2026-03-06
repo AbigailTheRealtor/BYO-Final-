@@ -2926,6 +2926,9 @@ class TenantAgentAuctionEdit extends Component
         $this->phone_number = $auction->info('phone_number');
         $this->email = $auction->info('email');
         $this->video_link = $auction->info('video_link');
+        if (!empty($this->video_link)) {
+            $this->embedUrl = $this->getEmbedUrl($this->video_link);
+        }
         $this->photo = $auction->info('photo');
         $this->video = $auction->info('video');
 
