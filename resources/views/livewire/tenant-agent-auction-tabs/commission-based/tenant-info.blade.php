@@ -91,8 +91,8 @@
     @endif
 
     <!-- Full-Screen Loader (Handled by Livewire) -->
-    <div id="photo-loader" wire:loading wire:target="photo"
-        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 9999; display: flex; justify-content: center; align-items: center; visibility: hidden;">
+    <div id="photo-loader" wire:loading.flex wire:target="photo"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 9999; justify-content: center; align-items: center; display: none;">
         <div style="text-align: center; color: white;">
             <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
                 <span class="visually-hidden">Loading...</span>

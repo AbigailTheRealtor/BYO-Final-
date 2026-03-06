@@ -3256,7 +3256,6 @@
 
             const videoInput = document.getElementById("video-input");
             const videoError = document.getElementById("video-error");
-            const videoLoader = document.getElementById("video-loader");
             let videoErrorFlag = false;
 
             function validatePhoto(file) {
@@ -3302,18 +3301,9 @@
                 return true;
             }
 
-            function showLoaderForMinimumTime() {
-                if (videoLoader) {
-                    videoLoader.style.visibility = "visible";
-                    setTimeout(() => { videoLoader.style.visibility = "hidden"; }, 30000);
-                }
-            }
-
             function handleVideoUpload(event) {
                 const file = event.target.files[0];
                 if (!validateVideo(file)) return;
-                Livewire.emit("upload:start");
-                showLoaderForMinimumTime();
             }
 
             if (!window.__photoChangeDelegated) {
@@ -3331,18 +3321,6 @@
             if (videoInput) {
                 videoInput.addEventListener("change", handleVideoUpload);
             }
-
-            // Livewire event listeners
-            Livewire.on("upload:start", () => {
-                showLoaderForMinimumTime();
-            });
-
-            Livewire.on("upload:finish", () => {
-                // Wait for at least 20 seconds before hiding the loader
-                setTimeout(() => {
-                    videoLoader.style.visibility = "hidden";
-                }, 30000);
-            });
 
 
             // Function to check if all required fields are filled
