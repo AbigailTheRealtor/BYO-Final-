@@ -60,7 +60,7 @@
 
             </span>
         </label>
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover" wire:key="photo-input-stable">
             <div class="input-group">
                 <input type="file" wire:model="photo" id="photo-input" class="form-control has-icon"
                     data-icon="fas fa-camera" accept="image/*">

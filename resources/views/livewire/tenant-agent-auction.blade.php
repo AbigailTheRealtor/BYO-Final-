@@ -3486,98 +3486,78 @@ $lease_types = [
             attachConditionDropdownListener();
         });
 
-        const photoInput = document.getElementById("photo-input");
-        const photoError = document.getElementById("photo-error");
         const videoInput = document.getElementById("video-input");
         const videoError = document.getElementById("video-error");
         const videoLoader = document.getElementById("video-loader");
-        const photoPreview = document.getElementById("photo-preview");
-        // Error flags
-        let photoErrorFlag = false;
         let videoErrorFlag = false;
 
-        // Function to validate photo upload
         function validatePhoto(file) {
-            if (!file) return true; // No file selected
+            const errEl = document.getElementById("photo-error");
+            const inputEl = document.getElementById("photo-input");
+            if (!file) return true;
 
             if (!file.type.startsWith("image/")) {
-                photoError.textContent = "Please upload a valid image file.";
-                photoError.style.display = "block";
-                photoErrorFlag = true; // Set error flag
-                photoInput.value = ""; // Clear input field
+                if (errEl) { errEl.textContent = "Please upload a valid image file."; errEl.style.display = "block"; }
+                if (inputEl) inputEl.value = "";
                 return false;
             }
 
             if (file.size > 10 * 1024 * 1024) {
-                photoError.textContent = "Photo size must be less than 10MB.";
-                photoError.style.display = "block";
-                photoErrorFlag = true; // Set error flag
-                photoInput.value = ""; // Clear input field
+                if (errEl) { errEl.textContent = "Photo size must be less than 10MB."; errEl.style.display = "block"; }
+                if (inputEl) inputEl.value = "";
                 return false;
             }
 
-            photoError.textContent = "";
-            photoError.style.display = "none";
-            photoErrorFlag = false; // Reset error flag
+            if (errEl) { errEl.textContent = ""; errEl.style.display = "none"; }
             return true;
         }
 
-        // Function to validate video upload
         function validateVideo(file) {
-            if (!file) return false; // No file selected
+            if (!file) return false;
 
             if (!file.type.startsWith("video/")) {
-                videoError.textContent = "Please upload a valid video file.";
-                videoError.style.display = "block";
-                videoErrorFlag = true; // Set error flag
-                videoInput.value = ""; // Clear input field
+                if (videoError) { videoError.textContent = "Please upload a valid video file."; videoError.style.display = "block"; }
+                if (videoInput) videoInput.value = "";
                 return false;
             }
 
-           if (file.size > 20 * 1024 * 1024) {
-                videoError.textContent =
-                    'Video size must be under 20MB. For larger videos, please paste a link instead (e.g., YouTube or Vimeo). For privacy, you can set your video as unlisted on YouTube so only those with the link can view it.';
-                videoError.style.display = "block";
-                videoErrorFlag = true; // Set error flag
-                videoInput.value = ""; // Clear input field
+            if (file.size > 20 * 1024 * 1024) {
+                if (videoError) {
+                    videoError.textContent = 'Video size must be under 20MB. For larger videos, please paste a link instead (e.g., YouTube or Vimeo). For privacy, you can set your video as unlisted on YouTube so only those with the link can view it.';
+                    videoError.style.display = "block";
+                }
+                if (videoInput) videoInput.value = "";
                 return false;
             }
 
-
-            videoError.textContent = "";
-            videoError.style.display = "none";
-            videoErrorFlag = false; // Reset error flag
+            if (videoError) { videoError.textContent = ""; videoError.style.display = "none"; }
             return true;
         }
 
-        // Function to show loader for at least 20 seconds
         function showLoaderForMinimumTime() {
-            videoLoader.style.visibility = "visible";
-
-            // Ensure the loader is visible for at least 20 seconds
-            setTimeout(() => {
-                videoLoader.style.visibility = "hidden";
-            }, 30000);
+            if (videoLoader) {
+                videoLoader.style.visibility = "visible";
+                setTimeout(() => { videoLoader.style.visibility = "hidden"; }, 30000);
+            }
         }
 
-        // Function to handle video upload
         function handleVideoUpload(event) {
             const file = event.target.files[0];
-
             if (!validateVideo(file)) return;
-
-            // Trigger Livewire video upload and show the loader
             Livewire.emit("upload:start");
             showLoaderForMinimumTime();
         }
 
-        function handlePhotoUpload(event) {
-            const file = event.target.files[0];
-            if (!validatePhoto(file)) return;
-        }
-
-        if (photoInput) {
-            photoInput.addEventListener("change", handlePhotoUpload);
+        if (!window.__photoChangeDelegated) {
+            window.__photoChangeDelegated = true;
+            document.addEventListener('change', function(e) {
+                if (e.target && e.target.id === 'photo-input') {
+                    const file = e.target.files[0];
+                    if (!validatePhoto(file)) {
+                        e.stopImmediatePropagation();
+                    }
+                }
+            }, true);
         }
 
         if (videoInput) {
