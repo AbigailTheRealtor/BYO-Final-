@@ -2063,6 +2063,34 @@ $lease_types = [
         });
     }
 
+    function initExchangeItemSelect2(forceRebuild) {
+        var $exEl = $('#exchange_item');
+        if (!$exEl.length) return;
+        var isVisible = $exEl.closest('.tab-pane').hasClass('active') || $exEl.is(':visible');
+        if (!isVisible && !forceRebuild) return;
+        if (forceRebuild && $exEl.hasClass('select2-hidden-accessible')) {
+            $exEl.select2('destroy');
+            $exEl.data('exchange-change-bound', false);
+        }
+        if (!$exEl.hasClass('select2-hidden-accessible')) {
+            $exEl.select2({ placeholder: "Select acceptable exchange items", allowClear: true });
+        }
+        var saved = [];
+        try { saved = JSON.parse($exEl.attr('data-selected') || '[]'); } catch(e) {}
+        if (!saved.length) {
+            try { saved = @this.get('exchange_item') || []; } catch(e) {}
+        }
+        if (saved.length > 0) {
+            $exEl.val(saved).trigger('change.select2');
+        }
+        if (!$exEl.data('exchange-change-bound')) {
+            $exEl.on('change', function(e) {
+                @this.set('exchange_item', $(this).val() || []);
+            });
+            $exEl.data('exchange-change-bound', true);
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         // Initial tooltip setup
         initializeTooltips();
@@ -2070,33 +2098,8 @@ $lease_types = [
         // Reinitialize when tabs are shown
         document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
             tab.addEventListener('shown.bs.tab', function() {
-                // Small delay to ensure tab content is visible
                 setTimeout(initializeTooltips, 50);
-                setTimeout(function() {
-                    if ($('#exchange_item').length) {
-                        var $exEl = $('#exchange_item');
-                        if (!$exEl.hasClass('select2-hidden-accessible')) {
-                            $exEl.select2({ placeholder: "Select acceptable exchange items", allowClear: true });
-                        }
-                        var saved = [];
-                        try { saved = JSON.parse($exEl.attr('data-selected') || '[]'); } catch(e) {}
-                        if (!saved.length) {
-                            try { saved = @this.get('exchange_item') || []; } catch(e) {}
-                        }
-                        if (saved.length > 0) {
-                            var current = $exEl.val() || [];
-                            if (current.length === 0) {
-                                $exEl.val(saved).trigger('change.select2');
-                            }
-                        }
-                        if (!$exEl.data('exchange-change-bound')) {
-                            $exEl.on('change', function(e) {
-                                @this.set('exchange_item', $(this).val() || []);
-                            });
-                            $exEl.data('exchange-change-bound', true);
-                        }
-                    }
-                }, 100);
+                setTimeout(function() { initExchangeItemSelect2(true); }, 150);
             });
         });
     });
@@ -2516,30 +2519,7 @@ $lease_types = [
             });
         }
 
-        if ($('#exchange_item').length) {
-            var $exEl = $('#exchange_item');
-            if (!$exEl.hasClass('select2-hidden-accessible')) {
-                $exEl.select2({
-                    placeholder: "Select acceptable exchange items",
-                    allowClear: true,
-                });
-            }
-            var savedExchangeItems = [];
-            try { savedExchangeItems = JSON.parse($exEl.attr('data-selected') || '[]'); } catch(e) {}
-            if (!savedExchangeItems.length) {
-                savedExchangeItems = @this.get('exchange_item') || [];
-            }
-            if (savedExchangeItems.length > 0) {
-                $exEl.val(savedExchangeItems).trigger('change.select2');
-            }
-            if (!$exEl.data('exchange-change-bound')) {
-                $exEl.on('change', function(e) {
-                    var selectedValues = $(this).val() || [];
-                    @this.set('exchange_item', selectedValues);
-                });
-                $exEl.data('exchange-change-bound', true);
-            }
-        }
+        initExchangeItemSelect2();
 
         // Enable Bootstrap tooltips for the entire document
         $('[data-bs-toggle="tooltip"]').tooltip();
