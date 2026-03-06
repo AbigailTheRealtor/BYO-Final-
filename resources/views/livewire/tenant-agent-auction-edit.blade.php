@@ -3492,7 +3492,7 @@
             bootstrap.Tab.getOrCreateInstance(nextTabEl).show();
             Livewire.emit('setActiveTab', currentIndex + 1);
 
-            setTimeout(() => { isEditNavigating = false; }, 100);
+            setTimeout(() => { isEditNavigating = false; }, 500);
             return true;
         }
 
@@ -3696,6 +3696,8 @@
         Livewire.hook('message.processed', () => {
             addIconsToInputs();
             checkRepresentationStatus();
+
+            if (isEditNavigating) return;
 
             // Re-detect selected service type after DOM update
             const fullServiceChecked = document.getElementById('fullService')?.checked;

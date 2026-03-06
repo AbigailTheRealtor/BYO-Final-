@@ -1,0 +1,210 @@
+Copy/paste these **Replit instructions with hard safeguards**. They cover **both issues**:
+
+1. **City/State/County/ZIP must auto-populate every time Edit is opened** (Landlord + Seller, and apply pattern to all roles)
+2. If Submit fails due to missing required fields, the user must get a **clear message + jump to the tab** with missing fields (all roles)
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS — Address Autopopulate on Edit + Required Fields Submit Feedback (ALL ROLES)
+
+### HARD SAFEGUARDS (NON-NEGOTIABLE)
+
+1. **First check which route I’m on:**
+
+   * If URL contains **`/auction/edit/`** → apply fixes in **`TenantAgentAuctionEdit.php`** and **`tenant-agent-auction-edit.blade.php`**
+   * If URL contains **`/auction/`** without `/edit/` → apply fixes in **`TenantAgentAuction.php`** and its blade
+2. **Do NOT touch any legacy controller/blade edit flows** outside these routes.
+3. **Do NOT rename/delete DB columns, tables, or migrations.**
+4. Keep changes surgical:
+
+   * Only **address hydration** logic + **submit validation UX feedback**
+5. Do not change labels/tooltips/options.
+
+---
+
+# PART 1 — City/State/County/ZIP must autopopulate on EVERY Edit open (Seller + Landlord, then apply same pattern to Buyer + Tenant)
+
+## Goal
+
+When a user clicks **Edit** for any listing, the following must populate immediately from the saved listing record:
+
+* City
+* State
+* County
+* ZIP Code
+
+This must work for:
+
+* Seller
+* Buyer
+* Landlord
+* Tenant
+  …and for drafts.
+
+## A) Fix in EDIT FLOW (most important)
+
+### File: `TenantAgentAuctionEdit.php`
+
+1. In `mount()` (or whichever method loads the auction record), after the auction is retrieved, **assign these properties** from the saved record.
+
+✅ Critical: do not rely on “defaults” after load. Load must win.
+
+2. Implement **non-wipe hydration**:
+
+* If the saved value exists → set Livewire property
+* If saved value is empty → do not overwrite an already-filled property with empty
+
+Example rule:
+
+* `if (!empty($auction->city)) $this->city = $auction->city;`
+
+3. Ensure the property names match what the blade binds to:
+
+* `$this->city`
+* `$this->state`
+* `$this->county`
+* `$this->zip_code` (or `$this->zip` — match the blade)
+
+4. If these fields are stored in metadata instead of columns for some roles, use the exact keys already being saved today (do not invent new schema).
+
+## B) Confirm bindings in EDIT BLADE
+
+### File: `tenant-agent-auction-edit.blade.php`
+
+Verify the inputs use the same Livewire properties:
+
+* `wire:model.defer="city"`
+* `wire:model.defer="state"`
+* `wire:model.defer="county"`
+* `wire:model.defer="zip_code"` (or zip)
+
+If any mismatch exists (example blade uses `zipcode` but PHP uses `zip_code`), fix the binding **only for these four fields**.
+
+## C) Apply the same hydration pattern to CREATE/DRAFT flow
+
+### File: `TenantAgentAuction.php`
+
+If drafts/resume open in the create route, ensure the same hydration logic exists there too (same rules, same property names).
+
+---
+
+## Acceptance test (must pass)
+
+1. Open Edit for a listing that already has an address.
+   ✅ City/State/County/ZIP populate immediately every time.
+2. Change nothing, click Submit.
+   ✅ It submits (no silent block due to missing required address fields).
+
+---
+
+# PART 2 — If Submit fails due to missing required fields, show an error message + take user to the correct tab (ALL ROLES)
+
+## Problem
+
+Right now Submit can fail silently because required fields are missing on a different tab.
+
+## Goal
+
+When user clicks **Submit** and validation fails:
+
+1. Show a clear message at the top:
+
+   * “Please complete the required fields before submitting.”
+2. List the missing fields (or at least count + first few)
+3. Automatically switch to the tab containing the first missing required field and scroll to it.
+4. Highlight missing fields (default Livewire validation styles are fine).
+
+---
+
+## A) Implement a universal validation failure handler in Livewire components
+
+### Files:
+
+* `TenantAgentAuction.php`
+* `TenantAgentAuctionEdit.php`
+
+1. In the submit method (whatever final submit/save is called), ensure it uses Livewire validation (likely `$this->validate()`).
+2. Catch validation exceptions and set two public properties:
+
+* `$this->showSubmitErrors = true;`
+* `$this->submitErrorFields = array_keys($e->validator->errors()->messages());`
+
+3. Also compute the “first error field”:
+
+* `$this->firstSubmitErrorField = $this->submitErrorFields[0] ?? null;`
+
+✅ This does not change validation rules. It only captures what failed.
+
+---
+
+## B) Add a top-of-page error banner in the blade(s)
+
+### Files:
+
+* create blade for TenantAgentAuction
+* `tenant-agent-auction-edit.blade.php`
+
+At the top of the form (above tabs), add:
+
+* A red alert banner shown when `$showSubmitErrors` is true
+* Message: “Please complete the required fields before submitting.”
+* Optionally show a short bullet list of missing field labels if you already have label mapping; otherwise show field keys (better than nothing).
+
+---
+
+## C) Auto-jump to the correct tab + scroll to the first missing field
+
+### Blade JS (both create + edit blades)
+
+When `firstSubmitErrorField` is set:
+
+1. Find the element with:
+
+* `[wire\\:model*="FIELDNAME"]` or an ID mapping (preferred if IDs exist)
+
+2. Determine which tab pane it’s inside
+3. Activate that tab
+4. Scroll into view and focus it
+
+✅ Keep this generic so it works for Seller/Buyer/Landlord/Tenant.
+
+---
+
+## D) IMPORTANT: Do not allow “Submit” to appear successful if it failed
+
+If submit fails:
+
+* Keep the user on the form
+* Show the banner
+* Jump to tab
+
+No redirects.
+
+---
+
+## Acceptance test (must pass)
+
+For each role (Seller, Buyer, Landlord, Tenant):
+
+1. Create or edit listing
+2. Leave required fields blank on a different tab
+3. Click Submit
+   ✅ Banner appears
+   ✅ User is taken to the correct tab
+   ✅ Missing field is visible/focused
+   ✅ They can complete and resubmit successfully
+
+---
+
+# STOP RULE
+
+If Replit cannot reliably map fields to tabs automatically, implement the minimum viable version:
+
+* show banner + list missing field names
+* and jump to the first tab that contains ANY validation errors (by checking which tab pane contains an element bound to the first error field)
+
+Do not refactor tab system.
+
+---
+
+If you want, paste the exact Livewire property names used for those 4 address fields (city/state/county/zip) from one of your blades (`wire:model...` lines). I’ll tailor the instruction so Replit doesn’t accidentally load into the wrong property names and miss the autopopulate again.

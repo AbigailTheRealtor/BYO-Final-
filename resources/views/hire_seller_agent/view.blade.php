@@ -484,7 +484,7 @@
                                     }
                                 }
                             @endphp
-                            @if (!empty($conditionItems))
+                            @if (!empty($conditionItems) && $propType !== 'Vacant Land')
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Property Condition:
                                 <span class="removeBold">{{ implode(', ', $conditionItems) }}</span>
@@ -585,7 +585,7 @@
                                 @endif
                             @endif
 
-                            @if (in_array($propType, ['Residential', 'Income']))
+                            @if (in_array($propType, ['Residential']))
                                 @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->carportOptions))
                                     @php
                                         $carportVal = @$auction->get->carportOptions;
@@ -638,55 +638,53 @@
                                 @endif
                             @endif
 
-                            @if (in_array($propType, ['Residential', 'Income']))
-                                @php
-                                    $appRaw = @$auction->get->appliances;
-                                    $appOther = @$auction->get->other_appliances;
-                                    $applianceItems = [];
-                                    if (!empty($appRaw)) {
-                                        $decoded = is_string($appRaw) ? json_decode(str_replace('"', '"', $appRaw), true) : (array) $appRaw;
-                                        if (is_array($decoded)) {
-                                            foreach ($decoded as $v) {
-                                                $v = is_string($v) ? trim(str_replace('"', '', $v)) : $v;
-                                                if ($v !== '' && $v !== null) {
-                                                    if (strtolower($v) === 'other' && !empty($appOther)) {
-                                                        $applianceItems[] = trim($appOther);
-                                                    } else {
-                                                        $applianceItems[] = $v;
-                                                    }
-                                                }
-                                            }
-                                        } else {
-                                            $v = trim(str_replace('"', '', $appRaw));
-                                            if ($v !== '') {
-                                                $applianceItems[] = $v;
-                                            }
-                                        }
-                                    }
-                                @endphp
-                                @if (!empty($applianceItems))
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Appliances Included:
-                                        @if (count($applianceItems) === 1)
-                                            <span class="removeBold">{{ $applianceItems[0] }}</span>
-                                        @else
-                                            @foreach ($applianceItems as $appItem)
-                                                <span class="removeBold badge bg-secondary">{{ $appItem }}</span>
-                                            @endforeach
-                                        @endif
-                                    </div>
-                                @endif
-                            @endif
-
-                            @if ($propType === 'Income' && @$auction->get->pool_needed !== null && @$auction->get->pool_needed !== '' && @$auction->get->pool_needed !== 'null')
-                                @include('hire_seller_agent.partials.pool-display', ['auction' => $auction])
-                            @endif
-
                             @if (@$auction->get->total_acreage != null && @$auction->get->total_acreage != '' && @$auction->get->total_acreage != 'null')
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Total Acreage:
                                     <span class="removeBold">{{ @$auction->get->total_acreage }}</span>
                                 </div>
+                            @endif
+
+                            @php
+                                $appRaw = @$auction->get->appliances;
+                                $appOther = @$auction->get->other_appliances;
+                                $applianceItems = [];
+                                if (!empty($appRaw)) {
+                                    $decoded = is_string($appRaw) ? json_decode(str_replace('"', '"', $appRaw), true) : (array) $appRaw;
+                                    if (is_array($decoded)) {
+                                        foreach ($decoded as $v) {
+                                            $v = is_string($v) ? trim(str_replace('"', '', $v)) : $v;
+                                            if ($v !== '' && $v !== null) {
+                                                if (strtolower($v) === 'other' && !empty($appOther)) {
+                                                    $applianceItems[] = trim($appOther);
+                                                } else {
+                                                    $applianceItems[] = $v;
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        $v = trim(str_replace('"', '', $appRaw));
+                                        if ($v !== '') {
+                                            $applianceItems[] = $v;
+                                        }
+                                    }
+                                }
+                            @endphp
+                            @if (!empty($applianceItems) && in_array($propType, ['Residential', 'Income', 'Commercial', 'Business']))
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
+                                    Appliances Included:
+                                    @if (count($applianceItems) === 1)
+                                        <span class="removeBold">{{ $applianceItems[0] }}</span>
+                                    @else
+                                        @foreach ($applianceItems as $appItem)
+                                            <span class="removeBold badge bg-secondary">{{ $appItem }}</span>
+                                        @endforeach
+                                    @endif
+                                </div>
+                            @endif
+
+                            @if ($propType === 'Income' && @$auction->get->pool_needed !== null && @$auction->get->pool_needed !== '' && @$auction->get->pool_needed !== 'null')
+                                @include('hire_seller_agent.partials.pool-display', ['auction' => $auction])
                             @endif
 
                             @if (in_array($propType, ['Commercial', 'Business', 'Income']))
@@ -717,7 +715,7 @@
                                 @endif
                             @endif
 
-                            @if (in_array($propType, ['Residential', 'Income']))
+                            @if (in_array($propType, ['Residential']))
                                 @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->carport_needed))
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Carport:
@@ -736,21 +734,19 @@
                                 @include('hire_seller_agent.partials.pool-display', ['auction' => $auction])
                             @endif
 
-                            @if (in_array($propType, ['Residential', 'Income']))
-                                @php
-                                    $viewPrefItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->view_preference, @$auction->get->other_preferences);
-                                @endphp
-                                @if (!empty($viewPrefItems))
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        View Preference:
-                                        @foreach ($viewPrefItems as $item)
-                                            <span class="removeBold badge bg-secondary">{{ $item }}</span>
-                                        @endforeach
-                                    </div>
-                                @endif
+                            @php
+                                $viewPrefItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->view_preference, @$auction->get->other_preferences);
+                            @endphp
+                            @if (!empty($viewPrefItems))
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
+                                    View Preference:
+                                    @foreach ($viewPrefItems as $item)
+                                        <span class="removeBold badge bg-secondary">{{ $item }}</span>
+                                    @endforeach
+                                </div>
                             @endif
 
-                            @if (in_array($propType, ['Residential', 'Income']))
+                            @if (in_array($propType, ['Residential']))
                                 @if (@$auction->get->leasing_55_plus != null && @$auction->get->leasing_55_plus != '')
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                     Age-Restricted Community:
@@ -1797,7 +1793,7 @@
                             </div>
 
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Additional Details:<span
+                                Additional Details: <span
                                     class="removeBold">{{ $auction->get->additional_details }}</span>
                             </div>
                         @endif
@@ -2020,9 +2016,9 @@
                             @if (@$auction->get->lease_value != '' && @$auction->get->lease_value != 'null')
                             @php
                                 $leaseCompDisplay = @$auction->get->lease_value;
-                                $leaseType = @$auction->get->lease_type ?? '$';
-                                if ($leaseType === '%') {
-                                    $leaseCompDisplay = $leaseCompDisplay . '% of Total Purchase Price';
+                                $leaseType = @$auction->get->lease_type ?? 'flat';
+                                if (in_array($leaseType, ['%', 'percent']) || str_contains($leaseCompDisplay ?? '', '%')) {
+                                    $leaseCompDisplay = str_replace('%', '', $leaseCompDisplay) . '% of Total Purchase Price';
                                 } else {
                                     $leaseCompDisplay = $fmtMoney($leaseCompDisplay);
                                 }
@@ -2035,9 +2031,9 @@
                             @if (@$auction->get->purchase_value != '' && @$auction->get->purchase_value != 'null')
                             @php
                                 $purchaseCompDisplay = @$auction->get->purchase_value;
-                                $purchaseType = @$auction->get->purchase_type ?? '$';
-                                if ($purchaseType === '%') {
-                                    $purchaseCompDisplay = $purchaseCompDisplay . '% of Total Purchase Price';
+                                $purchaseType = @$auction->get->purchase_type ?? 'flat';
+                                if (in_array($purchaseType, ['%', 'percent']) || str_contains($purchaseCompDisplay ?? '', '%')) {
+                                    $purchaseCompDisplay = str_replace('%', '', $purchaseCompDisplay) . '% of Total Purchase Price';
                                 } else {
                                     $purchaseCompDisplay = $fmtMoney($purchaseCompDisplay);
                                 }
