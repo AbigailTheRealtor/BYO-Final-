@@ -187,8 +187,6 @@
         #save-button.disabled {
             opacity: 0.5;
             cursor: not-allowed;
-            pointer-events: none;
-            /* This prevents clicks */
         }
 
         .service-option-card {
@@ -2478,7 +2476,7 @@
                 var currentPT = @this.get('property_type') || '';
                 if (currentPT !== _lastPropertyTypeForPI) {
                     _lastPropertyTypeForPI = currentPT;
-                    initPropertyItemsSelect2();
+                    setTimeout(function() { initPropertyItemsSelect2(); }, 100);
                 }
             });
 
@@ -2679,6 +2677,12 @@
             function initNonNegotiableAmenitiesSelect2() {
                 var $nn = $('#non_negotiable_amenities');
                 if (!$nn.length) return;
+                var currentPT = @this.get('property_type') || '';
+                if (currentPT) {
+                    $nn.prop('disabled', false);
+                } else {
+                    $nn.prop('disabled', true);
+                }
                 if ($nn.hasClass('select2-hidden-accessible')) {
                     $nn.select2('destroy');
                 }
@@ -3891,7 +3895,15 @@
                                 }
                                 lwChecks.forEach(function(chk) {
                                     var val = comp.get(chk.prop);
-                                    var isEmpty = chk.isArray ? (!Array.isArray(val) || val.length === 0) : (!val || val === '');
+                                    var isEmpty;
+                                    if (chk.isArray) {
+                                        if (typeof val === 'string') {
+                                            try { val = JSON.parse(val); } catch(e2) {}
+                                        }
+                                        isEmpty = !val || (Array.isArray(val) && val.length === 0) || val === '' || val === '[]';
+                                    } else {
+                                        isEmpty = !val || val === '';
+                                    }
                                     if (isEmpty) {
                                         invalidFields.push({ tab: 0, field: chk.prop, value: '' });
                                     }
@@ -3911,11 +3923,10 @@
                 const allValid = validateAllTabsStrictly();
                 if (allValid) {
                     saveButton.classList.remove('disabled');
-                    saveButton.removeAttribute('disabled');
                 } else {
                     saveButton.classList.add('disabled');
-                    saveButton.setAttribute('disabled', 'disabled');
                 }
+                saveButton.removeAttribute('disabled');
             }
 
             function setupGlobalListeners() {
@@ -4021,7 +4032,15 @@
                                     }
                                     lwReqs2.forEach(function(chk) {
                                         var val = comp2.get(chk.prop);
-                                        var isEmpty = chk.isArray ? (!Array.isArray(val) || val.length === 0) : (!val || val === '');
+                                        var isEmpty;
+                                        if (chk.isArray) {
+                                            if (typeof val === 'string') {
+                                                try { val = JSON.parse(val); } catch(e2) {}
+                                            }
+                                            isEmpty = !val || (Array.isArray(val) && val.length === 0) || val === '' || val === '[]';
+                                        } else {
+                                            isEmpty = !val || val === '';
+                                        }
                                         if (isEmpty) {
                                             invalidItems.push({ field: document.body, tab: null, fieldName: chk.label });
                                         }

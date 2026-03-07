@@ -186,8 +186,6 @@
     #save-button.disabled {
         opacity: 0.5;
         cursor: not-allowed;
-        pointer-events: none;
-        /* This prevents clicks */
     }
 
     .service-option-card {
@@ -2649,7 +2647,7 @@ $lease_types = [
             var currentPT = @this.get('property_type') || '';
             if (currentPT !== _lastPropertyTypeForPI) {
                 _lastPropertyTypeForPI = currentPT;
-                initPropertyItemsSelect2();
+                setTimeout(function() { initPropertyItemsSelect2(); }, 100);
             }
         });
 
@@ -2845,6 +2843,12 @@ $lease_types = [
         function initNonNegotiableAmenitiesSelect2() {
             var $nn = $('#non_negotiable_amenities');
             if (!$nn.length) return;
+            var currentPT = @this.get('property_type') || '';
+            if (currentPT) {
+                $nn.prop('disabled', false);
+            } else {
+                $nn.prop('disabled', true);
+            }
             if ($nn.hasClass('select2-hidden-accessible')) {
                 $nn.select2('destroy');
             }
@@ -4217,7 +4221,15 @@ $lease_types = [
                             }
                             lwChecks.forEach(function(chk) {
                                 var val = comp.get(chk.prop);
-                                var isEmpty = chk.isArray ? (!Array.isArray(val) || val.length === 0) : (!val || val === '');
+                                var isEmpty;
+                                if (chk.isArray) {
+                                    if (typeof val === 'string') {
+                                        try { val = JSON.parse(val); } catch(e2) {}
+                                    }
+                                    isEmpty = !val || (Array.isArray(val) && val.length === 0) || val === '' || val === '[]';
+                                } else {
+                                    isEmpty = !val || val === '';
+                                }
                                 if (isEmpty) {
                                     invalidFields.push({ tab: 0, field: chk.prop, value: '', visible: true });
                                 }
@@ -4263,11 +4275,10 @@ $lease_types = [
             const allValid = validateAllTabsStrictly();
             if (allValid) {
                 saveButton.classList.remove('disabled');
-                saveButton.removeAttribute('disabled');
             } else {
                 saveButton.classList.add('disabled');
-                saveButton.setAttribute('disabled', 'disabled');
             }
+            saveButton.removeAttribute('disabled');
         }
         
         // Expose updateSaveButton globally for draftLoaded event
@@ -4378,7 +4389,15 @@ $lease_types = [
                                 }
                                 lwReqs.forEach(function(chk) {
                                     var val = comp.get(chk.prop);
-                                    var isEmpty = chk.isArray ? (!Array.isArray(val) || val.length === 0) : (!val || val === '');
+                                    var isEmpty;
+                                    if (chk.isArray) {
+                                        if (typeof val === 'string') {
+                                            try { val = JSON.parse(val); } catch(e2) {}
+                                        }
+                                        isEmpty = !val || (Array.isArray(val) && val.length === 0) || val === '' || val === '[]';
+                                    } else {
+                                        isEmpty = !val || val === '';
+                                    }
                                     if (isEmpty) {
                                         invalidItems.push({ field: document.body, tab: null, fieldName: chk.label });
                                     }

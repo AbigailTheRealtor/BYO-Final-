@@ -262,7 +262,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
 
-    <div class="input-cover" wire:ignore>
+    <div class="input-cover">
 
         <select id="property_items" class="form-control has-icon select2-multiple"
             data-icon="fa-solid fa-home input-icon2" @if (!$property_type) disabled @endif multiple>
@@ -398,17 +398,14 @@
     <span class="error mt-2" id="bathrooms_error"></span>
 </div>
 
-@if ($property_type === 'Residential Property')
 <!-- Other Bathrooms Input (Hidden by Default) -->
 <div class="form-group other_bathrooms @if (($this->bathrooms ?? '') !== 'Other') d-none @endif">
-    {{-- <label class="fw-bold">Minimum Bathrooms Needed:</label> --}}
     <div class="input-cover">
         <input type="number" wire:model="other_bathrooms" class="form-control has-icon"
             data-icon="fa-solid fa-bath" placeholder="Enter minimum bathrooms needed (e.g., 11)">
     </div>
     <span class="error mt-2" id="other_bathrooms_error"></span>
 </div>
-@endif
 
 <!-- Minimum Heated Sqft Needed -->
 @if ($property_type === 'Residential Property')
@@ -784,7 +781,7 @@
                 $selectedAmenities = json_decode($selectedAmenities, true) ?? [];
             }
         @endphp
-        <div class="input-cover">
+        <div class="input-cover" wire:ignore>
             <select id="non_negotiable_amenities"
                 class="form-control has-icon select2-multiple" data-icon="fa-solid fa-lock input-icon2"
                 @if (!$property_type) disabled @endif multiple>

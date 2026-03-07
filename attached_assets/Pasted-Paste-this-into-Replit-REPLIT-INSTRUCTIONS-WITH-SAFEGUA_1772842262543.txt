@@ -1,0 +1,293 @@
+Paste this into Replit:
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A TENANT’S AGENT REMAINING FIXES ONLY
+
+### IMPORTANT
+
+This is a **small, surgical fix pass** for **Hire a Tenant’s Agent only**.
+Do **not** trace unrelated architecture.
+Do **not** touch Buyer, Seller, or Landlord flows.
+Fix only the exact items below, confirm they work, and stop.
+
+---
+
+# HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Do not modify Buyer, Seller, or Landlord files, components, blades, or validation logic.**
+2. **Do not rename or delete database columns.**
+3. **Do not do a broad Select2 rewrite or global JS rewrite.**
+4. **Do not change any labels, tooltips, option wording, or field order unless explicitly listed below.**
+5. **Do not modify unrelated shared files unless absolutely necessary for this exact Tenant flow fix.**
+6. **If a shared helper must be touched, make the smallest possible change and ensure it only affects Hire a Tenant’s Agent behavior.**
+7. **Do not overwrite drafts, saved listings, bids, uploads, or existing listing data.**
+8. **Keep all changes limited to Hire a Tenant’s Agent create/edit/submit behavior only.**
+9. **Do not spend time on broad refactoring. Use the smallest targeted fix only.**
+10. **Stop once these exact issues are fixed.**
+
+---
+
+# FIX ONLY THESE ITEMS
+
+## 1) MINIMUM BATHROOMS NEEDED = OTHER — COMMERCIAL INPUT BOX MISSING
+
+### Problem
+
+For **Minimum Bathrooms Needed**, if user selects **Other**, the custom input box is missing in some cases.
+
+Current behavior:
+
+* it shows for **Residential**
+* it does **not** show correctly for **Commercial**
+* issue happens when **creating a listing** and when **editing a listing**
+
+### Required fix
+
+For **Commercial Hire a Tenant’s Agent**:
+
+* when user selects **Other** under **Minimum Bathrooms Needed**
+* the custom input box must appear immediately
+* user must be able to type into it
+* it must save correctly
+* it must auto-populate correctly on Edit if previously saved
+
+### Safeguard
+
+Do not break the already-working Residential behavior.
+Fix Commercial specifically without causing Residential regression.
+
+---
+
+## 2) ACCEPTABLE PROPERTY STYLES IS GREYED OUT
+
+### Problem
+
+**Acceptable Property Styles** is greyed out and cannot be selected.
+
+### Required fix
+
+Restore normal interaction so user can select values in:
+
+* **Acceptable Property Styles**
+
+It must:
+
+* be clickable
+* allow selections
+* save correctly
+* auto-populate correctly on Edit
+* not be disabled unless there is a valid conditional reason
+
+### Safeguard
+
+Do not accidentally make unrelated fields enabled/disabled.
+Fix only this field’s disabled/greyed-out state.
+
+---
+
+## 3) NON-NEGOTIABLE AMENITIES AND PROPERTY FEATURES FLASHES ON AND OFF
+
+### Problem
+
+When clicking inputs for fields, the **Non-Negotiable Amenities and Property Features** options flash on and off.
+
+### Required fix
+
+Stabilize **Non-Negotiable Amenities and Property Features** so:
+
+* options do not visibly flash on/off
+* selections remain stable
+* field does not redraw or reset after click
+* selected values stay selected
+* save draft and edit behavior still work
+
+### Safeguard
+
+Do not do a broad rewrite of all multi-select fields.
+Apply the smallest targeted fix to this exact field only.
+
+---
+
+## 4) SUBMIT BUTTON / REQUIRED FIELD BUG — FALSE MISSING FIELD FOR lease_for
+
+### Problem
+
+The **Submit** button is not working correctly.
+It says missing required field:
+
+* **Tab 0: lease_for**
+
+even though that field is already filled in.
+
+### Required fix
+
+Fix final submit validation so it correctly reads the actual saved/current value of:
+
+* **lease_for**
+
+and does not falsely report it as missing when it is filled in.
+
+### Also required behavior for Submit button
+
+The **Submit button should always be clickable**.
+
+That means:
+
+* user should always be able to click Submit
+* if required fields are missing, clicking Submit should show the missing required fields
+* if all required fields are completed, Submit should proceed normally
+
+### Important
+
+Do **not** disable the Submit button just because validation is failing.
+Instead:
+
+* keep Submit clickable
+* run proper validation on click
+* show missing fields if any are missing
+* allow successful submission once fixed
+
+### Safeguard
+
+Do not rely only on front-end state.
+Final submit must validate using the real current form values, including correctly detecting filled values for `lease_for`.
+
+---
+
+## 5) OFFERED LEASE TERM = OTHER — INPUT BOX DOES NOT APPEAR
+
+### Problem
+
+When user selects **Other** under **Offered Lease Term**, the custom input box does not pop up.
+
+### Required fix
+
+When **Other** is selected for **Offered Lease Term**:
+
+* the dependent custom input must appear immediately
+* user must be able to type into it
+* it must save correctly
+* it must auto-populate on Edit if previously saved
+
+### Safeguard
+
+Do not wait for a second click or tab refresh.
+The dependent box should appear instantly on selection.
+
+---
+
+# IMPLEMENTATION APPROACH — KEEP IT FAST AND SURGICAL
+
+1. Fix only the exact Tenant issues above
+2. Do not broad-trace the whole app
+3. Reuse existing working patterns already used in Tenant flow where possible
+4. Prefer correcting:
+
+   * conditional visibility
+   * disabled state
+   * field binding
+   * submit validation mapping
+   * event/re-render flicker
+5. Do not touch unrelated roles or unrelated fields
+
+---
+
+# ROOT-CAUSE CHECKS BEFORE CHANGING CODE
+
+Check only what is needed for these exact bugs:
+
+1. whether Commercial **Minimum Bathrooms Needed** is missing the `Other` visibility condition on create/edit
+2. whether **Acceptable Property Styles** is disabled by incorrect conditional logic, wrong `disabled` attribute, overlay, or stale JS state
+3. whether **Non-Negotiable Amenities and Property Features** is re-initializing or re-rendering on click
+4. whether final submit validation is reading stale/incorrect value for `lease_for`
+5. whether **Offered Lease Term = Other** is missing the correct conditional render/show logic
+
+Do not over-investigate beyond these items.
+
+---
+
+# REQUIRED TESTS — MUST PASS
+
+## A. Minimum Bathrooms Needed = Other (Commercial)
+
+1. Create Commercial Hire a Tenant’s Agent listing
+2. Select **Other** under Minimum Bathrooms Needed
+3. Confirm custom input appears immediately
+4. Enter custom value
+5. Save draft or save listing
+6. Open Edit
+7. Confirm **Other** still selected
+8. Confirm custom value is visible and populated
+
+## B. Acceptable Property Styles
+
+1. Open listing create flow
+2. Confirm field is no longer greyed out
+3. Confirm user can select values
+4. Save
+5. Reopen Edit
+6. Confirm values auto-populate
+
+## C. Non-Negotiable Amenities and Property Features
+
+1. Click/select values
+2. Confirm no flashing on/off
+3. Confirm values remain selected
+4. Save draft
+5. Reopen Edit
+6. Confirm values remain
+
+## D. Submit button / lease_for
+
+1. Fill in `lease_for`
+2. Click Submit
+3. Confirm system does **not** falsely say `Tab 0: lease_for` is missing
+4. Leave another real required field blank
+5. Click Submit
+6. Confirm Submit remains clickable
+7. Confirm required-field summary appears correctly
+8. Fill the missing field
+9. Click Submit
+10. Confirm submission works
+
+## E. Offered Lease Term = Other
+
+1. Select **Other**
+2. Confirm custom input appears immediately
+3. Enter custom value
+4. Save draft/save listing
+5. Reopen Edit
+6. Confirm custom value auto-populates
+
+---
+
+# DO NOT MARK COMPLETE UNLESS ALL OF THE FOLLOWING ARE TRUE
+
+* Commercial **Minimum Bathrooms Needed = Other** shows the custom input on create and edit
+* Residential behavior is still working
+* **Acceptable Property Styles** is no longer greyed out
+* **Acceptable Property Styles** can be selected and saved
+* **Non-Negotiable Amenities and Property Features** no longer flashes on/off
+* Submit button stays clickable
+* Submit validation no longer falsely reports `Tab 0: lease_for` when filled in
+* clicking Submit with real missing fields shows the required-field list
+* clicking Submit after filling required fields works
+* **Offered Lease Term = Other** shows the custom input immediately
+* changes are limited to Hire a Tenant’s Agent only
+
+---
+
+# FINAL EXPECTATION
+
+This should be a **quick, contained fix pass** for **Hire a Tenant’s Agent only**.
+
+Fix only:
+
+* Commercial **Minimum Bathrooms Needed = Other**
+* **Acceptable Property Styles** greyed-out issue
+* **Non-Negotiable Amenities and Property Features** flashing
+* final **Submit / lease_for** false missing-field bug
+* **Offered Lease Term = Other** dependent input behavior
+
+Once those pass, stop.
