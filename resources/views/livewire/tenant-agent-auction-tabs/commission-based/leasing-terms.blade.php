@@ -42,7 +42,7 @@
             $selectedLeaseFor = json_decode($selectedLeaseFor, true) ?? [];
         }
     @endphp
-    <div class="input-cover">
+    <div class="input-cover" wire:ignore>
         <select class="lease_for form-control has-icon select2-multiple"
             data-icon="fa-solid fa-file-pen input-icon2" multiple required>
             @foreach ($lease_for_res as $row_pt)

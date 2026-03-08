@@ -2468,15 +2468,16 @@
                 }
                 $pi.off('change').on('change', function(e) {
                     let selectedValues = $(this).val();
-                    debouncedSet('property_items', selectedValues);
+                    safeLivewireSet('property_items', selectedValues);
                 });
             }
             initPropertyItemsSelect2();
             Livewire.hook('message.processed', () => {
                 var currentPT = @this.get('property_type') || '';
-                if (currentPT !== _lastPropertyTypeForPI) {
+                var $pi = $('#property_items');
+                if (currentPT !== _lastPropertyTypeForPI || ($pi.length && !$pi.hasClass('select2-hidden-accessible'))) {
                     _lastPropertyTypeForPI = currentPT;
-                    setTimeout(function() { initPropertyItemsSelect2(); }, 100);
+                    setTimeout(function() { initPropertyItemsSelect2(); }, 50);
                 }
             });
 
@@ -3137,7 +3138,10 @@
 
             function initSelect2LeaseFor() {
                 var $sel = $('.lease_for');
-                if ($sel.hasClass('select2-hidden-accessible')) return;
+                if (!$sel.length) return;
+                if ($sel.hasClass('select2-hidden-accessible')) {
+                    $sel.select2('destroy');
+                }
 
                 $sel.select2({
                     placeholder: "Select",
@@ -3145,7 +3149,10 @@
                 });
 
                 var lwValues = @this.get('lease_for') || [];
-                if (lwValues.length) {
+                if (typeof lwValues === 'string') {
+                    try { lwValues = JSON.parse(lwValues); } catch(e) { lwValues = []; }
+                }
+                if (lwValues && lwValues.length) {
                     $sel.val(lwValues).trigger('change.select2');
                 }
                 toggleLease($sel.val() || []);
@@ -3158,6 +3165,12 @@
             }
 
             initSelect2LeaseFor();
+            Livewire.hook('message.processed', () => {
+                var $lf = $('.lease_for');
+                if ($lf.length && !$lf.hasClass('select2-hidden-accessible')) {
+                    initSelect2LeaseFor();
+                }
+            });
 
             // End lease_for
             //rent_includes
@@ -3890,8 +3903,8 @@
                                     { prop: 'property_type', label: 'Property Type' },
                                 ];
                                 if (curUT === 'tenant' || curUT === 'landlord') {
-                                    lwChecks.push({ prop: 'lease_for', label: 'Offered Lease Term', isArray: true });
-                                    lwChecks.push({ prop: 'leasing_spaces_tenant', label: 'Leasing Space', isArray: true });
+                                    lwChecks.push({ prop: 'lease_for', label: 'Offered Lease Term', isArray: true, domSel: '.lease_for' });
+                                    lwChecks.push({ prop: 'leasing_spaces_tenant', label: 'Leasing Space', isArray: true, domSel: '#leasing_spaces_tenant' });
                                 }
                                 lwChecks.forEach(function(chk) {
                                     var val = comp.get(chk.prop);
@@ -3901,6 +3914,15 @@
                                             try { val = JSON.parse(val); } catch(e2) {}
                                         }
                                         isEmpty = !val || (Array.isArray(val) && val.length === 0) || val === '' || val === '[]';
+                                        if (isEmpty && chk.domSel) {
+                                            var $domEl = $(chk.domSel);
+                                            if ($domEl.length) {
+                                                var domVal = $domEl.val();
+                                                if (domVal && ((Array.isArray(domVal) && domVal.length > 0) || (typeof domVal === 'string' && domVal !== ''))) {
+                                                    isEmpty = false;
+                                                }
+                                            }
+                                        }
                                     } else {
                                         isEmpty = !val || val === '';
                                     }
@@ -4027,8 +4049,8 @@
                                         { prop: 'property_type', label: 'Property Type' },
                                     ];
                                     if (curUT2 === 'tenant' || curUT2 === 'landlord') {
-                                        lwReqs2.push({ prop: 'lease_for', label: 'Offered Lease Term', isArray: true });
-                                        lwReqs2.push({ prop: 'leasing_spaces_tenant', label: 'Leasing Space', isArray: true });
+                                        lwReqs2.push({ prop: 'lease_for', label: 'Offered Lease Term', isArray: true, domSel: '.lease_for' });
+                                        lwReqs2.push({ prop: 'leasing_spaces_tenant', label: 'Leasing Space', isArray: true, domSel: '#leasing_spaces_tenant' });
                                     }
                                     lwReqs2.forEach(function(chk) {
                                         var val = comp2.get(chk.prop);
@@ -4038,6 +4060,15 @@
                                                 try { val = JSON.parse(val); } catch(e2) {}
                                             }
                                             isEmpty = !val || (Array.isArray(val) && val.length === 0) || val === '' || val === '[]';
+                                            if (isEmpty && chk.domSel) {
+                                                var $domEl = $(chk.domSel);
+                                                if ($domEl.length) {
+                                                    var domVal = $domEl.val();
+                                                    if (domVal && ((Array.isArray(domVal) && domVal.length > 0) || (typeof domVal === 'string' && domVal !== ''))) {
+                                                        isEmpty = false;
+                                                    }
+                                                }
+                                            }
                                         } else {
                                             isEmpty = !val || val === '';
                                         }
