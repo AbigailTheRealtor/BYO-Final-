@@ -2662,9 +2662,14 @@ $lease_types = [
             }
             $pi.off('change').on('change', function(e) {
                 let selectedValues = $(this).val();
+                // Update option elements with selected attribute
+                $pi.find('option').removeAttr('selected');
+                if (selectedValues && selectedValues.length) {
+                    selectedValues.forEach(val => {
+                        $pi.find(`option[value="${val}"]`).attr('selected', 'selected');
+                    });
+                }
                 safeLivewireSet('property_items', selectedValues, false);
-                // Refresh Select2 display to show selected tags
-                setTimeout(() => $pi.trigger('change.select2'), 50);
             });
         }
         initPropertyItemsSelect2();
@@ -3387,10 +3392,15 @@ $lease_types = [
 
             $sel.off('change').on('change', function() {
                 let selectedLease = $(this).val() || [];
+                // Update option elements with selected attribute
+                $sel.find('option').removeAttr('selected');
+                if (selectedLease && selectedLease.length) {
+                    selectedLease.forEach(val => {
+                        $sel.find(`option[value="${val}"]`).attr('selected', 'selected');
+                    });
+                }
                 safeLivewireSet('lease_for', selectedLease, false);
                 toggleLease(selectedLease);
-                // Refresh Select2 display to show selected tags
-                setTimeout(() => $sel.trigger('change.select2'), 50);
             });
         }
 
