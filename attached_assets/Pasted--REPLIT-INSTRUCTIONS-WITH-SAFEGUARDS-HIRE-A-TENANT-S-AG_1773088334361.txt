@@ -1,0 +1,145 @@
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A TENANT’S AGENT — UPDATE ACCEPTABLE PROPERTY CONDITION OPTIONS
+
+### SCOPE
+
+Update the **Tenant-side Acceptable Property Condition options** in **Hire a Tenant’s Agent** so the option text is standardized everywhere this field appears.
+
+Apply this consistently in:
+
+* listing creation
+* save draft / reopen draft
+* edit mode
+* final listing display
+* any preview, summary, or review screen that shows this field
+
+---
+
+# HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Do not rename or delete database columns.**
+2. **Do not modify Buyer, Seller, or Landlord flows.**
+3. **Do not change field labels, tooltips, or logic other than the option text update requested below.**
+4. **Do not change the stored field name, binding, or database schema.**
+5. **Do not break existing saved listings or drafts.**
+6. **Do not broad-refactor shared components unless absolutely necessary for this Tenant field to remain consistent everywhere.**
+7. **Keep this change surgical and limited to Hire a Tenant’s Agent property condition options only.**
+
+---
+
+# REQUIRED CHANGE
+
+Update the **Acceptable Property Condition** options to exactly:
+
+* **Updated / Renovated**
+* **Partially Updated**
+* **Older but Clean & Well Maintained**
+* **No Preference**
+
+### IMPORTANT
+
+Use the capitalization **exactly as written above**.
+
+---
+
+# APPLY THIS EVERYWHERE IN HIRE A TENANT’S AGENT
+
+The updated option text must appear consistently in all relevant places, including:
+
+1. **Create Listing**
+2. **Save Draft**
+3. **Reload Draft**
+4. **Edit Listing**
+5. **Listing Display / View Page**
+6. **Any preview, summary, or confirmation screen for this field**
+
+---
+
+# BACKWARD COMPATIBILITY REQUIREMENT
+
+If older Tenant listings/drafts already contain previous versions of these values, make sure they still load and display correctly.
+
+Examples of older saved text that may need to map cleanly to the updated display text:
+
+* `Partially updated (some older finishes OK)` → display as **Partially Updated**
+* `Older but clean & well maintained` → display as **Older but Clean & Well Maintained**
+* `No preference (open to any condition)` → display as **No Preference**
+
+### IMPORTANT
+
+Do not delete, overwrite, or corrupt older saved data.
+If needed, normalize older values to the new display labels in a safe, non-destructive way for rendering and edit compatibility.
+
+---
+
+# REQUIRED IMPLEMENTATION RULE
+
+Update both:
+
+1. the **option source** used by the Tenant field
+2. the **display / normalization logic** so older saved values still render in the updated standardized format
+
+This must be consistent for:
+
+* selecting new values
+* reopening drafts
+* editing older listings
+* displaying saved listings
+
+---
+
+# TESTING REQUIREMENTS
+
+Please verify all of the following in **Hire a Tenant’s Agent only**:
+
+### A. Create
+
+* Open a new Tenant listing
+* Confirm the field shows exactly these 4 options:
+
+  * Updated / Renovated
+  * Partially Updated
+  * Older but Clean & Well Maintained
+  * No Preference
+
+### B. Draft
+
+* Select each option one at a time
+* Save as draft
+* Reopen draft
+* Confirm the same updated option text appears correctly
+
+### C. Edit
+
+* Open an existing Tenant listing
+* Confirm the field uses the updated option text
+* Save and reopen
+* Confirm it remains consistent
+
+### D. Older Listings
+
+* Test at least one older Tenant listing/draft with prior values
+* Confirm it still loads correctly
+* Confirm it displays using the new standardized text/capitalization
+
+### E. Listing Display
+
+* Confirm the final listing page shows:
+
+  * Updated / Renovated
+  * Partially Updated
+  * Older but Clean & Well Maintained
+  * No Preference
+
+and does **not** show the older wording/casing.
+
+---
+
+# SUCCESS CRITERIA
+
+This task is only complete when:
+
+* the Tenant Acceptable Property Condition options are updated exactly as requested
+* capitalization matches exactly
+* create, draft, edit, and listing display all match
+* older saved listings/drafts still work correctly
+* no Buyer, Seller, or Landlord options are changed

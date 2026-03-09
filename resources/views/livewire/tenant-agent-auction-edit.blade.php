@@ -2130,13 +2130,13 @@
             var $pi = $('#property_items');
             if ($pi.length && $pi.hasClass('select2-hidden-accessible')) {
                 var piVals = $pi.val() || [];
-                @this.set('property_items', piVals);
+                @this.set('property_items', piVals, true);
                 var piJsonInput = document.querySelector('input[wire\\:model="property_items_json"]');
                 if (piJsonInput) {
                     piJsonInput.value = JSON.stringify(piVals);
                     piJsonInput.dispatchEvent(new Event('input', { bubbles: true }));
                 }
-                @this.set('property_items_json', JSON.stringify(piVals));
+                @this.set('property_items_json', JSON.stringify(piVals), true);
             }
 
             var $sp = $('#sale_provision');
@@ -2181,7 +2181,7 @@
 
             var $lf = $('.lease_for');
             if ($lf.length && $lf.hasClass('select2-hidden-accessible')) {
-                @this.set('lease_for', $lf.val() || []);
+                @this.set('lease_for', $lf.val() || [], true);
             }
 
             var $nna = $('#non_negotiable_amenities');
@@ -2498,7 +2498,7 @@
                             $pi.find(`option[value="${val}"]`).attr('selected', 'selected');
                         });
                     }
-                    safeLivewireSet('property_items', selectedValues, false);
+                    safeLivewireSet('property_items', selectedValues, true);
                 });
             }
             initPropertyItemsSelect2();
@@ -2533,7 +2533,15 @@
                             }
                         } catch(e) {}
                         if (!isOpen) {
-                            initPropertyItemsSelect2();
+                            var domVals = ($pi.val() || []).slice().sort().join(',');
+                            var lwSorted = lwVals.slice().sort().join(',');
+                            // Only reinit if DOM and Livewire are already in sync
+                            if (domVals === lwSorted) {
+                                initPropertyItemsSelect2();
+                            } else {
+                                // DOM has a different selection — use it as the source of truth
+                                $pi.val($pi.val()).trigger('change.select2');
+                            }
                         }
                     }, 50);
                 }
@@ -3224,7 +3232,7 @@
                             $sel.find(`option[value="${val}"]`).attr('selected', 'selected');
                         });
                     }
-                    safeLivewireSet('lease_for', selectedLease, false);
+                    safeLivewireSet('lease_for', selectedLease, true);
                     toggleLease(selectedLease);
                 });
             }
