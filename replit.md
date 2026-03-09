@@ -17,6 +17,25 @@ The platform is built on Laravel 8.x, PHP 8.2.23, and PostgreSQL, with Node.js v
 ### System Design Choices
 The architecture prioritizes modularity, clear separation of concerns, and a database-first approach utilizing local database solutions. The system is optimized for production deployment, and the existing database schema for fees is immutable, with display-only formatting updates.
 
+## Bug Fixes Completed
+
+### Session 2 (Hire Tenant Agent Form - Final Round)
+1. **Acceptable Property Styles flash** — Added `wire:ignore` to the input-cover wrapper in property-details.blade.php to prevent Livewire re-renders from destroying Select2 when other Property Preferences fields change.
+2. **Submit button flash** — Added `style="display: none;"` to the Submit button (wizard-step-finish) in both create and edit blades to prevent flashing when both Next and Submit buttons appear during initial render.
+3. **Empty section headings on listing** — Wrapped 4 section heading displays with conditional checks in view.blade.php so they only show if their content has values (Purchase Fee Details, Lease-Option Details, Legal Terms, Brokerage Relationship).
+4. **Offered Lease Term** — Already functional via `wire:ignore` wrappers from previous session; normalizeListDeduped() in view correctly reads and displays selected lease terms.
+
+### Session 1 (Previous Fixes)
+- Commercial Other bathrooms bug (removed Residential-only wrapper)
+- Property Styles greyed out (removed wire:ignore from property_items wrapper to allow Blade re-render)
+- Non-negotiable amenities flash (added wire:ignore + JS disabled state management)
+- Submit button always clickable (removed disabled attr)
+- lease_for false positive in validation (DOM fallback + wire:ignore on Residential wrapper)
+- Cross-role safety (scoped Livewire validation to tenant/landlord only)
+- Removed validation-debug yellow box
+- Fixed initSelect2LeaseFor() re-initialization via message.processed hook
+- Property items immediate sync (safeLivewireSet) with message.processed re-init
+
 ## External Dependencies
 - **PostgreSQL**: Primary relational database.
 - **TailwindCSS**: Utility-first CSS framework.

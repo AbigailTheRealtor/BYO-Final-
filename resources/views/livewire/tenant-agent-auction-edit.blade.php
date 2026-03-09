@@ -1918,7 +1918,7 @@
 
                                 <button type="button" class="btn btn-primary wizard-step-next">Next</button>
 
-                                <button type="submit" class="btn btn-success wizard-step-finish"
+                                <button type="submit" class="btn btn-success wizard-step-finish" style="display: none;"
                                     id="save-button">
                                     Submit
                                 </button>
