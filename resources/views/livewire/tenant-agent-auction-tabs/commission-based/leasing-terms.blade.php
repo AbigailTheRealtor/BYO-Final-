@@ -44,7 +44,7 @@
     @endphp
     <div class="input-cover" wire:ignore>
         <select class="lease_for form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-file-pen input-icon2" wire:ignore multiple required>
+            data-icon="fa-solid fa-file-pen input-icon2" multiple required>
             @foreach ($lease_for_res as $row_pt)
                 <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $selectedLeaseFor) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
             @endforeach
@@ -71,7 +71,7 @@
     @endphp
     <div class="input-cover" wire:ignore>
         <select class="lease_for form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-file-pen input-icon2" wire:ignore multiple required>
+            data-icon="fa-solid fa-file-pen input-icon2" multiple required>
             @foreach ($lease_for_com as $row_pt)
                 <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $selectedLeaseForCom) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
             @endforeach

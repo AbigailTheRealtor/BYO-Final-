@@ -2645,10 +2645,15 @@ $lease_types = [
         initPropertyItemsSelect2();
         Livewire.hook('message.processed', () => {
             var currentPT = @this.get('property_type') || '';
-            var $pi = $('#property_items');
-            if (currentPT !== _lastPropertyTypeForPI || ($pi.length && !$pi.hasClass('select2-hidden-accessible'))) {
+            if (currentPT !== _lastPropertyTypeForPI) {
                 _lastPropertyTypeForPI = currentPT;
-                setTimeout(function() { initPropertyItemsSelect2(); }, 50);
+                setTimeout(function() { 
+                    var $pi = $('#property_items');
+                    if ($pi.hasClass('select2-hidden-accessible')) {
+                        $pi.select2('destroy');
+                    }
+                    initPropertyItemsSelect2();
+                }, 100);
             }
         });
 
@@ -3367,7 +3372,10 @@ $lease_types = [
         initSelect2LeaseFor();
         Livewire.hook('message.processed', () => {
             var $lf = $('.lease_for');
-            if ($lf.length && !$lf.hasClass('select2-hidden-accessible')) {
+            if ($lf.length) {
+                if ($lf.hasClass('select2-hidden-accessible')) {
+                    $lf.select2('destroy');
+                }
                 initSelect2LeaseFor();
             }
         });

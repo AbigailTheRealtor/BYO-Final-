@@ -1,0 +1,234 @@
+Do **not** switch modes yet just because of this. This sounds more like the fix was **not isolated enough** or Replit is patching symptoms instead of fixing the actual Tenant-only state sync/render issue.
+
+Use this instead:
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS — TENANT ONLY — STOP PATCHING / FIND ROOT CAUSE
+
+### SCOPE
+
+Fix **only** these Hire a Tenant’s Agent issues:
+
+1. **Offered Lease Term** appears selected in the UI but is **not actually showing/saving correctly**
+2. **Acceptable Property Styles** now says **“No results found”**
+3. **Acceptable Property Styles flashes/resets** when the user fills in other fields on the **Property Preferences** tab
+
+This needs a **root-cause fix**, not another surface patch.
+
+---
+
+## HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Only work on Hire a Tenant’s Agent flow**
+2. **Do not touch Buyer, Seller, or Landlord**
+3. **Do not rename, delete, or migrate database columns**
+4. **Do not change labels, option text, placeholders, tooltips, or required-field rules**
+5. **Do not do a global Select2 rewrite**
+6. **Do not refactor unrelated shared logic unless there is no safe Tenant-only fix**
+7. **Do not make blind trial-and-error edits**
+8. **First identify the exact active field binding path, option source, and re-render trigger for these 2 fields before changing code**
+9. **If a safe Tenant-only fix is not possible, stop**
+
+---
+
+## IMPORTANT APPROACH
+
+Do **not** just patch the symptoms.
+
+Before editing, trace these exact items for **Tenant only**:
+
+### For Offered Lease Term
+
+* the actual Livewire property name
+* the Blade field binding
+* whether Select2 is used
+* whether there is a hidden JSON bridge
+* the save path
+* the edit/draft restore path
+* the listing display path
+
+### For Acceptable Property Styles
+
+* the parent dependency field or fields
+* the source array/options list
+* the filtering logic
+* the selected value format
+* whether Select2 is used
+* what event causes it to reinitialize or clear
+* what causes “No results found”
+* what field update on Property Preferences triggers the flash/reset
+
+Do not proceed until those are confirmed.
+
+---
+
+## REQUIRED FIX 1 — OFFERED LEASE TERM LOOKS SELECTED BUT DOES NOT REALLY SAVE / SHOW
+
+Fix **Offered Lease Term** so it is connected end-to-end.
+
+### Must verify and correct:
+
+* the UI selected values match the actual Livewire property
+* the actual Livewire property is updated immediately on change
+* the field is not just visually selected inside Select2
+* the value format is consistent across:
+
+  * create
+  * save draft
+  * edit
+  * submit
+  * listing display
+* if multi-select, confirm it stays an array throughout
+* if stored as JSON, confirm encode/decode is correct in both directions
+* confirm the edit path restores the exact selected values
+* confirm listing display reads the same stored structure being saved
+
+### Required result:
+
+When user selects Offered Lease Term, it must:
+
+* stay visibly selected
+* persist after tab changes
+* save in draft
+* auto-populate in edit
+* display correctly on final listing
+
+---
+
+## REQUIRED FIX 2 — ACCEPTABLE PROPERTY STYLES SAYS “NO RESULTS FOUND”
+
+Fix **Acceptable Property Styles** so valid options appear correctly.
+
+### Must verify and correct:
+
+* parent dependency values are present before filtering
+* options array is actually populated
+* label/value format matches what Select2 expects
+* selected values match the available option values exactly
+* filtering logic is not over-restricting or clearing the array
+* field is not initializing before option data exists
+* re-render does not destroy the option source
+* draft/edit restored values do not conflict with current option values
+
+### Required result:
+
+* field shows valid options
+* field is selectable
+* no false “No results found”
+* saved values restore correctly in draft/edit
+
+---
+
+## REQUIRED FIX 3 — ACCEPTABLE PROPERTY STYLES FLASHES / RESETS WHEN USER FILLS OTHER FIELDS
+
+This is likely a **re-render / re-init / dependency reset issue**.
+
+Fix it so unrelated field entry on the Property Preferences tab does **not** clear, flash, disable, or rebuild **Acceptable Property Styles** unnecessarily.
+
+### Must verify and correct:
+
+* which field updates are triggering the re-render
+* whether Select2 is being destroyed/reinitialized too often
+* whether the option list is reloaded on every keystroke or every field update
+* whether the property styles field is tied to a broad watcher instead of only its true parent dependency
+* whether a general tab refresh or message.processed hook is wiping current state
+* whether the selected values are being replaced with empty values during rerender
+
+### Important rule:
+
+**Acceptable Property Styles should only refresh when its actual parent dependency changes**, not when unrelated fields on the same tab are edited.
+
+### Required result:
+
+* no flashing
+* no reset
+* no disappearing options
+* no “No results found” caused by unrelated typing/selections elsewhere
+
+---
+
+## ROOT-CAUSE RULE
+
+Do not apply another generic Select2 patch.
+
+Instead:
+
+1. identify the exact Tenant-only field lifecycle for both fields
+2. narrow the re-render trigger
+3. narrow the dependency trigger
+4. make the smallest possible fix
+
+If needed, use a **Tenant-only targeted guard** so these fields reinitialize **only when their own source data changes**, not on every update on the tab.
+
+---
+
+## TESTING REQUIREMENTS
+
+Test **Tenant only** in all modes.
+
+### Create
+
+1. Open Hire a Tenant’s Agent
+2. Go to Property Preferences
+3. Select parent fields needed for Acceptable Property Styles
+4. Confirm property style options appear
+5. Select Acceptable Property Styles
+6. Select Offered Lease Term
+7. Fill in other unrelated fields on the same tab
+8. Confirm Acceptable Property Styles does **not** flash/reset
+9. Move forward and back through tabs
+10. Confirm both fields remain selected
+
+### Draft
+
+1. Save draft with both fields selected
+2. Reopen draft
+3. Confirm both fields restore correctly
+4. Confirm no “No results found”
+5. Change unrelated fields
+6. Confirm property styles still does not flash/reset
+
+### Edit
+
+1. Open existing Tenant listing
+2. Confirm both fields are populated correctly
+3. Change Offered Lease Term
+4. Change Acceptable Property Styles
+5. Edit other Property Preferences fields
+6. Confirm no flashing or resets
+7. Save and reopen
+8. Confirm values persisted
+
+### Listing display
+
+1. Confirm Offered Lease Term displays correctly on final listing
+2. Confirm no empty or false values show
+3. Confirm only actually saved values display
+
+---
+
+## DO NOT CHANGE
+
+* do not touch other roles
+* do not change unrelated fields
+* do not rewrite all tab JS
+* do not replace working logic outside these exact Tenant issues
+* do not make app-wide Select2 changes
+* do not change DB structure
+
+---
+
+## SUCCESS RESULT
+
+This task is complete only when:
+
+1. **Offered Lease Term** truly saves, restores, and displays correctly
+2. **Acceptable Property Styles** no longer shows false **“No results found”**
+3. **Acceptable Property Styles** no longer flashes or resets when unrelated Property Preferences fields are edited
+4. fixes work in **create, draft, edit, and listing display**
+5. no Buyer, Seller, or Landlord flow is affected
+
+---
+
+On the Replit mode itself: use the mode that is **most careful and least aggressive**, not the one optimized for speed. The faster mode tends to keep making broad patches when you need a narrow Tenant-only fix.

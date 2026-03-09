@@ -262,10 +262,10 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
 
-    <div class="input-cover">
+    <div class="input-cover" wire:key="property-items-{{ $property_type }}">
 
         <select id="property_items" class="form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-home input-icon2" wire:ignore multiple>
+            data-icon="fa-solid fa-home input-icon2" multiple>
             @php
                 $selectedPropertyItems = $this->property_items ?? [];
                 if (is_string($selectedPropertyItems)) {
