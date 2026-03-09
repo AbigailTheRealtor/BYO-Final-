@@ -2153,6 +2153,10 @@ $lease_types = [
             { sel: '#leasing_spaces_tenant', field: 'leasing_spaces_tenant', multi: true },
             { sel: '#view_preference', field: 'view_preference', multi: true },
             { sel: '.tenant_pays', field: 'tenant_pays', multi: true },
+            { sel: '.owner_pays', field: 'owner_pays', multi: true },
+            { sel: '.rent_includes', field: 'rent_includes', multi: true },
+            { sel: '.terms_of_lease', field: 'terms_of_lease', multi: true },
+            { sel: '#appliances', field: 'appliances', multi: true },
             { sel: '.lease_term_options', field: 'desired_lease_length', multi: true },
             { sel: '.lease_for', field: 'lease_for', multi: true },
             { sel: '#non_negotiable_amenities', field: 'non_negotiable_amenities', multi: true },
@@ -2309,11 +2313,11 @@ $lease_types = [
             { id: '#garage_parking_spaces_option', prop: 'garage_parking_spaces_option' },
             { id: '#garage_parking_spaces_option_landlord', prop: 'garage_parking_spaces_option' },
             { id: '#leasing_spaces_tenant', prop: 'leasing_spaces_tenant' },
-            { id: '#tenant_pays', prop: 'tenant_pays' },
-            { id: '#owner_pays', prop: 'owner_pays' },
-            { id: '#rent_includes', prop: 'rent_includes' },
-            { id: '#desired_lease_length', prop: 'desired_lease_length' },
-            { id: '#terms_of_lease', prop: 'terms_of_lease' },
+            { id: '.tenant_pays', prop: 'tenant_pays' },
+            { id: '.owner_pays', prop: 'owner_pays' },
+            { id: '.rent_includes', prop: 'rent_includes' },
+            { id: '.terms_of_lease', prop: 'terms_of_lease' },
+            { id: '.lease_term_options', prop: 'desired_lease_length' },
             { id: '#pool_type', prop: 'pool_type' },
             { id: '#non_negotiable_amenities', prop: 'non_negotiable_amenities' },
             { id: '#tenant_require', prop: 'tenant_require' },
@@ -2587,18 +2591,20 @@ $lease_types = [
         function initGarageParkingLandlord() {
             let $sel = $('#garage_parking_spaces_option_landlord');
             if (!$sel.length) return;
-            if (!$sel.hasClass('select2-hidden-accessible')) {
-                $sel.select2({ placeholder: "Select", allowClear: true });
+            if ($sel.hasClass('select2-hidden-accessible')) {
+                return;
             }
+            $sel.select2({ placeholder: "Select", allowClear: true });
             $sel.off('change.garageLandlordSync').on('change.garageLandlordSync', function() {
-                let selectedValues = $(this).val();
+                let selectedValues = $sel.val() || [];
                 debouncedSet('garage_parking_spaces_option', selectedValues);
-                if (selectedValues && selectedValues.includes('Other')) {
+                if (selectedValues.includes('Other')) {
                     $('#other_garage_parking_spaces_option_landlord').removeClass('d-none').show();
                 } else {
                     $('#other_garage_parking_spaces_option_landlord').addClass('d-none').hide();
                 }
             });
+            rehydrateSelect2FromLivewire('#garage_parking_spaces_option_landlord', 'garage_parking_spaces_option');
         }
         initGarageParkingLandlord();
         Livewire.hook('message.processed', () => { initGarageParkingLandlord(); });
@@ -3109,29 +3115,28 @@ $lease_types = [
 
 
 
-        function initSelect2() {
-            if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
-                $('#view_preference').select2({
-                    placeholder: "Select",
-                    allowClear: true
-                });
-
-                $('#view_preference').on('change', function() {
-                    let selectedValues = $(this).val() || [];
-                    debouncedSet('view_preference', selectedValues);
-
-                    if (selectedValues.includes('Other')) {
-                        $('#other_preferences').show();
-                    } else {
-                        $('#other_preferences').hide();
-                        safeLivewireSet('other_preferences', '');
-                    }
-                });
+        function initSelect2ViewPref() {
+            var $vp = $('#view_preference');
+            if (!$vp.length) return;
+            if ($vp.hasClass('select2-hidden-accessible')) {
+                return;
             }
+            $vp.select2({ placeholder: "Select", allowClear: true });
+            $vp.off('change.viewPrefSync').on('change.viewPrefSync', function() {
+                let selectedValues = $vp.val() || [];
+                debouncedSet('view_preference', selectedValues);
+                if (selectedValues.includes('Other')) {
+                    $('#other_preferences').show();
+                } else {
+                    $('#other_preferences').hide();
+                    safeLivewireSet('other_preferences', '');
+                }
+            });
             rehydrateSelect2FromLivewire('#view_preference', 'view_preference');
         }
 
-        initSelect2();
+        initSelect2ViewPref();
+        Livewire.hook('message.processed', () => { initSelect2ViewPref(); });
 
 
         ///////////////////// end view_preference
@@ -3173,32 +3178,28 @@ $lease_types = [
 
         ///Preference
 
-        // Initialize Select2 for appliances
         function initializeAppliancesSelect2() {
-            if ($('#appliances').length && !$('#appliances').hasClass('select2-hidden-accessible')) {
-                $('#appliances').select2({
-                    placeholder: "Select",
-                    allowClear: true
-                });
-
-                // Listen for changes on the dropdown and update Livewire
-                $('#appliances').on('change', function() {
-                    let selectedValuesAppliances = $(this).val();
-                    Livewire.emit('updateAppliances', selectedValuesAppliances);
-
-                    // Toggle "Other" input field visibility
-                    if (selectedValuesAppliances && selectedValuesAppliances.includes('Other')) {
-                        $('#other_appliances').show();
-                    } else {
-                        $('#other_appliances').hide();
-                        safeLivewireSet('other_appliances', null); // Clear other appliances if "Other" is deselected
-                    }
-                });
+            var $app = $('#appliances');
+            if (!$app.length) return;
+            if ($app.hasClass('select2-hidden-accessible')) {
+                return;
             }
+            $app.select2({ placeholder: "Select", allowClear: true });
+            $app.off('change.appliancesSync').on('change.appliancesSync', function() {
+                let selectedValuesAppliances = $app.val() || [];
+                if (selectedValuesAppliances.includes('Other')) {
+                    $('#other_appliances').show();
+                } else {
+                    $('#other_appliances').hide();
+                    safeLivewireSet('other_appliances', null);
+                }
+                debouncedSet('appliances', selectedValuesAppliances);
+            });
+            rehydrateSelect2FromLivewire('#appliances', 'appliances');
         }
 
-        // Initial initialization
         initializeAppliancesSelect2();
+        Livewire.hook('message.processed', () => { initializeAppliancesSelect2(); });
         // End Preference
 
 
@@ -3234,32 +3235,32 @@ $lease_types = [
                 const $el = $(this);
                 if (!$el.hasClass('select2-hidden-accessible')) {
                     $el.select2({ placeholder: "Select", allowClear: true });
+                    $el.off('change.tenantPaysSync').on('change.tenantPaysSync', function() {
+                        let selectedValues = $el.val() || [];
+                        if (selectedValues.includes('Other')) {
+                            $('.tenant_pays_other').show();
+                        } else {
+                            $('.tenant_pays_other').hide();
+                        }
+                        debouncedSet('tenant_pays', selectedValues);
+                    });
+                    rehydrateSelect2FromLivewire('.tenant_pays', 'tenant_pays');
                 }
-                $el.off('change.tenantPaysSync').on('change.tenantPaysSync', function() {
-                    let selectedValues = $el.val() || [];
-                    Livewire.emit('updateTenantPays', selectedValues);
-                    if (selectedValues.includes('Other')) {
-                        $('.tenant_pays_other').show();
-                    } else {
-                        $('.tenant_pays_other').hide();
-                    }
-                    debouncedSet('tenant_pays', selectedValues);
-                });
             });
         }
         initTenantPays();
         Livewire.hook('message.processed', () => { initTenantPays(); });
 
-        $('.lease_term_options').each(function() {
-            if (!$(this).hasClass('select2-hidden-accessible')) {
-                $(this).select2({
-                    placeholder: "Select",
-                    allowClear: true
-                });
-                $(this).on('change', function() {
-                    let selectedValues = $(this).val() || [];
-                    Livewire.emit('updateLeaseTermOptions', selectedValues);
-                    if (selectedValues && selectedValues.includes('Other')) {
+        function initLeaseTermOptions() {
+            $('.lease_term_options').each(function() {
+                const $el = $(this);
+                if ($el.hasClass('select2-hidden-accessible')) {
+                    return;
+                }
+                $el.select2({ placeholder: "Select", allowClear: true });
+                $el.off('change.leaseTermSync').on('change.leaseTermSync', function() {
+                    let selectedValues = $el.val() || [];
+                    if (selectedValues.includes('Other')) {
                         $('.other_lease_term').show();
                     } else {
                         $('.other_lease_term').hide();
@@ -3267,8 +3268,11 @@ $lease_types = [
                     }
                     debouncedSet('desired_lease_length', selectedValues);
                 });
-            }
-        });
+                rehydrateSelect2FromLivewire('.lease_term_options', 'desired_lease_length');
+            });
+        }
+        initLeaseTermOptions();
+        Livewire.hook('message.processed', () => { initLeaseTermOptions(); });
 
 
 
@@ -3279,9 +3283,8 @@ $lease_types = [
         function initializeSelect2Lease() {
             const selectElement = $('.terms_of_lease');
             if (!selectElement.length) return;
-
             if (selectElement.hasClass('select2-hidden-accessible')) {
-                selectElement.select2('destroy');
+                return;
             }
 
             selectElement.select2({
@@ -3291,18 +3294,15 @@ $lease_types = [
                 dropdownParent: selectElement.parent()
             });
 
-            const initialValues = @json($terms_of_lease);
-            if (initialValues && initialValues.length > 0) {
-                selectElement.val(initialValues).trigger('change.select2');
-            }
-
-            toggleLeaseOther(initialValues || []);
-
             selectElement.off('change.leaseSync').on('change.leaseSync', function() {
                 const selectedValues = $(this).val() || [];
-                safeLivewireSet('terms_of_lease', selectedValues);
+                debouncedSet('terms_of_lease', selectedValues);
                 toggleLeaseOther(selectedValues);
             });
+
+            rehydrateSelect2FromLivewire('.terms_of_lease', 'terms_of_lease');
+            var initialVals = selectElement.val() || [];
+            toggleLeaseOther(initialVals);
         }
 
         function toggleLeaseOther(selectedValues) {
@@ -3342,18 +3342,18 @@ $lease_types = [
                 const $el = $(this);
                 if (!$el.hasClass('select2-hidden-accessible')) {
                     $el.select2({ placeholder: "Select", allowClear: true });
+                    $el.off('change.ownerPaysSync').on('change.ownerPaysSync', function() {
+                        let selectedValues = $el.val() || [];
+                        if (selectedValues.includes('Other')) {
+                            $('.other_owner_pays').show();
+                        } else {
+                            $('.other_owner_pays').hide();
+                            safeLivewireSet('other_owner_pays', null);
+                        }
+                        debouncedSet('owner_pays', selectedValues);
+                    });
+                    rehydrateSelect2FromLivewire('.owner_pays', 'owner_pays');
                 }
-                $el.off('change.ownerPaysSync').on('change.ownerPaysSync', function() {
-                    let selectedValues = $el.val() || [];
-                    Livewire.emit('updateOwnerPays', selectedValues);
-                    if (selectedValues.includes('Other')) {
-                        $('.other_owner_pays').show();
-                    } else {
-                        $('.other_owner_pays').hide();
-                        safeLivewireSet('other_owner_pays', null);
-                    }
-                    safeLivewireSet('owner_pays', selectedValues);
-                });
             });
         }
         initOwnerPays();
@@ -3464,18 +3464,18 @@ $lease_types = [
                 const $el = $(this);
                 if (!$el.hasClass('select2-hidden-accessible')) {
                     $el.select2({ placeholder: "Select", allowClear: true });
+                    $el.off('change.rentIncludesSync').on('change.rentIncludesSync', function() {
+                        let selectedValues = $el.val() || [];
+                        if (selectedValues.includes('Other')) {
+                            $('.other_rent_input_wrapper').show();
+                        } else {
+                            $('.other_rent_input_wrapper').hide();
+                            safeLivewireSet('other_rent_include', null);
+                        }
+                        debouncedSet('rent_includes', selectedValues);
+                    });
+                    rehydrateSelect2FromLivewire('.rent_includes', 'rent_includes');
                 }
-                $el.off('change.rentIncludesSync').on('change.rentIncludesSync', function() {
-                    let selectedValues = $el.val() || [];
-                    Livewire.emit('updateRentIncludes', selectedValues);
-                    if (selectedValues.includes('Other')) {
-                        $('.other_rent_input_wrapper').show();
-                    } else {
-                        $('.other_rent_input_wrapper').hide();
-                        safeLivewireSet('other_rent_include', null);
-                    }
-                    safeLivewireSet('rent_includes', selectedValues);
-                });
             });
         }
         initRentIncludes();

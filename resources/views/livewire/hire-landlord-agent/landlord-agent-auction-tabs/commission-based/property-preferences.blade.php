@@ -544,7 +544,7 @@
     </span>
 
     <div class="input-cover" wire:ignore>
-        <select wire:model="appliances" id="appliances" class="form-control has-icon select2-multiple"
+        <select id="appliances" class="form-control has-icon select2-multiple"
             data-icon="fa-solid fa-plug input-icon2" multiple>
             @foreach ($appliances as $row_pt)
                 <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -659,7 +659,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select wire:model="garage_parking_spaces_option" id="garage_parking_spaces_option_landlord"
+            <select id="garage_parking_spaces_option_landlord"
                 class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse input-icon2" multiple>
                 @foreach ($garage_parking_spaces as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -727,7 +727,7 @@
     </span>
 
     <div class="input-cover" wire:ignore>
-        <select wire:model="view_preference" id="view_preference"
+        <select id="view_preference"
             class="form-control has-icon select2-multiple" data-icon="fa-solid fa-tree input-icon2" multiple>
             @foreach ($preferences as $row_pt)
                 <option value="{{ $row_pt['name'] }}"
@@ -781,7 +781,7 @@
     </span>
 
     <div class="input-cover" wire:ignore>
-        <select wire:model="non_negotiable_amenities" id="non_negotiable_amenities"
+        <select id="non_negotiable_amenities"
             class="form-control has-icon select2-multiple" data-icon="fa-solid fa-lock input-icon2"
             @if (!$property_type) disabled @endif multiple>
             @if ($property_type === 'Residential Property')

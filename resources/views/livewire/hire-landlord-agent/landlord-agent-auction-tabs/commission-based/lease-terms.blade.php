@@ -891,8 +891,8 @@
             title="Select any expenses or responsibilities the Tenant is required to pay under the lease terms.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover">
-            <select wire:model="tenant_pays" id="tenant_pays" class="tenant_pays form-control has-icon select2-multiple"
+        <div class="input-cover" wire:ignore>
+            <select id="tenant_pays" class="tenant_pays form-control has-icon select2-multiple"
                 data-icon="fas fa-user input-icon2" multiple required>
                 @foreach ($tenantPays as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -928,8 +928,8 @@
             <i class="fa-solid fa-circle-info"></i>
 
         </span>
-        <div class="input-cover">
-            <select wire:model="owner_pays" id="owner_pays" class="owner_pays form-control has-icon select2-multiple"
+        <div class="input-cover" wire:ignore>
+            <select id="owner_pays" class="owner_pays form-control has-icon select2-multiple"
                 data-icon="fas fa-user-tie input-icon2" multiple required>
                 @foreach ($ownerPays as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -973,8 +973,8 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
 
-    <div class="input-cover">
-        <select id="terms_of_lease" wire:model="terms_of_lease" class="terms_of_lease form-control has-icon select2-multiple"
+    <div class="input-cover" wire:ignore>
+        <select id="terms_of_lease" class="terms_of_lease form-control has-icon select2-multiple"
             data-icon="fa-solid fa-file-signature input-icon2" multiple required>
 
             @foreach ($lease_types as $type)
@@ -1054,7 +1054,7 @@
     @enderror
 </div>
 
-<div class="form-group" wire:key="landlord-desired-lease-group">
+<div class="form-group" wire:key="landlord-desired-lease-{{ $property_type ?? 'none' }}">
     <label class="fw-bold">Desired Lease Term: <span class="text-danger">*</span></label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1062,9 +1062,8 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover" wire:ignore>
-        <select wire:model="desired_lease_length" class="lease_term_options form-control has-icon select2-multiple"
+        <select class="lease_term_options form-control has-icon select2-multiple"
             data-icon="fas fa-calendar-alt input-icon2" multiple required>
-            >
             @if ($property_type === 'Residential Property')
                 @foreach ($residential_lease_term_options as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -1100,7 +1099,7 @@
 
         </span>
         <div class="input-cover" wire:ignore>
-            <select wire:model="rent_includes" id="rent_includes" class="form-control has-icon select2-multiple rent_includes" multiple
+            <select id="rent_includes" class="form-control has-icon select2-multiple rent_includes" multiple
                 data-icon="fas fa-home input-icon2" required>
                 @foreach ($rent_includes as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
