@@ -1134,6 +1134,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                 </div> <!-- end broker-compensation-section -->
                 @endif
+                @endif
 
                 <hr />
                 <div class="card-header section-header">
