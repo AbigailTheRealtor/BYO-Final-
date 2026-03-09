@@ -1209,7 +1209,7 @@
                                 <button type="button" class="btn btn-secondary wizard-step-back">Back</button>
                             </div>
                             <div>
-                                <button type="button" class="btn btn-outline-primary me-2" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="saveDraft">
+                                <button type="button" class="btn btn-outline-primary me-2" onclick="syncLandlordSelect2BeforeSave()" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="saveDraft">
                                     <span wire:loading.remove wire:target="saveDraft"><i class="fas fa-save me-1"></i> Save Draft</span>
                                     <span wire:loading wire:target="saveDraft">Saving...</span>
                                 </button>
@@ -1233,6 +1233,7 @@
 @push('scripts')
     <script>
         let currentServiceType = null;
+        let _bathroomsDropdownHandler = null;
 
         document.addEventListener('DOMContentLoaded', () => {
             // Detect which service is preselected on load
@@ -1456,9 +1457,11 @@
             function attachBathroomsDropdownListener() {
                 const bathroomsDropdown = document.getElementById('bathrooms');
                 if (bathroomsDropdown) {
-                    bathroomsDropdown.addEventListener('change', function() {
-                        toggleOtherBathrooms(this);
-                    });
+                    if (_bathroomsDropdownHandler) {
+                        bathroomsDropdown.removeEventListener('change', _bathroomsDropdownHandler);
+                    }
+                    _bathroomsDropdownHandler = function(e) { toggleOtherBathrooms(e.currentTarget); };
+                    bathroomsDropdown.addEventListener('change', _bathroomsDropdownHandler);
 
                     // Manually trigger the toggle function on page load or after Livewire re-renders
                     toggleOtherBathrooms(bathroomsDropdown);
@@ -1467,11 +1470,6 @@
 
             // Attach the event listener initially
             attachBathroomsDropdownListener();
-
-            // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachBathroomsDropdownListener();
-            });
 
             function toggleGarageOptions() {
                 let garageSelect = document.getElementById('garage_parking_spaces');
@@ -1579,7 +1577,8 @@
                 if (!otherAmenitiesDiv) {
                     return;
                 }
-                if (selectElement.value === 'Other') {
+                var vals = $(selectElement).val() || [];
+                if (vals.includes('Other')) {
                     otherAmenitiesDiv.classList.remove('d-none'); // Show the "Other" input field
                 } else {
                     otherAmenitiesDiv.classList.add('d-none'); // Hide the "Other" input field
@@ -1691,8 +1690,8 @@
                     return;
                 }
 
-                // Show the "Other" input field if "Other" is selected
-                if (selectElement.value === 'Other') {
+                var vals = $(selectElement).val() || [];
+                if (vals.includes('Other')) {
                     otherConditionItemDiv.classList.remove('d-none'); // Show the "Other" input field
                 } else {
                     otherConditionItemDiv.classList.add('d-none'); // Hide the "Other" input field
@@ -1835,8 +1834,16 @@
                     allowClear: true,
                 });
                 $('#terms_of_lease').on('change', function(e) {
-                    let selectedValues = $(this).val();
+                    let selectedValues = $(this).val() || [];
                     @this.set('terms_of_lease', selectedValues);
+                    var container = document.getElementById('otherLeaseContainer');
+                    if (container) {
+                        if (selectedValues.includes('Other')) {
+                            container.classList.remove('d-none');
+                        } else {
+                            container.classList.add('d-none');
+                        }
+                    }
                 });
             }
 
@@ -1863,6 +1870,29 @@
                     @this.call('updateOwnerPays', selectedValues);
                 });
             }
+
+            window.syncLandlordSelect2BeforeSave = function() {
+                var selects2Map = {
+                    'appliances': '#appliances',
+                    'rent_includes': '#rent_includes',
+                    'terms_of_lease': '#terms_of_lease',
+                    'tenant_pays': '#tenant_pays',
+                    'owner_pays': '#owner_pays',
+                    'non_negotiable_amenities': '#non_negotiable_amenities',
+                    'property_items': '#property_items',
+                    'view_preference': '#view_preference',
+                };
+                Object.entries(selects2Map).forEach(function([field, selector]) {
+                    var $el = $(selector);
+                    if ($el.length && $el.hasClass('select2-hidden-accessible')) {
+                        @this.set(field, $el.val() || []);
+                    }
+                });
+                var $dlt = $('.lease_term_options');
+                if ($dlt.length && $dlt.hasClass('select2-hidden-accessible')) {
+                    @this.set('desired_lease_length', $dlt.val() || []);
+                }
+            };
 
             const photoInput = document.getElementById("photo-input");
             const photoError = document.getElementById("photo-error");

@@ -1,0 +1,210 @@
+Here are **clean, copy-paste Replit instructions with safeguards** that incorporate the delay check and force them to debug the **actual browser behavior**, not just the code.
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS
+
+## Hire a Tenant’s Agent — Edit Listing Issues Still Persisting
+
+### Scope
+
+The following issues are **still occurring in Hire a Tenant’s Agent → Edit Listing**:
+
+1. **Acceptable Property Styles**
+
+   * I select options
+   * they turn gray like they are selected
+   * but they **do not appear on the saved listing**
+
+2. **Offered Lease Terms**
+
+   * in Edit mode I **cannot add additional options beyond what is already saved**
+
+3. **Acceptable Property Conditions capitalization**
+
+   * the options must display exactly as:
+
+```
+Updated / Renovated
+Partially Updated (Some Older Finishes OK)
+Older but Clean & Well Maintained
+No Preference (Open to Any Condition)
+```
+
+The previous fix explanation did **not resolve the real behavior** in the browser.
+
+---
+
+# HARD SAFEGUARDS (NON-NEGOTIABLE)
+
+1. **Do NOT rename or delete database columns**
+2. **Do NOT modify Buyer, Seller, or Landlord flows**
+3. **Do NOT refactor the global Select2 system**
+4. **Do NOT change field order, tooltips, labels, or business rules**
+5. Only apply **surgical fixes to Hire a Tenant’s Agent edit flow**
+6. Do **not mark the issue as resolved unless the full click-path below works**
+
+If fixing this requires broader architectural changes, **stop and report exactly why**.
+
+---
+
+# REQUIRED DEBUG METHOD
+
+The issue must be debugged using the **actual rendered browser behavior**, not just PHP or Blade inspection.
+
+For the following fields:
+
+* Acceptable Property Styles
+* Offered Lease Terms
+
+inspect the **live DOM behavior** on the edit page.
+
+---
+
+# CHECK FOR DISPLAY DELAY OR RE-RENDER RESET
+
+Determine whether this is a **display timing problem or a save problem**.
+
+For both fields:
+
+1. After selecting an option, confirm whether the **raw `<select>` value updates immediately**.
+2. Confirm whether the **Livewire property updates immediately or only after a delay**.
+3. Check whether another **Livewire re-render or Select2 re-initialization resets the field after selection**.
+4. Confirm whether the value **exists in the database after clicking Update**.
+5. After saving, **manually refresh the listing page** and confirm whether the value appears.
+6. Confirm whether the listing view is reading **the same property that the edit form saves**.
+
+If the value saves in the database but does not appear in the listing, the problem is **display mapping**, not saving.
+
+If the value never reaches the database, the problem is **Livewire sync or re-render reset**.
+
+---
+
+# ACCEPTABLE PROPERTY STYLES — REQUIRED BEHAVIOR
+
+In **Edit Listing**, the field must allow:
+
+1. selecting additional styles
+2. clicking Update
+3. seeing the new style appear on the listing
+4. reopening Edit and seeing the same style still selected
+
+Gray highlighting in Select2 **does not count as success** unless the value:
+
+* saves
+* displays on listing
+* repopulates in edit mode
+
+---
+
+# OFFERED LEASE TERMS — REQUIRED BEHAVIOR
+
+In **Edit Listing**, the dropdown must always allow **adding additional lease term options**, even if only one value is saved.
+
+Example:
+
+If saved value is:
+
+```
+12 Months
+```
+
+the dropdown must still allow selecting:
+
+```
+6 Months
+18 Months
+24 Months
+Month-to-Month
+```
+
+Verify that the **actual rendered `<select>` contains the full option list**.
+
+If the edit page only renders saved values instead of the full list, fix that directly.
+
+---
+
+# ACCEPTABLE PROPERTY CONDITIONS — EXACT CAPITALIZATION
+
+For **Hire a Tenant’s Agent**, the displayed options must read exactly:
+
+```
+Updated / Renovated
+Partially Updated (Some Older Finishes OK)
+Older but Clean & Well Maintained
+No Preference (Open to Any Condition)
+```
+
+Ensure this formatting appears correctly in:
+
+* dropdown options
+* selected chips
+* listing display
+
+This should be handled at the **display layer only** so existing saved values remain compatible.
+
+---
+
+# REQUIRED REAL USER TEST
+
+Do not consider the issue resolved unless the following test path works:
+
+### Test 1 — Acceptable Property Styles
+
+1. Open an existing Tenant listing in Edit
+2. Select a style that was not previously selected
+3. Click Update
+4. Open the listing view
+5. Confirm the style appears
+6. Reopen Edit
+7. Confirm the style remains selected
+
+### Test 2 — Offered Lease Terms
+
+1. Open an existing listing with one lease term saved
+2. Add another lease term
+3. Click Update
+4. Confirm both appear on the listing
+5. Reopen Edit
+6. Confirm both remain selected
+
+### Test 3 — Capitalization
+
+Confirm all Acceptable Property Conditions display exactly as specified.
+
+---
+
+# IMPORTANT
+
+Do **not** respond with theoretical explanations such as:
+
+* “the sync logic should work”
+* “arrays are loaded correctly”
+* “the code appears correct”
+
+Only respond once the **actual UI behavior in the browser has been verified** using the test steps above.
+
+---
+
+# REQUIRED REPORT BACK
+
+When complete, report:
+
+1. the selector and Livewire property used for **Acceptable Property Styles**
+2. the selector and Livewire property used for **Offered Lease Terms**
+3. the exact root cause:
+
+   * re-render reset
+   * Select2 initialization issue
+   * incorrect option hydration
+   * Livewire sync timing
+   * listing display mismatch
+   * or a combination
+
+Also confirm:
+
+**“This was verified using the full edit → update → listing view → reopen edit flow.”**
+
+---
+
+If you'd like, I can also show you **the one very specific bug that most likely explains why your selections turn gray but don’t actually save** — it's a very common Livewire + Select2 issue and would fit exactly with what you're seeing.

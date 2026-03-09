@@ -1000,6 +1000,7 @@
         let currentServiceType = null;
         let _s2Timers = {};
         let _lastInitTime = 0;
+        let _bathroomsDropdownHandler = null;
 
         function debouncedSet(field, value, delay) {
             clearTimeout(_s2Timers[field]);
@@ -1016,6 +1017,9 @@
                 non_negotiable_amenities: '#non_negotiable_amenities',
                 appliances: '#appliances',
                 exchange_item: '#exchange_item',
+                sale_provision: '#sale_provision',
+                offered_financing: '#offered_financing',
+                view_preference: '#view_preference',
             };
             Object.entries(fields).forEach(function([field, selector]) {
                 var el = $(selector);
@@ -1135,7 +1139,11 @@
         function rehydrateSelect2MultiFields() {
             var multiFields = {
                 '#exchange_item': 'exchange_item',
-                '#non_negotiable_amenities': 'non_negotiable_amenities'
+                '#non_negotiable_amenities': 'non_negotiable_amenities',
+                '#sale_provision': 'sale_provision',
+                '#offered_financing': 'offered_financing',
+                '#view_preference': 'view_preference',
+                '#appliances': 'appliances',
             };
             Object.keys(multiFields).forEach(function(selector) {
                 var $el = $(selector);
@@ -1324,9 +1332,11 @@
             function attachBathroomsDropdownListener() {
                 const bathroomsDropdown = document.getElementById('bathrooms');
                 if (bathroomsDropdown) {
-                    bathroomsDropdown.addEventListener('change', function() {
-                        toggleOtherBathrooms(this);
-                    });
+                    if (_bathroomsDropdownHandler) {
+                        bathroomsDropdown.removeEventListener('change', _bathroomsDropdownHandler);
+                    }
+                    _bathroomsDropdownHandler = function(e) { toggleOtherBathrooms(e.currentTarget); };
+                    bathroomsDropdown.addEventListener('change', _bathroomsDropdownHandler);
 
                     // Manually trigger the toggle function on page load or after Livewire re-renders
                     toggleOtherBathrooms(bathroomsDropdown);
@@ -1335,11 +1345,6 @@
 
             // Attach the event listener initially
             attachBathroomsDropdownListener();
-
-            // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachBathroomsDropdownListener();
-            });
 
 
 
@@ -1468,7 +1473,8 @@
                 if (!otherAmenitiesDiv) {
                     return;
                 }
-                if (selectElement.value === 'Other') {
+                var vals = $(selectElement).val() || [];
+                if (vals.includes('Other')) {
                     otherAmenitiesDiv.classList.remove('d-none'); // Show the "Other" input field
                 } else {
                     otherAmenitiesDiv.classList.add('d-none'); // Hide the "Other" input field
