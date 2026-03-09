@@ -3369,14 +3369,20 @@ $lease_types = [
             });
         }
 
+        var _lastPropertyTypeForLF = '';
+        
         initSelect2LeaseFor();
         Livewire.hook('message.processed', () => {
-            var $lf = $('.lease_for');
-            if ($lf.length) {
-                if ($lf.hasClass('select2-hidden-accessible')) {
-                    $lf.select2('destroy');
-                }
-                initSelect2LeaseFor();
+            var currentPT = @this.get('property_type') || '';
+            if (currentPT !== _lastPropertyTypeForLF) {
+                _lastPropertyTypeForLF = currentPT;
+                setTimeout(function() {
+                    var $lf = $('.lease_for');
+                    if ($lf.hasClass('select2-hidden-accessible')) {
+                        $lf.select2('destroy');
+                    }
+                    initSelect2LeaseFor();
+                }, 100);
             }
         });
 
