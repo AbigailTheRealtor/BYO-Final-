@@ -2639,7 +2639,7 @@ $lease_types = [
             }
             $pi.off('change').on('change', function(e) {
                 let selectedValues = $(this).val();
-                safeLivewireSet('property_items', selectedValues);
+                safeLivewireSet('property_items', selectedValues, false);
             });
         }
         initPropertyItemsSelect2();
@@ -3364,7 +3364,7 @@ $lease_types = [
 
             $sel.off('change').on('change', function() {
                 let selectedLease = $(this).val() || [];
-                safeLivewireSet('lease_for', selectedLease, true);
+                safeLivewireSet('lease_for', selectedLease, false);
                 toggleLease(selectedLease);
             });
         }
