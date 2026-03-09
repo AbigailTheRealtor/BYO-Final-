@@ -884,7 +884,7 @@
     @endif
 @endif --}}
 @if ($property_type === 'Commercial Property')
-    <div class="form-group" wire:ignore>
+    <div class="form-group" wire:ignore wire:key="landlord-tenant-pays-group">
         <label class="fw-bold">Tenant Pays:<span class="text-danger">*</span></label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -920,7 +920,7 @@
 </div>
 </div> --}}
 
-    <div class="form-group" wire:ignore>
+    <div class="form-group" wire:ignore wire:key="landlord-owner-pays-group">
         <label class="fw-bold">Owner Pays:<span class="text-danger">*</span></label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -966,7 +966,7 @@
 
 
 {{-- 📜 Terms of Lease --}}
-<div class="form-group" wire:ignore> {{-- Remove .self --}}
+<div class="form-group" wire:ignore wire:key="landlord-terms-of-lease-group">
     <label class="fw-bold">Terms of Lease:<span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Select the lease term offered for this property. This defines how costs and responsibilities—such as taxes, insurance, and maintenance—are structured between the Landlord and Tenant.">
@@ -974,7 +974,7 @@
     </span>
 
     <div class="input-cover">
-        <select id="terms_of_lease" class="terms_of_lease form-control has-icon select2-multiple"
+        <select id="terms_of_lease" wire:model="terms_of_lease" class="terms_of_lease form-control has-icon select2-multiple"
             data-icon="fa-solid fa-file-signature input-icon2" multiple required>
 
             @foreach ($lease_types as $type)
@@ -1054,7 +1054,7 @@
     @enderror
 </div>
 
-<div class="form-group">
+<div class="form-group" wire:key="landlord-desired-lease-group">
     <label class="fw-bold">Desired Lease Term: <span class="text-danger">*</span></label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1091,7 +1091,7 @@
 </div>
 
 @if ($property_type === 'Residential Property')
-    <div class="form-group">
+    <div class="form-group" wire:ignore wire:key="landlord-rent-includes-group">
         <label class="fw-bold">Rent Includes: <span class="text-danger">*</span></label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"

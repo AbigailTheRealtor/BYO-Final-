@@ -536,7 +536,7 @@
 </div>
 
 <!-- View Preference Needed -->
-<div class="form-group">
+<div class="form-group" wire:key="landlord-appliances-group">
     <label class="fw-bold">Appliances Included:</label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Select the appliances included with the property. If 'Other' is selected, enter any additional appliances.">
@@ -718,7 +718,7 @@
     </div>
 @endif
 
-<div class="form-group">
+<div class="form-group" wire:key="landlord-view-pref-group">
     <label class="fw-bold">View:</label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -772,7 +772,7 @@
     </div>
 @endif
 <!-- Non-Negotiable Amenities and Property Features -->
-<div class="form-group" wire:ignore.self>
+<div class="form-group" wire:ignore wire:key="landlord-nna-{{ $property_type }}">
     <label class="fw-bold"> Amenities and Property Features:</label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -784,7 +784,6 @@
         <select wire:model="non_negotiable_amenities" id="non_negotiable_amenities"
             class="form-control has-icon select2-multiple" data-icon="fa-solid fa-lock input-icon2"
             @if (!$property_type) disabled @endif multiple>
-            <option value="">Select</option>
             @if ($property_type === 'Residential Property')
                 @foreach ($non_negotialble_terms_landlord as $item)
                     @if (str_contains($item['class'], 'residential-length'))

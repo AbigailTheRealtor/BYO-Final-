@@ -218,7 +218,7 @@ class TenantAgentAuction extends Component
     public $custom_lease_term = '';
     public $tenant_pays = [];
     public $other_tenant_pays = '';
-    public $owner_pays = '';
+    public $owner_pays = [];
     public $other_owner_pays = '';
     public $owner_pays_other = '';
     public $preference_details = '';
