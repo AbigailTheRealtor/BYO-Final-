@@ -992,17 +992,15 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
                 <!-- Purchase Fee Details Sub-section -->
-                @if (@$auction->get->interested_purchase_fee_type != null || (@$auction->get->interested_purchase_fee_type === 'Yes' && @$auction->get->purchase_fee_type != null))
-                <h5 class="mt-3 mb-2"><strong>Purchase Fee Details:</strong></h5>
-
                 @if (@$auction->get->interested_purchase_fee_type != null)
+                <h5 class="mt-3 mb-2"><strong>Purchase Fee Details:</strong></h5>
                 <div class="col-md-12 col-12 pt-2 fw-bold">
                     Interested in Purchasing a Property:
                     <span class="removeBold">{{ $auction->get->interested_purchase_fee_type ?? '' }}</span>
                 </div>
                 @endif
 
-@if (@$auction->get->interested_purchase_fee_type === 'Yes' && @$auction->get->purchase_fee_type != null)
+                @if (@$auction->get->interested_purchase_fee_type === 'Yes' && @$auction->get->purchase_fee_type != null)
                 @php
                     // Build combined Purchase Fee display for listing
                     $listingPurchaseFeeType = @$auction->get->purchase_fee_type ?? '';
@@ -1027,15 +1025,12 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     <span class="removeBold">{{ $listingPurchaseFeeCombined }}</span>
                 </div>
                 @endif
-                @endif
 
                 <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
                 <!-- Lease-Option Details Sub-section -->
-                @if (@$auction->get->interested_lease_option_agreement != null || (@$auction->get->interested_lease_option_agreement === 'Yes' && (@$auction->get->lease_value != null || @$auction->get->purchase_value != null)))
-                <h5 class="mt-3 mb-2"><strong>Lease-Option Details:</strong></h5>
-
                 @if (@$auction->get->interested_lease_option_agreement != null)
+                <h5 class="mt-3 mb-2"><strong>Lease-Option Details:</strong></h5>
                 <div class="col-md-12 col-12 pt-2 fw-bold">
                     Interested in a Lease-Option Agreement:
                     <span class="removeBold">{{ $auction->get->interested_lease_option_agreement ?? '' }}</span>
@@ -1068,14 +1063,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </span>
                 </div>
                 @endif
-                @endif
-                @endif
 
                 <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
                 <!-- Legal Terms Sub-section -->
                 @if (@$auction->get->protection_period != null || @$auction->get->early_termination_fee_option != null || @$auction->get->retainer_fee_option != null || @$auction->get->agency_agreement_timeframe != null)
                 <h5 class="mt-3 mb-2"><strong>Legal Terms:</strong></h5>
+                @endif
 
                 @if (@$auction->get->protection_period != null)
                 <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -1115,15 +1109,12 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     </span>
                 </div>
                 @endif
-                @endif
 
                 <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
                 <!-- Brokerage Relationship Sub-section -->
                 @if (@$auction->get->brokerage_relationship != null)
                 <h5 class="mt-3 mb-2"><strong>Brokerage Relationship:</strong></h5>
-
-                @if (@$auction->get->brokerage_relationship != null)
                 <div class="col-md-12 col-12 pt-2 fw-bold">
                     Acceptable Brokerage Relationship:
                     <span class="removeBold">{{ $auction->get->brokerage_relationship ?? '' }}</span>
