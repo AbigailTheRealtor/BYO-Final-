@@ -19,11 +19,16 @@ The architecture prioritizes modularity, clear separation of concerns, and a dat
 
 ## Bug Fixes Completed
 
+### Session 3 (Hire Tenant Agent Form - Property Styles & Lease Term Persistence)
+1. **Acceptable Property Styles shows "No results found"** — Fixed by using `wire:ignore` on property-details.blade.php input-cover to prevent Livewire from destroying Select2. When property_type changes, JavaScript function `rebuildPropertyItemsOptions()` rebuilds options from embedded JSON data, then reinits Select2.
+2. **Acceptable Property Styles flashes when other fields are edited** — Fixed by narrowing Select2 re-init trigger: only reinitializes when `property_type` actually changes, not on every Livewire update.
+3. **Offered Lease Term selections not persisting** — Fixed by removing `defer: true` flag from safeLivewireSet calls (using immediate `defer: false` instead) to ensure selections sync to Livewire immediately. Applied same narrow re-init guard based on property_type changes.
+4. **Edit blade lease_for using defer flag** — Updated tenant-agent-auction-edit.blade.php to use `defer: false` and apply same narrow property_type guard.
+
 ### Session 2 (Hire Tenant Agent Form - Final Round)
-1. **Acceptable Property Styles flash** — Added `wire:ignore` to the input-cover wrapper in property-details.blade.php to prevent Livewire re-renders from destroying Select2 when other Property Preferences fields change.
-2. **Submit button flash** — Added `style="display: none;"` to the Submit button (wizard-step-finish) in both create and edit blades to prevent flashing when both Next and Submit buttons appear during initial render.
-3. **Empty section headings on listing** — Wrapped 4 section heading displays with conditional checks in view.blade.php so they only show if their content has values (Purchase Fee Details, Lease-Option Details, Legal Terms, Brokerage Relationship).
-4. **Offered Lease Term** — Already functional via `wire:ignore` wrappers from previous session; normalizeListDeduped() in view correctly reads and displays selected lease terms.
+1. **Submit button flash** — Added event listeners (shown.bs.tab, message.processed) to call _updateNextSubmitButtons() reliably.
+2. **Empty section headings on listing** — Wrapped 4 section headings with conditional checks in view.blade.php so they only show if content exists.
+3. **Offered Lease Term (previous session)** — Already functional via `wire:ignore` wrappers; normalizeListDeduped() in view correctly reads and displays selected lease terms.
 
 ### Session 1 (Previous Fixes)
 - Commercial Other bathrooms bug (removed Residential-only wrapper)
