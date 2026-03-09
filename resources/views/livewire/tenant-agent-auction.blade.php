@@ -2675,13 +2675,28 @@ $lease_types = [
         initPropertyItemsSelect2();
         Livewire.hook('message.processed', () => {
             var currentPT = @this.get('property_type') || '';
+            var lwVals = @this.get('property_items') || [];
             if (currentPT !== _lastPropertyTypeForPI) {
                 _lastPropertyTypeForPI = currentPT;
                 setTimeout(function() {
-                    var lwVals = @this.get('property_items') || [];
                     rebuildPropertyItemsOptions(currentPT, lwVals);
                     initPropertyItemsSelect2();
                 }, 100);
+            } else {
+                // Always restore display from Livewire after any re-render
+                setTimeout(function() {
+                    var $pi = $('#property_items');
+                    if (!$pi.length) return;
+                    var isOpen = false;
+                    try {
+                        if ($pi.hasClass('select2-hidden-accessible') && $pi.data('select2')) {
+                            isOpen = $pi.data('select2').isOpen();
+                        }
+                    } catch(e) {}
+                    if (!isOpen) {
+                        initPropertyItemsSelect2();
+                    }
+                }, 50);
             }
         });
 
@@ -3409,6 +3424,7 @@ $lease_types = [
         initSelect2LeaseFor();
         Livewire.hook('message.processed', () => {
             var currentPT = @this.get('property_type') || '';
+            var lwLease = @this.get('lease_for') || [];
             if (currentPT !== _lastPropertyTypeForLF) {
                 _lastPropertyTypeForLF = currentPT;
                 setTimeout(function() {
@@ -3418,6 +3434,21 @@ $lease_types = [
                     }
                     initSelect2LeaseFor();
                 }, 100);
+            } else {
+                // Always restore display from Livewire after any re-render
+                setTimeout(function() {
+                    var $lf = $('.lease_for');
+                    if (!$lf.length) return;
+                    var isOpen = false;
+                    try {
+                        if ($lf.hasClass('select2-hidden-accessible') && $lf.data('select2')) {
+                            isOpen = $lf.data('select2').isOpen();
+                        }
+                    } catch(e) {}
+                    if (!isOpen) {
+                        initSelect2LeaseFor();
+                    }
+                }, 50);
             }
         });
 

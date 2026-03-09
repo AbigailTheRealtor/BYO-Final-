@@ -1,0 +1,108 @@
+Tell Replit this:
+
+---
+
+That still did **not** fix the real issue.
+
+### Current issue still happening in Hire a Tenant’s Agent
+
+Under both:
+
+* **Offered Lease Term**
+* **Acceptable Property Styles**
+
+I can select the options, but the selected values still do **not** show in the field after selection on listing creation.
+
+### Important
+
+Do **not** treat this as only an HTML `selected` attribute problem.
+
+The attempted fix of manually adding `selected="selected"` to `<option>` tags is **not enough** if Select2 is inside a `wire:ignore` block and the widget’s displayed state is not being refreshed correctly from the actual Livewire value.
+
+## Required next step
+
+I need you to stop patching the symptoms and verify the **actual runtime state** for these two fields.
+
+### Check all of this for Tenant only:
+
+#### 1. After selection, confirm the actual Livewire property updates immediately
+
+For:
+
+* `lease_for`
+* `property_items`
+
+Do not just assume it updates. Verify the actual value in runtime.
+
+#### 2. Confirm Select2 display is being refreshed from the same value source
+
+I need you to verify:
+
+* the Select2 widget value
+* the underlying `<select>` value
+* the Livewire property value
+
+All 3 must match after selection.
+
+#### 3. Confirm no later hook is wiping the visible state
+
+Check whether after selection:
+
+* a later `message.processed`
+* a reinit function
+* a tab refresh
+* a parent field watcher
+* or a delayed timeout
+
+is resetting the Select2 display state.
+
+#### 4. Confirm the field is not using two competing sync paths
+
+I need you to check whether these fields are being updated by:
+
+* manual jQuery `.val()`
+* `safeLivewireSet(...)`
+* hidden JSON bridge
+* Blade restore logic
+* Select2 init logic
+
+If more than one path is competing, consolidate to **one reliable source of truth**.
+
+## Hard instruction
+
+Do **not** give me another “this should now work” summary unless you actually verify in the UI that:
+
+1. I select **Offered Lease Term**
+2. the selected value immediately appears in the closed field
+3. I select **Acceptable Property Styles**
+4. the selected value immediately appears in the closed field
+5. both remain visible after other field updates
+6. both remain visible after tab changes
+
+## Safeguards
+
+* Tenant flow only
+* no Buyer, Seller, or Landlord changes
+* no DB changes
+* no label or tooltip changes
+* no broad Select2 rewrite
+* no mark-as-fixed unless actually verified in the UI
+
+## Likely root issue to inspect
+
+This now looks like a **Select2 visual state refresh problem after Livewire sync**, not just a saved-value problem.
+
+So I need you to inspect whether after updating Livewire, the code also properly updates the Select2 widget display with the current selected values using the exact same source of truth, and whether a later rerender/reinit is immediately overriding it.
+
+### Goal
+
+Fix the actual visible selected-value display for:
+
+* **Offered Lease Term**
+* **Acceptable Property Styles**
+
+on **listing creation**, with actual UI verification.
+
+---
+
+And no, based on that note, I would **not** trust the fix yet. They’re still explaining theory instead of proving the UI behavior is actually resolved.
