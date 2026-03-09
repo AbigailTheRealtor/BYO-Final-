@@ -1,0 +1,134 @@
+Here are **clean Replit instructions with safeguards** you can paste. This keeps it **very targeted** and consistent with the rules you've been using.
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS
+
+## Hire a Tenant’s Agent — Acceptable Property Conditions Capitalization Update
+
+### Scope
+
+Update the **display capitalization only** for the dropdown options under:
+
+**Acceptable Property Conditions**
+
+in the **Hire a Tenant’s Agent listing flow**.
+
+This change is **formatting only** and must **not affect stored values, database structure, or matching logic**.
+
+---
+
+# HARD SAFEGUARDS (NON-NEGOTIABLE)
+
+1. **Do NOT rename or delete any database columns.**
+2. **Do NOT change stored database values.**
+3. **Do NOT modify existing listings or drafts.**
+4. **Do NOT change field names, validation rules, or business logic.**
+5. **Do NOT alter other listing types (Buyer, Seller, Landlord).**
+6. Only update the **display labels of the dropdown options**.
+
+If the stored values differ from these labels, the **stored values must remain unchanged**.
+
+---
+
+# Required Update
+
+The **Acceptable Property Conditions** dropdown options must use **consistent Title Case capitalization** and read exactly as follows:
+
+```
+Updated / Renovated
+Partially Updated (Some Older Finishes OK)
+Older but Clean & Well Maintained
+No Preference (Open to Any Condition)
+```
+
+---
+
+# Implementation Rule
+
+Update only the **option label text shown in the dropdown**.
+
+The following must remain unchanged:
+
+* stored values
+* array keys
+* database values
+* filtering or matching logic
+
+Example:
+
+If the stored value is:
+
+```
+Partially updated (some older finishes OK)
+```
+
+the system should still **store and recognize the same value**, but display it as:
+
+```
+Partially Updated (Some Older Finishes OK)
+```
+
+This prevents breaking existing listings or search logic.
+
+---
+
+# Required Behavior
+
+After the change:
+
+### Dropdown Display
+
+The user should see:
+
+```
+Updated / Renovated
+Partially Updated (Some Older Finishes OK)
+Older but Clean & Well Maintained
+No Preference (Open to Any Condition)
+```
+
+### Edit Mode
+
+When editing an existing listing:
+
+* previously selected values must still appear selected
+* selections must not disappear
+* selections must not be overwritten
+
+### Listing Display
+
+Listings should display the **same capitalization format**.
+
+---
+
+# Required Testing
+
+Test the following scenarios:
+
+### New Listing
+
+Confirm dropdown shows the updated capitalization.
+
+### Draft Listing
+
+Selections must remain saved and visible.
+
+### Edit Listing
+
+Previously saved selections must load correctly and remain selectable.
+
+---
+
+# Success Criteria
+
+The fix is successful when:
+
+* Acceptable Property Conditions options show consistent Title Case capitalization
+* Existing listings and drafts remain unchanged
+* Dropdown selections continue working normally
+* Edit mode selections remain visible
+
+---
+
+If you want, I can also show you **one tiny structural improvement to your dropdowns that will prevent the “selections disappearing” issue you keep encountering across Tenant, Buyer, Seller, and Landlord listings.**

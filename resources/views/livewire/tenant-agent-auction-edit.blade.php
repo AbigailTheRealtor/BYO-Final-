@@ -3235,7 +3235,7 @@
                         initSelect2LeaseFor();
                     }, 100);
                 } else {
-                    // Always restore display from Livewire after any re-render
+                    // Restore display from Livewire, but don't erase a selection the user just made
                     setTimeout(function() {
                         var $lf = $('.lease_for');
                         if (!$lf.length) return;
@@ -3246,7 +3246,15 @@
                             }
                         } catch(e) {}
                         if (!isOpen) {
-                            initSelect2LeaseFor();
+                            var domVals = ($lf.val() || []).slice().sort().join(',');
+                            var lwSorted = lwLease.slice().sort().join(',');
+                            // Only reinit if DOM and Livewire are already in sync
+                            if (domVals === lwSorted) {
+                                initSelect2LeaseFor();
+                            } else {
+                                // DOM has a different selection — use it as the source of truth
+                                $lf.val($lf.val()).trigger('change.select2');
+                            }
                         }
                     }, 50);
                 }

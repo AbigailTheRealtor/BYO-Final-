@@ -572,7 +572,7 @@
     </div>
 
     <!-- Carport Spaces Input (Shown Only When "Yes" is Selected) -->
-    <div class="form-group d-none" id="other-carport-needed">
+    <div class="form-group {{ ($carport_needed === 'Yes' || (!empty($other_carport_needed) && $other_carport_needed !== '0')) ? '' : 'd-none' }}" id="other-carport-needed">
         <label class="fw-bold">Number of Carport Spaces Needed:</label>
         <div class="input-cover">
             <input type="number" min="1" wire:model="other_carport_needed" class="form-control has-icon"
@@ -605,7 +605,7 @@
 
 
     <!-- Garage Spaces Input (Shown Only When "Yes" is Selected) -->
-    <div class="form-group d-none" id="other-garage-needed">
+    <div class="form-group {{ ($garage_needed === 'Yes' || (!empty($other_garage_needed) && $other_garage_needed !== '0')) ? '' : 'd-none' }}" id="other-garage-needed">
         <label class="fw-bold">Number of Garage Spaces Needed:</label>
         <div class="input-cover">
             <input type="number" min="1" wire:model="other_garage_needed" class="form-control has-icon"
