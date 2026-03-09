@@ -1,0 +1,313 @@
+Replit’s explanation is **close**, but it has not fully solved your issue. The important part is this:
+
+If the field turns gray like it is selected, but it **does not show on the listing** and in **edit mode you cannot add more options**, then the problem is still one of these:
+
+1. **full option list is not being rebuilt on edit**
+2. **selected values are visually marked in Select2 but not actually synced back to the Livewire property**
+3. **edit page is hydrating from saved values only, instead of full options + saved selections**
+4. **the listing view is reading a different property / JSON bridge / normalized field than the one edit is saving**
+
+So you need to give Replit **more direct instructions** and make them prove each layer.
+
+Use this:
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS
+
+## Hire a Tenant’s Agent — Edit Fixes for Acceptable Property Styles, Offered Lease Terms, and Acceptable Property Conditions Capitalization
+
+### Scope
+
+Fix **only** these issues in **Hire a Tenant’s Agent → Edit Listing** flow:
+
+1. **Acceptable Property Styles**
+
+   * user can click/select options
+   * option turns gray / looks selected
+   * but does **not** save or show on listing
+
+2. **Offered Lease Terms**
+
+   * user can see existing selected values
+   * but cannot add new options beyond what is already filled out
+
+3. **Acceptable Property Conditions**
+
+   * update capitalization of displayed options to the exact required format
+
+Do **not** modify Buyer, Seller, or Landlord flows.
+Do **not** broad-refactor Select2 sitewide.
+This must be a **surgical fix** for Hire a Tenant’s Agent only.
+
+---
+
+# HARD SAFEGUARDS (NON-NEGOTIABLE)
+
+1. **Do NOT rename, delete, or migrate database columns.**
+2. **Do NOT change unrelated listing flows or shared business rules.**
+3. **Do NOT change tooltips, labels, field order, or validation rules unless required below.**
+4. **Do NOT overwrite or clear existing saved data.**
+5. **Do NOT replace the whole Select2 system.**
+6. Only fix:
+
+   * edit-mode hydration
+   * full-options loading
+   * Livewire syncing
+   * listing display mapping
+   * capitalization for Acceptable Property Conditions
+
+If this cannot be fixed without broader architecture changes, **STOP and report exactly why**.
+
+---
+
+# ISSUE 1 — ACCEPTABLE PROPERTY STYLES LOOKS SELECTED BUT DOES NOT SAVE / DOES NOT SHOW ON LISTING
+
+## Problem
+
+In **Edit Listing**, user selects **Acceptable Property Styles**.
+The option turns gray like it is selected, but:
+
+* it does not persist correctly
+* it does not show on the final listing
+* it may visually appear selected in Select2 without actually reaching the saved Livewire property
+
+## Required Fix
+
+Do a **full side-by-side verification** for this field across all 4 layers:
+
+### Layer A — Dropdown Option Source
+
+Confirm the edit field is initialized with the **full option list**, not only previously saved values.
+
+### Layer B — Edit Hydration
+
+Confirm previously saved values are **preselected**, but do not replace the full dropdown option list.
+
+### Layer C — Livewire Sync
+
+Confirm when user adds/removes options in edit mode, the **real Livewire property** is updated immediately enough for save/update to persist the values.
+
+Do not rely on visual Select2 state only.
+
+### Layer D — Listing Display
+
+Confirm the listing page reads from the **same saved property** used by edit/update.
+
+If edit saves to one property and listing reads another normalized or JSON field, fix that mismatch.
+
+---
+
+# REQUIRED DEBUG RULE FOR ACCEPTABLE PROPERTY STYLES
+
+Before making any more assumptions, compare these 4 things side by side for **Acceptable Property Styles**:
+
+1. the field name used in Blade
+2. the Livewire property name
+3. the DB column / save mapping
+4. the listing display field
+
+If any of those are mismatched, fix the mismatch directly.
+
+The field is **not fixed** unless:
+
+* selecting a new option in edit saves successfully
+* reopening edit shows it selected
+* the public/internal listing display shows it correctly
+
+---
+
+# ISSUE 2 — OFFERED LEASE TERMS IN EDIT ONLY ALLOWS ALREADY-SAVED VALUES
+
+## Problem
+
+In edit mode, **Offered Lease Terms** only allows values that were already saved.
+User cannot add more options.
+
+That means the edit field is being initialized incorrectly.
+
+## Required Fix
+
+For **Offered Lease Terms**, edit mode must always do this in order:
+
+1. load the **full master option list**
+2. apply saved selections as preselected values
+3. initialize Select2
+4. allow add/remove of any valid option from the full list
+
+It must **not** initialize from saved selections only.
+
+---
+
+# HARD RULE FOR OFFERED LEASE TERMS
+
+On edit, the dropdown must never be built from:
+
+* only selected values
+* a filtered list based on saved values
+* stale JSON bridge values only
+
+It must be built from the **complete allowed option set**, with saved values layered on top.
+
+---
+
+# REQUIRED PROOF FOR OFFERED LEASE TERMS
+
+After the fix, prove this exact scenario works:
+
+If saved values are:
+
+* 12 Months
+
+Then in edit mode user must still be able to add:
+
+* Month-to-Month
+* 6 Months
+* 18 Months
+* 24 Months
+* any other valid lease term options already allowed by the field
+
+If user adds another option and clicks save/update:
+
+* it must persist
+* it must repopulate on reopen
+* it must display on listing
+
+---
+
+# ISSUE 3 — ACCEPTABLE PROPERTY CONDITIONS CAPITALIZATION
+
+For **Hire a Tenant’s Agent**, the displayed options for **Acceptable Property Conditions** must read exactly as:
+
+```text
+Updated / Renovated
+Partially Updated (Some Older Finishes OK)
+Older but Clean & Well Maintained
+No Preference (Open to Any Condition)
+```
+
+## Safeguard
+
+This must be a **display-label capitalization update only** unless the stored values are already intended to match exactly.
+
+Do **not** break old saved selections.
+
+If needed, keep stored values backward-compatible and map them to these display labels safely.
+
+---
+
+# CRITICAL EDIT-MODE RULE FOR ALL 3 FIELDS
+
+For these fields in **Hire a Tenant’s Agent Edit**:
+
+* Acceptable Property Styles
+* Offered Lease Terms
+* Acceptable Property Conditions
+
+the edit flow must always follow this pattern:
+
+1. load full option list
+2. load saved selections
+3. preselect saved values
+4. initialize Select2 once
+5. on change, sync to real Livewire property
+6. on save/update, confirm the DOM selected values are pushed into Livewire before submit
+7. on reopen, values must repopulate exactly
+
+Do **not** allow a state where:
+
+* Select2 chip appears selected
+* but Livewire property remains stale/empty
+
+---
+
+# DO NOT ACCEPT A “VISUALLY SELECTED” FALSE POSITIVE
+
+Gray highlight or chip display in Select2 is **not proof** the field works.
+
+The field is only considered fixed if all of these succeed:
+
+1. user selects new value in edit
+2. clicks update
+3. listing saves
+4. edit reopen shows value selected
+5. listing display shows the same value
+
+---
+
+# REQUIRED VALIDATION / SAVE TESTS
+
+Run these exact tests in **Hire a Tenant’s Agent Edit**:
+
+## Test A — Acceptable Property Styles
+
+* open an existing listing in edit
+* add a new style not previously selected
+* save/update
+* confirm it appears on listing
+* reopen edit and confirm it remains selected
+
+## Test B — Offered Lease Terms
+
+* open an existing listing with one saved lease term
+* add at least one additional lease term
+* save/update
+* confirm both appear on listing
+* reopen edit and confirm both remain selected
+
+## Test C — Acceptable Property Conditions
+
+* confirm dropdown labels display exactly as:
+
+  * Updated / Renovated
+  * Partially Updated (Some Older Finishes OK)
+  * Older but Clean & Well Maintained
+  * No Preference (Open to Any Condition)
+
+## Test D — No false save
+
+Do not consider the issue resolved just because:
+
+* the option chip appears
+* the row is highlighted gray
+* console says Select2 changed
+
+Only consider it fixed if the saved listing output matches.
+
+---
+
+# REQUIRED REPORT BACK
+
+After fixing, report back with:
+
+1. the exact field/property name for **Acceptable Property Styles**
+2. the exact field/property name for **Offered Lease Terms**
+3. whether the bug was caused by:
+
+   * option list hydration
+   * stale Livewire sync
+   * JSON bridge mismatch
+   * listing display mismatch
+   * or a combination
+
+Do not respond with “it should now work” unless all tests above were completed.
+
+---
+
+# SUCCESS CRITERIA
+
+This is only complete when:
+
+* **Acceptable Property Styles** selected in edit actually saves and displays on listing
+* **Offered Lease Terms** allows adding more options in edit, and those options save/display correctly
+* **Acceptable Property Conditions** capitalization displays exactly as requested
+* reopen/edit/draft behavior stays intact
+* no schema changes were made
+
+---
+
+This is stronger than their last pass because it stops them from claiming success based on Select2 appearance alone.
+
+The one line I would add to your message to Replit is:
+
+**Do not treat gray/highlighted Select2 selections as success; verify the saved Livewire property, database value, and listing output all match after update.**

@@ -2181,7 +2181,8 @@
 
             var $lf = $('.lease_for');
             if ($lf.length && $lf.hasClass('select2-hidden-accessible')) {
-                @this.set('lease_for', $lf.val() || [], true);
+                var lfVals = $lf.val() || [];
+                @this.set('lease_for', lfVals, true);
             }
 
             var $nna = $('#non_negotiable_amenities');

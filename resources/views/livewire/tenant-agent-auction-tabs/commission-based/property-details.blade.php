@@ -324,8 +324,19 @@
                 class="condition_prop_buyer form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-screwdriver-wrench input-icon2" multiple
                 style="visibility:hidden;height:0;overflow:hidden">
+            @php
+                $displayMapping = [
+                    'Updated/Renovated' => 'Updated / Renovated',
+                    'Partially Updated' => 'Partially Updated (Some Older Finishes OK)',
+                    'Older but Clean' => 'Older but Clean & Well Maintained',
+                    'No Preference' => 'No Preference (Open to Any Condition)',
+                ];
+            @endphp
             @foreach ($conditionOptions as $row_pt)
-                <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
+                @php
+                    $displayName = $displayMapping[$row_pt['name']] ?? $row_pt['name'];
+                @endphp
+                <option value="{{ $row_pt['name'] }}">{{ $displayName }}</option>
             @endforeach
         </select>
     </div>
