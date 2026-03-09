@@ -262,16 +262,18 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
 
-    <div class="input-cover" wire:key="property-items-{{ $property_type }}">
+    <div class="input-cover" wire:ignore>
+        @php
+            $selectedPropertyItems = $this->property_items ?? [];
+            if (is_string($selectedPropertyItems)) {
+                $selectedPropertyItems = json_decode($selectedPropertyItems, true) ?? [];
+            }
+        @endphp
 
         <select id="property_items" class="form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-home input-icon2" wire:ignore multiple>
-            @php
-                $selectedPropertyItems = $this->property_items ?? [];
-                if (is_string($selectedPropertyItems)) {
-                    $selectedPropertyItems = json_decode($selectedPropertyItems, true) ?? [];
-                }
-            @endphp
+            data-icon="fa-solid fa-home input-icon2" multiple
+            data-property-type="{{ $property_type }}"
+            data-selected="{{ json_encode($selectedPropertyItems) }}">
             @if ($property_type === 'Residential Property')
                 @foreach ($property_items as $item)
                     @if (str_contains($item['class'], 'residential-length'))

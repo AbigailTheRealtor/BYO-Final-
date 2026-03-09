@@ -2622,7 +2622,30 @@ $lease_types = [
 
 
         
+        // All property style options embedded once at render time — used for JS-driven option rebuild
+        var tenantPropertyItemsAll = @json($property_items);
+
         var _lastPropertyTypeForPI = @this.get('property_type') || '';
+
+        function rebuildPropertyItemsOptions(propType, savedVals) {
+            var $pi = $('#property_items');
+            if (!$pi.length) return;
+
+            var classKey = '';
+            if (propType === 'Residential Property') classKey = 'residential-length';
+            else if (propType === 'Commercial Property') classKey = 'commercial-length';
+
+            $pi.empty();
+            if (classKey) {
+                tenantPropertyItemsAll.forEach(function(item) {
+                    if (item.class === classKey) {
+                        var selected = savedVals && savedVals.indexOf(item.name) !== -1;
+                        $pi.append(new Option(item.name, item.name, selected, selected));
+                    }
+                });
+            }
+        }
+
         function initPropertyItemsSelect2() {
             var $pi = $('#property_items');
             if (!$pi.length) return;
@@ -2647,11 +2670,9 @@ $lease_types = [
             var currentPT = @this.get('property_type') || '';
             if (currentPT !== _lastPropertyTypeForPI) {
                 _lastPropertyTypeForPI = currentPT;
-                setTimeout(function() { 
-                    var $pi = $('#property_items');
-                    if ($pi.hasClass('select2-hidden-accessible')) {
-                        $pi.select2('destroy');
-                    }
+                setTimeout(function() {
+                    var lwVals = @this.get('property_items') || [];
+                    rebuildPropertyItemsOptions(currentPT, lwVals);
                     initPropertyItemsSelect2();
                 }, 100);
             }

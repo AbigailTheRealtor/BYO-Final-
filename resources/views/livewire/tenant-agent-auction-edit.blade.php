@@ -2451,7 +2451,30 @@
 
 
 
+            // All property style options embedded once at render time — used for JS-driven option rebuild
+            var tenantPropertyItemsAll = @json($property_items);
+
             var _lastPropertyTypeForPI = @this.get('property_type') || '';
+
+            function rebuildPropertyItemsOptions(propType, savedVals) {
+                var $pi = $('#property_items');
+                if (!$pi.length) return;
+
+                var classKey = '';
+                if (propType === 'Residential Property') classKey = 'residential-length';
+                else if (propType === 'Commercial Property') classKey = 'commercial-length';
+
+                $pi.empty();
+                if (classKey) {
+                    tenantPropertyItemsAll.forEach(function(item) {
+                        if (item.class === classKey) {
+                            var selected = savedVals && savedVals.indexOf(item.name) !== -1;
+                            $pi.append(new Option(item.name, item.name, selected, selected));
+                        }
+                    });
+                }
+            }
+
             function initPropertyItemsSelect2() {
                 var $pi = $('#property_items');
                 if (!$pi.length) return;
@@ -2468,16 +2491,19 @@
                 }
                 $pi.off('change').on('change', function(e) {
                     let selectedValues = $(this).val();
-                    safeLivewireSet('property_items', selectedValues);
+                    safeLivewireSet('property_items', selectedValues, false);
                 });
             }
             initPropertyItemsSelect2();
             Livewire.hook('message.processed', () => {
                 var currentPT = @this.get('property_type') || '';
-                var $pi = $('#property_items');
-                if (currentPT !== _lastPropertyTypeForPI || ($pi.length && !$pi.hasClass('select2-hidden-accessible'))) {
+                if (currentPT !== _lastPropertyTypeForPI) {
                     _lastPropertyTypeForPI = currentPT;
-                    setTimeout(function() { initPropertyItemsSelect2(); }, 50);
+                    setTimeout(function() {
+                        var lwVals = @this.get('property_items') || [];
+                        rebuildPropertyItemsOptions(currentPT, lwVals);
+                        initPropertyItemsSelect2();
+                    }, 100);
                 }
             });
 
@@ -3159,16 +3185,25 @@
 
                 $sel.off('change').on('change', function() {
                     let selectedLease = $(this).val() || [];
-                    @this.set('lease_for', selectedLease, true);
+                    safeLivewireSet('lease_for', selectedLease, false);
                     toggleLease(selectedLease);
                 });
             }
 
+            var _lastPropertyTypeForLF = @this.get('property_type') || '';
+
             initSelect2LeaseFor();
             Livewire.hook('message.processed', () => {
-                var $lf = $('.lease_for');
-                if ($lf.length && !$lf.hasClass('select2-hidden-accessible')) {
-                    initSelect2LeaseFor();
+                var currentPT = @this.get('property_type') || '';
+                if (currentPT !== _lastPropertyTypeForLF) {
+                    _lastPropertyTypeForLF = currentPT;
+                    setTimeout(function() {
+                        var $lf = $('.lease_for');
+                        if ($lf.hasClass('select2-hidden-accessible')) {
+                            $lf.select2('destroy');
+                        }
+                        initSelect2LeaseFor();
+                    }, 100);
                 }
             });
 
