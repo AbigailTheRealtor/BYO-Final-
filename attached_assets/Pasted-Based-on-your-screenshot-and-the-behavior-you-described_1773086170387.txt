@@ -1,0 +1,206 @@
+Based on your screenshot and the behavior you described, this is a **classic Select2 + Livewire edit-state sync problem**.
+
+What’s happening:
+
+* When you **click Edit**, the database values exist.
+* Select2 **shows the item greyed out** (because it is technically selected in the DOM).
+* But **Livewire doesn’t actually receive the value**, so:
+
+  * it **doesn’t save**
+  * it **doesn’t display on the listing**
+
+This usually means the **Select2 change event is not syncing back to Livewire on edit load**.
+
+You need a **safe Replit fix that only touches the Select2 sync logic**, not your database or listing structure.
+
+Below are **copy-paste Replit instructions with safeguards**.
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS
+
+## Fix: Acceptable Property Styles & Offered Lease Terms Not Saving on Edit
+
+### (Hire a Tenant’s Agent Only)
+
+---
+
+# HARD SAFEGUARDS — DO NOT BREAK EXISTING LISTINGS
+
+1. **Do NOT rename or delete database columns.**
+2. **Do NOT modify Buyer, Seller, or Landlord flows.**
+3. **Do NOT change labels, tooltips, or option values.**
+4. **Do NOT change listing display logic.**
+5. **Do NOT modify any unrelated Select2 components.**
+6. **Only fix Select2 → Livewire synchronization for:**
+
+* Acceptable Property Styles
+* Offered Lease Term
+
+7. **Existing listings must continue to load exactly as before.**
+
+---
+
+# THE PROBLEM
+
+When the Edit page loads:
+
+* Select2 visually selects the values
+* But Livewire **does not receive the value update**
+* Therefore the field is treated as **empty when saving or rendering**
+
+This is because **Select2 does not trigger a change event when initialized with preloaded values.**
+
+---
+
+# REQUIRED FIX
+
+After Select2 initializes, force the values to sync with Livewire.
+
+---
+
+# IMPLEMENTATION
+
+After Select2 initialization for these fields, add a **forced Livewire sync trigger**.
+
+Example logic:
+
+```
+initializeSelect2()
+
+setTimeout(function() {
+
+   let value = $('#offered_lease_term').val()
+
+   if (value) {
+       Livewire.emit('set', 'offered_lease_term', value)
+   }
+
+}, 300)
+```
+
+Repeat the same pattern for:
+
+```
+acceptable_property_styles
+```
+
+---
+
+# ALSO ADD CHANGE EVENT LISTENER
+
+Ensure Select2 sends updates whenever user changes values.
+
+Example:
+
+```
+$('#offered_lease_term').on('change', function () {
+
+    let value = $(this).val()
+
+    Livewire.emit('set', 'offered_lease_term', value)
+
+})
+```
+
+Do the same for:
+
+```
+acceptable_property_styles
+```
+
+---
+
+# IMPORTANT
+
+Do **NOT** use:
+
+```
+wire:ignore
+```
+
+without manually syncing values, because that prevents Livewire from detecting changes.
+
+If `wire:ignore` is present, the **manual change handler is mandatory**.
+
+---
+
+# ALSO VERIFY JSON HANDLING
+
+If the fields are multi-select, ensure the data is decoded when loading:
+
+Correct example:
+
+```
+$this->offered_lease_term = json_decode($auction->offered_lease_term ?? '[]', true);
+```
+
+and saved as:
+
+```
+json_encode($this->offered_lease_term)
+```
+
+---
+
+# TESTING CHECKLIST
+
+After fix, verify:
+
+### 1️⃣ Edit Existing Listing
+
+Selected options must:
+
+* show in Select2
+* **not appear greyed out**
+* remain selected
+
+---
+
+### 2️⃣ Save Listing
+
+Selections must:
+
+* save properly
+* reload correctly on Edit
+
+---
+
+### 3️⃣ Listing Page
+
+Listing must show:
+
+```
+Offered Lease Term:
+3 Months
+6 Months
+```
+
+---
+
+### 4️⃣ Create New Listing
+
+Selections must:
+
+* save
+* display
+* reopen correctly in Edit
+
+---
+
+# EXPECTED RESULT
+
+After fix:
+
+✔ Edit page loads with correct selections
+✔ Selections sync to Livewire
+✔ Fields save properly
+✔ Listing displays correctly
+
+---
+
+✅ This fix is **very safe** and **does not touch your database or listing logic**, only the Select2 sync.
+
+---
+
+If you want, I can also show you the **one hidden bug that is likely causing ALL your Select2 problems (Tenant, Buyer, Seller, Landlord)** so you can fix it **once globally instead of chasing bugs field-by-field**. It’s probably costing you a lot of Replit credits right now.

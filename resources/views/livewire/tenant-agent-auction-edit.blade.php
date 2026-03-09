@@ -2502,6 +2502,16 @@
                 });
             }
             initPropertyItemsSelect2();
+            // One-time sync on edit load: confirm Select2 display values back to Livewire
+            setTimeout(function() {
+                var $pi = $('#property_items');
+                if ($pi.length && $pi.hasClass('select2-hidden-accessible')) {
+                    var vals = $pi.val() || [];
+                    if (vals.length) {
+                        safeLivewireSet('property_items', vals, true);
+                    }
+                }
+            }, 400);
             Livewire.hook('message.processed', () => {
                 var currentPT = @this.get('property_type') || '';
                 var lwVals = @this.get('property_items') || [];
@@ -3222,6 +3232,16 @@
             var _lastPropertyTypeForLF = @this.get('property_type') || '';
 
             initSelect2LeaseFor();
+            // One-time sync on edit load: confirm Select2 display values back to Livewire
+            setTimeout(function() {
+                var $lf = $('.lease_for');
+                if ($lf.length && $lf.hasClass('select2-hidden-accessible')) {
+                    var vals = $lf.val() || [];
+                    if (vals.length) {
+                        safeLivewireSet('lease_for', vals, true);
+                    }
+                }
+            }, 400);
             Livewire.hook('message.processed', () => {
                 var currentPT = @this.get('property_type') || '';
                 var lwLease = @this.get('lease_for') || [];
