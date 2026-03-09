@@ -327,9 +327,12 @@
             @php
                 $displayMapping = [
                     'Updated/Renovated' => 'Updated / Renovated',
-                    'Partially Updated' => 'Partially Updated (Some Older Finishes OK)',
+                    'Partially Updated' => 'Partially Updated',
                     'Older but Clean' => 'Older but Clean & Well Maintained',
-                    'No Preference' => 'No Preference (Open to Any Condition)',
+                    'No Preference' => 'No Preference',
+                    'Partially updated (some older finishes OK)' => 'Partially Updated',
+                    'Older but clean & well maintained' => 'Older but Clean & Well Maintained',
+                    'No preference (open to any condition)' => 'No Preference',
                 ];
             @endphp
             @foreach ($conditionOptions as $row_pt)

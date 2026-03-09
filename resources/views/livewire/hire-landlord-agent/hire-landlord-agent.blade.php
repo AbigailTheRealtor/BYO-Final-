@@ -285,10 +285,10 @@
     $property_types = [['name' => 'Residential Property'], ['name' => 'Commercial Property']];
 
     $property_condition = [
-        ['name' => 'New Construction'],
-        ['name' => 'No updates needed: Completely updated'],
-        ['name' => 'Semi-updated: Needs minor updates'],
-        ['name' => 'Not updated: Requires a complete update'],
+        ['name' => 'Updated/Renovated', 'display' => 'Updated / Renovated'],
+        ['name' => 'Partially Updated', 'display' => 'Partially Updated'],
+        ['name' => 'Older but Clean', 'display' => 'Older but Clean & Well Maintained'],
+        ['name' => 'No Preference', 'display' => 'No Preference'],
     ];
     $property_condition_landlord = $property_condition;
 

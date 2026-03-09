@@ -285,13 +285,10 @@
     $property_types = [['name' => 'Residential Property'], ['name' => 'Commercial Property']];
 
     $property_condition = [
-        ['name' => 'Completely Updated: No updates needed'],
-        ['name' => 'Currently Being Built'],
-        ['name' => 'New Construction'],
-        ['name' => 'Not Updated: Requires a complete update'],
-        ['name' => 'Pre-Construction'],
-        ['name' => 'Semi-updated: Needs minor updates'],
-        ['name' => 'Tear Down: Requires complete demolition and reconstruction'],
+        ['name' => 'Updated/Renovated', 'display' => 'Updated / Renovated'],
+        ['name' => 'Partially Updated', 'display' => 'Partially Updated'],
+        ['name' => 'Older but Clean', 'display' => 'Older but Clean & Well Maintained'],
+        ['name' => 'No Preference', 'display' => 'No Preference'],
     ];
 
     $property_condition_seller = $property_condition;

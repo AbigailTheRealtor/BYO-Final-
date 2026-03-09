@@ -168,10 +168,24 @@
                 </div>
               @endif
               @if (isset($auction->get->prop_condition) && is_array($auction->get->prop_condition))
+                @php
+                    $tenantConditionDisplayMap = [
+                        'Partially updated (some older finishes OK)' => 'Partially Updated',
+                        'Older but clean & well maintained' => 'Older but Clean & Well Maintained',
+                        'No preference (open to any condition)' => 'No Preference',
+                        'Updated/Renovated' => 'Updated / Renovated',
+                        'Partially Updated' => 'Partially Updated',
+                        'Older but Clean' => 'Older but Clean & Well Maintained',
+                        'No Preference' => 'No Preference',
+                    ];
+                @endphp
                 <div class="col-md-12 col-12 mt-2"><i class="fa-regular fa-check-square"></i> <strong>Acceptable Property Conditions: </strong>
                   @foreach ($auction->get->prop_condition as $item)
+                    @php
+                        $displayVal = $tenantConditionDisplayMap[$item] ?? $item;
+                    @endphp
                     @if ($item != 'Other')
-                      {{ $item }}
+                      {{ $displayVal }}
                     @elseif($item == 'Other')
                       {{ $auction->get->propsOther }}
                     @endif

@@ -615,28 +615,10 @@
             <span class="resFields">
               @php
                 $prop_condition = [
-                    ['name' => 'New Construction', 'target' => '', 'icon' => 'fa-regular fa-circle-check'],
-                    [
-                        'name' => 'Completely Updated: No updates needed',
-                        'target' => '',
-                        'icon' => 'fa-regular fa-circle-check',
-                    ],
-                    [
-                        'name' => 'Semi-updated: Needs minor updates',
-                        'target' => '',
-                        'icon' => 'fa-regular fa-circle-check',
-                    ],
-                    [
-                        'name' => 'Not Updated: Requires a complete update',
-                        'target' => '',
-                        'icon' => 'fa-regular fa-circle-check',
-                    ],
-                    [
-                        'name' => 'Open to any type of property condition',
-                        'target' => '',
-                        'icon' => 'fa-regular fa-circle-check',
-                    ],
-                    ['name' => 'Other', 'target' => '.other_prop_conditionRes', 'icon' => 'fa-regular fa-circle-check'],
+                    ['name' => 'Updated/Renovated', 'target' => '', 'icon' => 'fa-regular fa-circle-check', 'display' => 'Updated / Renovated'],
+                    ['name' => 'Partially Updated', 'target' => '', 'icon' => 'fa-regular fa-circle-check', 'display' => 'Partially Updated'],
+                    ['name' => 'Older but Clean', 'target' => '', 'icon' => 'fa-regular fa-circle-check', 'display' => 'Older but Clean & Well Maintained'],
+                    ['name' => 'No Preference', 'target' => '', 'icon' => 'fa-regular fa-circle-check', 'display' => 'No Preference'],
                 ];
               @endphp
               <div class="form-group ">
@@ -649,7 +631,7 @@
                   @foreach ($prop_condition as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-row"
                       style="width:calc(50% - 10px);" data-icon='<i class="fa-regular fa-circle-check"></i>'>
-                      {{ $item['name'] }}
+                      {{ $item['display'] }}
                     </option>
                   @endforeach
                 </select>

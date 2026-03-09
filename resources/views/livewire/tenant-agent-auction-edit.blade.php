@@ -382,10 +382,10 @@
     $property_types = [['name' => 'Residential Property'], ['name' => 'Commercial Property']];
 
     $property_condition = [
-        ['name' => 'Updated / Renovated'],
-        ['name' => 'Partially updated (some older finishes OK)'],
-        ['name' => 'Older but clean & well maintained'],
-        ['name' => 'No preference (open to any condition)'],
+        ['name' => 'Updated/Renovated', 'display' => 'Updated / Renovated'],
+        ['name' => 'Partially Updated', 'display' => 'Partially Updated'],
+        ['name' => 'Older but Clean', 'display' => 'Older but Clean & Well Maintained'],
+        ['name' => 'No Preference', 'display' => 'No Preference'],
     ];
     $property_condition_seller = [
         ['name' => 'No updates needed: Completely updated'],
