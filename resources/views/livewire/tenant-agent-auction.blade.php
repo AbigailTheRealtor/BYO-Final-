@@ -3661,6 +3661,12 @@ $lease_types = [
         if (submitBtn) submitBtn.style.display = isLastTab ? '' : 'none';
     };
     setTimeout(window._updateNextSubmitButtons, 300);
+    
+    // Call on every tab click and Livewire update
+    document.addEventListener('shown.bs.tab', window._updateNextSubmitButtons);
+    if (typeof Livewire !== 'undefined') {
+        Livewire.hook('message.processed', window._updateNextSubmitButtons);
+    }
 
     function validateCurrentTab(currentTabContent) {
         if (!currentTabContent) return true;

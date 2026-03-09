@@ -31,7 +31,7 @@
 
 @if ($property_type === 'Residential Property')
 
-<div class="form-group" wire:ignore>
+<div class="form-group">
     <label class="fw-bold">Offered Lease Term:<span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true" title="Select the Tenant's preferred lease term length.">
         <i class="fa-solid fa-circle-info"></i>
@@ -44,7 +44,7 @@
     @endphp
     <div class="input-cover" wire:ignore>
         <select class="lease_for form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-file-pen input-icon2" multiple required>
+            data-icon="fa-solid fa-file-pen input-icon2" wire:ignore multiple required>
             @foreach ($lease_for_res as $row_pt)
                 <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $selectedLeaseFor) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
             @endforeach
@@ -58,7 +58,7 @@
 @if ($property_type === 'Commercial Property')
 
 
-<div class="form-group" wire:ignore>
+<div class="form-group">
     <label class="fw-bold">Offered Lease Term:<span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true" title="Select the Tenant's preferred lease term length.">
         <i class="fa-solid fa-circle-info"></i>
@@ -69,9 +69,9 @@
             $selectedLeaseForCom = json_decode($selectedLeaseForCom, true) ?? [];
         }
     @endphp
-    <div class="input-cover">
+    <div class="input-cover" wire:ignore>
         <select class="lease_for form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-file-pen input-icon2" multiple required>
+            data-icon="fa-solid fa-file-pen input-icon2" wire:ignore multiple required>
             @foreach ($lease_for_com as $row_pt)
                 <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $selectedLeaseForCom) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
             @endforeach
