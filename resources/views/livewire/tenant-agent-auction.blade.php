@@ -2663,6 +2663,8 @@ $lease_types = [
             $pi.off('change').on('change', function(e) {
                 let selectedValues = $(this).val();
                 safeLivewireSet('property_items', selectedValues, false);
+                // Refresh Select2 display to show selected tags
+                setTimeout(() => $pi.trigger('change.select2'), 50);
             });
         }
         initPropertyItemsSelect2();
@@ -3387,6 +3389,8 @@ $lease_types = [
                 let selectedLease = $(this).val() || [];
                 safeLivewireSet('lease_for', selectedLease, false);
                 toggleLease(selectedLease);
+                // Refresh Select2 display to show selected tags
+                setTimeout(() => $sel.trigger('change.select2'), 50);
             });
         }
 
