@@ -1,0 +1,266 @@
+That means the bug is broader than one field or one role.
+
+What you’re describing is a **multi-select state-collapse bug**:
+
+* you select 2 options
+* they appear correctly
+* you select a 3rd option
+* previous selections get dropped
+* only 1 remains, or the set becomes inconsistent
+
+That is usually **not a display-only bug**. It usually means one of these:
+
+* Select2 is reinitializing after each change
+* the change handler is sending only the latest clicked value instead of the full array
+* Livewire is overwriting the array with a partial value on rerender
+* multiple handlers are bound and fighting each other
+* the same field is rendered twice or targeted by duplicate selectors
+* one role’s shared JS is still broken across Buyer / Seller / Landlord
+
+At this point, Replit should stop claiming individual fixes and instead trace the **shared multi-select behavior pattern** across all three flows.
+
+Send this:
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS — MULTI-SELECT SELECTIONS STILL BREAKING IN BUYER / SELLER / LANDLORD
+
+### ISSUE
+
+This is **still not resolved** across multiple listing types.
+
+In **Hire a Landlord’s Agent**, **Hire a Seller’s Agent**, and **Hire a Buyer’s Agent**, multi-select fields are still broken.
+
+### Actual behavior
+
+Example:
+
+* I select 2 options
+* both appear selected
+* then I select a 3rd option
+* earlier selections get deleted or collapse
+* sometimes only 1 option remains selected
+
+So this is not a one-field cosmetic issue. This is a broader **multi-select state handling bug**.
+
+---
+
+# HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Do not rename or delete database columns.**
+2. **Do not modify Tenant flow in this pass unless a shared helper absolutely requires a surgical fix.**
+3. **Do not change labels, tooltips, option text, or business logic.**
+4. **Do not broad-refactor unrelated components.**
+5. **Do not create a new architecture.**
+6. **Only fix the broken multi-select behavior pattern affecting Buyer, Seller, and Landlord flows.**
+7. **If a shared helper is the root cause, update it surgically and verify no regressions.**
+8. **Do not mark this fixed based on one field or one record.**
+
+---
+
+# WHAT IS HAPPENING
+
+The bug is:
+
+* multiple selections do not persist correctly during selection
+* selecting an additional option can wipe prior selections
+* the field behaves like it is storing only the most recent clicked option instead of the full selected array
+
+This suggests a broken Select2 / Livewire synchronization pattern.
+
+---
+
+# REQUIRED ROOT-CAUSE CHECKS
+
+For the broken Buyer / Seller / Landlord multi-select fields, inspect these exact causes:
+
+## 1. Change handler may be sending only the latest value
+
+Check whether any handler is using:
+
+* event target value
+* selected option text
+* last selected item only
+
+instead of sending the **full current Select2 array** from `.val()`.
+
+The sync must always send the **entire selected array**, not the most recent clicked item.
+
+---
+
+## 2. Re-init after change may be wiping prior selections
+
+Check whether Select2 is being reinitialized:
+
+* after each change
+* during `message.processed`
+* during tab changes
+* during reactive rerenders
+
+If it re-inits without correctly restoring the full array, earlier selections may disappear.
+
+---
+
+## 3. Duplicate event handlers may be firing
+
+Check for multiple bound handlers on the same field.
+
+Use proper namespacing and unbind before rebinding, for example:
+
+```javascript
+$field.off('change.select2sync').on('change.select2sync', function () {
+   ...
+});
+```
+
+If duplicate handlers exist, one may set the full array while another overwrites with a partial value.
+
+---
+
+## 4. Livewire state may be overwriting the DOM with stale data
+
+Compare:
+
+* current DOM selected values
+* current Livewire property value
+
+If Livewire still holds stale/partial data, rerender may overwrite the full browser selection.
+
+---
+
+## 5. Duplicate field rendering / duplicate selectors
+
+Check whether:
+
+* the same field appears twice in the DOM
+* duplicate IDs/classes exist
+* conditional sections are both rendered
+* shared field partials are included more than once
+
+If duplicate elements exist, Select2 may bind to the wrong element or only one copy.
+
+---
+
+## 6. Array normalization issue
+
+Confirm multi-select fields are always handled as arrays:
+
+* on load into Livewire
+* on JS sync
+* on save
+* on display
+
+No mixing of:
+
+* string
+* comma-separated text
+* JSON string
+* null
+* single value
+
+for the same field during the same flow.
+
+---
+
+# REQUIRED IMPLEMENTATION RULE
+
+For every broken multi-select field, the sync logic must always do this:
+
+1. read the **full** selected Select2 value via `.val()`
+2. normalize null to `[]`
+3. send the full array to the correct Livewire property
+4. avoid immediate reinit unless absolutely necessary
+5. destroy/reinit only in guarded situations
+6. preserve the full array when rerendering
+
+---
+
+# VERY IMPORTANT
+
+Do **not** say this is fixed unless you specifically verify the real bug behavior:
+
+### Real test:
+
+* select option 1
+* select option 2
+* confirm both remain
+* select option 3
+* confirm all 3 remain
+* select option 4
+* confirm all 4 remain
+
+If earlier selections drop out when adding later ones, the issue is still unresolved.
+
+---
+
+# REQUIRED DEBUG METHOD
+
+Use one known broken multi-select field in each flow:
+
+* one Buyer example
+* one Seller example
+* one Landlord example
+
+For each, trace:
+
+1. Blade field markup
+2. selector/id/class
+3. Select2 init function
+4. change handler
+5. message.processed logic
+6. Livewire property name
+7. pre-save sync
+8. save method
+9. rerender behavior
+
+Then compare the broken fields to a known-good multi-select field that does **not** collapse selections.
+
+---
+
+# TESTING REQUIREMENTS
+
+For Buyer, Seller, and Landlord flows:
+
+## For each affected multi-select field tested:
+
+1. select first option
+2. select second option
+3. confirm both remain
+4. select third option
+5. confirm all three remain
+6. switch tabs and return
+7. confirm all remain
+8. save draft / save listing
+9. reopen edit
+10. confirm all remain
+11. confirm listing display also matches
+
+---
+
+# SUCCESS CRITERIA
+
+This is only fixed when:
+
+* adding a new option no longer removes previous selections
+* the field always retains the full selected array
+* tab changes do not wipe selections
+* save/edit/draft all remain stable
+* Buyer, Seller, and Landlord flows all behave correctly
+
+---
+
+# FINAL RULE
+
+Please stop applying field-by-field cosmetic fixes.
+
+This needs a **shared root-cause fix for the broken multi-select behavior pattern** affecting Buyer / Seller / Landlord.
+
+Do not mark complete until selecting a 3rd or 4th option no longer deletes earlier ones.
+
+---
+
+Yes, at this point I would absolutely give them that example exactly as you said it:
+
+> “I select 2 options, then when I select a 3rd option it deletes and just shows 1 option.”
+
+That is a very strong repro case because it points directly to **array replacement** instead of **array accumulation**.
