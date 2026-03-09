@@ -939,7 +939,7 @@
 @if ($property_type != 'Vacant Land')
 
     <!-- Non-Negotiable Amenities and Property Features -->
-    <div class="form-group" wire:ignore.self>
+    <div class="form-group" wire:ignore wire:key="nna-{{ $property_type }}">
         <label class="fw-bold">Amenities and Property Features:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -947,7 +947,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
 
-        <div class="input-cover">
+        <div class="input-cover" wire:ignore>
             <select wire:model="non_negotiable_amenities" id="non_negotiable_amenities"
                 class="form-control has-icon select2-multiple" data-icon="fa-solid fa-lock input-icon2"
                 @if (!$property_type) disabled @endif multiple>
