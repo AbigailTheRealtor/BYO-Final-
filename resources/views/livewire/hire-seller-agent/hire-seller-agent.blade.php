@@ -1077,6 +1077,23 @@
             initializeTooltips();
             Livewire.hook('message.processed', (message, component) => {
                 initializeTooltips();
+
+                ['offered_financing', 'sale_provision'].forEach(field => {
+                    const $el = $('#' + field);
+                    if ($el.length) {
+                        const data = $el.val();
+                        const eventName = field === 'offered_financing' ? 'update-financing-visibility' : 'update-provision-visibility';
+                        const options = field === 'offered_financing' 
+                            ? ['Assumable', 'Cryptocurrency', 'Exchange/Trade', 'Lease Option', 'Lease Purchase', 'Non-Fungible Token (NFT)', 'Seller Financing', 'Other']
+                            : ['Assignment Contract', 'Other'];
+                        
+                        options.forEach(option => {
+                            window.dispatchEvent(new CustomEvent(eventName, {
+                                detail: { type: option, visible: data && data.includes(option) }
+                            }));
+                        });
+                    }
+                });
             });
         });
 
@@ -1199,6 +1216,43 @@
         }
 
         function initializeFullService() {
+            if ($('#offered_financing').length && !$('#offered_financing').hasClass('select2-hidden-accessible')) {
+                $('#offered_financing').select2({
+                    placeholder: "Select offered financing",
+                    allowClear: true,
+                });
+                $('#offered_financing').on('change', function(e) {
+                    var data = $(this).val();
+                    @this.set('offered_financing', data);
+
+                    const options = ['Assumable', 'Cryptocurrency', 'Exchange/Trade', 'Lease Option', 'Lease Purchase', 'Non-Fungible Token (NFT)', 'Seller Financing', 'Other'];
+                    options.forEach(option => {
+                        const isVisible = data && data.includes(option);
+                        window.dispatchEvent(new CustomEvent('update-financing-visibility', {
+                            detail: { type: option, visible: isVisible }
+                        }));
+                    });
+                });
+            }
+
+            if ($('#sale_provision').length && !$('#sale_provision').hasClass('select2-hidden-accessible')) {
+                $('#sale_provision').select2({
+                    placeholder: "Select sale provisions",
+                    allowClear: true,
+                });
+                $('#sale_provision').on('change', function(e) {
+                    var data = $(this).val();
+                    @this.set('sale_provision', data);
+
+                    const options = ['Assignment Contract', 'Other'];
+                    options.forEach(option => {
+                        const isVisible = data && data.includes(option);
+                        window.dispatchEvent(new CustomEvent('update-provision-visibility', {
+                            detail: { type: option, visible: isVisible }
+                        }));
+                    });
+                }
+            }
 
 
             if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
