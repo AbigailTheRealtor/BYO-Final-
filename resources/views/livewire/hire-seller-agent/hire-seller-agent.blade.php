@@ -1078,22 +1078,78 @@
             Livewire.hook('message.processed', (message, component) => {
                 initializeTooltips();
 
-                ['offered_financing', 'sale_provision'].forEach(field => {
-                    const $el = $('#' + field);
-                    if ($el.length) {
-                        const data = $el.val();
-                        const eventName = field === 'offered_financing' ? 'update-financing-visibility' : 'update-provision-visibility';
-                        const options = field === 'offered_financing' 
-                            ? ['Assumable', 'Cryptocurrency', 'Exchange/Trade', 'Lease Option', 'Lease Purchase', 'Non-Fungible Token (NFT)', 'Seller Financing', 'Other']
-                            : ['Assignment Contract', 'Other'];
-                        
-                        options.forEach(option => {
-                            window.dispatchEvent(new CustomEvent(eventName, {
-                                detail: { type: option, visible: data && data.includes(option) }
-                            }));
-                        });
+                var $financing = $('#offered_financing');
+                if ($financing.length) {
+                    var fData = $financing.val() || [];
+                    var financingMap = {
+                        'Assumable': '#seller-financing-assumable-section',
+                        'Cryptocurrency': '#seller-financing-crypto-section',
+                        'Exchange/Trade': '#seller-financing-exchange-section',
+                        'Lease Option': '#seller-financing-leaseoption-section',
+                        'Lease Purchase': '#seller-financing-leasepurchase-section',
+                        'Non-Fungible Token (NFT)': '#seller-financing-nft-section',
+                        'Seller Financing': '#seller-financing-sellerfinancing-section',
+                        'Other': '#seller-financing-other-section',
+                    };
+                    Object.keys(financingMap).forEach(function(option) {
+                        if (fData.includes(option)) {
+                            $(financingMap[option]).show();
+                        } else {
+                            $(financingMap[option]).hide();
+                        }
+                    });
+                }
+
+                var $provision = $('#sale_provision');
+                if ($provision.length) {
+                    var pData = $provision.val() || [];
+                    var provisionMap = {
+                        'Assignment Contract': '#seller-provision-assignment-section',
+                        'Other': '#seller-provision-other-section',
+                    };
+                    Object.keys(provisionMap).forEach(function(option) {
+                        if (pData.includes(option)) {
+                            $(provisionMap[option]).show();
+                        } else {
+                            $(provisionMap[option]).hide();
+                        }
+                    });
+                }
+
+                var $appliances = $('#appliances');
+                if ($appliances.length) {
+                    if (!$appliances.hasClass('select2-hidden-accessible')) {
+                        $appliances.select2({ placeholder: "Select Appliances", allowClear: true });
+                        if (!$appliances.data('appliances-change-bound')) {
+                            $appliances.on('change', function() {
+                                var selectedValues = $(this).val() || [];
+                                @this.set('appliances', selectedValues, false);
+                                if (selectedValues.includes('Other')) {
+                                    $('#other_appliances').show();
+                                } else {
+                                    $('#other_appliances').hide();
+                                }
+                            });
+                            $appliances.data('appliances-change-bound', true);
+                        }
                     }
-                });
+                    var aData = $appliances.val() || [];
+                    if (aData.includes('Other')) {
+                        $('#other_appliances').show();
+                    } else {
+                        $('#other_appliances').hide();
+                    }
+                }
+
+                var $viewPref = $('#view_preference');
+                if ($viewPref.length && $viewPref.hasClass('select2-hidden-accessible')) {
+                    var vData = $viewPref.val() || [];
+                    if (vData.includes('Other')) {
+                        $('#other_preferences').show();
+                    } else {
+                        $('#other_preferences').hide();
+                    }
+                }
             });
         });
 
@@ -1223,15 +1279,25 @@
                     allowClear: true,
                 });
                 $('#offered_financing').on('change', function(e) {
-                    var data = $(this).val();
+                    var data = $(this).val() || [];
                     @this.set('offered_financing', data);
 
-                    const options = ['Assumable', 'Cryptocurrency', 'Exchange/Trade', 'Lease Option', 'Lease Purchase', 'Non-Fungible Token (NFT)', 'Seller Financing', 'Other'];
-                    options.forEach(option => {
-                        const isVisible = data && data.includes(option);
-                        window.dispatchEvent(new CustomEvent('update-financing-visibility', {
-                            detail: { type: option, visible: isVisible }
-                        }));
+                    var financingMap = {
+                        'Assumable': '#seller-financing-assumable-section',
+                        'Cryptocurrency': '#seller-financing-crypto-section',
+                        'Exchange/Trade': '#seller-financing-exchange-section',
+                        'Lease Option': '#seller-financing-leaseoption-section',
+                        'Lease Purchase': '#seller-financing-leasepurchase-section',
+                        'Non-Fungible Token (NFT)': '#seller-financing-nft-section',
+                        'Seller Financing': '#seller-financing-sellerfinancing-section',
+                        'Other': '#seller-financing-other-section',
+                    };
+                    Object.keys(financingMap).forEach(function(option) {
+                        if (data.includes(option)) {
+                            $(financingMap[option]).show();
+                        } else {
+                            $(financingMap[option]).hide();
+                        }
                     });
                 });
             }
@@ -1242,15 +1308,19 @@
                     allowClear: true,
                 });
                 $('#sale_provision').on('change', function(e) {
-                    var data = $(this).val();
+                    var data = $(this).val() || [];
                     @this.set('sale_provision', data);
 
-                    const options = ['Assignment Contract', 'Other'];
-                    options.forEach(option => {
-                        const isVisible = data && data.includes(option);
-                        window.dispatchEvent(new CustomEvent('update-provision-visibility', {
-                            detail: { type: option, visible: isVisible }
-                        }));
+                    var provisionMap = {
+                        'Assignment Contract': '#seller-provision-assignment-section',
+                        'Other': '#seller-provision-other-section',
+                    };
+                    Object.keys(provisionMap).forEach(function(option) {
+                        if (data.includes(option)) {
+                            $(provisionMap[option]).show();
+                        } else {
+                            $(provisionMap[option]).hide();
+                        }
                     });
                 });
             }
