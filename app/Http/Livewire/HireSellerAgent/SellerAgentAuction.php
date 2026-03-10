@@ -59,7 +59,7 @@ class SellerAgentAuction extends Component
     public $other_carport_needed = '';
 
     // Properties
-    public $sale_provision = '';
+    public $sale_provision = [];
     public $sale_provision_other = '';
     public $sale_provision_assignment = '';
     public $assignment_fee_type = '';
@@ -75,7 +75,7 @@ class SellerAgentAuction extends Component
 
     // Properties
     public $maximum_budget = '';
-    public $offered_financing = '';
+    public $offered_financing = [];
     public $other_financing = '';
     public $cash_budget = '';
     public $pre_approved = '';
@@ -1599,7 +1599,7 @@ class SellerAgentAuction extends Component
 
 
             // Sale Provision
-            $this->sale_provision = $auction->get->sale_provision;
+            $this->sale_provision = is_string($auction->get->sale_provision) ? json_decode($auction->get->sale_provision, true) ?? [] : (array)($auction->get->sale_provision ?? []);
             $this->sale_provision_other = $auction->get->sale_provision_other;
             $this->sale_provision_assignment = $auction->get->sale_provision_assignment;
             $this->assignment_fee_type = $auction->get->assignment_fee_type;
