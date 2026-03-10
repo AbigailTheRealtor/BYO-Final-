@@ -1158,6 +1158,7 @@
                 '#offered_financing': 'offered_financing',
                 '#view_preference': 'view_preference',
                 '#appliances': 'appliances',
+                '#included_assets': 'property_items',
             };
             Object.keys(multiFields).forEach(function(selector) {
                 var $el = $(selector);
@@ -1483,6 +1484,17 @@
                 toggleSpaceInput('carport-needed', 'other-carport-needed');
                 toggleSpaceInput('garage-needed', 'other-garage-needed');
             });
+
+            if ($('#included_assets').length && !$('#included_assets').hasClass('select2-hidden-accessible')) {
+                $('#included_assets').select2({
+                    placeholder: "Select included assets",
+                    allowClear: true
+                });
+                $('#included_assets').on('change', function() {
+                    let selectedValues = $(this).val() || [];
+                    @this.set('property_items', selectedValues, false);
+                });
+            }
 
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
                 $('#view_preference').select2({

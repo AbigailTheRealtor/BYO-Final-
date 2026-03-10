@@ -59,7 +59,7 @@
     </span>
 
     <div class="input-cover" wire:ignore>
-        <select wire:model="sale_provision" id="sale_provision" class="form-control has-icon select2-multiple"
+        <select id="sale_provision" class="form-control has-icon select2-multiple"
             data-icon="fa-solid fa-screwdriver-wrench input-icon2" multiple required>
             @foreach ($seller_property as $row_pt)
                 <option value="{{ $row_pt['name'] }}" title="{{ $row_pt['description'] }}" {{ in_array($row_pt['name'], $sale_provision ?? []) ? 'selected' : '' }}>
@@ -72,7 +72,7 @@
 </div>
 
 <!-- Other Special Sale Provision Input -->
-<div x-data="{ visible: {{ in_array('Other', $sale_provision ?? []) ? 'true' : 'false' }} }" x-show="visible" x-on:update-provision-visibility.window="if($event.detail.type === 'Other') visible = $event.detail.visible">
+<div x-data="{ visible: {{ in_array('Other', $sale_provision ?? []) ? 'true' : 'false' }} }" x-show="visible" x-on:update-provision-visibility.window="if($event.detail.type === 'Other') visible = $event.detail.visible" wire:ignore.self>
     <div class="form-group mt-3">
         {{-- <label class="fw-bold">Other Special Sale Provision:</label> --}}
         <div class="input-cover">
@@ -84,7 +84,7 @@
 </div>
 
 <!-- Assignment Contract Flow -->
-<div x-data="{ visible: {{ in_array('Assignment Contract', $sale_provision ?? []) ? 'true' : 'false' }} }" x-show="visible" x-on:update-provision-visibility.window="if($event.detail.type === 'Assignment Contract') visible = $event.detail.visible">
+<div x-data="{ visible: {{ in_array('Assignment Contract', $sale_provision ?? []) ? 'true' : 'false' }} }" x-show="visible" x-on:update-provision-visibility.window="if($event.detail.type === 'Assignment Contract') visible = $event.detail.visible" wire:ignore.self>
     <!-- Buyer Under Contract Question -->
     <div class="form-group mt-3">
         <label class="fw-bold">Seller Under Contract for Assignment:</label>
@@ -286,7 +286,7 @@
     <span class="error mt-2" id="offered_financing_error"></span> --}}
 
     <div class="input-cover" wire:ignore>
-        <select wire:model="offered_financing" id="offered_financing" class="form-control has-icon select2-multiple"
+        <select id="offered_financing" class="form-control has-icon select2-multiple"
             data-icon="fa-solid fa-money-bill-wave input-icon2" multiple required>
             @foreach ($financing_options_seller as $option)
                 <option value="{{ $option['name'] }}" title="{{ $option['description'] }}" {{ in_array($option['name'], $offered_financing ?? []) ? 'selected' : '' }}>
@@ -298,7 +298,7 @@
     <span class="error mt-2" id="offered_financing_error"></span>
 
 </div>
-<div x-data="{ visible: {{ in_array('Other', $offered_financing ?? []) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Other') visible = $event.detail.visible">
+<div x-data="{ visible: {{ in_array('Other', $offered_financing ?? []) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Other') visible = $event.detail.visible" wire:ignore.self>
     {{-- @if ($offered_financing === 'Other') --}}
     <div>
         <div class="form-group">
@@ -355,7 +355,7 @@
 @endif --}}
 
 
-<div x-data="{ visible: {{ in_array('Assumable', $offered_financing ?? []) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Assumable') visible = $event.detail.visible">
+<div x-data="{ visible: {{ in_array('Assumable', $offered_financing ?? []) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Assumable') visible = $event.detail.visible" wire:ignore.self>
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-arrow-right-arrow-left me-2"></i>Assumable
@@ -583,7 +583,7 @@
 </div>
 <!-- Cryptocurrency Option -->
 
-<div x-data="{ visible: {{ in_array('Cryptocurrency', $offered_financing ?? []) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Cryptocurrency') visible = $event.detail.visible">
+<div x-data="{ visible: {{ in_array('Cryptocurrency', $offered_financing ?? []) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Cryptocurrency') visible = $event.detail.visible" wire:ignore.self>
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-brands fa-bitcoin me-2"></i>Cryptocurrency
@@ -721,7 +721,7 @@
 </div>
 <!-- Exchange/Trade Option -->
 
-<div x-data="{ visible: {{ in_array('Exchange/Trade', $offered_financing ?? []) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Exchange/Trade') visible = $event.detail.visible">
+<div x-data="{ visible: {{ in_array('Exchange/Trade', $offered_financing ?? []) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Exchange/Trade') visible = $event.detail.visible" wire:ignore.self>
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-exchange-alt me-2"></i>Exchange/Trade
@@ -900,7 +900,7 @@
 
 <!-- Lease Option -->
 
-<div x-data="{ visible: {{ in_array('Lease Option', $offered_financing ?? []) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Lease Option') visible = $event.detail.visible">
+<div x-data="{ visible: {{ in_array('Lease Option', $offered_financing ?? []) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Lease Option') visible = $event.detail.visible" wire:ignore.self>
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-key me-2"></i>Lease Option
@@ -1079,7 +1079,7 @@
 
 <!-- Lease Purchase -->
 
-<div x-data="{ visible: {{ in_array('Lease Purchase', $offered_financing ?? []) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Lease Purchase') visible = $event.detail.visible">
+<div x-data="{ visible: {{ in_array('Lease Purchase', $offered_financing ?? []) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Lease Purchase') visible = $event.detail.visible" wire:ignore.self>
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-file-signature me-2"></i>Lease Purchase
@@ -1255,7 +1255,7 @@
 
 <!-- NFT Option -->
 
-<div x-data="{ visible: {{ in_array('Non-Fungible Token (NFT)', $offered_financing ?? []) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Non-Fungible Token (NFT)') visible = $event.detail.visible">
+<div x-data="{ visible: {{ in_array('Non-Fungible Token (NFT)', $offered_financing ?? []) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Non-Fungible Token (NFT)') visible = $event.detail.visible" wire:ignore.self>
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-image me-2"></i>Non-Fungible Token (NFT)
@@ -1357,7 +1357,7 @@
 </div>
 <!-- Seller Financing -->
 
-<div x-data="{ visible: {{ in_array('Seller Financing', $offered_financing ?? []) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Seller Financing') visible = $event.detail.visible">
+<div x-data="{ visible: {{ in_array('Seller Financing', $offered_financing ?? []) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Seller Financing') visible = $event.detail.visible" wire:ignore.self>
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-handshake me-2"></i>Seller Financing

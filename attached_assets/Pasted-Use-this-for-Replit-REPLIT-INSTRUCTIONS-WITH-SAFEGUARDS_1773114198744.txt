@@ -1,0 +1,294 @@
+Use this for Replit:
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A SELLER’S AGENT ONLY — VIEW OPTIONS WRONG + CONDITIONAL FIELDS NOT DISPLAYING
+
+### SCOPE
+
+Fix **only** these remaining **Hire a Seller’s Agent** issues:
+
+1. **View** now has the **wrong options** and is showing the options from **Included Property or Business Assets**
+2. **Included Property or Business Assets** selections still delete when options are selected
+3. Under **Acceptable Special Sale Provisions**, selecting **Assignment Contract** does **not** display the tied questions
+4. Under **Special Sale Provision**, selecting **Other** does **not** display the custom input box
+5. Under **Offered Financing/Currency**, the tied follow-up questions do **not** display even when the trigger options are selected
+
+This pass is **Seller flow only**.
+
+Do **not** modify:
+
+* Hire a Buyer’s Agent
+* Hire a Landlord’s Agent
+* Hire a Tenant’s Agent
+
+---
+
+# HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Do not rename or delete database columns.**
+2. **Do not change labels, tooltips, or option values except to restore the correct View options.**
+3. **Do not broad-refactor shared components unless absolutely necessary for this Seller-only fix.**
+4. **Do not remove or alter saved drafts, listings, or bids.**
+5. **Do not break recently fixed Seller multi-select behavior in fields that already work.**
+6. **Do not mark this complete based only on code inspection.**
+7. **You must verify the fixes visually in the browser.**
+
+---
+
+# ISSUE 1 — VIEW HAS THE WRONG OPTIONS
+
+## Current issue
+
+In **Hire a Seller’s Agent**, the **View** field is showing the wrong option set.
+
+It is currently showing options from **Included Property or Business Assets** instead of the correct **View** options.
+
+The screenshot shows **View** displaying items like:
+
+* Furniture, Fixtures, and Equipment
+* Advertising Materials
+* Contract Rights
+* Leases
+* Licenses
+* Rights under any Agreement for Interests
+* Other
+
+Those are not View options.
+
+## Required fix
+
+Restore the correct **View** option list for Seller listings.
+
+The **View** field must no longer use the **Included Property or Business Assets** option source.
+
+## What to check
+
+Please inspect:
+
+1. the options source array for **View**
+2. the Blade/select binding for **View**
+3. whether the **View** selector or property is mistakenly pointing to the Included Property or Business Assets data
+4. whether a copy/paste or reused config accidentally swapped the two fields
+5. whether the wrong `wire:model`, selector, or option variable is being used
+6. whether Select2 reinit is attaching the wrong option set to the View field
+
+## Required result
+
+* **View** must show the correct View options again
+* **Included Property or Business Assets** must keep its own correct option set
+* the two fields must no longer share the wrong options
+
+---
+
+# ISSUE 2 — INCLUDED PROPERTY OR BUSINESS ASSETS STILL DELETES SELECTIONS
+
+## Current issue
+
+Under **Included Property or Business Assets**, options still delete when selected.
+
+## Required fix
+
+This field must allow stable multi-select behavior:
+
+* selecting option 1, 2, 3, etc. must keep all selected
+* adding another option must not wipe earlier selections
+* values must remain stable through create, draft, edit, save, and reopen
+
+## Required implementation approach
+
+Use the same stable multi-select pattern already working in the project for Seller/Landlord working fields.
+
+Check:
+
+1. outer wrapper `wire:ignore`
+2. inner wrapper `wire:ignore`
+3. correct `wire:key` if dynamic
+4. Select2 init logic
+5. namespaced change handler
+6. full `.val()` array sync
+7. guarded reinit only
+8. no duplicate handlers
+9. no duplicate DOM elements
+10. Livewire state not overwriting browser state
+
+---
+
+# ISSUE 3 — ACCEPTABLE SPECIAL SALE PROVISIONS → ASSIGNMENT CONTRACT DOES NOT DISPLAY TIED QUESTIONS
+
+## Current issue
+
+Under **Acceptable Special Sale Provisions**, selecting **Assignment Contract** does **not** display the tied questions.
+
+## Required fix
+
+When **Assignment Contract** is selected:
+
+* the related follow-up questions must display immediately
+* when unselected, they must hide
+* if still selected on edit/reload, they must remain visible
+* values in those follow-up questions must save and reload correctly
+
+## What to check
+
+1. conditional display logic for **Assignment Contract**
+2. whether the condition is correctly checking membership inside the selected array
+3. whether the condition is watching the correct Seller property
+4. whether the tied question block is inside the correct conditional section
+5. whether rerender is hiding it again
+
+---
+
+# ISSUE 4 — SPECIAL SALE PROVISION → OTHER INPUT BOX DOES NOT DISPLAY
+
+## Current issue
+
+Under **Special Sale Provision**, when **Other** is selected, the custom input box does **not** display.
+
+## Required fix
+
+When **Other** is selected:
+
+* the custom input box must appear immediately
+* it must hide if **Other** is unselected
+* it must remain visible after rerender if **Other** remains selected
+* the custom value must save and reload correctly
+
+## What to check
+
+1. whether the condition correctly checks for `"Other"` in the actual selected value structure
+2. correct companion “other” property
+3. correct conditional block placement
+4. rerender is not hiding it
+
+Use any already-working **Other** field in Seller/Landlord as the reference behavior.
+
+---
+
+# ISSUE 5 — OFFERED FINANCING/CURRENCY FOLLOW-UP QUESTIONS DO NOT DISPLAY
+
+## Current issue
+
+Under **Offered Financing/Currency**, the tied follow-up questions do **not** display even when the trigger terms are selected.
+
+## Required fix
+
+When financing/currency trigger option(s) are selected:
+
+* the correct dependent questions must display immediately
+* removing the trigger option must hide them
+* if the trigger option remains selected on edit/reload, the dependent questions must remain visible
+* any entered values must save and reload correctly
+
+## What to check
+
+1. conditional Blade logic
+2. correct property being watched
+3. array membership checks for selected options
+4. dependent question blocks placed under the correct conditional
+5. rerender is not hiding them
+6. no stale hidden sections are interfering
+
+---
+
+# REQUIRED DEBUG METHOD
+
+For each broken Seller field, compare to a working reference already present in the project.
+
+Please compare:
+
+## For multi-select stability
+
+Use a Seller/Landlord multi-select field that is currently working correctly.
+
+## For “Other” behavior
+
+Use a field where selecting **Other** already displays the custom box correctly.
+
+## For dependent questions
+
+Use any working conditional field in the project where selecting a trigger option immediately reveals follow-up questions.
+
+Do **not** invent a new pattern. Match the working implementation.
+
+---
+
+# REQUIRED TESTING — BROWSER ONLY
+
+## A) VIEW OPTIONS TEST
+
+1. open **Hire a Seller’s Agent**
+2. go to the **View** field
+3. confirm it shows the correct View options
+4. confirm it does **not** show Included Property or Business Assets options
+5. select values
+6. save/reopen
+7. confirm correct options remain
+
+## B) INCLUDED PROPERTY OR BUSINESS ASSETS MULTI-SELECT TEST
+
+1. select option 1
+2. select option 2
+3. confirm both remain
+4. select option 3
+5. confirm all remain
+6. save draft or save listing
+7. reopen edit
+8. confirm all remain
+
+## C) ASSIGNMENT CONTRACT FOLLOW-UP TEST
+
+1. select **Assignment Contract**
+2. confirm tied questions display immediately
+3. unselect it
+4. confirm they hide
+5. reselect it
+6. save
+7. reopen edit
+8. confirm questions remain visible if still selected
+
+## D) SPECIAL SALE PROVISION → OTHER TEST
+
+1. select **Other**
+2. confirm custom input appears immediately
+3. enter custom text
+4. save
+5. reopen edit
+6. confirm **Other** remains selected
+7. confirm custom input remains visible with saved value
+
+## E) OFFERED FINANCING/CURRENCY FOLLOW-UP TEST
+
+1. select financing/currency options that should trigger dependent questions
+2. confirm follow-up questions display immediately
+3. fill them out
+4. save
+5. reopen edit
+6. confirm follow-up questions remain visible if the trigger options remain selected
+7. confirm saved values remain
+
+---
+
+# SUCCESS CRITERIA
+
+This task is only complete when all of the following are true in **Hire a Seller’s Agent**:
+
+* **View** shows the correct View options again
+* **View** no longer shows Included Property or Business Assets options
+* **Included Property or Business Assets** no longer deletes selections
+* **Acceptable Special Sale Provisions → Assignment Contract** correctly displays its tied questions
+* **Special Sale Provision → Other** correctly displays the custom input box
+* **Offered Financing/Currency** correctly displays its tied follow-up questions
+* create / draft / edit / save / reopen all remain stable
+
+---
+
+# FINAL RULE
+
+Do **not** respond that this is fixed based only on code inspection.
+
+Please verify visually in the browser that:
+
+1. **View** has the correct option set again,
+2. **Included Property or Business Assets** retains multiple selections,
+3. **Assignment Contract**, **Other**, and **Offered Financing/Currency** all correctly display their dependent fields.

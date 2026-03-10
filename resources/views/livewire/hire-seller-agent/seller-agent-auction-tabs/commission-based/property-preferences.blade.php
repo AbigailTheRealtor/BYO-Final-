@@ -257,7 +257,21 @@
     ];
 
     $preferences = [
+        ['name' => 'City'],
+        ['name' => 'Mountain'],
+        ['name' => 'Ocean'],
+        ['name' => 'River'],
+        ['name' => 'Lake'],
+        ['name' => 'Golf Course'],
+        ['name' => 'Garden'],
+        ['name' => 'Pool'],
+        ['name' => 'Woods'],
+        ['name' => 'Park'],
         ['name' => 'Beach'],
+        ['name' => 'Other'],
+    ];
+
+    $included_assets = [
         ['name' => 'Furniture, Fixtures, and Equipment (as per attached inventory)'],
         ['name' => 'Advertising Materials'],
         ['name' => 'Contract Rights'],
@@ -1220,8 +1234,31 @@
     <span class="error mt-2" id="view_preference_error"></span>
 </div>
 
+<!-- Included Property or Business Assets -->
+<div class="form-group" wire:ignore wire:key="included-assets-{{ $property_type }}">
+    <label class="fw-bold">Included Property or Business Assets:</label>
+
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Select any property or business assets included in the sale.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+
+    <div class="input-cover" wire:ignore>
+        <select id="included_assets"
+            class="form-control has-icon select2-multiple" data-icon="fa-solid fa-briefcase input-icon2" multiple>
+            @foreach ($included_assets as $row_pt)
+                <option value="{{ $row_pt['name'] }}"
+                    {{ in_array($row_pt['name'], $property_items ?? []) ? 'selected' : '' }}>
+                    {{ $row_pt['name'] }}
+                </option>
+            @endforeach
+        </select>
+    </div>
+    <span class="error mt-2" id="included_assets_error"></span>
+</div>
+
 <!-- Other Preferences Input (Hidden or Visible based on Livewire state) -->
-<div class="form-group" id="other_preferences" style="display: {{ $this->is_other_visible ? 'block' : 'none' }}">
+    <div class="form-group" id="other_preferences" style="display: {{ in_array('Other', $view_preference ?? []) ? 'block' : 'none' }}">
     <div class="input-cover">
         <input type="text" wire:model.defer="other_preferences" class="form-control has-icon"
             data-icon="fa-solid fa-tree" placeholder="Enter view (e.g., Lake, Desert, Courtyard)">
