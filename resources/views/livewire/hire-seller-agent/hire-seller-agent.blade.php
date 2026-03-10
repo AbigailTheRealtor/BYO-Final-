@@ -2404,11 +2404,12 @@
         function addIconsToInputs() {
             document.querySelectorAll('.has-icon').forEach(input => {
                 const iconClass = input.getAttribute('data-icon');
-                if (iconClass && !input.previousElementSibling?.classList.contains('input-icon')) {
-                    const icon = document.createElement('i');
-                    icon.className = `input-icon ${iconClass}`;
-                    input.parentNode.insertBefore(icon, input);
-                }
+                const parent = input.parentNode;
+                if (!iconClass || !parent || !parent.classList || !parent.classList.contains('input-cover')) return;
+                if (parent.querySelector(':scope > .input-icon')) return;
+                const icon = document.createElement('i');
+                icon.className = `input-icon ${iconClass}`;
+                parent.insertBefore(icon, input);
             });
         }
 
