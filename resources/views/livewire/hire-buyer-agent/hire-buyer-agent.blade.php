@@ -1527,6 +1527,7 @@
             // Helper: immediately update all financing sub-sections visibility
             var traditionalLoanTypes = ['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'];
             function updateFinancingSections(selectedValues) {
+                if (!Array.isArray(selectedValues)) selectedValues = [selectedValues];
                 $('.financing-assumable-section').toggle(selectedValues.includes('Assumable'));
                 $('.financing-traditional-section').toggle(
                     traditionalLoanTypes.some(function(t) { return selectedValues.includes(t); })
