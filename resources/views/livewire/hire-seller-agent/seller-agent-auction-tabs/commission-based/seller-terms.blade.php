@@ -72,7 +72,7 @@
 </div>
 
 <!-- Other Special Sale Provision Input -->
-<div id="seller-provision-other-section" style="display: {{ in_array('Other', $sale_provision ?? []) ? 'block' : 'none' }}">
+<div id="seller-provision-other-section" wire:ignore.self style="display: {{ in_array('Other', $sale_provision ?? []) ? 'block' : 'none' }}">
     <div class="form-group mt-3">
         {{-- <label class="fw-bold">Other Special Sale Provision:</label> --}}
         <div class="input-cover">
@@ -84,7 +84,7 @@
 </div>
 
 <!-- Assignment Contract Flow -->
-<div id="seller-provision-assignment-section" style="display: {{ in_array('Assignment Contract', $sale_provision ?? []) ? 'block' : 'none' }}">
+<div id="seller-provision-assignment-section" wire:ignore.self style="display: {{ in_array('Assignment Contract', $sale_provision ?? []) ? 'block' : 'none' }}">
     <!-- Buyer Under Contract Question -->
     <div class="form-group mt-3">
         <label class="fw-bold">Seller Under Contract for Assignment:</label>
@@ -298,7 +298,7 @@
     <span class="error mt-2" id="offered_financing_error"></span>
 
 </div>
-<div id="seller-financing-other-section" style="display: {{ in_array('Other', $offered_financing ?? []) ? 'block' : 'none' }}">
+<div id="seller-financing-other-section" wire:ignore.self style="display: {{ in_array('Other', $offered_financing ?? []) ? 'block' : 'none' }}">
     {{-- @if ($offered_financing === 'Other') --}}
     <div>
         <div class="form-group">
@@ -355,7 +355,7 @@
 @endif --}}
 
 
-<div id="seller-financing-assumable-section" style="display: {{ in_array('Assumable', $offered_financing ?? []) ? 'block' : 'none' }}">
+<div id="seller-financing-assumable-section" wire:ignore.self style="display: {{ in_array('Assumable', $offered_financing ?? []) ? 'block' : 'none' }}">
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-arrow-right-arrow-left me-2"></i>Assumable
@@ -583,7 +583,7 @@
 </div>
 <!-- Cryptocurrency Option -->
 
-<div id="seller-financing-crypto-section" style="display: {{ in_array('Cryptocurrency', $offered_financing ?? []) ? 'block' : 'none' }}">
+<div id="seller-financing-crypto-section" wire:ignore.self style="display: {{ in_array('Cryptocurrency', $offered_financing ?? []) ? 'block' : 'none' }}">
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-brands fa-bitcoin me-2"></i>Cryptocurrency
@@ -721,7 +721,7 @@
 </div>
 <!-- Exchange/Trade Option -->
 
-<div id="seller-financing-exchange-section" style="display: {{ in_array('Exchange/Trade', $offered_financing ?? []) ? 'block' : 'none' }}">
+<div id="seller-financing-exchange-section" wire:ignore.self style="display: {{ in_array('Exchange/Trade', $offered_financing ?? []) ? 'block' : 'none' }}">
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-exchange-alt me-2"></i>Exchange/Trade
@@ -900,7 +900,7 @@
 
 <!-- Lease Option -->
 
-<div id="seller-financing-leaseoption-section" style="display: {{ in_array('Lease Option', $offered_financing ?? []) ? 'block' : 'none' }}">
+<div id="seller-financing-leaseoption-section" wire:ignore.self style="display: {{ in_array('Lease Option', $offered_financing ?? []) ? 'block' : 'none' }}">
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-key me-2"></i>Lease Option
@@ -1079,7 +1079,7 @@
 
 <!-- Lease Purchase -->
 
-<div id="seller-financing-leasepurchase-section" style="display: {{ in_array('Lease Purchase', $offered_financing ?? []) ? 'block' : 'none' }}">
+<div id="seller-financing-leasepurchase-section" wire:ignore.self style="display: {{ in_array('Lease Purchase', $offered_financing ?? []) ? 'block' : 'none' }}">
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-file-signature me-2"></i>Lease Purchase
@@ -1255,7 +1255,7 @@
 
 <!-- NFT Option -->
 
-<div id="seller-financing-nft-section" style="display: {{ in_array('Non-Fungible Token (NFT)', $offered_financing ?? []) ? 'block' : 'none' }}">
+<div id="seller-financing-nft-section" wire:ignore.self style="display: {{ in_array('Non-Fungible Token (NFT)', $offered_financing ?? []) ? 'block' : 'none' }}">
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-image me-2"></i>Non-Fungible Token (NFT)
@@ -1357,7 +1357,7 @@
 </div>
 <!-- Seller Financing -->
 
-<div id="seller-financing-sellerfinancing-section" style="display: {{ in_array('Seller Financing', $offered_financing ?? []) ? 'block' : 'none' }}">
+<div id="seller-financing-sellerfinancing-section" wire:ignore.self style="display: {{ in_array('Seller Financing', $offered_financing ?? []) ? 'block' : 'none' }}">
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-handshake me-2"></i>Seller Financing
