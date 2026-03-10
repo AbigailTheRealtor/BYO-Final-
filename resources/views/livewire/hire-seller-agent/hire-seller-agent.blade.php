@@ -1309,9 +1309,12 @@
                         allowClear: true,
                     });
                 }
-                $('#offered_financing')
-                    .off('change.s2vis select2:select.s2vis select2:unselect.s2vis')
-                    .on('change.s2vis select2:select.s2vis select2:unselect.s2vis', applyFinancingVisibility);
+                if (!$('#offered_financing').data('of-change-bound')) {
+                    $('#offered_financing').on('change', function() {
+                        applyFinancingVisibility();
+                    });
+                    $('#offered_financing').data('of-change-bound', true);
+                }
                 applyFinancingVisibility();
             }
 
@@ -1322,9 +1325,12 @@
                         allowClear: true,
                     });
                 }
-                $('#sale_provision')
-                    .off('change.s2vis select2:select.s2vis select2:unselect.s2vis')
-                    .on('change.s2vis select2:select.s2vis select2:unselect.s2vis', applyProvisionVisibility);
+                if (!$('#sale_provision').data('sp-change-bound')) {
+                    $('#sale_provision').on('change', function() {
+                        applyProvisionVisibility();
+                    });
+                    $('#sale_provision').data('sp-change-bound', true);
+                }
                 applyProvisionVisibility();
             }
 
