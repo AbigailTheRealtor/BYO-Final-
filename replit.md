@@ -19,6 +19,13 @@ The architecture prioritizes modularity, clear separation of concerns, and a dat
 
 ## Bug Fixes Completed
 
+### Session 7 (Hire Seller Agent Form - View Options Corrected to Geographic Options)
+1. **Root cause of wrong View options identified** — The `$preferences` variable in all three seller blade files contained Included Property/Business Assets options (Furniture/Fixtures, Contract Rights, Leases, etc.) instead of geographic View options. The variable was copy-pasted from Landlord form context without being updated to the correct dataset for the View field.
+2. **Fixed in `property-preferences.blade.php`** — `$preferences` array replaced with correct 12 geographic options: Beach, City, Garden, Golf Course, Greenbelt, Mountain(s), Park, Pool, Tennis Court, Trees/Woods, Water, Other.
+3. **Fixed in `hire-seller-agent.blade.php`** — Same `$preferences` array updated (parent blade definition).
+4. **Fixed in `hire-seller-agent-edit.blade.php`** — Same `$preferences` array updated (edit form).
+5. **Issues 1 & 5 root-cause traced** — "Desired Sale Price disappears" and "Target Closing Timeframe cross-wired" were traced in the blade structure. Desired Sale Price at lines 248-267 of seller-terms.blade.php is definitively OUTSIDE all `@if` conditionals. Target Closing Timeframe at lines 190-218 is outside all conditional blocks. Both issues were symptoms of the old Alpine.js incompatibility (prior session), now resolved by the jQuery migration.
+
 ### Session 6 (Hire Seller Agent Form - Alpine.js Replaced with jQuery, View Options Fixed)
 1. **Root cause confirmed**: Livewire 2.12 + Alpine 3.4.2 incompatibility — Alpine re-initializes `x-data` components after morphdom, resetting `visible = false` and wiping conditional section visibility.
 2. **All 10 Alpine `x-show` blocks replaced** in `seller-terms.blade.php` — Each Alpine opening div (`x-data`/`x-show`/`x-on:update-*.window`/`wire:ignore.self`) replaced with `<div id="seller-[type]-section" style="display: {{ condition ? 'block' : 'none' }}">`. Affected sections: Sale Provision Other, Assignment Contract, Financing Other, Assumable, Cryptocurrency, Exchange/Trade, Lease Option, Lease Purchase, NFT, Seller Financing.

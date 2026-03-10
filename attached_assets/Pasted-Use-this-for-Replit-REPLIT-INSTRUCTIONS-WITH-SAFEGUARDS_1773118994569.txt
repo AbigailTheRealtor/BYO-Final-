@@ -1,0 +1,174 @@
+Use this for Replit:
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A SELLER’S AGENT ONLY — RESTORE THE CORRECT VIEW OPTIONS
+
+### SCOPE
+
+Fix **only** the **View** field in **Hire a Seller’s Agent**.
+
+The current **View** options are completely wrong and appear to be pulling from the wrong field/source.
+
+This pass is **Seller-only**.
+
+Do **not** modify:
+
+* Hire a Buyer’s Agent
+* Hire a Landlord’s Agent
+* Hire a Tenant’s Agent
+
+---
+
+# HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Do not rename or delete database columns.**
+2. **Do not change labels, tooltips, or unrelated option sets.**
+3. **Do not broad-refactor shared components unless absolutely necessary for this Seller-only fix.**
+4. **Do not remove or alter saved drafts, listings, or bids.**
+5. **Do not break the working Landlord View field while using it as a reference.**
+6. **Do not mark this complete based only on code inspection.**
+7. **You must verify the fixed View options visually in the browser.**
+
+---
+
+# ISSUE
+
+In **Hire a Seller’s Agent**, the **View** field is completely wrong.
+
+It is currently showing options like:
+
+* Furniture, Fixtures, and Equipment
+* Advertising Materials
+* Contract Rights
+* Leases
+* Licenses
+* Rights under any Agreement for Interests
+* Other
+
+Those are clearly not **View** options and appear to be coming from the wrong field/source.
+
+---
+
+# REQUIRED FIX
+
+Restore the correct **Seller → View** options.
+
+The correct options should be:
+
+* **Beach**
+* **City**
+* **Garden**
+* **Golf Course**
+* **Greenbelt**
+* **Mountain(s)**
+* **Park**
+* **Pool**
+* **Tennis Court**
+* **Trees/Woods**
+* **Water**
+* **Other**
+
+### IMPORTANT
+
+Use those exact options for **Hire a Seller’s Agent → View**.
+
+---
+
+# WHAT TO CHECK
+
+Please inspect all of the following for the Seller **View** field:
+
+1. the options source array assigned to Seller **View**
+2. the Blade/select binding for Seller **View**
+3. whether Seller **View** is mistakenly pointing to **Included Property or Business Assets** or another field’s option source
+4. whether the wrong config key / variable / property is assigned
+5. whether a copy/paste regression swapped the option list
+6. whether Select2 is binding to the wrong field or wrong dataset
+
+---
+
+# REQUIRED RESULT
+
+After the fix:
+
+* Seller **View** must show only these options:
+
+  * Beach
+  * City
+  * Garden
+  * Golf Course
+  * Greenbelt
+  * Mountain(s)
+  * Park
+  * Pool
+  * Tennis Court
+  * Trees/Woods
+  * Water
+  * Other
+
+* Seller **View** must **not** show asset/business options
+
+* Seller **View** must no longer be tied to the wrong field/source
+
+---
+
+# REQUIRED TESTING — BROWSER ONLY
+
+1. open **Hire a Seller’s Agent**
+2. go to the **View** field
+3. confirm the dropdown shows exactly:
+
+   * Beach
+   * City
+   * Garden
+   * Golf Course
+   * Greenbelt
+   * Mountain(s)
+   * Park
+   * Pool
+   * Tennis Court
+   * Trees/Woods
+   * Water
+   * Other
+4. confirm it does **not** show:
+
+   * Furniture, Fixtures, and Equipment
+   * Advertising Materials
+   * Contract Rights
+   * Leases
+   * Licenses
+   * Rights under any Agreement for Interests
+5. save and reopen edit
+6. confirm the correct View options still remain
+
+---
+
+# SUCCESS CRITERIA
+
+This task is only complete when all of the following are true in **Hire a Seller’s Agent**:
+
+* **View** shows the correct option list:
+
+  * Beach
+  * City
+  * Garden
+  * Golf Course
+  * Greenbelt
+  * Mountain(s)
+  * Park
+  * Pool
+  * Tennis Court
+  * Trees/Woods
+  * Water
+  * Other
+* **View** no longer shows the wrong asset/business option set
+* create / draft / edit / save / reopen remain stable
+
+---
+
+# FINAL RULE
+
+Do **not** respond that this is fixed based only on code inspection.
+
+Please verify visually in the browser that the Seller **View** dropdown now shows the correct options only.
