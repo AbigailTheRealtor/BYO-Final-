@@ -1284,7 +1284,6 @@
                 });
                 $('#offered_financing').on('change', function(e) {
                     var data = $(this).val() || [];
-                    @this.set('offered_financing', data);
 
                     var financingMap = {
                         'Assumable': '#seller-financing-assumable-section',
@@ -1313,7 +1312,6 @@
                 });
                 $('#sale_provision').on('change', function(e) {
                     var data = $(this).val() || [];
-                    @this.set('sale_provision', data);
 
                     var provisionMap = {
                         'Assignment Contract': '#seller-provision-assignment-section',

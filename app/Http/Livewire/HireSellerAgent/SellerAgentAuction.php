@@ -801,13 +801,19 @@ class SellerAgentAuction extends Component
 
     public function updatedSaleProvision()
     {
-        // Reset all dependent fields when main selection changes
-        $this->reset([
-            'sale_provision_other',
-            'sale_provision_assignment',
-            'assignment_fee_amount',
-            'buyer_sell_contract'
-        ]);
+        $provision = $this->sale_provision ?? [];
+
+        if (!in_array('Other', $provision)) {
+            $this->reset(['sale_provision_other']);
+        }
+
+        if (!in_array('Assignment Contract', $provision)) {
+            $this->reset([
+                'sale_provision_assignment',
+                'assignment_fee_amount',
+                'buyer_sell_contract'
+            ]);
+        }
     }
 
     public function updatedSaleProvisionAssignment()
