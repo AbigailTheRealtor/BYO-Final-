@@ -1,0 +1,151 @@
+Yes — that is a good way to explain it.
+
+Using **Occupant Type → Occupied Until** as the working example gives Replit a very clear comparison:
+
+* trigger field is selected
+* dependent field appears immediately
+* no extra click is needed
+* no unrelated field needs to be changed first
+
+That is exactly the behavior you want them to copy for **Special Sale Provision**.
+
+The key is to phrase it clearly, because one sentence in your message has the opposite wording of what you want. You want to say:
+
+* **Other under Special Sale Provision should pop up immediately after selecting Other**
+* **it should NOT wait until Occupant Type is filled in**
+
+Here’s a clean version you can send:
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A SELLER’S AGENT ONLY — USE OCCUPANT TYPE AS THE WORKING REFERENCE FOR IMMEDIATE CONDITIONAL FIELDS
+
+The conditional behavior is still wrong in **Hire a Seller’s Agent → Sale Terms**.
+
+Also, the **icon issue is still not fixed** and remains an issue, but the main unresolved logic problem below still needs to be corrected.
+
+### Working reference example
+
+Use **Occupant Type** as the working example.
+
+When the user selects:
+
+* **Tenant** under **Occupant Type**
+
+the dependent field:
+
+* **Occupied Until**
+
+appears **immediately**
+
+That is the correct behavior pattern.
+
+I need the same type of immediate behavior for **Special Sale Provision** and **Offered Financing/Currency**.
+
+---
+
+### What should happen
+
+#### 1) Special Sale Provision → Assignment Contract
+
+When **Assignment Contract** is selected:
+
+* **Seller Under Contract for Assignment** should appear **immediately**
+
+Right now it only appears after the user selects something under **Target Closing Timeframe**, which is wrong.
+
+#### 2) Special Sale Provision → Other
+
+When **Other** is selected:
+
+* the custom **Other** input box should appear **immediately**
+
+Right now it does **not** pop up until I fill in **Occupant Type**, which is wrong.
+
+It should **not** depend on Occupant Type at all.
+
+#### 3) Offered Financing/Currency
+
+When a financing option is selected, such as:
+
+* **Seller Financing**
+
+the corresponding sub-questions should appear **immediately**
+
+Right now they do not. They seem delayed or tied to **Occupant Type**, which is wrong.
+
+They should **not** depend on Occupant Type.
+
+---
+
+### Required rule
+
+Use the same behavior pattern as:
+
+* **Occupant Type → Tenant → Occupied Until**
+
+Meaning:
+
+* trigger selected
+* dependent field appears immediately
+* no extra field needs to be changed first
+* no delayed rerender dependency
+* no unrelated trigger should control it
+
+---
+
+### What to investigate
+
+Please check whether:
+
+1. **Assignment Contract** is incorrectly tied to **Target Closing Timeframe**
+2. **Other** under **Special Sale Provision** is incorrectly tied to **Occupant Type**
+3. **Offered Financing/Currency** dependent sections are incorrectly tied to **Occupant Type**
+4. the dependent sections are placed inside the wrong conditional blocks
+5. the correct trigger values are selected, but the wrong property is being watched for visibility
+6. delayed appearance is caused by rerender timing instead of immediate visibility logic
+
+---
+
+### Required browser tests
+
+#### Test A — Occupant Type reference
+
+1. select **Tenant** under **Occupant Type**
+2. confirm **Occupied Until** appears immediately
+
+#### Test B — Assignment Contract
+
+1. select **Assignment Contract**
+2. confirm **Seller Under Contract for Assignment** appears immediately
+3. do not touch **Target Closing Timeframe**
+4. confirm it still appears
+
+#### Test C — Other
+
+1. select **Other** under **Special Sale Provision**
+2. confirm the custom input appears immediately
+3. do not touch **Occupant Type**
+4. confirm it still appears
+
+#### Test D — Offered Financing/Currency
+
+1. select **Seller Financing**
+2. confirm Seller Financing sub-questions appear immediately
+3. do not touch **Occupant Type**
+4. confirm they still appear
+
+---
+
+### Success criteria
+
+This is only fixed when:
+
+* **Assignment Contract** immediately shows **Seller Under Contract for Assignment**
+* **Other** immediately shows its custom input
+* **Offered Financing/Currency** immediately shows its related sub-questions
+* none of the above require **Occupant Type** or **Target Closing Timeframe** to be changed first
+
+---
+
+And yes, I would mention the icon issue separately too, because if you combine both into one sentence they may ignore one again.
