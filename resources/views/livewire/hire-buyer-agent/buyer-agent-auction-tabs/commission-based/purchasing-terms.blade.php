@@ -84,7 +84,7 @@
 </div>
 
 <!-- Assignment Contract Flow -->
-@if (is_array($sale_provision) && in_array('Assignment Contract', $sale_provision))
+<div class="assignment-contract-section" style="{{ (is_array($sale_provision) && in_array('Assignment Contract', $sale_provision)) ? '' : 'display:none;' }}">
     <!-- Buyer Under Contract Question -->
     <div class="form-group mt-3">
         <label class="fw-bold">Buyer Open to Purchasing an Assignment Contract:</label>
@@ -143,45 +143,9 @@
         <div class="alert alert-warning mt-3 p-2 small">
             <strong>⚠️ Note:</strong> This section is only for Buyers who are open to purchasing an assignment contract.
             If this does not apply, please select a different special sale provision.
-
         </div>
-
-        {{-- <div class="form-group mt-3">
-            <label class="fw-bold">Buyer Looking to Sell Contract:</label>
-            <div class="input-cover">
-                <select wire:model="buyer_sell_contract" class="form-control has-icon"
-                    data-icon="fa-solid fa-handshake">
-                    <option value="">Select</option>
-                    <option value="Yes">Yes</option>
-                    <option value="No">No</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- If Buyer Wants to Sell Contract -->
-        @if ($buyer_sell_contract === 'Yes')
-            <div class="form-group mt-3">
-                <label class="fw-bold">Assignment Fee to Broker:</label>
-                <div class="input-group">
-                    <div class="input-group-prepend">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown"
-                            aria-haspopup="true" aria-expanded="false" style="height: 100%;">
-                            {{ $assignment_fee_type }}
-                        </button>
-                        <div class="dropdown-menu">
-                            <a class="dropdown-item" href="#" wire:click.prevent="setAssignmentFeeType('$')">$
-                                (Flat Fee)</a>
-                            <a class="dropdown-item" href="#" wire:click.prevent="setAssignmentFeeType('%')">%
-                                (Percentage)</a>
-                        </div>
-                    </div>
-                    <input type="number" wire:model="assignment_fee_amount" class="form-control"
-                        placeholder="{{ $assignment_fee_type === '$' ? 'Enter flat fee (e.g., 2500)' : 'Enter percentage of contract assignment value (e.g., 2)' }}">
-                </div>
-            </div>
-        @endif --}}
     @endif
-@endif
+</div>
 
 <div class="form-group mt-4">
     <label class="fw-bold">Target Closing Timeframe: <span class="text-danger">*</span>
@@ -277,7 +241,8 @@
 <!-- Cash Option - No additional fields needed per requirements -->
 
 <!-- Assumable Financing -->
-@if (in_array('Assumable', $offered_financing))
+<div class="financing-assumable-section" style="{{ in_array('Assumable', $offered_financing) ? '' : 'display:none;' }}"
+>
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-arrow-right-arrow-left me-2"></i>Assumable
@@ -444,13 +409,13 @@
 
     </div>
 
-@endif
+</div>
 
 <!-- Traditional Loan Types - Show header for each selected type -->
-@if (in_array('Conventional', $offered_financing) || in_array('FHA', $offered_financing) || in_array('Jumbo', $offered_financing) || in_array('VA', $offered_financing) || in_array('No-Doc', $offered_financing) || in_array('Non-QM', $offered_financing) || in_array('USDA', $offered_financing))
-    @php
-        $selectedTraditionalLoans = array_filter(['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'], fn($type) => in_array($type, $offered_financing));
-    @endphp
+@php
+    $selectedTraditionalLoans = array_filter(['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'], fn($type) => in_array($type, $offered_financing));
+@endphp
+<div class="financing-traditional-section" style="{{ (in_array('Conventional', $offered_financing) || in_array('FHA', $offered_financing) || in_array('Jumbo', $offered_financing) || in_array('VA', $offered_financing) || in_array('No-Doc', $offered_financing) || in_array('Non-QM', $offered_financing) || in_array('USDA', $offered_financing)) ? '' : 'display:none;' }}">
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-file-invoice-dollar me-2"></i>{{ implode(' / ', $selectedTraditionalLoans) }}
@@ -493,10 +458,9 @@
 
         </div>
     @endif
-@endif
+</div>
 <!-- Cryptocurrency Option -->
-@if (in_array('Cryptocurrency', $offered_financing))
-<div wire:key="cryptocurrency-section">
+<div class="financing-cryptocurrency-section" wire:key="cryptocurrency-section" style="{{ in_array('Cryptocurrency', $offered_financing) ? '' : 'display:none;' }}">
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-brands fa-bitcoin me-2"></i>Cryptocurrency
@@ -639,10 +603,8 @@
     </div>
     @endif
 </div>
-@endif
 <!-- Exchange/Trade Option -->
-@if (in_array('Exchange/Trade', $offered_financing))
-<div wire:key="exchange-trade-section">
+<div class="financing-exchange-trade-section" wire:key="exchange-trade-section" style="{{ in_array('Exchange/Trade', $offered_financing) ? '' : 'display:none;' }}">
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-exchange-alt me-2"></i>Exchange/Trade
@@ -822,10 +784,9 @@
         </div>
     </div>
 </div>
-@endif
 
 <!-- Lease Option -->
-@if (in_array('Lease Option', $offered_financing))
+<div class="financing-lease-option-section" style="{{ in_array('Lease Option', $offered_financing) ? '' : 'display:none;' }}">
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-key me-2"></i>Lease Option
@@ -1001,10 +962,10 @@
                 placeholder="Enter extension terms (e.g., Tenant-Buyer may extend for 6 months with additional $5,000 fee)">
         </div>
     </div>
-@endif
+</div>
 
 <!-- Lease Purchase -->
-@if (in_array('Lease Purchase', $offered_financing))
+<div class="financing-lease-purchase-section" style="{{ in_array('Lease Purchase', $offered_financing) ? '' : 'display:none;' }}">
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-file-signature me-2"></i>Lease Purchase
@@ -1178,11 +1139,10 @@
                 placeholder="Enter extension terms (e.g., Lease may be extended for 6 months with adjusted purchase price)">
         </div>
     </div>
-@endif
+</div>
 
 <!-- NFT Option -->
-@if (in_array('Non-Fungible Token (NFT)', $offered_financing))
-<div wire:key="nft-section">
+<div class="financing-nft-section" wire:key="nft-section" style="{{ in_array('Non-Fungible Token (NFT)', $offered_financing) ? '' : 'display:none;' }}">
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-image me-2"></i>Non-Fungible Token (NFT)
@@ -1289,12 +1249,10 @@
         </div>
     </div>
 </div>
-@endif
 
 
 <!-- Seller Financing -->
-@if (in_array('Seller Financing', $offered_financing))
-<div wire:key="seller-financing-section">
+<div class="financing-seller-section" wire:key="seller-financing-section" style="{{ in_array('Seller Financing', $offered_financing) ? '' : 'display:none;' }}">
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-handshake me-2"></i>Seller Financing
@@ -1655,4 +1613,3 @@
         </div>
     </div>
 </div>
-@endif

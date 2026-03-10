@@ -1,0 +1,211 @@
+Use this for Replit:
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A TENANT’S AGENT ONLY — ACCEPTABLE PROPERTY STYLES & OFFERED LEASE TERMS STILL NOT FIXED IN EDIT MODE
+
+### SCOPE
+
+Fix **only** the remaining **Hire a Tenant’s Agent** issue for these two fields in **Edit mode**:
+
+* **Acceptable Property Styles**
+* **Offered Lease Terms**
+
+This issue is **still persisting**.
+
+### Actual behavior
+
+* I select options
+* they turn grey / look selected
+* but they do **not** behave correctly on the listing after edit/save
+
+### Working reference
+
+A correct example is:
+
+* **View Preference Needed**
+
+That field works correctly:
+
+* selections stay stable
+* no greyed-out fake state
+* it behaves correctly after save/edit
+
+Use **View Preference Needed** as the **known-good reference implementation** and make these two broken Tenant fields behave the same way.
+
+---
+
+# HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Do not rename or delete database columns.**
+2. **Do not modify Buyer, Seller, or Landlord flows.**
+3. **Do not change labels, tooltips, or option text.**
+4. **Do not broad-refactor the whole Tenant form.**
+5. **Only debug and fix these two fields in Hire a Tenant’s Agent:**
+
+   * Acceptable Property Styles
+   * Offered Lease Terms
+6. **Do not mark this complete based only on code inspection or one internal test.**
+7. **You must compare these two fields directly against the working Tenant field: View Preference Needed.**
+
+---
+
+# ISSUE TO FIX
+
+In **Hire a Tenant’s Agent → Edit mode**, these two fields are still not behaving correctly:
+
+* **Acceptable Property Styles**
+* **Offered Lease Terms**
+
+### Current bug
+
+* options appear greyed out / visually selected
+* but the field still does **not** properly behave on the actual listing after edit/save
+
+This means a visual Select2 state is still not reliably matching the actual saved/displayed state.
+
+---
+
+# REQUIRED DEBUG METHOD — COMPARE TO THE WORKING FIELD
+
+Use **View Preference Needed** as the working reference and compare it directly against the two broken fields.
+
+For all 3 fields, compare:
+
+1. Livewire property name
+2. Blade markup
+3. outer wrapper `wire:ignore`
+4. inner wrapper `wire:ignore`
+5. `wire:key`
+6. Select2 selector / class / id
+7. Select2 init logic
+8. change handler
+9. `message.processed` logic
+10. pre-save sync logic
+11. load-from-DB logic
+12. save/update method
+13. listing display blade/helper
+14. conditional logic that determines whether the field displays on the listing
+
+The goal is to make:
+
+* **Acceptable Property Styles**
+* **Offered Lease Terms**
+
+follow the exact same stable behavior pattern as:
+
+* **View Preference Needed**
+
+---
+
+# VERY IMPORTANT
+
+Do **not** assume this is fixed because:
+
+* the Select2 chips look selected
+* the options turn grey
+* one DB test looked correct
+* one test listing behaved differently
+
+The actual issue is not just visual selection.
+
+The issue is that these two fields still do not behave correctly **end-to-end** in the real Edit → Save → Listing flow.
+
+---
+
+# REQUIRED FULL-PIPELINE CHECK FOR EACH BROKEN FIELD
+
+For both:
+
+* **Acceptable Property Styles**
+* **Offered Lease Terms**
+
+verify all 4 stages:
+
+## 1. Edit Load
+
+* correct saved values load into the correct Livewire property
+* correct values are loaded into Select2
+* field does not only look selected visually while Livewire is stale
+
+## 2. Save Pipeline
+
+* pre-save sync is targeting the correct property
+* full `.val()` array is being sent
+* no later logic overwrites it with `[]`, `null`, or wrong value
+
+## 3. Database Persistence
+
+* after Edit → Save, inspect the actual record and confirm values remain saved correctly
+
+## 4. Listing Display
+
+* confirm the actual listing page is reading the correct saved field
+* confirm display logic is not hiding the section due to wrong empty/null/type checks
+* confirm the values visibly render on the listing
+
+---
+
+# SPECIFIC THINGS TO CHECK
+
+Please check for mismatches like:
+
+* correct field works from one property name, broken field saves to another
+* UI selector points to one property, listing display reads a different one
+* JSON saved correctly, but listing display expects a different format
+* Select2 is visually holding values, but Livewire property is stale
+* listing section is hidden because of wrong conditional logic
+* helper/normalization function strips or replaces the display unexpectedly
+
+---
+
+# REQUIRED TESTING — USE THE ACTUAL BROKEN TENANT LISTING
+
+Do **not** use only a substitute test listing.
+
+Use the actual affected **Hire a Tenant’s Agent** listing where this is still happening.
+
+### Test A — No reselection
+
+1. open Edit on the broken listing
+2. do **not** reselect the two broken fields
+3. click Save
+4. confirm DB still contains correct values
+5. confirm listing page visibly shows both fields correctly
+
+### Test B — Reselect / change values
+
+1. open Edit
+2. change **Acceptable Property Styles**
+3. change **Offered Lease Terms**
+4. click Save
+5. confirm DB updates correctly
+6. confirm listing page visibly shows the new values correctly
+
+### Test C — Reopen Edit
+
+1. reopen Edit
+2. confirm the same values are still selected
+3. confirm no fake grey-only state
+4. confirm behavior matches **View Preference Needed**
+
+---
+
+# SUCCESS CRITERIA
+
+This task is only complete when all of the following are true in **Hire a Tenant’s Agent**:
+
+* **Acceptable Property Styles** behaves like **View Preference Needed**
+* **Offered Lease Terms** behaves like **View Preference Needed**
+* values are not just greyed visually
+* Edit → Save → Listing display works correctly end-to-end
+* DB, Edit UI, and Listing page all stay in sync
+* no Buyer, Seller, or Landlord flows are changed
+
+---
+
+# FINAL RULE
+
+Please use **View Preference Needed** as the working reference and trace the exact difference between that field and the two broken Tenant fields.
+
+Do **not** respond that this is fixed unless the actual broken Tenant listing now shows both fields correctly on the listing after edit/save.

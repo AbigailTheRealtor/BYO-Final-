@@ -1515,16 +1515,44 @@
                 });
             }
 
+            // Helper: immediately update Assignment Contract section visibility
+            function updateAssignmentContractSection(selectedValues) {
+                if (selectedValues.includes('Assignment Contract')) {
+                    $('.assignment-contract-section').show();
+                } else {
+                    $('.assignment-contract-section').hide();
+                }
+            }
+
+            // Helper: immediately update all financing sub-sections visibility
+            var traditionalLoanTypes = ['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'];
+            function updateFinancingSections(selectedValues) {
+                $('.financing-assumable-section').toggle(selectedValues.includes('Assumable'));
+                $('.financing-traditional-section').toggle(
+                    traditionalLoanTypes.some(function(t) { return selectedValues.includes(t); })
+                );
+                $('.financing-cryptocurrency-section').toggle(selectedValues.includes('Cryptocurrency'));
+                $('.financing-exchange-trade-section').toggle(selectedValues.includes('Exchange/Trade'));
+                $('.financing-lease-option-section').toggle(selectedValues.includes('Lease Option'));
+                $('.financing-lease-purchase-section').toggle(selectedValues.includes('Lease Purchase'));
+                $('.financing-nft-section').toggle(selectedValues.includes('Non-Fungible Token (NFT)'));
+                $('.financing-seller-section').toggle(selectedValues.includes('Seller Financing'));
+            }
+
             // Initialize Select2 for sale_provision (Purchasing Terms tab)
             if ($('#sale_provision').length && !$('#sale_provision').hasClass('select2-hidden-accessible')) {
                 $('#sale_provision').select2({
                     placeholder: "Select",
                     allowClear: true,
-                }).on('change', function() {
-                    let selectedValues = $(this).val() || [];
-                    debouncedSet('sale_provision', selectedValues);
                 });
             }
+            // Bind sale_provision change handler outside the guard so it works even if already initialized
+            $('#sale_provision').off('change.spSync select2:select.spSync select2:unselect.spSync')
+                .on('change.spSync select2:select.spSync select2:unselect.spSync', function() {
+                    let selectedValues = $('#sale_provision').val() || [];
+                    updateAssignmentContractSection(selectedValues);
+                    debouncedSet('sale_provision', selectedValues);
+                });
 
             // Global flag to prevent Livewire sync during draft/edit load
             window.financingSyncInProgress = false;
@@ -1534,14 +1562,18 @@
                 $('#offered_financing').select2({
                     placeholder: "Select",
                     allowClear: true,
-                }).on('change', function() {
+                });
+            }
+            // Bind offered_financing change handler outside the guard so it works even if already initialized
+            $('#offered_financing').off('change.ofSync select2:select.ofSync select2:unselect.ofSync')
+                .on('change.ofSync select2:select.ofSync select2:unselect.ofSync', function() {
                     if (window.financingSyncInProgress) {
                         return;
                     }
-                    let selectedValues = $(this).val() || [];
+                    let selectedValues = $('#offered_financing').val() || [];
+                    updateFinancingSections(selectedValues);
                     debouncedSet('offered_financing', selectedValues);
                 });
-            }
 
             // Function to toggle Non-Negotiable Amenities and Property Features:" input field
 
@@ -1577,6 +1609,13 @@
             // Re-attach the event listener after Livewire re-renders the DOM
             Livewire.hook('message.processed', () => {
                 attachAmenitiesDropdownListener();
+                // Re-sync financing sections with current Select2 state (prevents Livewire re-render from overriding JS visibility)
+                if ($('#offered_financing').hasClass('select2-hidden-accessible')) {
+                    updateFinancingSections($('#offered_financing').val() || []);
+                }
+                if ($('#sale_provision').hasClass('select2-hidden-accessible')) {
+                    updateAssignmentContractSection($('#sale_provision').val() || []);
+                }
             });
 
             // Function to toggle "Other Bedrooms" input field
