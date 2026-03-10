@@ -329,43 +329,43 @@
 
 
     <div class="input-cover" wire:ignore wire:key="property-items-{{ $property_type }}">
-        <select wire:model="property_items" id="property_items" class="form-control has-icon select2-multiple"
+        <select id="property_items" class="form-control has-icon select2-multiple"
             data-icon="fa-solid fa-home input-icon2" @if (!$property_type) disabled @endif multiple
             required>
             @if ($property_type === 'Residential')
                 @foreach ($property_items_buyer as $item)
                     @if (str_contains($item['class'], 'residential-length'))
-                        <option value="{{ $item['name'] }}">{{ $item['name'] }}</option>
+                        <option value="{{ $item['name'] }}" {{ in_array($item['name'], $this->property_items ?? []) ? 'selected' : '' }}>{{ $item['name'] }}</option>
                     @endif
                 @endforeach
             @elseif ($property_type === 'Income')
                 @foreach ($property_items_buyer as $item)
                     @if (str_contains($item['class'], 'income-length'))
-                        <option value="{{ $item['name'] }}">{{ $item['name'] }}</option>
+                        <option value="{{ $item['name'] }}" {{ in_array($item['name'], $this->property_items ?? []) ? 'selected' : '' }}>{{ $item['name'] }}</option>
                     @endif
                 @endforeach
             @elseif ($property_type === 'Commercial')
                 @foreach ($property_items_buyer as $item)
                     @if (str_contains($item['class'], 'commercial-length'))
-                        <option value="{{ $item['name'] }}">{{ $item['name'] }}</option>
+                        <option value="{{ $item['name'] }}" {{ in_array($item['name'], $this->property_items ?? []) ? 'selected' : '' }}>{{ $item['name'] }}</option>
                     @endif
                 @endforeach
             @elseif ($property_type === 'Business')
                 @foreach ($property_items_buyer as $item)
                     @if (str_contains($item['class'], 'business-length'))
-                        <option value="{{ $item['name'] }}">{{ $item['name'] }}</option>
+                        <option value="{{ $item['name'] }}" {{ in_array($item['name'], $this->property_items ?? []) ? 'selected' : '' }}>{{ $item['name'] }}</option>
                     @endif
                 @endforeach
             @elseif ($property_type === 'Opportunity')
                 @foreach ($property_items_buyer as $item)
                     @if (str_contains($item['class'], 'opportunity-length'))
-                        <option value="{{ $item['name'] }}">{{ $item['name'] }}</option>
+                        <option value="{{ $item['name'] }}" {{ in_array($item['name'], $this->property_items ?? []) ? 'selected' : '' }}>{{ $item['name'] }}</option>
                     @endif
                 @endforeach
             @elseif ($property_type === 'Vacant Land')
                 @foreach ($property_items_buyer as $item)
                     @if (str_contains($item['class'], 'vacant-land-length'))
-                        <option value="{{ $item['name'] }}">{{ $item['name'] }}</option>
+                        <option value="{{ $item['name'] }}" {{ in_array($item['name'], $this->property_items ?? []) ? 'selected' : '' }}>{{ $item['name'] }}</option>
                     @endif
                 @endforeach
             @endif
@@ -375,7 +375,7 @@
 </div>
 
 <!-- Other Property Style Input (shown when "Other" is selected) -->
-<div class="form-group other_property_items @if (!is_array($property_items) || !in_array('Other', $property_items)) d-none @endif" wire:key="other-property-items-wrapper">
+<div class="form-group other_property_items_wrapper" style="{{ (is_array($this->property_items) && in_array('Other', $this->property_items)) ? '' : 'display:none;' }}" wire:key="other-property-items-wrapper">
     <div class="input-cover">
         <input type="text" wire:model.defer="other_property_items" class="form-control has-icon"
             data-icon="fa-solid fa-home"
@@ -424,11 +424,11 @@
         </label>
 
         <div class="input-cover" wire:ignore>
-            <select wire:model="condition_prop_buyer" id="condition_prop_buyer"
+            <select id="condition_prop_buyer"
                 class="condition_prop_buyer form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-screwdriver-wrench input-icon2" multiple>
                 @foreach ($property_condition as $row_pt)
-                    <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
+                    <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $this->condition_prop_buyer ?? []) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
                 @endforeach
             </select>
         </div>
@@ -436,8 +436,7 @@
     </div>
 @endif
 <!-- Other Property Condition Input (shown when "Other" is selected) -->
-@if (is_array($condition_prop_buyer) && in_array('Other', $condition_prop_buyer))
-<div class="form-group" wire:key="other-property-condition-wrapper">
+<div class="form-group other_property_condition_wrapper" style="{{ (is_array($this->condition_prop_buyer) && in_array('Other', $this->condition_prop_buyer)) ? '' : 'display:none;' }}" wire:key="other-property-condition-wrapper">
     <label class="fw-bold">Other Property Condition:</label>
     <div class="input-cover">
         <input type="text" wire:model.defer="other_property_condition" class="form-control has-icon"
@@ -445,7 +444,6 @@
     </div>
     <span class="error mt-2" id="other_property_condition_error"></span>
 </div>
-@endif
 
 <!-- Minimum Bedrooms Needed -->
 <div wire:key="buyer-property-fields-{{ $property_type ?? 'none' }}">

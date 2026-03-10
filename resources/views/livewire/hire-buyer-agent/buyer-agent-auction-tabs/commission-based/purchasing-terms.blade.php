@@ -63,9 +63,9 @@
 
     <div class="input-cover" wire:ignore>
         <i class="input-icon fa-solid fa-screwdriver-wrench input-icon2"></i>
-        <select wire:model="sale_provision" id="sale_provision" class="form-control select2-multiple" multiple>
+        <select id="sale_provision" class="form-control select2-multiple" multiple>
             @foreach ($seller_property as $row_pt)
-                <option value="{{ $row_pt['name'] }}" title="{{ $row_pt['description'] }}">{{ $row_pt['name'] }}
+                <option value="{{ $row_pt['name'] }}" title="{{ $row_pt['description'] }}" {{ in_array($row_pt['name'], $sale_provision ?? []) ? 'selected' : '' }}>{{ $row_pt['name'] }}
                 </option>
             @endforeach
         </select>
@@ -74,16 +74,14 @@
 </div>
 
 <!-- Other Special Sale Provision Input -->
-@if (is_array($sale_provision) && in_array('Other', $sale_provision))
-    <div class="form-group mt-3">
-        {{-- Label removed to match Seller flow --}}
-        <div class="input-cover">
-            <input type="text" wire:model="sale_provision_other" class="form-control has-icon"
-                data-icon="fa-solid fa-screwdriver-wrench"
-                placeholder="Enter special sale provision (e.g., Divorce Sale, Third-Party Approval)">
-        </div>
+<div class="form-group mt-3 sale_provision_other_wrapper" style="{{ (is_array($sale_provision) && in_array('Other', $sale_provision)) ? '' : 'display:none;' }}">
+    {{-- Label removed to match Seller flow --}}
+    <div class="input-cover">
+        <input type="text" wire:model="sale_provision_other" class="form-control has-icon"
+            data-icon="fa-solid fa-screwdriver-wrench"
+            placeholder="Enter special sale provision (e.g., Divorce Sale, Third-Party Approval)">
     </div>
-@endif
+</div>
 
 <!-- Assignment Contract Flow -->
 @if (is_array($sale_provision) && in_array('Assignment Contract', $sale_provision))
@@ -251,16 +249,6 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
 
-    {{-- <div class="input-cover">
-        <select wire:model="offered_financing" class="form-control has-icon" data-icon="fa-solid fa-money-bill-wave"
-            required>
-            <option value="">Select</option>
-            @foreach (['Assumable', 'Cash', 'Conventional', 'Cryptocurrency', 'Exchange/Trade', 'FHA', 'Jumbo', 'Lease Option', 'Lease Purchase', 'Non-Fungible Token (NFT)', 'No-Doc', 'Non-QM', 'Seller Financing', 'USDA', 'VA', 'Other'] as $option)
-                <option value="{{ $option }}">{{ $option }}</option>
-            @endforeach
-        </select>
-    </div> --}}
-
     <div class="input-cover" id="offered_financing_wrapper" wire:ignore>
         <i class="input-icon fa-solid fa-money-bill-wave input-icon2"></i>
         <select id="offered_financing" class="form-control select2-multiple" multiple required>
@@ -276,17 +264,15 @@
 
 </div>
 
-@if (in_array('Other', $offered_financing))
-    <div>
-        <div class="form-group">
-            <div class="input-cover">
-                <input type="text" wire:model="other_financing" class="form-control has-icon"
-                    data-icon="fa-solid fa-money-bill-wave"
-                    placeholder="Enter type of financing or currency offered">
-            </div>
+<div class="other_financing_wrapper" style="{{ (is_array($offered_financing) && in_array('Other', $offered_financing)) ? '' : 'display:none;' }}">
+    <div class="form-group">
+        <div class="input-cover">
+            <input type="text" wire:model="other_financing" class="form-control has-icon"
+                data-icon="fa-solid fa-money-bill-wave"
+                placeholder="Enter type of financing or currency offered">
         </div>
     </div>
-@endif
+</div>
 
 <!-- Cash Option - No additional fields needed per requirements -->
 

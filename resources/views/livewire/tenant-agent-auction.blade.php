@@ -4044,12 +4044,76 @@ $lease_types = [
         }
     }
 
+    function initSelect2(selectorId, wireModel) {
+        let $el = $('#' + selectorId);
+        if (!$el.length) return; // Add guard for missing elements
+        if ($el.hasClass("select2-hidden-accessible")) {
+             // If already initialized, just ensure values are synced if needed
+             return;
+        }
+        $el.select2();
+            $el.on('change', function(e) {
+                let data = $(this).val();
+                debouncedSet(wireModel, data);
+
+                // Toggle "Other" visibility for specific fields
+                if (selectorId === 'property_items') {
+                    if (data && data.includes('Other')) {
+                        $('.other_property_items_wrapper').show();
+                    } else {
+                        $('.other_property_items_wrapper').hide();
+                    }
+                }
+                if (selectorId === 'condition_prop_buyer') {
+                    if (data && data.includes('Other')) {
+                        $('.other_property_condition_wrapper').show();
+                    } else {
+                        $('.other_property_condition_wrapper').hide();
+                    }
+                }
+                if (selectorId === 'sale_provision') {
+                    if (data && data.includes('Other')) {
+                        $('.sale_provision_other_wrapper').show();
+                    } else {
+                        $('.sale_provision_other_wrapper').hide();
+                    }
+                }
+                if (selectorId === 'offered_financing') {
+                    if (data && data.includes('Other')) {
+                        $('.other_financing_wrapper').show();
+                    } else {
+                        $('.other_financing_wrapper').hide();
+                    }
+                }
+            });
+        }
+    }
+
+    let debounceTimer;
+
+    function debouncedSet(model, value) {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            if (typeof window.livewire !== 'undefined') {
+                window.livewire.emit('safeLivewireSet', model, value);
+            } else {
+                @this.set(model, value);
+            }
+        }, 300);
+    }
+
     Livewire.hook('message.processed', () => {
         addIconsToInputs();
         checkRepresentationStatus();
         if (typeof window._updateNextSubmitButtons === 'function') {
             setTimeout(window._updateNextSubmitButtons, 50);
         }
+
+        // Buyer Preferences Select2 Re-init
+        initSelect2('property_items', 'property_items');
+        initSelect2('condition_prop_buyer', 'condition_prop_buyer');
+        initSelect2('sale_provision', 'sale_provision');
+        initSelect2('offered_financing', 'offered_financing');
 
         if (typeof isNavigating !== 'undefined' && isNavigating) {
             return;
@@ -5107,5 +5171,14 @@ $lease_types = [
 </script> -->
 
 <!-- DEBUG FINGERPRINT: tenant-agent-auction.blade.php loaded from resources/views/livewire/tenant-agent-auction.blade.php | Component: App\Http\Livewire\TenantAgentAuction -->
+
+<script>
+    $(document).ready(function() {
+        initSelect2('property_items', 'property_items');
+        initSelect2('condition_prop_buyer', 'condition_prop_buyer');
+        initSelect2('sale_provision', 'sale_provision');
+        initSelect2('offered_financing', 'offered_financing');
+    });
+</script>
 
 @endpush
