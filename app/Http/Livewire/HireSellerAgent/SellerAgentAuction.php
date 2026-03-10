@@ -202,6 +202,7 @@ class SellerAgentAuction extends Component
     public $showCustomEnhancement = false;
     public $showOpenHouseInput = false;
     public $is_other_visible = false;
+    public $business_assets = [];
     // Appliances list matching Landlord Agent with legacy options for backwards compatibility
     public $applianceOptions = [
         ['name' => 'Bar Fridge'],
@@ -1715,6 +1716,7 @@ class SellerAgentAuction extends Component
 
             $this->view_preference = is_string($auction->get->view_preference) ? json_decode($auction->get->view_preference, true) ?? [] : (array)$auction->get->view_preference;
             $this->other_preferences = $auction->get->other_preferences;
+            $this->business_assets = is_string($auction->get->business_assets) ? json_decode($auction->get->business_assets, true) ?? [] : (array)($auction->get->business_assets ?? []);
             
             $this->appliances = is_string($auction->get->appliances) ? json_decode($auction->get->appliances, true) ?? [] : (array)$auction->get->appliances;
             $this->showOtherAppliances = in_array('Other', $this->appliances ?? []);
@@ -2079,6 +2081,7 @@ class SellerAgentAuction extends Component
         $auction->saveMeta('pool_type', json_encode($this->pool_type));
         $auction->saveMeta('view_preference', json_encode($this->view_preference));
         $auction->saveMeta('other_preferences', $this->other_preferences);
+        $auction->saveMeta('business_assets', json_encode($this->business_assets));
         $auction->saveMeta('appliances', json_encode($this->appliances));
         $auction->saveMeta('other_appliances', $this->other_appliances);
         $auction->saveMeta('real_estate_purchase', $this->real_estate_purchase);

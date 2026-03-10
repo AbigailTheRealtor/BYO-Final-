@@ -1158,7 +1158,7 @@
                 '#offered_financing': 'offered_financing',
                 '#view_preference': 'view_preference',
                 '#appliances': 'appliances',
-                '#included_assets': 'property_items',
+                '#included_assets': 'business_assets',
             };
             Object.keys(multiFields).forEach(function(selector) {
                 var $el = $(selector);
@@ -1492,7 +1492,7 @@
                 });
                 $('#included_assets').on('change', function() {
                     let selectedValues = $(this).val() || [];
-                    @this.set('property_items', selectedValues, false);
+                    @this.set('business_assets', selectedValues, false);
                 });
             }
 

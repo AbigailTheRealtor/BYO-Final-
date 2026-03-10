@@ -257,17 +257,13 @@
     ];
 
     $preferences = [
-        ['name' => 'City'],
-        ['name' => 'Mountain'],
-        ['name' => 'Ocean'],
-        ['name' => 'River'],
-        ['name' => 'Lake'],
-        ['name' => 'Golf Course'],
-        ['name' => 'Garden'],
-        ['name' => 'Pool'],
-        ['name' => 'Woods'],
-        ['name' => 'Park'],
         ['name' => 'Beach'],
+        ['name' => 'Furniture, Fixtures, and Equipment (as per attached inventory)'],
+        ['name' => 'Advertising Materials'],
+        ['name' => 'Contract Rights'],
+        ['name' => 'Leases'],
+        ['name' => 'Licenses'],
+        ['name' => 'Rights under any Agreement for Interests'],
         ['name' => 'Other'],
     ];
 
@@ -1234,7 +1230,17 @@
     <span class="error mt-2" id="view_preference_error"></span>
 </div>
 
-<!-- Included Property or Business Assets -->
+<!-- Other View Input — shown directly under View when Other is selected -->
+<div class="form-group" id="other_preferences" style="display: {{ in_array('Other', $view_preference ?? []) ? 'block' : 'none' }}">
+    <div class="input-cover">
+        <input type="text" wire:model.defer="other_preferences" class="form-control has-icon"
+            data-icon="fa-solid fa-tree" placeholder="Enter view (e.g., Lake, Desert, Courtyard)">
+    </div>
+    <span class="error mt-2" id="other_preferences_error"></span>
+</div>
+
+<!-- Included Property or Business Assets — only for Business, Commercial, Income -->
+@if (in_array($property_type, ['Business', 'Commercial', 'Income']))
 <div class="form-group" wire:ignore wire:key="included-assets-{{ $property_type }}">
     <label class="fw-bold">Included Property or Business Assets:</label>
 
@@ -1248,7 +1254,7 @@
             class="form-control has-icon select2-multiple" data-icon="fa-solid fa-briefcase input-icon2" multiple>
             @foreach ($included_assets as $row_pt)
                 <option value="{{ $row_pt['name'] }}"
-                    {{ in_array($row_pt['name'], $property_items ?? []) ? 'selected' : '' }}>
+                    {{ in_array($row_pt['name'], $business_assets ?? []) ? 'selected' : '' }}>
                     {{ $row_pt['name'] }}
                 </option>
             @endforeach
@@ -1256,15 +1262,8 @@
     </div>
     <span class="error mt-2" id="included_assets_error"></span>
 </div>
+@endif
 
-<!-- Other Preferences Input (Hidden or Visible based on Livewire state) -->
-    <div class="form-group" id="other_preferences" style="display: {{ in_array('Other', $view_preference ?? []) ? 'block' : 'none' }}">
-    <div class="input-cover">
-        <input type="text" wire:model.defer="other_preferences" class="form-control has-icon"
-            data-icon="fa-solid fa-tree" placeholder="Enter view (e.g., Lake, Desert, Courtyard)">
-    </div>
-    <span class="error mt-2" id="other_preferences_error"></span>
-</div>
 
 <!-- Eligibility/Interest in Leasing in 55-and-Over Communities -->
 @if ($property_type === 'Residential')
