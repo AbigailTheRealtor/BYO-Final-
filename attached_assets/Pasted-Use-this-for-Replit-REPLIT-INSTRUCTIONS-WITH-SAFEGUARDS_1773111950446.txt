@@ -1,0 +1,208 @@
+Use this for Replit:
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A SELLER’S AGENT ONLY — TAB 3 SPACING BUG + APPLIANCES INCLUDED “OTHER” BOX
+
+### SCOPE
+
+Fix **only** these two remaining issues in **Hire a Seller’s Agent**:
+
+1. **Major spacing / layout bug on Tab 3 (Sale Terms)** that is causing a large blank area and making the remaining tabs appear not to show their content properly:
+
+   * Services
+   * Additional Details
+   * Broker Compensation & Agency Agreement Terms
+   * Seller Information
+
+2. Under **Appliances Included**, selecting **Other** does **not** show the custom input box.
+
+Use **View → Other** as the working reference for how the **Other** input should behave.
+
+This pass is **Seller flow only**.
+Do **not** modify Buyer, Landlord, or Tenant flows.
+
+---
+
+# HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Do not rename or delete database columns.**
+2. **Do not modify Hire a Buyer’s Agent, Hire a Landlord’s Agent, or Hire a Tenant’s Agent.**
+3. **Do not change labels, tooltips, or option values.**
+4. **Do not broad-refactor shared layout/components unless absolutely necessary for this Seller-only fix.**
+5. **Do not remove or alter saved drafts, listings, or bids.**
+6. **Do not break the recently fixed multi-select behavior in Seller.**
+7. **Do not mark this complete based only on code inspection.**
+8. **You must verify the fix visually in the browser.**
+
+---
+
+# ISSUE 1 — TAB 3 MAJOR SPACING / LAYOUT BUG
+
+## Current issue
+
+On **Hire a Seller’s Agent → Tab 3 (Sale Terms)** there is a major spacing issue creating a very large blank area.
+
+Because of that, the remaining tabs now appear broken / not showing correctly:
+
+* **Services**
+* **Additional Details**
+* **Broker Compensation & Agency Agreement Terms**
+* **Seller Information**
+
+The screenshots show the tab container height/layout is being stretched incorrectly, leaving a large empty area and pushing the form content out of view.
+
+## Required fix
+
+* remove the abnormal blank vertical space on **Tab 3**
+* restore normal content flow and tab panel height
+* make the following tabs render their content correctly again:
+
+  * Services
+  * Additional Details
+  * Broker Compensation & Agency Agreement Terms
+  * Seller Information
+
+## What to check
+
+Please inspect for any of the following in the Seller flow:
+
+1. a container with a forced/min-height/height that is too large
+2. an unclosed or mismatched `<div>` in Tab 3 content
+3. a hidden conditional block still taking up space
+4. an absolutely positioned or empty wrapper expanding the panel
+5. a Select2/container wrapper adding excessive height
+6. a tab-pane / content wrapper not collapsing correctly
+7. a conditional “Other” field container or financing container that is hidden visually but still reserving space
+8. CSS applied to the Sale Terms panel that is affecting later tabs
+9. a layout regression from the recent Seller edits
+
+## Important
+
+This is likely a **layout/container bug**, not just missing content.
+
+Please trace the exact wrapper structure for:
+
+* Sale Terms tab
+* Services tab
+* Additional Details tab
+* Broker Compensation & Agency Agreement Terms tab
+* Seller Information tab
+
+and confirm the panel heights/containers are normal.
+
+---
+
+# ISSUE 2 — APPLIANCES INCLUDED → OTHER DOES NOT SHOW INPUT BOX
+
+## Current issue
+
+Under **Appliances Included**, if the user selects **Other**, the custom input box does **not** appear.
+
+## Working reference
+
+Use **View → Other** as the working reference.
+
+That field already behaves correctly:
+
+* select **Other**
+* custom box appears immediately underneath
+
+## Required fix
+
+Make **Appliances Included → Other** behave exactly the same way:
+
+* when **Other** is selected, show the custom input immediately
+* when **Other** is unselected, hide the input
+* if **Other** remains selected on edit/reload, keep the input visible
+* save and reload the custom text correctly
+
+## What to check
+
+1. whether the conditional is checking for `"Other"` correctly
+2. whether Appliances Included is multi-select and the condition is checking array membership properly
+3. whether the companion “other appliances” property is correct
+4. whether the custom input block is inside the correct conditional
+5. whether rerender is hiding it again
+
+---
+
+# REQUIRED IMPLEMENTATION APPROACH
+
+## A. For the spacing bug
+
+Keep this surgical:
+
+* fix the broken Seller tab layout/container causing the giant blank area
+* do not restyle the entire form
+* do not change the general tab design
+* only correct the abnormal spacing/container behavior
+
+## B. For Appliances Included → Other
+
+Mirror the exact same implementation pattern already working for:
+
+* **View → Other**
+
+Do **not** invent a new pattern.
+
+---
+
+# REQUIRED TESTING — BROWSER ONLY
+
+## A) TAB 3 SPACING / TAB CONTENT TEST
+
+1. open **Hire a Seller’s Agent**
+2. go to **Tab 3 (Sale Terms)**
+3. confirm the giant blank area is gone
+4. click **Services**
+5. confirm Services content displays normally
+6. click **Additional Details**
+7. confirm content displays normally
+8. click **Broker Compensation & Agency Agreement Terms**
+9. confirm content displays normally
+10. click **Seller Information**
+11. confirm content displays normally
+
+## B) APPLIANCES INCLUDED → OTHER TEST
+
+1. go to the field
+2. select one normal option
+3. select **Other**
+4. confirm custom input appears immediately
+5. type custom value
+6. save draft or save listing
+7. reopen edit
+8. confirm **Other** is still selected
+9. confirm custom input is still visible with saved value
+
+## C) VIEW → OTHER REGRESSION CHECK
+
+1. select **Other** under **View**
+2. confirm its custom input still works normally
+
+---
+
+# SUCCESS CRITERIA
+
+This task is only complete when all of the following are true in **Hire a Seller’s Agent**:
+
+* **Tab 3 (Sale Terms)** no longer has the major blank spacing issue
+* **Services** tab content shows correctly
+* **Additional Details** tab content shows correctly
+* **Broker Compensation & Agency Agreement Terms** tab content shows correctly
+* **Seller Information** tab content shows correctly
+* **Appliances Included → Other** correctly shows the custom input
+* **View → Other** still works correctly
+* create / draft / edit / reopen remain stable
+
+---
+
+# FINAL RULE
+
+Do **not** respond that this is fixed based only on code inspection.
+
+Please verify visually in the browser that:
+
+1. the large blank spacing on Seller Tab 3 is gone, and
+2. **Appliances Included → Other** now behaves like **View → Other**.

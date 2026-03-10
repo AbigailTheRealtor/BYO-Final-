@@ -184,8 +184,8 @@
                 </div>
             </div>
         @endif --}}
+    @endif
 </div>
-@endif
 
 <div class="form-group mt-4">
     <label class="fw-bold">Target Closing Timeframe:<span class="text-danger">*</span></label>

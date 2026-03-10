@@ -198,6 +198,9 @@ class SellerAgentAuction extends Component
     public $appliances = [];
     public $other_appliances = '';
     public $showOtherAppliances = false;
+    public $showEnhancements = false;
+    public $showCustomEnhancement = false;
+    public $showOpenHouseInput = false;
     // Appliances list matching Landlord Agent with legacy options for backwards compatibility
     public $applianceOptions = [
         ['name' => 'Bar Fridge'],
