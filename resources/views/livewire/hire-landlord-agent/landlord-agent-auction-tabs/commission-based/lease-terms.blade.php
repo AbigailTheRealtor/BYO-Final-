@@ -24,10 +24,10 @@
         ['name' => 'Other'],
     ];
 
-    $is_other_owner_pays_visible = $is_other_owner_pays_visible ?? (is_array($owner_pays ?? null) && in_array('Other', $owner_pays));
-    $is_other_tenant_pay_visible = $is_other_tenant_pay_visible ?? (is_array($tenant_pays ?? null) && in_array('Other', $tenant_pays));
-    $is_rent_include_visible = $is_rent_include_visible ?? (is_array($rent_includes ?? null) && in_array('Other', $rent_includes));
-    $is_update_lease_term_option_visible = $is_update_lease_term_option_visible ?? (is_array($desired_lease_length ?? null) && in_array('Other', $desired_lease_length));
+    $is_other_owner_pays_visible = is_array($owner_pays ?? null) && in_array('Other', $owner_pays ?? []);
+    $is_other_tenant_pay_visible = is_array($tenant_pays ?? null) && in_array('Other', $tenant_pays ?? []);
+    $is_rent_include_visible = is_array($this->rent_includes ?? null) && in_array('Other', $this->rent_includes ?? []);
+    $is_update_lease_term_option_visible = is_array($desired_lease_length ?? null) && in_array('Other', $desired_lease_length ?? []);
 @endphp
 <!-- Section Heading -->
 <h3>Leasing Terms</h3>

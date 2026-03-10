@@ -554,17 +554,16 @@
     <span class="error mt-2" id="appliances_error"></span>
 </div>
 
-@if ($showOtherAppliances)
-    <div class="form-group" id="other_appliances">
-        <div class="input-cover">
-            <input type="text" wire:model="other_appliances" class="form-control has-icon"
-                data-icon="fa-solid fa-plug"
-                placeholder="Enter appliances (e.g., Air Fryer Oven, Induction Cooktop, Double Oven)"
-                @if (in_array('Other', $appliances)) required @endif>
-        </div>
-        <span class="error mt-2" id="other_appliances_error"></span>
+<div class="form-group" id="other_appliances"
+    style="display: {{ (is_array($this->appliances) && in_array('Other', $this->appliances)) ? 'block' : 'none' }}">
+    <div class="input-cover">
+        <input type="text" wire:model="other_appliances" class="form-control has-icon"
+            data-icon="fa-solid fa-plug"
+            placeholder="Enter appliances (e.g., Air Fryer Oven, Induction Cooktop, Double Oven)"
+            @if (is_array($this->appliances) && in_array('Other', $this->appliances)) required @endif>
     </div>
-@endif
+    <span class="error mt-2" id="other_appliances_error"></span>
+</div>
 <!-- Furnishings Needed -->
 @if ($property_type === 'Residential Property')
     <div class="form-group">

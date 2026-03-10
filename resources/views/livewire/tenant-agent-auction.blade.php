@@ -3224,9 +3224,9 @@ $lease_types = [
 
         function toggleOtherTenantField(selectedValues) {
             if (selectedValues.includes('Other')) {
-                $('.tenant_pays_other').removeClass('d-none');
+                $('.tenant_pays_other_wrapper').show();
             } else {
-                $('.tenant_pays_other').addClass('d-none');
+                $('.tenant_pays_other_wrapper').hide();
             }
         }
 
@@ -3237,11 +3237,7 @@ $lease_types = [
                     $el.select2({ placeholder: "Select", allowClear: true });
                     $el.off('change.tenantPaysSync').on('change.tenantPaysSync', function() {
                         let selectedValues = $el.val() || [];
-                        if (selectedValues.includes('Other')) {
-                            $('.tenant_pays_other').show();
-                        } else {
-                            $('.tenant_pays_other').hide();
-                        }
+                        toggleOtherTenantField(selectedValues);
                         debouncedSet('tenant_pays', selectedValues);
                     });
                     rehydrateSelect2FromLivewire('.tenant_pays', 'tenant_pays');
