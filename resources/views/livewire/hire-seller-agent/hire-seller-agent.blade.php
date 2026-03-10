@@ -1251,7 +1251,7 @@
                             detail: { type: option, visible: isVisible }
                         }));
                     });
-                }
+                });
             }
 
 
@@ -1272,8 +1272,8 @@
                     allowClear: true,
                 });
                 $('#non_negotiable_amenities').on('change', function(e) {
-                    let selectedValues = $(this).val();
-                    debouncedSet('non_negotiable_amenities', selectedValues);
+                    let selectedValues = $(this).val() || [];
+                    @this.set('non_negotiable_amenities', selectedValues, false);
                 });
             }
 
@@ -1490,8 +1490,8 @@
                     allowClear: true
                 });
                 $('#view_preference').on('change', function() {
-                    let selectedValues = $(this).val();
-                    Livewire.emit('updatePreference', selectedValues);
+                    let selectedValues = $(this).val() || [];
+                    @this.set('view_preference', selectedValues, false);
                     if (selectedValues.includes('Other')) {
                         $('#other_preferences').show();
                     } else {
@@ -1506,12 +1506,27 @@
                     allowClear: true
                 });
                 $('#appliances').on('change', function() {
-                    let selectedValues = $(this).val();
-                    debouncedSet('appliances', selectedValues);
+                    let selectedValues = $(this).val() || [];
+                    @this.set('appliances', selectedValues, false);
                     if (selectedValues && selectedValues.includes('Other')) {
                         $('#other_appliances').closest('.form-group').show();
                     } else {
                         $('#other_appliances').closest('.form-group').hide();
+                    }
+                });
+            }
+
+            if ($('#garage_parking_spaces_option_landlord').length && !$('#garage_parking_spaces_option_landlord').hasClass('select2-hidden-accessible')) {
+                $('#garage_parking_spaces_option_landlord').select2({
+                    placeholder: "Select garage/parking features",
+                    allowClear: true
+                });
+                $('#garage_parking_spaces_option_landlord').on('change', function() {
+                    let selectedValues = $(this).val() || [];
+                    @this.set('garage_parking_spaces_option', selectedValues, false);
+                    const otherDiv = document.getElementById('other_garage_parking_spaces_option_landlord');
+                    if (otherDiv) {
+                        otherDiv.style.display = selectedValues.includes('Other') ? '' : 'none';
                     }
                 });
             }

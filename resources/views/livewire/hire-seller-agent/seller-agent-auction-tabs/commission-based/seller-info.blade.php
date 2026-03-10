@@ -141,7 +141,20 @@
         <div class="input-cover">
             <input type="url" wire:model="video_link" class="form-control has-icon"
                 data-icon="fa-solid fa-video" placeholder="Enter video link (e.g. YouTube, Vimeo)">
+            <button class="btn btn-primary input-group-text-seller" type="button" wire:click="previewVideo">
+                Enter
+            </button>
         </div>
+        @if($embedUrl)
+            <div class="ratio ratio-16x9 mt-2" style="width:25%; height:40vh;">
+                <iframe
+                    src="{{ $embedUrl }}"
+                    frameborder="0"
+                    allow="autoplay; accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen>
+                </iframe>
+            </div>
+        @endif
     </div>
 
     <div class="alert alert-warning mt-3 p-2 small">

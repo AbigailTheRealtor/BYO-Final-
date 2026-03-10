@@ -66,6 +66,13 @@ class SellerAgentAuction extends Component
     public $assignment_fee_amount = '';
     public $buyer_sell_contract = '';
 
+    // Occupant / business type
+    public $occupant_status = '';
+    public $occupant_tenant = '';
+    public $business_type = '';
+    public $other_business_type = '';
+    public $target_closing_date = '';
+
     // Properties
     public $maximum_budget = '';
     public $offered_financing = '';
@@ -78,13 +85,19 @@ class SellerAgentAuction extends Component
     public $down_payment_amount = '';
     public $seller_financing_type = '$';
     public $seller_financing_amount = '';
+    public $seller_down_payment_amount = '';
+    public $seller_late_fee_amount = '';
     public $interest_rate = '';
     public $loan_duration = '';
     public $prepayment_penalty = '';
     public $prepayment_penalty_amount = '';
+    public $balloon_payment = '';
     public $balloon_payment_amount = '';
     public $balloon_payment_date = '';
     public $assumable_terms = '';
+    public $assumable_loan_type = '';
+    public $outstanding_balance = '';
+    public $lender_approval_required = '';
     public $max_assumable_rate = '';
     public $assumable_monthly_escrow = '';
     public $assumable_loan_term_remaining = '';
@@ -106,6 +119,7 @@ class SellerAgentAuction extends Component
     public $additional_cash = '';
     public $value_determination = '';
     public $exchange_transfer_method = '';
+    public $exchange_liens = '';
     public $exchange_liens_disclosure = '';
     public $exchange_liens_details = '';
     public $exchange_inspection_rights = '';
@@ -118,6 +132,10 @@ class SellerAgentAuction extends Component
     public $lease_option_conditions = '';
     public $has_option_fee = '';
     public $option_fee_amount = '';
+    public $lease_option_fee_credit = '';
+    public $lease_option_fee_credit_percentage = '';
+    public $lease_option_maintenance = '';
+    public $lease_option_extension_terms = '';
     public $seller_lease_option_fee_credit = '';
     public $seller_lease_option_fee_credit_percent = '';
     public $seller_lease_option_maintenance = '';
@@ -129,6 +147,11 @@ class SellerAgentAuction extends Component
     public $lease_purchase_duration = '';
     public $lease_purchase_payment = '';
     public $lease_purchase_conditions = '';
+    public $lease_purchase_rent_credit = '';
+    public $lease_purchase_rent_credit_amount = '';
+    public $lease_purchase_deposit = '';
+    public $lease_purchase_maintenance = '';
+    public $lease_purchase_extension_terms = '';
     public $seller_lease_purchase_rent_credit = '';
     public $seller_lease_purchase_rent_credit_type = '$';
     public $seller_lease_purchase_rent_credit_amount = '';
@@ -139,7 +162,18 @@ class SellerAgentAuction extends Component
     public $lease_purchase_option_fee = '';
     public $lease_purchase_option_fee_amount = '';
 
+    // Seller financing amortization / payment
+    public $seller_amortization_type = '';
+    public $seller_amortization_other = '';
+    public $seller_payment_frequency = '';
+    public $seller_payment_frequency_other = '';
+
     // Cryptocurrency Properties
+    public $crypto_transfer_timing = '';
+    public $crypto_transfer_timing_other = '';
+    public $crypto_exchange_method = '';
+    public $crypto_custodian_wallet = '';
+    public $crypto_transaction_fees = '';
     public $cryptocurrency_type = '';
     public $crypto_percentage = '';
     public $cash_percentage_crypto = '';
@@ -148,6 +182,9 @@ class SellerAgentAuction extends Component
     public $nft_description = '';
     public $nft_percentage = '';
     public $cash_percentage_nft = '';
+    public $nft_gas_fees = '';
+    public $nft_transfer_method = '';
+    public $nft_valuation_method = '';
 
     public $garage_needed = '';
     public $other_garage_needed = '';
@@ -216,6 +253,27 @@ class SellerAgentAuction extends Component
     public $property_criteria = '';
     public $unit_size = '';
     public $unit_size_other = '';
+
+    // Additional property details (Income / multi-unit)
+    public $number_of_units = '';
+    public $number_occupied = '';
+    public $expected_rent = '';
+    public $total_square_feet = '';
+    public $sqft_heated_source = '';
+    public $beds_unit = '';
+    public $baths_unit = '';
+    public $garage_spaces = '';
+    public $carport_spaces = '';
+    public $unit_type_description = '';
+    public $breed_restrictions = '';
+
+    // Meeting preference
+    public $meeting_Preference = '';
+
+    // Services enhancements
+    public $custom_enhancement = '';
+    public $openHouseCount = '';
+    public $photo_enhancements = '';
 
     public $leasing_55_plus = '';
     public $non_negotiable_amenities = [];
@@ -321,6 +379,7 @@ class SellerAgentAuction extends Component
     public $email = '';
     public $current_status = '';
     public $video_link = '';
+    public $embedUrl = null;
 
 
 
@@ -441,6 +500,9 @@ class SellerAgentAuction extends Component
     public $activeTab = 0;
 
     // Location suggestions
+    public $cityFieldVisible = false;
+    public $stateFieldVisible = false;
+    public $zipCodeFieldVisible = false;
     public $cities = [];
     public $newCity = '';
     public $counties = [];
@@ -1400,6 +1462,43 @@ class SellerAgentAuction extends Component
     public function setActiveTab($index)
     {
         $this->activeTab = $index;
+    }
+
+    public function updatedVideoLink($value)
+    {
+        $this->embedUrl = $this->getEmbedUrl($value);
+    }
+
+    public function previewVideo()
+    {
+        $this->embedUrl = $this->getEmbedUrl($this->video_link);
+    }
+
+    public function getEmbedUrl($url)
+    {
+        if (str_contains($url, 'youtube.com') || str_contains($url, 'youtu.be')) {
+            preg_match('/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{6,})/i', $url, $m);
+            $videoId = $m[1] ?? null;
+            return $videoId
+                ? "https://www.youtube.com/embed/{$videoId}?autoplay=1&mute=1&playsinline=1"
+                : null;
+        }
+
+        if (str_contains($url, 'vimeo.com')) {
+            preg_match('/vimeo\.com\/(?:.*\/)?(\d+)(?:[\/?#]|$)/i', $url, $m);
+            $videoId = $m[1] ?? null;
+
+            if (!$videoId && str_contains($url, 'player.vimeo.com')) {
+                preg_match('/player\.vimeo\.com\/video\/(\d+)/i', $url, $m2);
+                $videoId = $m2[1] ?? null;
+            }
+
+            return $videoId
+                ? "https://player.vimeo.com/video/{$videoId}?autoplay=1&muted=1&playsinline=1"
+                : null;
+        }
+
+        return null;
     }
 
     public function render()

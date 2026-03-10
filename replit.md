@@ -19,6 +19,12 @@ The architecture prioritizes modularity, clear separation of concerns, and a dat
 
 ## Bug Fixes Completed
 
+### Session 4 (Hire Seller Agent Form - Missing Properties & Blade Variables)
+1. **Form 500 error on load** — `listing-details.blade.php` was missing the `$auction_lengths_seller` `@php` block definition. Added it to match the landlord form pattern.
+2. **Missing Livewire public properties** — `SellerAgentAuction.php` was missing many public properties that the blade templates referenced via `wire:model`, `@if`, and `$this->reset()` calls, causing `PropertyNotFoundException` and "Undefined variable" errors. Added: `$cityFieldVisible`, `$stateFieldVisible`, `$zipCodeFieldVisible`, `$balloon_payment`, `$occupant_status`, `$occupant_tenant`, `$business_type`, `$other_business_type`, `$target_closing_date`, `$exchange_liens`, `$seller_down_payment_amount`, `$seller_late_fee_amount`, `$assumable_loan_type`, `$outstanding_balance`, `$lender_approval_required`, `$seller_amortization_type`, `$seller_amortization_other`, `$seller_payment_frequency`, `$seller_payment_frequency_other`, `$crypto_transfer_timing`, `$crypto_exchange_method`, `$crypto_custodian_wallet`, `$crypto_transaction_fees`, and many lease option/purchase/NFT related properties.
+3. **Missing blade array definitions in seller-terms.blade.php** — `$occupant_types_seller`, `$seller_property` (sale provision options), and `$financing_options_seller` arrays were not defined anywhere accessible to the blade. Added them to the `@php` block at the top of `seller-terms.blade.php`.
+4. **Missing `$business_type` array in property-preferences.blade.php** — The `$business_type` variable was used in both `wire:model` (component property, string) and `@foreach` (options array). Added the options array to the `@php` block in `property-preferences.blade.php` to match the tenant form pattern.
+
 ### Session 3 (Hire Tenant Agent Form - Property Styles & Lease Term Persistence)
 1. **Acceptable Property Styles shows "No results found"** — Fixed by using `wire:ignore` on property-details.blade.php input-cover to prevent Livewire from destroying Select2. When property_type changes, JavaScript function `rebuildPropertyItemsOptions()` rebuilds options from embedded JSON data, then reinits Select2.
 2. **Acceptable Property Styles flashes when other fields are edited** — Fixed by narrowing Select2 re-init trigger: only reinitializes when `property_type` actually changes, not on every Livewire update.

@@ -1,3 +1,13 @@
+@php
+$auction_lengths_seller = [
+    ['name' => '1 Day'],
+    ['name' => '3 Days'],
+    ['name' => '5 Days'],
+    ['name' => '7 Days'],
+    ['name' => '10 Days'],
+    ['name' => '14 Days'],
+];
+@endphp
 <div class="dashboard-section">
     <h3>Listing Details </h3>
     <div class="alert alert-info bg-light-info border-info mb-4">

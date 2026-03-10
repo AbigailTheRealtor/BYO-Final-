@@ -1,0 +1,339 @@
+Use this for Replit:
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A SELLER’S AGENT ONLY — USE LANDLORD “APPLIANCES INCLUDED” AS THE WORKING REFERENCE
+
+### SCOPE
+
+Fix **only** the remaining **Hire a Seller’s Agent** issues listed below.
+
+This pass is **Seller flow only**.
+
+Do **not** modify:
+
+* Hire a Buyer’s Agent
+* Hire a Landlord’s Agent
+* Hire a Tenant’s Agent
+
+Use the **Landlord listing field “Appliances Included”** as the **working reference implementation** for how these multi-select fields should behave, because that field currently:
+
+* displays options immediately
+* allows multiple selections correctly
+* does not delete earlier selections
+* behaves properly in the UI
+
+Also use the already-working video preview behavior elsewhere in the project as the reference for **Personal Video Link**.
+
+---
+
+# HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Do not rename or delete database columns.**
+2. **Do not change labels, tooltips, or option values.**
+3. **Do not modify Buyer, Landlord, or Tenant flows in this pass.**
+4. **Do not broad-refactor unrelated shared components unless absolutely necessary for this Seller-only fix.**
+5. **Do not remove or alter saved drafts, listings, or bids.**
+6. **Do not break the working Landlord reference field while using it as the comparison.**
+7. **Do not mark this complete based only on code inspection.**
+8. **You must test the actual Seller fields in the browser.**
+
+---
+
+# WORKING REFERENCE IMPLEMENTATION
+
+Use the same stable implementation pattern already working in the project, specifically:
+
+* **Landlord → Appliances Included** for multi-select behavior
+* the already-working **video Enter + Preview** implementation used elsewhere in the project for Personal Video Link
+
+For the Seller fields below, mirror the same stable pattern for:
+
+* Select2 multi-select persistence
+* `wire:ignore` wrapper structure
+* full array synchronization
+* “Other” conditional input visibility
+* financing/currency dependent question visibility
+* instant UI response without deletion or delayed appearance
+
+Do **not invent a new pattern**.
+
+---
+
+# ISSUE GROUP 1 — BATHROOMS → OTHER INPUT BOX DOES NOT APPEAR
+
+### Current issue
+
+If **Other** is selected for **Bathrooms**, the custom input box does **not** appear.
+
+### Required fix
+
+When **Other** is selected:
+
+* the custom input box must appear immediately
+* it must hide when **Other** is unselected
+* the entered value must save correctly
+* the value must reload correctly in edit mode
+
+### What to check
+
+* whether Bathrooms is treated as a single-select or multi-select in Seller flow
+* whether the condition matches the actual data type
+* correct companion “other bathrooms” property
+* correct conditional block placement
+* rerender is not hiding it again
+
+---
+
+# ISSUE GROUP 2 — MULTI-SELECT FIELDS DELETE EARLIER SELECTIONS
+
+These Seller fields still delete earlier selections when selecting additional options:
+
+* **Appliances Included**
+* **Amenities and Property Features**
+* **View**
+* **Included Property or Business Assets**
+* **Special Sale Provision**
+* **Offered Financing/Currency**
+* **Garage / Parking Features**
+
+### Current broken behavior
+
+Example:
+
+1. select option 1
+2. select option 2
+3. both appear selected
+4. select option 3
+5. earlier selections get deleted or collapse
+
+### Required fix
+
+For each field:
+
+* selecting additional options must keep all previous selections
+* no selection should disappear when another is added
+* no flashing / resetting
+* values must remain stable through create, draft, edit, save, and reopen
+
+### Required implementation approach
+
+Compare each broken Seller field directly against the working:
+
+* **Landlord → Appliances Included**
+
+and make the Seller field follow the same stable pattern.
+
+### Required root-cause checks
+
+For each affected field, verify:
+
+1. outer wrapper `wire:ignore`
+2. inner wrapper `wire:ignore`
+3. proper `wire:key` if options are dynamic
+4. Select2 init logic
+5. namespaced change handler
+6. full `.val()` array is being sent, not only the last selected option
+7. guarded reinit only
+8. no duplicate event handlers
+9. no duplicate DOM elements / duplicate includes
+10. Livewire state is not overwriting browser state during rerender
+
+---
+
+# ISSUE GROUP 3 — SPECIAL SALE PROVISIONS & OFFERED FINANCING / CONTINGENCY → OTHER BOX DOES NOT APPEAR
+
+### Current issue
+
+The options properly select, but if **Other** is selected, the custom input box that should appear does **not** show.
+
+### Required fix
+
+When **Other** is selected:
+
+* the custom input box must appear immediately
+* it must remain visible after rerender if **Other** remains selected
+* it must save and reload correctly
+
+### What to check
+
+* condition correctly checks for `"Other"` in the actual selected value structure
+* correct companion “other” property
+* dependent input block is inside the correct conditional
+* rerender is not hiding it
+
+---
+
+# ISSUE GROUP 4 — OFFERED FINANCING / CURRENCY DEPENDENT QUESTIONS DO NOT SHOW
+
+### Current issue
+
+The questions associated with **Offered Financing / Currency** do **not** show depending on which option is selected.
+
+### Required fix
+
+When a financing/currency option is selected:
+
+* the proper associated follow-up questions must appear immediately
+* if the trigger option is removed, those questions must hide
+* saved answers must persist on edit/reopen
+* no delayed appearance
+
+### What to check
+
+* conditional Blade logic
+* correct Seller property being watched
+* array membership checks for selected options
+* dependent sections are under the correct conditional block
+* rerender does not hide them
+* stale hidden sections do not interfere
+
+---
+
+# ISSUE GROUP 5 — PERSONAL VIDEO LINK NEEDS ENTER BUTTON + PREVIEW
+
+### Current issue
+
+For **Personal Video Link**, there should be an **Enter** button that shows the **Preview** of the video, matching the already-working implementation elsewhere in the project.
+
+### Required fix
+
+Restore the same behavior pattern used in the working implementation:
+
+1. user pastes video URL
+2. user clicks **Enter**
+3. video preview appears
+4. preview updates properly
+5. saved preview behavior works in edit mode
+
+### Important
+
+Do **not** invent a different UX.
+Mirror the working implementation already present elsewhere in the project.
+
+---
+
+# REQUIRED DEBUG METHOD
+
+For each broken Seller field, compare directly against the working reference:
+
+## Multi-select reference:
+
+* **Landlord → Appliances Included**
+
+## Video preview reference:
+
+* the already-working **Enter + Preview** implementation elsewhere in the project
+
+For each broken Seller field, compare:
+
+1. Blade markup
+2. wrapper structure
+3. `wire:ignore`
+4. `wire:key`
+5. select `id` / class / selector
+6. Select2 init logic
+7. change handler
+8. `message.processed` logic
+9. conditional visibility logic
+10. save/reload behavior
+
+Do not guess. Match the working pattern.
+
+---
+
+# REQUIRED TESTING — BROWSER ONLY
+
+## A) MULTI-SELECT TEST
+
+For each affected Seller multi-select field:
+
+1. select option 1
+2. select option 2
+3. confirm both remain
+4. select option 3
+5. confirm all 3 remain
+6. select option 4 if available
+7. confirm all remain
+8. switch tabs and return
+9. confirm all remain
+10. save draft or save listing
+11. reopen edit
+12. confirm all remain
+
+If adding another option deletes earlier ones, that field is still broken.
+
+---
+
+## B) BATHROOMS → OTHER TEST
+
+1. select **Other**
+2. confirm custom input appears immediately
+3. enter custom value
+4. save
+5. reopen edit
+6. confirm **Other** is still selected
+7. confirm custom input is still visible with saved value
+
+---
+
+## C) SPECIAL SALE PROVISIONS / FINANCING → OTHER TEST
+
+1. select normal option(s)
+2. select **Other**
+3. confirm custom input appears immediately
+4. enter custom value
+5. save
+6. reopen edit
+7. confirm **Other** remains selected
+8. confirm custom input remains visible with saved value
+
+---
+
+## D) OFFERED FINANCING / CURRENCY FOLLOW-UP TEST
+
+1. select financing/currency option(s) that should trigger follow-up questions
+2. confirm those questions appear immediately
+3. fill them out
+4. save
+5. reopen edit
+6. confirm the questions are still visible if trigger options remain selected
+7. confirm saved values remain
+
+---
+
+## E) PERSONAL VIDEO LINK TEST
+
+1. paste valid video URL
+2. click **Enter**
+3. confirm preview appears
+4. save
+5. reopen edit
+6. confirm preview behavior remains correct
+
+---
+
+# SUCCESS CRITERIA
+
+This task is only complete when all of the following are true in **Hire a Seller’s Agent**:
+
+* **Bathrooms → Other** correctly shows custom input
+* **Appliances Included** no longer deletes selections
+* **Amenities and Property Features** no longer deletes selections
+* **View** no longer deletes selections
+* **Included Property or Business Assets** no longer deletes selections
+* **Special Sale Provision** no longer deletes selections
+* **Offered Financing / Currency** no longer deletes selections
+* **Garage / Parking Features** no longer deletes selections
+* **Special Sale Provisions & Offered Financing / Contingency → Other** correctly shows custom input
+* **Offered Financing / Currency** dependent questions display correctly
+* **Personal Video Link** has Enter button + preview behavior matching the working implementation
+* create / draft / edit / save / reopen all remain stable
+
+---
+
+# FINAL RULE
+
+Do **not** respond that this is fixed based on code inspection or partial testing.
+
+Use **Landlord → Appliances Included** as the working multi-select reference and make the broken Seller fields behave the same way in the actual browser.

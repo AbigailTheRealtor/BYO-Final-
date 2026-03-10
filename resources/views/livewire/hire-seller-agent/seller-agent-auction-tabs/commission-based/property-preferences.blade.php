@@ -66,6 +66,61 @@
         ['name' => '10'],
         ['name' => 'Other'],
     ];
+
+    // Business type options (for Commercial property type)
+    $business_type = [
+        ['name' => 'Aeronautical'],
+        ['name' => 'Agriculture'],
+        ['name' => 'Arts and Entertainment'],
+        ['name' => 'Assembly Hall'],
+        ['name' => 'Assisted Living'],
+        ['name' => 'Auto Dealer'],
+        ['name' => 'Auto Service'],
+        ['name' => 'Bar/Tavern/Lounge'],
+        ['name' => 'Barber/Beauty'],
+        ['name' => 'Car Wash'],
+        ['name' => 'Child Care'],
+        ['name' => 'Church'],
+        ['name' => 'Commercial'],
+        ['name' => 'Concession Trailers/Vehicles'],
+        ['name' => 'Construction/Contractor'],
+        ['name' => 'Convenience Store'],
+        ['name' => 'Distribution'],
+        ['name' => 'Distributor Routine Ven'],
+        ['name' => 'Education/School'],
+        ['name' => 'Farm'],
+        ['name' => 'Fashion/Specialty'],
+        ['name' => 'Flex Space'],
+        ['name' => 'Florist/Nursery'],
+        ['name' => 'Food & Beverage'],
+        ['name' => 'Gas Station'],
+        ['name' => 'Grocery'],
+        ['name' => 'Heavy Weight Sales Service'],
+        ['name' => 'Hotel/Motel'],
+        ['name' => 'Industrial'],
+        ['name' => 'Light Items Sales Only'],
+        ['name' => 'Manufacturing'],
+        ['name' => 'Marine/Marina'],
+        ['name' => 'Medical'],
+        ['name' => 'Mixed'],
+        ['name' => 'Mobile/Trailer Park'],
+        ['name' => 'Personal Service'],
+        ['name' => 'Professional Service'],
+        ['name' => 'Professional/Office'],
+        ['name' => 'Recreation'],
+        ['name' => 'Research & Development'],
+        ['name' => 'Residential'],
+        ['name' => 'Restaurant'],
+        ['name' => 'Retail'],
+        ['name' => 'Shopping Center/Strip Center'],
+        ['name' => 'Storage'],
+        ['name' => 'Theatre'],
+        ['name' => 'Timberland'],
+        ['name' => 'Veterinary'],
+        ['name' => 'Warehouse'],
+        ['name' => 'Wholesale'],
+        ['name' => 'Other'],
+    ];
 @endphp
 <style>
     .input-cover .input-icon2 {
@@ -551,15 +606,13 @@
         <span class="error mt-2" id="bathrooms_error"></span>
     </div>
     <!-- Other Bathrooms Input (Shows only when Other is selected) -->
-    @if ($bathrooms === 'Other')
-        <div class="form-group">
-            <div class="input-cover">
-                <input type="number" wire:model.defer="other_bathrooms" class="form-control has-icon"
-                    data-icon="fa-solid fa-bath" placeholder="Enter number of bathrooms (e.g., 11)">
-            </div>
-            <span class="error mt-2" id="other_bathrooms_error"></span>
+    <div class="form-group other_bathrooms {{ $bathrooms !== 'Other' ? 'd-none' : '' }}">
+        <div class="input-cover">
+            <input type="number" wire:model.defer="other_bathrooms" class="form-control has-icon"
+                data-icon="fa-solid fa-bath" placeholder="Enter number of bathrooms (e.g., 11)">
         </div>
-    @endif
+        <span class="error mt-2" id="other_bathrooms_error"></span>
+    </div>
 @endif
 
 <!-- Minimum Heated SqFt Needed -->
@@ -662,10 +715,10 @@
         </span>
 
         <div class="input-cover" wire:ignore>
-            <select wire:model="appliances" id="appliances" class="form-control has-icon select2-multiple"
+            <select id="appliances" class="form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-plug input-icon2" multiple>
                 @foreach ($applianceOptions as $row_pt)
-                    <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
+                    <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $appliances ?? []) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
                 @endforeach
             </select>
         </div>
@@ -821,11 +874,11 @@
             title="Select the type of garage or parking features available. If “Other” is selected, enter any additional garage or parking features in the provided field.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover">
-            <select wire:model="garage_parking_spaces_option" id="garage_parking_spaces_option_landlord"
+        <div class="input-cover" wire:ignore>
+            <select id="garage_parking_spaces_option_landlord"
                 class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse input-icon2" multiple>
                 @foreach ($garage_parking_spaces as $row_pt)
-                    <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
+                    <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $garage_parking_spaces_option ?? []) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
                 @endforeach
             </select>
         </div>
@@ -881,7 +934,7 @@
 @endif
 <!-- View Preference Needed -->
 
-<div class="form-group">
+<div class="form-group" wire:ignore wire:key="view-preference-{{ $property_type }}">
     <label class="fw-bold">View:</label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -890,7 +943,7 @@
     </span>
 
     <div class="input-cover" wire:ignore>
-        <select wire:model="view_preference" id="view_preference"
+        <select id="view_preference"
             class="form-control has-icon select2-multiple" data-icon="fa-solid fa-tree input-icon2" multiple>
             @foreach ($preferences as $row_pt)
                 <option value="{{ $row_pt['name'] }}"
@@ -948,20 +1001,20 @@
         </span>
 
         <div class="input-cover" wire:ignore>
-            <select wire:model="non_negotiable_amenities" id="non_negotiable_amenities"
+            <select id="non_negotiable_amenities"
                 class="form-control has-icon select2-multiple" data-icon="fa-solid fa-lock input-icon2"
                 @if (!$property_type) disabled @endif multiple>
                 <option value="">Select</option>
                 @if (in_array($property_type, ['Residential', 'Income']))
                     @foreach ($non_negotialble_terms_landlord as $item)
                         @if (str_contains($item['class'], 'residential-length'))
-                            <option value="{{ $item['name'] }}">{{ $item['name'] }}</option>
+                            <option value="{{ $item['name'] }}" {{ in_array($item['name'], $non_negotiable_amenities ?? []) ? 'selected' : '' }}>{{ $item['name'] }}</option>
                         @endif
                     @endforeach
                 @elseif(in_array($property_type, ['Business', 'Commercial']))
                     @foreach ($non_negotialble_terms_landlord as $item)
                         @if (str_contains($item['class'], 'commercial-length'))
-                            <option value="{{ $item['name'] }}">{{ $item['name'] }}</option>
+                            <option value="{{ $item['name'] }}" {{ in_array($item['name'], $non_negotiable_amenities ?? []) ? 'selected' : '' }}>{{ $item['name'] }}</option>
                         @endif
                     @endforeach
                 @endif
