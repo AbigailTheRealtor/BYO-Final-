@@ -84,7 +84,7 @@
 </div>
 
 <!-- Assignment Contract Flow -->
-<div class="assignment-contract-section" style="{{ (is_array($this->sale_provision) && in_array('Assignment Contract', $this->sale_provision)) ? '' : 'display:none;' }}">
+<div class="assignment-contract-section" x-data="{ visible: {{ (is_array($this->sale_provision) && in_array('Assignment Contract', $this->sale_provision)) ? 'true' : 'false' }} }" x-show="visible" x-on:update-assignment-visibility.window="visible = $event.detail.visible">
     <!-- Buyer Under Contract Question -->
     <div class="form-group mt-3">
         <label class="fw-bold">Buyer Open to Purchasing an Assignment Contract:</label>
@@ -241,7 +241,7 @@
 <!-- Cash Option - No additional fields needed per requirements -->
 
 <!-- Assumable Financing -->
-<div class="financing-assumable-section" style="{{ is_array($this->offered_financing) && in_array('Assumable', $this->offered_financing) ? '' : 'display:none;' }}"
+<div class="financing-assumable-section" x-data="{ visible: {{ (is_array($this->offered_financing) && in_array('Assumable', $this->offered_financing)) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Assumable') visible = $event.detail.visible"
 >
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
@@ -415,7 +415,7 @@
 @php
     $selectedTraditionalLoans = array_filter(['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'], fn($type) => in_array($type, $offered_financing));
 @endphp
-<div class="financing-traditional-section" style="{{ (is_array($this->offered_financing) && (in_array('Conventional', $this->offered_financing) || in_array('FHA', $this->offered_financing) || in_array('Jumbo', $this->offered_financing) || in_array('VA', $this->offered_financing) || in_array('No-Doc', $this->offered_financing) || in_array('Non-QM', $this->offered_financing) || in_array('USDA', $this->offered_financing))) ? '' : 'display:none;' }}">
+<div class="financing-traditional-section" x-data="{ visible: {{ (is_array($this->offered_financing) && (count(array_intersect(['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'], $this->offered_financing)) > 0)) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Traditional') visible = $event.detail.visible">
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-file-invoice-dollar me-2"></i>{{ implode(' / ', $selectedTraditionalLoans) }}
@@ -460,7 +460,7 @@
     @endif
 </div>
 <!-- Cryptocurrency Option -->
-<div class="financing-cryptocurrency-section" wire:key="cryptocurrency-section" style="{{ is_array($this->offered_financing) && in_array('Cryptocurrency', $this->offered_financing) ? '' : 'display:none;' }}">
+<div class="financing-cryptocurrency-section" wire:key="cryptocurrency-section" x-data="{ visible: {{ (is_array($this->offered_financing) && in_array('Cryptocurrency', $this->offered_financing)) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Cryptocurrency') visible = $event.detail.visible">
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-brands fa-bitcoin me-2"></i>Cryptocurrency
@@ -604,7 +604,7 @@
     @endif
 </div>
 <!-- Exchange/Trade Option -->
-<div class="financing-exchange-trade-section" wire:key="exchange-trade-section" style="{{ is_array($this->offered_financing) && in_array('Exchange/Trade', $this->offered_financing) ? '' : 'display:none;' }}">
+<div class="financing-exchange-trade-section" wire:key="exchange-trade-section" x-data="{ visible: {{ (is_array($this->offered_financing) && in_array('Exchange/Trade', $this->offered_financing)) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Exchange/Trade') visible = $event.detail.visible">
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-exchange-alt me-2"></i>Exchange/Trade
@@ -786,7 +786,7 @@
 </div>
 
 <!-- Lease Option -->
-<div class="financing-lease-option-section" style="{{ is_array($this->offered_financing) && in_array('Lease Option', $this->offered_financing) ? '' : 'display:none;' }}">
+<div class="financing-lease-option-section" x-data="{ visible: {{ (is_array($this->offered_financing) && in_array('Lease Option', $this->offered_financing)) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Lease Option') visible = $event.detail.visible">
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-key me-2"></i>Lease Option
@@ -965,7 +965,7 @@
 </div>
 
 <!-- Lease Purchase -->
-<div class="financing-lease-purchase-section" style="{{ is_array($this->offered_financing) && in_array('Lease Purchase', $this->offered_financing) ? '' : 'display:none;' }}">
+<div class="financing-lease-purchase-section" x-data="{ visible: {{ (is_array($this->offered_financing) && in_array('Lease Purchase', $this->offered_financing)) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Lease Purchase') visible = $event.detail.visible">
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-file-signature me-2"></i>Lease Purchase
@@ -1142,7 +1142,7 @@
 </div>
 
 <!-- NFT Option -->
-<div class="financing-nft-section" wire:key="nft-section" style="{{ is_array($this->offered_financing) && in_array('Non-Fungible Token (NFT)', $this->offered_financing) ? '' : 'display:none;' }}">
+<div class="financing-nft-section" wire:key="nft-section" x-data="{ visible: {{ (is_array($this->offered_financing) && in_array('Non-Fungible Token (NFT)', $this->offered_financing)) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Non-Fungible Token (NFT)') visible = $event.detail.visible">
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-image me-2"></i>Non-Fungible Token (NFT)
@@ -1252,7 +1252,7 @@
 
 
 <!-- Seller Financing -->
-<div class="financing-seller-section" wire:key="seller-financing-section" style="{{ is_array($this->offered_financing) && in_array('Seller Financing', $this->offered_financing) ? '' : 'display:none;' }}">
+<div class="financing-seller-section" wire:key="seller-financing-section" x-data="{ visible: {{ (is_array($this->offered_financing) && in_array('Seller Financing', $this->offered_financing)) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Seller Financing') visible = $event.detail.visible">
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
             <i class="fa-solid fa-handshake me-2"></i>Seller Financing

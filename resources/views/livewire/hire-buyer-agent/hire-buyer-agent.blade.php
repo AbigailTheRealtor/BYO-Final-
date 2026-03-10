@@ -1064,9 +1064,14 @@
 
         function debouncedSet(field, value, delay) {
             clearTimeout(_s2Timers[field]);
+            // Use shorter delay for visibility-critical fields
+            var effectiveDelay = delay || 200;
+            if (field === 'offered_financing' || field === 'sale_provision') {
+                effectiveDelay = 50;
+            }
             _s2Timers[field] = setTimeout(function() {
                 @this.set(field, value);
-            }, delay || 200);
+            }, effectiveDelay);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -1515,30 +1520,31 @@
                 });
             }
 
-            // Helper: immediately update Assignment Contract section visibility
-            function updateAssignmentContractSection(selectedValues) {
-                if (selectedValues.includes('Assignment Contract')) {
-                    $('.assignment-contract-section').show();
-                } else {
-                    $('.assignment-contract-section').hide();
-                }
-            }
-
-            // Helper: immediately update all financing sub-sections visibility
-            var traditionalLoanTypes = ['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'];
-            function updateFinancingSections(selectedValues) {
+            // Global Helpers: immediately update section visibility via Alpine events
+            window.updateAssignmentContractSection = function(selectedValues) {
                 if (!Array.isArray(selectedValues)) selectedValues = [selectedValues];
-                $('.financing-assumable-section').toggle(selectedValues.includes('Assumable'));
-                $('.financing-traditional-section').toggle(
-                    traditionalLoanTypes.some(function(t) { return selectedValues.includes(t); })
-                );
-                $('.financing-cryptocurrency-section').toggle(selectedValues.includes('Cryptocurrency'));
-                $('.financing-exchange-trade-section').toggle(selectedValues.includes('Exchange/Trade'));
-                $('.financing-lease-option-section').toggle(selectedValues.includes('Lease Option'));
-                $('.financing-lease-purchase-section').toggle(selectedValues.includes('Lease Purchase'));
-                $('.financing-nft-section').toggle(selectedValues.includes('Non-Fungible Token (NFT)'));
-                $('.financing-seller-section').toggle(selectedValues.includes('Seller Financing'));
-            }
+                var isVisible = selectedValues.includes('Assignment Contract');
+                window.dispatchEvent(new CustomEvent('update-assignment-visibility', { detail: { visible: isVisible } }));
+            };
+
+            window.updateFinancingSections = function(selectedValues) {
+                if (!Array.isArray(selectedValues)) selectedValues = [selectedValues];
+                var traditionalLoanTypes = ['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'];
+                
+                var types = ['Assumable', 'Cryptocurrency', 'Exchange/Trade', 'Lease Option', 'Lease Purchase', 'Non-Fungible Token (NFT)', 'Seller Financing'];
+                
+                types.forEach(function(type) {
+                    window.dispatchEvent(new CustomEvent('update-financing-visibility', { 
+                        detail: { type: type, visible: selectedValues.includes(type) } 
+                    }));
+                });
+
+                // Traditional check
+                var traditionalVisible = traditionalLoanTypes.some(function(t) { return selectedValues.includes(t); });
+                window.dispatchEvent(new CustomEvent('update-financing-visibility', { 
+                    detail: { type: 'Traditional', visible: traditionalVisible } 
+                }));
+            };
 
             // Initialize Select2 for sale_provision (Purchasing Terms tab)
             if ($('#sale_provision').length && !$('#sale_provision').hasClass('select2-hidden-accessible')) {
@@ -1546,13 +1552,15 @@
                     placeholder: "Select",
                     allowClear: true,
                 });
+                // Initial visibility sync
+                window.updateAssignmentContractSection($('#sale_provision').val() || []);
             }
-            // Bind sale_provision change handler outside the guard so it works even if already initialized
+            // Bind sale_provision change handler
             $('#sale_provision').off('change.spSync select2:select.spSync select2:unselect.spSync')
                 .on('change.spSync select2:select.spSync select2:unselect.spSync', function() {
                     let selectedValues = $('#sale_provision').val() || [];
-                    updateAssignmentContractSection(selectedValues);
-                    debouncedSet('sale_provision', selectedValues);
+                    window.updateAssignmentContractSection(selectedValues);
+                    debouncedSet('sale_provision', selectedValues, 50);
                 });
 
             // Global flag to prevent Livewire sync during draft/edit load
@@ -1564,16 +1572,16 @@
                     placeholder: "Select",
                     allowClear: true,
                 });
+                // Initial visibility sync
+                window.updateFinancingSections($('#offered_financing').val() || []);
             }
-            // Bind offered_financing change handler outside the guard so it works even if already initialized
+            // Bind offered_financing change handler
             $('#offered_financing').off('change.ofSync select2:select.ofSync select2:unselect.ofSync')
                 .on('change.ofSync select2:select.ofSync select2:unselect.ofSync', function() {
-                    if (window.financingSyncInProgress) {
-                        return;
-                    }
+                    if (window.financingSyncInProgress) return;
                     let selectedValues = $('#offered_financing').val() || [];
-                    updateFinancingSections(selectedValues);
-                    debouncedSet('offered_financing', selectedValues);
+                    window.updateFinancingSections(selectedValues);
+                    debouncedSet('offered_financing', selectedValues, 50);
                 });
 
             // Function to toggle Non-Negotiable Amenities and Property Features:" input field
@@ -1612,10 +1620,10 @@
                 attachAmenitiesDropdownListener();
                 // Re-sync financing sections with current Select2 state (prevents Livewire re-render from overriding JS visibility)
                 if ($('#offered_financing').hasClass('select2-hidden-accessible')) {
-                    updateFinancingSections($('#offered_financing').val() || []);
+                    if (window.updateFinancingSections) window.updateFinancingSections($('#offered_financing').val() || []);
                 }
                 if ($('#sale_provision').hasClass('select2-hidden-accessible')) {
-                    updateAssignmentContractSection($('#sale_provision').val() || []);
+                    if (window.updateAssignmentContractSection) window.updateAssignmentContractSection($('#sale_provision').val() || []);
                 }
             });
 
