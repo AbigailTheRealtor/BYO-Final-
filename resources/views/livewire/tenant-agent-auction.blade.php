@@ -2145,9 +2145,10 @@ $lease_types = [
         _s2Timers = {};
 
         var fields = [
-            { sel: '.condition_prop_buyer', field: 'condition_prop_buyer', multi: true },
-            { sel: '#sale_provision', field: 'sale_provision', multi: false },
-            { sel: '#offered_financing', field: 'offered_financing', multi: false },
+            { sel: '#property_items', field: 'property_items', multi: true },
+            { sel: '#condition_prop_buyer', field: 'condition_prop_buyer', multi: true },
+            { sel: '#sale_provision', field: 'sale_provision', multi: true },
+            { sel: '#offered_financing', field: 'offered_financing', multi: true },
             { sel: '#garage_parking_spaces_option_landlord', field: 'garage_parking_spaces_option', multi: true },
             { sel: '#garage_parking_spaces_option', field: 'garage_parking_spaces_option', multi: true },
             { sel: '#leasing_spaces_tenant', field: 'leasing_spaces_tenant', multi: true },
@@ -2176,26 +2177,11 @@ $lease_types = [
             nuVals = [...new Set(nuVals)];
             safeLivewireSet('number_of_unit_type', nuVals);
         }
-
-        var $pi = $('#property_items');
-        if ($pi.length && $pi.hasClass('select2-hidden-accessible')) {
-            var piVals = $pi.val() || [];
-            safeLivewireSet('property_items', piVals);
-        }
     }
 
     document.addEventListener('submit', function(e) {
         if (e.target && e.target.tagName === 'FORM') {
             syncAllSelect2BeforeSave();
-            var $cpb = $('.condition_prop_buyer');
-            if ($cpb.length && $cpb.hasClass('select2-hidden-accessible')) {
-                var cpbVals = $cpb.val() || [];
-                cpbVals = [...new Set(cpbVals)];
-                safeLivewireSet('condition_prop_buyer', cpbVals);
-                if (typeof syncConditionJsonBridge === 'function') {
-                    syncConditionJsonBridge(cpbVals);
-                }
-            }
         }
     }, true);
 
@@ -4105,15 +4091,28 @@ $lease_types = [
     Livewire.hook('message.processed', () => {
         addIconsToInputs();
         checkRepresentationStatus();
+        
+        // Re-add icons to inputs that might have been replaced by Livewire
+        $('.input-cover').each(function() {
+            const $container = $(this);
+            const $input = $container.find('.has-icon');
+            if ($input.length && !$container.find('.input-icon').length) {
+                const iconClass = $input.data('icon');
+                if (iconClass) {
+                    $container.prepend(`<i class="input-icon ${iconClass}"></i>`);
+                }
+            }
+        });
+
         if (typeof window._updateNextSubmitButtons === 'function') {
             setTimeout(window._updateNextSubmitButtons, 50);
         }
 
         // Buyer Preferences Select2 Re-init
-        initSelect2('property_items', 'property_items');
-        initSelect2('condition_prop_buyer', 'condition_prop_buyer');
-        initSelect2('sale_provision', 'sale_provision');
-        initSelect2('offered_financing', 'offered_financing');
+        initSelect2('#property_items', 'property_items', '.other_property_items_wrapper');
+        initSelect2('#condition_prop_buyer', 'condition_prop_buyer', '.other_property_condition_wrapper');
+        initSelect2('#sale_provision', 'sale_provision', '.sale_provision_other_wrapper');
+        initSelect2('#offered_financing', 'offered_financing', '.other_financing_wrapper');
 
         if (typeof isNavigating !== 'undefined' && isNavigating) {
             return;
@@ -5174,10 +5173,10 @@ $lease_types = [
 
 <script>
     $(document).ready(function() {
-        initSelect2('property_items', 'property_items');
-        initSelect2('condition_prop_buyer', 'condition_prop_buyer');
-        initSelect2('sale_provision', 'sale_provision');
-        initSelect2('offered_financing', 'offered_financing');
+        initSelect2('#property_items', 'property_items', '.other_property_items_wrapper');
+        initSelect2('#condition_prop_buyer', 'condition_prop_buyer', '.other_property_condition_wrapper');
+        initSelect2('#sale_provision', 'sale_provision', '.sale_provision_other_wrapper');
+        initSelect2('#offered_financing', 'offered_financing', '.other_financing_wrapper');
     });
 </script>
 

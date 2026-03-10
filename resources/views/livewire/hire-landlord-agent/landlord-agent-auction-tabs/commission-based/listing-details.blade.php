@@ -384,6 +384,7 @@ $auction_lengths_seller = [
             title="Enter a short, clear title describing the type of Agent the Landlord needs and the location.">
             <i class="fa-solid fa-circle-info"></i> </span>
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-tag"></i>
             <input type="text" wire:model="listing_title" id="listing_title" class="form-control has-icon"
                 data-icon="fa-solid fa-tag"
                 placeholder="Enter listing title (e.g., Need a Leasing Agent in Tampa, FL to Rent Out My Property)"
@@ -400,6 +401,7 @@ $auction_lengths_seller = [
             title="Indicate whether the Landlord is currently under a signed agreement with a Broker. “Represented” means the Landlord has signed a Landlord representation agreement; “Not Represented” means no agreement has been signed, and the Landlord is free to hire a Broker.">
             <i class="fa-solid fa-circle-info"></i> </span>
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-handshake"></i>
             <select wire:model="working_with_agent" id="working_with_agent" class="form-control has-icon"
                 data-icon="fa-solid fa-handshake" required>
                 <option value="">Select</option>
