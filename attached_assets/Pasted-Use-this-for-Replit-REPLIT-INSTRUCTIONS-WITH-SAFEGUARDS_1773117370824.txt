@@ -1,0 +1,272 @@
+Use this for Replit:
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A SELLER’S AGENT ONLY — DELAYED CONDITIONALS + VIEW OPTIONS STILL WRONG + OFFERED FINANCING TIED TO OCCUPANT TYPE
+
+### SCOPE
+
+These **Hire a Seller’s Agent** issues are **still not resolved**.
+
+Fix **only** the remaining Seller issues listed below.
+
+Do **not** modify:
+
+* Hire a Buyer’s Agent
+* Hire a Landlord’s Agent
+* Hire a Tenant’s Agent
+
+This pass is **Seller-only** and should focus on the actual unresolved behavior in the browser.
+
+---
+
+# HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Do not rename or delete database columns.**
+2. **Do not change labels, tooltips, or option values except to restore the correct View options.**
+3. **Do not broad-refactor shared components unless absolutely necessary for this Seller-only fix.**
+4. **Do not remove or alter saved drafts, listings, or bids.**
+5. **Do not break working Landlord behavior while using it as the reference.**
+6. **Do not mark this complete based only on code inspection.**
+7. **You must verify these exact Seller issues visually in the browser.**
+8. **Do not treat “delayed” as fixed. The dependent UI must appear immediately.**
+
+---
+
+# WORKING REFERENCES
+
+Use these as the references:
+
+## 1) Landlord → View
+
+Seller **View** should use the **same correct option set** as **Landlord → View**.
+
+## 2) A working immediate “Other” field
+
+Use any Seller/Landlord field where selecting **Other** causes the custom input to appear **immediately**, not after a delayed rerender.
+
+## 3) A working immediate dependent-question field
+
+Use any working field in the project where selecting a trigger option causes its tied questions to appear **immediately**.
+
+Do **not** invent a new pattern.
+
+---
+
+# ISSUE 1 — ACCEPTABLE SPECIAL SALE PROVISIONS → ASSIGNMENT CONTRACT QUESTION IS VERY DELAYED
+
+## Current issue
+
+Under **Acceptable Special Sale Provisions**, selecting **Assignment Contract** eventually shows the tied question, but it is **very delayed**.
+
+This is **not fixed**.
+
+## Required fix
+
+When **Assignment Contract** is selected:
+
+* the tied question must appear **immediately**
+* it must not wait for a delayed rerender
+* it must hide immediately when Assignment Contract is removed
+* it must remain visible on edit/reload if still selected
+
+## What to check
+
+1. whether the tied question is relying only on delayed server-side rerender timing
+2. whether the current selected DOM state is available immediately but not being used
+3. whether a `message.processed` hook is causing the delayed appearance
+4. whether the conditional visibility should be toggled immediately client-side, while still remaining rerender-safe
+5. whether the condition is watching the correct property and array membership
+
+---
+
+# ISSUE 2 — SPECIAL SALE PROVISION → OTHER INPUT BOX IS VERY DELAYED
+
+## Current issue
+
+Under **Special Sale Provision**, selecting **Other** eventually shows the custom input box, but it is **very delayed**.
+
+This is **not fixed**.
+
+## Required fix
+
+When **Other** is selected:
+
+* the custom input box must appear **immediately**
+* it must hide immediately when **Other** is unselected
+* it must remain visible after rerender if **Other** remains selected
+* it must save and reload correctly
+
+## What to check
+
+1. whether the custom input visibility is relying only on delayed Livewire rerender timing
+2. whether the “Other” selected state is already available in the browser and should be used immediately
+3. whether the conditional is checking the correct Seller property
+4. whether rerender is causing the delay
+
+---
+
+# ISSUE 3 — SELLER VIEW OPTIONS ARE STILL WRONG
+
+## Current issue
+
+The options for **View** under **Hire a Seller’s Agent** are still wrong.
+
+These should never have been changed.
+
+You confirmed the correct options can be viewed under:
+
+* **Hire a Landlord’s Agent → View**
+
+## Required fix
+
+Restore **Seller → View** so it uses the **same correct options as Landlord → View**.
+
+## Required result
+
+* Seller View must match Landlord View options
+* Seller View must no longer use the wrong option source
+* Seller View must not be tied to another field’s config or data
+
+## What to check
+
+1. options source array for Seller View
+2. Blade/select binding for Seller View
+3. whether Seller View is incorrectly using another field’s option variable
+4. whether a copy/paste or regression changed the option source
+5. whether the wrong selector/property/config key is assigned
+
+---
+
+# ISSUE 4 — OFFERED FINANCING / CURRENCY APPEARS TO BE TIED TO OCCUPANT TYPE AND IS VERY DELAYED
+
+## Current issue
+
+It looks like **Offered Financing/Currency** is now tied to **Occupant Type**, and the options / dependent questions are **very delayed** to show.
+
+This suggests the wrong dependency is controlling the field or its visibility.
+
+## Required fix
+
+* **Offered Financing/Currency must not be incorrectly tied to Occupant Type**
+* it must appear and behave according to its own intended logic
+* any dependent questions for Offered Financing/Currency must appear **immediately** when the financing/currency trigger terms are selected
+* changing Occupant Type must not control or delay Offered Financing/Currency unless there is an explicit intended rule
+* no delayed appearance
+
+## What to check
+
+1. whether Offered Financing/Currency visibility is incorrectly nested under an Occupant Type conditional
+2. whether changing Occupant Type triggers a rerender that hides or delays the Offered Financing/Currency section
+3. whether the wrong property is being watched for visibility
+4. whether the dependent financing questions are using delayed rerender timing instead of immediate visibility logic
+5. whether tab content below Occupant Type is inside the wrong wrapper/conditional
+
+---
+
+# REQUIRED IMPLEMENTATION APPROACH
+
+## A. Restore correct field ownership
+
+Make sure:
+
+* **View** uses its own correct option source
+* **Offered Financing/Currency** uses its own intended conditional logic
+* **Assignment Contract** question is tied to Acceptable Special Sale Provisions
+* **Other** input is tied to Special Sale Provision
+
+No cross-wiring between unrelated fields.
+
+## B. Remove delay from dependent UI
+
+For:
+
+* Assignment Contract tied question
+* Special Sale Provision → Other input
+* Offered Financing/Currency dependent questions
+
+the UI must appear **immediately on selection**, not after a delayed rerender.
+
+## C. Keep it rerender-safe
+
+The immediate display must still survive:
+
+* tab switch
+* draft save
+* edit reload
+* normal Livewire rerenders
+
+---
+
+# REQUIRED TESTING — BROWSER ONLY
+
+## A) ASSIGNMENT CONTRACT TEST
+
+1. open **Hire a Seller’s Agent**
+2. go to **Acceptable Special Sale Provisions**
+3. select **Assignment Contract**
+4. confirm the tied question appears **immediately**
+5. unselect it
+6. confirm the tied question hides immediately
+7. reselect it
+8. save
+9. reopen edit
+10. confirm it remains visible if still selected
+
+---
+
+## B) SPECIAL SALE PROVISION → OTHER TEST
+
+1. select **Other**
+2. confirm the custom input appears **immediately**
+3. enter text
+4. unselect **Other**
+5. confirm the custom input hides immediately
+6. reselect **Other**
+7. save
+8. reopen edit
+9. confirm the custom input remains visible with saved value
+
+---
+
+## C) VIEW OPTIONS TEST
+
+1. open Seller **View**
+2. open Landlord **View**
+3. confirm Seller View now shows the **same correct options** as Landlord View
+4. confirm Seller View no longer shows the wrong option set
+
+---
+
+## D) OFFERED FINANCING / CURRENCY TEST
+
+1. confirm the field appears where it is supposed to, independent of wrong Occupant Type behavior
+2. select financing/currency term(s) that should trigger dependent questions
+3. confirm those dependent questions appear **immediately**
+4. change Occupant Type
+5. confirm Offered Financing/Currency does **not** break, disappear, or become incorrectly delayed
+6. save
+7. reopen edit
+8. confirm it all remains correct
+
+---
+
+# SUCCESS CRITERIA
+
+This task is only complete when all of the following are true in **Hire a Seller’s Agent**:
+
+* **Assignment Contract** tied question appears immediately
+* **Special Sale Provision → Other** custom input appears immediately
+* **Seller View** uses the same correct options as **Landlord View**
+* **Offered Financing/Currency** is no longer wrongly tied to **Occupant Type**
+* **Offered Financing/Currency** and its dependent questions appear immediately and correctly
+* create / draft / edit / save / reopen all remain stable
+
+---
+
+# FINAL RULE
+
+Do **not** respond that this is fixed unless the dependent UI appears **immediately in the browser** and Seller **View** visibly matches Landlord **View**.
+
+The issue is not whether the fields eventually appear.
+The issue is that they are currently **delayed** or wired to the wrong field, and that must be corrected.

@@ -394,13 +394,13 @@
     ];
 
     $preferences = [
+        ['name' => 'Beach'],
         ['name' => 'Furniture, Fixtures, and Equipment (as per attached inventory)'],
         ['name' => 'Advertising Materials'],
         ['name' => 'Contract Rights'],
         ['name' => 'Leases'],
         ['name' => 'Licenses'],
         ['name' => 'Rights under any Agreement for Interests'],
-
         ['name' => 'Other'],
     ];
 

@@ -19,6 +19,17 @@ The architecture prioritizes modularity, clear separation of concerns, and a dat
 
 ## Bug Fixes Completed
 
+### Session 6 (Hire Seller Agent Form - Alpine.js Replaced with jQuery, View Options Fixed)
+1. **Root cause confirmed**: Livewire 2.12 + Alpine 3.4.2 incompatibility — Alpine re-initializes `x-data` components after morphdom, resetting `visible = false` and wiping conditional section visibility.
+2. **All 10 Alpine `x-show` blocks replaced** in `seller-terms.blade.php` — Each Alpine opening div (`x-data`/`x-show`/`x-on:update-*.window`/`wire:ignore.self`) replaced with `<div id="seller-[type]-section" style="display: {{ condition ? 'block' : 'none' }}">`. Affected sections: Sale Provision Other, Assignment Contract, Financing Other, Assumable, Cryptocurrency, Exchange/Trade, Lease Option, Lease Purchase, NFT, Seller Financing.
+3. **JS change handlers updated** in `hire-seller-agent.blade.php` — `#offered_financing` and `#sale_provision` Select2 change handlers now use direct jQuery `show()/hide()` instead of `window.dispatchEvent` Alpine custom events.
+4. **`message.processed` hook updated** — The hook now directly calls jQuery `show()/hide()` by reading the current Select2 `.val()` for `#offered_financing`, `#sale_provision`, `#appliances`, and `#view_preference`. This re-applies correct visibility after every Livewire re-render (e.g., when Occupant Type triggers a server update).
+5. **Appliances Select2 re-init fixed** — `#appliances` initialization moved to the `message.processed` hook (with a `data('appliances-change-bound')` guard) so it correctly initializes when the appliances section appears after a property_type change.
+6. **Seller View options fixed** — `hire-seller-agent.blade.php` and `hire-seller-agent-edit.blade.php` `$preferences` arrays were missing 'Beach'. Added 'Beach' as the first option to match Landlord View exactly: Beach, Furniture/Fixtures/Equipment, Advertising Materials, Contract Rights, Leases, Licenses, Rights under any Agreement for Interests, Other.
+7. **Issue 6 (Occupant Type + Offered Financing)** — When Occupant Type changes (triggering a Livewire re-render), the financing conditional sections no longer disappear. The server-rendered `style` attribute correctly reflects the current `$offered_financing` state, and the `message.processed` hook confirms jQuery visibility.
+
+**Pattern**: All conditional visibility in Seller form now uses `style="display: block/none"` (PHP-computed for initial/rerender state) + jQuery `show()/hide()` (immediate client-side response). No Alpine.js.
+
 ### Session 5 (Hire Seller Agent Form - Layout Bug & Appliances Other)
 1. **Major blank space on Sale Terms tab / all subsequent tabs empty** — Root cause: The closing `</div>` for the Assignment Contract Alpine.js `x-show` wrapper was trapped inside `@if ($sale_provision_assignment === 'No')` in `seller-terms.blade.php`. Since that condition is false by default, the Alpine div was never closed, and its `x-show="false"` swallowed all content including all subsequent tab panes (Services, Additional Details, Broker Compensation, Seller Information). Fixed by moving `</div>` to after `@endif`.
 2. **Appliances Included → Other does not show custom input** — The `@if ($showOtherAppliances)` conditional removed the `#other_appliances` element entirely from the DOM, so the existing jQuery `.show()`/`.hide()` JS handler could not find it. Fixed by always rendering the element with `style="display: block/none"` matching the "View → Other" pattern.
