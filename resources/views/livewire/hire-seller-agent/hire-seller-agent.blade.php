@@ -1178,6 +1178,29 @@
 
             addIconsToInputs();
             checkRepresentationStatus();
+
+            // Polling safety net: ensures sections show/hide within 100ms of any Select2 change,
+            // regardless of whether jQuery event binding caught the change event.
+            var _lastProvVal = '';
+            var _lastFinVal = '';
+            setInterval(function() {
+                var $sp = $('#sale_provision');
+                var $of = $('#offered_financing');
+                if ($sp.length) {
+                    var pv = JSON.stringify($sp.val() || []);
+                    if (pv !== _lastProvVal) {
+                        _lastProvVal = pv;
+                        applyProvisionVisibility();
+                    }
+                }
+                if ($of.length) {
+                    var fv = JSON.stringify($of.val() || []);
+                    if (fv !== _lastFinVal) {
+                        _lastFinVal = fv;
+                        applyFinancingVisibility();
+                    }
+                }
+            }, 100);
         });
         
         // Sync select element values from Livewire component data
