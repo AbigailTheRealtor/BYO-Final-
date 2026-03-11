@@ -1116,10 +1116,16 @@
         // Using $(document).on() means these handlers survive any DOM replacement,
         // morphdom patching, or Select2 re-initialization — they are bound once and
         // never need to be re-registered.
+        // @this.set() syncs the value into the Livewire component so that every
+        // subsequent server-side re-render keeps sections visible (mirrors Appliances pattern).
         $(document).on('change', '#sale_provision', function() {
+            var selectedValues = $(this).val() || [];
+            @this.set('sale_provision', selectedValues, false);
             applyProvisionVisibility();
         });
         $(document).on('change', '#offered_financing', function() {
+            var selectedValues = $(this).val() || [];
+            @this.set('offered_financing', selectedValues, false);
             applyFinancingVisibility();
         });
 
@@ -1322,6 +1328,8 @@
                 }
                 if (!$('#offered_financing').data('of-change-bound')) {
                     $('#offered_financing').on('change', function() {
+                        var selectedValues = $(this).val() || [];
+                        @this.set('offered_financing', selectedValues, false);
                         applyFinancingVisibility();
                     });
                     $('#offered_financing').data('of-change-bound', true);
@@ -1338,6 +1346,8 @@
                 }
                 if (!$('#sale_provision').data('sp-change-bound')) {
                     $('#sale_provision').on('change', function() {
+                        var selectedValues = $(this).val() || [];
+                        @this.set('sale_provision', selectedValues, false);
                         applyProvisionVisibility();
                     });
                     $('#sale_provision').data('sp-change-bound', true);
