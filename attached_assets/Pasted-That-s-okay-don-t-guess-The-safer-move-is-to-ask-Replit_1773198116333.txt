@@ -1,0 +1,107 @@
+That’s okay — don’t guess.
+
+The safer move is to ask Replit to **trace and list any legacy/alternate paths** for **all four flows** before you label another one as legacy.
+
+Use this:
+
+---
+
+## REPLIT INSTRUCTIONS — IDENTIFY LEGACY VS ACTIVE FILES ACROSS TENANT / BUYER / SELLER / LANDLORD
+
+Before we mark any more files as legacy, I need you to trace the active vs alternate paths for all four hire-agent flows.
+
+Please identify for each of these:
+
+* Tenant
+* Buyer
+* Seller
+* Landlord
+
+the exact:
+
+1. route(s)
+2. Livewire component(s)
+3. PHP class(es)
+4. Blade view(s)
+5. included partial(s)
+6. whether each path is:
+
+   * active/primary
+   * alternate
+   * legacy
+   * shared
+   * dedicated
+
+---
+
+### REQUIRED OUTPUT FORMAT
+
+For each role, respond like this:
+
+## Tenant
+
+* Active primary route:
+* Active component:
+* Active PHP class:
+* Active Blade view:
+* Included partials:
+* Alternate route(s):
+* Alternate component(s):
+* Legacy file(s), if any:
+* Final recommendation: which path should be treated as the primary development path?
+
+## Buyer
+
+* Active primary route:
+* Active component:
+* Active PHP class:
+* Active Blade view:
+* Included partials:
+* Alternate route(s):
+* Alternate component(s):
+* Legacy file(s), if any:
+* Final recommendation: which path should be treated as the primary development path?
+
+## Seller
+
+* Active primary route:
+* Active component:
+* Active PHP class:
+* Active Blade view:
+* Included partials:
+* Alternate route(s):
+* Alternate component(s):
+* Legacy file(s), if any:
+* Final recommendation: which path should be treated as the primary development path?
+
+## Landlord
+
+* Active primary route:
+* Active component:
+* Active PHP class:
+* Active Blade view:
+* Included partials:
+* Alternate route(s):
+* Alternate component(s):
+* Legacy file(s), if any:
+* Final recommendation: which path should be treated as the primary development path?
+
+---
+
+### IMPORTANT
+
+Do not guess.
+
+Trace the actual routes and code paths currently used by the live app.
+
+I want a clear map of:
+
+* which files are the true active paths
+* which files are alternate/shared paths
+* which files should be treated as legacy going forward
+
+After that, we can decide what to officially mark as legacy.
+
+---
+
+That’s the cleanest way to handle it. It keeps you from accidentally telling them to de-prioritize the wrong flow.
