@@ -1112,6 +1112,17 @@
             });
         }
 
+        // Document-level event delegation for sale provision and financing visibility.
+        // Using $(document).on() means these handlers survive any DOM replacement,
+        // morphdom patching, or Select2 re-initialization — they are bound once and
+        // never need to be re-registered.
+        $(document).on('change', '#sale_provision', function() {
+            applyProvisionVisibility();
+        });
+        $(document).on('change', '#offered_financing', function() {
+            applyFinancingVisibility();
+        });
+
         // Re-initialize tooltips after Livewire updates
         document.addEventListener('livewire:load', function() {
             initializeTooltips();
