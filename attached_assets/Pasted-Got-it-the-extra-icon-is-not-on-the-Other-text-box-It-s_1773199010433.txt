@@ -1,0 +1,70 @@
+Got it — the extra icon is **not** on the “Other” text box.
+
+It’s the stray **money icon showing underneath Occupant Type**, right above **Offered Financing/Currency**.
+
+That means this is likely a **layout/icon injection bug**, where the icon for the next field is being inserted in the wrong place or escaping its input wrapper.
+
+Use this exact message for Replit:
+
+---
+
+## MINOR UI FIX — STRAY ICON APPEARS UNDER OCCUPANT TYPE IN HIRE A SELLER’S AGENT
+
+The Seller Sale Terms logic is working now, but there is still a small UI bug.
+
+### Issue
+
+After the user selects a value under:
+
+**Occupant Type**
+
+an extra **money icon** appears underneath the Occupant Type field, above the **Offered Financing/Currency** label.
+
+The icon is floating by itself and should **not** appear there.
+
+### Expected behavior
+
+* **Occupant Type** should only show its own correct icon inside its own field
+* **Offered Financing/Currency** should show its icon only inside its own field/input wrapper
+* there should be **no stray icon** sitting between the two fields
+
+### Scope
+
+Fix this **only** in the active Seller path I am using.
+
+Do not change Buyer, Landlord, or Tenant flows.
+
+### What to inspect
+
+Please check:
+
+1. the markup for **Occupant Type**
+2. the markup for **Offered Financing/Currency**
+3. whether an icon element is being injected outside the correct `.input-cover` wrapper
+4. whether `addIconsToInputs()` or similar icon-injection logic is placing the icon before the next field label instead of inside the field
+5. whether a duplicated/static icon exists in the Blade plus a JS-injected icon
+6. whether the icon for Offered Financing/Currency is being appended before the field initializes
+
+### Required fix
+
+Make sure the money icon for **Offered Financing/Currency** stays only inside the correct field/input wrapper and does not appear underneath **Occupant Type**.
+
+### Important
+
+* Do **not** change any working conditional visibility logic
+* Do **not** change field bindings
+* Do **not** change labels or option values
+* This is a **UI cleanup only**
+
+### Success criteria
+
+After selecting **Occupant Type**, there is no stray money icon floating between:
+
+* Occupant Type
+* Offered Financing/Currency
+
+The Offered Financing/Currency icon should appear only in its proper field.
+
+---
+
+This is likely a quick fix now that the main logic is working.
