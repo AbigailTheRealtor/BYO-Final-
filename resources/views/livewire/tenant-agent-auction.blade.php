@@ -4030,6 +4030,49 @@ $lease_types = [
         }
     }
 
+    function applySellerProvisionVisibility() {
+        var data = ($('#sale_provision').val() || []);
+        var provisionMap = {
+            'Assignment Contract': '#seller-provision-assignment-section',
+            'Other': '#seller-provision-other-section',
+        };
+        Object.keys(provisionMap).forEach(function(option) {
+            if (data.includes(option)) {
+                $(provisionMap[option]).show();
+            } else {
+                $(provisionMap[option]).hide();
+            }
+        });
+    }
+
+    function applySellerFinancingVisibility() {
+        var data = ($('#offered_financing').val() || []);
+        var financingMap = {
+            'Assumable': '#seller-financing-assumable-section',
+            'Cryptocurrency': '#seller-financing-crypto-section',
+            'Exchange/Trade': '#seller-financing-exchange-section',
+            'Lease Option': '#seller-financing-leaseoption-section',
+            'Lease Purchase': '#seller-financing-leasepurchase-section',
+            'Non-Fungible Token (NFT)': '#seller-financing-nft-section',
+            'Seller Financing': '#seller-financing-sellerfinancing-section',
+            'Other': '#seller-financing-other-section',
+        };
+        Object.keys(financingMap).forEach(function(option) {
+            if (data.includes(option)) {
+                $(financingMap[option]).show();
+            } else {
+                $(financingMap[option]).hide();
+            }
+        });
+    }
+
+    $(document).on('change', '#sale_provision', function() {
+        applySellerProvisionVisibility();
+    });
+    $(document).on('change', '#offered_financing', function() {
+        applySellerFinancingVisibility();
+    });
+
     function initSelect2(selectorId, wireModel, otherWrapper) {
         // selectorId should be just the ID without '#' prefix
         let $el = $(selectorId.startsWith('#') ? selectorId : '#' + selectorId);
@@ -4074,6 +4117,8 @@ $lease_types = [
         initSelect2('#condition_prop_buyer', 'condition_prop_buyer', '.other_property_condition_wrapper');
         initSelect2('#sale_provision', 'sale_provision', '.sale_provision_other_wrapper');
         initSelect2('#offered_financing', 'offered_financing', '.other_financing_wrapper');
+        if ($('#sale_provision').length) { applySellerProvisionVisibility(); }
+        if ($('#offered_financing').length) { applySellerFinancingVisibility(); }
 
         if (typeof isNavigating !== 'undefined' && isNavigating) {
             return;
@@ -5138,6 +5183,8 @@ $lease_types = [
         initSelect2('#condition_prop_buyer', 'condition_prop_buyer', '.other_property_condition_wrapper');
         initSelect2('#sale_provision', 'sale_provision', '.sale_provision_other_wrapper');
         initSelect2('#offered_financing', 'offered_financing', '.other_financing_wrapper');
+        if ($('#sale_provision').length) { applySellerProvisionVisibility(); }
+        if ($('#offered_financing').length) { applySellerFinancingVisibility(); }
     });
 </script>
 
