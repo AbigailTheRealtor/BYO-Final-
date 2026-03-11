@@ -2490,7 +2490,7 @@
                 if (lwVals.length) {
                     $pi.val(lwVals).trigger('change.select2');
                 }
-                $pi.off('change').on('change', function(e) {
+                $pi.off('change.piSync').on('change.piSync', function(e) {
                     let selectedValues = $(this).val();
                     // Update option elements with selected attribute
                     $pi.find('option').removeAttr('selected');
@@ -2523,28 +2523,19 @@
                         initPropertyItemsSelect2();
                     }, 100);
                 } else {
-                    // Always restore display from Livewire after any re-render
-                    setTimeout(function() {
-                        var $pi = $('#property_items');
-                        if (!$pi.length) return;
+                    // Property type unchanged — sync display value only; never destroy Select2
+                    var $pi = $('#property_items');
+                    if ($pi.length && $pi.hasClass('select2-hidden-accessible')) {
                         var isOpen = false;
-                        try {
-                            if ($pi.hasClass('select2-hidden-accessible') && $pi.data('select2')) {
-                                isOpen = $pi.data('select2').isOpen();
-                            }
-                        } catch(e) {}
+                        try { isOpen = $pi.data('select2').isOpen(); } catch(e) {}
                         if (!isOpen) {
                             var domVals = ($pi.val() || []).slice().sort().join(',');
                             var lwSorted = lwVals.slice().sort().join(',');
-                            // Only reinit if DOM and Livewire are already in sync
-                            if (domVals === lwSorted) {
-                                initPropertyItemsSelect2();
-                            } else {
-                                // DOM has a different selection — use it as the source of truth
-                                $pi.val($pi.val()).trigger('change.select2');
+                            if (domVals !== lwSorted) {
+                                $pi.val(lwVals).trigger('change.select2');
                             }
                         }
-                    }, 50);
+                    }
                 }
             });
 
@@ -3224,7 +3215,7 @@
                 }
                 toggleLease($sel.val() || []);
 
-                $sel.off('change').on('change', function() {
+                $sel.off('change.lfSync').on('change.lfSync', function() {
                     let selectedLease = $(this).val() || [];
                     // Update option elements with selected attribute
                     $sel.find('option').removeAttr('selected');
@@ -3264,28 +3255,19 @@
                         initSelect2LeaseFor();
                     }, 100);
                 } else {
-                    // Restore display from Livewire, but don't erase a selection the user just made
-                    setTimeout(function() {
-                        var $lf = $('.lease_for');
-                        if (!$lf.length) return;
+                    // Property type unchanged — sync display value only; never destroy Select2
+                    var $lf = $('.lease_for');
+                    if ($lf.length && $lf.hasClass('select2-hidden-accessible')) {
                         var isOpen = false;
-                        try {
-                            if ($lf.hasClass('select2-hidden-accessible') && $lf.data('select2')) {
-                                isOpen = $lf.data('select2').isOpen();
-                            }
-                        } catch(e) {}
+                        try { isOpen = $lf.data('select2').isOpen(); } catch(e) {}
                         if (!isOpen) {
                             var domVals = ($lf.val() || []).slice().sort().join(',');
                             var lwSorted = lwLease.slice().sort().join(',');
-                            // Only reinit if DOM and Livewire are already in sync
-                            if (domVals === lwSorted) {
-                                initSelect2LeaseFor();
-                            } else {
-                                // DOM has a different selection — use it as the source of truth
-                                $lf.val($lf.val()).trigger('change.select2');
+                            if (domVals !== lwSorted) {
+                                $lf.val(lwLease).trigger('change.select2');
                             }
                         }
-                    }, 50);
+                    }
                 }
             });
 
