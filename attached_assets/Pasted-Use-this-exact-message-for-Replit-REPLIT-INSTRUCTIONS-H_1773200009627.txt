@@ -1,0 +1,282 @@
+Use this exact message for Replit:
+
+---
+
+## REPLIT INSTRUCTIONS — HIRE A BUYER’S AGENT ONLY — TRACE ACTIVE PATH FIRST, THEN FIX PURCHASING TERMS CONDITIONAL SECTIONS
+
+I am testing this exact route:
+
+```text
+/hire/agent/auction/buyer
+```
+
+I am seeing the same kind of issue we had before with Seller, and I do **not** want edits made to the wrong Buyer files.
+
+So before making any fixes, first trace the **exact active code path** for this route, then apply the fix only to that path.
+
+---
+
+# STEP 1 — TRACE THE EXACT ACTIVE PATH FIRST
+
+For this exact route:
+
+```text
+/hire/agent/auction/buyer
+```
+
+please identify and confirm the exact:
+
+1. **route definition**
+2. **flow type**
+
+   * shared create
+   * dedicated create
+   * shared edit
+3. **Livewire component**
+4. **PHP class**
+5. **Blade view**
+6. **included partials**
+7. **JS source / inline script controlling Buyer Purchasing Terms**
+8. **exact files that should be edited for this route only**
+
+Do **not** start editing until you confirm this.
+
+---
+
+# REQUIRED RESPONSE FORMAT BEFORE EDITING
+
+Please respond first like this:
+
+## Active Buyer path for `/hire/agent/auction/buyer`
+
+* Route:
+* Flow type:
+* Livewire component:
+* PHP class:
+* Blade view:
+* Included partials:
+* JS source / inline script:
+* Exact files that should be edited for this route only:
+
+## Alternate Buyer paths that look similar but are NOT this route
+
+* Route:
+* Component:
+* Blade:
+* Why it should NOT be edited for this bug:
+
+## Final confirmation
+
+* Is `/hire/agent/auction/buyer` using the shared Tenant-based path?
+* Which exact files should be edited for the Buyer issue shown in my screenshot?
+
+Do **not** guess.
+
+---
+
+# STEP 2 — AFTER CONFIRMING THE ACTIVE PATH, FIX THESE BUYER ISSUES
+
+The screenshot shows that in **Buyer → Purchasing Terms**, the user has already selected:
+
+## Acceptable Special Sale Provisions
+
+* Assignment Contract
+* Auction
+* Bank Owned/REO
+* Government Owned
+* Probate Listing
+* Short Sale
+* None
+* Other
+
+## Offered Financing/Currency
+
+* Assumable
+* Cash
+* Conventional
+* Cryptocurrency
+* Exchange/Trade
+* FHA
+* Jumbo
+* Lease Option
+* Lease Purchase
+* NFT
+* No-Doc
+* Non-QM
+* Seller Financing
+* USDA
+* VA
+* Other
+
+But the dependent sections are **not showing**.
+
+This is the same type of issue we had with Seller.
+
+---
+
+# REQUIRED BUYER FIXES
+
+## 1) Acceptable Special Sale Provisions → Other
+
+When **Other** is selected:
+
+* the Buyer custom input must appear **immediately**
+* it must not require another field change
+* it must not require another rerender
+* it must save and reload correctly
+
+## 2) Acceptable Special Sale Provisions → Assignment Contract
+
+When **Assignment Contract** is selected:
+
+* the Buyer assignment-related dependent question(s)/section(s) must appear **immediately**
+* it must not depend on another field
+* it must save and reload correctly
+
+## 3) Offered Financing/Currency
+
+For **every Buyer financing/currency option that has a dependent section**, that dependent section must appear **immediately** after selection.
+
+This is **not limited** to just one or two example options.
+
+Any Buyer Purchasing Terms financing/currency term with a related follow-up section must show it immediately.
+
+---
+
+# IMPORTANT RULE
+
+These Buyer dependent sections must **not** depend on changing another unrelated field, including things like:
+
+* Target Closing Timeframe
+* another click
+* another rerender
+* another tab action
+
+Selecting the trigger option itself should make the related Buyer section appear immediately.
+
+---
+
+# WORKING REFERENCE
+
+Use a known-good immediate behavior pattern already working in the project as the reference.
+
+For example:
+
+* a field where selecting **Other** immediately shows its custom input
+* or the final working Seller conditional pattern if that same architecture applies to the active Buyer path
+
+Do **not** invent a new pattern if the project already has a stable one.
+
+---
+
+# REQUIRED ROOT-CAUSE INVESTIGATION
+
+Once you confirm the active Buyer path, inspect and fix the actual dependency structure for that path.
+
+Please verify:
+
+## A. Trigger → dependent section mapping
+
+Which Buyer field controls which dependent section for:
+
+* Special Sale Provisions → Other
+* Special Sale Provisions → Assignment Contract
+* Offered Financing/Currency options
+
+## B. Wrong nesting / wrong wrapper placement
+
+Make sure the dependent sections are not:
+
+* inside the wrong conditional block
+* inside the wrong wrapper
+* tied to another field incorrectly
+* hidden by a wrong parent container
+
+## C. Correct field ownership
+
+Make sure:
+
+* Acceptable Special Sale Provisions controls only its own dependent sections
+* Offered Financing/Currency controls only its own dependent sections
+* unrelated Buyer fields do not control these sections
+
+---
+
+# REQUIRED TESTING — REAL BROWSER UI
+
+After fixing the active Buyer path, test the actual visible form at:
+
+```text
+/hire/agent/auction/buyer
+```
+
+## Test 1 — Special Sale Provisions → Other
+
+1. open Buyer Purchasing Terms
+2. select **Other**
+3. confirm the custom input appears immediately
+4. unselect it
+5. confirm it hides immediately
+6. save/reopen if applicable
+7. confirm it persists correctly
+
+## Test 2 — Special Sale Provisions → Assignment Contract
+
+1. select **Assignment Contract**
+2. confirm the related Buyer assignment section appears immediately
+3. unselect it
+4. confirm it hides immediately
+5. save/reopen if applicable
+6. confirm it persists correctly
+
+## Test 3 — Offered Financing/Currency
+
+For **every Buyer financing/currency option that has a dependent section**:
+
+1. select the term
+2. confirm its section appears immediately
+3. unselect the term
+4. confirm its section hides immediately
+5. save/reopen if applicable
+6. confirm it persists correctly
+
+---
+
+# REQUIRED RESPONSE BACK AFTER FIX
+
+When done, please tell me:
+
+1. the exact active Buyer route/component/path that was fixed
+2. the exact files that were edited
+3. which Buyer financing/currency terms have dependent sections
+4. whether each one was tested individually
+5. whether the Buyer Purchasing Terms conditional sections now appear immediately in the actual visible UI
+
+---
+
+# HARD SAFEGUARDS
+
+1. **Do not rename or delete database columns.**
+2. **Do not modify Seller, Landlord, or Tenant flows.**
+3. **Do not change labels, tooltips, or option values unless absolutely necessary for the active Buyer path.**
+4. **Do not edit alternate Buyer files unless you first prove they are the active source for `/hire/agent/auction/buyer`.**
+5. **Do not mark this complete based only on automated tests or theory.**
+6. **Verify the real visible Buyer UI.**
+
+---
+
+# FINAL RULE
+
+First trace the exact active path for:
+
+```text
+/hire/agent/auction/buyer
+```
+
+Then fix **only that path**.
+
+Do not repeat the Seller mistake of editing the wrong Buyer files.
+
+---
+
+If you want, after Replit responds with the active Buyer path, paste it here and I’ll tell you whether they’re about to edit the correct files before you spend more credits.

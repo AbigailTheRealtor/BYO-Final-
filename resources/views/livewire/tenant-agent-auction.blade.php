@@ -4068,11 +4068,45 @@ $lease_types = [
         });
     }
 
+    // Buyer Purchasing Terms visibility logic — dispatches Alpine window events for buyer sections.
+    // If changes are made to one path, they must also be applied to the other to keep both Buyer flows consistent.
+    function applyBuyerProvisionVisibility() {
+        var data = ($('#sale_provision').val() || []);
+        if (data.includes('Other')) {
+            $('.sale_provision_other_wrapper').show();
+        } else {
+            $('.sale_provision_other_wrapper').hide();
+        }
+        window.dispatchEvent(new CustomEvent('update-assignment-visibility', {
+            detail: { visible: data.includes('Assignment Contract') }
+        }));
+    }
+
+    function applyBuyerFinancingVisibility() {
+        var data = ($('#offered_financing').val() || []);
+        if (data.includes('Other')) {
+            $('.other_financing_wrapper').show();
+        } else {
+            $('.other_financing_wrapper').hide();
+        }
+        var traditionalTypes = ['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'];
+        window.dispatchEvent(new CustomEvent('update-financing-visibility', { detail: { type: 'Assumable', visible: data.includes('Assumable') } }));
+        window.dispatchEvent(new CustomEvent('update-financing-visibility', { detail: { type: 'Traditional', visible: traditionalTypes.some(function(t) { return data.includes(t); }) } }));
+        window.dispatchEvent(new CustomEvent('update-financing-visibility', { detail: { type: 'Cryptocurrency', visible: data.includes('Cryptocurrency') } }));
+        window.dispatchEvent(new CustomEvent('update-financing-visibility', { detail: { type: 'Exchange/Trade', visible: data.includes('Exchange/Trade') } }));
+        window.dispatchEvent(new CustomEvent('update-financing-visibility', { detail: { type: 'Lease Option', visible: data.includes('Lease Option') } }));
+        window.dispatchEvent(new CustomEvent('update-financing-visibility', { detail: { type: 'Lease Purchase', visible: data.includes('Lease Purchase') } }));
+        window.dispatchEvent(new CustomEvent('update-financing-visibility', { detail: { type: 'Non-Fungible Token (NFT)', visible: data.includes('Non-Fungible Token (NFT)') } }));
+        window.dispatchEvent(new CustomEvent('update-financing-visibility', { detail: { type: 'Seller Financing', visible: data.includes('Seller Financing') } }));
+    }
+
     $(document).on('change', '#sale_provision', function() {
         applySellerProvisionVisibility();
+        applyBuyerProvisionVisibility();
     });
     $(document).on('change', '#offered_financing', function() {
         applySellerFinancingVisibility();
+        applyBuyerFinancingVisibility();
     });
 
     function initSelect2(selectorId, wireModel, otherWrapper) {
@@ -4119,8 +4153,8 @@ $lease_types = [
         initSelect2('#condition_prop_buyer', 'condition_prop_buyer', '.other_property_condition_wrapper');
         initSelect2('#sale_provision', 'sale_provision', '.sale_provision_other_wrapper');
         initSelect2('#offered_financing', 'offered_financing', '.other_financing_wrapper');
-        if ($('#sale_provision').length) { applySellerProvisionVisibility(); }
-        if ($('#offered_financing').length) { applySellerFinancingVisibility(); }
+        if ($('#sale_provision').length) { applySellerProvisionVisibility(); applyBuyerProvisionVisibility(); }
+        if ($('#offered_financing').length) { applySellerFinancingVisibility(); applyBuyerFinancingVisibility(); }
 
         if (typeof isNavigating !== 'undefined' && isNavigating) {
             return;
@@ -5185,8 +5219,8 @@ $lease_types = [
         initSelect2('#condition_prop_buyer', 'condition_prop_buyer', '.other_property_condition_wrapper');
         initSelect2('#sale_provision', 'sale_provision', '.sale_provision_other_wrapper');
         initSelect2('#offered_financing', 'offered_financing', '.other_financing_wrapper');
-        if ($('#sale_provision').length) { applySellerProvisionVisibility(); }
-        if ($('#offered_financing').length) { applySellerFinancingVisibility(); }
+        if ($('#sale_provision').length) { applySellerProvisionVisibility(); applyBuyerProvisionVisibility(); }
+        if ($('#offered_financing').length) { applySellerFinancingVisibility(); applyBuyerFinancingVisibility(); }
     });
 </script>
 
