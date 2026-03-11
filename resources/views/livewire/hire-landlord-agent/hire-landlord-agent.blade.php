@@ -290,7 +290,12 @@
         ['name' => 'Older but Clean', 'display' => 'Older but Clean & Well Maintained'],
         ['name' => 'No Preference', 'display' => 'No Preference'],
     ];
-    $property_condition_landlord = $property_condition;
+    $property_condition_landlord = [
+        ['name' => 'New Construction'],
+        ['name' => 'Updated / Renovated'],
+        ['name' => 'Partially Updated'],
+        ['name' => 'Older but Well Maintained'],
+    ];
 
     $bedroomsRes = [
         ['name' => '1'],

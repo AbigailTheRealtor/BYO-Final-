@@ -398,9 +398,9 @@
     ];
     $property_condition_landlord = [
         ['name' => 'New Construction'],
-        ['name' => 'No updates needed: Completely updated'],
-        ['name' => 'Semi-updated: Needs minor updates'],
-        ['name' => 'Not updated: Requires a complete update'],
+        ['name' => 'Updated / Renovated'],
+        ['name' => 'Partially Updated'],
+        ['name' => 'Older but Well Maintained'],
     ];
     $bedroomsRes = [
         ['name' => '1'],
