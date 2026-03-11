@@ -1,0 +1,300 @@
+Use this for Replit:
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A LANDLORD’S AGENT ONLY
+
+### SCOPE
+
+Fix **only** these remaining issues in **Hire a Landlord’s Agent**.
+
+Apply the fixes to the active Landlord flow for:
+
+* listing creation
+* draft save / draft reload
+* edit mode
+* final saved listing flow where applicable
+
+Do **not** modify Buyer, Seller, or Tenant flows in this pass.
+
+---
+
+# HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Do not rename or delete database columns.**
+2. **Do not modify Buyer, Seller, or Tenant flows.**
+3. **Do not change labels, tooltips, or unrelated option values.**
+4. **Do not broad-refactor shared components unless absolutely necessary for this Landlord-only fix.**
+5. **Do not remove or alter saved drafts, listings, or bids.**
+6. **Keep this surgical and limited to the exact Landlord issues below.**
+7. **Before editing, confirm the exact active Landlord route, Livewire component, PHP class, Blade view, and included partials for the path I am using.**
+8. **Do not mark this complete based only on code inspection. Verify in the real visible UI.**
+
+---
+
+# ISSUE 1 — PROPERTY CONDITION OPTIONS MUST BE UPDATED EVERYWHERE
+
+## Current requirement
+
+For **Hire a Landlord’s Agent**, update **Property Condition** options to exactly:
+
+* **New Construction**
+* **Updated / Renovated**
+* **Partially Updated**
+* **Older but Well Maintained**
+
+## Apply this everywhere in the active Landlord flow
+
+This update must apply consistently in:
+
+* create listing
+* save draft
+* reopen draft
+* edit listing
+* any preview/review screen
+* listing display if this field is shown there
+
+## Important
+
+* Use the capitalization exactly as written above
+* Remove old/incorrect Landlord Property Condition options from this field only
+* Do not change the Tenant version or any other role’s condition options
+
+## Backward compatibility
+
+If older Landlord drafts/listings already contain previous versions of this field, make sure they still load safely and map/display correctly where needed.
+
+---
+
+# ISSUE 2 — SUBMIT BUTTON NOT WORKING FOR HIRE A LANDLORD LISTINGS
+
+## Current issue
+
+The **Submit** button is not working for Landlord listings.
+
+## Required fix
+
+When all required visible fields are completed correctly, the Landlord form must submit normally.
+
+## What to investigate
+
+Please check all of the following:
+
+1. whether validation is silently failing
+2. whether hidden stale fields are still being treated as required
+3. whether Leasing Space conditional sections are leaving behind hidden required inputs
+4. whether JS errors are blocking submit
+5. whether a loading/disabled state is stuck
+6. whether Select2 fields look filled visually but Livewire still sees them as empty
+7. whether duplicated or wrong conditional sections are interfering with final submission
+
+## Required result
+
+* Submit must work when visible required fields are completed
+* Hidden or irrelevant fields must not block submission
+* Draft/edit behavior must remain stable
+
+---
+
+# ISSUE 3 — LEASING SPACE CONDITIONAL LOGIC IS STILL WRONG
+
+## Current issue
+
+On **Leasing Space**, when switching between:
+
+* **Entire Property**
+* **Single Room**
+
+the form behaves incorrectly.
+
+You reported:
+
+* **Included Storage Space icon appears but not the input box**
+* sometimes the form shows questions for **both** Single Room and Entire Property
+* it should only show the set of questions relevant to the currently selected option
+* this must be correct for **Hire a Landlord Commercial listings**
+* and it must **not** cause the same issue in Residential either
+
+## Required fix
+
+For Landlord listings, Leasing Space conditional sections must behave correctly and exclusively.
+
+### Correct behavior
+
+If **Entire Property** is selected:
+
+* show only the questions relevant to **Entire Property**
+
+If **Single Room** is selected:
+
+* show only the questions relevant to **Single Room**
+
+If the user switches between them:
+
+* the previous section must fully hide
+* only the new relevant section must remain
+* no duplicate or overlapping question sets
+* no hidden stale section should still affect validation or submission
+
+## Included Storage Space issue
+
+If **Included Storage Space** is supposed to display an input field based on the selected Leasing Space logic, then:
+
+* the actual input box must appear, not just the icon
+* the icon must not float by itself
+* the field must appear inside the correct visible section
+
+---
+
+# IMPORTANT — THIS APPLIES TO COMMERCIAL, BUT MUST NOT BREAK RESIDENTIAL
+
+Please specifically verify the conditional logic for:
+
+## Commercial Landlord listings
+
+* Entire Property
+* Single Room
+
+and make sure only the correct question set shows
+
+## Residential Landlord listings
+
+Ensure this Leasing Space fix does **not** create the same overlap/visibility issue there.
+
+Do not assume Commercial and Residential should use the same exact section logic unless already intended.
+Just make sure each path shows only the proper fields for the selected Leasing Space option.
+
+---
+
+# REQUIRED DEBUG METHOD
+
+Before editing, confirm the exact active Landlord path and files being used.
+
+Then trace these exact sections:
+
+1. Property Condition field source/options
+2. Submit button action and validation path
+3. Leasing Space field
+4. Entire Property conditional section
+5. Single Room conditional section
+6. Included Storage Space field and its wrapper/input rendering
+7. any JS or Livewire logic tied to switching Leasing Space modes
+
+Check for:
+
+* wrong `@if` / `@elseif` conditions
+* overlapping conditional blocks
+* wrong wrapper placement
+* hidden sections still taking space or remaining active
+* misplaced icons without matching inputs
+* stale DOM state after switching options
+* validation rules still tied to hidden sections
+
+---
+
+# REQUIRED TESTING — REAL UI
+
+## A) Property Condition options
+
+In active Landlord create mode:
+
+1. open Property Condition
+2. confirm the only options are:
+
+   * New Construction
+   * Updated / Renovated
+   * Partially Updated
+   * Older but Well Maintained
+
+Then verify the same in:
+
+* draft reload
+* edit mode
+
+---
+
+## B) Submit button
+
+1. complete all required visible Landlord fields
+2. click Submit
+3. confirm form submits successfully
+4. confirm no hidden stale fields block submission
+5. confirm no JS error or stuck loading state
+
+---
+
+## C) Leasing Space — Commercial
+
+1. open Commercial Landlord listing flow
+2. select **Entire Property**
+3. confirm only Entire Property questions show
+4. switch to **Single Room**
+5. confirm Entire Property questions fully disappear
+6. confirm only Single Room questions show
+7. verify Included Storage Space shows its actual input if applicable
+8. switch back again
+9. confirm no overlapping question sets remain
+
+---
+
+## D) Leasing Space — Residential
+
+1. open Residential Landlord listing flow
+2. change Leasing Space options where applicable
+3. confirm only the correct fields show
+4. confirm this fix did not introduce overlapping or duplicated sections in Residential
+
+---
+
+## E) Save / Edit / Reopen
+
+After the fixes:
+
+1. save draft
+2. reopen draft
+3. edit listing
+4. confirm Property Condition, Leasing Space logic, and Submit behavior all remain stable
+
+---
+
+# REQUIRED RESPONSE BACK
+
+Please tell me:
+
+1. the exact active Landlord route/component/path that was edited
+2. the exact files changed
+3. what caused the Submit button failure
+4. what caused the Leasing Space overlap / Included Storage Space icon-without-input issue
+5. whether both Commercial and Residential were verified after the fix
+
+---
+
+# SUCCESS CRITERIA
+
+This task is only complete when all of the following are true in **Hire a Landlord’s Agent**:
+
+* Property Condition options are exactly:
+
+  * New Construction
+  * Updated / Renovated
+  * Partially Updated
+  * Older but Well Maintained
+* Submit button works correctly for Landlord listings
+* Switching Leasing Space between Entire Property and Single Room only shows the correct fields
+* Included Storage Space shows the actual input box when applicable, not just the icon
+* Commercial logic is fixed
+* Residential is not broken by the fix
+* create / draft / edit / save / reopen all remain stable
+
+---
+
+# FINAL RULE
+
+Do **not** mark this complete based only on code review.
+
+Please verify in the actual visible Landlord UI that:
+
+* Property Condition options are updated,
+* Submit works,
+* Leasing Space sections no longer overlap,
+* Included Storage Space shows correctly.

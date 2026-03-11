@@ -1871,6 +1871,29 @@
                 });
             }
 
+            function initLeaseTermSelect2() {
+                var $dlt = $('.lease_term_options');
+                if (!$dlt.length || $dlt.hasClass('select2-hidden-accessible')) return;
+                $dlt.select2({
+                    placeholder: "Select desired lease term",
+                    allowClear: true,
+                });
+                $dlt.off('change.ltsSync').on('change.ltsSync', function() {
+                    var selectedValues = $(this).val() || [];
+                    @this.set('desired_lease_length', selectedValues);
+                    var otherWrapper = document.querySelector('.other_lease_term_wrapper');
+                    if (otherWrapper) {
+                        otherWrapper.style.display = selectedValues.includes('Other') ? 'block' : 'none';
+                    }
+                });
+            }
+
+            initLeaseTermSelect2();
+
+            Livewire.hook('message.processed', () => {
+                initLeaseTermSelect2();
+            });
+
             window.syncLandlordSelect2BeforeSave = function() {
                 var selects2Map = {
                     'appliances': '#appliances',

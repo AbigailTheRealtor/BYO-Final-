@@ -331,9 +331,9 @@
 @php
     $landlordConditionOptions = isset($property_condition_landlord) ? $property_condition_landlord : [
         ['name' => 'New Construction'],
-        ['name' => 'No updates needed: Completely updated'],
-        ['name' => 'Semi-updated: Needs minor updates'],
-        ['name' => 'Not updated: Requires a complete update'],
+        ['name' => 'Updated / Renovated'],
+        ['name' => 'Partially Updated'],
+        ['name' => 'Older but Well Maintained'],
     ];
     if (!empty($condition_prop) && is_string($condition_prop)) {
         $optNames = array_column($landlordConditionOptions, 'name');

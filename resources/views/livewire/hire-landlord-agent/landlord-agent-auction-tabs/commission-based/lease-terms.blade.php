@@ -158,7 +158,7 @@
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                         title="Select if dedicated storage space is included in the lease for the Tenant’s exclusive use.">
                         <i class="fas fa-circle-info"></i>
-
+                    </span>
                 </label>
                 <div class="input-cover">
                     <select wire:model="included_storage_space_res_both" id="garage-needed"
@@ -430,6 +430,7 @@
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                         title="Select if dedicated storage space is included in the lease for the Tenant’s exclusive use.">
                         <i class="fas fa-circle-info"></i>
+                    </span>
                 </label>
                 <div class="input-cover">
                     <select wire:model="included_storage_space_com_entire" id="garage-needed"
