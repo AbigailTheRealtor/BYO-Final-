@@ -4030,6 +4030,8 @@ $lease_types = [
         }
     }
 
+    // Seller Sale Terms visibility logic must remain identical between the dedicated Seller path and the shared TenantAgentAuction seller path.
+    // If changes are made to one path, they must also be applied to the other to keep both Seller flows consistent.
     function applySellerProvisionVisibility() {
         var data = ($('#sale_provision').val() || []);
         var provisionMap = {
