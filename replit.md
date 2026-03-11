@@ -6,6 +6,93 @@ Bid Your Offer is a Laravel-based real estate auction platform designed to strea
 ## User Preferences
 I prefer detailed explanations. Ask before making major changes.
 
+## REQUIRED WORKFLOW BEFORE EVERY FIX
+
+Before editing anything, first confirm:
+
+1. The exact route/URL being tested
+2. Which flow type it is: **dedicated create**, **shared create**, or **shared edit**
+3. The exact active Livewire component
+4. The exact PHP class
+5. The exact Blade view
+6. The included partials
+7. The exact files to edit for that path only
+
+Do not start coding until this is confirmed. Respond with:
+
+- **Route:**
+- **Flow type:** dedicated create / shared create / shared edit
+- **Livewire component:**
+- **PHP class:**
+- **Blade view:**
+- **Included partials:**
+- **Files to edit:**
+
+---
+
+## Confirmed Architecture Map
+
+### Three path types exist for each role:
+
+| Flow type | Description |
+|---|---|
+| **Dedicated create** | Role-specific component used when the logged-in user is that role type |
+| **Shared create** | `TenantAgentAuction` component serving any role via URL parameter |
+| **Shared edit** | `TenantAgentAuctionEdit` component for all roles |
+
+---
+
+### Tenant
+
+- **Primary create path:** `/hire/agent/auction/tenant` → `TenantAgentAuction` → `tenant-agent-auction.blade.php`
+- **Partials:** `tenant-agent-auction-tabs/commission-based/` (listing-details, property-details, leasing-terms, services, additional-details)
+- **Edit path:** `/hire/agent/auction/edit/{id}/tenant` → `TenantAgentAuctionEdit` → `tenant-agent-auction-edit.blade.php`
+- **Note:** Tenant has no separate dedicated component — `TenantAgentAuction` IS the primary
+
+---
+
+### Buyer
+
+- **Dedicated create path (buyer-type users):** `/buyer/add-auction` → `BuyerAgentAuction` → `hire-buyer-agent.blade.php`
+- **Shared create path (other user types):** `/hire/agent/auction/buyer` → `TenantAgentAuction` → `tenant-agent-auction.blade.php`
+- **Partials:** `hire-buyer-agent/buyer-agent-auction-tabs/commission-based/` (listing-details, property-preferences, purchasing-terms, services, additional-details)
+- **Edit path:** `/hire/agent/auction/edit/{id}/buyer` → `TenantAgentAuctionEdit` → `tenant-agent-auction-edit.blade.php`
+- **PHP classes:** `app/Http/Livewire/HireBuyerAgent/BuyerAgentAuction.php` (dedicated), `TenantAgentAuction.php` (shared)
+
+---
+
+### Seller
+
+- **Dedicated create path (seller-type users):** `/hire/agent/seller` → `SellerAgentAuction` → `hire-seller-agent.blade.php`
+- **Shared create path (other user types, e.g. tenant accounts):** `/hire/agent/auction/seller` → `TenantAgentAuction` → `tenant-agent-auction.blade.php`
+- **Partials (both paths use same partials):** `hire-seller-agent/seller-agent-auction-tabs/commission-based/` (listing-details, property-preferences, **seller-terms**, services, additional-details)
+- **Edit path:** `/hire/agent/auction/edit/{id}/seller` → `TenantAgentAuctionEdit` → `tenant-agent-auction-edit.blade.php`
+- **PHP classes:** `app/Http/Livewire/HireSellerAgent/SellerAgentAuction.php` (dedicated), `TenantAgentAuction.php` (shared)
+- **Nav links:** Header for seller-type users → dedicated path. Header tenant dropdown + dashboard → shared path.
+
+---
+
+### Landlord
+
+- **Dedicated create path (landlord-type users):** `/landlord/hire/agent/auction` → `LandLordAgentAuction` → `hire-landlord-agent.blade.php`
+- **Shared create path (other user types):** `/hire/agent/auction/landlord` → `TenantAgentAuction` → `tenant-agent-auction.blade.php`
+- **Partials:** `hire-landlord-agent/landlord-agent-auction-tabs/commission-based/` (listing-details, property-preferences, lease-terms, services)
+- **Edit path:** `/hire/agent/auction/edit/{id}/landlord` → `TenantAgentAuctionEdit` → `tenant-agent-auction-edit.blade.php`
+- **PHP classes:** `app/Http/Livewire/HireLandLordAgent/LandLordAgentAuction.php` (dedicated), `TenantAgentAuction.php` (shared)
+
+---
+
+## Legacy File Rule
+
+Only these should be treated as legacy — do NOT confuse alternate active flows with legacy:
+- `*.blade copy.php` files
+- `*.blade copy 2.php` files
+- Files with explicit deprecation comments
+
+Active files that look similar but serve different paths (e.g. `hire-seller-agent.blade.php` vs `tenant-agent-auction.blade.php`) are NOT legacy — both are active.
+
+---
+
 ## System Architecture
 
 ### UI/UX Decisions
@@ -13,6 +100,9 @@ The platform uses Laravel Mix with TailwindCSS and AlpineJS for a responsive UI,
 
 ### Technical Implementations
 The platform is built on Laravel 8.x, PHP 8.2.23, and PostgreSQL, with Node.js v20 for asset compilation. A shared `TenantAgentAuction.php` Livewire component processes all agent type form submissions, managing submission, draft saving/loading, and metadata persistence. Drafts use an append-only versioning system. Model resolution dynamically selects the correct auction model. Numeric inputs are sanitized, and configuration files centralize display logic. The `ServicesFormatter` groups buyer agent services into canonical categories, while `ListingDisplayHelper` standardizes field formatting. Conditional rendering of fields is managed based on user selections and listing types. PDF listing packets are generated using `barryvdh/laravel-dompdf`, driven by dedicated field map classes and a universal Blade template. Select2 and Livewire integration handles dynamic and static multi-select fields, using `wire:ignore` where appropriate and providing robust initialization and repair mechanisms. A JSON Bridge Pattern synchronizes data for certain buyer multi-select fields between Select2 and Livewire properties. Wizard navigation employs a delegation pattern for tab transitions and validation across Livewire re-renders. Address fields dynamically show/hide based on data presence. File uploads (photos/videos) utilize `wire:key` for stabilization and event delegation for validation. Video links are embedded as iframes or displayed as clickable links. Required field validations and select2 stabilization for property-type-dependent fields are carefully managed.
+
+### Seller Sale Terms Conditional Visibility (both paths)
+`applySellerProvisionVisibility()` and `applySellerFinancingVisibility()` handle immediate show/hide for all dependent sections. Both functions exist in `hire-seller-agent.blade.php` (dedicated path) and `tenant-agent-auction.blade.php` (shared path). The `@this.set()` / `debouncedSet()` pattern syncs values to Livewire so server-side re-renders keep sections visible.
 
 ### System Design Choices
 The architecture emphasizes modularity, clear separation of concerns, and a database-first approach utilizing local database solutions. The system is optimized for production deployment, and the existing database schema for fees is immutable, with display-only formatting updates.
