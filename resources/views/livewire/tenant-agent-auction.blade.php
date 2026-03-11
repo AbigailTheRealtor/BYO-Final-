@@ -2550,6 +2550,16 @@ $lease_types = [
             safeLivewireSet('condition_prop_buyer_json', json);
         }
 
+        function toggleOtherPropertyCondition(vals) {
+            var $div = $('.other_property_condition');
+            if (!$div.length) return;
+            if (vals.includes('Other')) {
+                $div.removeClass('d-none');
+            } else {
+                $div.addClass('d-none');
+            }
+        }
+
         function initConditionSelect2() {
             var $sel = $('.condition_prop_buyer');
             if ($sel.hasClass('select2-hidden-accessible')) return;
@@ -2564,12 +2574,14 @@ $lease_types = [
                 data = [...new Set(data)];
                 safeLivewireSet('condition_prop_buyer', data, true);
                 syncConditionJsonBridge(data);
+                toggleOtherPropertyCondition(data);
             });
         }
 
         $(document).ready(function() {
             initConditionSelect2();
             rehydrateSelect2FromLivewire('.condition_prop_buyer', 'condition_prop_buyer');
+            toggleOtherPropertyCondition($('.condition_prop_buyer').val() || []);
         });
 
         /////////////////////condition_prop_buyer
@@ -2742,8 +2754,8 @@ $lease_types = [
 
 
 
-        // Function to toggle visibility of the "Other Property Condition" input field
-        function toggleOtherPropertyCondition(selectElement) {
+        // Function to toggle visibility of the "Other Property Style" input field (seller property style select)
+        function toggleOtherPropertyStyleSeller(selectElement) {
             const otherFieldContainer = document.querySelector('.other_property_items_seller');
 
             if (!otherFieldContainer) {
@@ -2763,11 +2775,11 @@ $lease_types = [
             if (propertySelect) {
                 // Add the event listener to the select dropdown
                 propertySelect.addEventListener('change', function() {
-                    toggleOtherPropertyCondition(this);
+                    toggleOtherPropertyStyleSeller(this);
                 });
 
                 // Manually trigger the toggle function on page load or after Livewire re-renders
-                toggleOtherPropertyCondition(propertySelect);
+                toggleOtherPropertyStyleSeller(propertySelect);
             }
         }
 
@@ -3414,6 +3426,7 @@ $lease_types = [
                         if (domVals !== lwSorted) {
                             $lf.val(lwLease).trigger('change.select2');
                         }
+                        toggleLease($lf.val() || []);
                     }
                 }
             }

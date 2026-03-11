@@ -2068,7 +2068,16 @@
                 tab.addEventListener('shown.bs.tab', function() {
                     setTimeout(initializeTooltips, 50);
                     setTimeout(function() { initExchangeItemSelect2('force'); }, 150);
-                    setTimeout(rehydrateAllSelect2Fields, 200);
+                    setTimeout(function() {
+                        rehydrateAllSelect2Fields();
+                        if (typeof toggleGarageOptions === 'function') toggleGarageOptions();
+                        if (typeof toggleOtherPropertyCondition === 'function') {
+                            toggleOtherPropertyCondition($('.condition_prop_buyer').val() || []);
+                        }
+                        if (typeof toggleLease === 'function') {
+                            toggleLease($('.lease_for').val() || []);
+                        }
+                    }, 200);
                     setTimeout(function() {
                         if (typeof window._updateNextSubmitButtons === 'function') window._updateNextSubmitButtons();
                     }, 50);
@@ -2373,6 +2382,16 @@
                 @this.set('condition_prop_buyer_json', json);
             }
 
+            function toggleOtherPropertyCondition(vals) {
+                var $div = $('.other_property_condition');
+                if (!$div.length) return;
+                if (vals.includes('Other')) {
+                    $div.removeClass('d-none');
+                } else {
+                    $div.addClass('d-none');
+                }
+            }
+
             function initConditionSelect2() {
                 var $sel = $('.condition_prop_buyer');
                 if ($sel.hasClass('select2-hidden-accessible')) return;
@@ -2387,11 +2406,13 @@
                     data = [...new Set(data)];
                     @this.set('condition_prop_buyer', data, true);
                     syncConditionJsonBridge(data);
+                    toggleOtherPropertyCondition(data);
                 });
 
                 var current = @this.get('condition_prop_buyer');
                 if (current && current.length) {
                     $sel.val(current).trigger('change.select2');
+                    toggleOtherPropertyCondition(Array.isArray(current) ? current : []);
                 }
             }
 
@@ -2596,8 +2617,8 @@
 
 
 
-            // Function to toggle visibility of the "Other Property Condition" input field
-            function toggleOtherPropertyCondition(selectElement) {
+            // Function to toggle visibility of the "Other Property Style" input field (seller property style select)
+            function toggleOtherPropertyStyleSeller(selectElement) {
                 const otherFieldContainer = document.querySelector('.other_property_items_seller');
 
                 if (!otherFieldContainer) {
@@ -2617,11 +2638,11 @@
                 if (propertySelect) {
                     // Add the event listener to the select dropdown
                     propertySelect.addEventListener('change', function() {
-                        toggleOtherPropertyCondition(this);
+                        toggleOtherPropertyStyleSeller(this);
                     });
 
                     // Manually trigger the toggle function on page load or after Livewire re-renders
-                    toggleOtherPropertyCondition(propertySelect);
+                    toggleOtherPropertyStyleSeller(propertySelect);
                 }
             }
 
@@ -3266,6 +3287,7 @@
                             if (domVals !== lwSorted) {
                                 $lf.val(lwLease).trigger('change.select2');
                             }
+                            toggleLease($lf.val() || []);
                         }
                     }
                 }
@@ -3884,7 +3906,7 @@
             addIconsToInputs();
             checkRepresentationStatus();
             if (typeof window._updateNextSubmitButtons === 'function') {
-                setTimeout(window._updateNextSubmitButtons, 50);
+                window._updateNextSubmitButtons();
             }
 
             if (isEditNavigating) return;
