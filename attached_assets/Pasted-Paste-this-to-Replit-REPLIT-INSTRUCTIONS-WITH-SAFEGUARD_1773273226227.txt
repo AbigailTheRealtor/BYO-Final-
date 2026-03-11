@@ -1,0 +1,354 @@
+Paste this to Replit:
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A TENANT’S AGENT ONLY — EDIT FLOW BUG FIXES
+
+### SCOPE
+
+Fix **only** these bugs in the **Hire a Tenant’s Agent edit flow**.
+
+This is specifically for the **edit route**, not the create flow.
+
+The screenshot confirms I am testing on an edit URL like:
+
+`/hire/agent/auction/edit/{id}/tenant`
+
+So you must verify and work on the **actual active edit flow files** for that route, not just the create flow.
+
+---
+
+# HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Only work on Hire a Tenant’s Agent edit flow.**
+2. **Do not edit Buyer, Seller, or Landlord flows.**
+3. **Do not rename, delete, or migrate any database columns.**
+4. **Do not change labels, tooltips, placeholders, option text, or business rules.**
+5. **Do not refactor the entire component architecture.**
+6. **Do not replace Select2, Livewire, or shared JS systems.**
+7. **Do not touch unrelated tabs or fields.**
+8. **Do not make broad “cleanup” changes.**
+9. **Keep this surgical and limited to:**
+
+   * edit hydration
+   * Select2 selected-state sync
+   * “Other” input visibility
+   * save/persist behavior for the affected fields
+   * delay in UI response for the affected fields
+10. **If the actual active edit route uses shared files, isolate the fix so it only affects the Tenant edit flow unless absolutely necessary.**
+
+---
+
+# IMPORTANT — VERIFY THE ACTUAL ACTIVE EDIT FILES FIRST
+
+Before editing anything, confirm the exact active files used by this route:
+
+`/hire/agent/auction/edit/{id}/tenant`
+
+I need you to identify:
+
+1. the exact Livewire component handling this edit route
+2. the exact blade view used by this edit route
+3. the exact partials used for:
+
+   * Acceptable Property Styles
+   * Offered Lease Term
+   * Acceptable Property Conditions
+   * Garage/Parking Features
+4. the exact JS/init code responsible for Select2 initialization and re-initialization in this edit flow
+
+Do **not** assume the create flow files are the same as the edit flow.
+
+Do **not** fix only the create flow.
+
+---
+
+# ROOT-CAUSE DIRECTION
+
+These issues appear related and likely share the same underlying cause:
+
+* edit hydration not fully restoring selected values
+* Select2 UI state not staying synced with Livewire state
+* conditional “Other” logic only firing on manual change instead of also on edit load
+* save-before-tab-change not properly capturing current Select2 values
+* selected values not being marked in the DOM immediately
+* re-render timing causing fields to look selected only after reopening the dropdown
+
+Please fix the **underlying synchronization issue** for the affected Tenant edit fields, not just each symptom separately.
+
+---
+
+# BUGS THAT MUST BE FIXED
+
+## 1) Acceptable Property Styles & Offered Lease Terms have a slight delay
+
+Current issue:
+
+* These fields have a visible delay before reacting properly.
+* Compare them to **Acceptable Property Conditions**, which responds immediately.
+
+Required behavior:
+
+* **Acceptable Property Styles**
+* **Offered Lease Terms**
+
+must respond immediately like **Acceptable Property Conditions**.
+
+That means:
+
+* selection should show immediately
+* “Other” visibility should react immediately when applicable
+* no lag or delayed visual sync
+* no need to click away and back for the field to catch up
+
+Investigate whether these two fields are missing the same immediate sync/init logic that Acceptable Property Conditions already has.
+
+---
+
+## 2) Offered Lease Term — “Other” input does not appear on Edit
+
+Current issue:
+
+* In edit mode, if I select **Other** for **Offered Lease Term**, the custom input box does **not** pop up.
+
+Required behavior:
+
+* If **Other** was already saved, the custom input must automatically appear when edit opens.
+* If I newly select **Other** while editing, the input must appear immediately.
+* The custom value must persist after save, tab change, refresh, and reopen.
+
+---
+
+## 3) Offered Lease Term and Acceptable Property Styles do not save properly on Edit
+
+Current issue:
+
+* I edit these fields
+* move to another tab
+* come back
+* the selections disappear
+* they do not persist correctly
+* sometimes they appear selected only inside the dropdown, but not in the closed field
+* they do not display correctly on the listing
+
+Required behavior:
+
+For both:
+
+* **Offered Lease Term**
+* **Acceptable Property Styles**
+
+make sure that when I edit them:
+
+1. selections save immediately to the correct Livewire state
+2. selections persist when moving to another tab
+3. selections persist when returning to the tab
+4. selections persist after refresh/reopen
+5. selections appear correctly in the closed Select2 field
+6. selections appear highlighted in the dropdown
+7. selections display correctly on the listing/output
+
+---
+
+## 4) Selected options do not visually turn selected immediately
+
+Current issue:
+
+* when I click options in these fields, they do not turn grey/selected immediately
+* but if I reopen the dropdown, they may appear selected internally
+
+Affected fields:
+
+* **Offered Lease Term**
+* **Acceptable Property Styles**
+
+Required behavior:
+
+* selected options must visibly show as selected immediately
+* selected values must immediately appear in the closed Select2 field
+* no extra click, reopen, or tab change should be needed
+
+---
+
+## 5) Garage/Parking Features — “Other” input does not show on Edit
+
+Current issue:
+
+* In edit mode, the **Other** input for **Garage/Parking Features** does not show.
+
+Required behavior:
+
+* If **Other** was already saved, show the custom input automatically when edit opens.
+* If I newly select **Other** while editing, show the input immediately.
+* Persist the custom value after save, tab change, refresh, and reopen.
+
+---
+
+# REQUIRED IMPLEMENTATION APPROACH
+
+## 1) WORK ONLY ON THE ACTUAL TENANT EDIT PATH
+
+Since I am testing on:
+
+`/hire/agent/auction/edit/{id}/tenant`
+
+you must make sure the fix is applied to the **actual active edit flow files**, not just create files.
+
+Before changing anything, confirm:
+
+* exact component
+* exact blade
+* exact partials
+* exact Select2 JS/init code used by this route
+
+---
+
+## 2) COMPARE AGAINST ACCEPTABLE PROPERTY CONDITIONS
+
+Because **Acceptable Property Conditions** already behaves more correctly, use it as the baseline.
+
+Check whether it has:
+
+* better change handlers
+* immediate Livewire sync
+* explicit selected attribute updates
+* better init timing
+* better edit hydration logic
+
+Then make **Acceptable Property Styles** and **Offered Lease Term** behave the same way.
+
+Do not change the working behavior of Acceptable Property Conditions.
+
+---
+
+## 3) FIX EDIT HYDRATION + TAB PERSISTENCE
+
+For the affected fields, make sure edit mode does all of this correctly:
+
+* loads saved values into Livewire
+* reflects those values into Select2
+* updates selected DOM options correctly
+* shows the correct “Other” inputs on load
+* preserves values when moving between tabs
+* preserves values when returning to the tab
+* preserves values after refresh/reopen
+
+---
+
+## 4) FIX “OTHER” VISIBILITY ON BOTH LOAD AND CHANGE
+
+For:
+
+* Offered Lease Term
+* Garage/Parking Features
+
+the “Other” input logic must run in both cases:
+
+1. **on initial edit load**
+2. **when the user changes the field**
+
+Do not rely only on manual `change` events.
+
+---
+
+## 5) DO NOT LET TAB CHANGES WIPE VALUES
+
+When navigating away from the tab and back:
+
+* current Select2 values must be synchronized before tab change
+* Livewire state must not revert to stale values
+* re-render must not blank the closed field display
+* values must not disappear from listing output
+
+If there is already a sync-before-save or sync-before-tab-change helper, reuse/fix it rather than creating conflicting logic.
+
+---
+
+# QA TESTING REQUIRED
+
+After fixing, test all of these in the **actual Tenant edit flow**.
+
+## Route confirmation
+
+1. Open a Tenant edit URL like `/hire/agent/auction/edit/{id}/tenant`
+2. Confirm the fix is on this exact route
+
+## Acceptable Property Styles
+
+1. Open edit
+2. Confirm saved selections show immediately
+3. Change selections
+4. Confirm selected options turn grey immediately
+5. Move to another tab
+6. Return to the tab
+7. Confirm selections remain
+8. Refresh/reopen
+9. Confirm selections remain
+10. Confirm listing display/output shows correctly
+
+## Offered Lease Term
+
+1. Open edit
+2. Confirm saved selections show immediately
+3. Select **Other**
+4. Confirm custom input appears immediately
+5. Enter custom value
+6. Move to another tab
+7. Return
+8. Confirm both selection and custom value remain
+9. Refresh/reopen
+10. Confirm listing display/output shows correctly
+
+## Garage/Parking Features
+
+1. Open edit
+2. Select **Other**
+3. Confirm custom input appears immediately
+4. Save / tab away / come back
+5. Confirm it remains visible with saved value
+
+## Delay comparison
+
+1. Compare Acceptable Property Styles and Offered Lease Term against Acceptable Property Conditions
+2. Confirm they now react immediately with no noticeable delay
+
+---
+
+# WHAT TO REPORT BACK
+
+Report back with:
+
+1. the exact active Livewire component for `/hire/agent/auction/edit/{id}/tenant`
+2. the exact blade and partials used by that route
+3. the exact files changed
+4. the root cause of:
+
+   * the delay
+   * the missing “Other” input on edit
+   * the disappearing selections after tab change
+   * the selected options not turning grey immediately
+5. how the fix was implemented
+6. confirmation that the fix was tested on the real Tenant edit route, not just the create flow
+7. confirmation that Buyer, Seller, and Landlord flows were not changed
+
+---
+
+# FINAL REMINDER
+
+This is a **surgical Tenant edit-flow bug fix only**.
+
+Do not do broader refactors.
+
+Only fix:
+
+* Acceptable Property Styles delay
+* Offered Lease Term delay
+* Offered Lease Term “Other” input on edit
+* Offered Lease Term persistence on edit
+* Acceptable Property Styles persistence on edit
+* immediate selected-state display
+* Garage/Parking Features “Other” input on edit
+
+---
+
+If you want, I can also make this into a shorter **ultra-strict version** with fewer words so Replit stays even more focused.

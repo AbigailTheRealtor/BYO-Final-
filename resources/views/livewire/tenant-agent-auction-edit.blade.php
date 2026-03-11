@@ -2112,6 +2112,24 @@
             }, delay || 200);
         }
 
+        // Safe Livewire setter — guards against component not ready
+        var _editComponentId = '{{ $_instance->id }}';
+        function safeLivewireSet(property, value, defer) {
+            try {
+                if (typeof Livewire !== 'undefined' &&
+                    Livewire.components &&
+                    Livewire.components.componentsById &&
+                    Livewire.components.componentsById[_editComponentId]) {
+                    var _comp = Livewire.components.componentsById[_editComponentId];
+                    if (_comp && typeof _comp.set === 'function') {
+                        _comp.set(property, value, defer || false);
+                    }
+                }
+            } catch (e) {
+                console.warn('[Livewire Edit] Component not ready for property:', property, e);
+            }
+        }
+
         function syncAllSelect2BeforeSave() {
             Object.keys(_s2Timers).forEach(function(k) { clearTimeout(_s2Timers[k]); });
             _s2Timers = {};
@@ -3021,6 +3039,20 @@
                         @this.set('other_parking_space_wrapper', null);
                     }
                 });
+
+                // Restore saved value on edit load so toggleGarageOptions() sees "Other" correctly
+                var _savedGarageVals = @this.get('garage_parking_spaces_option') || [];
+                if (_savedGarageVals && _savedGarageVals.length) {
+                    $sel.val(_savedGarageVals).trigger('change.select2');
+                    // Show "Other" input immediately if "Other" was saved
+                    if (_savedGarageVals.includes('Other') &&
+                        document.getElementById('garage_parking_spaces') &&
+                        document.getElementById('garage_parking_spaces').value === 'Yes') {
+                        $('#other_parking_space_wrapper').show();
+                    }
+                }
+                // Re-run the garage toggle now that the native select has the saved values
+                if (typeof toggleGarageOptions === 'function') toggleGarageOptions();
             }
 
 
