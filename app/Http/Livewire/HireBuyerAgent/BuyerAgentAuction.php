@@ -167,7 +167,7 @@ class BuyerAgentAuction extends Component
     public $garage_needed = '';
     public $other_garage_needed = '';
     public $garage_parking_spaces = '';
-    public $garage_parking_spaces_option = '';
+    public $garage_parking_spaces_option = [];
     public $other_parking_space_wrapper = '';
     public $pool_needed = '';
     public $pool_type = [];
@@ -178,7 +178,7 @@ class BuyerAgentAuction extends Component
     public $number_of_unit_other = '';
     public $minimum_annual_net_income = '';
     public $minimum_cap_rate = '';
-    public $assets = '';
+    public $assets = [];
     public $assets_other = '';
     public $property_criteria = '';
     public $unit_size = '';
@@ -1266,7 +1266,8 @@ class BuyerAgentAuction extends Component
             $this->min_acreage = $auction->get->min_acreage ?? '';
             $this->total_acreage = $auction->get->total_acreage ?? '';
             $this->minimum_cap_rate = $auction->get->minimum_cap_rate ?? '';
-            $this->assets = $auction->get->assets ?? '';
+            $assetsRaw = $auction->get->assets ?? null;
+            $this->assets = $assetsRaw ? (is_array($assetsRaw) ? $assetsRaw : (is_string($assetsRaw) ? json_decode($assetsRaw, true) ?? [] : [])) : [];
             $this->assets_other = $auction->get->assets_other ?? '';
             $this->property_criteria = $auction->get->property_criteria ?? '';
             $this->unit_size = $auction->get->unit_size ?? '';
@@ -1385,7 +1386,8 @@ class BuyerAgentAuction extends Component
             $this->garage_needed = $auction->get->garage_needed ?? '';
             $this->other_garage_needed = $auction->get->other_garage_needed ?? '';
             $this->garage_parking_spaces = $auction->get->garage_parking_spaces ?? '';
-            $this->garage_parking_spaces_option = $auction->get->garage_parking_spaces_option ?? '';
+            $gpsRaw = $auction->get->garage_parking_spaces_option ?? null;
+            $this->garage_parking_spaces_option = $gpsRaw ? (is_array($gpsRaw) ? $gpsRaw : (is_string($gpsRaw) ? json_decode($gpsRaw, true) ?? [] : [])) : [];
             $this->other_parking_space_wrapper = $auction->get->other_parking_space_wrapper ?? '';
             $this->pool_needed = $auction->get->pool_needed ?? '';
 
@@ -1608,6 +1610,8 @@ class BuyerAgentAuction extends Component
                 'number_of_unit_type' => $this->number_of_unit_type,
                 'condition_prop_buyer' => $this->condition_prop_buyer,
                 'property_items' => $this->property_items,
+                'assets' => $this->assets,
+                'garage_parking_spaces_option' => $this->garage_parking_spaces_option,
             ]);
             
             // Clear the loading flag after all data is loaded

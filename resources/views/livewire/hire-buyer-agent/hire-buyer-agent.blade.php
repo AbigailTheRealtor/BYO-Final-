@@ -1125,6 +1125,8 @@
                     '#non_negotiable_amenities': 'non_negotiable_amenities',
                     '#view_preference': 'view_preference',
                     '#condition_prop_buyer': 'condition_prop_buyer',
+                    '#garage_parking_spaces_option': 'garage_parking_spaces_option',
+                    '#assets': 'assets',
                 };
                 Object.entries(multiFields).forEach(function([selector, prop]) {
                     var $el = $(selector);
@@ -1232,6 +1234,9 @@
             var nna = $('#non_negotiable_amenities').val() || [];
             var sp = $('#sale_provision').val() || [];
             var of = $('#offered_financing').val() || [];
+            var vp = $('#view_preference').val() || [];
+            var gps = $('#garage_parking_spaces_option').val() || [];
+            var ass = $('#assets').val() || [];
 
             cpb = [...new Set(cpb)];
             nut = [...new Set(nut)];
@@ -1239,6 +1244,9 @@
             nna = [...new Set(nna)];
             sp = [...new Set(sp)];
             of = [...new Set(of)];
+            vp = [...new Set(vp)];
+            gps = [...new Set(gps)];
+            ass = [...new Set(ass)];
 
             @this.set('condition_prop_buyer', cpb);
             @this.set('number_of_unit_type', nut);
@@ -1246,6 +1254,9 @@
             @this.set('non_negotiable_amenities', nna);
             @this.set('sale_provision', sp);
             @this.set('offered_financing', of);
+            @this.set('view_preference', vp);
+            @this.set('garage_parking_spaces_option', gps);
+            @this.set('assets', ass);
 
             setJsonModel('condition_prop_buyer_json', cpb);
             setJsonModel('number_of_unit_type_json', nut);
@@ -1313,6 +1324,38 @@
                     selectedValues = [...new Set(selectedValues)];
                     debouncedSet('condition_prop_buyer', selectedValues);
                     setJsonModel('condition_prop_buyer_json', selectedValues);
+                });
+            }
+
+            if ($('#garage_parking_spaces_option').length && !$('#garage_parking_spaces_option').hasClass('select2-hidden-accessible')) {
+                $('#garage_parking_spaces_option').select2({
+                    placeholder: "Select parking features",
+                    allowClear: true,
+                });
+
+                $('#garage_parking_spaces_option').off('change.gpsSync').on('change.gpsSync', function() {
+                    let selectedValues = $(this).val() || [];
+                    selectedValues = [...new Set(selectedValues)];
+                    debouncedSet('garage_parking_spaces_option', selectedValues);
+                    var hasOther = selectedValues.includes('Other');
+                    var otherWrapper = document.getElementById('other_parking_space_wrapper');
+                    var garageMainSelect = document.getElementById('garage_parking_spaces');
+                    if (otherWrapper && garageMainSelect && garageMainSelect.value === 'Yes') {
+                        otherWrapper.classList.toggle('d-none', !hasOther);
+                    }
+                });
+            }
+
+            if ($('#assets').length && !$('#assets').hasClass('select2-hidden-accessible')) {
+                $('#assets').select2({
+                    placeholder: "Select required assets",
+                    allowClear: true,
+                });
+
+                $('#assets').off('change.assetsSync').on('change.assetsSync', function() {
+                    let selectedValues = $(this).val() || [];
+                    selectedValues = [...new Set(selectedValues)];
+                    debouncedSet('assets', selectedValues);
                 });
             }
 
@@ -1426,8 +1469,14 @@
                     }
                 }
 
-                // Then check if "Other" is selected in the options dropdown
-                if (garageOptions && garageOptions.value === "Other" && garageSelect.value === "Yes") {
+                // Then check if "Other" is selected in the options dropdown (handles both native and Select2 multi-select)
+                var garageOptionValues = [];
+                if (garageOptions) {
+                    garageOptionValues = $('#garage_parking_spaces_option').hasClass('select2-hidden-accessible')
+                        ? ($('#garage_parking_spaces_option').val() || [])
+                        : Array.from(garageOptions.selectedOptions || []).map(function(o) { return o.value; });
+                }
+                if (garageOptions && garageOptionValues.includes("Other") && garageSelect && garageSelect.value === "Yes") {
                     otherInputWrapper.classList.remove('d-none'); // Show input field
                 } else {
                     otherInputWrapper.classList.add('d-none'); // Hide input field
@@ -1510,7 +1559,7 @@
                     
                     selectedValues = [...new Set(selectedValues)];
                     
-                    Livewire.emit('updatePreference', selectedValues);
+                    debouncedSet('view_preference', selectedValues);
 
                     if (selectedValues.includes('Other')) {
                         $('#other_preferences').show();
