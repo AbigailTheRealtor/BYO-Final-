@@ -2902,26 +2902,36 @@
                 let otherInputWrapper = document.getElementById('other_parking_space_wrapper');
                 let garageOptions = document.getElementById('garage_parking_spaces_option');
 
-                // First check the main garage/parking spaces selection
-                if (garageSelect) {
+                // First check the main garage/parking spaces selection (only exists for Commercial)
+                if (garageSelect && optionsWrapper) {
                     if (garageSelect.value === "Yes") {
                         optionsWrapper.classList.remove('d-none'); // Show options dropdown
                     } else {
                         optionsWrapper.classList.add('d-none'); // Hide options dropdown
-                        otherInputWrapper.classList.add('d-none'); // Also hide other input
+                        if (otherInputWrapper) otherInputWrapper.classList.add('d-none'); // Also hide other input
                     }
                 }
 
                 // Then check if "Other" is selected in the options dropdown
-                if (garageOptions) {
-                    // Get all selected options
-                    let selectedOptions = Array.from(garageOptions.selectedOptions).map(option => option.value);
-
-                    // Check if "Other" is among the selected options
-                    if (selectedOptions.includes("Other") && garageSelect.value === "Yes") {
-                        otherInputWrapper.classList.remove('d-none'); // Show input field
+                if (garageOptions && otherInputWrapper) {
+                    // Use Select2 value if initialized, otherwise use native selectedOptions
+                    var $gSel = $(garageOptions);
+                    var selectedOptions;
+                    if ($gSel.hasClass('select2-hidden-accessible')) {
+                        selectedOptions = $gSel.val() || [];
                     } else {
-                        otherInputWrapper.classList.add('d-none'); // Hide input field
+                        selectedOptions = Array.from(garageOptions.selectedOptions).map(opt => opt.value);
+                    }
+
+                    // garageSelect may not exist (non-Commercial): treat as "enabled" in that case
+                    var garageEnabled = !garageSelect || garageSelect.value === "Yes";
+
+                    if (selectedOptions.includes("Other") && garageEnabled) {
+                        otherInputWrapper.classList.remove('d-none'); // Show input field
+                    } else if (!garageEnabled) {
+                        otherInputWrapper.classList.add('d-none'); // Hide when garage is No
+                    } else {
+                        otherInputWrapper.classList.add('d-none'); // Hide when Other not selected
                     }
                 }
             }
@@ -3040,18 +3050,16 @@
                     }
                 });
 
-                // Restore saved value on edit load so toggleGarageOptions() sees "Other" correctly
-                var _savedGarageVals = @this.get('garage_parking_spaces_option') || [];
+                // Restore saved value on edit load using PHP-rendered value (no timing issue)
+                var _savedGarageVals = @json($garage_parking_spaces_option ?? []);
                 if (_savedGarageVals && _savedGarageVals.length) {
                     $sel.val(_savedGarageVals).trigger('change.select2');
                     // Show "Other" input immediately if "Other" was saved
-                    if (_savedGarageVals.includes('Other') &&
-                        document.getElementById('garage_parking_spaces') &&
-                        document.getElementById('garage_parking_spaces').value === 'Yes') {
+                    if (_savedGarageVals.includes('Other')) {
                         $('#other_parking_space_wrapper').show();
                     }
                 }
-                // Re-run the garage toggle now that the native select has the saved values
+                // Re-run the garage toggle so all visibility is in sync
                 if (typeof toggleGarageOptions === 'function') toggleGarageOptions();
             }
 

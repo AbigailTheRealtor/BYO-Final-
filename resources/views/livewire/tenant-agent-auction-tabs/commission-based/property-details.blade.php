@@ -652,7 +652,7 @@
     </div>
 @endif
 <!-- Garage/Parking Spaces Type Dropdown -->
-<div class="form-group d-none" id="garage_parking_spaces_option_wrapper" wire:ignore>
+<div class="form-group {{ ($garage_parking_spaces ?? '') === 'Yes' ? '' : 'd-none' }}" id="garage_parking_spaces_option_wrapper" wire:ignore>
     <label class="fw-bold">Garage/Parking Features:</label>
 
     <div class="input-cover">
@@ -674,7 +674,7 @@
     <span class="error mt-2" id="garage_parking_spaces_option_error"></span>
 </div>
 <!-- Other Parking Space Text Input -->
-<div class="form-group d-none" id="other_parking_space_wrapper">
+<div class="form-group {{ ($garage_parking_spaces ?? '') === 'Yes' && in_array('Other', (array)($garage_parking_spaces_option ?? [])) ? '' : 'd-none' }}" id="other_parking_space_wrapper" wire:ignore>
     {{-- <label class="fw-bold">Other Garage/Parking Features:</label> --}}
     <div class="input-cover">
 

@@ -1,0 +1,262 @@
+Paste this to Replit:
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A LANDLORD’S AGENT ONLY — SUBMIT BUTTON FLASHES GREEN THEN DISABLES / DOES NOT SUBMIT
+
+### SCOPE
+
+Fix **only** this bug in the **Hire a Landlord’s Agent** flow:
+
+* On the final Landlord tab, the **Submit** button briefly flashes dark green for a moment, then returns to the disabled/unsubmittable state and does **not** complete submission.
+
+The screenshot shows this is happening on the Landlord final step with **Save Draft** and **Submit** visible.
+
+This is a **real active-flow bug** and must be fixed in the **actual Landlord flow files**, not in a guessed or parallel path.
+
+---
+
+# HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Only work on Hire a Landlord’s Agent flow.**
+2. **Do not edit Tenant, Buyer, or Seller flows.**
+3. **Do not rename, delete, or migrate any database columns.**
+4. **Do not change unrelated field labels, tooltips, placeholders, option values, or layout.**
+5. **Do not refactor the whole component architecture.**
+6. **Do not replace Livewire, Select2, or shared frontend systems.**
+7. **Do not make broad cleanup changes.**
+8. **If shared files must be touched, isolate the fix so it only affects Landlord flow unless absolutely necessary.**
+9. **Do not break Save Draft, edit, or draft reopen behavior.**
+10. **Do not claim fixed unless tested in the exact active Landlord flow shown in the screenshot.**
+
+---
+
+# IMPORTANT — VERIFY THE ACTUAL ACTIVE FILES FIRST
+
+Before editing anything, confirm the exact active files used by:
+
+* Hire a Landlord **create**
+* Hire a Landlord **draft reopen**
+* Hire a Landlord **edit/final submit path**, if applicable
+
+Also identify:
+
+1. the exact Livewire component for the active Landlord form
+2. the exact blade used by the final tab
+3. the exact partial/blade section containing the **Submit** button
+4. the exact submit method called by that button
+5. the exact JS/form-validity logic that is enabling/disabling Submit
+6. whether the button state depends on:
+
+   * browser form validity
+   * JS `checkFormValidity()`
+   * Livewire loading state
+   * hidden required fields
+   * conditional sections
+   * Select2 sync-before-submit logic
+
+Do **not** assume the create path and final submit path are the same unless confirmed.
+
+---
+
+# CURRENT ISSUE
+
+The Submit button behavior is:
+
+* it briefly flashes dark green
+* then immediately becomes unsubmittable again
+* no successful submit happens
+
+That strongly suggests one of these:
+
+* the click is firing, but frontend validity logic immediately disables it again
+* hidden required fields are failing validation
+* JS-controlled fields are not synced before submit
+* submit request starts, then is aborted/reset by client-side validation state
+* a conditional field from another tab is still considered required
+* the button is tied to a transient enabled state and then reverts
+* Livewire method is called, but validation fails silently and UI does not surface the real reason
+* Save Draft works, but final Submit path has extra gating that is broken
+
+This must be investigated and fixed at the **actual source**.
+
+---
+
+# REQUIRED BEHAVIOR
+
+When all required fields are complete, clicking **Submit** must:
+
+1. remain enabled long enough to submit
+2. call the correct Livewire submit method
+3. validate correctly
+4. show visible validation feedback if something is missing
+5. complete submission successfully
+6. not revert to disabled state unless there is a real visible validation error
+
+If something is blocking submission, the user must see **what field is blocking it**.
+
+The button must not just flash and die.
+
+---
+
+# REQUIRED INVESTIGATION
+
+Please inspect for all of these possible causes:
+
+## 1) Hidden required fields
+
+Check whether there are hidden required inputs on:
+
+* current tab
+* previous tabs
+* conditionally hidden sections
+* file upload/video sections
+* commercial/residential conditional sections
+
+A hidden required field can cause the button to briefly enable and then fail browser validity.
+
+## 2) JS form-validity gating
+
+Check whether the button enabled/disabled state is controlled by custom JS such as:
+
+* `checkFormValidity()`
+* `syncBeforeSave()`
+* mutation/change listeners
+* delayed re-check after click
+
+If so, identify exactly why it is turning the button back off.
+
+## 3) Livewire submit method mismatch
+
+Check whether:
+
+* the button is calling the wrong method
+* the final tab is using the wrong submit handler
+* draft and final submit use different paths and only draft works
+
+## 4) Validation failing silently
+
+Check whether submit is actually firing but failing server-side validation without visible feedback.
+
+If so:
+
+* surface the validation errors visibly
+* do not leave the button in a fake dead state
+
+## 5) JS-controlled field sync
+
+Check whether Select2 or other JS-controlled inputs are not being synchronized into Livewire state before submit.
+
+If required data is missing server-side because JS state was never synced, that can cause silent validation failure.
+
+## 6) Button state reset after click
+
+Check whether:
+
+* `wire:loading`
+* disabled attributes
+* class toggles
+* state watchers
+* Alpine/JS listeners
+
+are resetting the button immediately after click.
+
+---
+
+# REQUIRED FIX
+
+Fix the **actual cause** of the Submit failure in the **active Landlord flow**.
+
+Do not use a superficial workaround like permanently forcing the button green.
+
+The fix must ensure:
+
+* real validity
+* real submission
+* real visible validation errors if incomplete
+* no flicker-to-disabled behavior without explanation
+
+---
+
+# DO NOT BREAK SAVE DRAFT
+
+The screenshot shows **Save Draft** next to **Submit**.
+
+Make sure the Submit fix does **not** break:
+
+* Save Draft
+* reopening drafts
+* final submission from drafts
+* previous/next navigation
+
+---
+
+# QA TESTING REQUIRED
+
+After fixing, test all of these in the **actual active Landlord flow**.
+
+## Test 1 — Valid submit
+
+1. Open Hire a Landlord flow
+2. Complete all required fields
+3. Go to final tab
+4. Click Submit
+5. Confirm the button does not flash and revert
+6. Confirm submission completes successfully
+
+## Test 2 — Missing field
+
+1. Intentionally leave one required field incomplete
+2. Click Submit
+3. Confirm visible validation feedback appears
+4. Confirm the button does not just flash and die silently
+
+## Test 3 — Draft path
+
+1. Save as draft
+2. Reopen draft
+3. Go to final tab
+4. Click Submit
+5. Confirm submission completes successfully
+
+## Test 4 — Conditional fields
+
+1. Test with both Residential and Commercial Landlord scenarios if relevant
+2. Confirm no hidden required field is blocking submission
+
+---
+
+# WHAT TO REPORT BACK
+
+Report back with:
+
+1. the exact active Livewire component and blade used by the final Landlord submit step
+2. the exact file/method containing the Submit button
+3. the exact file/method handling final submit
+4. the exact root cause of the flash-green-then-disable behavior
+5. whether the problem was:
+
+   * hidden required fields
+   * JS validity gating
+   * unsynced JS-controlled inputs
+   * Livewire validation failure
+   * wrong submit method
+   * something else
+6. the exact files changed
+7. confirmation that valid submit, invalid submit, and draft→submit were all tested
+8. confirmation that Tenant, Buyer, and Seller flows were not changed
+
+---
+
+# FINAL REMINDER
+
+This is a **surgical Hire a Landlord Submit bug fix only**.
+
+Fix only:
+
+* Submit button flashes green briefly then becomes unsubmittable
+* final submission not completing
+
+Do not do unrelated edits or broad refactors.
+
+---
