@@ -2308,6 +2308,7 @@ $lease_types = [
             { id: '#non_negotiable_amenities', prop: 'non_negotiable_amenities' },
             { id: '#tenant_require', prop: 'tenant_require' },
             { id: '#garage_parking_spaces_option_buyer', prop: 'garage_parking_spaces_option_buyer' },
+            { id: '#assets', prop: 'assets' },
         ];
 
         select2Fields.forEach(function(field) {
@@ -2678,11 +2679,14 @@ $lease_types = [
         initPropertyItemsSelect2();
         Livewire.hook('message.processed', () => {
             var currentPT = @this.get('property_type') || '';
+            var currentUT = (@this.get('user_type') || '').toLowerCase();
             var lwVals = @this.get('property_items') || [];
             if (currentPT !== _lastPropertyTypeForPI) {
                 _lastPropertyTypeForPI = currentPT;
                 setTimeout(function() {
-                    rebuildPropertyItemsOptions(currentPT, lwVals);
+                    if (currentUT !== 'buyer') {
+                        rebuildPropertyItemsOptions(currentPT, lwVals);
+                    }
                     initPropertyItemsSelect2();
                 }, 100);
             } else {
@@ -2849,11 +2853,12 @@ $lease_types = [
             // when user changes selections…
             $select.on('change', () => {
                 const vals = $select.val() || [];
-                // push into your Livewire property
-                Livewire.emit('assetsOption', vals);
+                debouncedSet('assets', vals);
                 // show/hide the "Other" text input
                 $other.toggleClass('d-none', !vals.includes('Other'));
             });
+
+            rehydrateSelect2FromLivewire('#assets', 'assets');
         }
 
         //// End •      Business & Real Estate Purchase Requirements
@@ -3034,8 +3039,8 @@ $lease_types = [
 
             // Then check if "Other" is selected in the options dropdown
             if (garageOptions) {
-                // Get all selected options
-                let selectedOptions = Array.from(garageOptions.selectedOptions).map(option => option.value);
+                // Use jQuery .val() to get correct values when Select2 is active
+                let selectedOptions = $('#garage_parking_spaces_option').val() || [];
 
                 // Check if "Other" is among the selected options
                 if (selectedOptions.includes("Other") && garageSelect.value === "Yes") {
@@ -3155,8 +3160,7 @@ $lease_types = [
             $sel.on('change', function() {
                 const vals = $(this).val() || [];
 
-                // Trigger Livewire update for selected values
-                Livewire.emit('updateGarageParkingSpaces', vals);
+                debouncedSet('garage_parking_spaces_option', vals);
 
                 // Check if "Other" is selected and toggle the input field visibility
                 if (vals.includes('Other')) {
@@ -3166,6 +3170,8 @@ $lease_types = [
                     safeLivewireSet('other_parking_space_wrapper', null); // Clear the text input
                 }
             });
+
+            rehydrateSelect2FromLivewire('#garage_parking_spaces_option', 'garage_parking_spaces_option');
         }
 
         

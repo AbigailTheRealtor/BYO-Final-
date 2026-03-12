@@ -149,7 +149,7 @@ class TenantAgentAuction extends Component
 
     public $appliances = [];
     public $other_appliances = '';
-    public $assets = '';
+    public $assets = [];
     public $assets_other = '';
     public $unit_number = '';
     public $unit_size = '';
