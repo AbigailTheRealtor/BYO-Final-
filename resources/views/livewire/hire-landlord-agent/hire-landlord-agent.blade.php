@@ -2275,6 +2275,7 @@
                 const saveButton = document.querySelector('.wizard-step-finish');
                 if (saveButton) {
                     saveButton.disabled = !isValid;
+                    saveButton.classList.toggle('disabled', !isValid);
                 }
             });
 
@@ -2517,6 +2518,7 @@
                 const saveButton = document.querySelector('.wizard-step-finish');
                 if (saveButton) {
                     saveButton.disabled = !isValid;
+                    saveButton.classList.toggle('disabled', !isValid);
                 }
             });
 
@@ -2569,6 +2571,7 @@
                 notice.classList.toggle('d-none', !isRepresented);
                 nextBtn.disabled = isRepresented;
                 saveBtn.disabled = isRepresented;
+                saveBtn.classList.toggle('disabled', isRepresented);
             }
         }
 
@@ -2647,11 +2650,26 @@
                 return field.value.trim() !== '';
             }
 
+            function isFieldVisibleAndEnabled(field) {
+                if (!field) return false;
+                if (field.disabled) return false;
+                if (field.getAttribute('aria-hidden') === 'true') return false;
+                if (field.offsetWidth === 0 && field.offsetHeight === 0) return false;
+                let el = field.parentElement;
+                while (el && el !== document.body) {
+                    const style = window.getComputedStyle(el);
+                    if (style.display === 'none' || el.classList.contains('d-none')) return false;
+                    el = el.parentElement;
+                }
+                return true;
+            }
+
             function validateAllTabsStrictly() {
                 const requiredFields = getAllRequiredFields();
                 let invalidFields = [];
 
                 requiredFields.forEach(field => {
+                    if (!isFieldVisibleAndEnabled(field)) return;
                     if (!isFieldValid(field)) {
                         const tab = field.closest('.tab-pane');
                         const tabIndex = [...document.querySelectorAll('.tab-pane')].indexOf(tab) + 1;
