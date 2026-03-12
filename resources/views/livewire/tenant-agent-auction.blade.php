@@ -4408,7 +4408,7 @@ $lease_types = [
                             var lwChecks = [
                                 { prop: 'property_type', label: 'Property Type' },
                             ];
-                            if (curUserType === 'tenant' || curUserType === 'landlord') {
+                            if (curUserType === 'tenant') {
                                 lwChecks.push({ prop: 'lease_for', label: 'Offered Lease Term', isArray: true, domSel: '.lease_for' });
                                 lwChecks.push({ prop: 'leasing_spaces_tenant', label: 'Leasing Space', isArray: true, domSel: '#leasing_spaces_tenant' });
                             }
@@ -4559,7 +4559,7 @@ $lease_types = [
                                 var lwReqs = [
                                     { prop: 'property_type', label: 'Property Type' },
                                 ];
-                                if (curUT === 'tenant' || curUT === 'landlord') {
+                                if (curUT === 'tenant') {
                                     lwReqs.push({ prop: 'lease_for', label: 'Offered Lease Term', isArray: true, domSel: '.lease_for' });
                                     lwReqs.push({ prop: 'leasing_spaces_tenant', label: 'Leasing Space', isArray: true, domSel: '#leasing_spaces_tenant' });
                                 }
