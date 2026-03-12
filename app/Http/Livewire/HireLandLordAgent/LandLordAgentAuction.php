@@ -2377,6 +2377,22 @@ class LandLordAgentAuction extends Component
 
     public function store()
     {
+        $this->validate([
+            'first_name'           => 'required|string',
+            'last_name'            => 'required|string',
+            'phone_number'         => 'required|string',
+            'email'                => 'required|email',
+            'desired_lease_length' => 'required|array|min:1',
+        ], [
+            'first_name.required'           => 'First Name is required.',
+            'last_name.required'            => 'Last Name is required.',
+            'phone_number.required'         => 'Phone Number is required.',
+            'email.required'                => 'Email Address is required.',
+            'email.email'                   => 'Please enter a valid email address.',
+            'desired_lease_length.required' => 'Desired Lease Term is required.',
+            'desired_lease_length.min'      => 'Please select at least one Desired Lease Term.',
+        ]);
+
         try {
             $this->isDraft = 0;
 

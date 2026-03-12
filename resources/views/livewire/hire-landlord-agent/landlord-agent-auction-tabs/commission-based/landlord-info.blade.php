@@ -15,8 +15,9 @@
 
     <div class="input-cover">
         <input type="text" wire:model="first_name" class="form-control has-icon" data-icon="fa-solid fa-user"
-            placeholder="Enter first name">
+            placeholder="Enter first name" required>
     </div>
+    @error('first_name') <span class="text-danger">{{ $message }}</span> @enderror
 </div>
 
 <!-- Last Name -->
@@ -24,8 +25,9 @@
     <label class="fw-bold">Last Name:<span class="text-danger">*</span></label>
     <div class="input-cover">
         <input type="text" wire:model="last_name" class="form-control has-icon" data-icon="fa-solid fa-user"
-            placeholder="Enter last name">
+            placeholder="Enter last name" required>
     </div>
+    @error('last_name') <span class="text-danger">{{ $message }}</span> @enderror
 </div>
 
 <!-- Phone Number -->
@@ -43,8 +45,10 @@
   autocomplete="tel"
   maxlength="14"
   oninput="formatLandlordPhone(this)"
+  required
 />
   </div>
+  @error('phone_number') <span class="text-danger">{{ $message }}</span> @enderror
 </div>
 
 <!-- Email -->
@@ -52,8 +56,9 @@
     <label class="fw-bold">Email Address:<span class="text-danger">*</span></label>
     <div class="input-cover">
         <input type="email" wire:model="email" class="form-control has-icon" data-icon="fa-solid fa-envelope"
-            placeholder="Enter email address ">
+            placeholder="Enter email address" required>
     </div>
+    @error('email') <span class="text-danger">{{ $message }}</span> @enderror
 </div>
 @if ($service_type === 'full_service')
 

@@ -1,0 +1,292 @@
+Paste this to Replit:
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A LANDLORD’S AGENT ONLY — REQUIRED FIELD VALIDATION + REQUIRED MARKER FIXES
+
+### SCOPE
+
+Fix **only** these required-field issues in the **Hire a Landlord’s Agent** flow.
+
+Current problem:
+
+* Landlord listings are submitting even when required fields are missing
+
+This must be corrected so listings **only submit once all required fields are filled in**.
+
+---
+
+# REQUIRED CHANGES
+
+## 1) Make **Desired Lease Term** required
+
+**Desired Lease Term** must be a required field.
+
+If it is missing:
+
+* final submit must be blocked
+* the user must see the same required-field notice/error behavior used elsewhere in the form
+
+---
+
+## 2) Remove the red star from fields that should NOT be required
+
+Remove the red required star next to:
+
+* **Tenant Pays**
+* **Owner Pays**
+* **Terms of Lease**
+* **Rent Includes**
+
+These should **not** display as required fields.
+
+Also make sure they are **not enforced as required** in final validation unless there is already a very specific existing business rule that truly requires them.
+
+---
+
+## 3) Make these contact fields required
+
+These fields must be required in the **Hire a Landlord’s Agent** flow:
+
+* **First Name**
+* **Last Name**
+* **Phone Number**
+* **Email Address**
+
+If any are missing:
+
+* final submit must be blocked
+* the same required-field notice/error style used on the rest of the form must appear
+
+---
+
+## 4) Final rule
+
+**Listings should only submit once all required fields are filled in.**
+
+That means the active Landlord submit path must enforce required validation correctly and consistently.
+
+---
+
+# HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Only work on Hire a Landlord’s Agent flow.**
+2. **Do not edit Tenant, Buyer, or Seller flows.**
+3. **Do not rename, delete, or migrate any database columns.**
+4. **Do not change unrelated labels, tooltips, placeholders, or option text.**
+5. **Do not refactor the whole component architecture.**
+6. **Do not replace Livewire, Select2, or existing frontend systems.**
+7. **Do not make broad cleanup edits.**
+8. **If shared files must be touched, isolate the fix so it only affects Landlord flow unless absolutely necessary.**
+9. **Do not break Save Draft, draft reopen, edit loading, or listing display.**
+10. **Do not make additional fields required beyond the ones listed here, and do not leave non-required fields visually marked as required.**
+
+---
+
+# STEP 1 — VERIFY THE ACTUAL ACTIVE LANDLORD FILES FIRST
+
+Before editing anything, identify the exact active files used by:
+
+* Hire a Landlord **create**
+* Hire a Landlord **draft reopen**
+* Hire a Landlord **edit**
+* final **submit** path
+
+Also identify:
+
+1. the exact Livewire component(s)
+2. the exact blade(s)
+3. the exact partial(s) containing:
+
+   * Desired Lease Term
+   * Tenant Pays
+   * Owner Pays
+   * Terms of Lease
+   * Rent Includes
+   * First Name
+   * Last Name
+   * Phone Number
+   * Email Address
+4. the exact validation method used on final submit
+5. the exact UI/markup source of the red required stars for those fields
+
+Do **not** assume the create and edit paths use the same files.
+
+---
+
+# CURRENT ISSUE
+
+The Landlord listing currently submits without all required fields being filled in.
+
+That means the active Landlord submit path is not enforcing required validation properly for the true required fields.
+
+There is also a required-marker mismatch:
+
+* some fields that should not be required still show a red star
+* true required fields are not being enforced consistently
+
+This must be corrected so the UI and backend validation match.
+
+---
+
+# REQUIRED IMPLEMENTATION APPROACH
+
+## 1) ADD REQUIRED VALIDATION TO THE ACTUAL ACTIVE LANDLORD SUBMIT PATH
+
+Make sure the active Landlord final submission method validates these required fields before allowing submit:
+
+* Desired Lease Term
+* First Name
+* Last Name
+* Phone Number
+* Email Address
+
+If drafts are allowed to be incomplete, keep draft-save behavior intact, but final submit must require these fields.
+
+---
+
+## 2) REMOVE REQUIRED STARS FROM NON-REQUIRED FIELDS
+
+Remove the red required star from:
+
+* Tenant Pays
+* Owner Pays
+* Terms of Lease
+* Rent Includes
+
+Also make sure those fields are not being treated as required by the active final validation logic unless that is truly intended by a pre-existing explicit business rule. If not, they should not block final submit.
+
+---
+
+## 3) SHOW VISIBLE VALIDATION FEEDBACK
+
+If any required field is missing:
+
+* show the same required-field notice/error style already used elsewhere in the form
+* do not allow submit to go through
+* do not fail silently
+
+---
+
+## 4) KEEP UI + VALIDATION CONSISTENT
+
+The red stars, required attributes, and backend validation must match.
+
+That means:
+
+* required fields should look required
+* non-required fields should not look required
+* final validation should enforce exactly what the UI communicates
+
+---
+
+## 5) HANDLE JS/SELECT2 FIELDS CORRECTLY IF APPLICABLE
+
+If **Desired Lease Term** is Select2 or JS-controlled:
+
+* ensure its value is synchronized before final validation/submission
+* do not let unsynced frontend state bypass or break validation
+
+---
+
+# QA TESTING REQUIRED
+
+After fixing, test all of these in the **actual active Landlord flow**.
+
+## Test 1 — Missing Desired Lease Term
+
+1. Open Landlord create flow
+2. Leave **Desired Lease Term** blank
+3. Fill the rest
+4. Try to submit
+5. Confirm submit is blocked
+6. Confirm visible required-field error appears
+
+## Test 2 — Missing contact fields
+
+1. Leave blank:
+
+   * First Name
+   * Last Name
+   * Phone Number
+   * Email Address
+2. Try to submit
+3. Confirm submit is blocked
+4. Confirm visible required-field errors appear
+
+## Test 3 — Non-required fields
+
+1. Leave blank:
+
+   * Tenant Pays
+   * Owner Pays
+   * Terms of Lease
+   * Rent Includes
+2. Confirm they do **not** show red required stars
+3. Confirm they do **not** incorrectly block final submit if all actual required fields are filled
+
+## Test 4 — Valid submit
+
+1. Fill all required fields:
+
+   * Desired Lease Term
+   * First Name
+   * Last Name
+   * Phone Number
+   * Email Address
+2. Submit
+3. Confirm listing submits successfully
+
+## Test 5 — Draft reopen
+
+1. Save draft
+2. Reopen draft
+3. Leave one required field blank
+4. Try final submit
+5. Confirm submit is blocked with visible error
+6. Fill missing field
+7. Confirm final submit works
+
+---
+
+# WHAT TO REPORT BACK
+
+Report back with:
+
+1. the exact active Landlord create/draft/edit/submit files
+2. the exact validation method where required rules were added/updated
+3. the exact files changed
+4. confirmation that these are now required:
+
+   * Desired Lease Term
+   * First Name
+   * Last Name
+   * Phone Number
+   * Email Address
+5. confirmation that these no longer show red required stars:
+
+   * Tenant Pays
+   * Owner Pays
+   * Terms of Lease
+   * Rent Includes
+6. confirmation that final submit is blocked until all true required fields are filled
+7. confirmation that Save Draft behavior was not broken
+8. confirmation that Tenant, Buyer, and Seller flows were not changed
+
+---
+
+# FINAL REMINDER
+
+This is a **surgical Hire a Landlord required-field validation and required-marker fix only**.
+
+Fix only:
+
+* listings submitting without required fields
+* Desired Lease Term must be required
+* First Name, Last Name, Phone Number, Email Address must be required
+* remove red stars from Tenant Pays, Owner Pays, Terms of Lease, and Rent Includes
+* listings should only submit once all required fields are filled in
+
+Do not do unrelated cleanup or broad refactors.
+
+---

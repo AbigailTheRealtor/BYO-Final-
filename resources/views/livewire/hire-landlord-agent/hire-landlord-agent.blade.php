@@ -1220,7 +1220,8 @@
                                 </button>
                                 <button type="button" class="btn btn-primary wizard-step-next">Next</button>
                                 <button type="submit" class="btn btn-success wizard-step-finish disabled"
-                                    id="save-button" wire:loading.attr="disabled" wire:target="store">
+                                    id="save-button" wire:loading.attr="disabled" wire:target="store"
+                                    onclick="syncLandlordSelect2BeforeSave()">
                                     <span wire:loading.remove wire:target="store">Submit</span>
                                     <span wire:loading wire:target="store">Submitting...</span>
                                 </button>
@@ -2570,8 +2571,11 @@
                 const isRepresented = select.value === 'Represented';
                 notice.classList.toggle('d-none', !isRepresented);
                 nextBtn.disabled = isRepresented;
-                saveBtn.disabled = isRepresented;
-                saveBtn.classList.toggle('disabled', isRepresented);
+                if (isRepresented) {
+                    saveBtn.disabled = true;
+                    saveBtn.classList.add('disabled');
+                }
+                // When NOT represented, let updateSaveButton() control the button state
             }
         }
 
@@ -2622,12 +2626,12 @@
                     '#services',
                     '#additional-details',
                     '#broker-compensation',
-                    '#tenant-info'
+                    '#landlord-information'
                 ] : [
                     '#listing-details',
                     '#location-and-meeting-details',
                     '#service-selection-and-pricing',
-                    '#tenant-info'
+                    '#landlord-information'
                 ];
 
                 tabSelector.forEach(selector => {
@@ -2722,6 +2726,12 @@
             // Initial setup
             setupGlobalListeners();
             updateSaveButton();
+
+            // Re-run validation whenever a Bootstrap tab becomes visible
+            // (covers both Next-button navigation and direct tab-link clicks)
+            document.addEventListener('shown.bs.tab', function() {
+                setTimeout(updateSaveButton, 100);
+            });
 
             // Livewire reactivity hook
             if (typeof Livewire !== 'undefined') {

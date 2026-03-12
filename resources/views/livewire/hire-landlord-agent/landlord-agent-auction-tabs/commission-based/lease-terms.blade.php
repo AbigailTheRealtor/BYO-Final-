@@ -876,7 +876,7 @@
 @endif --}}
 @if ($property_type === 'Commercial Property')
     <div class="form-group" wire:ignore wire:key="landlord-tenant-pays-group">
-        <label class="fw-bold">Tenant Pays:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Tenant Pays:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select any expenses or responsibilities the Tenant is required to pay under the lease terms.">
@@ -884,7 +884,7 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="tenant_pays" class="tenant_pays form-control has-icon select2-multiple"
-                data-icon="fas fa-user input-icon2" multiple required>
+                data-icon="fas fa-user input-icon2" multiple>
                 @foreach ($tenantPays as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach
@@ -912,7 +912,7 @@
 </div> --}}
 
     <div class="form-group" wire:ignore wire:key="landlord-owner-pays-group">
-        <label class="fw-bold">Owner Pays:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Owner Pays:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select any expenses the Owner will cover as part of the lease arrangement.">
@@ -921,7 +921,7 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="owner_pays" class="owner_pays form-control has-icon select2-multiple"
-                data-icon="fas fa-user-tie input-icon2" multiple required>
+                data-icon="fas fa-user-tie input-icon2" multiple>
                 @foreach ($ownerPays as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach
@@ -958,7 +958,7 @@
 
 {{-- 📜 Terms of Lease --}}
 <div class="form-group" wire:ignore wire:key="landlord-terms-of-lease-group">
-    <label class="fw-bold">Terms of Lease:<span class="text-danger">*</span></label>
+    <label class="fw-bold">Terms of Lease:</label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Select the lease term offered for this property. This defines how costs and responsibilities—such as taxes, insurance, and maintenance—are structured between the Landlord and Tenant.">
         <i class="fa-solid fa-circle-info"></i>
@@ -966,7 +966,7 @@
 
     <div class="input-cover" wire:ignore>
         <select id="terms_of_lease" class="terms_of_lease form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-file-signature input-icon2" multiple required>
+            data-icon="fa-solid fa-file-signature input-icon2" multiple>
 
             @foreach ($lease_types as $type)
             <option value="{{ $type['name'] }}">{{ $type['name'] }}</option>
@@ -1079,10 +1079,13 @@
     </div>
 
 </div>
+@error('desired_lease_length')
+    <span class="text-danger">{{ $message }}</span>
+@enderror
 
 @if ($property_type === 'Residential Property')
     <div class="form-group" wire:ignore wire:key="landlord-rent-includes-group">
-        <label class="fw-bold">Rent Includes: <span class="text-danger">*</span></label>
+        <label class="fw-bold">Rent Includes:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select any utilities or services included in the rent.">
@@ -1091,7 +1094,7 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="rent_includes" class="form-control has-icon select2-multiple rent_includes" multiple
-                data-icon="fas fa-home input-icon2" required>
+                data-icon="fas fa-home input-icon2">
                 @foreach ($rent_includes as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach
