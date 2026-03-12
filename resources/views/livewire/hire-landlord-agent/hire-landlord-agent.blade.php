@@ -2289,21 +2289,17 @@
                 }
             });
 
-            // Add event listeners to update save button state when fields change
-            document.addEventListener('DOMContentLoaded', function() {
-                // Initial check
+            // Run initial validity check now (already inside DOMContentLoaded when called)
+            setTimeout(function() {
                 checkFormValidity();
-
-                // Update on any input change
-                document.querySelectorAll('input, select, textarea').forEach(field => {
+                document.querySelectorAll('input, select, textarea').forEach(function(field) {
                     field.addEventListener('change', checkFormValidity);
                     field.addEventListener('keyup', checkFormValidity);
                 });
+            }, 150);
 
-                // Special handling for Livewire-updated fields
-                document.addEventListener('livewire:update', function() {
-                    setTimeout(checkFormValidity, 100);
-                });
+            Livewire.hook('message.processed', function() {
+                setTimeout(checkFormValidity, 150);
             });
 
 
@@ -2535,21 +2531,17 @@
                 }
             });
 
-            // Add event listeners to update save button state when fields change
-            document.addEventListener('DOMContentLoaded', function() {
-                // Initial check
+            // Run initial validity check now (already inside DOMContentLoaded when called)
+            setTimeout(function() {
                 checkFormValidity();
-
-                // Update on any input change
-                document.querySelectorAll('input, select, textarea').forEach(field => {
+                document.querySelectorAll('input, select, textarea').forEach(function(field) {
                     field.addEventListener('change', checkFormValidity);
                     field.addEventListener('keyup', checkFormValidity);
                 });
+            }, 150);
 
-                // Special handling for Livewire-updated fields
-                document.addEventListener('livewire:update', function() {
-                    setTimeout(checkFormValidity, 100);
-                });
+            Livewire.hook('message.processed', function() {
+                setTimeout(checkFormValidity, 150);
             });
         }
 

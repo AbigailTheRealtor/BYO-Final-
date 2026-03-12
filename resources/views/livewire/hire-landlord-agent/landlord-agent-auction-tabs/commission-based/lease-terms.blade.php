@@ -309,7 +309,7 @@
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                         title="Select if dedicated storage space is included in the lease for the Tenant’s exclusive use.">
                         <i class="fas fa-circle-info"></i>
-
+                    </span>
                 </label>
                 <div class="input-cover">
                     <select wire:model="included_storage_space_res_single" id="garage-needed"
@@ -550,17 +550,7 @@
                         placeholder="Enter name of business types or names if notable (e.g., Walmart, Target) ">
                 </div>
             </div>
-        @endif
-    </div>
-
-@endif
-
-@if ($property_type === 'Commercial Property')
-
-    <!-- Leasing Details Based on Selected Space -->
-    <div class="form-group mt-4" id="leasing_space_details">
-
-        @if (in_array($leasing_spaces, ['Single Room']))
+        @elseif (in_array($leasing_spaces, ['Single Room']))
             <div class="form-group">
                 <label>Guests are:</label>
 
@@ -682,7 +672,7 @@
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                         title="Select if dedicated storage space is included in the lease for the Tenant’s exclusive use.">
                         <i class="fas fa-circle-info"></i>
-
+                    </span>
                 </label>
                 <div class="input-cover">
                     <select wire:model="included_storage_space_com_single" id="garage-needed"
