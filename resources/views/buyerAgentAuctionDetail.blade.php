@@ -1099,12 +1099,16 @@
                                 </div>
                                 @if (@$auction->get->exchange_item)
                                     @php
-                                        $displayExchangeItem = str_replace('"', '', @$auction->get->exchange_item);
-                                        $displayOtherExchange = str_replace('"', '', @$auction->get->other_exchange_item);
+                                        $rawExchangeItem = str_replace('"', '', @$auction->get->exchange_item);
+                                        $displayExchangeItem = is_array($rawExchangeItem) ? implode(', ', $rawExchangeItem) : ($rawExchangeItem ?? '');
+                                        $displayOtherExchange = str_replace('"', '', @$auction->get->other_exchange_item ?? '');
+                                        $exchangeItemIsOther = is_array(@$auction->get->exchange_item)
+                                            ? in_array('Other', @$auction->get->exchange_item)
+                                            : (@$auction->get->exchange_item === 'Other');
                                     @endphp
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Acceptable Exchange Item:
-                                        @if (@$auction->get->exchange_item === 'Other' && @$auction->get->other_exchange_item)
+                                        @if ($exchangeItemIsOther && @$auction->get->other_exchange_item)
                                             <span class="removeBold">{{ $displayOtherExchange }}</span>
                                         @else
                                             <span class="removeBold">{{ $displayExchangeItem }}</span>
