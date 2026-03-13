@@ -1050,8 +1050,8 @@
     </div>
 @endif
 {{-- "Other" text input (only for Income, Commercial, Business when "Other" is selected) --}}
-@if (in_array($property_type, ['Income', 'Commercial', 'Business']) && is_array($assets ?? []) && in_array('Other', $assets ?? []))
-<div class="form-group" wire:key="other-assets-wrapper">
+@if (in_array($property_type, ['Income', 'Commercial', 'Business']))
+<div class="form-group other_assets {{ in_array('Other', $assets ?? []) ? '' : 'd-none' }}" wire:key="other-assets-wrapper">
     <div class="input-cover">
         <input type="text" wire:model.defer="assets_other" class="form-control has-icon" data-icon="fas fa-building"
             placeholder="Enter any included assets (e.g., Inventory, Customer Lists, Trademarks, Software Rights)">

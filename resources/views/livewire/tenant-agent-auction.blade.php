@@ -2607,21 +2607,27 @@ $lease_types = [
         }
         initGarageParkingLandlord();
         Livewire.hook('message.processed', () => { initGarageParkingLandlord(); });
-        $('.number_of_unit_type').each(function() {
-            var $el = $(this);
-            if (!$el.hasClass('select2-hidden-accessible')) {
-                $el.select2({
-                    placeholder: "Select",
-                    allowClear: true,
-                });
 
-                $el.on('change', function(e) {
+        function initAcceptableUnitTypeSelect2() {
+            $('.number_of_unit_type').each(function() {
+                var $el = $(this);
+                if ($el.hasClass('select2-hidden-accessible')) {
+                    $el.select2('destroy');
+                }
+                $el.select2({ placeholder: "Select", allowClear: true });
+                $el.off('change.unitTypeBuyer').on('change.unitTypeBuyer', function() {
                     let selectedValues = $(this).val() || [];
                     selectedValues = [...new Set(selectedValues)];
                     debouncedSet('number_of_unit_type', selectedValues);
                 });
-            }
-        });
+                var nuVals = @this.get('number_of_unit_type') || [];
+                if (nuVals.length) {
+                    $el.val(nuVals).trigger('change.select2');
+                }
+            });
+        }
+        initAcceptableUnitTypeSelect2();
+        Livewire.hook('message.processed', () => { initAcceptableUnitTypeSelect2(); });
 
 
 
@@ -2838,28 +2844,28 @@ $lease_types = [
 
         ///// • Business & Real Estate Purchase Requirements
 
-
-        // cache the wrapper
-        const $select = $('#assets');
-        const $other = $('.other_assets');
-
-        // initialize once
-        if ($select.length && !$select.hasClass('select2-hidden-accessible')) {
-            $select.select2({
-                placeholder: "Select",
-                allowClear: true,
-            });
-
-            // when user changes selections…
-            $select.on('change', () => {
-                const vals = $select.val() || [];
+        function initAssetsSelect2() {
+            var $assetSel = $('#assets');
+            if (!$assetSel.length) return;
+            if ($assetSel.hasClass('select2-hidden-accessible')) {
+                $assetSel.select2('destroy');
+            }
+            $assetSel.select2({ placeholder: "Select", allowClear: true });
+            $assetSel.off('change.assetsBuyer').on('change.assetsBuyer', function() {
+                const vals = $assetSel.val() || [];
                 debouncedSet('assets', vals);
-                // show/hide the "Other" text input
-                $other.toggleClass('d-none', !vals.includes('Other'));
+                $('.other_assets').toggleClass('d-none', !vals.includes('Other'));
             });
-
-            rehydrateSelect2FromLivewire('#assets', 'assets');
+            var assetVals = @this.get('assets') || [];
+            if (assetVals.length) {
+                $assetSel.val(assetVals).trigger('change.select2');
+                if (assetVals.includes('Other')) {
+                    $('.other_assets').removeClass('d-none');
+                }
+            }
         }
+        initAssetsSelect2();
+        Livewire.hook('message.processed', () => { initAssetsSelect2(); });
 
         //// End •      Business & Real Estate Purchase Requirements
         ///// Selected the business type other then
@@ -3121,7 +3127,7 @@ $lease_types = [
             var $vp = $('#view_preference');
             if (!$vp.length) return;
             if ($vp.hasClass('select2-hidden-accessible')) {
-                return;
+                $vp.select2('destroy');
             }
             $vp.select2({ placeholder: "Select", allowClear: true });
             $vp.off('change.viewPrefSync').on('change.viewPrefSync', function() {
@@ -3134,7 +3140,13 @@ $lease_types = [
                     safeLivewireSet('other_preferences', '');
                 }
             });
-            rehydrateSelect2FromLivewire('#view_preference', 'view_preference');
+            var vpVals = @this.get('view_preference') || [];
+            if (vpVals.length) {
+                $vp.val(vpVals).trigger('change.select2');
+                if (vpVals.includes('Other')) {
+                    $('#other_preferences').show();
+                }
+            }
         }
 
         initSelect2ViewPref();
@@ -3143,36 +3155,35 @@ $lease_types = [
 
         ///////////////////// end view_preference
 
-        // garage_parking_spaces_option for multi-select
+        // garage_parking_spaces_option for multi-select (buyer path)
 
-
-        const $sel = $('#garage_parking_spaces_option');
-
-        // Initialize Select2 for multi-select
-        if ($sel.length && !$sel.hasClass('select2-hidden-accessible')) {
-            $sel.select2({
-                placeholder: "Select",
-                allowClear: true,
-                width: '100%',
-            });
-
-            // When the user changes the selection, check for "Other"
-            $sel.on('change', function() {
+        function initGarageParkingBuyer() {
+            var $gps = $('#garage_parking_spaces_option');
+            if (!$gps.length) return;
+            if ($gps.hasClass('select2-hidden-accessible')) {
+                $gps.select2('destroy');
+            }
+            $gps.select2({ placeholder: "Select", allowClear: true, width: '100%' });
+            $gps.off('change.garageBuyer').on('change.garageBuyer', function() {
                 const vals = $(this).val() || [];
-
                 debouncedSet('garage_parking_spaces_option', vals);
-
-                // Check if "Other" is selected and toggle the input field visibility
                 if (vals.includes('Other')) {
-                    $('#other_parking_space_wrapper').show(); // Show "Other" input
+                    $('#other_parking_space_wrapper').show();
                 } else {
-                    $('#other_parking_space_wrapper').hide(); // Hide "Other" input
-                    safeLivewireSet('other_parking_space_wrapper', null); // Clear the text input
+                    $('#other_parking_space_wrapper').hide();
+                    safeLivewireSet('other_parking_space_wrapper', null);
                 }
             });
-
-            rehydrateSelect2FromLivewire('#garage_parking_spaces_option', 'garage_parking_spaces_option');
+            var gpsVals = @this.get('garage_parking_spaces_option') || [];
+            if (gpsVals.length) {
+                $gps.val(gpsVals).trigger('change.select2');
+                if (gpsVals.includes('Other')) {
+                    $('#other_parking_space_wrapper').show();
+                }
+            }
         }
+        initGarageParkingBuyer();
+        Livewire.hook('message.processed', () => { initGarageParkingBuyer(); });
 
         
 
@@ -4099,6 +4110,9 @@ $lease_types = [
             $('.other_financing_wrapper').hide();
         }
         var traditionalTypes = ['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'];
+        var selectedTradLabels = traditionalTypes.filter(function(t) { return data.includes(t); });
+        var $tradLabelEl = document.getElementById('traditional-loan-label-text');
+        if ($tradLabelEl) { $tradLabelEl.textContent = selectedTradLabels.join(' / '); }
         window.dispatchEvent(new CustomEvent('update-financing-visibility', { detail: { type: 'Assumable', visible: data.includes('Assumable') } }));
         window.dispatchEvent(new CustomEvent('update-financing-visibility', { detail: { type: 'Traditional', visible: traditionalTypes.some(function(t) { return data.includes(t); }) } }));
         window.dispatchEvent(new CustomEvent('update-financing-visibility', { detail: { type: 'Cryptocurrency', visible: data.includes('Cryptocurrency') } }));
