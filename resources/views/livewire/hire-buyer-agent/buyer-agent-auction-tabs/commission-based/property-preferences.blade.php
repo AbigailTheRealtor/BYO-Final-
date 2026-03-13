@@ -430,7 +430,7 @@
                 class="condition_prop_buyer form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-screwdriver-wrench input-icon2" multiple>
                 @foreach ($property_condition as $row_pt)
-                    <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $this->condition_prop_buyer ?? []) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
+                    <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $this->condition_prop_buyer ?? []) ? 'selected' : '' }}>{{ $row_pt['display'] ?? $row_pt['name'] }}</option>
                 @endforeach
             </select>
         </div>

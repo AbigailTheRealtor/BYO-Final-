@@ -95,6 +95,7 @@ class BuyerAgentAuction extends Component
     public $assumable_terms = '';
     public $max_assumable_rate = '';
     public $max_monthly_payment = '';
+    public $assumable_loan_type = '';
     public $gap_payment_type = '$';
     public $gap_payment_amount = '';
     
@@ -576,7 +577,7 @@ class BuyerAgentAuction extends Component
                 'seller_payment_frequency', 'seller_payment_frequency_other',
                 'seller_late_fee_amount'
             ],
-            'Assumable' => ['assumable_terms', 'max_assumable_rate', 'max_monthly_payment'],
+            'Assumable' => ['assumable_terms', 'max_assumable_rate', 'max_monthly_payment', 'assumable_loan_type'],
             'Bridge Loan' => ['gap_payment_amount', 'gap_payment_type'],
             'Exchange/Trade' => [
                 'exchange_item', 'other_exchange_item', 'exchange_item_value', 
@@ -1308,6 +1309,7 @@ class BuyerAgentAuction extends Component
             $this->assumable_terms = $auction->get->assumable_terms ?? '';
             $this->max_assumable_rate = $auction->get->max_assumable_rate ?? '';
             $this->max_monthly_payment = $auction->get->max_monthly_payment ?? '';
+            $this->assumable_loan_type = $auction->get->assumable_loan_type ?? '';
             $this->gap_payment_type = $auction->get->gap_payment_type ?? '$';
             $this->gap_payment_amount = $auction->get->gap_payment_amount ?? '';
             
@@ -1765,6 +1767,7 @@ class BuyerAgentAuction extends Component
         $auction->saveMeta('assumable_terms', $this->assumable_terms);
         $auction->saveMeta('max_assumable_rate', $this->stripCommas($this->max_assumable_rate));
         $auction->saveMeta('max_monthly_payment', $this->stripCommas($this->max_monthly_payment));
+        $auction->saveMeta('assumable_loan_type', $this->assumable_loan_type);
         $auction->saveMeta('gap_payment_type', $this->gap_payment_type);
         $auction->saveMeta('gap_payment_amount', $this->stripCommas($this->gap_payment_amount));
         

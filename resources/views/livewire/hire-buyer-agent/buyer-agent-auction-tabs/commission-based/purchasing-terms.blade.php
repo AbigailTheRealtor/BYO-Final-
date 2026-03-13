@@ -249,7 +249,7 @@
         </h5>
     </div>
     <div class="form-group">
-        <label class="fw-bold">Offered Assumable Terms:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Offered Assumable Terms:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the terms of the assumable loan being proposed, including remaining balance, interest rate, term type (fixed/variable), and remaining duration.">
@@ -258,12 +258,12 @@
         <div class="input-cover">
             <input type="text" wire:model="assumable_terms" class="form-control has-icon"
                 data-icon="fa-regular fa-calendar-days"
-                placeholder="Enter assumable terms (e.g., $250,0000 remaining at 4.25% for 20 years) " required>
+                placeholder="Enter assumable terms (e.g., $250,0000 remaining at 4.25% for 20 years) ">
         </div>
     </div>
 
     <div class="form-group">
-        <label class="fw-bold">Maximum Interest Rate of Assumable Loan:<span class="text-danger">*</span>
+        <label class="fw-bold">Maximum Interest Rate of Assumable Loan:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Enter the maximum interest rate the Buyer is willing to accept for the assumable loan (e.g., 5).">
                 <i class="fa-solid fa-circle-info"></i>
@@ -273,15 +273,14 @@
             <input type="text" wire:model="max_assumable_rate" class="form-control"
                 placeholder="Enter maximum acceptable interest rate (e.g., 5)"
                 data-error-id="max_assumable_rate_error" oninput="validateInput(this)"
-                onblur="reformatNumber(this)" onpaste="handlePaste(event)" required>
+                onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             <span class="input-group-text">%</span>
         </div>
         <span class="error mt-2" id="max_assumable_rate_error"></span>
     </div>
 
     <div class="form-group mt-3">
-        <label class="fw-bold">Maximum Monthly Payment (Principal & Interest) for Assumable Loan:<span
-                class="text-danger">*</span></label>
+        <label class="fw-bold">Maximum Monthly Payment (Principal & Interest) for Assumable Loan:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the highest monthly principal and interest payment the Buyer is willing to make. Exclude taxes, insurance, and HOA unless included in the mortgage.">
@@ -293,12 +292,30 @@
             <input type="text" wire:model="max_monthly_payment" class="form-control has-icon"
                 placeholder="Enter maximum monthly payment (e.g., 2000)"
                  data-error-id="max_monthly_payment_error" oninput="validateInput(this)"
-                onblur="reformatNumber(this)" onpaste="handlePaste(event)
-                " required>
+                onblur="reformatNumber(this)" onpaste="handlePaste(event)">
         </div>
                 <span class="error mt-2" id="max_monthly_payment_error"></span>
 
 
+    </div>
+
+    <!-- Type of Loan -->
+    <div class="form-group mt-3">
+        <label class="fw-bold">Type of Loan:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Assumable loans allow a buyer to take over the seller's existing financing. FHA, VA, and USDA loans are the most common types that may be assumed, but lender approval is usually required. Conventional loans almost always have a due-on-sale clause and are not assumable.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+        <div class="input-cover">
+            <select wire:model="assumable_loan_type" class="form-control has-icon"
+                data-icon="fa-solid fa-file-invoice-dollar">
+                <option value="">Select</option>
+                <option value="FHA">FHA</option>
+                <option value="VA">VA</option>
+                <option value="USDA">USDA</option>
+            </select>
+        </div>
     </div>
 
     {{-- <div class="form-group mt-3">
@@ -375,8 +392,7 @@
 
 
        <div class="form-group mt-3">
-        <label class="fw-bold">Down Payment Buyer Can Afford to Bridge the Gap:<span
-                class="text-danger">*</span></label>
+        <label class="fw-bold">Down Payment Buyer Can Afford to Bridge the Gap:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the amount the Buyer can pay upfront to cover the difference between the purchase price and the loan balance.">
@@ -396,7 +412,7 @@
                         ? 'Enter down payment percentage to bridge gap (e.g., 10)'
                         : 'Enter down payment amount to bridge gap (e.g., 50000)' }}"
                          data-error-id="gap_payment_amount_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)" required>
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
 
                 @if ($gap_payment_type === '%')
                 <!-- Suffix for percentage only -->
@@ -422,7 +438,7 @@
         </h5>
     </div>
     <div class="form-group mt-3">
-        <label class="fw-bold">Buyer Pre-Approved for a Loan:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Buyer Pre-Approved for a Loan:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select “Yes” if the Buyer has been pre-approved for a loan. If “No,” no pre-approval has been granted yet.">
@@ -439,7 +455,7 @@
 
     @if ($pre_approved === 'Yes')
         <div class="form-group">
-            <label class="fw-bold">Buyer Pre-Approval Amount:<span class="text-danger">*</span></label>
+            <label class="fw-bold">Buyer Pre-Approval Amount:</label>
 
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Enter the amount listed on the Buyer’s pre-approval letter (e.g., 800000).">
@@ -451,8 +467,7 @@
                 <input type="text" wire:model="pre_approval_amount" class="form-control has-icon"
                     placeholder="Enter pre-approved loan amount (e.g., 800000)"
                      data-error-id="pre_approval_amount_error" oninput="validateInput(this)"
-                onblur="reformatNumber(this)" onpaste="handlePaste(event)
-                " required>
+                onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             </div>
             <span class="error mt-2" id="pre_approval_amount_error"></span>
 
@@ -467,7 +482,7 @@
         </h5>
     </div>
     <div class="form-group">
-        <label class="fw-bold">Offered Cryptocurrency:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Offered Cryptocurrency:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the type of cryptocurrency the Buyer is offering (e.g., Bitcoin, Ethereum).">
@@ -476,9 +491,7 @@
         <div class="input-cover">
             <input type="text" wire:model="cryptocurrency_type" class="form-control has-icon"
                 data-icon="fa-solid fa-money-bill-wave"
-                placeholder="Enter type of cryptocurrency (e.g., Bitcoin, Ethereum)" 
-               
-                required>
+                placeholder="Enter type of cryptocurrency (e.g., Bitcoin, Ethereum)">
         </div>
 
 
@@ -486,8 +499,7 @@
     </div>
 
     <div class="form-group mt-3">
-        <label class="fw-bold">Percentage of Purchase Price to be Paid with Cryptocurrency:<span
-                class="text-danger">*</span></label>
+        <label class="fw-bold">Percentage of Purchase Price to be Paid with Cryptocurrency:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the percentage of the total purchase price to be paid in cryptocurrency.">
@@ -497,8 +509,7 @@
             <input type="text" wire:model="crypto_percentage" class="form-control"
                 placeholder="Enter percentage to be paid with cryptocurrency (e.g., 50)"
                 data-error-id="crypto_percentage_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
-                required>
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             <span class="input-group-text">%</span>
         </div>
         <span class="error mt-2" id="crypto_percentage_error"></span>
@@ -506,8 +517,7 @@
     </div>
 
     <div class="form-group mt-3">
-        <label class="fw-bold">Percentage of Purchase Price to be Paid with Cash:<span
-                class="text-danger">*</span></label>
+        <label class="fw-bold">Percentage of Purchase Price to be Paid with Cash:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the percentage to be paid in cash. The two percentages should total 100%">
@@ -517,8 +527,7 @@
             <input type="text" wire:model="cash_percentage_crypto" class="form-control"
                 placeholder="Enter percentage to be paid with cash (e.g., 50)"
                 data-error-id="cash_percentage_crypto_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
-                required>
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             <span class="input-group-text">%</span>
         </div>
         <span class="error mt-2" id="cash_percentage_crypto_error"></span>
@@ -611,14 +620,14 @@
         </h5>
     </div>
     <div class="form-group mt-3">
-        <label class="fw-bold">Acceptable Exchange Item:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Acceptable Exchange Item:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the type of item the Buyer is offering (e.g., another home, artwork, boat, jewelry, motorhome, vehicle, or other).">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <select wire:model="exchange_item" class="form-control has-icon" data-icon="fa-solid fa-exchange-alt" required>
+            <select wire:model="exchange_item" class="form-control has-icon" data-icon="fa-solid fa-exchange-alt">
                 <option value="">Select</option>
                 <option value="Another Home">Another Home</option>
                 <option value="Artwork">Artwork</option>
@@ -642,7 +651,7 @@
     @endif
 
     <div class="form-group">
-        <label class="fw-bold">Estimated Value of Exchange/Trade Item:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Estimated Value of Exchange/Trade Item:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the estimated fair market value of the trade item.">
@@ -653,7 +662,7 @@
             <span class="input-group-text-seller">$</span>
 
             <input type="text" wire:model="exchange_item_value"class="form-control has-icon"
-                placeholder="Enter estimated item value (e.g., 75000)" required
+                placeholder="Enter estimated item value (e.g., 75000)"
                 
                  data-error-id="exchange_item_value_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
@@ -665,7 +674,7 @@
     </div>
 
     <div class="form-group">
-        <label class="fw-bold">Condition of Exchange/Trade Item:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Condition of Exchange/Trade Item:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the condition of the trade item (e.g., new, good, fair).">
@@ -673,7 +682,7 @@
         </span>
         <div class="input-cover">
             <select wire:model="exchange_item_condition" class="form-control has-icon"
-                data-icon="fa-solid fa-clipboard-check" required>
+                data-icon="fa-solid fa-clipboard-check">
                 <option value="">Select</option>
                 <option value="New">New</option>
                 <option value="Like New">Like New</option>
@@ -688,7 +697,7 @@
     </div>
 
     <div class="form-group">
-        <label class="fw-bold">Additional Cash Buyer Will Offer:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Additional Cash Buyer Will Offer:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the amount of additional cash the Buyer will provide if the trade item’s value is less than the purchase price.">
@@ -700,15 +709,14 @@
             <input type="text" wire:model="additional_cash" class="form-control has-icon"
                 placeholder="Enter additional cash offered (e.g., 25000)"
                  data-error-id="additional_cash_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
-               required >
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
         </div>
                         <span class="error mt-2" id="additional_cash_error"></span>
 
     </div>
 
     <div class="form-group">
-        <label class="fw-bold">Value of Exchange/Trade Item Determined:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Value of Exchange/Trade Item Determined:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Describe how the value of the exchange or trade item will be determined.">
@@ -717,9 +725,7 @@
         <div class="input-cover">
             <input type="text" wire:model="value_determination" class="form-control has-icon"
                 data-icon="fa-solid fa-exchange-alt"
-                placeholder="Enter how the value of the exchange/trade item should be determined (e.g., Licensed Appraisal, Online Valuation, Mutual Agreement)"
-                
-                 required>
+                placeholder="Enter how the value of the exchange/trade item should be determined (e.g., Licensed Appraisal, Online Valuation, Mutual Agreement)">
         </div>
     </div>
 
@@ -794,8 +800,8 @@
     </div>
     <!-- 1. Buyer's Desired Offering Price for Lease Option -->
     <div class="form-group">
-        <label class="fw-bold">Buyer's Desired Offering Price for Lease Option:<span
-                class="text-danger">*</span></label>
+        <label class="fw-bold">Buyer's Desired Offering Price for Lease Option:
+                </label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the price the Buyer is willing to pay if the purchase option is exercised.">
             <i class="fa-solid fa-circle-info"></i>
@@ -805,14 +811,14 @@
             <input type="text" wire:model="lease_option_price" class="form-control has-icon"
                 placeholder="Enter offering price for lease option (e.g., 500000)"
                 data-error-id="lease_option_price_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)" required>
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
         </div>
         <span class="error mt-2" id="lease_option_price_error"></span>
     </div>
 
     <!-- 2. Monthly Payment Buyer is Offering -->
     <div class="form-group mt-3">
-        <label class="fw-bold">Monthly Payment Buyer is Offering:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Monthly Payment Buyer is Offering:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the monthly lease payment during the lease term before the purchase option may be exercised.">
             <i class="fa-solid fa-circle-info"></i>
@@ -822,14 +828,14 @@
             <input type="text" wire:model="lease_option_payment" class="form-control has-icon"
                 placeholder="Enter monthly payment amount (e.g., 2500)"
                 data-error-id="lease_option_payment_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)" required>
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
         </div>
         <span class="error mt-2" id="lease_option_payment_error"></span>
     </div>
 
     <!-- 3. Proposed Duration of Lease (Months) -->
     <div class="form-group mt-3">
-        <label class="fw-bold">Proposed Duration of Lease (Months):<span class="text-danger">*</span></label>
+        <label class="fw-bold">Proposed Duration of Lease (Months):</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the number of months the Buyer wishes to lease before having the option to purchase.">
             <i class="fa-solid fa-circle-info"></i>
@@ -837,20 +843,20 @@
         <div class="input-cover">
             <input type="number" wire:model="lease_option_duration" class="form-control has-icon"
                 data-icon="fa-regular fa-calendar-days"
-                placeholder="Enter the proposed lease duration in months (e.g., 6)" required>
+                placeholder="Enter the proposed lease duration in months (e.g., 6)">
         </div>
     </div>
 
     <!-- 4. Offered Option Fee -->
     <div class="form-group mt-3">
-        <label class="fw-bold">Offered Option Fee:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Offered Option Fee:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Indicate whether the Buyer is offering a non-refundable option fee, and if so, enter the amount.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
             <select wire:model="has_option_fee" class="form-control has-icon"
-                data-icon="fa-solid fa-file-invoice-dollar" required>
+                data-icon="fa-solid fa-file-invoice-dollar">
                 <option value="">Select</option>
                 <option value="Yes">Yes</option>
                 <option value="No">No</option>
@@ -903,7 +909,7 @@
 
     <!-- 6. Conditions or Requirements for Lease Option -->
     <div class="form-group mt-3">
-        <label class="fw-bold">Conditions or Requirements for Lease Option:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Conditions or Requirements for Lease Option:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter any additional requirements or limitations (e.g., option exercisable after 12 months).">
             <i class="fa-solid fa-circle-info"></i>
@@ -911,13 +917,13 @@
         <div class="input-cover">
             <input type="text" wire:model="lease_option_conditions" class="form-control has-icon"
                 data-icon="fa-solid fa-file-alt"
-                placeholder="Enter any conditions or requirements for the lease option (e.g., Buyer may exercise option after 12 months, Property must pass inspection)" required>
+                placeholder="Enter any conditions or requirements for the lease option (e.g., Buyer may exercise option after 12 months, Property must pass inspection)">
         </div>
     </div>
 
     <!-- 7. Specific Terms Proposed for Lease Option -->
     <div class="form-group mt-3">
-        <label class="fw-bold">Specific Terms Proposed for Lease Option:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Specific Terms Proposed for Lease Option:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter any proposed terms for the lease option (e.g., inspections allowed during lease term).">
             <i class="fa-solid fa-circle-info"></i>
@@ -925,7 +931,7 @@
         <div class="input-cover">
             <input type="text" wire:model="lease_option_terms" class="form-control has-icon"
                 data-icon="fa-solid fa-file-alt"
-                placeholder="Enter any conditions or requirements for the lease option (e.g., Buyer may conduct inspections during lease term, Seller to maintain property)" required>
+                placeholder="Enter any conditions or requirements for the lease option (e.g., Buyer may conduct inspections during lease term, Seller to maintain property)">
         </div>
     </div>
 
@@ -980,8 +986,8 @@
 
     <!-- 1. Buyer's Desired Offering Price for Lease Purchase -->
     <div class="form-group mt-3">
-        <label class="fw-bold">Buyer's Desired Offering Price for Lease Purchase:<span
-                class="text-danger">*</span></label>
+        <label class="fw-bold">Buyer's Desired Offering Price for Lease Purchase:
+                </label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the price the Buyer is offering if the purchase is completed at the end of the lease term.">
             <i class="fa-solid fa-circle-info"></i>
@@ -989,7 +995,7 @@
         <div class="input-cover">
             <span class="input-group-text-seller">$</span>
             <input type="text" wire:model="lease_purchase_price" class="form-control has-icon"
-                placeholder="Enter offering price for lease purchase (e.g., 800000)" required
+                placeholder="Enter offering price for lease purchase (e.g., 800000)"
                 data-error-id="lease_purchase_price_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
         </div>
@@ -998,7 +1004,7 @@
 
     <!-- 2. Monthly Payment Buyer is Offering -->
     <div class="form-group mt-3">
-        <label class="fw-bold">Monthly Payment Buyer is Offering:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Monthly Payment Buyer is Offering:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the monthly lease payment during the lease-purchase term before the purchase is completed.">
             <i class="fa-solid fa-circle-info"></i>
@@ -1006,7 +1012,7 @@
         <div class="input-cover">
             <span class="input-group-text-seller">$</span>
             <input type="text" wire:model="lease_purchase_payment" class="form-control has-icon"
-                placeholder="Enter monthly payment amount (e.g., 5000)" required
+                placeholder="Enter monthly payment amount (e.g., 5000)"
                 data-error-id="lease_purchase_payment_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
         </div>
@@ -1015,7 +1021,7 @@
 
     <!-- 3. Proposed Duration of Lease (Months) -->
     <div class="form-group mt-3">
-        <label class="fw-bold">Proposed Duration of Lease (Months):<span class="text-danger">*</span></label>
+        <label class="fw-bold">Proposed Duration of Lease (Months):</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the number of months the Buyer wishes to lease before purchasing.">
             <i class="fa-solid fa-circle-info"></i>
@@ -1023,7 +1029,7 @@
         <div class="input-cover">
             <input type="number" wire:model="lease_purchase_duration" class="form-control has-icon"
                 data-icon="fa-regular fa-calendar-days"
-                placeholder="Enter the proposed lease duration in months (e.g., 6)" required>
+                placeholder="Enter the proposed lease duration in months (e.g., 6)">
         </div>
     </div>
 
@@ -1079,8 +1085,7 @@
 
     <!-- 6. Conditions or Requirements for Lease Purchase -->
     <div class="form-group mt-3">
-        <label class="fw-bold">Conditions or Requirements for Lease Purchase:<span
-                class="text-danger">*</span></label>
+        <label class="fw-bold">Conditions or Requirements for Lease Purchase:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter any requirements (e.g., Buyer must secure financing by lease end).">
             <i class="fa-solid fa-circle-info"></i>
@@ -1088,13 +1093,13 @@
         <div class="input-cover">
             <input type="text" wire:model="lease_purchase_conditions" class="form-control has-icon"
                 data-icon="fa-solid fa-file-alt"
-                placeholder="Enter any conditions or requirements (e.g., Property must appraise at agreed value, Seller to cover closing costs)" required>
+                placeholder="Enter any conditions or requirements (e.g., Property must appraise at agreed value, Seller to cover closing costs)">
         </div>
     </div>
 
     <!-- 7. Specific Terms Proposed for Lease Purchase -->
     <div class="form-group mt-3">
-        <label class="fw-bold">Specific Terms Proposed for Lease Purchase:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Specific Terms Proposed for Lease Purchase:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter any proposed terms for the lease purchase (e.g., rent credits apply toward purchase).">
             <i class="fa-solid fa-circle-info"></i>
@@ -1102,7 +1107,7 @@
         <div class="input-cover">
             <input type="text" wire:model="lease_purchase_terms" class="form-control has-icon"
                 data-icon="fa-solid fa-file-alt"
-                placeholder="Enter specific terms proposed (e.g., Rent credits apply toward purchase, Option to buy after 12 months)" required>
+                placeholder="Enter specific terms proposed (e.g., Rent credits apply toward purchase, Option to buy after 12 months)">
         </div>
     </div>
 
@@ -1149,7 +1154,7 @@
         </h5>
     </div>
     <div class="form-group mt-3">
-        <label class="fw-bold">Offered Non-Fungible Token (NFT):<span class="text-danger">*</span></label>
+        <label class="fw-bold">Offered Non-Fungible Token (NFT):</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the type of NFT the Buyer is offering (e.g., tokenized real estate, digital artwork).">
@@ -1158,13 +1163,12 @@
         <div class="input-cover">
             <input type="text" wire:model="nft_description" class="form-control has-icon"
                 data-icon="fa-solid fa-money-bill-wave"
-                placeholder="Enter NFT type (e.g., Tokenized Real Estate, Digital Artwork)" required>
+                placeholder="Enter NFT type (e.g., Tokenized Real Estate, Digital Artwork)">
         </div>
     </div>
 
     <div class="form-group mt-3">
-        <label class="fw-bold">Percentage of Purchase Price to be Paid with NFT:<span
-                class="text-danger">*</span></label>
+        <label class="fw-bold">Percentage of Purchase Price to be Paid with NFT:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the percentage of the purchase price to be paid in NFTs.">
@@ -1172,7 +1176,7 @@
         </span>
         <div class="input-group">
             <input type="text" wire:model="nft_percentage" class="form-control"
-                placeholder="Enter percentage to be paid with NFT (e.g., 40)" required
+                placeholder="Enter percentage to be paid with NFT (e.g., 40)"
                 data-error-id="nft_percentage_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             <span class="input-group-text">%</span>
@@ -1182,8 +1186,7 @@
     </div>
 
     <div class="form-group mt-3">
-        <label class="fw-bold">Percentage of Purchase Price to be Paid with Cash:<span
-                class="text-danger">*</span></label>
+        <label class="fw-bold">Percentage of Purchase Price to be Paid with Cash:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the percentage to be paid in cash. The two percentages should total 100%.">
@@ -1191,7 +1194,7 @@
         </span>
         <div class="input-group">
             <input type="text" wire:model="cash_percentage_nft" class="form-control"
-                placeholder="Enter percentage to be paid with cash (e.g., 60)" required
+                placeholder="Enter percentage to be paid with cash (e.g., 60)"
                 data-error-id="cash_percentage_nft_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             <span class="input-group-text">%</span>
@@ -1259,7 +1262,7 @@
         </h5>
     </div>
     <div class="form-group">
-        <label class="fw-bold">Desired Purchase Price:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Desired Purchase Price:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the purchase price the Buyer is willing to offer for a property.">
@@ -1269,7 +1272,7 @@
             <span class="input-group-text-seller">$</span>
 
             <input type="text" wire:model="purchase_price" class="form-control has-icon"
-                placeholder="Enter total purchase price (e.g., 500000)" required
+                placeholder="Enter total purchase price (e.g., 500000)"
                 data-error-id="purchase_price_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
                 >
@@ -1281,7 +1284,7 @@
 
 {{-- 
     <div class="form-group mt-3">
-        <label class="fw-bold">Desired Down Payment:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Desired Down Payment:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the down payment amount the Buyer is offering.">
@@ -1328,7 +1331,7 @@
 
 
     <div class="form-group mt-3">
-              <label class="fw-bold">Desired Down Payment:<span class="text-danger">*</span></label>
+              <label class="fw-bold">Desired Down Payment:</label>
 
 
            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1349,7 +1352,7 @@
                         ? 'Enter down payment amount (e.g., 20)'
                         : 'Enter down payment amount (e.g., 100000)' }}"
                          data-error-id="down_payment_type_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)" required>
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             </div>
             <span class="error mt-2" id="down_payment_type_error"></span>
 
@@ -1360,7 +1363,7 @@
 
     
     <div class="form-group mt-3">
-        <label class="fw-bold">Desired Seller Financing Amount:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Desired Seller Financing Amount:</label>
 
 
            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1381,7 +1384,7 @@
                         ? 'Enter seller financing amount (e.g., 80)'
                         : 'Enter seller financing amount (e.g., 400000)' }}"
                          data-error-id="seller_financing_amount_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)" required>
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             </div>
             <span class="error mt-2" id="seller_financing_amount_error"></span>
 
@@ -1389,7 +1392,7 @@
 
 
     {{-- <div class="form-group mt-3">
-        <label class="fw-bold">Desired Seller Financing Amount:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Desired Seller Financing Amount:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the amount the Buyer would like the Seller to finance.">
@@ -1436,7 +1439,7 @@
     </div> --}}
 
     <div class="form-group">
-        <label class="fw-bold">Desired Interest Rate:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Desired Interest Rate:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the interest rate the Buyer is requesting for the seller-financed amount.">
@@ -1446,7 +1449,7 @@
             <input type="text" wire:model="interest_rate" class="form-control"
                 placeholder="Enter interest rate (e.g., 6.5)"
                 data-error-id="interest_rate_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)" required>
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             <span class="input-group-text">%</span>
         </div>
         <span class="error mt-2" id="interest_rate_error"></span>
@@ -1454,21 +1457,21 @@
     </div>
 
     <div class="form-group">
-        <label class="fw-bold">Desired Loan Duration:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Desired Loan Duration:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the term of the loan in years.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <input type="text" wire:model="loan_duration" class="form-control has-icon"
-                data-icon="fa-regular fa-calendar-days" placeholder="Enter loan duration (e.g., 30 Years)" required>
+            <input type="text" wire:model.defer="loan_duration" class="form-control has-icon"
+                data-icon="fa-regular fa-calendar-days" placeholder="Enter loan duration (e.g., 30 Years)">
 
         </div>
     </div>
 
     <div class="form-group mt-3">
-        <label class="fw-bold">Prepayment Penalty:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Prepayment Penalty:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Indicate if the Buyer agrees to a penalty for early payoff and, if so, enter the amount.">
@@ -1476,7 +1479,7 @@
         </span>
         <div class="input-cover">
             <select wire:model="prepayment_penalty" class="form-control has-icon"
-                data-icon="fa-solid fa-exclamation-circle" required>
+                data-icon="fa-solid fa-exclamation-circle">
                 <option value="">Select</option>
                 <option value="Yes">Yes</option>
                 <option value="No">No</option>
@@ -1499,7 +1502,7 @@
         </div>
     @endif
     <div class="form-group mt-3">
-        <label class="fw-bold">Balloon Payment:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Balloon Payment:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Indicate if a balloon payment is included and, if so, enter the amount and due date.">
@@ -1507,7 +1510,7 @@
         </span>
         <div class="input-cover">
             <select wire:model="balloon_payment" class="form-control has-icon"
-                data-icon="fa-solid fa-money-bill-wave" required>
+                data-icon="fa-solid fa-money-bill-wave">
                 <option value="">Select</option>
                 <option value="Yes">Yes</option>
                 <option value="No">No</option>

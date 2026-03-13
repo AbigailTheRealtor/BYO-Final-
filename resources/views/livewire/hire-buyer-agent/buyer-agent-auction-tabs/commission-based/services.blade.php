@@ -69,7 +69,7 @@
     <div class="service-section mb-4">
         <h5 class="section-header bg-info text-white p-2 mb-3">📝 Offer & Contract Coordination</h5>
         <div class="service-options">
-            @foreach (['Draft and submit offers using state-approved purchase forms', 'Provide the Buyer with the necessary disclosure forms required by state or local law', 'Draft and deliver counteroffers and manage revisions to the purchase agreement', 'Negotiate price, deposits, and contingencies with the Seller’s Agent or Seller ', 'Manage communications with the Seller’s Agent or Seller', 'Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties', 'Assist with inspection-related negotiations and Buyer requests for repairs', 'Monitor contract milestones, contingency periods, and financing deadlines', 'Provide referrals to Attorneys, Title Companies, Escrow Professionals, or Lenders (referrals only — no endorsement or warranty is made)'] as $service)
+            @foreach (['Draft and submit offers using state-approved purchase forms', 'Provide the Buyer with the necessary disclosure forms required by state or local law', 'Draft and deliver counteroffers and manage revisions to the purchase agreement', 'Negotiate price, deposits, and contingencies with the Seller’s Agent or Seller', 'Manage communications with the Seller’s Agent or Seller', 'Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties', 'Assist with inspection-related negotiations and Buyer requests for repairs', 'Monitor contract milestones, contingency periods, and financing deadlines', 'Provide referrals to Attorneys, Title Companies, Escrow Professionals, or Lenders (referrals only — no endorsement or warranty is made)'] as $service)
                 <div class="form-check service-item">
                     <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
                         id="offer-{{ Str::slug($service) }}">
@@ -85,7 +85,7 @@
     <div class="service-section mb-4">
         <h5 class="section-header bg-info text-white p-2 mb-3">📋 Closing Coordination & Transaction Management</h5>
         <div class="service-options">
-            @foreach (['Review and provide the Buyer with Seller-supplied due diligence documentation, including property disclosures, inspection reports, HOA documents, and utility summaries (as available)', 'Coordinate scheduling for inspections, appraisals, and other requested evaluations', 'Coordinate with the Lender, Title, Escrow, and/or Attorney to prepare for Closing', 'Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed ', 'Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties', 'Schedule and confirm the Final Walkthrough', 'Schedule and confirm the Closing Appointment'] as $service)
+            @foreach (['Review and provide the Buyer with Seller-supplied due diligence documentation, including property disclosures, inspection reports, HOA documents, and utility summaries (as available)', 'Coordinate scheduling for inspections, appraisals, and other requested evaluations', 'Coordinate with the Lender, Title, Escrow, and/or Attorney to prepare for Closing', 'Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed', 'Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties', 'Schedule and confirm the Final Walkthrough', 'Schedule and confirm the Closing Appointment'] as $service)
                 <div class="form-check service-item">
                     <input class="form-check-input" type="checkbox" wire:model="services" value="{{ $service }}"
                         id="closing-{{ Str::slug($service) }}">
@@ -229,7 +229,7 @@
         @foreach ([
             'Review and provide due diligence documents such as lease agreements, estoppel certificates, rent rolls, utility summaries, and operating expense breakdowns (as available)',
             'Coordinate with the Seller’s Agent, Buyer’s Lender, Title, Escrow, and/or Attorney to prepare for Closing',
-            'Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed ',
+            'Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed',
             'Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties',
             'Schedule and confirm the Final Walkthrough',
             'Schedule and confirm the Closing Appointment'
@@ -381,7 +381,7 @@
             'Coordinate inspections, appraisals, environmental assessments, and estoppel certificate collection as needed',
             'Review and request due diligence documentation such as lease agreements, estoppel certificates, rent rolls, utility summaries, and operating expense breakdowns (as available)',
             'Coordinate with the Lender, Title Company, Escrow Officer, and/or Attorney to prepare for Closing',
-            'Review the Settlement Statement for accuracy and coordinate with all parties if corrections are needed ',
+            'Review the Settlement Statement for accuracy and coordinate with all parties if corrections are needed',
             'Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties',
             'Schedule and confirm the Final Walkthrough',
             'Schedule and confirm the Closing Appointment'
@@ -544,7 +544,7 @@
         @foreach ([
             'Coordinate inspections, licensing verifications, lease assignments, and inventory counts',
             'Coordinate with Lenders, Attorneys, Escrow Officers, Title Companies, CPAs, and other involved parties to prepare for Closing',
-            'Review the Settlement Statement or Closing Worksheet for accuracy and coordinate with all parties if corrections are needed ',
+            'Review the Settlement Statement or Closing Worksheet for accuracy and coordinate with all parties if corrections are needed',
             'Confirm delivery of final executed documents, wire instructions, and business transition materials',
             'Schedule and confirm the Final Walkthrough',
             'Schedule and confirm the Closing Appointment'
@@ -578,6 +578,9 @@
                 </label>
             </div>
         @endforeach
+    </div>
+    <div class="alert alert-warning mt-3 p-2 small">
+        <strong>⚖️ Note:</strong> Buying strategy and guidance are provided for informational purposes only. Analyses are not formal valuations or appraisals, and no legal, tax, accounting, or financial advice is provided.
     </div>
 </div>
 
@@ -705,7 +708,7 @@
         @foreach ([
             'Coordinate surveys, appraisals, inspections, and environmental assessments',
             'Coordinate with the Lender, Title Company, Escrow Officer, and/or Attorney to prepare for Closing',
-            'Review the Settlement Statement for accuracy and coordinate with all parties if corrections are needed ',
+            'Review the Settlement Statement for accuracy and coordinate with all parties if corrections are needed',
             'Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties',
             'Schedule and confirm the Final Walkthrough',
             'Schedule and confirm the Closing Appointment'
