@@ -1,0 +1,133 @@
+Add this as a **separate tiny fix** so Replit keeps it surgical.
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS
+
+## HIRE A TENANT’S AGENT — LABEL SPACING FIX
+
+### SCOPE
+
+Fix **one text/label formatting issue only** in the **Hire a Tenant Agent** flow:
+
+* Change `Pets :` to `Pets:`
+
+This should be a **display-only cleanup**.
+Do **not** change logic, validation, saving, or field behavior.
+
+---
+
+# HARD SAFEGUARDS (NON-NEGOTIABLE)
+
+1. **Only edit the Hire a Tenant Agent flow.**
+2. **Do not modify Buyer, Seller, or Landlord files.**
+3. **Do not rename any field, variable, wire:model, database column, or label key used in logic.**
+4. **Do not change validation rules.**
+5. **Do not touch conditional rendering logic.**
+6. **Do not touch public listing logic unless this exact label is rendered there too and needs the same spacing fix.**
+7. **Do not do any refactor. This is a text fix only.**
+
+---
+
+# TASK
+
+Find the exact place in the **Hire a Tenant Agent** views where the label is rendered as:
+
+```html
+Pets :
+```
+
+Change it to:
+
+```html
+Pets:
+```
+
+---
+
+# WHAT TO CHECK
+
+Search the Tenant flow files for any of these:
+
+```txt
+Pets :
+Pets :
+Pets
+```
+
+Likely locations may include:
+
+```txt
+resources/views/livewire/tenant-agent-auction*.blade.php
+resources/views/livewire/tenant-agent-auction-tabs/*.blade.php
+resources/views/livewire/...listing-preview...
+resources/views/livewire/...summary...
+```
+
+Also check whether this appears in:
+
+1. the form label
+2. the listing preview
+3. the final listing display
+4. any summary / PDF / review section for Tenant listings
+
+Only fix the ones that actually belong to **Hire a Tenant Agent**.
+
+---
+
+# EXAMPLE CHANGE
+
+### BEFORE
+
+```html
+<label>Pets :</label>
+```
+
+### AFTER
+
+```html
+<label>Pets:</label>
+```
+
+If rendered as plain text:
+
+### BEFORE
+
+```html
+<span>Pets :</span>
+```
+
+### AFTER
+
+```html
+<span>Pets:</span>
+```
+
+---
+
+# IMPORTANT
+
+This is **not** a content rewrite.
+Do **not** change it to anything else like:
+
+* Pet Policy:
+* Pets Allowed:
+* Pets Accepted:
+
+Only remove the extra space before the colon.
+
+---
+
+# QA CHECK
+
+After the fix, confirm in **Hire a Tenant Agent** only:
+
+* Form shows `Pets:`
+* Review/preview shows `Pets:`
+* Listing page shows `Pets:`
+* No other labels changed
+* No logic or saving behavior changed
+
+---
+
+If you want, I can combine this with your Seller edits into **one single copy-paste Replit instruction block** so you only send one message.

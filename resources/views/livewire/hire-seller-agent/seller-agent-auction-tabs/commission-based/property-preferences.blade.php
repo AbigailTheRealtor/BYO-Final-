@@ -281,7 +281,7 @@
         ['name' => 'Other'],
     ];
 
-    $purchasing_props = [['name' => 'Yes'], ['name' => 'No']];
+    $purchasing_props = [['name' => 'Not Age-Restricted'], ['name' => '55+ Community'], ['name' => '62+ Community']];
 
     $unit_types = [
         ['name' => '1 Bed/1 Bath'],
@@ -914,7 +914,7 @@
 
 @if (in_array($property_type, ['Residential', 'Business', 'Commercial']))
     <div class="form-group" wire:ignore wire:key="heated-square-select-{{ $property_type }}">
-        <label class="fw-bold">Heated SqFt:<span class="text-danger">*</span></label>
+        <label class="fw-bold">Heated SqFt:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the total square footage of climate-controlled (heated/cooled) interior space.">
             <i class="fa-solid fa-circle-info"></i>
@@ -923,7 +923,7 @@
             <input type="text" id="minimum_heated_square" wire:model.defer="minimum_heated_square"
                 class="form-control has-icon" data-icon="fa-solid fa-ruler"
                 placeholder="Enter heated square footage (e.g., 1000)" data-error-id="minimum_heated_square_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)" required>
+                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
         </div>
         <span class="error mt-2" id="minimum_heated_square_error"></span>
     </div>
@@ -966,7 +966,7 @@
 
 <!-- Minimum Total Acreage Needed -->
 <div class="form-group">
-    <label class="fw-bold"> Total Acreage:<span class="text-danger">*</span></label>
+    <label class="fw-bold"> Total Acreage:</label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Enter the total land area of the property, measured in acres.">
@@ -975,7 +975,7 @@
 
     <div class="input-cover">
         <select wire:model="total_acreage" id="total_acreage" class="form-control has-icon"
-            data-icon="fa-solid fa-ruler-combined" required>
+            data-icon="fa-solid fa-ruler-combined">
             <option value="">Select</option>
             @foreach ($acreageRes as $row_pt)
                 <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>

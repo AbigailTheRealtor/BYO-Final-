@@ -506,7 +506,7 @@
         ['name' => 'Other'],
     ];
 
-    $purchasing_props = [['name' => 'Yes'], ['name' => 'No']];
+    $purchasing_props = [['name' => 'Not Age-Restricted'], ['name' => '55+ Community'], ['name' => '62+ Community']];
 
     $lease_for = [
         ['name' => '3 Months'],
