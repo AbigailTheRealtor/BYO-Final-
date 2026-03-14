@@ -459,3 +459,9 @@ button.btn.btn-success.wizard-step-finish:hover,
 #save-button:not(.disabled) {
   opacity: 1 !important;
 }
+
+/* Prevent "Hired Agent" status button text from wrapping */
+.btn-status {
+  white-space: nowrap;
+  min-width: 110px;
+}
