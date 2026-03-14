@@ -4216,6 +4216,8 @@ $lease_types = [
         function getAllRequiredFields() {
             const requiredFields = [];
             const serviceType = formContainer.getAttribute('data-service-type');
+            const userType = (typeof CURRENT_USER_TYPE !== 'undefined' ? CURRENT_USER_TYPE : 'tenant').toLowerCase();
+            const infoTabId = '#' + userType + '-information';
 
             const tabSelector = serviceType === 'full_service' ? [
                 '#listing-details',
@@ -4228,13 +4230,13 @@ $lease_types = [
 
                 '#services',
                 '#additional-details',
-                '#broker-compensation',
-                '#tenant-info'
+                '#broker-compensation-agency-agreement-terms',
+                infoTabId
             ] : [
                 '#listing-details',
                 '#location-and-meeting-details',
                 '#service-selection-and-pricing',
-                '#tenant-info'
+                infoTabId
             ];
 
             tabSelector.forEach(selector => {
