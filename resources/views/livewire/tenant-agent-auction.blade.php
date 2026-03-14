@@ -4504,6 +4504,32 @@ $lease_types = [
 
         const createForm = document.getElementById('create-auction-form');
         if (createForm) {
+
+            // Tenant-only helper: returns true if the field is hidden by conditional
+            // rendering WITHIN its tab pane (d-none or inline display:none), but does
+            // NOT treat an inactive tab-pane itself as "hidden".  This lets us validate
+            // required fields across ALL tabs, not just the currently visible one.
+            function isTenantFieldHiddenWithinTab(field) {
+                const tabPane = field.closest('.tab-pane');
+                if (!tabPane) return false;
+                let el = field.parentElement;
+                while (el && el !== tabPane) {
+                    if (el.classList && el.classList.contains('d-none')) return true;
+                    if (el.style && el.style.display === 'none') return true;
+                    el = el.parentElement;
+                }
+                return false;
+            }
+
+            // Tenant-only helper: resolves the user-facing label for a field.
+            function getTenantFieldLabel(field) {
+                const label = field.closest('.form-group')?.querySelector('label');
+                if (label) {
+                    return label.textContent.replace(/[*:]/g, '').trim();
+                }
+                return field.getAttribute('placeholder') || field.name || field.id || 'Unknown field';
+            }
+
             document.addEventListener('submit', function(e) {
                 if (!e.target || e.target.id !== 'create-auction-form') return;
                 const banner = document.getElementById('submit-error-banner');
@@ -4514,17 +4540,44 @@ $lease_types = [
                 const requiredFields = getAllRequiredFields();
                 let invalidItems = [];
 
+                const _submitUserType = typeof CURRENT_USER_TYPE !== 'undefined' ? CURRENT_USER_TYPE : '';
+
                 requiredFields.forEach(field => {
-                    if (!isFieldValid(field)) {
-                        const tab = field.closest('.tab-pane');
-                        const label = field.closest('.form-group')?.querySelector('label');
-                        let fieldName = '';
-                        if (label) {
-                            fieldName = label.textContent.replace(/[*:]/g, '').trim();
+                    if (_submitUserType === 'tenant') {
+                        // Tenant flow: check required fields across ALL tabs (active and inactive).
+                        // Only skip fields that are hidden by conditional rendering within the tab.
+                        if (isTenantFieldHiddenWithinTab(field)) return;
+
+                        // Skip Select2-managed multi-selects — handled separately via Livewire check.
+                        if (field.tagName === 'SELECT' && field.multiple &&
+                            field.classList.contains('select2-hidden-accessible')) return;
+
+                        // Direct value check (no tab-visibility gate).
+                        let isEmpty = false;
+                        if (field.type === 'checkbox' || field.type === 'radio') {
+                            isEmpty = !field.checked;
+                        } else if (field.type === 'select-one' || field.type === 'select-multiple') {
+                            isEmpty = field.value === '' || field.value === null || field.value === undefined;
                         } else {
-                            fieldName = field.getAttribute('placeholder') || field.name || field.id || 'Unknown field';
+                            isEmpty = !field.value || field.value.trim() === '';
                         }
-                        invalidItems.push({ field, tab, fieldName });
+
+                        if (isEmpty) {
+                            invalidItems.push({ field, tab: field.closest('.tab-pane'), fieldName: getTenantFieldLabel(field) });
+                        }
+                    } else {
+                        // Non-tenant flows: existing behavior unchanged.
+                        if (!isFieldValid(field)) {
+                            const tab = field.closest('.tab-pane');
+                            const label = field.closest('.form-group')?.querySelector('label');
+                            let fieldName = '';
+                            if (label) {
+                                fieldName = label.textContent.replace(/[*:]/g, '').trim();
+                            } else {
+                                fieldName = field.getAttribute('placeholder') || field.name || field.id || 'Unknown field';
+                            }
+                            invalidItems.push({ field, tab, fieldName });
+                        }
                     }
                 });
 
@@ -4587,6 +4640,27 @@ $lease_types = [
                                         invalidItems.push({ field: document.body, tab: null, fieldName: chk.label });
                                     }
                                 });
+
+                                // Tenant-specific: validate bedrooms via Livewire state.
+                                // The bedrooms select only renders when property_type === 'Residential Property'
+                                // (PHP conditional), so it may not be in the DOM due to Livewire re-render
+                                // timing.  Reading the Livewire state directly is more reliable.
+                                if (curUT === 'tenant') {
+                                    var _ptVal = comp.get('property_type');
+                                    if (_ptVal === 'Residential Property') {
+                                        var _bedroomsVal = comp.get('bedrooms');
+                                        var _bedroomsEmpty = !_bedroomsVal || _bedroomsVal === '';
+                                        if (_bedroomsEmpty) {
+                                            // Only add if not already caught by the DOM scan.
+                                            var _alreadyHasBedrooms = invalidItems.some(function(i) {
+                                                return i.fieldName && i.fieldName.toLowerCase().indexOf('bedroom') !== -1;
+                                            });
+                                            if (!_alreadyHasBedrooms) {
+                                                invalidItems.push({ field: document.body, tab: null, fieldName: 'Minimum Bedrooms Needed' });
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
