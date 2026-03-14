@@ -465,3 +465,10 @@ button.btn.btn-success.wizard-step-finish:hover,
   white-space: nowrap;
   min-width: 110px;
 }
+
+/* Allow clicking a visually-disabled Submit button so the validation banner can fire */
+.wizard-step-finish.disabled,
+#save-button.disabled {
+  pointer-events: auto !important;
+  cursor: not-allowed !important;
+}

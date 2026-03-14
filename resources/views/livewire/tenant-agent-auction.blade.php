@@ -2179,12 +2179,6 @@ $lease_types = [
         }
     }
 
-    document.addEventListener('submit', function(e) {
-        if (e.target && e.target.tagName === 'FORM') {
-            syncAllSelect2BeforeSave();
-        }
-    }, true);
-
     document.addEventListener('DOMContentLoaded', () => {
         // Sync select values from their selected options (fixes draft loading issue)
         syncSelectValues();
@@ -4522,7 +4516,8 @@ $lease_types = [
 
         const createForm = document.getElementById('create-auction-form');
         if (createForm) {
-            createForm.addEventListener('submit', function(e) {
+            document.addEventListener('submit', function(e) {
+                if (!e.target || e.target.id !== 'create-auction-form') return;
                 const banner = document.getElementById('submit-error-banner');
                 const errorList = document.getElementById('submit-error-list');
                 banner.classList.add('d-none');
@@ -4611,7 +4606,7 @@ $lease_types = [
 
                 if (invalidItems.length > 0) {
                     e.preventDefault();
-                    e.stopPropagation();
+                    e.stopImmediatePropagation();
 
                     const seen = new Set();
                     invalidItems.forEach(item => {
@@ -4648,8 +4643,9 @@ $lease_types = [
                     return false;
                 }
 
+                syncAllSelect2BeforeSave();
                 banner.classList.add('d-none');
-            });
+            }, true);
         }
     });
 </script>

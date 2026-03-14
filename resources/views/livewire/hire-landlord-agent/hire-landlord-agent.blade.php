@@ -1040,7 +1040,11 @@
 
                 <div id="wizard-form-container" class="container pt-5 pb-5" data-service-type="{{ $service_type }}">
 
-                    <form wire:submit.prevent="store">
+                    <form id="create-auction-form" wire:submit.prevent="store" novalidate>
+                        <div id="submit-error-banner" class="alert alert-danger d-none" role="alert" style="position: sticky; top: 0; z-index: 1050;">
+                            <strong>Please complete the required fields before submitting.</strong>
+                            <ul id="submit-error-list" class="mb-0 mt-2"></ul>
+                        </div>
                         <!-- Tab Navigation -->
 
                         @if ($service_type === 'full_service')
@@ -2700,7 +2704,7 @@
                     saveButton.removeAttribute('disabled');
                 } else {
                     saveButton.classList.add('disabled');
-                    saveButton.setAttribute('disabled', 'disabled');
+                    saveButton.removeAttribute('disabled');
                 }
             }
             
@@ -2748,6 +2752,79 @@
                         updateSaveButton();
                     }, 300);
                 });
+            }
+
+            // Form submit listener: block submission and show banner when required fields are missing
+            const createForm = document.getElementById('create-auction-form');
+            if (createForm) {
+                document.addEventListener('submit', function(e) {
+                    if (!e.target || e.target.id !== 'create-auction-form') return;
+                    const banner = document.getElementById('submit-error-banner');
+                    const errorList = document.getElementById('submit-error-list');
+                    if (banner) banner.classList.add('d-none');
+                    if (errorList) errorList.innerHTML = '';
+
+                    const requiredFields = getAllRequiredFields();
+                    let invalidItems = [];
+
+                    requiredFields.forEach(function(field) {
+                        if (field.disabled || field.type === 'hidden') return;
+                        if (!isFieldValid(field)) {
+                            const tab = field.closest('.tab-pane');
+                            const labelEl = field.closest('.form-group') && field.closest('.form-group').querySelector('label');
+                            const fieldName = labelEl ? labelEl.textContent.replace(/[*:]/g, '').trim() : (field.getAttribute('placeholder') || field.name || field.id || 'Required field');
+                            invalidItems.push({ field: field, tab: tab, fieldName: fieldName });
+                        }
+                    });
+
+                    if (invalidItems.length > 0) {
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+
+                        if (banner && errorList) {
+                            const seen = new Set();
+                            invalidItems.forEach(function(item) {
+                                if (!seen.has(item.fieldName)) {
+                                    seen.add(item.fieldName);
+                                    const li = document.createElement('li');
+                                    li.textContent = item.fieldName;
+                                    errorList.appendChild(li);
+                                }
+                            });
+                            banner.querySelector('strong').textContent = 'Please complete the required fields before submitting.';
+                            banner.classList.remove('d-none');
+                        }
+
+                        const firstItem = invalidItems[0];
+                        if (firstItem.tab) {
+                            const tabId = firstItem.tab.id;
+                            const tabTrigger = document.querySelector('[data-bs-target="#' + tabId + '"], [href="#' + tabId + '"]');
+                            if (tabTrigger) {
+                                bootstrap.Tab.getOrCreateInstance(tabTrigger).show();
+                                const allTabPanes = [...document.querySelectorAll('.tab-pane')];
+                                const tabIndex = allTabPanes.indexOf(firstItem.tab);
+                                if (tabIndex >= 0 && typeof Livewire !== 'undefined') {
+                                    Livewire.emit('setActiveTab', tabIndex);
+                                }
+                            }
+                        }
+
+                        setTimeout(function() {
+                            if (firstItem.field && firstItem.field.classList) {
+                                firstItem.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                if (typeof firstItem.field.focus === 'function' && firstItem.field.tagName !== 'DIV') {
+                                    firstItem.field.focus();
+                                }
+                                firstItem.field.classList.add('is-invalid');
+                            }
+                            if (banner) banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 300);
+
+                        return false;
+                    }
+
+                    if (banner) banner.classList.add('d-none');
+                }, true);
             }
         });
     </script>
