@@ -1,0 +1,268 @@
+What’s probably happening is they fixed the **first-click sync bug**, but not the **multi-select accumulation bug**.
+
+If it works for 1–2 selections and then starts deleting when you add more, that usually means one of these is still wrong:
+
+* the handler is only syncing the **last changed item** instead of the **full array**
+* a re-render is restoring an **older partial array**
+* the DOM selection and Livewire state are getting out of sync after each additional pick
+* there is still a helper like `syncSelect2MultiSelects()` or tab/re-render logic re-applying stale values after the 3rd+ selection
+* the field is not being treated exactly like the working field during **every** select/unselect cycle
+
+Paste this into Replit:
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS — BUYER ONLY — VIEW PREFERENCE NEEDED STILL FAILS WHEN SELECTING MORE THAN 2
+
+### PAGE / ROUTE
+
+Use the exact Buyer page:
+
+`/hire/agent/auction/buyer`
+
+This is a **single-field Buyer-only fix**.
+
+---
+
+## ISSUE STILL NOT FIXED
+
+`View Preference Needed` is **still broken**.
+
+### Current behavior
+
+It may appear to work for 1 or 2 selections, but when selecting additional options, it starts deleting previously selected options.
+
+### Required behavior
+
+It must allow the user to select **several** options and keep **all** of them selected, exactly like:
+
+* `Non-Negotiable Amenities and Property Features`
+
+This is not just a first-selection fix.
+It must support **accumulating multiple selections** without wiping earlier ones.
+
+---
+
+## HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Fix only `View Preference Needed` in the Buyer flow at `/hire/agent/auction/buyer`.**
+2. **Do not edit Tenant, Seller, or Landlord files.**
+3. **Do not edit unrelated Buyer fields.**
+4. **Do not edit shared/global helpers, shared JS, shared Select2 logic, shared traits, or shared partials unless absolutely unavoidable.**
+5. **If a shared file seems necessary, stop first and explain why the Buyer-specific file cannot be fixed by itself.**
+6. **Do not rename, delete, migrate, or repurpose any database columns.**
+7. **Do not do a global Select2 rewrite.**
+8. **Do not change labels, placeholders, options, tooltips, validation, or unrelated business logic.**
+9. **Do not claim fixed based on testing only 1–2 selections.**
+10. **You must test with 4+ selections in this field before calling it fixed.**
+11. **Use the exact working Buyer pattern from `Non-Negotiable Amenities and Property Features`.**
+12. **No cleanup, no refactor, no “while I’m here” edits.**
+
+---
+
+## IMPORTANT: DO A TRUE FIELD-VS-FIELD COMPARISON
+
+Do not stop at “the event names now match.”
+
+I need you to compare `View Preference Needed` against the working field `Non-Negotiable Amenities and Property Features` across the entire lifecycle:
+
+* markup
+* wire model usage
+* array casting / normalization
+* select2 init
+* select/unselect event handlers
+* full-array sync behavior
+* tab switch behavior
+* message.processed behavior
+* save/reload hydration
+* edit preload
+* any helper that re-applies values from Livewire back into Select2
+* any function that runs on tab switch, blur, next/back, save, or validation error
+
+---
+
+## WHAT I BELIEVE IS STILL WRONG
+
+The bug is likely **not fully solved** if only 1–2 selections were tested.
+
+I want you to specifically inspect whether one of these is still happening:
+
+### 1) Partial array overwrite
+
+When the user selects the 3rd or 4th item, the code may be sending only:
+
+* the newest value
+  or
+* an incomplete array
+
+instead of the full current selected array.
+
+### 2) Stale re-application after each new selection
+
+A helper may still be reading stale Livewire state and reapplying it back into the field after each new pick.
+
+### 3) Tab/re-render sync function still wiping values
+
+Any function like:
+
+* `syncSelect2MultiSelects()`
+* tab-switch sync
+* Livewire message hook
+* DOM rehydrate helper
+
+may still be restoring an outdated array after the 3rd+ selection.
+
+### 4) DOM values and Livewire state diverge after multiple picks
+
+The UI may visually show multiple selected values briefly, but then Livewire pushes back an older array and deletes some.
+
+---
+
+## REQUIRED FIX
+
+Make `View Preference Needed` behave exactly like `Non-Negotiable Amenities and Property Features` when selecting:
+
+* 1 option
+* 2 options
+* 3 options
+* 4 options
+* more than 4 options
+
+### It must:
+
+* keep all selected values
+* not wipe earlier selections
+* survive tab switch
+* survive validation errors
+* survive save/reload
+* preload correctly on edit
+
+---
+
+## SPECIFIC IMPLEMENTATION DIRECTION
+
+I want you to verify whether `View Preference Needed` is truly syncing the **entire selected array** on every select/unselect event.
+
+### On every select/unselect:
+
+* read the full current `.val()` array from Select2
+* normalize it to an array
+* immediately sync the **full array** into Livewire
+* do not debounce if the working field does not debounce
+* do not re-apply stale state after that
+
+### Also inspect:
+
+* whether any tab switch handler or sync function is still running too early
+* whether `syncSelect2MultiSelects()` or similar is still touching `view_preference`
+* whether a later hook is rehydrating from stale `component.get('view_preference')`
+* whether save/next/tab click triggers a stale overwrite
+* whether the field is missing the same selected-option restoration logic used in the working field
+
+---
+
+## DO NOT MARK COMPLETE UNTIL YOU TEST THIS EXACT SEQUENCE
+
+### Required manual or automated test:
+
+1. Select option 1
+2. Select option 2
+3. Select option 3
+4. Select option 4
+5. Select option 5
+6. Confirm all 5 remain selected
+7. Switch tabs away and back
+8. Confirm all 5 still remain selected
+9. Save
+10. Reload/edit
+11. Confirm all 5 still remain selected
+
+### Also test:
+
+* unselect one from the middle
+* add another one after that
+* confirm the rest do not get wiped
+
+If you only test 1–2 selections, the fix is not verified.
+
+---
+
+## IF NEEDED, ADD TEMP DEBUG LOGGING FIRST
+
+If the bug is still hard to catch, temporarily log during select/unselect for `view_preference` only:
+
+* full Select2 `.val()` array before sync
+* exact payload being sent into Livewire
+* Livewire client value immediately after set
+* value being read by any rehydrate/sync/tab-switch helper
+* value after tab switch
+* value after message.processed
+
+Then remove debug output after the fix is confirmed.
+
+This should reveal whether the 3rd+ selection is sending a partial array or getting overwritten by stale state.
+
+---
+
+## QA CHECKLIST — MUST PASS ALL
+
+### A. Multi-select accumulation
+
+* select 1 → stays
+* select 2 → both stay
+* select 3 → all 3 stay
+* select 4 → all 4 stay
+* select 5 → all 5 stay
+
+### B. Unselect/reselect
+
+* remove one selected item from the middle
+* remaining selections stay
+* add another item
+* all intended selections remain
+
+### C. Tab switching
+
+* after 4–5 selections, switch tabs
+* return to field
+* all selections still present
+
+### D. Save/reload
+
+* save listing
+* reload/edit
+* all selections still present
+
+### E. Validation error
+
+* trigger validation error elsewhere
+* return to field
+* selections must still remain
+
+### F. Match working field
+
+* behavior must now truly match `Non-Negotiable Amenities and Property Features`
+
+---
+
+## FINAL RESPONSE FORMAT I WANT
+
+When done, respond with:
+
+1. **Exact Buyer files changed**
+2. **Exact root cause of why selections were still deleting after more than 2**
+3. **Whether the bug was caused by partial array sync, stale rehydrate, tab-switch overwrite, or something else**
+4. **Exact code behavior changed to fix it**
+5. **Confirmation that this was tested with at least 5 selections**
+6. **QA results for A–F**
+
+---
+
+## IMPORTANT
+
+Do not tell me it is fixed unless you tested it with **more than 2 selections**.
+That is the whole point of this pass.
+
+---
+
+My guess is they solved the timing problem but not the **full-array persistence problem**. This next instruction should force them to find that exact break.
