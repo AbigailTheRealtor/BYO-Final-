@@ -53,7 +53,7 @@
 @if ($property_type === 'Residential Property')
     <!-- Pets Allowed -->
     <div class="form-group">
-        <label class="fw-bold">Pets :</label>
+        <label class="fw-bold">Pets:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Indicate whether the Tenant has pets. If so, enter details including the number, type, breed, weight, and whether the pet is a service animal or an emotional support animal.">
