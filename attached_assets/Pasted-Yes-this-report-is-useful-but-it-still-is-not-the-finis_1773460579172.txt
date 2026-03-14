@@ -1,0 +1,239 @@
+Yes — this report is useful, but it still is **not the finish line**.
+
+What it proved is:
+
+* the **submit chain** is being gated in JS
+* there **was** a stale Livewire fallback bug
+* they removed that fallback in `isFieldValid()`
+
+But your real issue is bigger:
+
+**Hire a Tenant Agent still does not require every field you intended to be required.**
+
+That means the next step should be a **full required-fields audit + enforcement pass**, not more guessing.
+
+Here’s what I would send to Replit next:
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A TENANT’S AGENT ONLY — FULL REQUIRED FIELD AUDIT + ENFORCEMENT
+
+## SCOPE
+
+Do a **complete required-field audit** for **Hire a Tenant’s Agent only**.
+
+The goal is to identify **every field that is supposed to be required** and make sure all 3 layers match:
+
+1. **UI layer** → red star / required indicator
+2. **front-end submit gate** → JS required-field blocking
+3. **server-side Livewire validation** → `store()` / final save validation
+
+Right now the form can still be submitted without every required field filled in, so there is still a mismatch somewhere.
+
+This task is to **trace and fix the mismatch completely** for **Hire a Tenant’s Agent only**.
+
+---
+
+## HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Only work on Hire a Tenant’s Agent flow.**
+2. **Do not modify Buyer, Seller, or Landlord flows.**
+3. **Do not rename fields, database columns, wire:model names, or validation keys.**
+4. **Do not run migrations.**
+5. **Do not refactor shared logic unless absolutely necessary, and if shared logic must be touched, it must be wrapped so only Tenant flow behavior changes.**
+6. **Do not change labels, tooltips, placeholders, icons, or wording unless directly related to required/not-required display.**
+7. **Do not alter Select2 persistence logic unless it is directly causing required-field validation failure.**
+8. **Do not remove any existing required field unless explicitly confirmed by the current Tenant requirements.**
+9. **Do not guess. Build the list from the real code.**
+
+---
+
+## STEP 1 — IDENTIFY THE REAL TENANT FLOW FILES FIRST
+
+Before changing anything, confirm the exact files used by the active **Hire a Tenant’s Agent create flow**.
+
+Because this project uses shared logic, first confirm:
+
+* active route
+* active Livewire component
+* active blade
+* directly included partials
+* any JS inside the blade or included partials that participates in submit validation
+* the exact `store()` method and any validation methods/rules it uses
+
+Output a short trace of:
+
+* component class file
+* blade file
+* included tab partials
+* where required fields are visually marked
+* where required fields are checked in JS
+* where required fields are enforced in Livewire/PHP
+
+Do not edit until this map is confirmed.
+
+---
+
+## STEP 2 — BUILD A MASTER REQUIRED-FIELD MATRIX FOR HIRE A TENANT’S AGENT
+
+Create a full list of **every field in Hire a Tenant’s Agent** and classify each as one of these:
+
+* **Always required**
+* **Conditionally required**
+* **Optional**
+
+For each field, provide:
+
+* field label
+* `wire:model` / property name
+* tab/section
+* whether UI shows it as required
+* whether JS submit gate checks it
+* whether server-side validation enforces it
+* whether current behavior matches intended behavior
+
+Format the audit like this:
+
+| Tab | Field Label | Property | Intended Status | UI Star? | JS Enforced? | Livewire Enforced? | Matches? |
+| --- | ----------- | -------- | --------------- | -------- | ------------ | ------------------ | -------- |
+
+This is required before applying the fix.
+
+---
+
+## STEP 3 — PAY SPECIAL ATTENTION TO CONDITIONAL REQUIRED FIELDS
+
+Audit any fields that become required only when another answer is selected.
+
+Examples:
+
+* property-type dependent fields
+* commercial vs residential fields
+* fields that appear only after another selection
+* screening-related follow-up fields
+* compensation/agreement fields that depend on prior answers
+* custom “Other” fields
+* hidden tab fields that are still being validated or skipped incorrectly
+
+For each conditional field, confirm:
+
+* what condition makes it required
+* whether the field is visible at that time
+* whether JS checks it only when visible/relevant
+* whether Livewire validates it only when relevant
+* whether hidden fields are incorrectly bypassing or incorrectly blocking submit
+
+---
+
+## STEP 4 — STOP RELYING ON JS ALONE
+
+The final authority must be **server-side validation** in the Tenant `store()` flow.
+
+JS can improve UX, but it is not enough.
+
+Make sure every required Tenant field is enforced in the final Livewire validation used by `store()`.
+
+That means:
+
+* fields marked required in UI must also be required in Livewire validation
+* conditionally required fields must use proper conditional validation
+* optional fields must not be required in validation
+* JS and UI should mirror server truth, not invent separate rules
+
+If there is currently duplicated required logic in JS that does not match Livewire, align it.
+
+---
+
+## STEP 5 — FIX THE REQUIRED-FIELD SOURCE OF TRUTH
+
+After the audit, fix the mismatch so all 3 layers match:
+
+### REQUIRED FIELDS MUST MATCH IN ALL 3 PLACES:
+
+1. visual required indicator
+2. front-end submit validation
+3. Livewire server-side validation
+
+No field should be:
+
+* starred but not actually required
+* required in PHP but not shown as required
+* blocked by JS but not validated in store()
+* validated in store() but bypassed because JS is checking the wrong field or wrong condition
+
+---
+
+## STEP 6 — TEST THE FORM LIKE A REAL USER
+
+After the fix, test the full Tenant create flow with real user behavior.
+
+### REQUIRED TEST CASES
+
+#### A. Blank submit test
+
+Try to submit with required Tenant fields empty.
+Expected:
+
+* submit blocked
+* missing fields clearly identified
+* `store()` does not complete
+
+#### B. Filled required fields test
+
+Fill all required fields only.
+Expected:
+
+* submit succeeds
+
+#### C. Conditional required test
+
+Trigger each conditional branch and verify the required follow-up fields are enforced only when relevant.
+
+#### D. Hidden field test
+
+When fields are hidden/not applicable, they should not block submit.
+
+#### E. Delete-after-fill test
+
+Fill required fields, then clear them, then click submit immediately.
+Expected:
+
+* submit blocked
+* no stale values pass validation
+
+#### F. Tab navigation test
+
+Go forward/back across tabs and verify required enforcement still works.
+
+---
+
+## STEP 7 — RETURN A FINAL REPORT
+
+After fixing, return:
+
+1. the complete required-field matrix
+2. which fields were mismatched
+3. which files were changed
+4. exactly what was changed
+5. proof of real testing
+6. confirmation that only Hire a Tenant’s Agent was touched
+
+Also clearly state whether the final server-side `store()` validation now enforces all required Tenant fields.
+
+---
+
+## IMPORTANT
+
+Do **not** just patch one field.
+
+Do **not** just patch JS.
+
+Do **not** assume stars equal validation.
+
+I want the **full Hire a Tenant’s Agent required-field system audited and aligned** so that every required field is truly required before submit.
+
+---
+
+That’s the right next move.
+
+The report they gave you explains **why one bypass existed**, but your actual problem sounds like **the required field definitions themselves are still inconsistent**. So yes — make them produce the full list and align it to the real Tenant flow.

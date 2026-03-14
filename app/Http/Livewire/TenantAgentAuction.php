@@ -3330,23 +3330,57 @@ class TenantAgentAuction extends Component
     protected function validateOnlyFilledFields()
     {
         $rules = [
-            // Basic Information
-            'service_type' => 'required',
-            'user_type' => 'required',
-            'listing_title' => 'required|string|max:255',
-            'working_with_agent' => 'required',
-            'listing_date' => 'required|date',
-            'expiration_date' => 'required',
-            'auction_type' => 'required',
-
-
+            // Basic Information (all user types)
+            'service_type'        => 'required',
+            'user_type'           => 'required',
+            'listing_title'       => 'required|string|max:255',
+            'working_with_agent'  => 'required',
+            'listing_date'        => 'required|date',
+            'expiration_date'     => 'required',
+            'auction_type'        => 'required',
         ];
+
+        // Tenant-specific required fields (full_service only)
+        if ($this->user_type === 'tenant' && $this->service_type === 'full_service') {
+            // Tab 1 – Listing Details
+            $rules['desired_agent_hire_date'] = 'required|date';
+            $rules['meeting_Preference']      = 'required';
+
+            // Tab 1 – Bidding Period Length (only required when auction type is Bidding Period)
+            if ($this->auction_type === 'Bidding Period') {
+                $rules['auction_time'] = 'required';
+            }
+
+            // Tab 2 – Property Preferences
+            $rules['state']         = 'required';
+            $rules['property_type'] = 'required';
+            $rules['bedrooms']      = 'required';
+            $rules['bathrooms']     = 'required';
+            $rules['counties']      = 'required|array|min:1';
+
+            // Tab 3 – Leasing Terms
+            $rules['budget']                = 'required';
+            $rules['lease_for']             = 'required|array|min:1';
+            $rules['lease_date']            = 'required|date';
+            $rules['leasing_spaces_tenant'] = 'required|array|min:1';
+
+            // Tab 4 – Pre-Screening
+            $rules['number_occupant']    = 'required';
+            $rules['monthly_income']     = 'required';
+            $rules['screening_concerns'] = 'required';
+
+            // Tab 7 – Tenant Information
+            $rules['first_name']   = 'required|string|max:255';
+            $rules['last_name']    = 'required|string|max:255';
+            $rules['phone_number'] = 'required';
+            $rules['email']        = 'required|email';
+        }
 
         if ($this->isDraft) {
             $filledRules = [];
             foreach ($rules as $field => $rule) {
-
-                if (!empty($this->$field)) {
+                $value = $this->$field ?? null;
+                if (!empty($value)) {
                     $filledRules[$field] = $rule;
                 }
             }
