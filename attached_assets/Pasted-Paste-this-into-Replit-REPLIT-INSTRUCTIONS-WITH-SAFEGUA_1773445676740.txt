@@ -1,0 +1,348 @@
+Paste this into Replit:
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A BUYER’S AGENT ONLY — REMAINING FIXES
+
+### VERIFY THE CORRECT PAGE FIRST
+
+Use this exact Buyer flow first:
+
+`/hire/agent/auction/buyer`
+
+Do **not** guess which files to edit.
+We have had repeated issues before from editing the wrong Buyer file.
+
+---
+
+## SCOPE
+
+Fix **only** these remaining issues in **Hire a Buyer’s Agent**:
+
+1. **View Preference Needed** selections still delete themselves
+2. **Garage/Parking Features** selections still delete themselves
+3. **Garage/Parking Features** `Other` input does not appear immediately
+4. **Offered Financing/Currency** selected financing labels need the same font style/size as the other financing section headings
+
+Do not do a broad cleanup.
+Do not touch Tenant, Seller, or Landlord flows.
+
+---
+
+## HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Work only on the exact Buyer files used by `/hire/agent/auction/buyer`.**
+2. **Before editing anything, identify and report the exact active route, Livewire component, Blade, and directly included Buyer partials used by this page.**
+3. **Do not edit Tenant, Seller, or Landlord files.**
+4. **Do not edit shared/global helpers, shared JS, shared Select2 logic, shared traits, or shared partials unless it is truly unavoidable.**
+5. **If a shared file appears related, stop first and explain why the Buyer-specific file cannot be fixed on its own.**
+6. **Do not rename, delete, migrate, or repurpose database columns.**
+7. **Do not do a global Select2 rewrite.**
+8. **Do not change unrelated labels, options, placeholders, tooltips, validation, or business logic.**
+9. **Preserve all saved Buyer listings, drafts, edit behavior, and existing data.**
+10. **All fixes must work in create, edit, save, reload, and draft mode.**
+11. **Use the same already-working Buyer-side pattern where applicable instead of inventing a new approach.**
+12. **Replit should already know this past fix pattern from similar Buyer/Tenant/Landlord selection bugs. Reuse that same targeted fix approach in the Buyer files without asking multiple follow-up questions.**
+13. **No “while I’m here” edits.**
+14. **Smallest Buyer-only change wins.**
+
+---
+
+## FIRST STEP — CONFIRM THE CORRECT BUYER FILES
+
+Before changing anything, trace the exact files used by `/hire/agent/auction/buyer` and report:
+
+* active route
+* active Livewire class
+* active Blade view
+* directly included Buyer partial for the section containing:
+
+  * View Preference Needed
+  * Garage/Parking Features
+* directly included Buyer partial for:
+
+  * Offered Financing/Currency
+* any Buyer-only script block or init code handling Select2 / multi-select / “Other” behavior on this page
+
+### Do not edit until this is confirmed.
+
+We have had issues before where the wrong file was edited.
+
+---
+
+# REQUIRED FIXES
+
+## 1) View Preference Needed — selections still delete themselves
+
+### Current issue
+
+The user selects options, then the selected options disappear/delete themselves.
+
+### Required result
+
+This field must behave exactly like the working Buyer field:
+
+* **Non-Negotiable Amenities and Property Features**
+
+Meaning:
+
+* user selects option
+* option stays selected immediately
+* no disappearing
+* no second click needed
+* no deletion after re-render
+* works in create
+* works in edit
+* works after save/reload
+* works after validation error
+
+### Safeguard
+
+Do **not** create a new global fix.
+Use the same Buyer-specific working pattern already used by **Non-Negotiable Amenities and Property Features**.
+
+### Check these specific areas for this field
+
+* hydration / preload from saved values
+* Select2 initialization
+* change event sync to Livewire
+* message processed / re-render handling
+* before-submit sync
+* array normalization / JSON decode if needed
+* protection against stale overwrite
+
+---
+
+## 2) Garage/Parking Features — selections still delete themselves
+
+### Current issue
+
+The user selects options, then the selected options disappear/delete themselves.
+
+### Required result
+
+This field must behave exactly like the working Buyer field:
+
+* **Non-Negotiable Amenities and Property Features**
+
+Meaning:
+
+* selections stay selected immediately
+* no disappearing
+* no second click needed
+* no deletion after re-render
+* works in create
+* works in edit
+* works after save/reload
+* works after validation error
+
+### Safeguard
+
+Do **not** create a global fix.
+Use the same Buyer-specific working pattern already used by **Non-Negotiable Amenities and Property Features**.
+
+### Check these specific areas for this field
+
+* hydration / preload
+* Select2 init
+* change event sync
+* re-render handling
+* before-submit sync
+* array normalization if needed
+* stale overwrite prevention
+
+---
+
+## 3) Garage/Parking Features — `Other` input does not pop up immediately
+
+### Current issue
+
+When the user selects `Other`, the custom input box does not appear right away.
+
+### Required result
+
+This field must also behave exactly like the working Buyer field behavior for:
+
+* **Non-Negotiable Amenities and Property Features**
+
+Meaning:
+
+* selecting `Other` shows the custom input immediately
+* no second click
+* no tab change
+* no save/reload needed
+* works in create
+* works in edit
+* works after validation error
+* hides again when `Other` is removed
+* preserves saved custom text on reload/edit
+
+### Important
+
+This is part of the same Garage/Parking Features fix.
+Both problems must be resolved:
+
+1. selections must stop deleting themselves
+2. `Other` must show the input immediately
+
+### Safeguard
+
+Do this only in the Buyer-specific logic for this field.
+Do not modify global `Other` logic unless truly unavoidable.
+
+---
+
+## 4) Offered Financing/Currency — financing labels need the same font/style as the other financing headings
+
+### Current issue
+
+If the user selects:
+
+* Conventional
+* FHA
+* Jumbo
+* No-Doc
+* Non-QM
+* USDA
+* VA
+
+those selected labels are showing in the wrong font/style.
+
+### Required result
+
+When these financing labels appear, their **font text and size** must match the same visual style already used by:
+
+* Assumable
+* Cryptocurrency
+* Exchange/Trade
+* Lease Option
+* Lease Purchase
+* Non-Fungible Token (NFT)
+* Seller Financing
+
+### Important
+
+This is a **display styling fix only** for the Buyer financing section.
+
+### Requirements
+
+* selected financing labels for Conventional / FHA / Jumbo / No-Doc / Non-QM / USDA / VA should use the exact same font styling and size as the headings listed above
+* if multiple are selected, all of them should render in that same heading style
+* they should no longer look like a different font, link style, or mismatched size
+* update immediately when selected/unselected
+* works in create
+* works in edit
+* works after save/reload
+* preserve current behavior for Assumable, Cryptocurrency, Exchange/Trade, Lease Option, Lease Purchase, NFT, and Seller Financing
+
+### Safeguard
+
+Do not refactor the entire financing section.
+Only make the Buyer-specific styling/rendering change needed so these labels visually match the existing financing section headings.
+
+---
+
+# IMPLEMENTATION RULES
+
+## For the disappearing multi-select fields
+
+Fields:
+
+* View Preference Needed
+* Garage/Parking Features
+
+Use the exact same Buyer-side working pattern already used in:
+
+* **Non-Negotiable Amenities and Property Features**
+
+Do not invent a different approach if a working one already exists in this Buyer flow.
+
+---
+
+## For the Garage/Parking `Other` box
+
+Mirror the exact same Buyer-side `Other` trigger logic already used where selecting `Other` immediately opens the custom input.
+
+This must work:
+
+* on first selection
+* after re-render
+* on edit preload
+* after validation errors
+* after save/reload
+
+---
+
+## For financing text styling
+
+Use the same existing markup/class/style pattern already used by these Buyer financing headings:
+
+* Assumable
+* Cryptocurrency
+* Exchange/Trade
+* Lease Option
+* Lease Purchase
+* Non-Fungible Token (NFT)
+* Seller Financing
+
+Apply that same pattern to the displayed Conventional / FHA / Jumbo / No-Doc / Non-QM / USDA / VA labels.
+
+Do not introduce a new style if one already exists in this Buyer section.
+
+---
+
+# QA CHECKLIST — MUST TEST BEFORE FINISHING
+
+Test only in the actual Buyer flow at `/hire/agent/auction/buyer`.
+
+## A. View Preference Needed
+
+* select one option → stays selected
+* select multiple options → all stay selected
+* switch tabs and return → still selected
+* save → reload → still selected
+* edit existing listing → preloads correctly
+
+## B. Garage/Parking Features selection stability
+
+* select one option → stays selected
+* select multiple options → all stay selected
+* switch tabs and return → still selected
+* save → reload → still selected
+* edit existing listing → preloads correctly
+
+## C. Garage/Parking Features `Other`
+
+* select `Other` → custom input appears immediately
+* type custom value → save → reload → persists
+* remove `Other` → custom input hides
+* edit listing with `Other` already selected → input shows on load
+
+## D. Offered Financing/Currency font styling
+
+* select Conventional only → displayed label matches Assumable/Cryptocurrency heading style
+* select FHA + VA + Jumbo → all displayed labels match the same heading style
+* remove one → it disappears from display immediately
+* styling remains consistent after save/reload
+* Assumable, Cryptocurrency, Exchange/Trade, Lease Option, Lease Purchase, NFT, and Seller Financing still display exactly as before
+
+---
+
+# FINAL RESPONSE FORMAT I WANT
+
+When done, respond with:
+
+1. **Exact Buyer files changed**
+2. **What changed in each file**
+3. **Confirmation that the correct `/hire/agent/auction/buyer` files were identified first**
+4. **Confirmation that no shared/global files were changed unless first proven unavoidable**
+5. **QA results for A–D above**
+
+---
+
+## IMPORTANT REMINDER
+
+Do not edit the wrong file.
+Trace the actual Buyer route/component/blade/partials first, then apply these fixes only to those Buyer files.
+
+---

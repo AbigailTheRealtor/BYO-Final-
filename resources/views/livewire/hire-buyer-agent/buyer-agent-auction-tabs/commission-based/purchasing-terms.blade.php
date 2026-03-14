@@ -433,8 +433,8 @@
 @endphp
 <div class="financing-traditional-section" x-data="{ visible: {{ (is_array($this->offered_financing) && (count(array_intersect(['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'], $this->offered_financing)) > 0)) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Traditional') visible = $event.detail.visible">
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
-        <h5 class="fw-bold text-primary mb-0">
-            <i class="fa-solid fa-file-invoice-dollar me-2"></i><span id="traditional-loan-label-text">{{ implode(' / ', $selectedTraditionalLoans) }}</span>
+        <h5 id="traditional-loan-label-h5" class="fw-bold text-primary mb-0">
+            <i class="fa-solid fa-file-invoice-dollar me-2"></i>{{ implode(' / ', $selectedTraditionalLoans) }}
         </h5>
     </div>
     <div class="form-group mt-3">

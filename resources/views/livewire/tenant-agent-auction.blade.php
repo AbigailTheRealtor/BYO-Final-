@@ -3127,7 +3127,7 @@ $lease_types = [
             var $vp = $('#view_preference');
             if (!$vp.length) return;
             if ($vp.hasClass('select2-hidden-accessible')) {
-                $vp.select2('destroy');
+                return;
             }
             $vp.select2({ placeholder: "Select", allowClear: true });
             $vp.off('change.viewPrefSync').on('change.viewPrefSync', function() {
@@ -3140,12 +3140,10 @@ $lease_types = [
                     safeLivewireSet('other_preferences', '');
                 }
             });
-            var vpVals = @this.get('view_preference') || [];
-            if (vpVals.length) {
-                $vp.val(vpVals).trigger('change.select2');
-                if (vpVals.includes('Other')) {
-                    $('#other_preferences').show();
-                }
+            rehydrateSelect2FromLivewire('#view_preference', 'view_preference');
+            var vpVals = $vp.val() || [];
+            if (vpVals.includes('Other')) {
+                $('#other_preferences').show();
             }
         }
 
@@ -3161,25 +3159,23 @@ $lease_types = [
             var $gps = $('#garage_parking_spaces_option');
             if (!$gps.length) return;
             if ($gps.hasClass('select2-hidden-accessible')) {
-                $gps.select2('destroy');
+                return;
             }
             $gps.select2({ placeholder: "Select", allowClear: true, width: '100%' });
             $gps.off('change.garageBuyer').on('change.garageBuyer', function() {
                 const vals = $(this).val() || [];
                 debouncedSet('garage_parking_spaces_option', vals);
                 if (vals.includes('Other')) {
-                    $('#other_parking_space_wrapper').show();
+                    $('#other_parking_space_wrapper').removeClass('d-none').show();
                 } else {
-                    $('#other_parking_space_wrapper').hide();
+                    $('#other_parking_space_wrapper').addClass('d-none').hide();
                     safeLivewireSet('other_parking_space_wrapper', null);
                 }
             });
-            var gpsVals = @this.get('garage_parking_spaces_option') || [];
-            if (gpsVals.length) {
-                $gps.val(gpsVals).trigger('change.select2');
-                if (gpsVals.includes('Other')) {
-                    $('#other_parking_space_wrapper').show();
-                }
+            rehydrateSelect2FromLivewire('#garage_parking_spaces_option', 'garage_parking_spaces_option');
+            var initVals = $gps.val() || [];
+            if (initVals.includes('Other')) {
+                $('#other_parking_space_wrapper').removeClass('d-none').show();
             }
         }
         initGarageParkingBuyer();
@@ -4111,8 +4107,8 @@ $lease_types = [
         }
         var traditionalTypes = ['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'];
         var selectedTradLabels = traditionalTypes.filter(function(t) { return data.includes(t); });
-        var $tradLabelEl = document.getElementById('traditional-loan-label-text');
-        if ($tradLabelEl) { $tradLabelEl.textContent = selectedTradLabels.join(' / '); }
+        var $tradH5 = document.getElementById('traditional-loan-label-h5');
+        if ($tradH5) { $tradH5.innerHTML = '<i class="fa-solid fa-file-invoice-dollar me-2"></i>' + selectedTradLabels.join(' / '); }
         window.dispatchEvent(new CustomEvent('update-financing-visibility', { detail: { type: 'Assumable', visible: data.includes('Assumable') } }));
         window.dispatchEvent(new CustomEvent('update-financing-visibility', { detail: { type: 'Traditional', visible: traditionalTypes.some(function(t) { return data.includes(t); }) } }));
         window.dispatchEvent(new CustomEvent('update-financing-visibility', { detail: { type: 'Cryptocurrency', visible: data.includes('Cryptocurrency') } }));
