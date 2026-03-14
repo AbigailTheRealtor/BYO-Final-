@@ -3121,35 +3121,36 @@ $lease_types = [
         });
         //////////////////////// / view_preference
 
-
-
         function initSelect2ViewPref() {
             var $vp = $('#view_preference');
             if (!$vp.length) return;
             if ($vp.hasClass('select2-hidden-accessible')) {
-                return;
+                $vp.select2('destroy');
             }
-            $vp.select2({ placeholder: "Select", allowClear: true });
-            $vp.off('change.viewPrefSync').on('change.viewPrefSync', function() {
-                let selectedValues = $vp.val() || [];
-                debouncedSet('view_preference', selectedValues);
-                if (selectedValues.includes('Other')) {
+            $vp.select2({
+                    placeholder: "Select",
+                    allowClear: true
+                })
+                .on('select2:select select2:unselect', function(e) {
+                    const vals = $(this).val() || [];
+                    if (vals.includes('Other')) {
+                        $('#other_preferences').show();
+                    } else {
+                        $('#other_preferences').hide();
+                        safeLivewireSet('other_preferences', '', true);
+                    }
+                    safeLivewireSet('view_preference', vals, true);
+                });
+            var vpVals = @this.get('view_preference') || [];
+            if (vpVals.length) {
+                $vp.val(vpVals).trigger('change.select2');
+                if (vpVals.includes('Other')) {
                     $('#other_preferences').show();
-                } else {
-                    $('#other_preferences').hide();
-                    safeLivewireSet('other_preferences', '');
                 }
-            });
-            rehydrateSelect2FromLivewire('#view_preference', 'view_preference');
-            var vpVals = $vp.val() || [];
-            if (vpVals.includes('Other')) {
-                $('#other_preferences').show();
             }
         }
 
         initSelect2ViewPref();
-        Livewire.hook('message.processed', () => { initSelect2ViewPref(); });
-
 
         ///////////////////// end view_preference
 
