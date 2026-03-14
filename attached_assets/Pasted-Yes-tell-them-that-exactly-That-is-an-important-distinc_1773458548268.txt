@@ -1,0 +1,199 @@
+Yes — tell them that exactly. That is an important distinction.
+
+The bug is not just “empty form on first submit.”
+The real requirement is:
+
+* if a required field was filled in before
+* and then the user deletes it later
+* the listing must **not** submit
+
+Also, your UX requirement is clear:
+
+* **do not disable or gray out the Submit button**
+* keep **Submit clickable**
+* when clicked with missing required fields, show the **required-fields notice**
+* and block submission
+
+Send this:
+
+---
+
+The fix is still **not correct**.
+
+### What is happening:
+
+At first it looked like it worked, but then I **deleted required field values** and the listing still submitted.
+
+### What I need:
+
+If **any required field is empty**, including a field that was previously filled in and then later deleted, the listing must **not** submit.
+
+That means the validation must check the **current live value at the moment Submit is clicked**, not just whether the field was filled earlier.
+
+### Important UX requirement:
+
+Do **not** make the Submit button unclickable or disabled.
+
+I want the **Submit** button to remain clickable.
+
+When the user clicks Submit and required fields are missing, the system must:
+
+1. **Block submission**
+2. Show the **required-fields notice**
+3. Tell the user which required fields must be filled in before the listing can be submitted
+4. Take the user to the **first invalid tab** if supported by the current architecture
+
+---
+
+## REPLIT INSTRUCTIONS WITH SAFEGUARDS — TENANT ONLY
+
+### Final Submit must validate current live values, including deleted required fields
+
+Fix **only** the **Hire a Tenant’s Agent** flow.
+
+### Route already confirmed:
+
+* `/hire/agent/auction/tenant`
+
+### Active component already confirmed:
+
+* `TenantAgentAuction`
+
+### Active blade already confirmed:
+
+* `resources/views/livewire/tenant-agent-auction.blade.php`
+
+### Submit method already confirmed:
+
+* `wire:submit.prevent="store"`
+
+---
+
+# HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Only work on Tenant flow**
+2. **Do not touch Buyer, Seller, or Landlord yet**
+3. **Do not disable the Submit button**
+4. **Do not make Submit unclickable**
+5. **Submit must stay clickable at all times**
+6. **Do not change Select2 logic unless absolutely necessary**
+7. **Do not change labels, tooltips, placeholders, icons, wording, or option values**
+8. **Do not refactor shared architecture**
+9. **Do not rename, remove, or migrate database columns**
+10. **Do not change Next-button validation**
+11. **Do not edit unrelated files**
+12. **Do not introduce tab flicker, disappearing selections, or dynamic field regressions**
+
+---
+
+# ACTUAL BUG TO FIX
+
+The issue is not only initial empty fields.
+
+The issue is also this:
+
+* a required field may be filled in
+* then later the user deletes that value
+* then clicks Submit
+* and the listing still submits
+
+That is incorrect.
+
+## Required behavior:
+
+At the exact moment the user clicks **Submit**, the system must validate the **current actual value** of every currently required field.
+
+If any required field is now empty, even if it had a value earlier, the listing must **not** submit.
+
+---
+
+# REQUIRED UX BEHAVIOR
+
+## Keep Submit clickable
+
+Do **not** solve this by disabling the Submit button.
+
+The Submit button should still be clickable.
+
+## On click:
+
+If required fields are missing:
+
+* block submission
+* show the required-fields notice
+* list the missing required fields
+* send user to the first invalid tab if supported
+
+If all required fields are complete:
+
+* allow normal submit
+
+---
+
+# WHAT TO CHECK
+
+Please verify the final-submit validation is reading the **current DOM / current Livewire state** when Submit is clicked.
+
+Do **not** rely on:
+
+* stale values
+* previously filled state
+* old cached field lists
+* initial page-load values only
+
+Validation must reflect what is **currently present after deletions/edits**.
+
+---
+
+# TEST THIS EXACT SCENARIO
+
+For Tenant flow only:
+
+1. Fill required fields so the form appears valid
+2. Go back and delete one or more required fields
+3. Click Submit
+
+## Expected result:
+
+* listing must **not** submit
+* required-fields notice must appear
+* missing required field names must be shown
+* user must be taken to the first invalid tab if supported
+
+Test this specifically for:
+
+* **Tab 3: Pre-Screening**
+* **Tab 7: Tenant Information**
+
+---
+
+# DO NOT CHANGE THE UX TO A DISABLED BUTTON
+
+To be clear:
+
+* I do **not** want Submit disabled
+* I do **not** want Submit hidden
+* I do **not** want Submit non-clickable
+
+I want Submit to stay clickable and act as the trigger that shows the required-fields notice when fields are missing.
+
+---
+
+# REQUIRED REPORT BACK
+
+After fixing, provide:
+
+1. Exact code section changed in `resources/views/livewire/tenant-agent-auction.blade.php`
+2. Why the prior fix still allowed submission after deleting required fields
+3. How the new logic validates current values at submit time
+4. Test result for this exact scenario:
+
+   * fill required fields
+   * delete them
+   * click Submit
+   * confirm submission is blocked
+5. Confirm no Select2 or tab regressions were introduced
+
+---
+
+That wording is much stronger because it tells them the real bug is **stale validation / deleted field values still passing**, not just missing fields on first load.

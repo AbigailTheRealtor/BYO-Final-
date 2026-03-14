@@ -4372,25 +4372,11 @@ $lease_types = [
                 return field.checked;
             }
             if (field.type === 'select-one' || field.type === 'select-multiple') {
-                let value = field.value;
-                // Fallback to Livewire value if DOM value is empty
-                if (value === '' || value === null) {
-                    const lwValue = getLivewireValue(field.id);
-                    if (lwValue !== null && lwValue !== '') {
-                        value = lwValue;
-                    }
-                }
-                return value !== '' && value !== null;
+                const value = field.value;
+                return value !== '' && value !== null && value !== undefined;
             }
-            let value = field.value;
-            // Fallback to Livewire value if DOM value is empty
-            if (!value || value.trim() === '') {
-                const lwValue = getLivewireValue(field.id);
-                if (lwValue !== null && lwValue !== '') {
-                    value = lwValue;
-                }
-            }
-            return value && value.trim() !== '';
+            const value = field.value;
+            return value !== null && value !== undefined && value.trim() !== '';
         }
 
         function validateAllTabsStrictly() {
