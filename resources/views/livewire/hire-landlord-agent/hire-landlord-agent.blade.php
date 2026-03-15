@@ -2737,93 +2737,290 @@
                 setTimeout(updateSaveButton, 100);
             });
 
-            // Livewire reactivity hook
+            // ---- LANDLORD GUIDED CORRECTION MODE ----------------------------------------
+
+            // Stable label map: property name -> exact user-facing label shown in the UI.
+            var LANDLORD_FIELD_LABELS = {
+                'listing_title':           'Listing Title',
+                'working_with_agent':      'Currently Working with an Agent',
+                'desired_agent_hire_date': 'Desired Agent Hire Date',
+                'listing_date':            'Listing Date',
+                'expiration_date':         'Expiration Date',
+                'auction_type':            'Listing Type',
+                'auction_time':            'Bidding Period Length',
+                'address':                 'Street Address',
+                'property_city':           'Property City',
+                'property_state':          'Property State',
+                'property_county':         'Property County',
+                'property_zip':            'Property Zip Code',
+                'property_type':           'Property Type',
+                'property_items':          'Property Style',
+                'condition_prop':          'Property Condition',
+                'bedrooms':                'Minimum Bedrooms',
+                'bathrooms':               'Minimum Bathrooms',
+                'minimum_heated_square':   'Minimum Heated SqFt',
+                'minimum_leaseable':       'Net Leasable SqFt',
+                'occupant_status':         'Current Occupant Status',
+                'occupant_tenant':         'Occupied Until',
+                'leasing_spaces':          'Leasing Space Type',
+                'desired_lease_length':    'Desired Lease Term',
+                'meeting_Preference':      'Meeting Preference',
+                'first_name':              'First Name',
+                'last_name':               'Last Name',
+                'phone_number':            'Phone Number',
+                'email':                   'Email Address',
+            };
+
+            // Returns the canonical deduplication key for a DOM field.
+            function resolveLandlordFieldKey(field) {
+                var wm = field.getAttribute('wire:model') ||
+                         field.getAttribute('wire:model.defer') ||
+                         field.getAttribute('wire:model.lazy') ||
+                         field.getAttribute('wire:model.live') ||
+                         field.getAttribute('wire:model.debounce.300ms');
+                if (wm) {
+                    var base = wm.split('.')[0];
+                    return LANDLORD_FIELD_LABELS[base] ? base : (field.id || base);
+                }
+                return field.id || field.name || 'field';
+            }
+
+            // Returns the exact user-facing label for a field.
+            function resolveLandlordFieldLabel(field) {
+                var key = resolveLandlordFieldKey(field);
+                if (LANDLORD_FIELD_LABELS[key]) return LANDLORD_FIELD_LABELS[key];
+                var labelEl = field.closest('.form-group') && field.closest('.form-group').querySelector('label');
+                return labelEl ? labelEl.textContent.replace(/[*:]/g, '').trim()
+                               : (field.getAttribute('placeholder') || key || 'Required field');
+            }
+
+            // Returns true when a field is hidden by a d-none or display:none ancestor
+            // within its tab pane (i.e. conditionally hidden, not just on an inactive tab).
+            function isLandlordFieldHiddenWithinTab(field) {
+                var tabPane = field.closest('.tab-pane');
+                if (!tabPane) return false;
+                var el = field.parentElement;
+                while (el && el !== tabPane) {
+                    if (el.classList && el.classList.contains('d-none')) return true;
+                    if (el.style && el.style.display === 'none') return true;
+                    el = el.parentElement;
+                }
+                return false;
+            }
+
+            // Collects all currently-missing required Landlord fields across every tab.
+            function landlordGetInvalidItems() {
+                var items = [];
+                var seen  = new Set();
+
+                // DOM-based required fields (respects conditional visibility)
+                var reqFields = getAllRequiredFields();
+                reqFields.forEach(function(field) {
+                    if (isLandlordFieldHiddenWithinTab(field)) return;
+                    // Select2-initialised multi-selects: checked via Livewire property below
+                    if (field.tagName === 'SELECT' && field.multiple &&
+                        field.classList.contains('select2-hidden-accessible')) return;
+                    var isEmpty = false;
+                    if (field.type === 'checkbox' || field.type === 'radio') {
+                        isEmpty = !field.checked;
+                    } else if (field.type === 'select-one' || field.type === 'select-multiple') {
+                        isEmpty = (field.value === '' || field.value === null ||
+                                   field.value === undefined);
+                    } else {
+                        isEmpty = !field.value || field.value.trim() === '';
+                    }
+                    if (isEmpty) {
+                        var fKey = resolveLandlordFieldKey(field);
+                        if (!seen.has(fKey)) {
+                            seen.add(fKey);
+                            items.push({
+                                field:     field,
+                                tab:       field.closest('.tab-pane'),
+                                fieldName: resolveLandlordFieldLabel(field),
+                                key:       fKey,
+                            });
+                        }
+                    }
+                });
+
+                // Livewire property fallback: desired_lease_length (Select2 multi-select,
+                // class="lease_term_options"; wire:ignore parent means DOM value is unreliable)
+                try {
+                    var _wireIdEl = document.querySelector('[wire\\:id]');
+                    var _comp2 = _wireIdEl ? (window.livewire
+                        ? window.livewire.find(_wireIdEl.getAttribute('wire:id'))
+                        : null) : null;
+                    if (_comp2) {
+                        var _dll = _comp2.get('desired_lease_length');
+                        if (!Array.isArray(_dll) || _dll.length === 0) {
+                            if (!seen.has('desired_lease_length')) {
+                                seen.add('desired_lease_length');
+                                var _dllEl  = document.querySelector('.lease_term_options');
+                                var _dllTab = _dllEl
+                                    ? _dllEl.closest('.tab-pane')
+                                    : document.querySelector('#leasing-terms');
+                                items.push({
+                                    field:     _dllEl || null,
+                                    tab:       _dllTab,
+                                    fieldName: 'Desired Lease Term',
+                                    key:       'desired_lease_length',
+                                });
+                            }
+                        }
+                    }
+                } catch(exLl) {}
+
+                return items;
+            }
+
+            // Guided-correction mode state
+            var _landlordCorrectionMode = false;
+            var _landlordMissingItems   = [];
+
+            // Navigate to the tab containing item, sync server-side $activeTab,
+            // then scroll to and focus the field.
+            function landlordNavigateToItem(item) {
+                if (!item || !item.tab) return;
+                var tabPane = item.tab;
+                var tabId   = tabPane.id;
+                var trigger = document.querySelector('[data-bs-target="#' + tabId + '"]');
+                if (trigger) {
+                    new bootstrap.Tab(trigger).show();
+                    var allPanes = [...document.querySelectorAll('.tab-pane')];
+                    var idx = allPanes.indexOf(tabPane);
+                    if (idx >= 0) {
+                        try { @this.call('setActiveTab', idx); } catch(exNav) {}
+                    }
+                }
+                setTimeout(function() {
+                    if (item.field && item.field.classList) {
+                        item.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        if (typeof item.field.focus === 'function' &&
+                            item.field.tagName !== 'DIV') {
+                            item.field.focus();
+                        }
+                        item.field.classList.add('is-invalid');
+                    }
+                }, 350);
+            }
+
+            // Called after each Livewire round-trip while in correction mode.
+            // Re-checks missing fields; navigates to the next one or exits when all are done.
+            function landlordAdvanceCorrection() {
+                if (!_landlordCorrectionMode) return;
+
+                var freshMissing = landlordGetInvalidItems();
+                var prevKeys = new Set(
+                    _landlordMissingItems.map(function(i) { return i.key || i.fieldName; })
+                );
+                var someFixed = freshMissing.length < _landlordMissingItems.length ||
+                    freshMissing.some(function(i) {
+                        return !prevKeys.has(i.key || i.fieldName);
+                    });
+
+                var _banner4  = document.getElementById('submit-error-banner');
+                var _errList4 = document.getElementById('submit-error-list');
+                if (_errList4) {
+                    _errList4.innerHTML = '';
+                    freshMissing.forEach(function(i) {
+                        var li = document.createElement('li');
+                        li.textContent = i.fieldName;
+                        _errList4.appendChild(li);
+                    });
+                }
+
+                if (freshMissing.length === 0) {
+                    // All required fields complete — exit correction and return to submit tab
+                    _landlordCorrectionMode = false;
+                    _landlordMissingItems   = [];
+                    if (_banner4) _banner4.classList.add('d-none');
+                    var _submitTrigger = document.querySelector(
+                        '[data-bs-target="#landlord-information"]'
+                    );
+                    if (_submitTrigger) {
+                        new bootstrap.Tab(_submitTrigger).show();
+                        try { @this.call('setActiveTab', 6); } catch(exExit) {}
+                    }
+                    return;
+                }
+
+                // Re-show banner — Livewire DOM-diff re-adds d-none on every setActiveTab
+                // round-trip, so we must explicitly remove it after each re-render.
+                if (_banner4) _banner4.classList.remove('d-none');
+
+                if (someFixed) {
+                    _landlordMissingItems = freshMissing;
+                    landlordNavigateToItem(freshMissing[0]);
+                }
+            }
+
+            // Livewire reactivity hook: drives button state AND guided correction
             if (typeof Livewire !== 'undefined') {
                 Livewire.hook('message.processed', () => {
                     setTimeout(() => {
-                        // Refresh listeners and service type
                         const updatedServiceType = document.querySelector('[data-service-type]');
                         if (updatedServiceType) {
-                            formContainer.setAttribute('data-service-type', updatedServiceType
-                                .getAttribute('data-service-type'));
+                            formContainer.setAttribute(
+                                'data-service-type',
+                                updatedServiceType.getAttribute('data-service-type')
+                            );
                         }
-
                         setupGlobalListeners();
                         updateSaveButton();
+                        if (_landlordCorrectionMode) {
+                            landlordAdvanceCorrection();
+                        }
                     }, 300);
                 });
             }
 
-            // Form submit listener: block submission and show banner when required fields are missing
+            // Form submit handler with full guided correction
             const createForm = document.getElementById('create-auction-form');
             if (createForm) {
                 document.addEventListener('submit', function(e) {
                     if (!e.target || e.target.id !== 'create-auction-form') return;
-                    const banner = document.getElementById('submit-error-banner');
-                    const errorList = document.getElementById('submit-error-list');
-                    if (banner) banner.classList.add('d-none');
-                    if (errorList) errorList.innerHTML = '';
 
-                    const requiredFields = getAllRequiredFields();
-                    let invalidItems = [];
+                    var banner    = document.getElementById('submit-error-banner');
+                    var errorList = document.getElementById('submit-error-list');
 
-                    requiredFields.forEach(function(field) {
-                        if (field.disabled || field.type === 'hidden') return;
-                        if (!isFieldValid(field)) {
-                            const tab = field.closest('.tab-pane');
-                            const labelEl = field.closest('.form-group') && field.closest('.form-group').querySelector('label');
-                            const fieldName = labelEl ? labelEl.textContent.replace(/[*:]/g, '').trim() : (field.getAttribute('placeholder') || field.name || field.id || 'Required field');
-                            invalidItems.push({ field: field, tab: tab, fieldName: fieldName });
-                        }
-                    });
+                    var invalidItems = landlordGetInvalidItems();
 
                     if (invalidItems.length > 0) {
                         e.preventDefault();
                         e.stopImmediatePropagation();
 
+                        // Populate banner with every missing field
                         if (banner && errorList) {
-                            const seen = new Set();
+                            errorList.innerHTML = '';
                             invalidItems.forEach(function(item) {
-                                if (!seen.has(item.fieldName)) {
-                                    seen.add(item.fieldName);
-                                    const li = document.createElement('li');
-                                    li.textContent = item.fieldName;
-                                    errorList.appendChild(li);
-                                }
+                                var li = document.createElement('li');
+                                li.textContent = item.fieldName;
+                                errorList.appendChild(li);
                             });
-                            banner.querySelector('strong').textContent = 'Please complete the required fields before submitting.';
                             banner.classList.remove('d-none');
                         }
 
-                        const firstItem = invalidItems[0];
-                        if (firstItem.tab) {
-                            const tabId = firstItem.tab.id;
-                            const tabTrigger = document.querySelector('[data-bs-target="#' + tabId + '"], [href="#' + tabId + '"]');
-                            if (tabTrigger) {
-                                bootstrap.Tab.getOrCreateInstance(tabTrigger).show();
-                                const allTabPanes = [...document.querySelectorAll('.tab-pane')];
-                                const tabIndex = allTabPanes.indexOf(firstItem.tab);
-                                if (tabIndex >= 0 && typeof Livewire !== 'undefined') {
-                                    Livewire.emit('setActiveTab', tabIndex);
-                                }
-                            }
-                        }
+                        // Enter guided correction mode and navigate to first missing field
+                        _landlordCorrectionMode = true;
+                        _landlordMissingItems   = invalidItems;
+                        landlordNavigateToItem(invalidItems[0]);
 
                         setTimeout(function() {
-                            if (firstItem.field && firstItem.field.classList) {
-                                firstItem.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                if (typeof firstItem.field.focus === 'function' && firstItem.field.tagName !== 'DIV') {
-                                    firstItem.field.focus();
-                                }
-                                firstItem.field.classList.add('is-invalid');
+                            if (banner) {
+                                // Re-assert visibility in case morphdom fired before this timeout
+                                banner.classList.remove('d-none');
+                                banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
                             }
-                            if (banner) banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }, 300);
+                        }, 350);
 
                         return false;
                     }
 
+                    // All required fields valid — clear correction state and sync Select2 before submit
+                    _landlordCorrectionMode = false;
+                    _landlordMissingItems   = [];
                     if (banner) banner.classList.add('d-none');
+                    syncLandlordSelect2BeforeSave();
                 }, true);
             }
         });

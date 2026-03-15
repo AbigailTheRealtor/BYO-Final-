@@ -4698,7 +4698,11 @@ $lease_types = [
                         item.field.classList.add('is-invalid');
                     }
                     var _banner2 = document.getElementById('submit-error-banner');
-                    if (_banner2) _banner2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    if (_banner2) {
+                        // Re-assert visibility in case morphdom fired before this timeout
+                        _banner2.classList.remove('d-none');
+                        _banner2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
                 }, 350);
             }
 
@@ -4735,6 +4739,10 @@ $lease_types = [
                     }
                     return;
                 }
+
+                // Re-show banner — Livewire DOM-diff re-adds d-none on every setActiveTab
+                // round-trip, so we must explicitly remove it after each re-render.
+                if (_banner3) _banner3.classList.remove('d-none');
 
                 // Still have missing fields — navigate to the first remaining one
                 _tenantMissingItems = freshMissing;

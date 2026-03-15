@@ -1,0 +1,373 @@
+Absolutely — here is a **clean Replit instruction block with safeguards** for **Hire a Landlord Listings**, using the **same required-field enforcement format now working for Tenants**.
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A LANDLORD LISTINGS — REQUIRED FIELD ENFORCEMENT + GUIDED CORRECTION FLOW
+
+## SCOPE
+
+Apply the **same required-field submission behavior now working for Hire a Tenant** to the **Hire a Landlord listing flow**.
+
+### Required final behavior for Hire a Landlord:
+
+1. User must **not** be able to submit unless **all required fields** are completed.
+2. If required fields are missing, the form must:
+
+   * block submit
+   * show a banner listing **every required field still missing**
+   * use the **exact user-facing field names**
+   * include required fields from **all tabs**, not just the current tab
+3. When the user clicks Submit and fields are missing, the form must:
+
+   * take the user to the **first missing required field**
+   * after that field is filled in, move to the **next missing required field**
+   * continue until all required required fields are completed
+4. Once all required fields are complete:
+
+   * correction mode must fully exit
+   * user must be able to submit normally
+5. The form must **not** snap back to the final tab while the user is correcting missing fields.
+
+The goal is to mirror the **Tenant required-field workflow** for **Landlord listings**.
+
+---
+
+## HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Only work on Hire a Landlord flow.**
+2. **Do not modify Tenant, Buyer, or Seller flows.**
+3. **Do not rename database columns, Livewire properties, wire:model bindings, field IDs, tab IDs, or route names.**
+4. **Do not run migrations.**
+5. **Do not alter existing field labels, placeholders, tooltips, icons, or wording except where needed for accurate missing-field banner labels.**
+6. **Do not weaken any existing required-field logic.**
+7. **Do not remove any existing Landlord conditional logic.**
+8. **Do not refactor shared code unless absolutely necessary, and if shared code must be touched, wrap the behavior so it only affects Landlord flow.**
+9. **Do not break the now-working Tenant required-field flow.**
+10. **Keep this surgical and addition-only where possible.**
+
+---
+
+## GOAL
+
+Replicate the **Tenant validation/correction UX** for **Hire a Landlord listings**, including:
+
+* full required-field audit
+* exact missing-field banner
+* cross-tab missing-field detection
+* guided navigation to each missing required field
+* no snap-back bug
+* clean exit from correction mode once all required fields are filled
+* final submit must still work
+
+---
+
+## STEP 1 — IDENTIFY THE EXACT LANDLORD FLOW FILES FIRST
+
+Before editing anything, confirm the active files for **Hire a Landlord listing create flow**.
+
+Map the full chain:
+
+* route
+* Livewire component class
+* main blade
+* included tab partials
+* any included JS in the blade
+* where submit is handled
+* where server-side validation is handled
+* where tab switching is handled
+
+Return the exact active files before making changes.
+
+Typical places may include files like:
+
+* `app/Http/Livewire/LandlordAgentAuction.php`
+* `resources/views/livewire/landlord-agent-auction.blade.php`
+* `resources/views/livewire/landlord-agent-auction-tabs/...`
+
+But do **not assume** — confirm the real active files first.
+
+---
+
+## STEP 2 — BUILD A COMPLETE LANDLORD REQUIRED-FIELD MATRIX
+
+Before applying any fix, audit **every field in Hire a Landlord** and classify each as:
+
+* **Always required**
+* **Conditionally required**
+* **Optional**
+
+For each field, document:
+
+* tab/section
+* visible label
+* property name / `wire:model`
+* whether it shows required in the UI
+* whether current JS checks it
+* whether current server-side validation checks it
+* whether it should appear in the missing-fields banner
+* whether it is residential-only, commercial-only, or shared
+* what condition makes it required if conditional
+
+Format it like:
+
+| Tab | Field Label | Property | Required Type | UI Marker | JS Checked | PHP Validated | Notes |
+| --- | ----------- | -------- | ------------- | --------- | ---------- | ------------- | ----- |
+
+Do not skip Commercial-only or Residential-only branches.
+
+---
+
+## STEP 3 — ALIGN ALL 3 VALIDATION LAYERS FOR LANDLORD
+
+For every required Landlord field, align all 3 layers:
+
+1. **Visual/UI required state**
+2. **Front-end submit blocking**
+3. **Server-side Livewire validation**
+
+No field should be:
+
+* visually required but not enforced
+* enforced but not named in the banner
+* required in PHP but skipped in JS
+* blocked in JS without being part of the proper Landlord flow
+
+The Landlord flow should behave as one consistent required-field system.
+
+---
+
+## STEP 4 — ADD A STABLE LANDLORD FIELD LABEL MAP
+
+Just like Tenant needed a stable label map, Landlord should not rely on fragile DOM scraping for banner names.
+
+For **Landlord flow only**, create a stable field label map for all required fields so the banner always shows the exact user-facing labels.
+
+This map must cover:
+
+* shared Landlord required fields
+* residential-only required fields
+* commercial-only required fields
+* conditional follow-up fields
+* Select2/custom fields
+* badge/tag-based fields
+
+Use the **actual label text shown in the Landlord UI**.
+
+Do not use internal property names in the banner.
+
+---
+
+## STEP 5 — BUILD LANDLORD REQUIRED-FIELD DETECTION LIKE TENANT
+
+Implement a Landlord-specific missing-field collector that:
+
+* checks all currently relevant required fields across all tabs
+* includes inactive tabs
+* skips fields hidden only because they are not relevant
+* does **not** skip fields just because the tab is inactive
+* handles standard inputs, radios, selects, Select2 fields, and badge-based fields
+* handles Residential and Commercial branches correctly
+* handles conditional fields correctly
+* returns a full deduplicated ordered list of missing required fields
+
+This should mirror the tenant approach, but be tailored to Landlord flow.
+
+---
+
+## STEP 6 — SHOW A FULL MISSING-FIELDS BANNER FOR LANDLORD
+
+When the user clicks Submit and required fields are missing, show a banner that:
+
+* says the user must complete required fields before submitting
+* lists **every missing required Landlord field**
+* uses the exact label map names
+* includes missing fields from all relevant tabs
+* deduplicates by canonical field key, not loose text matching
+
+No partial list.
+No “some fields.”
+It must show the full required list still missing.
+
+---
+
+## STEP 7 — ADD GUIDED CORRECTION MODE FOR LANDLORD
+
+For **Landlord flow only**, add the same guided correction mode pattern now working for Tenant:
+
+* on blocked submit, collect the ordered missing-field list
+* navigate to the first missing required field
+* after the user fills that field, re-check the remaining missing fields
+* move to the next missing field
+* continue until all required fields are complete
+* once complete, exit correction mode cleanly
+
+Important:
+
+* do not bounce back to the last tab after each correction
+* do not leave the user stranded on the wrong tab once everything is completed
+* do not keep correction mode active once all required fields are filled
+
+---
+
+## STEP 8 — PREVENT SNAP-BACK BUG FOR LANDLORD
+
+When navigating to a missing field on another tab, make sure the server-side active tab stays in sync.
+
+If the Landlord tab system uses server-side `setActiveTab()` or similar, sync it when moving tabs so Livewire does not morph the user back to the final tab on the next update.
+
+This was the exact issue Tenant had. Prevent the same issue in Landlord.
+
+---
+
+## STEP 9 — ENSURE FINAL VALID SUBMIT STILL WORKS
+
+Once all required Landlord fields are complete:
+
+* correction mode must turn off immediately
+* any missing-fields state must clear
+* no more navigation logic should fire
+* the submit handler must **not** intercept valid submit
+* the form must fall through to the normal Livewire `store()` path
+
+Important rule:
+
+> Correction mode may block invalid submit, but it must never block a fully valid submit.
+
+---
+
+## STEP 10 — HANDLE BOTH RESIDENTIAL AND COMMERCIAL LANDLORD FLOWS
+
+This must be tested for both:
+
+### Residential Landlord listings
+
+* required fields block correctly
+* missing-fields banner is complete
+* guided correction works
+* valid final submit works
+
+### Commercial Landlord listings
+
+* required fields block correctly
+* missing-fields banner is complete
+* guided correction works
+* valid final submit works
+
+Do not assume if Residential works then Commercial works.
+Test both separately.
+
+---
+
+## STEP 11 — HANDLE CONDITIONAL FIELDS CORRECTLY
+
+Landlord has conditional logic, so verify:
+
+* fields shown only for certain property types
+* fields shown only for certain leasing space selections
+* auction vs traditional logic
+* any room / ADU / suite / entire property logic
+* any commercial-only follow-up questions
+* any “Other” fields
+* any custom visibility logic
+
+Conditionally hidden fields should not block submit when irrelevant.
+Conditionally required visible fields must be enforced when relevant.
+
+---
+
+## STEP 12 — TEST THE FULL UX
+
+Run these exact tests for Landlord:
+
+### Test A — blank submit
+
+Leave many required fields blank and click Submit
+Expected:
+
+* submit blocked
+* banner lists every missing required field
+* goes to first missing field
+
+### Test B — guided correction
+
+Fill the first missing field
+Expected:
+
+* stays in correction flow
+* goes to next missing field
+* does not snap back to final tab
+
+### Test C — complete correction
+
+Continue until all missing required fields are filled
+Expected:
+
+* correction mode exits cleanly
+* no forced tab jumping remains
+
+### Test D — final valid submit
+
+After all required fields are complete, click Submit
+Expected:
+
+* Livewire `store()` runs
+* listing submits successfully
+
+### Test E — Residential
+
+Residential flow passes all tests
+
+### Test F — Commercial
+
+Commercial flow passes all tests
+
+---
+
+## STEP 13 — DO NOT BREAK EXISTING LANDLORD FEATURES
+
+Keep all existing Landlord-specific features working, including:
+
+* current tab structure
+* field visibility logic
+* leasing space conditional logic
+* residential/commercial branching
+* compensation logic
+* placeholders/tooltips/icons
+* existing save/store behavior
+* current data structure
+
+This is a required-field enforcement and guided correction enhancement only.
+
+---
+
+## STEP 14 — RETURN A FINAL REPORT
+
+After implementation, return:
+
+1. exact files changed
+2. Landlord required-field matrix
+3. exact label map added
+4. exact missing-field detection logic added/updated
+5. exact correction-mode logic added/updated
+6. proof Residential Landlord works
+7. proof Commercial Landlord works
+8. confirmation Tenant flow was not changed
+9. confirmation valid final submit still reaches `store()`
+
+---
+
+## IMPORTANT
+
+The final behavior for **Hire a Landlord** should match the now-working **Tenant required-field format**:
+
+* all required fields truly required
+* full missing-fields banner
+* exact field names
+* cross-tab detection
+* guided correction through each missing field
+* no snap-back
+* valid final submit works
+
+---
+
+If you want, I can also turn this into a **shorter, tighter Replit version** with less explanation and more direct implementation steps.
