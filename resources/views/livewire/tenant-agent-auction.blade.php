@@ -4575,6 +4575,166 @@ $lease_types = [
                 return false;
             }
 
+            // ---- TENANT CORRECTION MODE ------------------------------------------------
+            // Tracks whether the form is in guided-correction mode (submit was blocked
+            // and we are walking the user through each still-missing required field).
+            var _tenantCorrectionMode = false;
+            var _tenantMissingItems = [];   // last computed ordered missing-field list
+
+            // Re-runs the tenant validation checks and returns the current ordered list
+            // of still-missing required fields.  Mirrors the submit-handler checks so
+            // results are always fresh (never stale DOM).
+            function tenantGetInvalidItems() {
+                var items = [];
+                var reqFields = getAllRequiredFields();
+                reqFields.forEach(function(field) {
+                    if (isTenantFieldHiddenWithinTab(field)) return;
+                    if (field.tagName === 'SELECT' && field.multiple &&
+                        field.classList.contains('select2-hidden-accessible')) return;
+                    var isEmpty = false;
+                    if (field.type === 'checkbox' || field.type === 'radio') {
+                        isEmpty = !field.checked;
+                    } else if (field.type === 'select-one' || field.type === 'select-multiple') {
+                        isEmpty = field.value === '' || field.value === null || field.value === undefined;
+                    } else {
+                        isEmpty = !field.value || field.value.trim() === '';
+                    }
+                    if (isEmpty) {
+                        var _fKey = resolveTenantFieldKey(field);
+                        items.push({ field: field, tab: field.closest('.tab-pane'), fieldName: resolveTenantFieldLabel(field), key: _fKey });
+                    }
+                });
+
+                // Counties badge check
+                var countiesContainer = document.querySelector('.counties-container');
+                if (countiesContainer) {
+                    var countyBadges = countiesContainer.querySelectorAll('.badge');
+                    if (!countyBadges || countyBadges.length === 0) {
+                        items.push({ field: countiesContainer, tab: countiesContainer.closest('.tab-pane'), fieldName: TENANT_FIELD_LABELS['counties'] || 'Acceptable Counties', key: 'counties' });
+                    }
+                }
+
+                // Livewire-state checks (Select2 multi-selects + property_type)
+                try {
+                    var _wireEl = document.querySelector('[wire\\:id]');
+                    if (_wireEl && typeof Livewire !== 'undefined') {
+                        var _comp = Livewire.find(_wireEl.getAttribute('wire:id'));
+                        if (_comp && _comp.get) {
+                            var _svcType = formContainer.getAttribute('data-service-type');
+                            if (_svcType === 'full_service') {
+                                var _lwReqs = [
+                                    { prop: 'property_type', label: TENANT_FIELD_LABELS['property_type'] || 'Acceptable Property Type', key: 'property_type' },
+                                    { prop: 'lease_for',     label: TENANT_FIELD_LABELS['lease_for']    || 'Offered Lease Term',          key: 'lease_for',            isArray: true, domSel: '.lease_for' },
+                                    { prop: 'leasing_spaces_tenant', label: TENANT_FIELD_LABELS['leasing_spaces_tenant'] || 'Leasing Space', key: 'leasing_spaces_tenant', isArray: true, domSel: '#leasing_spaces_tenant' },
+                                ];
+                                _lwReqs.forEach(function(chk) {
+                                    var val = _comp.get(chk.prop);
+                                    var isEmpty2;
+                                    if (chk.isArray) {
+                                        if (typeof val === 'string') { try { val = JSON.parse(val); } catch(ex) {} }
+                                        isEmpty2 = !val || (Array.isArray(val) && val.length === 0) || val === '' || val === '[]';
+                                        if (isEmpty2 && chk.domSel) {
+                                            var $domEl2 = $(chk.domSel);
+                                            if ($domEl2.length) {
+                                                var domVal2 = $domEl2.val();
+                                                if (domVal2 && ((Array.isArray(domVal2) && domVal2.length > 0) || (typeof domVal2 === 'string' && domVal2 !== ''))) isEmpty2 = false;
+                                            }
+                                        }
+                                    } else {
+                                        isEmpty2 = !val || val === '';
+                                    }
+                                    if (isEmpty2) {
+                                        items.push({ field: document.body, tab: null, fieldName: chk.label, key: chk.key || chk.prop });
+                                    }
+                                });
+                                // Bedrooms Livewire fallback
+                                var _ptVal2 = _comp.get('property_type');
+                                if (_ptVal2 === 'Residential Property') {
+                                    var _bedroomsVal2 = _comp.get('bedrooms');
+                                    if (!_bedroomsVal2 || _bedroomsVal2 === '') {
+                                        if (!items.some(function(i) { return i.key === 'bedrooms'; })) {
+                                            items.push({ field: document.body, tab: null, fieldName: TENANT_FIELD_LABELS['bedrooms'] || 'Minimum Bedrooms Needed', key: 'bedrooms' });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch(ex2) {}
+
+                // Deduplicate by key
+                var seen2 = new Set();
+                var deduped2 = [];
+                items.forEach(function(item) {
+                    var dk = item.key || item.fieldName;
+                    if (!seen2.has(dk)) { seen2.add(dk); deduped2.push(item); }
+                });
+                return deduped2;
+            }
+
+            // Navigates the user to a missing-field item: switches Bootstrap tab
+            // client-side AND syncs the server-side $activeTab so morphdom does NOT
+            // snap the tab back on the next Livewire round-trip.
+            function tenantNavigateToItem(item) {
+                if (item && item.tab) {
+                    var _tabId = item.tab.id;
+                    var _tabTrigger = document.querySelector('[data-bs-target="#' + _tabId + '"], [href="#' + _tabId + '"]');
+                    if (_tabTrigger) {
+                        new bootstrap.Tab(_tabTrigger).show();
+                        // Sync server $activeTab — parse the numeric index from wire:click="setActiveTab(N)"
+                        var _wc = _tabTrigger.getAttribute('wire:click') || '';
+                        var _m = _wc.match(/setActiveTab\((\d+)\)/);
+                        if (_m) {
+                            try { @this.call('setActiveTab', parseInt(_m[1])); } catch(ex3) {}
+                        }
+                    }
+                }
+                setTimeout(function() {
+                    if (item && item.field && item.field !== document.body) {
+                        item.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        if (typeof item.field.focus === 'function' && item.field.tagName !== 'DIV') {
+                            item.field.focus();
+                        }
+                        item.field.classList.add('is-invalid');
+                    }
+                    var _banner2 = document.getElementById('submit-error-banner');
+                    if (_banner2) _banner2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 350);
+            }
+
+            // Called after each Livewire update when in correction mode.
+            // If a previously-missing field is now filled, advance to the next one.
+            // When all required fields are complete, exit correction mode silently.
+            function tenantAdvanceCorrection() {
+                if (!_tenantCorrectionMode) return;
+                var freshMissing = tenantGetInvalidItems();
+
+                // Refresh the banner list to reflect current state
+                var _errorList2 = document.getElementById('submit-error-list');
+                var _banner3   = document.getElementById('submit-error-banner');
+                if (_errorList2) {
+                    _errorList2.innerHTML = '';
+                    freshMissing.forEach(function(item) {
+                        var li = document.createElement('li');
+                        li.textContent = item.fieldName;
+                        _errorList2.appendChild(li);
+                    });
+                }
+
+                if (freshMissing.length === 0) {
+                    // All done — exit correction mode, hide banner
+                    _tenantCorrectionMode = false;
+                    _tenantMissingItems = [];
+                    if (_banner3) _banner3.classList.add('d-none');
+                    return;
+                }
+
+                // Still have missing fields — navigate to the first remaining one
+                _tenantMissingItems = freshMissing;
+                tenantNavigateToItem(freshMissing[0]);
+            }
+            // ---- END TENANT CORRECTION MODE -------------------------------------------
+
             document.addEventListener('submit', function(e) {
                 if (!e.target || e.target.id !== 'create-auction-form') return;
                 const banner = document.getElementById('submit-error-banner');
@@ -4716,11 +4876,14 @@ $lease_types = [
                     e.preventDefault();
                     e.stopImmediatePropagation();
 
+                    // Build deduplicated list and populate banner
                     const seen = new Set();
+                    const deduplicatedItems = [];
                     invalidItems.forEach(item => {
                         const _dedupeKey = item.key || item.fieldName;
                         if (!seen.has(_dedupeKey)) {
                             seen.add(_dedupeKey);
+                            deduplicatedItems.push(item);
                             const li = document.createElement('li');
                             li.textContent = item.fieldName;
                             errorList.appendChild(li);
@@ -4728,26 +4891,35 @@ $lease_types = [
                     });
                     banner.classList.remove('d-none');
 
-                    const firstItem = invalidItems[0];
-                    if (firstItem.tab) {
-                        const tabId = firstItem.tab.id;
-                        const tabTrigger = document.querySelector('[data-bs-target="#' + tabId + '"], [href="#' + tabId + '"]');
-                        if (tabTrigger) {
-                            const bsTab = new bootstrap.Tab(tabTrigger);
-                            bsTab.show();
-                        }
-                    }
-
-                    setTimeout(() => {
-                        if (firstItem.field) {
-                            firstItem.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            if (typeof firstItem.field.focus === 'function' && firstItem.field.tagName !== 'DIV') {
-                                firstItem.field.focus();
+                    if (_submitUserType === 'tenant') {
+                        // Tenant flow: enter guided correction mode.
+                        // tenantNavigateToItem() switches the Bootstrap tab AND syncs
+                        // server-side $activeTab so Livewire morphdom cannot snap back.
+                        _tenantCorrectionMode = true;
+                        _tenantMissingItems = deduplicatedItems;
+                        tenantNavigateToItem(deduplicatedItems[0]);
+                    } else {
+                        // Non-tenant flows: original navigation behavior unchanged.
+                        const firstItem = deduplicatedItems[0];
+                        if (firstItem && firstItem.tab) {
+                            const tabId = firstItem.tab.id;
+                            const tabTrigger = document.querySelector('[data-bs-target="#' + tabId + '"], [href="#' + tabId + '"]');
+                            if (tabTrigger) {
+                                const bsTab = new bootstrap.Tab(tabTrigger);
+                                bsTab.show();
                             }
-                            firstItem.field.classList.add('is-invalid');
                         }
-                        banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 300);
+                        setTimeout(() => {
+                            if (firstItem && firstItem.field) {
+                                firstItem.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                if (typeof firstItem.field.focus === 'function' && firstItem.field.tagName !== 'DIV') {
+                                    firstItem.field.focus();
+                                }
+                                firstItem.field.classList.add('is-invalid');
+                            }
+                            banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 300);
+                    }
 
                     return false;
                 }
@@ -4755,6 +4927,28 @@ $lease_types = [
                 syncAllSelect2BeforeSave();
                 banner.classList.add('d-none');
             }, true);
+
+            // Tenant correction mode: after each Livewire update check whether a
+            // previously-missing field has been filled.  If so, advance to the next
+            // still-missing field automatically (guided correction flow).
+            // This runs ONLY when _tenantCorrectionMode is true, and ONLY if at least
+            // one field that was missing before the Livewire update is now filled.
+            if (typeof Livewire !== 'undefined') {
+                Livewire.hook('message.processed', function() {
+                    if (!_tenantCorrectionMode) return;
+                    setTimeout(function() {
+                        var _freshMissing = tenantGetInvalidItems();
+                        var _freshKeys = new Set(_freshMissing.map(function(i) { return i.key || i.fieldName; }));
+                        var _someFixed = false;
+                        _tenantMissingItems.forEach(function(i) {
+                            if (!_freshKeys.has(i.key || i.fieldName)) _someFixed = true;
+                        });
+                        if (_someFixed) {
+                            tenantAdvanceCorrection();
+                        }
+                    }, 450);
+                });
+            }
         }
     });
 </script>

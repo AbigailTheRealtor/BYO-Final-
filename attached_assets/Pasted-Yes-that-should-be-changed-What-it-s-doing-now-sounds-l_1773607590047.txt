@@ -1,0 +1,238 @@
+Yes — that should be changed.
+
+What it’s doing now sounds like this flow:
+
+1. Submit finds the first missing required field
+2. it takes the user there
+3. user fills it in
+4. then the UI kicks them back to the last tab
+5. they have to click Submit again
+
+That is clunky.
+
+The better behavior is:
+
+* on Submit, take the user to the **first missing required field**
+* after they fill that field, **stay in the current workflow**
+* if another required field is still missing, go to the **next missing required field**
+* only return to the final tab once **all required fields are complete**
+
+Here’s a clean Replit instruction block you can paste:
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A TENANT’S AGENT ONLY — KEEP USER MOVING TO NEXT MISSING REQUIRED FIELD
+
+## SCOPE
+
+Fix the **required-field navigation behavior** for **Hire a Tenant’s Agent only**.
+
+### Current bug
+
+When the user clicks **Submit** and required fields are missing:
+
+* the system correctly takes the user to a missing field
+* but after the user fills that field in, it sends them back to the **last tab**
+* this interrupts the correction flow
+
+### Required behavior
+
+When Submit is clicked and required fields are missing:
+
+1. take the user to the **first missing required field**
+2. after that field is completed, do **not** jump back to the final tab
+3. instead, continue guiding the user to the **next missing required field**
+4. repeat until all required fields are completed
+5. only then should normal submission proceed
+
+---
+
+## HARD SAFEGUARDS
+
+1. **Only edit Hire a Tenant’s Agent flow.**
+2. **Do not touch Buyer, Seller, or Landlord flows.**
+3. **Do not rename fields, IDs, wire:model bindings, database columns, or tab IDs.**
+4. **Do not run migrations.**
+5. **Do not refactor unrelated validation logic.**
+6. **Do not break the current missing-fields banner.**
+7. **Do not remove the current behavior that blocks submit when required fields are missing.**
+8. **Do not change labels, placeholders, tooltips, or wording.**
+9. **Keep this as a surgical UX fix only.**
+
+---
+
+## GOAL
+
+The Tenant form should behave like a guided correction flow.
+
+If multiple required fields are missing across multiple tabs, the user should be taken through them in order, instead of being bounced back to the last tab after each correction.
+
+---
+
+## STEP 1 — TRACE WHAT IS SENDING THE USER BACK TO THE LAST TAB
+
+Before changing anything, identify the exact code path that returns the user to the last tab after a missing field is corrected.
+
+Inspect:
+
+* submit handler in `tenant-agent-auction.blade.php`
+* tab switching logic
+* any “go back to final tab” helper
+* any event listeners on input/change/blur
+* any Livewire hook like `message.processed`
+* any logic tied to `wizard-step-finish`, `currentTab`, `showTab`, `goToTab`, or similar
+
+I want the exact reason the form returns to the last tab after the field is filled.
+
+---
+
+## STEP 2 — PRESERVE THE “FIRST MISSING FIELD” DESTINATION
+
+Do **not** remove the current helpful behavior where Submit takes the user to the first missing required field.
+
+Keep that.
+
+But once the user is taken there, the UI should remain in correction mode instead of snapping back to the last tab.
+
+---
+
+## STEP 3 — ADD A “MISSING FIELD CORRECTION MODE” FOR TENANT FLOW ONLY
+
+For Tenant flow only, add a lightweight correction mode such as:
+
+* store the ordered list of missing required fields
+* store an index/pointer to the current missing field being corrected
+* after the user fills one missing field, check whether another required field is still missing
+* if yes, take them to the next missing field
+* if no, allow the form to proceed normally
+
+This can be JS-only if that is the safest approach.
+
+Important:
+
+* do not rely on stale DOM
+* do not lose the missing-fields banner
+* do not send the user to the last tab in between corrections
+
+---
+
+## STEP 4 — ONLY ADVANCE TO THE NEXT MISSING FIELD, NOT THE FINAL TAB
+
+Once the user fills the current required field:
+
+* find the next still-missing required field
+* navigate to that field’s tab
+* focus/scroll to that field
+* keep doing this until all missing fields are complete
+
+Do **not** automatically navigate to the final tab after each correction.
+
+If the next missing field is on the same tab, stay on that tab.
+
+If the next missing field is on another tab, move directly to that tab.
+
+---
+
+## STEP 5 — WHEN ALL REQUIRED FIELDS ARE COMPLETE, RESUME NORMAL SUBMIT FLOW
+
+After the last missing required field is completed:
+
+* stop correction mode
+* do not force more tab jumps
+* let the user submit normally
+
+Acceptable behavior:
+
+* either keep them where they are and allow the next Submit click to work
+* or, if already in the submit flow, continue cleanly to submit
+
+But do **not** bounce them around unnecessarily.
+
+---
+
+## STEP 6 — HANDLE CROSS-TAB REQUIRED FIELDS IN ORDER
+
+If required fields are missing on Tabs 2, 3, 4, and 7:
+
+* the user should be taken through them in a stable order
+* preferably the same order as the form itself
+* not random order
+* not last-tab-first behavior
+
+Use the existing required-field order already established by the Tenant missing-fields audit/banner logic.
+
+---
+
+## STEP 7 — DO NOT BREAK THESE EXISTING WORKING PARTS
+
+Keep all of these working:
+
+* submit blocking when required fields are missing
+* missing-fields banner listing every required field by name
+* cross-tab detection of missing required fields
+* exact labels like `Minimum Bedrooms Needed`
+* Tenant-only behavior
+
+---
+
+## STEP 8 — TEST REQUIRED UX CASES
+
+After the fix, test these exact cases:
+
+### Test A
+
+Leave multiple required fields blank across several tabs.
+Click Submit.
+Expected:
+
+* user goes to first missing field
+* not back to last tab
+
+### Test B
+
+Fill that field.
+Expected:
+
+* user goes to the next missing required field
+* not back to last tab
+
+### Test C
+
+Continue until all missing required fields are filled.
+Expected:
+
+* no more forced navigation
+* submit can proceed normally
+
+### Test D
+
+If the next missing field is on the same tab, stay on same tab and focus next field.
+
+### Test E
+
+If the next missing field is on another tab, go directly there.
+
+---
+
+## STEP 9 — RETURN A FINAL REPORT
+
+Return:
+
+1. exact file(s) changed
+2. exact reason the UI was returning to the last tab
+3. exact fix applied
+4. whether a correction-mode / next-missing-field flow was added
+5. proof of testing across multiple tabs
+6. confirmation that only Tenant flow was touched
+
+---
+
+## IMPORTANT
+
+The desired UX is:
+
+> Submit should guide the user through each missing required field in order, not keep snapping them back to the final tab after each field is fixed.
+
+---
+
+One small product note: the smoothest version is usually **take them to the first missing field, let them fix fields on that tab, then only move when they try Submit again**. But if you want the stronger guided flow, your wording above is right: **go to each next missing required field automatically**.
