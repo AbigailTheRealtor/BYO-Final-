@@ -1,0 +1,195 @@
+That means the tenant flow is still **not fully aligned for Commercial**.
+
+If **Residential submits** but **Commercial does not**, the most likely cause is that Commercial has one or more required-field checks that are still mismatched between:
+
+* what renders in the Commercial branch
+* what the JS thinks is required
+* what the final submit path expects
+
+Based on what you pasted, I would not accept “test automation limitation” as the final answer yet. Residential working and Commercial not working usually means there is still a **Commercial-only required field or selector issue**.
+
+Send Replit this:
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A TENANT’S AGENT ONLY — COMMERCIAL SUBMIT FIX
+
+## SCOPE
+
+Residential Tenant listings now submit, but **Commercial Tenant listings do not**.
+
+This task is to find the exact Commercial-only cause and fix it **without affecting Residential**.
+
+---
+
+## HARD SAFEGUARDS
+
+1. Only edit **Hire a Tenant’s Agent** flow.
+2. Do not touch Buyer, Seller, or Landlord flows.
+3. Do not rename DB columns, wire:model names, IDs, or tab IDs.
+4. Do not run migrations.
+5. Do not remove the working Residential submit flow.
+6. Do not refactor unrelated shared logic.
+7. Keep this surgical and Commercial-specific if possible.
+
+---
+
+## GOAL
+
+A fully completed **Commercial Tenant** listing must submit successfully just like Residential.
+
+If Commercial is blocked, the system must identify the exact missing or mismatched field and fix the logic.
+
+---
+
+## STEP 1 — TRACE A REAL COMMERCIAL SUBMIT ATTEMPT
+
+Run a real end-to-end test for **Tenant → Commercial** and trace the final submit path.
+
+I need to know on the final click:
+
+* does `invalidItems` still contain something?
+* if yes, exactly which field(s)?
+* does correction mode exit cleanly?
+* does `preventDefault()` still fire?
+* does `wire:submit.prevent="store"` reach `store()`?
+* if `store()` runs, does PHP validation fail?
+* if PHP validation fails, which Commercial field/rule is causing it?
+
+Do not guess. Return the exact blocking field or code path.
+
+---
+
+## STEP 2 — COMPARE RESIDENTIAL VS COMMERCIAL REQUIRED FIELDS
+
+Build a side-by-side comparison for Tenant flow:
+
+### Residential required fields
+
+* actual rendered fields
+* JS required checks
+* server-side validation rules
+
+### Commercial required fields
+
+* actual rendered fields
+* JS required checks
+* server-side validation rules
+
+I want the exact mismatch.
+
+Likely issue examples:
+
+* Commercial-only field is rendered but not filled by Select2 sync
+* Commercial field is required in JS but not visibly marked
+* Commercial field is required in PHP but not included in correction banner
+* wrong tab/selector for Commercial branch
+* wrong label map / wrong key / wrong `wire:model`
+* hidden Commercial field still being treated as required
+* Commercial leasing-space/property-type branch not resolving correctly
+
+---
+
+## STEP 3 — INSPECT COMMERCIAL-ONLY FIELDS ESPECIALLY
+
+Audit any field that behaves differently for Commercial Tenant flow, including things like:
+
+* property type branch
+* lease term branch
+* leasing space branch
+* any commercial-only selects
+* any custom “Other” fields
+* any conditionally shown follow-up fields
+* any fields using Select2/custom wrappers
+* any fields in tabs that render differently than Residential
+
+Confirm whether one of these is still blocking submit.
+
+---
+
+## STEP 4 — CHECK FINAL VALID SUBMIT PATH FOR COMMERCIAL
+
+Even if all visible Commercial fields are filled, confirm whether the JS valid path is truly reached:
+
+* `invalidItems.length === 0`
+* `_tenantCorrectionMode = false`
+* `_tenantMissingItems = []`
+* `syncAllSelect2BeforeSave()` runs
+* no new Commercial-only missing items appear after sync
+* no `message.processed` race re-enters correction mode
+* submit falls through to Livewire `store()`
+
+If Residential reaches this path but Commercial does not, identify exactly where Commercial diverges.
+
+---
+
+## STEP 5 — CHECK SERVER-SIDE COMMERCIAL RULES
+
+If JS is passing but submit still fails, inspect `TenantAgentAuction.php` for any rules that affect Commercial only.
+
+I want the exact answer to this:
+
+* does `store()` run for Commercial?
+* if yes, does Laravel validation fail?
+* if validation fails, which property and which rule?
+* is that field actually present and fillable in the Commercial UI?
+
+---
+
+## STEP 6 — FIX ONLY THE COMMERCIAL GAP
+
+Once identified, apply the smallest safe fix.
+
+Examples:
+
+* add missing Commercial field sync
+* correct Commercial selector/id mapping
+* correct Commercial conditional required logic
+* exclude hidden Commercial-only field from required checks
+* align Commercial server-side validation to rendered UI
+* update correction-mode field detection for Commercial branch
+
+Do not weaken Residential.
+Do not remove required fields unless they are incorrectly enforced.
+
+---
+
+## STEP 7 — TEST BOTH FLOWS AFTER FIX
+
+After the fix, test:
+
+### Residential Tenant
+
+* still submits successfully
+
+### Commercial Tenant
+
+* now submits successfully when complete
+* still blocks properly when incomplete
+* still lists missing required fields correctly
+* still guides user to missing fields correctly
+
+---
+
+## STEP 8 — RETURN A FINAL REPORT
+
+Return:
+
+1. exact Commercial blocking cause
+2. exact file(s) changed
+3. exact fix applied
+4. proof Residential still works
+5. proof Commercial now works
+6. confirmation only Tenant flow was touched
+
+---
+
+## IMPORTANT
+
+Do not stop with “automation couldn’t fill dropdowns.”
+
+Residential working and Commercial failing means there is likely still a real Commercial-only mismatch. I need the actual root cause traced and fixed.
+
+---
+
+My guess is there’s still a Commercial-only field or conditional branch being treated as required incorrectly, or a Select2/custom field not syncing in Commercial the way it does in Residential.

@@ -3354,8 +3354,13 @@ class TenantAgentAuction extends Component
             // Tab 2 – Property Preferences
             $rules['state']         = 'required';
             $rules['property_type'] = 'required';
-            $rules['bedrooms']      = 'required';
-            $rules['bathrooms']     = 'required';
+            // Bedrooms and bathrooms are only rendered (and therefore only fillable)
+            // for Residential-type properties. For Commercial, Vacant Land, Business, etc.
+            // these fields are never shown, so they must not be required server-side.
+            if (in_array($this->property_type, ['Residential Property', 'Residential', 'Income', 'Income Property'])) {
+                $rules['bedrooms'] = 'required';
+                $rules['bathrooms'] = 'required';
+            }
             $rules['counties']      = 'required|array|min:1';
 
             // Tab 3 – Leasing Terms
