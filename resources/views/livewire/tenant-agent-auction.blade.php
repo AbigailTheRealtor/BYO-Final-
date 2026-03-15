@@ -4505,10 +4505,64 @@ $lease_types = [
         const createForm = document.getElementById('create-auction-form');
         if (createForm) {
 
-            // Tenant-only helper: returns true if the field is hidden by conditional
-            // rendering WITHIN its tab pane (d-none or inline display:none), but does
-            // NOT treat an inactive tab-pane itself as "hidden".  This lets us validate
-            // required fields across ALL tabs, not just the currently visible one.
+            // Stable label map for every required Tenant field.
+            // Keyed by wire:model property name — the canonical key used for lookup
+            // and deduplication.  Labels match exact wording shown in the live UI.
+            const TENANT_FIELD_LABELS = {
+                'listing_title':           'Listing Title',
+                'working_with_agent':      'Current Representation Status with Broker',
+                'desired_agent_hire_date': 'Desired Agent Hire Date',
+                'listing_date':            'Listing Date',
+                'expiration_date':         'Expiration Date',
+                'auction_type':            'Listing Type',
+                'auction_time':            'Bidding Period Length',
+                'meeting_Preference':      'Meeting Preference',
+                'state':                   'Acceptable State',
+                'property_type':           'Acceptable Property Type',
+                'bedrooms':                'Minimum Bedrooms Needed',
+                'bathrooms':               'Minimum Bathrooms Needed',
+                'counties':                'Acceptable Counties',
+                'budget':                  'Maximum Monthly Lease Price',
+                'lease_for':               'Offered Lease Term',
+                'lease_date':              'Offered Lease Date',
+                'leasing_spaces_tenant':   'Leasing Space',
+                'number_occupant':         'Number of Occupants',
+                'monthly_income':          'Estimated Monthly Net Household Income',
+                'screening_concerns':      'Screening Concerns That May Affect Rental Approval',
+                'first_name':              'First Name',
+                'last_name':               'Last Name',
+                'phone_number':            'Phone Number',
+                'email':                   'Email Address',
+            };
+
+            // Returns the canonical property key for a field: wire:model value first,
+            // then wire:model.defer / wire:model.lazy, then id, then name.
+            function resolveTenantFieldKey(field) {
+                return field.getAttribute('wire:model')
+                    || field.getAttribute('wire:model.defer')
+                    || field.getAttribute('wire:model.lazy')
+                    || field.id
+                    || field.name
+                    || '';
+            }
+
+            // Returns the user-facing label for a Tenant field.
+            // Prefers TENANT_FIELD_LABELS (stable); falls back to DOM label text.
+            function resolveTenantFieldLabel(field) {
+                const key = resolveTenantFieldKey(field);
+                if (key && TENANT_FIELD_LABELS[key]) {
+                    return TENANT_FIELD_LABELS[key];
+                }
+                const label = field.closest('.form-group')?.querySelector('label');
+                if (label) {
+                    return label.textContent.replace(/[*:]/g, '').trim();
+                }
+                return field.getAttribute('placeholder') || field.name || field.id || 'Unknown field';
+            }
+
+            // Returns true if the field is hidden by conditional rendering WITHIN its
+            // tab pane (d-none / inline display:none), but does NOT treat an inactive
+            // tab-pane as hidden — enabling cross-tab validation.
             function isTenantFieldHiddenWithinTab(field) {
                 const tabPane = field.closest('.tab-pane');
                 if (!tabPane) return false;
@@ -4519,15 +4573,6 @@ $lease_types = [
                     el = el.parentElement;
                 }
                 return false;
-            }
-
-            // Tenant-only helper: resolves the user-facing label for a field.
-            function getTenantFieldLabel(field) {
-                const label = field.closest('.form-group')?.querySelector('label');
-                if (label) {
-                    return label.textContent.replace(/[*:]/g, '').trim();
-                }
-                return field.getAttribute('placeholder') || field.name || field.id || 'Unknown field';
             }
 
             document.addEventListener('submit', function(e) {
@@ -4563,7 +4608,8 @@ $lease_types = [
                         }
 
                         if (isEmpty) {
-                            invalidItems.push({ field, tab: field.closest('.tab-pane'), fieldName: getTenantFieldLabel(field) });
+                            const _fKey = resolveTenantFieldKey(field);
+                            invalidItems.push({ field, tab: field.closest('.tab-pane'), fieldName: resolveTenantFieldLabel(field), key: _fKey });
                         }
                     } else {
                         // Non-tenant flows: existing behavior unchanged.
@@ -4597,7 +4643,7 @@ $lease_types = [
                     const countyBadges = countiesContainer.querySelectorAll('.badge');
                     if (!countyBadges || countyBadges.length === 0) {
                         const tab = countiesContainer.closest('.tab-pane');
-                        invalidItems.push({ field: countiesContainer, tab, fieldName: 'County' });
+                        invalidItems.push({ field: countiesContainer, tab, fieldName: TENANT_FIELD_LABELS['counties'] || 'Acceptable Counties', key: 'counties' });
                     }
                 }
 
@@ -4610,11 +4656,11 @@ $lease_types = [
                             var curUT = (typeof CURRENT_USER_TYPE !== 'undefined') ? CURRENT_USER_TYPE : 'tenant';
                             if (svcType === 'full_service') {
                                 var lwReqs = [
-                                    { prop: 'property_type', label: 'Property Type' },
+                                    { prop: 'property_type', label: TENANT_FIELD_LABELS['property_type'] || 'Acceptable Property Type', key: 'property_type' },
                                 ];
                                 if (curUT === 'tenant') {
-                                    lwReqs.push({ prop: 'lease_for', label: 'Offered Lease Term', isArray: true, domSel: '.lease_for' });
-                                    lwReqs.push({ prop: 'leasing_spaces_tenant', label: 'Leasing Space', isArray: true, domSel: '#leasing_spaces_tenant' });
+                                    lwReqs.push({ prop: 'lease_for', label: TENANT_FIELD_LABELS['lease_for'] || 'Offered Lease Term', isArray: true, domSel: '.lease_for', key: 'lease_for' });
+                                    lwReqs.push({ prop: 'leasing_spaces_tenant', label: TENANT_FIELD_LABELS['leasing_spaces_tenant'] || 'Leasing Space', isArray: true, domSel: '#leasing_spaces_tenant', key: 'leasing_spaces_tenant' });
                                 }
                                 lwReqs.forEach(function(chk) {
                                     var val = comp.get(chk.prop);
@@ -4637,7 +4683,7 @@ $lease_types = [
                                         isEmpty = !val || val === '';
                                     }
                                     if (isEmpty) {
-                                        invalidItems.push({ field: document.body, tab: null, fieldName: chk.label });
+                                        invalidItems.push({ field: document.body, tab: null, fieldName: chk.label, key: chk.key || chk.prop });
                                     }
                                 });
 
@@ -4651,12 +4697,12 @@ $lease_types = [
                                         var _bedroomsVal = comp.get('bedrooms');
                                         var _bedroomsEmpty = !_bedroomsVal || _bedroomsVal === '';
                                         if (_bedroomsEmpty) {
-                                            // Only add if not already caught by the DOM scan.
+                                            // Only add if not already caught by the DOM scan (dedupe by key).
                                             var _alreadyHasBedrooms = invalidItems.some(function(i) {
-                                                return i.fieldName && i.fieldName.toLowerCase().indexOf('bedroom') !== -1;
+                                                return i.key === 'bedrooms';
                                             });
                                             if (!_alreadyHasBedrooms) {
-                                                invalidItems.push({ field: document.body, tab: null, fieldName: 'Minimum Bedrooms Needed' });
+                                                invalidItems.push({ field: document.body, tab: null, fieldName: TENANT_FIELD_LABELS['bedrooms'] || 'Minimum Bedrooms Needed', key: 'bedrooms' });
                                             }
                                         }
                                     }
@@ -4672,8 +4718,9 @@ $lease_types = [
 
                     const seen = new Set();
                     invalidItems.forEach(item => {
-                        if (!seen.has(item.fieldName)) {
-                            seen.add(item.fieldName);
+                        const _dedupeKey = item.key || item.fieldName;
+                        if (!seen.has(_dedupeKey)) {
+                            seen.add(_dedupeKey);
                             const li = document.createElement('li');
                             li.textContent = item.fieldName;
                             errorList.appendChild(li);

@@ -1,0 +1,204 @@
+That’s much closer, but it’s **still not fully done**.
+
+What they fixed:
+
+* the form now blocks submit unless required fields are filled in
+
+What is still broken:
+
+* the **missing-fields banner is not reliably naming every required field**
+* it still needed a special patch for bedrooms, which means the field-to-label mapping is still fragile
+
+What you need now is a **final polish pass on the missing-fields banner**, not another broad validation rewrite.
+
+Send Replit this:
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A TENANT’S AGENT ONLY — FINAL FIX FOR MISSING REQUIRED FIELD NAMES
+
+## SCOPE
+
+The form is now correctly blocking submit, but the missing-fields banner must now be finalized so it shows the **exact user-facing name of every required field that is blank**, including fields from inactive tabs.
+
+### Current requirement:
+
+When Submit is clicked on **Hire a Tenant’s Agent**, the banner must list **every missing required field by its exact visible label**.
+
+Examples:
+
+* Minimum Bedrooms Needed
+* Minimum Bathrooms Needed
+* Monthly Income
+* First Name
+* Email
+* etc.
+
+This task is only about making the missing-fields list complete, accurate, and stable.
+
+---
+
+## HARD SAFEGUARDS
+
+1. Only edit **Hire a Tenant’s Agent** flow.
+2. Do not touch Buyer, Seller, or Landlord flows.
+3. Do not rename any database columns, Livewire properties, IDs, or wire:model bindings.
+4. Do not run migrations.
+5. Do not refactor unrelated validation logic.
+6. Do not change labels in the UI unless the banner is pulling the wrong label text.
+7. Do not stop after proving submit is blocked — the banner text itself must be correct.
+
+---
+
+## GOAL
+
+Build a **reliable missing-field label map** for Tenant required fields so the banner no longer depends on fragile DOM visibility, partial tab rendering, or inconsistent label extraction.
+
+The banner must show **every missing required field** even if:
+
+* the field is in another tab
+* the tab is inactive
+* the field is conditionally rendered
+* the field is Select2/custom
+* the DOM label wrapper is inconsistent
+
+---
+
+## STEP 1 — STOP INFERRING LABELS FROM RANDOM DOM STRUCTURE
+
+Right now the banner appears to be deriving field names from the DOM in a way that is still inconsistent.
+
+For **Tenant flow only**, create a stable label resolver that maps each required field/property to its exact user-facing label.
+
+Example idea:
+
+* `listing_title` → `Listing Title`
+* `working_with_agent` → `Are You Currently Working With an Agent?`
+* `desired_agent_hire_date` → `Desired Agent Hire Date`
+* `meeting_Preference` → `Meeting Preference`
+* `state` → `State`
+* `property_type` → `Property Type`
+* `bedrooms` → `Minimum Bedrooms Needed`
+* `bathrooms` → `Minimum Bathrooms Needed`
+* `counties` → `Acceptable Counties`
+* `budget` → `Maximum Budget`
+* `lease_for` → `Lease Term Needed`
+* `lease_date` → `Desired Move-In Date`
+* `leasing_spaces_tenant` → `Leasing Space Needed`
+* `number_occupant` → `Number of Occupants`
+* `monthly_income` → `Monthly Income`
+* `screening_concerns` → `Screening Concerns`
+* `first_name` → `First Name`
+* `last_name` → `Last Name`
+* `phone_number` → `Phone Number`
+* `email` → `Email`
+
+Use the **real field labels from the actual Tenant UI**, not guessed wording.
+
+---
+
+## STEP 2 — USE THE LABEL MAP FOR THE BANNER
+
+When building the missing-fields array, do not rely only on:
+
+* closest label lookup
+* parent wrappers
+* active tab visibility
+* DOM text scraping alone
+
+Instead:
+
+* determine which required fields are missing
+* resolve each missing field to a label using the Tenant label map
+* render the banner from that mapped list
+
+This will make the list stable across all tabs and conditional UI states.
+
+---
+
+## STEP 3 — ENSURE NO REQUIRED FIELD CAN BE “MISSING BUT UNNAMED”
+
+For every required Tenant field, verify there is always:
+
+1. a detection path
+2. a mapped banner label
+
+There should be no case where:
+
+* the field blocks submit
+* but the banner fails to name it
+
+If a field can block submit, it must have a banner label.
+
+---
+
+## STEP 4 — DEDUPE WITHOUT DROPPING VALID ITEMS
+
+If a field is detected from multiple paths (DOM scan + Livewire state), dedupe by property/key, not by loose text matching.
+
+Example:
+
+* if `bedrooms` is caught twice, only show `Minimum Bedrooms Needed` once
+* do not let dedupe accidentally remove unrelated fields
+
+---
+
+## STEP 5 — VERIFY BEDROOMS AND BATHROOMS SPECIFICALLY
+
+Run this exact test:
+
+### Test
+
+* choose the branch where Minimum Bedrooms Needed and Minimum Bathrooms Needed are required
+* leave both blank
+* go to Submit
+
+### Expected banner must include exactly:
+
+* Minimum Bedrooms Needed
+* Minimum Bathrooms Needed
+
+Not just “Bedrooms”
+Not just “Bathrooms”
+Not internal names
+
+Use the exact UI wording.
+
+---
+
+## STEP 6 — VERIFY FULL CROSS-TAB MISSING LIST
+
+Run a near-blank Tenant form test and click Submit from the last tab.
+
+### Expected:
+
+The banner must list every required field missing across all relevant tabs.
+
+No partial list.
+No silent omissions.
+No hidden required field should block submit without being named.
+
+---
+
+## STEP 7 — RETURN A FINAL REPORT
+
+Return:
+
+1. exact file changed
+2. exact label map added or updated
+3. how banner labels are now resolved
+4. proof that `Minimum Bedrooms Needed` and `Minimum Bathrooms Needed` now appear correctly
+5. proof that all missing required fields across tabs are listed
+6. confirmation that only Tenant flow was touched
+
+---
+
+## IMPORTANT
+
+The job is not finished until this is true:
+
+> Any required field that blocks submit must also appear by name in the missing-fields banner.
+
+---
+
+That should get you to the finish line. The missing piece now is **stable label mapping**, not the blocking logic itself.
