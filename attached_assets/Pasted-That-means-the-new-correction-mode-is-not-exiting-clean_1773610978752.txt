@@ -1,0 +1,211 @@
+That means the new **correction mode is not exiting cleanly** once all required fields are filled.
+
+Most likely what happened is:
+
+* the guided “next missing field” flow works
+* but the form is still being intercepted after everything is valid
+* so submit never falls through to the real `wire:submit.prevent="store"` path
+
+This is the next Replit message I’d send:
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A TENANT’S AGENT ONLY — FIX FINAL SUBMIT AFTER CORRECTION MODE
+
+## SCOPE
+
+The guided required-field behavior is now working, but there is a new bug:
+
+### Current bug
+
+After the user fills in all required missing fields, the listing still does **not submit**.
+
+### Required behavior
+
+* If required fields are missing, keep guiding the user to the next missing field
+* Once **all required fields are complete**, correction mode must fully stop
+* The next submit attempt must proceed normally to the real Livewire `store()` path
+* Do not keep intercepting submit after all fields are valid
+
+---
+
+## HARD SAFEGUARDS
+
+1. Only edit **Hire a Tenant’s Agent** flow
+2. Do not touch Buyer, Seller, or Landlord flows
+3. Do not rename fields, IDs, wire:model bindings, or DB columns
+4. Do not run migrations
+5. Do not remove the missing-fields banner behavior
+6. Do not remove the next-missing-field guided flow
+7. Do not refactor unrelated code
+8. Keep this surgical and limited to the Tenant submit/correction JS logic
+
+---
+
+## LIKELY ROOT CAUSE TO TRACE
+
+The new correction-mode logic probably continues intercepting submit even after there are no invalid items left.
+
+Inspect these exact paths:
+
+* `_tenantCorrectionMode`
+* `_tenantMissingItems`
+* `tenantGetInvalidItems()`
+* `tenantAdvanceCorrection()`
+* the submit listener block
+* the `message.processed` hook
+* any place where `preventDefault()` / `stopImmediatePropagation()` is still firing
+* any place where correction mode is not being reset to false
+* any place where banner state remains active even when all fields are valid
+
+I need the exact reason the final valid submit is not falling through.
+
+---
+
+## STEP 1 — TRACE THE FINAL VALID SUBMIT PATH
+
+Test this exact flow:
+
+1. Leave several required fields blank
+2. Click Submit
+3. Let correction mode guide through missing fields
+4. Fill the final required field
+5. Click Submit again
+
+Confirm whether on that final click:
+
+* `tenantGetInvalidItems()` returns empty
+* `_tenantCorrectionMode` is still true
+* the submit listener still calls `preventDefault()`
+* the form ever reaches Livewire `store()`
+
+Do not guess. Trace the real execution.
+
+---
+
+## STEP 2 — ENSURE CORRECTION MODE FULLY EXITS WHEN NO INVALID ITEMS REMAIN
+
+For Tenant flow only, once `tenantGetInvalidItems()` returns an empty array:
+
+* set `_tenantCorrectionMode = false`
+* clear `_tenantMissingItems`
+* clear any correction pointer/index if one exists
+* stop any auto-advance behavior
+* stop any banner-blocking state
+
+This must happen reliably before the next submit attempt.
+
+---
+
+## STEP 3 — DO NOT BLOCK A VALID SUBMIT
+
+In the Tenant submit handler:
+
+* only call `preventDefault()` and `stopImmediatePropagation()` if invalid items still exist
+* if there are **zero** invalid items, do not intercept the submit
+* let the normal `wire:submit.prevent="store"` path run
+
+This is the key rule:
+
+> Correction mode may block invalid submits, but it must never block a fully valid submit.
+
+---
+
+## STEP 4 — CHECK MESSAGE.PROCESSED DOES NOT INTERFERE WITH FINAL SUBMIT
+
+Inspect the new `message.processed` hook.
+
+Possible issue:
+
+* after the final field is filled, `message.processed` may still be re-running correction mode logic
+* it may be clearing/rebuilding state incorrectly
+* it may be causing a tab jump or leaving the form in a blocked mode
+
+For Tenant flow only:
+
+* if there are no invalid items left, `message.processed` should quietly exit correction mode and do nothing else
+* it should not re-open banner logic
+* it should not intercept or simulate another correction step
+* it should not prevent the user from submitting
+
+---
+
+## STEP 5 — KEEP CURRENT GOOD BEHAVIOR
+
+Do not break these working parts:
+
+* banner lists every missing required field
+* banner uses exact field names
+* submit guides user to next missing field
+* no snap-back to last tab
+* Tenant-only behavior
+
+---
+
+## STEP 6 — TEST THESE EXACT CASES
+
+### Test A — invalid submit
+
+Leave required fields blank and click Submit
+Expected:
+
+* submit blocked
+* banner shown
+* guided correction works
+
+### Test B — final correction
+
+Fill the final missing required field
+Expected:
+
+* correction mode exits
+* no more forced navigation
+* no hidden blocked state remains
+
+### Test C — valid final submit
+
+After all required fields are filled, click Submit
+Expected:
+
+* form successfully submits
+* Livewire `store()` runs
+* listing saves normally
+
+### Test D — no regression
+
+Try a fresh fully-complete Tenant listing from start to finish
+Expected:
+
+* submit works normally
+* no correction loop
+
+---
+
+## STEP 7 — RETURN A FINAL REPORT
+
+Return:
+
+1. exact file changed
+2. exact cause of why valid submit was still blocked
+3. exact fix applied
+4. confirmation that correction mode now exits cleanly
+5. proof that final valid submit reaches `store()`
+6. confirmation only Tenant flow was touched
+
+---
+
+## IMPORTANT
+
+The final desired behavior is:
+
+* missing fields → guide user through them
+* all fields complete → submit normally
+
+Not:
+
+* missing fields → guide user
+* all fields complete → still stuck in correction mode
+
+---
+
+If you want, I can also tighten this into a **shorter copy-paste version** for Replit so it’s easier to send.

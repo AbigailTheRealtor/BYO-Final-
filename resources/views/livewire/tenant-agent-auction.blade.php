@@ -4722,10 +4722,17 @@ $lease_types = [
                 }
 
                 if (freshMissing.length === 0) {
-                    // All done — exit correction mode, hide banner
+                    // All required fields are now complete.  Exit correction mode,
+                    // hide the banner, and navigate back to the submit tab so the
+                    // user can submit without having to find it manually.
                     _tenantCorrectionMode = false;
                     _tenantMissingItems = [];
                     if (_banner3) _banner3.classList.add('d-none');
+                    var _submitTabTrigger = document.querySelector('[data-bs-target="#information"]');
+                    if (_submitTabTrigger) {
+                        new bootstrap.Tab(_submitTabTrigger).show();
+                        try { @this.call('setActiveTab', 4); } catch(ex4) {}
+                    }
                     return;
                 }
 
@@ -4924,6 +4931,12 @@ $lease_types = [
                     return false;
                 }
 
+                // Tenant: always clear correction mode on a valid submit so the
+                // message.processed hook never interferes with the store() action.
+                if (_submitUserType === 'tenant') {
+                    _tenantCorrectionMode = false;
+                    _tenantMissingItems = [];
+                }
                 syncAllSelect2BeforeSave();
                 banner.classList.add('d-none');
             }, true);
