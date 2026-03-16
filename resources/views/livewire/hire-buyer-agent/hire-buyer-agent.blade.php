@@ -2577,12 +2577,12 @@
                     '#services',
                     '#additional-details',
                     '#broker-compensation',
-                    '#tenant-info'
+                    '#buyer-information'
                 ] : [
                     '#listing-details',
                     '#location-and-meeting-details',
                     '#service-selection-and-pricing',
-                    '#tenant-info'
+                    '#buyer-information'
                 ];
 
                 tabSelector.forEach(selector => {
@@ -2683,6 +2683,259 @@
             // Form submit listener: block submission and show banner when required fields are missing
             const createForm = document.getElementById('create-auction-form');
             if (createForm) {
+
+                // Stable label map for every required Buyer field.
+                // Keyed by wire:model property name.  Labels match exact wording shown in the live UI.
+                const BUYER_FIELD_LABELS = {
+                    'listing_title':           'Listing Title',
+                    'working_with_agent':      'Current Representation Status with Broker',
+                    'desired_agent_hire_date': 'Desired Agent Hire Date',
+                    'listing_date':            'Listing Date',
+                    'expiration_date':         'Expiration Date',
+                    'auction_type':            'Listing Type',
+                    'auction_time':            'Bidding Period Length',
+                    'meeting_Preference':      'Meeting Preference',
+                    'state':                   'Acceptable State',
+                    'property_type':           'Acceptable Property Type',
+                    'property_items':          'Acceptable Property Style',
+                    'bedrooms':                'Minimum Bedrooms Needed',
+                    'bathrooms':               'Minimum Bathrooms Needed',
+                    'counties':                'Acceptable Counties',
+                    'target_closing_date':     'Target Closing Date',
+                    'maximum_budget':          'Maximum Budget',
+                    'offered_financing':       'Offered Financing',
+                    'tenant_require':          'Furnishings Needed',
+                    'pets':                    'Pets',
+                    'real_estate_purchase':    'Business & Real Estate Purchase Requirements',
+                    'first_name':              'First Name',
+                    'last_name':               'Last Name',
+                    'phone_number':            'Phone Number',
+                    'email':                   'Email Address',
+                };
+
+                // Returns the canonical property key for a field: wire:model value first,
+                // then wire:model.defer / wire:model.lazy, then id, then name.
+                function resolveBuyerFieldKey(field) {
+                    return field.getAttribute('wire:model')
+                        || field.getAttribute('wire:model.defer')
+                        || field.getAttribute('wire:model.lazy')
+                        || field.id
+                        || field.name
+                        || '';
+                }
+
+                // Returns the user-facing label for a Buyer field.
+                // Prefers BUYER_FIELD_LABELS (stable); falls back to DOM label text.
+                function resolveBuyerFieldLabel(field) {
+                    var key = resolveBuyerFieldKey(field);
+                    if (key && BUYER_FIELD_LABELS[key]) {
+                        return BUYER_FIELD_LABELS[key];
+                    }
+                    var label = field.closest('.form-group') && field.closest('.form-group').querySelector('label');
+                    if (label) {
+                        return label.textContent.replace(/[*:]/g, '').trim();
+                    }
+                    return field.getAttribute('placeholder') || field.name || field.id || 'Required field';
+                }
+
+                // Returns true if the field is hidden by conditional rendering WITHIN its
+                // tab pane (d-none / inline display:none), but does NOT treat an inactive
+                // tab-pane as hidden, enabling cross-tab validation.
+                function isBuyerFieldHiddenWithinTab(field) {
+                    var tabPane = field.closest('.tab-pane');
+                    if (!tabPane) return false;
+                    var el = field.parentElement;
+                    while (el && el !== tabPane) {
+                        if (el.classList && el.classList.contains('d-none')) return true;
+                        if (el.style && el.style.display === 'none') return true;
+                        el = el.parentElement;
+                    }
+                    return false;
+                }
+
+                // ---- BUYER CORRECTION MODE -------------------------------------------
+                // Tracks whether the form is in guided-correction mode (submit was blocked
+                // and we are walking the user through each still-missing required field).
+                var _buyerCorrectionMode = false;
+                var _buyerMissingItems = [];
+
+                // Re-runs all buyer required checks and returns the current ordered list
+                // of still-missing required fields.
+                function buyerGetInvalidItems() {
+                    var items = [];
+                    var reqFields = getAllRequiredFields();
+                    reqFields.forEach(function(field) {
+                        if (isBuyerFieldHiddenWithinTab(field)) return;
+                        // Skip Select2-managed multi-selects — handled via Livewire state check below.
+                        if (field.tagName === 'SELECT' && field.multiple &&
+                            field.classList.contains('select2-hidden-accessible')) return;
+                        var isEmpty = false;
+                        if (field.type === 'checkbox' || field.type === 'radio') {
+                            isEmpty = !field.checked;
+                        } else if (field.type === 'select-one' || field.type === 'select-multiple') {
+                            isEmpty = field.value === '' || field.value === null || field.value === undefined;
+                        } else {
+                            isEmpty = !field.value || field.value.trim() === '';
+                        }
+                        if (isEmpty) {
+                            var _fKey = resolveBuyerFieldKey(field);
+                            items.push({ field: field, tab: field.closest('.tab-pane'), fieldName: resolveBuyerFieldLabel(field), key: _fKey });
+                        }
+                    });
+
+                    // Counties badge check
+                    var countiesContainer = document.querySelector('.counties-container');
+                    if (countiesContainer) {
+                        var countyBadges = countiesContainer.querySelectorAll('.badge');
+                        if (!countyBadges || countyBadges.length === 0) {
+                            items.push({ field: countiesContainer, tab: countiesContainer.closest('.tab-pane'), fieldName: BUYER_FIELD_LABELS['counties'] || 'Acceptable Counties', key: 'counties' });
+                        }
+                    }
+
+                    // Livewire-state checks for Select2 multi-selects (wire:ignore — not catchable via DOM)
+                    try {
+                        var _wireEl = document.querySelector('[wire\\:id]');
+                        if (_wireEl && typeof Livewire !== 'undefined') {
+                            var _comp = Livewire.find(_wireEl.getAttribute('wire:id'));
+                            if (_comp && _comp.get) {
+                                // property_items: required when property_type is selected
+                                var _ptValBgi = _comp.get('property_type');
+                                if (_ptValBgi && _ptValBgi !== '') {
+                                    var _piValBgi = _comp.get('property_items');
+                                    if (typeof _piValBgi === 'string') { try { _piValBgi = JSON.parse(_piValBgi); } catch(ex) {} }
+                                    var _piEmptyBgi = !_piValBgi || (Array.isArray(_piValBgi) && _piValBgi.length === 0) || _piValBgi === '[]';
+                                    if (_piEmptyBgi) {
+                                        var $piDom = $('#property_items');
+                                        if ($piDom.length) {
+                                            var _piDomVal = $piDom.val();
+                                            if (_piDomVal && Array.isArray(_piDomVal) && _piDomVal.length > 0) _piEmptyBgi = false;
+                                        }
+                                    }
+                                    if (_piEmptyBgi && !items.some(function(i) { return i.key === 'property_items'; })) {
+                                        var _piEl = document.getElementById('property_items');
+                                        var _piTab = _piEl ? _piEl.closest('.tab-pane') : null;
+                                        items.push({ field: _piEl || document.body, tab: _piTab, fieldName: BUYER_FIELD_LABELS['property_items'] || 'Acceptable Property Style', key: 'property_items' });
+                                    }
+                                }
+
+                                // offered_financing: always required
+                                var _ofValBgi = _comp.get('offered_financing');
+                                if (typeof _ofValBgi === 'string') { try { _ofValBgi = JSON.parse(_ofValBgi); } catch(ex2) {} }
+                                var _ofEmptyBgi = !_ofValBgi || (Array.isArray(_ofValBgi) && _ofValBgi.length === 0) || _ofValBgi === '' || _ofValBgi === '[]';
+                                if (_ofEmptyBgi) {
+                                    var $ofDom = $('#offered_financing');
+                                    if ($ofDom.length) {
+                                        var _ofDomVal = $ofDom.val();
+                                        if (_ofDomVal && Array.isArray(_ofDomVal) && _ofDomVal.length > 0) _ofEmptyBgi = false;
+                                    }
+                                }
+                                if (_ofEmptyBgi && !items.some(function(i) { return i.key === 'offered_financing'; })) {
+                                    var _ofEl = document.getElementById('offered_financing');
+                                    var _ofTab = _ofEl ? _ofEl.closest('.tab-pane') : null;
+                                    items.push({ field: _ofEl || document.body, tab: _ofTab, fieldName: BUYER_FIELD_LABELS['offered_financing'] || 'Offered Financing', key: 'offered_financing' });
+                                }
+                            }
+                        }
+                    } catch(ex3) {}
+
+                    // Deduplicate by key
+                    var seen2 = new Set();
+                    var deduped2 = [];
+                    items.forEach(function(item) {
+                        var dk = item.key || item.fieldName;
+                        if (!seen2.has(dk)) { seen2.add(dk); deduped2.push(item); }
+                    });
+                    return deduped2;
+                }
+
+                // Navigates the user to a missing-field item: switches Bootstrap tab
+                // client-side AND syncs the server-side $activeTab so morphdom does NOT
+                // snap the tab back on the next Livewire round-trip.
+                function buyerNavigateToItem(item) {
+                    if (item && item.tab) {
+                        var _tabId = item.tab.id;
+                        var _tabTrigger = document.querySelector('[data-bs-target="#' + _tabId + '"], [href="#' + _tabId + '"]');
+                        if (_tabTrigger) {
+                            new bootstrap.Tab(_tabTrigger).show();
+                            // Sync server $activeTab via wire:click="setActiveTab(N)"
+                            var _wc = _tabTrigger.getAttribute('wire:click') || '';
+                            var _m = _wc.match(/setActiveTab\((\d+)\)/);
+                            if (_m) {
+                                try { @this.call('setActiveTab', parseInt(_m[1])); } catch(ex4) {}
+                            }
+                        }
+                    }
+                    setTimeout(function() {
+                        if (item && item.field && item.field !== document.body) {
+                            item.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            if (typeof item.field.focus === 'function' && item.field.tagName !== 'DIV') {
+                                item.field.focus();
+                            }
+                            item.field.classList.add('is-invalid');
+                        }
+                        var _banner2 = document.getElementById('submit-error-banner');
+                        if (_banner2) {
+                            _banner2.classList.remove('d-none');
+                            _banner2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    }, 350);
+                }
+
+                // Called after each Livewire update when in correction mode.
+                // If a previously-missing field is now filled, advance to the next one.
+                // When all required fields are complete, exit correction mode silently.
+                function buyerAdvanceCorrection() {
+                    if (!_buyerCorrectionMode) return;
+                    var freshMissing = buyerGetInvalidItems();
+
+                    // Refresh the banner list to reflect current state
+                    var _errorList2 = document.getElementById('submit-error-list');
+                    var _banner3   = document.getElementById('submit-error-banner');
+                    if (_errorList2) {
+                        _errorList2.innerHTML = '';
+                        freshMissing.forEach(function(item) {
+                            var li = document.createElement('li');
+                            li.textContent = item.fieldName;
+                            _errorList2.appendChild(li);
+                        });
+                    }
+
+                    if (freshMissing.length === 0) {
+                        // All required fields are now complete. Exit correction mode,
+                        // hide the banner, and navigate back to the submit tab.
+                        _buyerCorrectionMode = false;
+                        _buyerMissingItems = [];
+                        if (_banner3) _banner3.classList.add('d-none');
+                        var _submitTabTrigger = document.querySelector('[data-bs-target="#buyer-information"]');
+                        if (_submitTabTrigger) {
+                            new bootstrap.Tab(_submitTabTrigger).show();
+                            var _infoWc = _submitTabTrigger.getAttribute('wire:click') || '';
+                            var _infoM = _infoWc.match(/setActiveTab\((\d+)\)/);
+                            if (_infoM) {
+                                try { @this.call('setActiveTab', parseInt(_infoM[1])); } catch(ex5) {}
+                            }
+                        }
+                        return;
+                    }
+
+                    // Re-show banner (Livewire DOM-diff re-adds d-none on every setActiveTab round-trip)
+                    if (_banner3) _banner3.classList.remove('d-none');
+
+                    // Still have missing fields — navigate to the first remaining one
+                    _buyerMissingItems = freshMissing;
+                    buyerNavigateToItem(freshMissing[0]);
+                }
+                // ---- END BUYER CORRECTION MODE ----------------------------------------
+
+                // Register a Livewire message.processed hook inside createForm to advance correction mode.
+                if (typeof Livewire !== 'undefined') {
+                    Livewire.hook('message.processed', function() {
+                        setTimeout(function() {
+                            buyerAdvanceCorrection();
+                        }, 350);
+                    });
+                }
+
                 document.addEventListener('submit', function(e) {
                     if (!e.target || e.target.id !== 'create-auction-form') return;
                     const banner = document.getElementById('submit-error-banner');
@@ -2690,62 +2943,31 @@
                     if (banner) banner.classList.add('d-none');
                     if (errorList) errorList.innerHTML = '';
 
-                    const requiredFields = getAllRequiredFields();
-                    let invalidItems = [];
-
-                    requiredFields.forEach(function(field) {
-                        if (field.disabled || field.type === 'hidden') return;
-                        if (!isFieldValid(field)) {
-                            const tab = field.closest('.tab-pane');
-                            const labelEl = field.closest('.form-group') && field.closest('.form-group').querySelector('label');
-                            const fieldName = labelEl ? labelEl.textContent.replace(/[*:]/g, '').trim() : (field.getAttribute('placeholder') || field.name || field.id || 'Required field');
-                            invalidItems.push({ field: field, tab: tab, fieldName: fieldName });
-                        }
-                    });
+                    let invalidItems = buyerGetInvalidItems();
 
                     if (invalidItems.length > 0) {
                         e.preventDefault();
                         e.stopImmediatePropagation();
 
-                        if (banner && errorList) {
-                            const seen = new Set();
-                            invalidItems.forEach(function(item) {
-                                if (!seen.has(item.fieldName)) {
-                                    seen.add(item.fieldName);
-                                    const li = document.createElement('li');
-                                    li.textContent = item.fieldName;
-                                    errorList.appendChild(li);
-                                }
-                            });
-                            banner.querySelector('strong').textContent = 'Please complete the required fields before submitting.';
-                            banner.classList.remove('d-none');
-                        }
-
-                        const firstItem = invalidItems[0];
-                        if (firstItem.tab) {
-                            const tabId = firstItem.tab.id;
-                            const tabTrigger = document.querySelector('[data-bs-target="#' + tabId + '"], [href="#' + tabId + '"]');
-                            if (tabTrigger) {
-                                bootstrap.Tab.getOrCreateInstance(tabTrigger).show();
-                                const allTabPanes = [...document.querySelectorAll('.tab-pane')];
-                                const tabIndex = allTabPanes.indexOf(firstItem.tab);
-                                if (tabIndex >= 0 && typeof Livewire !== 'undefined') {
-                                    Livewire.emit('setActiveTab', tabIndex);
-                                }
+                        // Build deduplicated list and populate banner
+                        const seen = new Set();
+                        const deduplicatedItems = [];
+                        invalidItems.forEach(function(item) {
+                            const _dedupeKey = item.key || item.fieldName;
+                            if (!seen.has(_dedupeKey)) {
+                                seen.add(_dedupeKey);
+                                deduplicatedItems.push(item);
+                                const li = document.createElement('li');
+                                li.textContent = item.fieldName;
+                                errorList.appendChild(li);
                             }
-                        }
+                        });
+                        if (banner) banner.classList.remove('d-none');
 
-                        setTimeout(function() {
-                            if (firstItem.field && firstItem.field.classList) {
-                                firstItem.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                if (typeof firstItem.field.focus === 'function' && firstItem.field.tagName !== 'DIV') {
-                                    firstItem.field.focus();
-                                }
-                                firstItem.field.classList.add('is-invalid');
-                            }
-                            if (banner) banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }, 300);
-
+                        // Enter guided correction mode
+                        _buyerCorrectionMode = true;
+                        _buyerMissingItems = deduplicatedItems;
+                        buyerNavigateToItem(deduplicatedItems[0]);
                         return false;
                     }
 
