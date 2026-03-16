@@ -502,7 +502,7 @@
         </div>
         <span class="error mt-2" id="bathrooms_error"></span>
     </div>
-    @if ($bathrooms === 'Other')
+    @if ($this->bathrooms === 'Other')
     <!-- Other Bathrooms Input -->
     <div class="form-group other_bathrooms">
         <div class="input-cover">
@@ -688,7 +688,8 @@
     </div>
 @endif
 <!-- Garage/Parking Spaces Type Dropdown -->
-<div class="form-group d-none" id="garage_parking_spaces_option_wrapper">
+@if ($this->garage_parking_spaces == 'Yes')
+<div class="form-group" id="garage_parking_spaces_option_wrapper">
     <label class="fw-bold">Garage/Parking Features:</label>
     <div class="input-cover" wire:ignore>
 
@@ -702,6 +703,7 @@
     </div>
     <span class="error mt-2" id="garage_parking_spaces_option_error"></span>
 </div>
+@endif
 
 <!-- Other Parking Space Text Input -->
 @if (in_array('Other', $garage_parking_spaces_option ?? []))
@@ -869,7 +871,7 @@
 {{-- Pets for Income Property (after Non-Negotiable Amenities, before Required Property or Business Assets) --}}
 @if ($property_type === 'Income')
     <div class="form-group">
-        <label class="fw-bold">Pets:<span class="text-danger">*</span>
+        <label class="fw-bold">Pets:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Indicate whether the Buyer has pets. If so, enter details including the number, type, breed, weight, and whether the pet is a service animal or an emotional support animal.">
                 <i class="fa-solid fa-circle-info"></i>
@@ -878,7 +880,7 @@
 
         <div class="input-cover">
             <select wire:model="pets" id="pets_income" class="form-control has-icon" data-icon="fa-solid fa-paw"
-                required>
+                >
                 <option value="">Select</option>
                 <option value="Yes">Yes</option>
                 <option value="No">No</option>

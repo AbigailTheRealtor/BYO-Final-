@@ -2942,6 +2942,18 @@
             // Listen for Livewire updates
             Livewire.hook('message.processed', () => {
                 toggleGarageOptions();
+                var $gpsOpt = $('#garage_parking_spaces_option');
+                if ($gpsOpt.length && !$gpsOpt.hasClass('select2-hidden-accessible')) {
+                    $gpsOpt.select2({
+                        placeholder: "Select",
+                        allowClear: true,
+                        width: '100%',
+                    });
+                    $gpsOpt.off('change.gpsSyncEdit').on('change.gpsSyncEdit', function() {
+                        var selectedValues = $(this).val() || [];
+                        debouncedSet('garage_parking_spaces_option', selectedValues);
+                    });
+                }
             });
 
             // Add event listeners

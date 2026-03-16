@@ -1411,6 +1411,7 @@
             // Re-attach the event listener after Livewire re-renders the DOM
             Livewire.hook('message.processed', () => {
                 attachAuctionDropdownListener();
+                attachBathroomsDropdownListener();
             });
 
 
@@ -1487,6 +1488,17 @@
             // Listen for Livewire updates
             Livewire.hook('message.processed', () => {
                 toggleGarageOptions();
+                if ($('#garage_parking_spaces_option').length && !$('#garage_parking_spaces_option').hasClass('select2-hidden-accessible')) {
+                    $('#garage_parking_spaces_option').select2({
+                        placeholder: "Select parking features",
+                        allowClear: true,
+                    });
+                    $('#garage_parking_spaces_option').off('change.gpsSync').on('change.gpsSync', function() {
+                        let selectedValues = $(this).val() || [];
+                        selectedValues = [...new Set(selectedValues)];
+                        debouncedSet('garage_parking_spaces_option', selectedValues);
+                    });
+                }
             });
 
             // Add event listeners
@@ -2705,7 +2717,6 @@
                     'maximum_budget':          'Maximum Budget',
                     'offered_financing':       'Offered Financing',
                     'tenant_require':          'Furnishings Needed',
-                    'pets':                    'Pets',
                     'real_estate_purchase':    'Business & Real Estate Purchase Requirements',
                     'first_name':              'First Name',
                     'last_name':               'Last Name',
