@@ -1,0 +1,301 @@
+Here are **copy-paste Replit instructions with strong safeguards** so this stays **surgical** and does **not** break Select2 or any other listing type.
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A TENANT’S AGENT ONLY — ACCEPTABLE PROPERTY CONDITIONS SAVE + AUTOFILL + DISPLAY TEXT FIX
+
+## SCOPE
+
+Make **two targeted fixes only** in the **Hire a Tenant Agent** flow:
+
+1. **Acceptable Property Conditions** must **save correctly** and **autopopulate correctly in draft/edit mode**
+2. On the listing/display side, the option currently showing as
+   **Older but Clean**
+   must display as
+   **Older but Clean and Well Maintained**
+
+This task must apply **only** to **Hire a Tenant Agent** and must **not** affect any other listing type or flow.
+
+---
+
+## HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Only edit the Hire a Tenant Agent flow.**
+2. **Do not modify Buyer, Seller, or Landlord flows.**
+3. **Do not modify shared Select2 initialization logic unless absolutely necessary.**
+4. **Do not refactor any global Select2 helper used by other flows.**
+5. **Do not rename database columns, Livewire properties, IDs, names, wire:model bindings, or option values unless the exact Tenant field already uses the wrong one and must be aligned.**
+6. **Do not change any other multi-select field behavior.**
+7. **Do not change any other labels, placeholders, tooltips, icons, or wording outside this one Tenant field/display text.**
+8. **Do not run migrations.**
+9. **Do not change storage format for other fields.**
+10. **Do not break draft save, edit mode, listing display, or final submit.**
+11. **Do not alter the Select2 visual format, dropdown structure, width, placeholder behavior, or event bindings for unrelated fields.**
+12. **Keep this as a surgical field-specific fix only.**
+
+---
+
+## IMPORTANT CONTEXT
+
+We have had Select2/save/autopopulate issues before. Because of that:
+
+* do **not** do a broad Select2 rewrite
+* do **not** change the generic multi-select sync pattern unless you can prove this exact Tenant field is miswired and the fix is isolated to this field only
+* do **not** “clean up” or refactor unrelated code
+* do **not** touch working fields
+
+This should be a **field-specific investigation and fix**.
+
+---
+
+## REQUIRED OUTCOME
+
+For **Hire a Tenant Agent** only:
+
+### Acceptable Property Conditions must:
+
+* save correctly
+* remain saved in draft
+* autopopulate correctly when reopening a draft
+* autopopulate correctly when editing an existing listing
+* display the selected values correctly in the field UI
+* display the correct wording on the listing/review side
+
+### And specifically:
+
+If the option currently stored or shown as:
+**Older but Clean**
+
+It should display to the user as:
+**Older but Clean and Well Maintained**
+
+---
+
+## STEP 1 — IDENTIFY THE EXACT TENANT FILES FIRST
+
+Before editing anything, confirm the exact active files for **Hire a Tenant Agent** related to this field only:
+
+1. the Tenant Livewire component class
+2. the Tenant blade containing **Acceptable Property Conditions**
+3. any included partial where that field is rendered
+4. any draft/edit hydration logic for that field
+5. any save/store/update logic for that field
+6. any listing/review/display blade where the selected value is shown back to the user
+
+Do **not** assume file names. Confirm the exact active files first.
+
+Likely areas may include:
+
+* `app/Http/Livewire/TenantAgentAuction.php`
+* `resources/views/livewire/tenant-agent-auction.blade.php`
+* `resources/views/livewire/tenant-agent-auction-tabs/...`
+
+But confirm the real files before touching anything.
+
+---
+
+## STEP 2 — TRACE THE EXACT FIELD WIRING FOR ACCEPTABLE PROPERTY CONDITIONS
+
+For **Acceptable Property Conditions** only, trace all of the following:
+
+* visible field label
+* HTML `id`
+* HTML `name`
+* `wire:model` / `wire:model.defer` / `wire:model.lazy`
+* Select2 init function used for this field
+* any JS sync code used before draft save or final submit
+* how the field is stored in PHP
+* whether it is stored as array / JSON / string
+* how it is re-hydrated in edit/draft mode
+* how the selected options are rendered back into the Select2 field
+* how it is displayed on the listing/review side
+
+I need the exact reason it is not saving/autopopulating correctly.
+
+---
+
+## STEP 3 — FIX SAVE + DRAFT AUTOFILL FOR THIS FIELD ONLY
+
+For **Acceptable Property Conditions** in **Hire a Tenant Agent only**:
+
+Make sure the selected values:
+
+* persist on draft save
+* reload correctly into the field on draft reopen
+* reload correctly into edit mode
+* remain selected in the Select2 UI without disappearing
+* survive Livewire re-rendering
+
+Important:
+
+* use the same proven field-specific pattern as the Tenant fields that already save and repopulate correctly
+* do **not** replace the whole Select2 system
+* do **not** alter working field patterns elsewhere
+
+If the issue is:
+
+* missing sync before save
+* wrong property name
+* wrong initialization target
+* wrong hydration source
+* wrong selected-option mapping
+* wrong JSON decode/encode
+* wrong edit binding
+
+fix only that exact issue for this field.
+
+---
+
+## STEP 4 — DO NOT CHANGE SELECT FORMAT OR UI STRUCTURE
+
+This is critical.
+
+For **Acceptable Property Conditions**, do **not** change:
+
+* Select2 visual style
+* placeholder format
+* width/layout
+* dropdown appearance
+* multiselect badge style
+* event structure used by other working fields
+* option ordering, unless absolutely required to match existing intended order
+
+The goal is:
+
+* same Select2 format
+* same UI appearance
+* same interaction style
+* only the save/autopopulate bug fixed
+
+---
+
+## STEP 5 — FIX DISPLAY TEXT ONLY WHERE NEEDED
+
+Right now the listing/display side shows:
+
+**Older but Clean**
+
+It should show:
+
+**Older but Clean and Well Maintained**
+
+Important:
+
+* do **not** blindly rename option values everywhere without tracing storage first
+* if the saved/internal value is currently `"Older but Clean"`, it is acceptable to keep that internal stored value **if needed for compatibility**, but map the displayed user-facing text to:
+  **Older but Clean and Well Maintained**
+* if the field options in the Tenant UI already should use the full wording, update the visible option text carefully **without breaking saved selections**
+
+Best approach:
+
+* preserve compatibility with already-saved records
+* ensure old saved values still render correctly
+* ensure the user-facing text now shows the full correct phrase
+
+---
+
+## STEP 6 — PRESERVE BACKWARD COMPATIBILITY
+
+If older Tenant drafts/listings already have:
+**Older but Clean**
+
+those must still:
+
+* load successfully
+* appear selected correctly
+* display to the user as:
+  **Older but Clean and Well Maintained**
+
+Do not break existing data.
+
+---
+
+## STEP 7 — VERIFY ALL 4 TENANT STATES
+
+After the fix, test all of these for **Hire a Tenant Agent only**:
+
+### A. New draft
+
+* select Acceptable Property Conditions
+* save draft
+* reopen draft
+* expected: values are still selected
+
+### B. Edit existing draft
+
+* values already selected
+* expected: field autopopulates correctly
+
+### C. Edit existing submitted/listing record
+
+* expected: field autopopulates correctly
+
+### D. Listing/review display
+
+* expected:
+  **Older but Clean and Well Maintained**
+  shows instead of
+  **Older but Clean**
+
+---
+
+## STEP 8 — VERIFY NO REGRESSION TO OTHER TENANT SELECT2 FIELDS
+
+After the fix, confirm these are unchanged:
+
+* no disappearing selections
+* no “No results found” regressions
+* no broken Select2 open/close behavior
+* no missing placeholder regressions
+* no draft-save breakage in unrelated Tenant fields
+* no change to other property preference fields unless directly required for this field’s save/hydration
+
+---
+
+## STEP 9 — VERIFY NO OTHER FLOWS WERE TOUCHED
+
+Explicitly confirm:
+
+* Buyer flow unchanged
+* Seller flow unchanged
+* Landlord flow unchanged
+* no shared listing type behavior changed
+* no shared Select2 global behavior changed unless wrapped and Tenant-only
+
+---
+
+## STEP 10 — RETURN A FINAL REPORT
+
+After fixing, return:
+
+1. exact file(s) changed
+2. exact root cause of why **Acceptable Property Conditions** was not saving/autopopulating
+3. exact fix applied
+4. whether internal stored value was preserved for compatibility
+5. how **Older but Clean** now displays as
+   **Older but Clean and Well Maintained**
+6. proof draft save + reopen works
+7. proof edit mode autopopulates correctly
+8. confirmation only **Hire a Tenant Agent** was touched
+
+---
+
+## IMPORTANT
+
+This is a **Tenant-only, field-specific fix**.
+
+Do **not** do any broad Select2 cleanup.
+Do **not** touch other listing types.
+Do **not** change the Select2 format.
+
+The final result should be:
+
+* **Acceptable Property Conditions saves correctly**
+* **Acceptable Property Conditions autopopulates correctly in draft/edit**
+* **Older but Clean** displays as
+  **Older but Clean and Well Maintained**
+* **No other flows or Select2 fields are affected**
+
+---
+
+If you want, I can also make this into a **shorter Replit version** with just the direct implementation steps.

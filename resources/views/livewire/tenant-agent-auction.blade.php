@@ -4548,8 +4548,13 @@ $lease_types = [
 
             // Returns the user-facing label for a Tenant field.
             // Prefers TENANT_FIELD_LABELS (stable); falls back to DOM label text.
+            // property_type label is role-aware: landlord/seller see 'Property Type'.
             function resolveTenantFieldLabel(field) {
                 const key = resolveTenantFieldKey(field);
+                if (key === 'property_type' && typeof CURRENT_USER_TYPE !== 'undefined' &&
+                    (CURRENT_USER_TYPE === 'landlord' || CURRENT_USER_TYPE === 'seller')) {
+                    return 'Property Type';
+                }
                 if (key && TENANT_FIELD_LABELS[key]) {
                     return TENANT_FIELD_LABELS[key];
                 }
@@ -4615,22 +4620,41 @@ $lease_types = [
                 }
 
                 // Livewire-state checks (Select2 multi-selects + property_type)
+                // Role-aware: tenant-only fields are gated; property_type label varies.
                 try {
                     var _wireEl = document.querySelector('[wire\\:id]');
                     if (_wireEl && typeof Livewire !== 'undefined') {
                         var _comp = Livewire.find(_wireEl.getAttribute('wire:id'));
                         if (_comp && _comp.get) {
                             var _svcType = formContainer.getAttribute('data-service-type');
+                            var _curUTgi = (typeof CURRENT_USER_TYPE !== 'undefined') ? CURRENT_USER_TYPE : 'tenant';
                             if (_svcType === 'full_service') {
-                                var _lwReqs = [
-                                    { prop: 'property_type', label: TENANT_FIELD_LABELS['property_type'] || 'Acceptable Property Type', key: 'property_type' },
-                                    { prop: 'lease_for',     label: TENANT_FIELD_LABELS['lease_for']    || 'Offered Lease Term',          key: 'lease_for',            isArray: true, domSel: '.lease_for' },
-                                    { prop: 'leasing_spaces_tenant', label: TENANT_FIELD_LABELS['leasing_spaces_tenant'] || 'Leasing Space', key: 'leasing_spaces_tenant', isArray: true, domSel: '#leasing_spaces_tenant' },
-                                ];
-                                _lwReqs.forEach(function(chk) {
-                                    var val = _comp.get(chk.prop);
-                                    var isEmpty2;
-                                    if (chk.isArray) {
+                                // property_type: required for all roles; label is role-aware.
+                                // Resolve the actual DOM element so tenantNavigateToItem()
+                                // can switch to the correct tab when it is empty.
+                                var _ptValGi = _comp.get('property_type');
+                                if (!_ptValGi || _ptValGi === '') {
+                                    var _ptElGi = document.getElementById('property_type')
+                                        || document.querySelector('[wire\\:model="property_type"]')
+                                        || document.querySelector('[wire\\:model\\.defer="property_type"]');
+                                    var _ptTabGi = _ptElGi ? _ptElGi.closest('.tab-pane') : null;
+                                    var _ptLabelGi = (_curUTgi === 'landlord' || _curUTgi === 'seller')
+                                        ? 'Property Type'
+                                        : (TENANT_FIELD_LABELS['property_type'] || 'Acceptable Property Type');
+                                    if (!items.some(function(i) { return i.key === 'property_type'; })) {
+                                        items.push({ field: _ptElGi || document.body, tab: _ptTabGi, fieldName: _ptLabelGi, key: 'property_type' });
+                                    }
+                                }
+
+                                if (_curUTgi === 'tenant') {
+                                    // lease_for and leasing_spaces_tenant are tenant-only fields.
+                                    var _lwTenantReqs = [
+                                        { prop: 'lease_for', label: TENANT_FIELD_LABELS['lease_for'] || 'Offered Lease Term', key: 'lease_for', isArray: true, domSel: '.lease_for' },
+                                        { prop: 'leasing_spaces_tenant', label: TENANT_FIELD_LABELS['leasing_spaces_tenant'] || 'Leasing Space', key: 'leasing_spaces_tenant', isArray: true, domSel: '#leasing_spaces_tenant' },
+                                    ];
+                                    _lwTenantReqs.forEach(function(chk) {
+                                        var val = _comp.get(chk.prop);
+                                        var isEmpty2;
                                         if (typeof val === 'string') { try { val = JSON.parse(val); } catch(ex) {} }
                                         isEmpty2 = !val || (Array.isArray(val) && val.length === 0) || val === '' || val === '[]';
                                         if (isEmpty2 && chk.domSel) {
@@ -4640,20 +4664,19 @@ $lease_types = [
                                                 if (domVal2 && ((Array.isArray(domVal2) && domVal2.length > 0) || (typeof domVal2 === 'string' && domVal2 !== ''))) isEmpty2 = false;
                                             }
                                         }
-                                    } else {
-                                        isEmpty2 = !val || val === '';
-                                    }
-                                    if (isEmpty2) {
-                                        items.push({ field: document.body, tab: null, fieldName: chk.label, key: chk.key || chk.prop });
-                                    }
-                                });
-                                // Bedrooms Livewire fallback
-                                var _ptVal2 = _comp.get('property_type');
-                                if (_ptVal2 === 'Residential Property') {
-                                    var _bedroomsVal2 = _comp.get('bedrooms');
-                                    if (!_bedroomsVal2 || _bedroomsVal2 === '') {
-                                        if (!items.some(function(i) { return i.key === 'bedrooms'; })) {
-                                            items.push({ field: document.body, tab: null, fieldName: TENANT_FIELD_LABELS['bedrooms'] || 'Minimum Bedrooms Needed', key: 'bedrooms' });
+                                        if (isEmpty2) {
+                                            items.push({ field: document.body, tab: null, fieldName: chk.label, key: chk.key });
+                                        }
+                                    });
+
+                                    // Bedrooms Livewire fallback (tenant only)
+                                    var _ptVal2 = _comp.get('property_type');
+                                    if (_ptVal2 === 'Residential Property') {
+                                        var _bedroomsVal2 = _comp.get('bedrooms');
+                                        if (!_bedroomsVal2 || _bedroomsVal2 === '') {
+                                            if (!items.some(function(i) { return i.key === 'bedrooms'; })) {
+                                                items.push({ field: document.body, tab: null, fieldName: TENANT_FIELD_LABELS['bedrooms'] || 'Minimum Bedrooms Needed', key: 'bedrooms' });
+                                            }
                                         }
                                     }
                                 }
@@ -4732,10 +4755,23 @@ $lease_types = [
                     _tenantCorrectionMode = false;
                     _tenantMissingItems = [];
                     if (_banner3) _banner3.classList.add('d-none');
-                    var _submitTabTrigger = document.querySelector('[data-bs-target="#information"]');
+                    // Navigate to the info tab — slug varies by role on the full_service path.
+                    var _infoRole = (typeof CURRENT_USER_TYPE !== 'undefined') ? CURRENT_USER_TYPE : '';
+                    var _infoSlug = _infoRole === 'landlord' ? '#landlord-information'
+                        : _infoRole === 'seller'   ? '#seller-information'
+                        : _infoRole === 'buyer'    ? '#buyer-information'
+                        : _infoRole === 'tenant'   ? '#tenant-information'
+                        : '#information';
+                    var _submitTabTrigger = document.querySelector('[data-bs-target="' + _infoSlug + '"]')
+                        || document.querySelector('[data-bs-target="#information"]');
                     if (_submitTabTrigger) {
                         new bootstrap.Tab(_submitTabTrigger).show();
-                        try { @this.call('setActiveTab', 4); } catch(ex4) {}
+                        // Extract the tab index from wire:click instead of hard-coding it.
+                        var _infoWc = _submitTabTrigger.getAttribute('wire:click') || '';
+                        var _infoM = _infoWc.match(/setActiveTab\((\d+)\)/);
+                        if (_infoM) {
+                            try { @this.call('setActiveTab', parseInt(_infoM[1])); } catch(ex4) {}
+                        }
                     }
                     return;
                 }
@@ -4763,8 +4799,8 @@ $lease_types = [
                 const _submitUserType = typeof CURRENT_USER_TYPE !== 'undefined' ? CURRENT_USER_TYPE : '';
 
                 requiredFields.forEach(field => {
-                    if (_submitUserType === 'tenant') {
-                        // Tenant flow: check required fields across ALL tabs (active and inactive).
+                    if (_submitUserType === 'tenant' || _submitUserType === 'landlord') {
+                        // Tenant/Landlord flow: check required fields across ALL tabs.
                         // Only skip fields that are hidden by conditional rendering within the tab.
                         if (isTenantFieldHiddenWithinTab(field)) return;
 
@@ -4787,7 +4823,7 @@ $lease_types = [
                             invalidItems.push({ field, tab: field.closest('.tab-pane'), fieldName: resolveTenantFieldLabel(field), key: _fKey });
                         }
                     } else {
-                        // Non-tenant flows: existing behavior unchanged.
+                        // Other flows (seller, buyer): existing behavior unchanged.
                         if (!isFieldValid(field)) {
                             const tab = field.closest('.tab-pane');
                             const label = field.closest('.form-group')?.querySelector('label');
@@ -4830,17 +4866,30 @@ $lease_types = [
                             var svcType = formContainer.getAttribute('data-service-type');
                             var curUT = (typeof CURRENT_USER_TYPE !== 'undefined') ? CURRENT_USER_TYPE : 'tenant';
                             if (svcType === 'full_service') {
-                                var lwReqs = [
-                                    { prop: 'property_type', label: TENANT_FIELD_LABELS['property_type'] || 'Acceptable Property Type', key: 'property_type' },
-                                ];
-                                if (curUT === 'tenant') {
-                                    lwReqs.push({ prop: 'lease_for', label: TENANT_FIELD_LABELS['lease_for'] || 'Offered Lease Term', isArray: true, domSel: '.lease_for', key: 'lease_for' });
-                                    lwReqs.push({ prop: 'leasing_spaces_tenant', label: TENANT_FIELD_LABELS['leasing_spaces_tenant'] || 'Leasing Space', isArray: true, domSel: '#leasing_spaces_tenant', key: 'leasing_spaces_tenant' });
+                                // property_type: required for all roles; label and tab are role-aware.
+                                // Find the actual DOM element so guided correction can navigate to its tab.
+                                var _ptValSub = comp.get('property_type');
+                                if (!_ptValSub || _ptValSub === '') {
+                                    if (!invalidItems.some(function(i) { return i.key === 'property_type'; })) {
+                                        var _ptElSub = document.getElementById('property_type')
+                                            || document.querySelector('[wire\\:model="property_type"]')
+                                            || document.querySelector('[wire\\:model\\.defer="property_type"]');
+                                        var _ptTabSub = _ptElSub ? _ptElSub.closest('.tab-pane') : null;
+                                        var _ptLabelSub = (curUT === 'landlord' || curUT === 'seller')
+                                            ? 'Property Type'
+                                            : (TENANT_FIELD_LABELS['property_type'] || 'Acceptable Property Type');
+                                        invalidItems.push({ field: _ptElSub || document.body, tab: _ptTabSub, fieldName: _ptLabelSub, key: 'property_type' });
+                                    }
                                 }
-                                lwReqs.forEach(function(chk) {
-                                    var val = comp.get(chk.prop);
-                                    var isEmpty;
-                                    if (chk.isArray) {
+
+                                if (curUT === 'tenant') {
+                                    var lwReqs = [
+                                        { prop: 'lease_for', label: TENANT_FIELD_LABELS['lease_for'] || 'Offered Lease Term', isArray: true, domSel: '.lease_for', key: 'lease_for' },
+                                        { prop: 'leasing_spaces_tenant', label: TENANT_FIELD_LABELS['leasing_spaces_tenant'] || 'Leasing Space', isArray: true, domSel: '#leasing_spaces_tenant', key: 'leasing_spaces_tenant' },
+                                    ];
+                                    lwReqs.forEach(function(chk) {
+                                        var val = comp.get(chk.prop);
+                                        var isEmpty;
                                         if (typeof val === 'string') {
                                             try { val = JSON.parse(val); } catch(e2) {}
                                         }
@@ -4854,13 +4903,11 @@ $lease_types = [
                                                 }
                                             }
                                         }
-                                    } else {
-                                        isEmpty = !val || val === '';
-                                    }
-                                    if (isEmpty) {
-                                        invalidItems.push({ field: document.body, tab: null, fieldName: chk.label, key: chk.key || chk.prop });
-                                    }
-                                });
+                                        if (isEmpty) {
+                                            invalidItems.push({ field: document.body, tab: null, fieldName: chk.label, key: chk.key });
+                                        }
+                                    });
+                                }
 
                                 // Tenant-specific: validate bedrooms via Livewire state.
                                 // The bedrooms select only renders when property_type === 'Residential Property'
@@ -4906,15 +4953,15 @@ $lease_types = [
                     });
                     banner.classList.remove('d-none');
 
-                    if (_submitUserType === 'tenant') {
-                        // Tenant flow: enter guided correction mode.
+                    if (_submitUserType === 'tenant' || _submitUserType === 'landlord') {
+                        // Tenant/Landlord flow: enter guided correction mode.
                         // tenantNavigateToItem() switches the Bootstrap tab AND syncs
                         // server-side $activeTab so Livewire morphdom cannot snap back.
                         _tenantCorrectionMode = true;
                         _tenantMissingItems = deduplicatedItems;
                         tenantNavigateToItem(deduplicatedItems[0]);
                     } else {
-                        // Non-tenant flows: original navigation behavior unchanged.
+                        // Other flows (seller, buyer): original navigation behavior unchanged.
                         const firstItem = deduplicatedItems[0];
                         if (firstItem && firstItem.tab) {
                             const tabId = firstItem.tab.id;
@@ -4939,9 +4986,9 @@ $lease_types = [
                     return false;
                 }
 
-                // Tenant: always clear correction mode on a valid submit so the
+                // Tenant/Landlord: always clear correction mode on a valid submit so the
                 // message.processed hook never interferes with the store() action.
-                if (_submitUserType === 'tenant') {
+                if (_submitUserType === 'tenant' || _submitUserType === 'landlord') {
                     _tenantCorrectionMode = false;
                     _tenantMissingItems = [];
                 }
@@ -4959,6 +5006,27 @@ $lease_types = [
                     if (!_tenantCorrectionMode) return;
                     setTimeout(function() {
                         var _freshMissing = tenantGetInvalidItems();
+
+                        // Always re-show the banner after every Livewire round-trip.
+                        // morphdom re-adds d-none to the banner on every setActiveTab
+                        // re-render, so we must remove it unconditionally here.
+                        var _bannerPersist = document.getElementById('submit-error-banner');
+                        if (_bannerPersist) {
+                            _bannerPersist.classList.remove('d-none');
+                        }
+
+                        // Also keep the error list current so it reflects the latest
+                        // state of missing fields as the user navigates around.
+                        var _errorListPersist = document.getElementById('submit-error-list');
+                        if (_errorListPersist) {
+                            _errorListPersist.innerHTML = '';
+                            _freshMissing.forEach(function(item) {
+                                var li = document.createElement('li');
+                                li.textContent = item.fieldName;
+                                _errorListPersist.appendChild(li);
+                            });
+                        }
+
                         var _freshKeys = new Set(_freshMissing.map(function(i) { return i.key || i.fieldName; }));
                         var _someFixed = false;
                         _tenantMissingItems.forEach(function(i) {
