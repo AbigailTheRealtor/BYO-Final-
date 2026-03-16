@@ -4237,8 +4237,7 @@ $lease_types = [
             const tabSelector = serviceType === 'full_service' ? [
                 '#listing-details',
                 '#property-preferences',
-
-                //  '#property-details',
+                '#property-details',
                 '#sale-terms',
                 '#leasing-terms',
                 '#pre-screening',
@@ -4548,6 +4547,18 @@ $lease_types = [
                 'last_name':               'Last Name',
                 'phone_number':            'Phone Number',
                 'email':                   'Email Address',
+                'address':                 'Street Address',
+                'property_city':           'City',
+                'property_state':          'State',
+                'property_county':         'County',
+                'property_zip':            'ZIP Code',
+                'condition_prop':          'Property Condition',
+                'occupant_status':         'Occupant Type',
+                'occupant_tenant':         'Occupied Until',
+                'leasing_spaces':          'Leasing Space',
+                'desired_rental_amount':   'Desired Rental Amount',
+                'lease_amount_frequency':  'Lease Amount Frequency',
+                'desired_lease_length':    'Desired Lease Term',
             };
 
             // Returns the canonical property key for a field: wire:model value first,
@@ -4693,6 +4704,24 @@ $lease_types = [
                                                 items.push({ field: document.body, tab: null, fieldName: TENANT_FIELD_LABELS['bedrooms'] || 'Minimum Bedrooms Needed', key: 'bedrooms' });
                                             }
                                         }
+                                    }
+                                } else if (_curUTgi === 'landlord') {
+                                    // desired_lease_length is a landlord-only Select2 multi-select (wire:ignore).
+                                    // It syncs to Livewire via debouncedSet; check Livewire state directly.
+                                    var _dllValGi = _comp.get('desired_lease_length');
+                                    if (typeof _dllValGi === 'string') { try { _dllValGi = JSON.parse(_dllValGi); } catch(ex3) {} }
+                                    var _dllEmptyGi = !_dllValGi || (Array.isArray(_dllValGi) && _dllValGi.length === 0) || _dllValGi === '' || _dllValGi === '[]';
+                                    if (_dllEmptyGi) {
+                                        var $dllDomGi = $('.lease_term_options');
+                                        if ($dllDomGi.length) {
+                                            var _dllDomValGi = $dllDomGi.val();
+                                            if (_dllDomValGi && Array.isArray(_dllDomValGi) && _dllDomValGi.length > 0) _dllEmptyGi = false;
+                                        }
+                                    }
+                                    if (_dllEmptyGi && !items.some(function(i) { return i.key === 'desired_lease_length'; })) {
+                                        var _dllElGi = document.querySelector('.lease_term_options');
+                                        var _dllTabGi = _dllElGi ? _dllElGi.closest('.tab-pane') : null;
+                                        items.push({ field: _dllElGi || document.body, tab: _dllTabGi, fieldName: TENANT_FIELD_LABELS['desired_lease_length'] || 'Desired Lease Term', key: 'desired_lease_length' });
                                     }
                                 }
                             }
@@ -4942,6 +4971,24 @@ $lease_types = [
                                                 invalidItems.push({ field: document.body, tab: null, fieldName: TENANT_FIELD_LABELS['bedrooms'] || 'Minimum Bedrooms Needed', key: 'bedrooms' });
                                             }
                                         }
+                                    }
+                                } else if (curUT === 'landlord') {
+                                    // desired_lease_length is a landlord-only Select2 multi-select (wire:ignore).
+                                    // It syncs to Livewire via debouncedSet; check Livewire state directly.
+                                    var _dllVal = comp.get('desired_lease_length');
+                                    if (typeof _dllVal === 'string') { try { _dllVal = JSON.parse(_dllVal); } catch(e2) {} }
+                                    var _dllEmpty = !_dllVal || (Array.isArray(_dllVal) && _dllVal.length === 0) || _dllVal === '' || _dllVal === '[]';
+                                    if (_dllEmpty) {
+                                        var $dllDom = $('.lease_term_options');
+                                        if ($dllDom.length) {
+                                            var _dllDomVal = $dllDom.val();
+                                            if (_dllDomVal && Array.isArray(_dllDomVal) && _dllDomVal.length > 0) _dllEmpty = false;
+                                        }
+                                    }
+                                    if (_dllEmpty && !invalidItems.some(function(i) { return i.key === 'desired_lease_length'; })) {
+                                        var _dllEl = document.querySelector('.lease_term_options');
+                                        var _dllTab = _dllEl ? _dllEl.closest('.tab-pane') : null;
+                                        invalidItems.push({ field: _dllEl || document.body, tab: _dllTab, fieldName: TENANT_FIELD_LABELS['desired_lease_length'] || 'Desired Lease Term', key: 'desired_lease_length' });
                                     }
                                 }
                             }
