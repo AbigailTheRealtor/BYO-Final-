@@ -1,0 +1,407 @@
+Absolutely — here is a **full copy-paste Replit instruction block with safeguards** for **Hire a Buyer’s Agent** using the same required-field enforcement format you finalized for Tenant and are now applying to Landlord.
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A BUYER’S AGENT ONLY — REQUIRED FIELDS MUST ALL BE FILLED BEFORE SUBMIT
+
+## SCOPE
+
+Apply the same **required-field enforcement + missing-fields banner + guided correction flow** used for the finalized **Hire a Tenant Agent** flow to the **Hire a Buyer’s Agent** flow.
+
+### Required final behavior for Hire a Buyer’s Agent:
+
+1. the listing **cannot submit** unless **every required field** is filled in
+2. the system must check **all required fields across every relevant tab**, not just the current tab
+3. if required fields are missing, the form must:
+
+   * block submit
+   * show a banner listing **every missing required field**
+   * use the **exact user-facing field names**
+   * include required fields from all relevant tabs
+4. when the user clicks Submit and fields are missing, the form must:
+
+   * take the user to the **first missing required field**
+   * after that field is filled in, move to the **next missing required field**
+   * continue until all required fields are completed
+5. once all required fields are complete:
+
+   * correction mode must fully exit
+   * valid final submit must work normally
+6. the form must **not snap back to the last tab** while the user is correcting missing fields
+
+The goal is to mirror the **Tenant required-field workflow** for **Hire a Buyer’s Agent** only.
+
+---
+
+## HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Only work on Hire a Buyer’s Agent flow.**
+2. **Do not modify Tenant, Landlord, or Seller flows.**
+3. **Do not rename database columns, Livewire properties, wire:model bindings, field IDs, field names, route names, or tab IDs.**
+4. **Do not run migrations.**
+5. **Do not change Select2 formatting, layout, placeholders, width, badge style, dropdown style, or any select UI structure.**
+6. **Do not refactor global/shared logic unless absolutely necessary, and if shared code must be touched, wrap the behavior so it only affects Buyer flow.**
+7. **Do not weaken or remove any working Tenant or Landlord validation/correction logic.**
+8. **Do not change labels, placeholders, tooltips, icons, wording, or field order unless needed strictly for correct missing-field label output.**
+9. **Do not assume fields are valid because of stale Livewire values, placeholders, or default values.**
+10. **Do not do a broad Select2 rewrite.**
+11. **Keep this surgical and limited to Buyer required-field enforcement and guided correction only.**
+
+---
+
+## ACTUAL GOAL
+
+The **Hire a Buyer’s Agent** flow must behave like the finished Tenant flow:
+
+* every required field is truly enforced before submit
+* fields on inactive tabs cannot be skipped
+* the banner lists every missing required field by the correct visible name
+* guided correction walks the user through missing required fields one by one
+* no snap-back to the last tab
+* once all required fields are complete, submit works normally
+
+---
+
+## STEP 1 — TRACE THE REAL BUYER FLOW FIRST
+
+Before editing anything, confirm the exact active files and code path for **Hire a Buyer’s Agent**.
+
+I need the exact mapping of:
+
+* active route
+* Livewire component class
+* main blade file
+* included tab partials
+* which partial contains Property Preferences / Property Details for Buyer
+* which JS submit handler is active
+* which method handles final submit (`store()` or equivalent)
+* where any existing Buyer required-field logic lives
+* how tab switching is handled
+* whether Buyer is using shared create logic through `TenantAgentAuction.php` or a separate component
+
+Do not assume. Confirm the exact active files first.
+
+---
+
+## STEP 2 — BUILD THE FULL BUYER REQUIRED-FIELD MATRIX
+
+Before applying any fix, audit **every field in Hire a Buyer’s Agent** and classify each as:
+
+* **Always required**
+* **Conditionally required**
+* **Optional**
+
+For each field, document:
+
+* tab/section
+* visible field label
+* property name / `wire:model`
+* whether it is visually required
+* whether current JS checks it
+* whether current server-side validation checks it
+* whether it appears in the missing-fields banner
+* whether it is branch-specific / conditional
+* whether it can currently be skipped
+
+Format like this:
+
+| Tab | Field Label | Property | Required Type | UI Marker | JS Checked | PHP Checked | Banner Included | Can Skip? |
+
+Do not skip Buyer-only conditional fields, Select2 fields, or hidden branch-specific fields.
+
+---
+
+## STEP 3 — FIX THE CORE PROBLEM: BUYER MUST CHECK EVERY REQUIRED FIELD ACROSS ALL TABS
+
+For **Buyer only**, make the submit validation go through **every currently relevant required field**, including fields on tabs that are not currently visible.
+
+The validation must not skip a field just because:
+
+* it is on another tab
+* the tab is inactive
+* it is rendered conditionally but currently relevant
+* it uses Select2 or custom field UI
+* it is not on the last tab
+
+Important:
+
+* fields hidden because they are truly irrelevant should not block submit
+* fields hidden only because the tab is inactive **must still be checked**
+
+---
+
+## STEP 4 — ALIGN ALL 3 VALIDATION LAYERS FOR BUYER
+
+For every required Buyer field, align:
+
+1. **UI required state**
+2. **front-end submit blocking**
+3. **server-side validation**
+
+No field should be:
+
+* visually required but not enforced
+* enforced in PHP but skipped in JS
+* skipped in the banner but still blocking submit
+* allowed through because it sits on a non-active tab
+
+The Buyer flow must behave as one consistent required-field system.
+
+---
+
+## STEP 5 — ADD A STABLE BUYER FIELD LABEL MAP
+
+For **Buyer flow only**, create a stable field-label map for all required Buyer fields so the banner always shows the exact user-facing field names.
+
+Do not rely on fragile DOM scraping alone.
+
+The label map must cover:
+
+* shared Buyer required fields
+* property preference fields
+* financing / buying terms fields if required
+* Select2/custom fields
+* conditional follow-up fields
+* “Other” fields if conditionally required
+* buyer information fields
+
+Use the exact labels shown in the Buyer UI.
+
+Do not expose internal property names in the banner.
+
+---
+
+## STEP 6 — BUILD A BUYER-SPECIFIC MISSING-FIELD COLLECTOR
+
+Implement a Buyer-specific missing-field collector that:
+
+* checks all currently relevant required fields across all tabs
+* includes inactive tabs
+* ignores fields only when they are truly irrelevant/hidden by condition
+* handles standard inputs, radios, selects, Select2 fields, multiselects, and badge/tag-based fields
+* handles conditional fields correctly
+* returns a full deduplicated ordered list of missing required fields
+
+This should mirror the Tenant approach, but be tailored specifically to Buyer flow.
+
+---
+
+## STEP 7 — DO NOT LET STALE VALUES OR DEFAULTS BYPASS VALIDATION
+
+Use the same anti-stale-value protections that were needed in Tenant.
+
+Do not treat a field as valid just because:
+
+* Livewire still holds an old value
+* the field was previously filled but cleared in the DOM
+* there is a placeholder
+* there is some default string that is not a real completed answer
+
+At submit time, the current DOM/UI value and real current state must control validity.
+
+---
+
+## STEP 8 — SHOW A FULL BUYER MISSING-FIELDS BANNER
+
+When the user clicks Submit and required fields are missing, show a banner that:
+
+* states the user must complete required fields before submitting
+* lists **every missing required Buyer field**
+* uses the exact label map names
+* includes missing fields from all relevant tabs
+* deduplicates by canonical field key, not fuzzy text matching
+
+No partial list.
+No current-tab-only list.
+No hidden omissions.
+
+If 12 required fields are missing, all 12 must appear.
+
+---
+
+## STEP 9 — ADD GUIDED CORRECTION MODE FOR BUYER
+
+For **Buyer flow only**, add the same guided correction mode pattern now working for Tenant:
+
+* on blocked submit, collect the ordered missing-field list
+* navigate to the first missing required field
+* after the user fills that field, re-check the remaining missing fields
+* move to the next missing field
+* continue until all required fields are complete
+* once complete, exit correction mode cleanly
+
+Important:
+
+* do not bounce back to the final tab after each correction
+* do not leave the user stranded on an intermediate tab once everything is completed
+* do not keep correction mode active after all required fields are filled
+
+---
+
+## STEP 10 — PREVENT SNAP-BACK BUG FOR BUYER
+
+When navigating to a missing field on another tab, make sure the server-side active tab stays in sync.
+
+If Buyer uses server-side `setActiveTab()` or similar, sync it when moving tabs so Livewire does not morph the UI back to the final tab during correction mode.
+
+This was the same problem previously seen in Tenant.
+
+Prevent the same issue in Buyer.
+
+---
+
+## STEP 11 — ENSURE VALID FINAL SUBMIT STILL WORKS
+
+Once all required Buyer fields are complete:
+
+* correction mode must turn off immediately
+* any missing-fields state must clear
+* no more guided-navigation logic should fire
+* the submit handler must **not** intercept valid submit
+* the form must fall through to the normal Livewire `store()` path
+
+Important rule:
+
+> Correction mode may block invalid submit, but it must never block a fully valid submit.
+
+---
+
+## STEP 12 — HANDLE CONDITIONAL BUYER FIELDS CORRECTLY
+
+Audit all Buyer conditional logic, including any fields that depend on:
+
+* property type
+* financing type
+* desired property features
+* “Other” options
+* lease-option / purchase path distinctions if applicable
+* custom fields that appear only after a prior selection
+* commercial vs residential branches if Buyer flow includes them
+
+Conditionally hidden fields should not block submit when irrelevant.
+Conditionally required fields must be enforced when relevant.
+
+---
+
+## STEP 13 — DO NOT CHANGE SELECT FORMAT OR WORKING SELECT2 STRUCTURE
+
+This is critical.
+
+For Buyer flow:
+
+* do **not** change the Select2 format
+* do **not** change dropdown structure
+* do **not** change placeholder behavior
+* do **not** change width/layout
+* do **not** rewrite shared multi-select code globally
+* do **not** break working Buyer fields while fixing required-field logic
+
+If a Select2/custom field needs validation support, add the smallest field-safe logic necessary.
+
+---
+
+## STEP 14 — TEST THE FULL BUYER UX
+
+Run these exact tests for **Hire a Buyer’s Agent**:
+
+### Test A — blank submit
+
+Leave many required fields blank and click Submit
+Expected:
+
+* submit blocked
+* banner lists every missing required field
+* goes to first missing field
+
+### Test B — guided correction
+
+Fill the first missing field
+Expected:
+
+* stays in correction flow
+* goes to next missing field
+* does not snap back to final tab
+
+### Test C — cross-tab missing fields
+
+Leave required fields blank on earlier tabs
+Expected:
+
+* they still appear in the banner
+* they still block submit
+* user is guided back to them
+
+### Test D — final completion
+
+Continue until all required fields are filled
+Expected:
+
+* correction mode exits cleanly
+* no forced tab jumps remain
+
+### Test E — final valid submit
+
+After all required fields are complete, click Submit
+Expected:
+
+* Livewire `store()` runs
+* listing submits successfully
+
+### Test F — conditional fields
+
+Trigger conditional Buyer-only fields and verify:
+
+* they block submit only when relevant
+* they do not block when hidden/irrelevant
+
+---
+
+## STEP 15 — DO NOT BREAK EXISTING BUYER FEATURES
+
+Keep all of these intact:
+
+* current Buyer tab structure
+* current Select2 field behavior
+* current placeholders/tooltips/icons
+* current dynamic field visibility logic
+* current draft/save/store behavior
+* current data structure
+* current listing/review flow
+* current Buyer-specific field wording
+
+This is a required-field enforcement + banner + guided correction enhancement only.
+
+---
+
+## STEP 16 — RETURN A FINAL REPORT
+
+After implementation, return:
+
+1. exact files changed
+2. full Buyer required-field matrix
+3. exact Buyer field-label map added
+4. exact missing-field detection logic added/updated
+5. exact correction-mode logic added/updated
+6. proof incomplete Buyer submit is blocked
+7. proof banner lists every missing required Buyer field
+8. proof guided correction works across tabs
+9. proof final valid submit still reaches `store()`
+10. confirmation Tenant, Landlord, and Seller flows were not touched
+
+---
+
+## IMPORTANT
+
+The final behavior for **Hire a Buyer’s Agent** should match the finalized **Tenant required-field format**:
+
+* all required fields truly required
+* full missing-fields banner
+* exact field names
+* cross-tab detection
+* guided correction through each missing field
+* no snap-back
+* valid final submit works
+
+---
+
+If you want, I can also make you a **shorter version** written in your usual Replit style with less explanation and more hard-stop implementation language.
