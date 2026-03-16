@@ -4564,13 +4564,15 @@ $lease_types = [
                 'property_items':          'Acceptable Property Style',
                 'target_closing_date':     'Target Closing Date',
                 'maximum_budget':          'Maximum Budget',
-                'offered_financing':       'Offered Financing',
+                'offered_financing':       'Offered Financing/Currency',
                 'tenant_require':          'Furnishings Needed',
                 'pets':                    'Pets',
                 'real_estate_purchase':    'Business & Real Estate Purchase Requirements',
                 // Seller-specific fields
                 'sale_provision':          'Special Sale Provision',
                 'current_status':          "Seller's Current Status",
+                // Buyer-specific labels
+                'buyer_current_status':    "Buyer's Current Status",
             };
 
             // Returns the canonical property key for a field: wire:model value first,
@@ -4594,6 +4596,9 @@ $lease_types = [
                     if (key === 'property_items')   return 'Property Style';
                     if (key === 'maximum_budget')   return 'Desired Sale Price';
                     if (key === 'offered_financing') return 'Offered Financing/Currency';
+                }
+                if (typeof CURRENT_USER_TYPE !== 'undefined' && CURRENT_USER_TYPE === 'buyer') {
+                    if (key === 'current_status')   return "Buyer's Current Status";
                 }
                 if (key === 'property_type' && typeof CURRENT_USER_TYPE !== 'undefined' &&
                     (CURRENT_USER_TYPE === 'landlord' || CURRENT_USER_TYPE === 'seller')) {
@@ -4742,8 +4747,7 @@ $lease_types = [
                                         items.push({ field: _dllElGi || document.body, tab: _dllTabGi, fieldName: TENANT_FIELD_LABELS['desired_lease_length'] || 'Desired Lease Term', key: 'desired_lease_length' });
                                     }
                                 } else if (_curUTgi === 'buyer') {
-                                    // Buyer-specific Select2 multi-selects that are wire:ignore — check Livewire state.
-                                    // property_items: required when property_type is selected
+                                    // Buyer — property_items: Select2 multi-select (wire:ignore), required when property_type is selected
                                     var _ptValBuyer = _comp.get('property_type');
                                     if (_ptValBuyer && _ptValBuyer !== '') {
                                         var _piValBuyer = _comp.get('property_items');
@@ -4762,7 +4766,8 @@ $lease_types = [
                                             items.push({ field: _piElBuyer || document.body, tab: _piTabBuyer, fieldName: TENANT_FIELD_LABELS['property_items'] || 'Acceptable Property Style', key: 'property_items' });
                                         }
                                     }
-                                    // offered_financing: always required for buyer
+
+                                    // Buyer — offered_financing: Select2 multi-select (wire:ignore), always required
                                     var _ofValBuyer = _comp.get('offered_financing');
                                     if (typeof _ofValBuyer === 'string') { try { _ofValBuyer = JSON.parse(_ofValBuyer); } catch(exB2) {} }
                                     var _ofEmptyBuyer = !_ofValBuyer || (Array.isArray(_ofValBuyer) && _ofValBuyer.length === 0) || _ofValBuyer === '' || _ofValBuyer === '[]';
@@ -4776,7 +4781,61 @@ $lease_types = [
                                     if (_ofEmptyBuyer && !items.some(function(i) { return i.key === 'offered_financing'; })) {
                                         var _ofElBuyer = document.getElementById('offered_financing');
                                         var _ofTabBuyer = _ofElBuyer ? _ofElBuyer.closest('.tab-pane') : null;
-                                        items.push({ field: _ofElBuyer || document.body, tab: _ofTabBuyer, fieldName: TENANT_FIELD_LABELS['offered_financing'] || 'Offered Financing', key: 'offered_financing' });
+                                        items.push({ field: _ofElBuyer || document.body, tab: _ofTabBuyer, fieldName: TENANT_FIELD_LABELS['offered_financing'] || 'Offered Financing/Currency', key: 'offered_financing' });
+                                    }
+
+                                    // Buyer — bedrooms: required for Residential only (Livewire check — conditional render)
+                                    var _ptBuyer2 = _ptValBuyer || _comp.get('property_type');
+                                    if (_ptBuyer2 === 'Residential') {
+                                        var _bedroomsValB = _comp.get('bedrooms');
+                                        if ((!_bedroomsValB || _bedroomsValB === '') && !items.some(function(i) { return i.key === 'bedrooms'; })) {
+                                            var _bedroomsElB = document.getElementById('bedrooms');
+                                            var _bedroomsTabB = _bedroomsElB ? _bedroomsElB.closest('.tab-pane') : null;
+                                            items.push({ field: _bedroomsElB || document.body, tab: _bedroomsTabB, fieldName: TENANT_FIELD_LABELS['bedrooms'] || 'Minimum Bedrooms Needed', key: 'bedrooms' });
+                                        }
+                                    }
+
+                                    // Buyer — bathrooms: required for Residential, Commercial, Business
+                                    if (_ptBuyer2 === 'Residential' || _ptBuyer2 === 'Commercial' || _ptBuyer2 === 'Business') {
+                                        var _bathroomsValB = _comp.get('bathrooms');
+                                        if ((!_bathroomsValB || _bathroomsValB === '') && !items.some(function(i) { return i.key === 'bathrooms'; })) {
+                                            var _bathroomsElB = document.getElementById('bathrooms');
+                                            var _bathroomsTabB = _bathroomsElB ? _bathroomsElB.closest('.tab-pane') : null;
+                                            items.push({ field: _bathroomsElB || document.body, tab: _bathroomsTabB, fieldName: TENANT_FIELD_LABELS['bathrooms'] || 'Minimum Bathrooms Needed', key: 'bathrooms' });
+                                        }
+                                    }
+
+                                    // Buyer — pets: required for Residential and Income
+                                    if (_ptBuyer2 === 'Residential' || _ptBuyer2 === 'Income') {
+                                        var _petsValB = _comp.get('pets');
+                                        if ((!_petsValB || _petsValB === '') && !items.some(function(i) { return i.key === 'pets'; })) {
+                                            var _petsElB = document.getElementById('pets') || document.getElementById('pets_income');
+                                            var _petsTabB = _petsElB ? _petsElB.closest('.tab-pane') : null;
+                                            items.push({ field: _petsElB || document.body, tab: _petsTabB, fieldName: TENANT_FIELD_LABELS['pets'] || 'Pets', key: 'pets' });
+                                        }
+                                    }
+
+                                    // Buyer — real_estate_purchase: required for Business only
+                                    if (_ptBuyer2 === 'Business') {
+                                        var _repValB = _comp.get('real_estate_purchase');
+                                        if ((!_repValB || _repValB === '') && !items.some(function(i) { return i.key === 'real_estate_purchase'; })) {
+                                            var _repElB = document.querySelector('[wire\\:model="real_estate_purchase"]');
+                                            var _repTabB = _repElB ? _repElB.closest('.tab-pane') : null;
+                                            items.push({ field: _repElB || document.body, tab: _repTabB, fieldName: TENANT_FIELD_LABELS['real_estate_purchase'] || 'Business & Real Estate Purchase Requirements', key: 'real_estate_purchase' });
+                                        }
+                                    }
+
+                                    // Buyer — current_status: no required HTML attr — hybrid DOM+Livewire check
+                                    var _csElBuyer = document.querySelector('[wire\\:model="current_status"]');
+                                    var _csDomValBuyer = _csElBuyer ? _csElBuyer.value : null;
+                                    var _csEmptyBuyer = !_csDomValBuyer || _csDomValBuyer.trim() === '';
+                                    if (_csEmptyBuyer) {
+                                        var _csLwValBuyer = _comp.get('current_status');
+                                        if (_csLwValBuyer && typeof _csLwValBuyer === 'string' && _csLwValBuyer.trim() !== '') _csEmptyBuyer = false;
+                                    }
+                                    if (_csEmptyBuyer && !items.some(function(i) { return i.key === 'current_status'; })) {
+                                        var _csTabBuyer = _csElBuyer ? _csElBuyer.closest('.tab-pane') : null;
+                                        items.push({ field: _csElBuyer || document.body, tab: _csTabBuyer, fieldName: "Buyer's Current Status", key: 'current_status' });
                                     }
                                 } else if (_curUTgi === 'seller') {
                                     // Seller: sale_provision is a Select2 multi-select (wire:ignore) — check Livewire state.
@@ -4956,8 +5015,8 @@ $lease_types = [
                 const _submitUserType = typeof CURRENT_USER_TYPE !== 'undefined' ? CURRENT_USER_TYPE : '';
 
                 requiredFields.forEach(field => {
-                    if (_submitUserType === 'tenant' || _submitUserType === 'landlord' || _submitUserType === 'seller') {
-                        // Tenant/Landlord/Seller flow: check required fields across ALL tabs.
+                    if (_submitUserType === 'tenant' || _submitUserType === 'landlord' || _submitUserType === 'seller' || _submitUserType === 'buyer') {
+                        // Tenant/Landlord/Seller/Buyer flow: check required fields across ALL tabs.
                         // Only skip fields that are hidden by conditional rendering within the tab.
                         if (isTenantFieldHiddenWithinTab(field)) return;
 
@@ -4978,19 +5037,6 @@ $lease_types = [
                         if (isEmpty) {
                             const _fKey = resolveTenantFieldKey(field);
                             invalidItems.push({ field, tab: field.closest('.tab-pane'), fieldName: resolveTenantFieldLabel(field), key: _fKey });
-                        }
-                    } else {
-                        // Other flows (buyer): existing behavior unchanged.
-                        if (!isFieldValid(field)) {
-                            const tab = field.closest('.tab-pane');
-                            const label = field.closest('.form-group')?.querySelector('label');
-                            let fieldName = '';
-                            if (label) {
-                                fieldName = label.textContent.replace(/[*:]/g, '').trim();
-                            } else {
-                                fieldName = field.getAttribute('placeholder') || field.name || field.id || 'Unknown field';
-                            }
-                            invalidItems.push({ field, tab, fieldName });
                         }
                     }
                 });
@@ -5161,6 +5207,87 @@ $lease_types = [
                                             invalidItems.push({ field: _sElSub || document.body, tab: _sTabSub, fieldName: chkSub.label, key: chkSub.prop });
                                         }
                                     });
+                                } else if (curUT === 'buyer') {
+                                    // Buyer — offered_financing: Select2 multi-select (wire:ignore)
+                                    var _ofValBSub = comp.get('offered_financing');
+                                    if (typeof _ofValBSub === 'string') { try { _ofValBSub = JSON.parse(_ofValBSub); } catch(eBF) {} }
+                                    var _ofEmptyBSub = !_ofValBSub || (Array.isArray(_ofValBSub) && _ofValBSub.length === 0) || _ofValBSub === '' || _ofValBSub === '[]';
+                                    if (_ofEmptyBSub) {
+                                        var $ofDomBSub = $('#offered_financing');
+                                        if ($ofDomBSub.length) {
+                                            var _ofDomBSub = $ofDomBSub.val();
+                                            if (_ofDomBSub && Array.isArray(_ofDomBSub) && _ofDomBSub.length > 0) _ofEmptyBSub = false;
+                                        }
+                                    }
+                                    if (_ofEmptyBSub && !invalidItems.some(function(i) { return i.key === 'offered_financing'; })) {
+                                        var _ofElBSub = document.getElementById('offered_financing');
+                                        var _ofTabBSub = _ofElBSub ? _ofElBSub.closest('.tab-pane') : null;
+                                        invalidItems.push({ field: _ofElBSub || document.body, tab: _ofTabBSub, fieldName: 'Offered Financing/Currency', key: 'offered_financing' });
+                                    }
+
+                                    // Buyer — property_items: Select2 multi (required when property_type selected)
+                                    var _ptValBSub = comp.get('property_type');
+                                    if (_ptValBSub && _ptValBSub !== '') {
+                                        var _piValBSub = comp.get('property_items');
+                                        if (typeof _piValBSub === 'string') { try { _piValBSub = JSON.parse(_piValBSub); } catch(ePIS) {} }
+                                        var _piEmptyBSub = !_piValBSub || (Array.isArray(_piValBSub) && _piValBSub.length === 0) || _piValBSub === '[]';
+                                        if (_piEmptyBSub) {
+                                            var $piDomBSub = $('#property_items');
+                                            if ($piDomBSub.length) {
+                                                var _piDomBSub = $piDomBSub.val();
+                                                if (_piDomBSub && Array.isArray(_piDomBSub) && _piDomBSub.length > 0) _piEmptyBSub = false;
+                                            }
+                                        }
+                                        if (_piEmptyBSub && !invalidItems.some(function(i) { return i.key === 'property_items'; })) {
+                                            var _piElBSub = document.getElementById('property_items');
+                                            var _piTabBSub = _piElBSub ? _piElBSub.closest('.tab-pane') : null;
+                                            invalidItems.push({ field: _piElBSub || document.body, tab: _piTabBSub, fieldName: TENANT_FIELD_LABELS['property_items'] || 'Acceptable Property Style', key: 'property_items' });
+                                        }
+                                    }
+
+                                    // Buyer — bedrooms (Residential), bathrooms (Residential/Commercial/Business),
+                                    // pets (Residential/Income), real_estate_purchase (Business)
+                                    if (_ptValBSub === 'Residential') {
+                                        var _bedroomsVBS = comp.get('bedrooms');
+                                        if ((!_bedroomsVBS || _bedroomsVBS === '') && !invalidItems.some(function(i) { return i.key === 'bedrooms'; })) {
+                                            var _bedroomsElBS = document.getElementById('bedrooms');
+                                            invalidItems.push({ field: _bedroomsElBS || document.body, tab: _bedroomsElBS ? _bedroomsElBS.closest('.tab-pane') : null, fieldName: TENANT_FIELD_LABELS['bedrooms'] || 'Minimum Bedrooms Needed', key: 'bedrooms' });
+                                        }
+                                    }
+                                    if (_ptValBSub === 'Residential' || _ptValBSub === 'Commercial' || _ptValBSub === 'Business') {
+                                        var _bathroomsVBS = comp.get('bathrooms');
+                                        if ((!_bathroomsVBS || _bathroomsVBS === '') && !invalidItems.some(function(i) { return i.key === 'bathrooms'; })) {
+                                            var _bathroomsElBS = document.getElementById('bathrooms');
+                                            invalidItems.push({ field: _bathroomsElBS || document.body, tab: _bathroomsElBS ? _bathroomsElBS.closest('.tab-pane') : null, fieldName: TENANT_FIELD_LABELS['bathrooms'] || 'Minimum Bathrooms Needed', key: 'bathrooms' });
+                                        }
+                                    }
+                                    if (_ptValBSub === 'Residential' || _ptValBSub === 'Income') {
+                                        var _petsVBS = comp.get('pets');
+                                        if ((!_petsVBS || _petsVBS === '') && !invalidItems.some(function(i) { return i.key === 'pets'; })) {
+                                            var _petsElBS = document.getElementById('pets') || document.getElementById('pets_income');
+                                            invalidItems.push({ field: _petsElBS || document.body, tab: _petsElBS ? _petsElBS.closest('.tab-pane') : null, fieldName: TENANT_FIELD_LABELS['pets'] || 'Pets', key: 'pets' });
+                                        }
+                                    }
+                                    if (_ptValBSub === 'Business') {
+                                        var _repVBS = comp.get('real_estate_purchase');
+                                        if ((!_repVBS || _repVBS === '') && !invalidItems.some(function(i) { return i.key === 'real_estate_purchase'; })) {
+                                            var _repElBS = document.querySelector('[wire\\:model="real_estate_purchase"]');
+                                            invalidItems.push({ field: _repElBS || document.body, tab: _repElBS ? _repElBS.closest('.tab-pane') : null, fieldName: TENANT_FIELD_LABELS['real_estate_purchase'] || 'Business & Real Estate Purchase Requirements', key: 'real_estate_purchase' });
+                                        }
+                                    }
+
+                                    // Buyer — current_status: no required HTML attr — hybrid DOM+Livewire check
+                                    var _csElBSub = document.querySelector('[wire\\:model="current_status"]');
+                                    var _csDomBSub = _csElBSub ? _csElBSub.value : null;
+                                    var _csEmptyBSub = !_csDomBSub || _csDomBSub.trim() === '';
+                                    if (_csEmptyBSub) {
+                                        var _csLwBSub = comp.get('current_status');
+                                        if (_csLwBSub && typeof _csLwBSub === 'string' && _csLwBSub.trim() !== '') _csEmptyBSub = false;
+                                    }
+                                    if (_csEmptyBSub && !invalidItems.some(function(i) { return i.key === 'current_status'; })) {
+                                        var _csTabBSub = _csElBSub ? _csElBSub.closest('.tab-pane') : null;
+                                        invalidItems.push({ field: _csElBSub || document.body, tab: _csTabBSub, fieldName: "Buyer's Current Status", key: 'current_status' });
+                                    }
                                 }
                             }
                         }
@@ -5186,42 +5313,21 @@ $lease_types = [
                     });
                     banner.classList.remove('d-none');
 
-                    if (_submitUserType === 'tenant' || _submitUserType === 'landlord' || _submitUserType === 'seller') {
-                        // Tenant/Landlord/Seller flow: enter guided correction mode.
+                    if (_submitUserType === 'tenant' || _submitUserType === 'landlord' || _submitUserType === 'seller' || _submitUserType === 'buyer') {
+                        // All roles: enter guided correction mode.
                         // tenantNavigateToItem() switches the Bootstrap tab AND syncs
                         // server-side $activeTab so Livewire morphdom cannot snap back.
                         _tenantCorrectionMode = true;
                         _tenantMissingItems = deduplicatedItems;
                         tenantNavigateToItem(deduplicatedItems[0]);
-                    } else {
-                        // Other flows (buyer): original navigation behavior unchanged.
-                        const firstItem = deduplicatedItems[0];
-                        if (firstItem && firstItem.tab) {
-                            const tabId = firstItem.tab.id;
-                            const tabTrigger = document.querySelector('[data-bs-target="#' + tabId + '"], [href="#' + tabId + '"]');
-                            if (tabTrigger) {
-                                const bsTab = new bootstrap.Tab(tabTrigger);
-                                bsTab.show();
-                            }
-                        }
-                        setTimeout(() => {
-                            if (firstItem && firstItem.field) {
-                                firstItem.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                if (typeof firstItem.field.focus === 'function' && firstItem.field.tagName !== 'DIV') {
-                                    firstItem.field.focus();
-                                }
-                                firstItem.field.classList.add('is-invalid');
-                            }
-                            banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }, 300);
                     }
 
                     return false;
                 }
 
-                // Tenant/Landlord/Seller: always clear correction mode on a valid submit so the
+                // All roles: always clear correction mode on a valid submit so the
                 // message.processed hook never interferes with the store() action.
-                if (_submitUserType === 'tenant' || _submitUserType === 'landlord' || _submitUserType === 'seller') {
+                if (_submitUserType === 'tenant' || _submitUserType === 'landlord' || _submitUserType === 'seller' || _submitUserType === 'buyer') {
                     _tenantCorrectionMode = false;
                     _tenantMissingItems = [];
                 }

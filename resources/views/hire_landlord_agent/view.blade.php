@@ -550,10 +550,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 <span class="removeBold">{{ @$auction->get->bedrooms !== 'Other' ? @$auction->get->bedrooms : @$auction->get->other_bedrooms }}</span>
             </div>
             @endif
-            @if (@$auction->get->bathrooms != null)
+            @php
+                $bathroomDisplay = @$auction->get->bathrooms !== 'Other' ? @$auction->get->bathrooms : @$auction->get->other_bathrooms;
+            @endphp
+            @if (\App\Helpers\ListingDisplayHelper::hasValue($bathroomDisplay))
             <div class="col-md-12 col-12 pt-2 fw-bold">
                 Bathrooms:
-                <span class="removeBold">{{ @$auction->get->bathrooms !== 'Other' ? @$auction->get->bathrooms : @$auction->get->other_bathrooms }}</span>
+                <span class="removeBold">{{ $bathroomDisplay }}</span>
             </div>
             @endif
 
@@ -629,15 +632,15 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
 
             @if ($isResidential)
-            @if (@$auction->get->tenant_require != null)
+            @php
+                $tenantRequireRaw = @$auction->get->tenant_require;
+                $tenantRequireVal = is_string($tenantRequireRaw) ? trim(trim($tenantRequireRaw, '"')) : '';
+            @endphp
+            @if (!empty($tenantRequireVal) && $tenantRequireVal !== 'null')
             <div class="col-md-12 col-12 pt-2 fw-bold">
                 Furnishings:
                 <span class="removeBold">
-                    <?php
-                    $tenantRequire = @$auction->get->tenant_require;
-                    $tenantRequire = trim($tenantRequire, '"');
-                    ?>
-                    <span class="removeBold badge bg-secondary">{{ $tenantRequire }}</span>
+                    <span class="removeBold badge bg-secondary">{{ $tenantRequireVal }}</span>
                 </span>
             </div>
             @endif
@@ -1107,11 +1110,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             $leaseTermItems = \App\Helpers\ListingDisplayHelper::normalizeList($termsOfLease, @$auction->get->custom_lease_term);
         @endphp
         @if (!empty($leaseTermItems))
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-             Terms of Lease:
-            @foreach ($leaseTermItems as $lt)
-                <span class="removeBold badge bg-secondary">{{ $lt }}</span>
-            @endforeach
+        <div class="row" style="flex-wrap: wrap;">
+            <div class="col-12 fw-bold pt-2">
+                Terms of Lease:
+                @foreach ($leaseTermItems as $lt)
+                    <span class="removeBold badge bg-secondary">{{ $lt }}</span>
+                @endforeach
+            </div>
         </div>
         @endif
 
@@ -1136,10 +1141,12 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             $desiredLeaseTermItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->desired_lease_length, @$auction->get->other_lease_term);
         @endphp
         @if (!empty($desiredLeaseTermItems))
-        <div class="col-md-12 col-12 pt-2 fw-bold"> Desired Lease Term:
-            @foreach ($desiredLeaseTermItems as $item)
-                <span class="removeBold badge bg-secondary">{{ $item }}</span>
-            @endforeach
+        <div class="row" style="flex-wrap: wrap;">
+            <div class="col-12 fw-bold pt-2">Desired Lease Term:
+                @foreach ($desiredLeaseTermItems as $item)
+                    <span class="removeBold badge bg-secondary">{{ $item }}</span>
+                @endforeach
+            </div>
         </div>
         @endif
         @php
@@ -1426,7 +1433,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         <div class="broker-compensation-section">
 
         <!-- Landlord's Broker Compensation Sub-section -->
+        @if (@$auction->get->purchase_fee_type != null)
         <h5 class="mt-3 mb-2"><strong>Landlord's Broker Compensation:</strong></h5>
+        @endif
 
         @if (@$auction->get->purchase_fee_type != null)
         @php
@@ -1530,7 +1539,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endif
 
         <!-- Payment Timing & Renewal Terms Sub-section -->
+        @if (@$auction->get->broker_fee_timing != null || @$auction->get->renewal_fee_type != null || @$auction->get->expansion_commission_percentage != null)
         <h5 class="mt-3 mb-2"><strong>Payment Timing & Renewal Terms:</strong></h5>
+        @endif
 
         @if (@$auction->get->broker_fee_timing != null)
         @php
@@ -1635,7 +1646,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
         <!-- Property Management Sub-section -->
+        @if (@$auction->get->interested_in_property_management != null)
         <h5 class="mt-3 mb-2"><strong>Property Management:</strong></h5>
+        @endif
 
         @if (@$auction->get->interested_in_property_management != null)
         <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -1673,7 +1686,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
         <!-- Lease-Option Details Sub-section -->
+        @if (@$auction->get->interested_lease_option_agreement != null)
         <h5 class="mt-3 mb-2"><strong>Lease-Option Details:</strong></h5>
+        @endif
 
         @if (@$auction->get->interested_lease_option_agreement != null)
         <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -1713,7 +1728,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
         <!-- Purchase Fee Details Sub-section -->
+        @if (@$auction->get->interested_in_selling != null)
         <h5 class="mt-3 mb-2"><strong>Purchase Fee Details:</strong></h5>
+        @endif
 
         @if (@$auction->get->interested_in_selling != null)
         <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -1752,7 +1769,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
         <!-- Legal Terms Sub-section -->
+        @if (@$auction->get->protection_period != null || @$auction->get->agency_agreement_timeframe != null || ($isResidential && @$auction->get->early_termination_fee_option != null))
         <h5 class="mt-3 mb-2"><strong>Legal Terms:</strong></h5>
+        @endif
 
         @if (@$auction->get->protection_period != null)
         <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -1783,7 +1802,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
         <!-- Brokerage Relationship Sub-section -->
+        @if (@$auction->get->brokerage_relationship != null)
         <h5 class="mt-3 mb-2"><strong>Brokerage Relationship:</strong></h5>
+        @endif
 
         @if (@$auction->get->brokerage_relationship != null)
         <div class="col-md-12 col-12 pt-2 fw-bold">

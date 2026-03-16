@@ -430,15 +430,16 @@
         </div>
         <span class="error mt-2" id="bathrooms_error"></span>
     </div>
-    <!-- Other Bathrooms Input (Hidden by Default) -->
-    <div class="form-group other_bathrooms d-none">
-        {{-- <label class="fw-bold">Minimum Bathrooms Needed:</label> --}}
+    @if ($bathrooms === 'Other')
+    <!-- Other Bathrooms Input -->
+    <div class="form-group other_bathrooms">
         <div class="input-cover">
             <input type="number" wire:model="other_bathrooms" class="form-control has-icon"
                 data-icon="fa-solid fa-bath" placeholder="Enter number of bathrooms (e.g., 11)">
         </div>
         <span class="error mt-2" id="other_bathrooms_error"></span>
     </div>
+    @endif
 @endif
 <!-- Minimum Heated Sqft Needed -->
 @if ($property_type === 'Residential Property')
@@ -607,8 +608,9 @@
         </div>
     </div>
 
+    @if ($carport_needed == 'Yes')
     <!-- Carport Spaces Input (Shown Only When "Yes" is Selected) -->
-    <div class="form-group d-none" id="other-carport-needed">
+    <div class="form-group" id="other-carport-needed">
         <label class="fw-bold">Number of Carport Spaces:</label>
         <div class="input-cover">
             <input type="number" min="1" wire:model="other_carport_needed" class="form-control has-icon"
@@ -616,6 +618,7 @@
         </div>
         <span class="error mt-2" id="other_carport_needed_error"></span>
     </div>
+    @endif
 @endif
 
 <!-- Garage Spaces Needed (Residential Only) -->

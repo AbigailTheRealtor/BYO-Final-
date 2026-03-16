@@ -3459,10 +3459,11 @@ class TenantAgentAuction extends Component
             $rules['offered_financing']   = 'required|array|min:1';
 
             // Tab 7 – Buyer Information
-            $rules['first_name']   = 'required|string|max:255';
-            $rules['last_name']    = 'required|string|max:255';
-            $rules['phone_number'] = 'required';
-            $rules['email']        = 'required|email';
+            $rules['first_name']     = 'required|string|max:255';
+            $rules['last_name']      = 'required|string|max:255';
+            $rules['phone_number']   = 'required';
+            $rules['email']          = 'required|email';
+            $rules['current_status'] = 'required';
         }
 
         // Seller-specific required fields (full_service only)

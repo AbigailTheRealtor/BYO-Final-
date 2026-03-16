@@ -1559,8 +1559,11 @@
 
             // Reinitialize after Livewire updates
             Livewire.hook('message.processed', () => {
-                toggleSpaceInput('carport-needed', 'other-carport-needed');
-                toggleSpaceInput('garage-needed', 'other-garage-needed');
+                setTimeout(() => {
+                    attachBathroomsDropdownListener();
+                    toggleSpaceInput('carport-needed', 'other-carport-needed');
+                    toggleSpaceInput('garage-needed', 'other-garage-needed');
+                }, 150);
             });
 
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {

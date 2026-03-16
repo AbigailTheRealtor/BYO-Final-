@@ -1647,6 +1647,35 @@ $tenantPays = [
                 });
             }
 
+            // Initialize Desired Lease Term Select2 for edit mode
+            function initEditLeaseTermSelect2() {
+                var $dlt = $('.lease_term_options');
+                if (!$dlt.length || $dlt.hasClass('select2-hidden-accessible')) return;
+                $dlt.select2({
+                    placeholder: "Select desired lease term",
+                    allowClear: true,
+                });
+                var savedValues = @json($desired_lease_length ?? []);
+                if (savedValues && savedValues.length) {
+                    $dlt.val(savedValues).trigger('change.select2');
+                }
+                var otherWrapper = document.querySelector('.other_lease_term_wrapper');
+                if (otherWrapper) {
+                    var current = $dlt.val() || [];
+                    otherWrapper.style.display = current.includes('Other') ? 'block' : 'none';
+                }
+                $dlt.off('change.ltsSync').on('change.ltsSync', function() {
+                    var selectedValues = $(this).val() || [];
+                    @this.set('desired_lease_length', selectedValues);
+                    var wrapper = document.querySelector('.other_lease_term_wrapper');
+                    if (wrapper) {
+                        wrapper.style.display = selectedValues.includes('Other') ? 'block' : 'none';
+                    }
+                });
+            }
+
+            initEditLeaseTermSelect2();
+
             const photoInput = document.getElementById("photo-input");
             const photoError = document.getElementById("photo-error");
             const videoInput = document.getElementById("video-input");
@@ -2429,6 +2458,21 @@ $tenantPays = [
 
                         setupGlobalListeners();
                         updateSaveButton();
+
+                        // Re-init Desired Lease Term Select2 after Livewire re-render
+                        initEditLeaseTermSelect2();
+
+                        // Re-attach Bathrooms Other listener after Livewire re-render
+                        attachBathroomsDropdownListener();
+
+                        // Re-check Carport spaces input visibility after Livewire re-render
+                        var carportSelect = document.getElementById('carport-needed');
+                        var carportInput = document.getElementById('other-carport-needed');
+                        if (carportSelect && carportInput) {
+                            if (carportSelect.value === 'Yes') {
+                                carportInput.classList.remove('d-none');
+                            }
+                        }
                     }, 300);
                 });
             }
