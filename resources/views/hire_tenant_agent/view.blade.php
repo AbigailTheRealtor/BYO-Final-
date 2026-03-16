@@ -527,6 +527,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             'Partially updated (some older finishes OK)' => 'Partially Updated',
                             'Older but clean & well maintained' => 'Older but Clean & Well Maintained',
                             'No preference (open to any condition)' => 'No Preference',
+                            'Updated/Renovated' => 'Updated / Renovated',
+                            'Updated / Renovated' => 'Updated / Renovated',
+                            'Older but Clean' => 'Older but Clean & Well Maintained',
                         ];
 
                         if (is_array($rawConditions)) {

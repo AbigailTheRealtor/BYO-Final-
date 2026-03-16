@@ -4165,6 +4165,21 @@ $lease_types = [
         // Buyer Preferences Select2 Re-init
         initSelect2('#property_items', 'property_items', '.other_property_items_wrapper');
         initSelect2('#condition_prop_buyer', 'condition_prop_buyer', '.other_property_condition_wrapper');
+        var _cpbUT = (@this.get('user_type') || '').toLowerCase();
+        if (_cpbUT === 'tenant') {
+            var _cpbEl = $('.condition_prop_buyer');
+            if (_cpbEl.length && _cpbEl.hasClass('select2-hidden-accessible')) {
+                var _cpbLwVals = @this.get('condition_prop_buyer') || [];
+                var _cpbDomVals = (_cpbEl.val() || []).slice().sort().join(',');
+                var _cpbLwSorted = _cpbLwVals.slice().sort().join(',');
+                var _cpbOpen = false;
+                try { _cpbOpen = _cpbEl.data('select2').isOpen(); } catch(e) {}
+                if (!_cpbOpen && _cpbDomVals !== _cpbLwSorted) {
+                    _cpbEl.val(_cpbLwVals).trigger('change.select2');
+                    toggleOtherPropertyCondition(_cpbLwVals);
+                }
+            }
+        }
         initSelect2('#sale_provision', 'sale_provision', '.sale_provision_other_wrapper');
         initSelect2('#offered_financing', 'offered_financing', '.other_financing_wrapper');
         if ($('#sale_provision').length) { applySellerProvisionVisibility(); applyBuyerProvisionVisibility(); }
