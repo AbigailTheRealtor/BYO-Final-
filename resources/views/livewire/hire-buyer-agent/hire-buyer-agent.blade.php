@@ -2433,6 +2433,26 @@
                         existingCountiesError2.remove();
                     }
                 }
+
+                // Offered Financing is required in purchasing-terms — Select2 removes 'required' so check manually
+                if (currentTabContent.id === 'purchasing-terms') {
+                    var ofErrorSpan2 = currentTabContent.querySelector('#offered_financing_error');
+                    var ofJqVal = (typeof jQuery !== 'undefined') ? jQuery('#offered_financing').val() : null;
+                    var ofIsEmpty = !ofJqVal || (Array.isArray(ofJqVal) && ofJqVal.length === 0);
+                    if (ofIsEmpty) {
+                        var ofNativeEl = currentTabContent.querySelector('#offered_financing');
+                        if (ofNativeEl && ofNativeEl.selectedOptions && ofNativeEl.selectedOptions.length > 0) {
+                            ofIsEmpty = false;
+                        }
+                    }
+                    if (ofIsEmpty) {
+                        isValid = false;
+                        if (ofErrorSpan2) { ofErrorSpan2.textContent = 'This field is required.'; }
+                    } else {
+                        if (ofErrorSpan2) { ofErrorSpan2.textContent = ''; }
+                    }
+                }
+
                 if (currentTabContent.id === 'service-selection-and-pricing') {
                     const understandTerms = currentTabContent.querySelector('#understandTerms');
                     if (understandTerms && !understandTerms.checked) {
