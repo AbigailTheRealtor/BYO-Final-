@@ -1425,6 +1425,19 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
 
+        @php
+            $hasLandlordBrokerCompData = !empty(@$auction->get->purchase_fee_type)
+                || !empty(@$auction->get->tenant_broker_commission_structure)
+                || !empty(@$auction->get->broker_fee_timing)
+                || !empty(@$auction->get->renewal_fee_type)
+                || !empty(@$auction->get->protection_period)
+                || !empty(@$auction->get->agency_agreement_timeframe)
+                || !empty(@$auction->get->early_termination_fee_option)
+                || !empty(@$auction->get->interested_in_selling)
+                || !empty(@$auction->get->interested_lease_option_agreement)
+                || !empty(@$auction->get->interested_in_property_management);
+        @endphp
+        @if ($hasLandlordBrokerCompData)
         <hr />
         <div class="card-header section-header">
             <h4 class="section-title">Broker Compensation & Agency Agreement Terms</h4>
@@ -1825,6 +1838,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endif
 
         </div> <!-- end broker-compensation-section -->
+        @endif
         <hr />
         <div class="card-header">
             <h4>Landlord's Info </h4>

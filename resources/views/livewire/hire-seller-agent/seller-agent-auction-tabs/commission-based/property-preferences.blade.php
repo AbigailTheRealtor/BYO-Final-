@@ -887,7 +887,7 @@
         <span class="error mt-2" id="bathrooms_error"></span>
     </div>
     <!-- Other Bathrooms Input (Shows only when Other is selected) -->
-    @if ($bathrooms === 'Other')
+    @if ($this->bathrooms === 'Other')
     <div class="form-group other_bathrooms">
         <div class="input-cover">
             <input type="number" wire:model.defer="other_bathrooms" class="form-control has-icon"

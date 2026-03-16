@@ -269,7 +269,7 @@
 
 <!-- Offered Financing/Currency -->
 <div class="form-group mt-3">
-    <label class="fw-bold">Offered Financing/Currency: <span class="text-danger">*</span></label>
+    <label class="fw-bold">Offered Financing/Currency:</label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Select the types of financing or currency the Seller is open to accepting — such as cash, conventional loans, seller financing, lease options, or alternative methods like cryptocurrency or exchange/trade.">
@@ -289,7 +289,7 @@
     <div class="input-cover" wire:ignore wire:key="offered-financing-cover">
         <i class="input-icon fa-solid fa-money-bill-wave input-icon2"></i>
         <select id="offered_financing" class="form-control has-icon select2-multiple"
-            multiple required>
+            multiple>
             @foreach ($financing_options_seller as $option)
                 <option value="{{ $option['name'] }}" title="{{ $option['description'] }}" {{ in_array($option['name'], $offered_financing ?? []) ? 'selected' : '' }}>
                     {{ $option['name'] }}

@@ -1798,6 +1798,17 @@
                             </div>
                         @endif
 
+                        @php
+                            $hasSellerBrokerCompData = !empty(@$auction->get->purchase_fee_type)
+                                || !empty(@$auction->get->commission_structure)
+                                || !empty(@$auction->get->broker_fee_timing)
+                                || !empty(@$auction->get->protection_period)
+                                || !empty(@$auction->get->agency_agreement_timeframe)
+                                || !empty(@$auction->get->early_termination_fee_option)
+                                || !empty(@$auction->get->interested_purchase_fee_type)
+                                || !empty(@$auction->get->brokerage_relationship);
+                        @endphp
+                        @if ($hasSellerBrokerCompData)
                         <hr />
                         <div class="card-header section-header">
                             <h4 class="section-title">Broker Compensation & Agency Agreement Terms</h4>
@@ -2141,6 +2152,7 @@
                         @endif
 
                         </div>
+                        @endif
 
                         <hr />
                         <div class="card-header section-header">

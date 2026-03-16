@@ -1650,11 +1650,13 @@ $tenantPays = [
             // Initialize Desired Lease Term Select2 for edit mode
             function initEditLeaseTermSelect2() {
                 var $dlt = $('.lease_term_options');
-                if (!$dlt.length || $dlt.hasClass('select2-hidden-accessible')) return;
-                $dlt.select2({
-                    placeholder: "Select desired lease term",
-                    allowClear: true,
-                });
+                if (!$dlt.length) return;
+                if (!$dlt.hasClass('select2-hidden-accessible')) {
+                    $dlt.select2({
+                        placeholder: "Select desired lease term",
+                        allowClear: true,
+                    });
+                }
                 var savedValues = @json($desired_lease_length ?? []);
                 if (savedValues && savedValues.length) {
                     $dlt.val(savedValues).trigger('change.select2');

@@ -960,7 +960,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 </div>
                 @endif
 
-                @if (@$auction->get->broker_fee_timing != null)
                 @php
                     $brokerTimingMap = [
                         'full_execution' => 'Full amount upon execution of lease, sales contract, or other transfer agreement',
@@ -973,14 +972,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     } else {
                         $displayBrokerTiming = $brokerTimingMap[$rawBrokerTiming] ?? str_replace('_', ' ', ucfirst($rawBrokerTiming ?? ''));
                     }
-                @endphp
-                <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Payment Timing for Broker Fees:
-                    <span class="removeBold">{{ $displayBrokerTiming }}</span>
-                </div>
-                @endif
-
-                @php
                     $calendarDaysValue = collect([
                         @$auction->get->broker_fee_days_from_rent,
                         @$auction->get->broker_fee_days_after_lease,
@@ -988,10 +979,18 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         @$auction->get->broker_fee_days_after_due_event,
                     ])->filter(fn($v) => $v !== null && $v !== '')->first();
                 @endphp
-                @if ($calendarDaysValue)
+                @if ($rawBrokerTiming != null || $calendarDaysValue)
                 <div class="col-md-12 col-12 pt-2 fw-bold">
-                    Calendar Days to Pay:
-                    <span class="removeBold">{{ $calendarDaysValue }}</span>
+                    Payment Timing for Broker Fees:
+                    <span class="removeBold">
+                        @if ($rawBrokerTiming != null && $calendarDaysValue)
+                            {{ $displayBrokerTiming }} — {{ $calendarDaysValue }} calendar days to pay
+                        @elseif ($rawBrokerTiming != null)
+                            {{ $displayBrokerTiming }}
+                        @else
+                            {{ $calendarDaysValue }} calendar days to pay
+                        @endif
+                    </span>
                 </div>
                 @endif
 

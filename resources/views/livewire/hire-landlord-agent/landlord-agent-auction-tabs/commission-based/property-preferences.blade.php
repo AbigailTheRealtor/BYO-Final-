@@ -430,7 +430,7 @@
         </div>
         <span class="error mt-2" id="bathrooms_error"></span>
     </div>
-    @if ($bathrooms === 'Other')
+    @if ($this->bathrooms === 'Other')
     <!-- Other Bathrooms Input -->
     <div class="form-group other_bathrooms">
         <div class="input-cover">
