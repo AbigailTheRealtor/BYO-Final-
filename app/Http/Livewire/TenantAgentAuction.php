@@ -3465,6 +3465,50 @@ class TenantAgentAuction extends Component
             $rules['email']        = 'required|email';
         }
 
+        // Seller-specific required fields (full_service only)
+        if ($this->user_type === 'seller' && $this->service_type === 'full_service') {
+            // Tab 1 – Listing Details
+            $rules['desired_agent_hire_date'] = 'required|date';
+            $rules['meeting_Preference']      = 'required';
+
+            if ($this->auction_type === 'Bidding Period') {
+                $rules['auction_time'] = 'required';
+            }
+
+            // Tab 2 – Property Details
+            $rules['address']         = 'required|string';
+            $rules['property_city']   = 'required|string';
+            $rules['property_state']  = 'required|string';
+            $rules['property_county'] = 'required|string';
+            $rules['property_zip']    = 'required';
+            $rules['property_type']   = 'required';
+
+            if (!empty($this->property_type)) {
+                $rules['property_items'] = 'required|string';
+            }
+
+            if ($this->property_type !== 'Vacant Land') {
+                $rules['condition_prop'] = 'required';
+            }
+
+            // Tab 3 – Sale Terms
+            $rules['sale_provision']      = 'required|array|min:1';
+            $rules['target_closing_date'] = 'required';
+            $rules['maximum_budget']      = 'required';
+            $rules['offered_financing']   = 'required|array|min:1';
+
+            if ($this->property_type !== 'Vacant Land') {
+                $rules['occupant_status'] = 'required';
+            }
+
+            // Tab 7 – Seller Information
+            $rules['first_name']     = 'required|string|max:255';
+            $rules['last_name']      = 'required|string|max:255';
+            $rules['phone_number']   = 'required';
+            $rules['email']          = 'required|email';
+            $rules['current_status'] = 'required';
+        }
+
         if ($this->isDraft) {
             $filledRules = [];
             foreach ($rules as $field => $rule) {

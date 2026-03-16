@@ -1,0 +1,438 @@
+Yes — if it did not cover **Residential, Income, Commercial, Business, and Vacant Land**, then they likely were not working in the full correct Buyer flow or did not audit all Buyer property branches.
+
+Here is a **corrected, stronger Replit instruction block** with extra safeguards and an explicit warning to verify the **actual active Buyer file(s)** before touching anything.
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A BUYER’S AGENT ONLY — REQUIRED FIELDS MUST ALL BE FILLED BEFORE SUBMIT FOR RESIDENTIAL, INCOME, COMMERCIAL, BUSINESS, AND VACANT LAND
+
+## SCOPE
+
+This must be done for **Hire a Buyer’s Agent only** and must cover **all Buyer property categories**:
+
+* **Residential**
+* **Income**
+* **Commercial**
+* **Business**
+* **Vacant Land**
+
+The current behavior is still incorrect if the system does **not**:
+
+1. show **every single missing required field across all tabs**
+2. block submit until **all required fields are completed**
+3. guide the user through the missing required fields one by one
+4. behave the same way as the finalized **Hire a Tenant’s Agent** flow
+
+This task is **not done** unless Buyer works in the same format as Tenant.
+
+---
+
+## HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Only work on Hire a Buyer’s Agent flow.**
+2. **Do not modify Tenant, Landlord, or Seller flows.**
+3. **Do not rename database columns, Livewire properties, wire:model bindings, field IDs, field names, route names, or tab IDs.**
+4. **Do not run migrations.**
+5. **Do not change Select2 formatting, layout, placeholders, width, badge style, dropdown style, option styling, or any selection box UI structure.**
+6. **Do not do a broad Select2 rewrite.**
+7. **Do not refactor shared/global logic unless absolutely necessary, and if shared code must be touched, wrap it so it affects Buyer only.**
+8. **Do not weaken or change working Tenant validation/correction logic.**
+9. **Do not weaken or change working Landlord validation/correction logic.**
+10. **Do not change labels, placeholders, tooltips, icons, wording, field order, or display text unless strictly necessary for missing-field label output.**
+11. **Do not assume the correct file was already edited. Confirm the real active Buyer file(s) first.**
+12. **Do not stop after fixing only one Buyer branch. This must work for Residential, Income, Commercial, Business, and Vacant Land.**
+13. **Do not treat stale Livewire state, placeholder text, or prefilled defaults as valid answers unless they truly satisfy the field.**
+14. **Keep this surgical and limited to Buyer required-field enforcement, missing-field banner logic, and guided correction flow only.**
+
+---
+
+## IMPORTANT FIRST CHECK — VERIFY THE CORRECT ACTIVE FILES BEFORE ANY EDITS
+
+I do **not** trust that the previous edits were done in the correct file or correct branch.
+
+Before changing anything, confirm the **actual active files and code path** for **Hire a Buyer’s Agent**.
+
+I need the exact mapping of:
+
+* active route for Buyer create/edit flow
+* active Livewire component class
+* main Blade file
+* included Buyer tab partials
+* which partials render:
+
+  * Listing Details
+  * Property Preferences / Property Details
+  * Buying Terms / Financing / Offer Terms if applicable
+  * Services / Additional Details if required
+  * Buyer Information
+* which JS submit handler is actually active on Buyer
+* which method handles final submit (`store()` or equivalent)
+* whether Buyer uses shared logic through `TenantAgentAuction.php` or another shared component
+* where `setActiveTab()` or equivalent is defined for Buyer
+
+### Hard stop:
+
+Do **not** edit anything until the real active Buyer files are confirmed.
+
+Return the exact files first.
+
+---
+
+## GOAL
+
+Make **Hire a Buyer’s Agent** behave exactly like the finalized **Hire a Tenant’s Agent** required-field workflow:
+
+* submit blocked if any required field is missing
+* banner lists **every missing required field across all relevant tabs**
+* uses the exact visible user-facing field names
+* guided correction takes the user to each missing field one by one
+* no snap-back to the last tab
+* valid final submit works normally
+
+---
+
+## STEP 1 — BUILD A COMPLETE BUYER REQUIRED-FIELD MATRIX FOR ALL PROPERTY CATEGORIES
+
+Audit the entire **Hire a Buyer’s Agent** flow and build a full required-field matrix for all five categories:
+
+* **Residential**
+* **Income**
+* **Commercial**
+* **Business**
+* **Vacant Land**
+
+For each field, document:
+
+* tab/section
+* visible field label
+* property / wire:model name
+* always required / conditionally required / optional
+* category branch:
+
+  * Residential
+  * Income
+  * Commercial
+  * Business
+  * Vacant Land
+  * Shared
+* whether current JS checks it
+* whether current PHP validation checks it
+* whether it appears in the current missing-fields banner
+* whether it can currently be skipped
+
+Format:
+
+| Category | Tab | Field Label | Property | Required Type | JS Checked | PHP Checked | Banner Included | Can Skip? |
+
+### Important:
+
+Do not skip:
+
+* Select2 fields
+* multiselects
+* “Other” follow-up fields
+* conditional fields
+* hidden branch-specific fields
+* category-specific fields
+
+This must cover all Buyer categories, not just one.
+
+---
+
+## STEP 2 — FIX THE CORE PROBLEM: BUYER MUST CHECK EVERY REQUIRED FIELD ACROSS ALL RELEVANT TABS
+
+For **Buyer only**, the submit logic must check **every currently relevant required field** across the whole Buyer flow.
+
+A field must **not** be skipped just because:
+
+* it is on another tab
+* the tab is inactive
+* it is in Residential/Income/Commercial/Business/Vacant Land branch markup
+* it uses Select2/custom UI
+* it is conditionally rendered but currently relevant
+
+### Important rule:
+
+* fields hidden because they are truly irrelevant should not block submit
+* fields hidden only because the tab is inactive **must still be checked**
+
+---
+
+## STEP 3 — ALIGN ALL 3 VALIDATION LAYERS FOR BUYER
+
+For every required Buyer field, align all 3 layers:
+
+1. **UI required state**
+2. **front-end submit blocking**
+3. **server-side validation**
+
+No field should be:
+
+* visually required but not enforced
+* enforced in PHP but skipped in JS
+* skipped in the banner but still blocking submit
+* allowed through because it is on a non-active tab
+* allowed through because stale Livewire data still exists
+
+The Buyer flow must behave as one consistent required-field system.
+
+---
+
+## STEP 4 — ADD A STABLE BUYER FIELD LABEL MAP FOR ALL FIVE PROPERTY CATEGORIES
+
+For **Buyer only**, create a stable label map so the missing-fields banner shows the exact user-facing label for every required field.
+
+This label map must cover:
+
+* shared Buyer fields
+* Residential fields
+* Income fields
+* Commercial fields
+* Business fields
+* Vacant Land fields
+* Select2/custom fields
+* conditional follow-up fields
+* “Other” fields when relevant
+
+Do **not** rely only on fragile DOM scraping.
+
+Do **not** show internal property names in the banner.
+
+The banner must show the exact visible label text the user sees in Buyer flow.
+
+---
+
+## STEP 5 — BUILD A BUYER-SPECIFIC MISSING-FIELD COLLECTOR THAT HANDLES ALL PROPERTY CATEGORIES
+
+Implement a Buyer-specific missing-field collector that:
+
+* checks all currently relevant required fields across all Buyer tabs
+* includes inactive tabs
+* handles Residential, Income, Commercial, Business, and Vacant Land correctly
+* ignores fields only when they are truly irrelevant/hidden by condition
+* handles standard inputs, radios, checkboxes, selects, Select2 fields, multiselects, and badge/tag-based fields
+* handles conditional “Other” fields correctly
+* returns a full deduplicated ordered list of missing required fields
+
+This should mirror the finalized Tenant approach, but be tailored to Buyer and all five property categories.
+
+---
+
+## STEP 6 — DO NOT LET STALE VALUES OR DEFAULTS BYPASS BUYER VALIDATION
+
+Use the same protections that Tenant needed.
+
+Do **not** treat a field as valid just because:
+
+* Livewire still holds an old value
+* the user cleared it in the DOM but PHP still has stale data
+* there is placeholder text
+* there is a default mount value that is not a real completed answer
+* there is a prior category-specific value hanging around from another branch
+
+At submit time, the field must be validated against the **real current Buyer state**.
+
+---
+
+## STEP 7 — SHOW A FULL MISSING-FIELDS BANNER FOR BUYER
+
+When the user clicks Submit and required fields are missing, show a banner that:
+
+* states the user must complete required fields before submitting
+* lists **every missing required Buyer field**
+* includes missing fields from all relevant Buyer tabs
+* includes missing fields from the active property category branch
+* uses the exact label-map names
+* deduplicates by canonical field key, not loose text matching
+
+### Important:
+
+No partial list.
+No current-tab-only list.
+No missing earlier-tab omissions.
+
+If 20 Buyer required fields are missing, all 20 must appear.
+
+---
+
+## STEP 8 — ADD GUIDED CORRECTION MODE FOR BUYER
+
+For **Buyer only**, add the same guided correction flow used in finalized Tenant:
+
+* blocked submit collects the ordered missing-field list
+* user is taken to the first missing required field
+* after that field is filled, the system re-checks remaining missing required fields
+* then takes user to the next missing required field
+* repeats until all required fields are complete
+* once complete, correction mode exits cleanly
+
+### Important:
+
+* do not bounce back to the last tab after each correction
+* do not leave the user stranded on the wrong tab
+* do not keep correction mode active once all required fields are complete
+
+---
+
+## STEP 9 — PREVENT SNAP-BACK BUG FOR BUYER
+
+When Buyer correction mode moves the user to another tab, make sure the **server-side active tab state** stays synced.
+
+If Buyer uses `setActiveTab()` or equivalent, call it so Livewire does not morph the UI back to the last tab during correction mode.
+
+This is required.
+Do not repeat the old Tenant snap-back bug in Buyer.
+
+---
+
+## STEP 10 — VALID FINAL SUBMIT MUST STILL WORK
+
+Once all required Buyer fields are filled:
+
+* correction mode must turn off immediately
+* any missing-fields state must clear
+* no more correction navigation should fire
+* the submit handler must **not** block valid submit
+* the form must fall through to normal Livewire `store()` path
+
+### Important rule:
+
+Correction mode may block invalid submit, but it must never block a fully valid submit.
+
+---
+
+## STEP 11 — HANDLE PROPERTY-CATEGORY CONDITIONAL LOGIC CORRECTLY
+
+Audit and enforce all conditional logic for:
+
+* **Residential**
+* **Income**
+* **Commercial**
+* **Business**
+* **Vacant Land**
+
+This includes any fields that depend on:
+
+* selected property category
+* financing type
+* property style/type
+* “Other” selections
+* conditional follow-up fields
+* category-specific details
+* business-only fields
+* land-only fields
+* commercial-only fields
+* income-property-only fields
+
+Conditionally hidden fields should not block submit when irrelevant.
+Conditionally required fields must block submit when relevant.
+
+---
+
+## STEP 12 — DO NOT CHANGE SELECT FORMAT OR WORKING SELECT BEHAVIOR
+
+This is critical.
+
+For Buyer flow:
+
+* do **not** change Select2 format
+* do **not** change selection box structure
+* do **not** change placeholder behavior
+* do **not** change width/layout
+* do **not** change tag/badge style
+* do **not** rewrite shared multi-select code globally
+* do **not** break working Buyer selection fields while fixing required-field logic
+
+If a select/custom field needs validation support, add the smallest Buyer-safe logic necessary.
+
+---
+
+## STEP 13 — TEST EVERY BUYER PROPERTY CATEGORY
+
+Run the full required-field workflow tests for each category separately:
+
+### Test A — Residential
+
+* leave required fields blank across multiple tabs
+* click Submit
+* expected: submit blocked, all missing required fields listed, guided correction works
+
+### Test B — Income
+
+* same expected behavior
+
+### Test C — Commercial
+
+* same expected behavior
+
+### Test D — Business
+
+* same expected behavior
+
+### Test E — Vacant Land
+
+* same expected behavior
+
+### Test F — Final valid submit
+
+For each category, once all required fields are filled:
+
+* correction mode exits
+* no snap-back
+* submit works normally
+
+---
+
+## STEP 14 — DO NOT BREAK EXISTING BUYER FEATURES
+
+Keep all of these intact:
+
+* current Buyer tab structure
+* current category branching
+* current Select2 behavior
+* current placeholders/tooltips/icons
+* current dynamic field visibility
+* current draft/save/store behavior
+* current data structure
+* current review/listing flow
+* current Buyer wording
+
+This is a required-field enforcement + banner + guided correction enhancement only.
+
+---
+
+## STEP 15 — RETURN A FINAL REPORT
+
+After implementation, return:
+
+1. exact files changed
+2. proof the correct active Buyer file(s) were identified before editing
+3. full Buyer required-field matrix for Residential / Income / Commercial / Business / Vacant Land
+4. exact Buyer field-label map added
+5. exact missing-field detection logic added/updated
+6. exact correction-mode logic added/updated
+7. proof incomplete Buyer submit is blocked in all five property categories
+8. proof banner lists every missing required Buyer field across all tabs
+9. proof guided correction works across all tabs
+10. proof final valid submit still reaches `store()`
+11. confirmation Tenant, Landlord, and Seller flows were not touched
+12. confirmation Select2 format and selection box behavior were not changed
+
+---
+
+## IMPORTANT
+
+The final behavior for **Hire a Buyer’s Agent** must match the finalized **Hire a Tenant’s Agent** required-field format:
+
+* every required field truly required
+* full missing-fields banner
+* exact field names
+* all tabs checked
+* all five Buyer property categories checked
+* guided correction through each missing field
+* no snap-back
+* valid final submit works
+
+---
+
+If you want, I can also turn this into a **shorter hard-stop version** that is even more direct for Replit.

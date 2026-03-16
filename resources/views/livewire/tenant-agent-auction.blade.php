@@ -4568,6 +4568,9 @@ $lease_types = [
                 'tenant_require':          'Furnishings Needed',
                 'pets':                    'Pets',
                 'real_estate_purchase':    'Business & Real Estate Purchase Requirements',
+                // Seller-specific fields
+                'sale_provision':          'Special Sale Provision',
+                'current_status':          "Seller's Current Status",
             };
 
             // Returns the canonical property key for a field: wire:model value first,
@@ -4586,6 +4589,12 @@ $lease_types = [
             // property_type label is role-aware: landlord/seller see 'Property Type'.
             function resolveTenantFieldLabel(field) {
                 const key = resolveTenantFieldKey(field);
+                if (typeof CURRENT_USER_TYPE !== 'undefined' && CURRENT_USER_TYPE === 'seller') {
+                    if (key === 'property_type')    return 'Property Type';
+                    if (key === 'property_items')   return 'Property Style';
+                    if (key === 'maximum_budget')   return 'Desired Sale Price';
+                    if (key === 'offered_financing') return 'Offered Financing/Currency';
+                }
                 if (key === 'property_type' && typeof CURRENT_USER_TYPE !== 'undefined' &&
                     (CURRENT_USER_TYPE === 'landlord' || CURRENT_USER_TYPE === 'seller')) {
                     return 'Property Type';
@@ -4769,6 +4778,64 @@ $lease_types = [
                                         var _ofTabBuyer = _ofElBuyer ? _ofElBuyer.closest('.tab-pane') : null;
                                         items.push({ field: _ofElBuyer || document.body, tab: _ofTabBuyer, fieldName: TENANT_FIELD_LABELS['offered_financing'] || 'Offered Financing', key: 'offered_financing' });
                                     }
+                                } else if (_curUTgi === 'seller') {
+                                    // Seller: sale_provision is a Select2 multi-select (wire:ignore) — check Livewire state.
+                                    var _spValSeller = _comp.get('sale_provision');
+                                    if (typeof _spValSeller === 'string') { try { _spValSeller = JSON.parse(_spValSeller); } catch(exS1) {} }
+                                    var _spEmptySeller = !_spValSeller || (Array.isArray(_spValSeller) && _spValSeller.length === 0) || _spValSeller === '' || _spValSeller === '[]';
+                                    if (_spEmptySeller) {
+                                        var $spDomSeller = $('#sale_provision');
+                                        if ($spDomSeller.length) {
+                                            var _spDomValSeller = $spDomSeller.val();
+                                            if (_spDomValSeller && Array.isArray(_spDomValSeller) && _spDomValSeller.length > 0) _spEmptySeller = false;
+                                        }
+                                    }
+                                    if (_spEmptySeller && !items.some(function(i) { return i.key === 'sale_provision'; })) {
+                                        var _spElSeller = document.getElementById('sale_provision');
+                                        var _spTabSeller = _spElSeller ? _spElSeller.closest('.tab-pane') : null;
+                                        items.push({ field: _spElSeller || document.body, tab: _spTabSeller, fieldName: TENANT_FIELD_LABELS['sale_provision'] || 'Special Sale Provision', key: 'sale_provision' });
+                                    }
+
+                                    // Seller: offered_financing is a Select2 multi-select (wire:ignore) — check Livewire state.
+                                    var _ofValSeller = _comp.get('offered_financing');
+                                    if (typeof _ofValSeller === 'string') { try { _ofValSeller = JSON.parse(_ofValSeller); } catch(exS2) {} }
+                                    var _ofEmptySeller = !_ofValSeller || (Array.isArray(_ofValSeller) && _ofValSeller.length === 0) || _ofValSeller === '' || _ofValSeller === '[]';
+                                    if (_ofEmptySeller) {
+                                        var $ofDomSeller = $('#offered_financing');
+                                        if ($ofDomSeller.length) {
+                                            var _ofDomValSeller = $ofDomSeller.val();
+                                            if (_ofDomValSeller && Array.isArray(_ofDomValSeller) && _ofDomValSeller.length > 0) _ofEmptySeller = false;
+                                        }
+                                    }
+                                    if (_ofEmptySeller && !items.some(function(i) { return i.key === 'offered_financing'; })) {
+                                        var _ofElSeller = document.getElementById('offered_financing');
+                                        var _ofTabSeller = _ofElSeller ? _ofElSeller.closest('.tab-pane') : null;
+                                        items.push({ field: _ofElSeller || document.body, tab: _ofTabSeller, fieldName: 'Offered Financing/Currency', key: 'offered_financing' });
+                                    }
+
+                                    // Seller-info fields: labels have *, but inputs lack required attr.
+                                    // Hybrid check: prefer DOM value (real-time) then Livewire state.
+                                    // phone_number uses wire:model.defer so Livewire state only updates on submit.
+                                    var _sellerInfoFields = [
+                                        { prop: 'first_name',     label: 'First Name',                domSel: '[wire\\:model="first_name"]' },
+                                        { prop: 'last_name',      label: 'Last Name',                 domSel: '[wire\\:model="last_name"]' },
+                                        { prop: 'phone_number',   label: 'Phone Number',              domSel: '#seller_phone_number' },
+                                        { prop: 'email',          label: 'Email Address',             domSel: '[wire\\:model="email"]' },
+                                        { prop: 'current_status', label: "Seller's Current Status",   domSel: '[wire\\:model="current_status"]' },
+                                    ];
+                                    _sellerInfoFields.forEach(function(chkS) {
+                                        var _sEl = document.querySelector(chkS.domSel);
+                                        var _sDomVal = _sEl ? _sEl.value : null;
+                                        var _sEmpty = !_sDomVal || _sDomVal.trim() === '';
+                                        if (_sEmpty) {
+                                            var _sLwVal = _comp.get(chkS.prop);
+                                            if (_sLwVal && typeof _sLwVal === 'string' && _sLwVal.trim() !== '') _sEmpty = false;
+                                        }
+                                        if (_sEmpty && !items.some(function(i) { return i.key === chkS.prop; })) {
+                                            var _sTab = _sEl ? _sEl.closest('.tab-pane') : null;
+                                            items.push({ field: _sEl || document.body, tab: _sTab, fieldName: chkS.label, key: chkS.prop });
+                                        }
+                                    });
                                 }
                             }
                         }
@@ -4889,8 +4956,8 @@ $lease_types = [
                 const _submitUserType = typeof CURRENT_USER_TYPE !== 'undefined' ? CURRENT_USER_TYPE : '';
 
                 requiredFields.forEach(field => {
-                    if (_submitUserType === 'tenant' || _submitUserType === 'landlord') {
-                        // Tenant/Landlord flow: check required fields across ALL tabs.
+                    if (_submitUserType === 'tenant' || _submitUserType === 'landlord' || _submitUserType === 'seller') {
+                        // Tenant/Landlord/Seller flow: check required fields across ALL tabs.
                         // Only skip fields that are hidden by conditional rendering within the tab.
                         if (isTenantFieldHiddenWithinTab(field)) return;
 
@@ -4913,7 +4980,7 @@ $lease_types = [
                             invalidItems.push({ field, tab: field.closest('.tab-pane'), fieldName: resolveTenantFieldLabel(field), key: _fKey });
                         }
                     } else {
-                        // Other flows (seller, buyer): existing behavior unchanged.
+                        // Other flows (buyer): existing behavior unchanged.
                         if (!isFieldValid(field)) {
                             const tab = field.closest('.tab-pane');
                             const label = field.closest('.form-group')?.querySelector('label');
@@ -5036,6 +5103,64 @@ $lease_types = [
                                         var _dllTab = _dllEl ? _dllEl.closest('.tab-pane') : null;
                                         invalidItems.push({ field: _dllEl || document.body, tab: _dllTab, fieldName: TENANT_FIELD_LABELS['desired_lease_length'] || 'Desired Lease Term', key: 'desired_lease_length' });
                                     }
+                                } else if (curUT === 'seller') {
+                                    // Seller: sale_provision is a Select2 multi-select (wire:ignore) — check Livewire state.
+                                    var _spValSub = comp.get('sale_provision');
+                                    if (typeof _spValSub === 'string') { try { _spValSub = JSON.parse(_spValSub); } catch(eS1) {} }
+                                    var _spEmptySub = !_spValSub || (Array.isArray(_spValSub) && _spValSub.length === 0) || _spValSub === '' || _spValSub === '[]';
+                                    if (_spEmptySub) {
+                                        var $spDomSub = $('#sale_provision');
+                                        if ($spDomSub.length) {
+                                            var _spDomValSub = $spDomSub.val();
+                                            if (_spDomValSub && Array.isArray(_spDomValSub) && _spDomValSub.length > 0) _spEmptySub = false;
+                                        }
+                                    }
+                                    if (_spEmptySub && !invalidItems.some(function(i) { return i.key === 'sale_provision'; })) {
+                                        var _spElSub = document.getElementById('sale_provision');
+                                        var _spTabSub = _spElSub ? _spElSub.closest('.tab-pane') : null;
+                                        invalidItems.push({ field: _spElSub || document.body, tab: _spTabSub, fieldName: TENANT_FIELD_LABELS['sale_provision'] || 'Special Sale Provision', key: 'sale_provision' });
+                                    }
+
+                                    // Seller: offered_financing is a Select2 multi-select (wire:ignore) — check Livewire state.
+                                    var _ofValSub = comp.get('offered_financing');
+                                    if (typeof _ofValSub === 'string') { try { _ofValSub = JSON.parse(_ofValSub); } catch(eS2) {} }
+                                    var _ofEmptySub = !_ofValSub || (Array.isArray(_ofValSub) && _ofValSub.length === 0) || _ofValSub === '' || _ofValSub === '[]';
+                                    if (_ofEmptySub) {
+                                        var $ofDomSub = $('#offered_financing');
+                                        if ($ofDomSub.length) {
+                                            var _ofDomValSub = $ofDomSub.val();
+                                            if (_ofDomValSub && Array.isArray(_ofDomValSub) && _ofDomValSub.length > 0) _ofEmptySub = false;
+                                        }
+                                    }
+                                    if (_ofEmptySub && !invalidItems.some(function(i) { return i.key === 'offered_financing'; })) {
+                                        var _ofElSub = document.getElementById('offered_financing');
+                                        var _ofTabSub = _ofElSub ? _ofElSub.closest('.tab-pane') : null;
+                                        invalidItems.push({ field: _ofElSub || document.body, tab: _ofTabSub, fieldName: 'Offered Financing/Currency', key: 'offered_financing' });
+                                    }
+
+                                    // Seller-info fields: labels have *, but inputs lack required attr.
+                                    // Hybrid check: prefer DOM value (real-time) then Livewire state.
+                                    // phone_number uses wire:model.defer so Livewire state only updates on submit.
+                                    var _sellerInfoFieldsSub = [
+                                        { prop: 'first_name',     label: 'First Name',               domSel: '[wire\\:model="first_name"]' },
+                                        { prop: 'last_name',      label: 'Last Name',                domSel: '[wire\\:model="last_name"]' },
+                                        { prop: 'phone_number',   label: 'Phone Number',             domSel: '#seller_phone_number' },
+                                        { prop: 'email',          label: 'Email Address',            domSel: '[wire\\:model="email"]' },
+                                        { prop: 'current_status', label: "Seller's Current Status",  domSel: '[wire\\:model="current_status"]' },
+                                    ];
+                                    _sellerInfoFieldsSub.forEach(function(chkSub) {
+                                        var _sElSub = document.querySelector(chkSub.domSel);
+                                        var _sDomValSub = _sElSub ? _sElSub.value : null;
+                                        var _sEmptySub = !_sDomValSub || _sDomValSub.trim() === '';
+                                        if (_sEmptySub) {
+                                            var _sLwValSub = comp.get(chkSub.prop);
+                                            if (_sLwValSub && typeof _sLwValSub === 'string' && _sLwValSub.trim() !== '') _sEmptySub = false;
+                                        }
+                                        if (_sEmptySub && !invalidItems.some(function(i) { return i.key === chkSub.prop; })) {
+                                            var _sTabSub = _sElSub ? _sElSub.closest('.tab-pane') : null;
+                                            invalidItems.push({ field: _sElSub || document.body, tab: _sTabSub, fieldName: chkSub.label, key: chkSub.prop });
+                                        }
+                                    });
                                 }
                             }
                         }
@@ -5061,15 +5186,15 @@ $lease_types = [
                     });
                     banner.classList.remove('d-none');
 
-                    if (_submitUserType === 'tenant' || _submitUserType === 'landlord') {
-                        // Tenant/Landlord flow: enter guided correction mode.
+                    if (_submitUserType === 'tenant' || _submitUserType === 'landlord' || _submitUserType === 'seller') {
+                        // Tenant/Landlord/Seller flow: enter guided correction mode.
                         // tenantNavigateToItem() switches the Bootstrap tab AND syncs
                         // server-side $activeTab so Livewire morphdom cannot snap back.
                         _tenantCorrectionMode = true;
                         _tenantMissingItems = deduplicatedItems;
                         tenantNavigateToItem(deduplicatedItems[0]);
                     } else {
-                        // Other flows (seller, buyer): original navigation behavior unchanged.
+                        // Other flows (buyer): original navigation behavior unchanged.
                         const firstItem = deduplicatedItems[0];
                         if (firstItem && firstItem.tab) {
                             const tabId = firstItem.tab.id;
@@ -5094,9 +5219,9 @@ $lease_types = [
                     return false;
                 }
 
-                // Tenant/Landlord: always clear correction mode on a valid submit so the
+                // Tenant/Landlord/Seller: always clear correction mode on a valid submit so the
                 // message.processed hook never interferes with the store() action.
-                if (_submitUserType === 'tenant' || _submitUserType === 'landlord') {
+                if (_submitUserType === 'tenant' || _submitUserType === 'landlord' || _submitUserType === 'seller') {
                     _tenantCorrectionMode = false;
                     _tenantMissingItems = [];
                 }
