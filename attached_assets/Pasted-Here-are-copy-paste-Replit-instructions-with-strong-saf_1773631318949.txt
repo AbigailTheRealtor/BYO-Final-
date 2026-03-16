@@ -1,0 +1,338 @@
+Here are **copy-paste Replit instructions with strong safeguards** for these edits.
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A BUYER AGENT ONLY — BATHROOMS OTHER / DESIRED LEASE TERM EDIT DISPLAY / HIDE EMPTY SECTIONS / LEASING TERMS SPACING
+
+## SCOPE
+
+Make these fixes **only for Hire a Buyer Agent**:
+
+1. **Bathrooms**
+
+   * when user selected **Other**, the custom input box must show when user clicks **Edit**
+   * the custom value must display on the actual listing
+   * the listing must not show `Bathrooms:` with a blank value
+
+2. **Desired Lease Term**
+
+   * when user clicks **Edit**, the previously selected options must show correctly
+   * selections must not disappear
+
+3. **Hide empty terms/sections on the listing**
+
+   * if terms were not filled in, they should **not show on the listing**
+   * example: do **not** show `Broker Compensation & Agency Agreement Terms` if it has no actual filled values
+
+4. **Leasing Terms spacing on the actual listing**
+
+   * rows/questions are not evenly spaced
+   * fix spacing on the Buyer listing display only
+
+---
+
+## HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Only edit the Hire a Buyer Agent flow.**
+2. **Do not modify Tenant, Landlord, or Seller flows.**
+3. **Do not edit any unrelated file.**
+4. **Do not rename database columns.**
+5. **Do not rename Livewire properties.**
+6. **Do not rename wire:model bindings.**
+7. **Do not change routes.**
+8. **Do not run migrations.**
+9. **Do not change Select2 initialization.**
+10. **Do not change selection box format, layout, styling, placeholder behavior, width, badge style, or dropdown behavior.**
+11. **Do not change tooltips, icons, field labels, field order, or placeholders.**
+12. **Do not do a broad cleanup or refactor.**
+13. **Do not touch any other “Other” fields except the exact Buyer fields listed below if needed.**
+14. **Keep this surgical and field-specific.**
+
+---
+
+## IMPORTANT
+
+We have had issues before with Replit editing the wrong file or breaking selection inputs.
+
+### Hard stop:
+
+Before editing anything, first confirm the **actual active Buyer files** for:
+
+* Buyer edit form
+* Buyer listing display
+* Buyer Leasing Terms display
+* Buyer Bathrooms field
+* Buyer Desired Lease Term field
+
+Do **not** assume.
+Do **not** edit shared files unless absolutely necessary.
+If a shared file must be touched, wrap changes so they affect **Buyer only**.
+
+---
+
+## STEP 1 — CONFIRM THE CORRECT ACTIVE FILES FIRST
+
+Before making changes, identify the exact active files for **Hire a Buyer Agent**:
+
+1. Livewire/component file handling Buyer create/edit
+2. Blade/partial rendering the **Bathrooms** field
+3. Blade/partial rendering **Desired Lease Term**
+4. Blade/partial rendering the **actual Buyer listing display**
+5. Blade/partial rendering **Broker Compensation & Agency Agreement Terms** on the Buyer listing display
+6. Blade/partial rendering the **Leasing Terms** section on the Buyer listing display
+
+### Requirement
+
+Return the exact files first, then edit only those files.
+
+### Hard stop
+
+No other file should be edited or changed.
+
+---
+
+## STEP 2 — FIX BATHROOMS “OTHER” ON EDIT + LISTING DISPLAY
+
+## Current bug
+
+When user selected **Other** for **Bathrooms**:
+
+* the custom input does not show when user clicks **Edit**
+* the listing shows `Bathrooms:` but the value is blank even though it was filled in
+
+## Required behavior
+
+For **Buyer Bathrooms only**:
+
+* if saved selection is **Other**, show the custom input when editing
+* preload the saved custom value into that input
+* on the listing, show the custom value
+* if there is no actual value, do not show the `Bathrooms:` row at all
+
+## What to trace and fix
+
+Confirm:
+
+* main Bathrooms property
+* Bathrooms “Other” property
+* conditional logic that shows the custom input
+* edit hydration logic
+* listing display logic
+
+### Important
+
+Do not rewrite all “Other” logic globally.
+Fix only the Buyer Bathrooms path.
+
+---
+
+## STEP 3 — FIX DESIRED LEASE TERM SO SELECTED OPTIONS SHOW ON EDIT
+
+## Current bug
+
+When user clicks **Edit**, the selected **Desired Lease Term** options do not show.
+
+## Required behavior
+
+For **Buyer Desired Lease Term only**:
+
+* previously selected options must appear when editing
+* if “Other” is part of this field and a custom value exists, preserve that too
+* do not change the selection box format
+* do not change Select2 behavior globally
+* do not break save logic
+
+## What to trace and fix
+
+Confirm:
+
+* exact `wire:model`
+* how values are stored
+* how values are decoded/hydrated for edit mode
+* how selected options are re-applied on load
+* whether the edit page is using the correct saved array/string value
+
+### Important
+
+Use the same working rehydration pattern used by Buyer/Tenant fields that already repopulate correctly.
+Do not do a broad Select2 rewrite.
+
+---
+
+## STEP 4 — HIDE EMPTY TERMS/SECTIONS ON THE BUYER LISTING
+
+## Current bug
+
+The listing shows empty section headers/labels, for example:
+
+`Broker Compensation & Agency Agreement Terms`
+
+even when nothing was filled in.
+
+## Required behavior
+
+If a section has no actual filled values, do **not** show the section header.
+If an individual row/term has no actual value, do **not** show that row.
+
+This should match the behavior used in **Hire a Tenant Agent** listing display.
+
+## Apply to Buyer listing display
+
+At minimum, ensure:
+
+* empty `Broker Compensation & Agency Agreement Terms` does not show
+* empty rows inside that section do not show
+* empty terms anywhere else in the Buyer listing do not show
+
+### Important
+
+Do not hide filled values.
+Do not affect other listing types.
+Do not remove data — only suppress empty display rows/headers.
+
+---
+
+## STEP 5 — MATCH TENANT LISTING DISPLAY LOGIC
+
+Find the **Tenant listing display** logic that already hides empty sections and rows correctly.
+
+Mirror that display pattern for the **Buyer listing display only**.
+
+### Important
+
+Copy the display logic pattern only.
+Do not alter Tenant files unless absolutely necessary.
+Prefer fixing the Buyer display template directly.
+
+---
+
+## STEP 6 — FIX LEASING TERMS SPACING ON THE ACTUAL BUYER LISTING
+
+## Current bug
+
+On the actual listing, the **Leasing Terms** questions/rows are not evenly spaced.
+
+## Required behavior
+
+On the **Buyer listing display only**:
+
+* make Leasing Terms rows evenly spaced
+* use consistent vertical spacing
+* keep labels and values aligned cleanly
+* do not change create/edit form spacing
+* do not change field content
+* do not affect other sections unless necessary to match the same Buyer listing style
+
+### Important
+
+This is a listing display layout fix only.
+
+---
+
+## STEP 7 — PRESERVE BACKWARD COMPATIBILITY
+
+If older Buyer records already saved:
+
+* Bathrooms = Other with custom value
+* Desired Lease Term selections
+
+They must still:
+
+* load correctly on edit
+* show correctly on listing
+* not require migrations
+* not break existing saved data
+
+---
+
+## STEP 8 — TEST THESE EXACT CASES
+
+### A. Bathrooms → Other
+
+* save custom value
+* click Edit
+* expected: Other input shows and is populated
+* expected: listing shows actual bathroom value
+* expected: no blank `Bathrooms:` row
+
+### B. Desired Lease Term
+
+* save selected options
+* click Edit
+* expected: previously selected options show correctly
+* expected: nothing disappears
+
+### C. Empty Broker Compensation section
+
+* leave section empty
+* expected: `Broker Compensation & Agency Agreement Terms` does not show on listing
+
+### D. Empty individual terms
+
+* leave rows blank
+* expected: blank rows do not show
+
+### E. Leasing Terms spacing
+
+* expected: evenly spaced rows on actual Buyer listing display
+
+---
+
+## STEP 9 — VERIFY NOTHING ELSE CHANGED
+
+After the fix, explicitly confirm:
+
+* no Tenant files changed
+* no Landlord files changed
+* no Seller files changed
+* no selection input format changed
+* no Select2 UI changed
+* no placeholders changed
+* no tooltips changed
+* no icons changed
+* no unrelated Buyer fields changed
+
+---
+
+## STEP 10 — RETURN A FINAL REPORT
+
+After implementation, return:
+
+1. exact files changed
+2. confirmation the correct active Buyer files were identified first
+3. exact root cause for:
+
+   * Bathrooms Other not showing on edit/display
+   * Desired Lease Term selections not showing on edit
+   * empty Broker Compensation section showing
+   * Leasing Terms uneven spacing
+4. exact fix applied for each
+5. confirmation no other files were edited
+6. confirmation selection inputs/Select2 format were not changed
+7. proof the Buyer listing now hides empty sections like Tenant
+
+---
+
+## IMPORTANT FINAL RULE
+
+This is a **Buyer-only, surgical fix**.
+
+Do **not**:
+
+* edit unrelated files
+* change selection box format
+* refactor global select logic
+* touch Tenant, Landlord, or Seller
+* make broad UI changes
+
+The final result should be:
+
+* Bathrooms Other shows correctly on edit and listing
+* Desired Lease Term selections show correctly on edit
+* empty sections/rows do not show on Buyer listing
+* Leasing Terms rows are evenly spaced
+* no other file or selection input behavior is changed
+
+---
+
+If you want, I can also turn this into a **shorter hard-stop version** for Replit.

@@ -1447,20 +1447,26 @@
                 let garageOptions = document.getElementById('garage_parking_spaces_option');
 
                 // First check the main garage/parking spaces selection
-                if (garageSelect) {
+                if (garageSelect && optionsWrapper) {
                     if (garageSelect.value === "Yes") {
-                        optionsWrapper.classList.remove('d-none'); // Show options dropdown
+                        optionsWrapper.classList.remove('d-none');
                     } else {
-                        optionsWrapper.classList.add('d-none'); // Hide options dropdown
-                        otherInputWrapper.classList.add('d-none'); // Also hide other input
+                        optionsWrapper.classList.add('d-none');
+                        if (otherInputWrapper) otherInputWrapper.classList.add('d-none');
                     }
                 }
 
                 // Then check if "Other" is selected in the options dropdown
-                if (garageOptions && garageOptions.value === "Other" && garageSelect.value === "Yes") {
-                    otherInputWrapper.classList.remove('d-none'); // Show input field
-                } else {
-                    otherInputWrapper.classList.add('d-none'); // Hide input field
+                var garageOptionValues = [];
+                if (garageOptions) {
+                    garageOptionValues = $('#garage_parking_spaces_option').hasClass('select2-hidden-accessible')
+                        ? ($('#garage_parking_spaces_option').val() || [])
+                        : Array.from(garageOptions.selectedOptions || []).map(function(o) { return o.value; });
+                }
+                if (otherInputWrapper && garageOptions && garageOptionValues.includes("Other") && garageSelect && garageSelect.value === "Yes") {
+                    otherInputWrapper.classList.remove('d-none');
+                } else if (otherInputWrapper) {
+                    otherInputWrapper.classList.add('d-none');
                 }
             }
 

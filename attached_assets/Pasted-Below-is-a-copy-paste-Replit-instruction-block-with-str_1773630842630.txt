@@ -1,0 +1,424 @@
+Below is a **copy-paste Replit instruction block with strict safeguards** to fix the **Hire a Buyer’s Agent issues only**, without touching anything else in your platform.
+
+This is written in the **same surgical style you’ve been using** so Replit AI does **not accidentally modify Tenant, Landlord, or Seller flows** or break Select2 inputs.
+
+---
+
+# REPLIT INSTRUCTIONS — HIRE A BUYER AGENT FIXES ONLY (WITH HARD SAFEGUARDS)
+
+## OBJECTIVE
+
+Fix the following issues **ONLY for the Hire a Buyer’s Agent listing flow**:
+
+1. **Minimum Bathrooms Needed – “Other” input not appearing or saving**
+2. **Carport Needed – “Other” input not appearing or saving**
+3. **Garage Needed – “Other” input not appearing or saving**
+4. **Garage/Parking Features Needed – “Other” input not appearing or saving**
+5. **Type of Loan – user input not saving and not displaying**
+6. **Fields that are not filled in should NOT display on the listing page**
+7. **Empty Broker Compensation sections should NOT display on the listing page**
+
+These must behave exactly like the **Hire a Tenant Agent listing display logic**, where empty sections do not appear.
+
+---
+
+# CRITICAL SAFEGUARDS — DO NOT BREAK ANYTHING
+
+### DO NOT CHANGE ANY OF THE FOLLOWING
+
+* DO NOT modify **Tenant Agent files**
+* DO NOT modify **Landlord Agent files**
+* DO NOT modify **Seller Agent files**
+* DO NOT modify **database schema**
+* DO NOT rename **database columns**
+* DO NOT rename **wire:model properties**
+* DO NOT change **routes**
+* DO NOT change **Livewire component names**
+* DO NOT modify **Select2 initialization**
+* DO NOT change **dropdown formatting**
+* DO NOT change **selection inputs**
+* DO NOT modify **placeholders**
+* DO NOT modify **icons**
+* DO NOT modify **tooltips**
+* DO NOT modify **UI layout**
+* DO NOT modify **field labels**
+* DO NOT change **any field order**
+
+### IMPORTANT
+
+Only implement **logic fixes for saving, showing “Other” inputs, and hiding empty sections.**
+
+---
+
+# STEP 1 — VERIFY THE CORRECT BUYER FILES BEFORE EDITING
+
+Before changing anything, confirm the **actual files used by Hire a Buyer Agent**.
+
+Identify:
+
+### Livewire Component
+
+Likely:
+
+```
+app/Http/Livewire/TenantAgentAuction.php
+```
+
+Buyer uses this shared component.
+
+### Blade View
+
+Likely:
+
+```
+resources/views/livewire/tenant-agent-auction.blade.php
+```
+
+### Buyer Property Preferences Partial
+
+Usually:
+
+```
+resources/views/livewire/tenant-agent-auction-tabs/commission-based/property-preferences.blade.php
+```
+
+### Buyer Listing Display Page
+
+Likely:
+
+```
+resources/views/listings/hire-buyer-agent.blade.php
+```
+
+OR similar listing display file.
+
+---
+
+⚠️ **Do NOT assume these files. Confirm first.**
+
+Once confirmed, only edit **Buyer logic sections inside those files.**
+
+---
+
+# STEP 2 — FIX “OTHER” INPUT FIELDS NOT SHOWING ON EDIT
+
+Problem:
+When user selects **Other**, the input field should appear and store the value.
+
+Currently:
+
+* field value saves
+* but input box disappears when editing
+* listing display shows blank
+
+### Affected fields
+
+Fix logic for:
+
+```
+Minimum Bathrooms Needed
+Carport Needed
+Garage Needed
+Garage/Parking Features Needed
+```
+
+### Required behavior
+
+If user selects:
+
+```
+Other
+```
+
+Then:
+
+1. Show the **custom input box**
+2. Save the **custom value**
+3. Reload the custom value when editing
+4. Display the custom value on the listing page
+
+---
+
+### Fix pattern
+
+Ensure conditional display uses **saved Livewire value**.
+
+Example logic pattern:
+
+```
+@if($minimum_bathrooms_needed === 'Other')
+show custom input
+@endif
+```
+
+Instead of only relying on JS change events.
+
+This ensures the input shows when editing existing listings.
+
+---
+
+### Ensure values persist
+
+Verify these Livewire properties exist and save correctly:
+
+```
+minimum_bathrooms_needed
+minimum_bathrooms_needed_other
+carport_needed
+carport_needed_other
+garage_needed
+garage_needed_other
+garage_parking_features_needed
+garage_parking_features_needed_other
+```
+
+If missing, ensure they are included in:
+
+```
+$fillable
+validation rules
+store() method
+update() method
+```
+
+---
+
+# STEP 3 — FIX “TYPE OF LOAN” NOT SAVING
+
+Problem:
+
+```
+Type of Loan
+```
+
+User enters value but it does not:
+
+* save
+* appear on listing
+* appear on edit screen
+
+### Fix checklist
+
+Confirm property exists:
+
+```
+$type_of_loan
+```
+
+Confirm it is included in:
+
+```
+public $type_of_loan;
+```
+
+Confirm it is saved in:
+
+```
+store()
+update()
+```
+
+Confirm binding exists:
+
+```
+wire:model.defer="type_of_loan"
+```
+
+Confirm listing display references:
+
+```
+$type_of_loan
+```
+
+If missing from any step, add it.
+
+---
+
+# STEP 4 — HIDE EMPTY FIELDS ON BUYER LISTING PAGE
+
+Buyer listings should behave exactly like **Tenant listings**.
+
+If a field is empty, **do not display the label.**
+
+Example current problem:
+
+User sees:
+
+```
+Broker Compensation & Agency Agreement Terms
+Buyer's Broker Compensation:
+Buyer's Broker Lease Fee:
+Lease-Option Details:
+Legal Terms:
+Brokerage Relationship:
+Additional Terms:
+```
+
+Even when nothing is filled in.
+
+---
+
+### Correct behavior
+
+If the value is empty, **hide the entire line.**
+
+Example fix:
+
+```
+@if(!empty($listing->buyers_broker_compensation))
+show section
+@endif
+```
+
+Apply this to:
+
+```
+Buyer's Broker Compensation
+Buyer's Broker Lease Fee
+Lease-Option Details
+Legal Terms
+Brokerage Relationship
+Additional Terms
+```
+
+---
+
+### Also hide the section header if all fields are empty
+
+Example:
+
+```
+@if(
+$listing->buyers_broker_compensation ||
+$listing->buyers_broker_lease_fee ||
+$listing->lease_option_details ||
+$listing->legal_terms ||
+$listing->brokerage_relationship ||
+$listing->additional_terms
+)
+
+show "Broker Compensation & Agency Agreement Terms"
+
+@endif
+```
+
+---
+
+# STEP 5 — MATCH TENANT LISTING DISPLAY LOGIC
+
+Locate the **Tenant listing display template** and mirror its logic.
+
+Tenant listings already:
+
+* hide empty rows
+* hide empty sections
+* only show filled values
+
+Use the **same conditional logic pattern** for Buyer listings.
+
+---
+
+# STEP 6 — VERIFY EDIT MODE
+
+Test that when editing a listing:
+
+If user selected:
+
+```
+Other
+```
+
+Then:
+
+* custom input appears
+* custom value is pre-filled
+* value can be edited
+
+Test fields:
+
+```
+Minimum Bathrooms Needed
+Carport Needed
+Garage Needed
+Garage/Parking Features Needed
+```
+
+---
+
+# STEP 7 — VERIFY LISTING DISPLAY
+
+Create test listings.
+
+### Test 1
+
+Fill custom values for:
+
+```
+Bathrooms
+Garage
+Carport
+Parking
+```
+
+Expected result:
+
+Custom values appear.
+
+---
+
+### Test 2
+
+Leave fields blank.
+
+Expected result:
+
+Fields do **not appear on listing page.**
+
+---
+
+### Test 3
+
+Test **Type of Loan**
+
+Expected result:
+
+* saves
+* appears on listing
+* reloads on edit
+
+---
+
+# STEP 8 — CONFIRM NOTHING ELSE CHANGED
+
+After fixes, confirm:
+
+* Tenant listings unchanged
+* Landlord listings unchanged
+* Seller listings unchanged
+* Select2 dropdowns unchanged
+* selection inputs unchanged
+* UI layout unchanged
+* placeholders unchanged
+* tooltips unchanged
+
+---
+
+# FINAL REPORT REQUIRED
+
+Return:
+
+1. Exact files modified
+2. Confirmation only Buyer flow was edited
+3. Confirmation Select2 inputs were not modified
+4. Confirmation “Other” inputs now show on edit
+5. Confirmation Type of Loan saves and displays
+6. Confirmation empty Broker Compensation sections no longer appear
+7. Confirmation no other flows were affected
+
+---
+
+✅ This instruction set is **very safe for Replit AI** and prevents it from touching the wrong flows.
+
+---
+
+If you want, I can also give you **one additional safeguard that will prevent Replit from editing the wrong Livewire component again** (this has caused some of the issues you've been seeing).

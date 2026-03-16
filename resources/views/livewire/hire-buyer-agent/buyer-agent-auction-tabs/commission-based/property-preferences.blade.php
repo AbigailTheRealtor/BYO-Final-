@@ -502,14 +502,16 @@
         </div>
         <span class="error mt-2" id="bathrooms_error"></span>
     </div>
-    <!-- Other Bathrooms Input (Hidden by Default) -->
-    <div class="form-group other_bathrooms d-none">
+    @if ($bathrooms === 'Other')
+    <!-- Other Bathrooms Input -->
+    <div class="form-group other_bathrooms">
         <div class="input-cover">
             <input type="number" wire:model.defer="other_bathrooms" class="form-control has-icon"
                 data-icon="fa-solid fa-bath" placeholder="Enter minimum bathrooms needed (e.g., 11)">
         </div>
         <span class="error mt-2" id="other_bathrooms_error"></span>
     </div>
+    @endif
 @endif
 
 <!-- Minimum Heated Sqft Needed -->
@@ -612,17 +614,17 @@
 
     </div>
 
+    @if ($carport_needed == 'Yes')
     <!-- Carport Spaces Input (Shown Only When "Yes" is Selected) -->
-    <div class="form-group d-none" id="other-carport-needed">
-        <label class="fw-bold">Number of Carport Spaces Needed:
-
-        </label>
+    <div class="form-group" id="other-carport-needed">
+        <label class="fw-bold">Number of Carport Spaces Needed:</label>
         <div class="input-cover">
             <input type="number" min="1" wire:model.defer="other_carport_needed" class="form-control has-icon"
                 data-icon="fa-solid fa-warehouse" placeholder="Enter number of carport spaces needed (e.g., 1)">
         </div>
         <span class="error mt-2" id="other_carport_needed_error"></span>
     </div>
+    @endif
 @endif
 
 <!-- Garage Spaces Needed (Residential Only) -->
@@ -648,8 +650,9 @@
         </div>
     </div>
 
+    @if ($garage_needed == 'Yes')
     <!-- Garage Spaces Input (Shown Only When "Yes" is Selected) -->
-    <div class="form-group d-none" id="other-garage-needed">
+    <div class="form-group" id="other-garage-needed">
         <label class="fw-bold">Number of Garage Spaces Needed:</label>
         <div class="input-cover">
             <input type="number" min="1" wire:model.defer="other_garage_needed" class="form-control has-icon"
@@ -657,6 +660,7 @@
         </div>
         <span class="error mt-2" id="other_garage_needed_error"></span>
     </div>
+    @endif
 @endif
 
 <!-- Garage/Parking Spaces Needed -->
@@ -700,14 +704,15 @@
 </div>
 
 <!-- Other Parking Space Text Input -->
-<div class="form-group d-none" id="other_parking_space_wrapper">
+@if (in_array('Other', $garage_parking_spaces_option ?? []))
+<div class="form-group" id="other_parking_space_wrapper">
     <div class="input-cover">
-
         <input type="text" wire:model.defer="other_parking_space_wrapper" id="other_parking_space"
             class="form-control has-icon" data-icon="fa-solid fa-warehouse"
             placeholder="Enter garage/parking features needed (e.g., Tandem Parking, Gated Entry, Shared Driveway) ">
     </div>
 </div>
+@endif
 
 <!-- Pool Needed -->
 @if ($property_type === 'Residential' or $property_type === 'Income')

@@ -881,7 +881,7 @@
                                 // Check if each financing type has data for grouped display
                                 $hasSellerFinancingData = !empty(@$auction->get->purchase_price) || !empty(@$auction->get->down_payment_amount) || !empty(@$auction->get->seller_financing_amount) || !empty(@$auction->get->interest_rate) || !empty(@$auction->get->loan_duration) || !empty(@$auction->get->seller_amortization_type) || !empty(@$auction->get->seller_payment_frequency) || !empty(@$auction->get->seller_late_fee_amount) || !empty(@$auction->get->balloon_payment) || !empty(@$auction->get->balloon_payment_amount) || !empty(@$auction->get->balloon_payment_date) || !empty(@$auction->get->prepayment_penalty) || !empty(@$auction->get->prepayment_penalty_amount);
                                 
-                                $hasAssumableData = !empty(@$auction->get->assumable_terms) || !empty(@$auction->get->max_assumable_rate) || !empty(@$auction->get->max_monthly_payment) || !empty(@$auction->get->gap_payment_amount);
+                                $hasAssumableData = !empty(@$auction->get->assumable_terms) || !empty(@$auction->get->assumable_loan_type) || !empty(@$auction->get->max_assumable_rate) || !empty(@$auction->get->max_monthly_payment) || !empty(@$auction->get->gap_payment_amount);
                                 
                                 $hasExchangeData = !empty(@$auction->get->exchange_item) || !empty(@$auction->get->exchange_item_value) || !empty(@$auction->get->exchange_item_condition) || !empty(@$auction->get->additional_cash) || !empty(@$auction->get->value_determination) || !empty(@$auction->get->exchange_transfer_method) || !empty(@$auction->get->exchange_liens) || !empty(@$auction->get->exchange_inspection_rights);
                                 
@@ -965,6 +965,13 @@
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
                                         Offered Assumable Terms:
                                         <span class="removeBold">{{ $displayAssumableTerms }}</span>
+                                    </div>
+                                @endif
+
+                                @if (@$auction->get->assumable_loan_type)
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Type of Loan:
+                                        <span class="removeBold">{{ str_replace('"', '', @$auction->get->assumable_loan_type) }}</span>
                                     </div>
                                 @endif
 
@@ -1631,7 +1638,9 @@
                         </div>
 
                         <!-- Buyer's Broker Compensation Sub-section -->
+                        @if (@$auction->get->commission_structure != null || @$auction->get->purchase_fee_type != null)
                         <h5 class="mt-3 mb-2"><strong>Buyer's Broker Compensation:</strong></h5>
+                        @endif
                         <div class="broker-compensation-section">
 
                         @if (@$auction->get->commission_structure != null)
@@ -1669,7 +1678,9 @@
                         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
                         <!-- Buyer's Broker Lease Fee Sub-section -->
+                        @if (@$auction->get->interested_lease_option != null || @$auction->get->lease_fee_type != null)
                         <h5 class="mt-3 mb-2"><strong>Buyer's Broker Lease Fee:</strong></h5>
+                        @endif
 
                         @if (@$auction->get->interested_lease_option != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -1720,7 +1731,9 @@
                         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
                         <!-- Lease-Option Details Sub-section -->
+                        @if (@$auction->get->interested_lease_option_agreement != null)
                         <h5 class="mt-3 mb-2"><strong>Lease-Option Details:</strong></h5>
+                        @endif
 
                         @if (@$auction->get->interested_lease_option_agreement != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -1760,7 +1773,9 @@
                         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
                         <!-- Legal Terms Sub-section -->
+                        @if (@$auction->get->protection_period != null || @$auction->get->early_termination_fee_option != null || @$auction->get->retainer_fee_option != null || @$auction->get->agency_agreement_timeframe != null)
                         <h5 class="mt-3 mb-2"><strong>Legal Terms:</strong></h5>
+                        @endif
 
                         @if (@$auction->get->protection_period != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -1804,7 +1819,9 @@
                         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
                         <!-- Brokerage Relationship Sub-section -->
+                        @if (@$auction->get->brokerage_relationship != null)
                         <h5 class="mt-3 mb-2"><strong>Brokerage Relationship:</strong></h5>
+                        @endif
 
                         @if (@$auction->get->brokerage_relationship != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -1816,7 +1833,9 @@
                         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
                         <!-- Additional Terms Sub-section -->
+                        @if (@$auction->get->additional_details_broker != null)
                         <h5 class="mt-3 mb-2"><strong>Additional Terms:</strong></h5>
+                        @endif
 
                         @if (@$auction->get->additional_details_broker != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
