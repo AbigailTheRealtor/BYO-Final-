@@ -873,6 +873,7 @@
                 property_items: '#property_items',
                 non_negotiable_amenities: '#non_negotiable_amenities',
                 exchange_item: '#exchange_item',
+                business_assets: '#included_assets',
             };
             Object.entries(fields).forEach(function([field, selector]) {
                 var el = $(selector);
@@ -980,6 +981,27 @@
                 var currentVal = $('#exchange_item').val() || [];
                 if (savedExchangeItems.length > 0 && currentVal.length === 0) {
                     $('#exchange_item').val(savedExchangeItems).trigger('change.select2');
+                }
+            }
+
+            if ($('#included_assets').length && !$('#included_assets').hasClass('select2-hidden-accessible')) {
+                $('#included_assets').select2({
+                    placeholder: "Select included assets",
+                    allowClear: true,
+                });
+                var savedBusinessAssets = @this.get('business_assets') || [];
+                if (savedBusinessAssets.length > 0) {
+                    $('#included_assets').val(savedBusinessAssets).trigger('change.select2');
+                }
+                $('#included_assets').on('change', function(e) {
+                    var selectedValues = $(this).val() || [];
+                    @this.set('business_assets', selectedValues, false);
+                });
+            } else if ($('#included_assets').length && $('#included_assets').hasClass('select2-hidden-accessible')) {
+                var savedBusinessAssets = @this.get('business_assets') || [];
+                var currentAssets = $('#included_assets').val() || [];
+                if (savedBusinessAssets.length > 0 && currentAssets.length === 0) {
+                    $('#included_assets').val(savedBusinessAssets).trigger('change.select2');
                 }
             }
 

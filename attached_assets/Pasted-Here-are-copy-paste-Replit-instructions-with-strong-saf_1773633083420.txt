@@ -1,0 +1,477 @@
+Here are **copy-paste Replit instructions with strong safeguards** so this stays **surgical** and only affects **Hire a Seller’s Agent**.
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A SELLER’S AGENT ONLY — REQUIRED MARKER / HIDE EMPTY FIELDS / EDIT “OTHER” FIXES
+
+## SCOPE
+
+Make these fixes **only for Hire a Seller’s Agent**:
+
+1. **Offered Financing/Currency**
+
+   * remove the **red star**
+   * make it **not required**
+
+2. **Any field not filled in should not show on the listing**
+
+   * example: do **not** show empty rows like:
+
+     * `Special Sale Provision:` if empty
+     * `Broker Compensation & Agency Agreement Terms`
+     * `Broker Compensation:`
+     * `Legal Terms:`
+     * `Brokerage Relationship:`
+   * for **Income listings**, do **not** show the **Unit Type Configuration** table if there is no real data to show
+
+3. **Special Sale Provision**
+
+   * make this a **required field**
+
+4. **Edit Listing issues**
+
+   * **Bathrooms** and **Bedrooms**: when user previously selected **Other**, edit mode shows “Other” but not the custom input
+   * **Carport** and **Garage**: edit mode shows “Yes” but not the custom input
+   * **Included Property or Business Assets**: when user selected **Other**, the custom input box does not show on edit and the saved value does not properly repopulate
+
+---
+
+## HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Only work on Hire a Seller’s Agent flow.**
+2. **Do not modify Tenant, Buyer, or Landlord flows.**
+3. **Do not edit any unrelated file.**
+4. **Do not rename database columns.**
+5. **Do not rename Livewire properties.**
+6. **Do not rename wire:model bindings.**
+7. **Do not change routes.**
+8. **Do not run migrations.**
+9. **Do not change Select2 initialization.**
+10. **Do not change selection box format, dropdown styling, placeholder behavior, width, badge/tag style, or general selection UI.**
+11. **Do not change field labels, tooltips, placeholders, icons, or field order except removing the red star from Offered Financing/Currency.**
+12. **Do not do a broad refactor or cleanup.**
+13. **Do not touch any other “Other” field logic except the exact Seller fields listed below if needed.**
+14. **Keep this surgical and field-specific.**
+
+---
+
+## IMPORTANT
+
+We have had issues before with:
+
+* Replit editing the wrong file
+* “Other” inputs not repopulating
+* empty listing rows showing when they should be hidden
+* shared select logic being broken
+
+Because of that:
+
+### Hard stop
+
+Before editing anything, first confirm the **actual active Seller files** for:
+
+* Seller create/edit form
+* Seller listing display
+* Seller Property Details / Sale Terms / Broker Compensation display
+* Seller fields for Bedrooms, Bathrooms, Carport, Garage
+* Included Property or Business Assets field
+* Income listing Unit Type Configuration display
+
+Do **not** assume.
+Do **not** edit shared files unless absolutely necessary.
+If a shared file must be touched, wrap the change so it affects **Seller only**.
+
+---
+
+# STEP 1 — CONFIRM THE CORRECT ACTIVE SELLER FILES FIRST
+
+Before making changes, identify the exact active files for **Hire a Seller’s Agent**:
+
+1. Livewire/component file handling Seller create/edit
+2. Blade/partial rendering:
+
+   * Offered Financing/Currency
+   * Special Sale Provision
+   * Bedrooms
+   * Bathrooms
+   * Carport
+   * Garage
+   * Included Property or Business Assets
+3. Blade/partial rendering the **actual Seller listing display**
+4. Blade/partial rendering the **Broker Compensation & Agency Agreement Terms** section on the listing
+5. Blade/partial rendering the **Income Unit Type Configuration** section/table
+6. Any partial used in Seller edit hydration for “Other” inputs
+
+### Requirement
+
+Return the exact files first, then edit **only those files**.
+
+### Hard stop
+
+**No other file should be edited or changed.**
+
+---
+
+# STEP 2 — REMOVE RED STAR FROM OFFERED FINANCING/CURRENCY AND MAKE IT NOT REQUIRED
+
+## Required behavior
+
+For **Seller only**:
+
+* remove the **red required star** next to **Offered Financing/Currency**
+* make it **not required** in submit validation
+
+### Important
+
+This means align all 3 layers for **Seller only**:
+
+1. visual required indicator
+2. front-end required-field enforcement
+3. server-side validation
+
+### Do not:
+
+* affect Buyer/Tenant/Landlord versions of this field
+* change the field’s select/input format
+* change placeholder text
+* change option list
+
+This should be a **required-status removal only**.
+
+---
+
+# STEP 3 — MAKE SPECIAL SALE PROVISION REQUIRED
+
+## Required behavior
+
+For **Seller only**:
+
+* **Special Sale Provision** must now be a required field
+
+### This means:
+
+* show required indicator if your Seller UI uses one
+* include it in front-end required field enforcement
+* include it in server-side validation
+* include it in the missing-fields banner/guided correction flow if that Seller flow already supports it
+
+### Important
+
+Do not apply this change to other listing types/flows.
+
+---
+
+# STEP 4 — HIDE EMPTY FIELDS/SECTIONS ON SELLER LISTING DISPLAY
+
+## Current bug
+
+Seller listing page is showing labels/sections even when they were not filled in.
+
+Examples:
+
+* `Special Sale Provision:` when empty
+* `Broker Compensation & Agency Agreement Terms`
+* `Broker Compensation:`
+* `Legal Terms:`
+* `Brokerage Relationship:`
+
+## Required behavior
+
+If a field has no meaningful value, **do not show the row**.
+If all rows in a section are empty, **do not show the section header**.
+
+### Apply to Seller listing display
+
+At minimum, fix:
+
+* `Special Sale Provision`
+* `Broker Compensation & Agency Agreement Terms`
+* `Broker Compensation`
+* `Legal Terms`
+* `Brokerage Relationship`
+
+### Important
+
+Use the same display logic pattern as the listing type that already behaves correctly, like Tenant.
+
+Do **not**:
+
+* hide filled values
+* remove data from storage
+* affect Buyer, Tenant, or Landlord display
+
+This is a **Seller listing display conditional rendering fix only**.
+
+---
+
+# STEP 5 — HIDE EMPTY INCOME “UNIT TYPE CONFIGURATION” TABLE
+
+## Current bug
+
+On Seller **Income** listing display, the **Unit Type Configuration** table shows even when there is no real data:
+
+* Unit Type
+* Beds
+* Baths
+* Garage
+* Carport
+* Other Spaces
+* # Units
+* # Occupied
+* Expected Rent
+* Description
+
+## Required behavior
+
+If there are no actual configured unit rows with meaningful values, **do not show the Unit Type Configuration section/table at all**.
+
+### Important
+
+* if there is real data, keep showing the table
+* if rows are blank/empty, hide the entire section
+* do not affect non-Income property categories
+* do not change the table format when data exists
+
+This is a **Seller Income listing display-only fix**.
+
+---
+
+# STEP 6 — FIX BEDROOMS AND BATHROOMS “OTHER” ON EDIT
+
+## Current bug
+
+When user previously selected **Other** for **Bedrooms** or **Bathrooms**:
+
+* edit mode shows “Other”
+* but does **not** show the custom input field
+* so the saved custom value is not visible/editable
+
+## Required behavior
+
+For **Seller Bedrooms and Bathrooms only**:
+
+* if the saved selection is **Other**, show the custom input field on edit
+* preload the saved custom value into that input
+* ensure the listing shows the correct custom value
+* if there is no actual value, do not show a blank listing row
+
+### Trace and fix
+
+Confirm:
+
+* main property
+* “Other” property
+* conditional display logic
+* edit hydration logic
+* listing display logic
+
+### Important
+
+Do **not** rewrite all “Other” logic globally.
+Fix only the Seller Bedrooms/Bathrooms path.
+
+---
+
+# STEP 7 — FIX CARPORT & GARAGE ON EDIT
+
+## Current bug
+
+When user clicks **Edit**:
+
+* Carport / Garage shows `Yes`
+* but the custom input does not show when it should
+
+## Required behavior
+
+For **Seller Carport and Garage only**:
+
+* if the saved selection requires a custom input / “Other” style value, show the custom input in edit mode
+* preload the saved custom value
+* ensure listing display shows the custom value properly
+* do not show a blank row if no actual value exists
+
+### Important
+
+Do not affect Buyer/Landlord parking fields.
+Do not change selection format.
+
+---
+
+# STEP 8 — FIX “INCLUDED PROPERTY OR BUSINESS ASSETS” OTHER INPUT ON EDIT
+
+## Current bug
+
+For **Included Property or Business Assets**:
+
+* selected **Other**
+* custom input box does not show on edit
+* saved custom input did not repopulate correctly
+
+## Required behavior
+
+For **Seller only**:
+
+* if saved selection includes **Other**, show the custom input box on edit
+* preload the saved custom value
+* ensure the custom value remains saved
+* ensure listing display shows the correct value
+* do not change the selection input format
+
+### Trace and fix
+
+Confirm:
+
+* field property name
+* custom “Other” property name
+* save/store/update path
+* edit hydration
+* display logic
+
+### Important
+
+Do not rewrite all asset-field logic globally.
+Fix only this exact Seller field path.
+
+---
+
+# STEP 9 — PRESERVE BACKWARD COMPATIBILITY
+
+Older Seller records that already saved:
+
+* Bedrooms Other
+* Bathrooms Other
+* Carport/Garage custom values
+* Included Property or Business Assets Other
+* empty broker compensation fields
+* empty unit type config structures
+
+must still:
+
+* load correctly on edit
+* display correctly on listing
+* not require schema changes
+* not break existing records
+
+Do not require migrations.
+
+---
+
+# STEP 10 — TEST THESE EXACT CASES
+
+## A. Offered Financing/Currency
+
+* expected: no red star
+* expected: not required on submit
+
+## B. Special Sale Provision
+
+* leave blank
+* expected: submit blocked
+* expected: treated as required for Seller only
+
+## C. Bedrooms → Other
+
+* save custom value
+* click Edit
+* expected: Other input visible and populated
+
+## D. Bathrooms → Other
+
+* save custom value
+* click Edit
+* expected: Other input visible and populated
+
+## E. Carport / Garage custom input
+
+* save value
+* click Edit
+* expected: custom input visible and populated
+
+## F. Included Property or Business Assets → Other
+
+* save custom value
+* click Edit
+* expected: Other input visible and populated
+* expected: saved value preserved
+
+## G. Empty Broker Compensation section
+
+* leave section empty
+* expected: section header does not show on listing
+* expected: blank rows do not show
+
+## H. Empty Special Sale Provision
+
+* expected: no listing row if empty
+
+## I. Income Unit Type Configuration empty
+
+* expected: table does not show if no meaningful row data exists
+
+---
+
+# STEP 11 — VERIFY NOTHING ELSE CHANGED
+
+After the fix, explicitly confirm:
+
+* no Tenant files changed
+* no Buyer files changed
+* no Landlord files changed
+* no other Seller property categories were broken
+* no selection input format changed
+* no Select2 UI changed
+* no placeholders changed
+* no tooltips changed
+* no icons changed
+* no unrelated Seller fields changed
+
+---
+
+# STEP 12 — RETURN A FINAL REPORT
+
+After implementation, return:
+
+1. exact files changed
+2. confirmation the correct active Seller files were identified first
+3. exact root cause for:
+
+   * Offered Financing/Currency required status
+   * Special Sale Provision required status
+   * Bedrooms/Bathrooms Other not showing on edit
+   * Carport/Garage input not showing on edit
+   * Included Property or Business Assets Other not repopulating
+   * empty Broker Compensation section showing
+   * empty Income Unit Type Configuration showing
+4. exact fix applied for each
+5. confirmation no other files were edited
+6. confirmation selection inputs/Select2 format were not changed
+7. proof Seller listing now hides empty sections like Tenant
+
+---
+
+## IMPORTANT FINAL RULE
+
+This is a **Seller-only, surgical fix**.
+
+Do **not**:
+
+* edit unrelated files
+* change selection box format
+* refactor global select logic
+* touch Tenant, Landlord, or Buyer
+* make broad UI changes
+
+The final result should be:
+
+* Offered Financing/Currency is not required
+* Special Sale Provision is required
+* Bedrooms/Bathrooms Other shows correctly on edit
+* Carport/Garage custom input shows correctly on edit
+* Included Property or Business Assets Other shows correctly on edit
+* empty rows/sections do not show on Seller listing
+* empty Income Unit Type Configuration does not show
+* no other file or selection input behavior is changed
+
+---
+
+If you want, I can also make this into a **shorter hard-stop version** for Replit with even tighter language.

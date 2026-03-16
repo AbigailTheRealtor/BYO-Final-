@@ -1805,13 +1805,14 @@
 
                         <div class="broker-compensation-section">
 
-                        <!-- Broker Compensation Sub-section -->
-                        <h5 class="mt-3 mb-2"><strong>Broker Compensation:</strong></h5>
-
                         @php
                             $hasPurchaseFee = !empty(@$auction->get->purchase_fee_type);
                             $hasLeaseFee = !empty(@$auction->get->lease_fee_type);
                         @endphp
+                        <!-- Broker Compensation Sub-section -->
+                        @if ($hasPurchaseFee || $hasLeaseFee)
+                        <h5 class="mt-3 mb-2"><strong>Broker Compensation:</strong></h5>
+                        @endif
                         @if ($hasPurchaseFee)
                         @php
                             $purchaseFeeType = @$auction->get->purchase_fee_type ?? '';
@@ -2046,10 +2047,21 @@
                         @endif
                         @endif
 
+                        @php
+                            $hasLegalTerms = !empty(@$auction->get->protection_period)
+                                || @$auction->get->early_termination_fee_option != null
+                                || !empty(@$auction->get->retainer_fee_option)
+                                || (@$auction->get->retained_deposits != null && @$auction->get->retained_deposits != '' && @$auction->get->retained_deposits != 'null')
+                                || @$auction->get->agency_agreement_timeframe != null;
+                        @endphp
+                        @if ($hasLegalTerms)
                         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
+                        @endif
 
                         <!-- Legal Terms Sub-section -->
+                        @if ($hasLegalTerms)
                         <h5 class="mt-3 mb-2"><strong>Legal Terms:</strong></h5>
+                        @endif
 
                         @if (@$auction->get->protection_period != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -2100,10 +2112,18 @@
                         </div>
                         @endif
 
+                        @php
+                            $hasBrokerageRel = @$auction->get->brokerage_relationship != null
+                                || \App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->additional_details_broker);
+                        @endphp
+                        @if ($hasBrokerageRel)
                         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
+                        @endif
 
                         <!-- Brokerage Relationship Sub-section -->
+                        @if ($hasBrokerageRel)
                         <h5 class="mt-3 mb-2"><strong>Brokerage Relationship:</strong></h5>
+                        @endif
 
                         @if (@$auction->get->brokerage_relationship != null)
                         <div class="col-md-12 col-12 pt-2 fw-bold">

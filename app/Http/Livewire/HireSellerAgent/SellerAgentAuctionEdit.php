@@ -150,6 +150,7 @@ class SellerAgentAuctionEdit extends Component
     public $leasing_55_plus = '';
     public $non_negotiable_amenities = [];
     public $other_non_negotiable_amenities = '';
+    public $business_assets = [];
     public $budget = '';
 
     // Lease terms
@@ -1130,6 +1131,7 @@ class SellerAgentAuctionEdit extends Component
             $this->non_negotiable_amenities = is_string($auction->get->non_negotiable_amenities) ? json_decode($auction->get->non_negotiable_amenities, true) ?? [] : (array)$auction->get->non_negotiable_amenities;
 
             $this->other_non_negotiable_amenities = $auction->get->other_non_negotiable_amenities;
+            $this->business_assets = is_string($auction->get->business_assets) ? json_decode($auction->get->business_assets, true) ?? [] : (array)($auction->get->business_assets ?? []);
             $this->budget = $auction->get->budget;
 
             // Lease terms
@@ -1453,6 +1455,7 @@ class SellerAgentAuctionEdit extends Component
         // Requirements
         $auction->saveMeta('non_negotiable_amenities', json_encode($this->non_negotiable_amenities));
         $auction->saveMeta('other_non_negotiable_amenities', $this->other_non_negotiable_amenities);
+        $auction->saveMeta('business_assets', json_encode($this->business_assets));
         $auction->saveMeta('budget', $this->budget);
 
         // Lease Terms
