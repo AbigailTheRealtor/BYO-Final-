@@ -151,6 +151,13 @@
         color: #34465c !important;
     }
 
+    /* Consistent row spacing for all buyer listing data rows */
+    .card-body .col-md-12.fw-bold,
+    .card-body .col-12.fw-bold {
+        padding-top: 0.5rem !important;
+        padding-bottom: 0.35rem !important;
+    }
+
     ul {
         --icon-size: 1em;
         --gutter: .5em;
@@ -488,16 +495,15 @@
                                         </div>
                                     @endif
 
-                                    @if (@$auction->get->bathrooms != null)
+                                    @php
+                                        $bathroomsDisplay = (@$auction->get->bathrooms === 'Other')
+                                            ? @$auction->get->other_bathrooms
+                                            : @$auction->get->bathrooms;
+                                    @endphp
+                                    @if (!empty($bathroomsDisplay))
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
                                             Minimum Bathrooms Needed:
-                                            <span class="removeBold">
-                                                @if (@$auction->get->bathrooms != 'Other')
-                                                    {{ @$auction->get->bathrooms }}
-                                                @else
-                                                    {{ @$auction->get->other_bathrooms }}
-                                                @endif
-                                            </span>
+                                            <span class="removeBold">{{ $bathroomsDisplay }}</span>
                                         </div>
                                     @endif
 
@@ -1632,10 +1638,26 @@
                             </div>
                         @endif
 
+                        @php
+                            $hasBrokerCompData =
+                                !empty(@$auction->get->commission_structure) ||
+                                !empty(@$auction->get->purchase_fee_type) ||
+                                !empty(@$auction->get->interested_lease_option) ||
+                                !empty(@$auction->get->lease_fee_type) ||
+                                !empty(@$auction->get->interested_lease_option_agreement) ||
+                                !empty(@$auction->get->protection_period) ||
+                                !empty(@$auction->get->early_termination_fee_option) ||
+                                !empty(@$auction->get->retainer_fee_option) ||
+                                !empty(@$auction->get->agency_agreement_timeframe) ||
+                                !empty(@$auction->get->brokerage_relationship) ||
+                                !empty(@$auction->get->additional_details_broker);
+                        @endphp
+                        @if ($hasBrokerCompData)
                         <hr />
                         <div class="card-header section-header">
                             <h4 class="section-title">Broker Compensation & Agency Agreement Terms:</h4>
                         </div>
+                        @endif
 
                         <!-- Buyer's Broker Compensation Sub-section -->
                         @if (@$auction->get->commission_structure != null || @$auction->get->purchase_fee_type != null)
@@ -1675,7 +1697,9 @@
                         </div>
                         @endif
 
+                        @if (@$auction->get->commission_structure != null || @$auction->get->purchase_fee_type != null)
                         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
+                        @endif
 
                         <!-- Buyer's Broker Lease Fee Sub-section -->
                         @if (@$auction->get->interested_lease_option != null || @$auction->get->lease_fee_type != null)
@@ -1728,7 +1752,9 @@
                         </div>
                         @endif
 
+                        @if (@$auction->get->interested_lease_option != null || @$auction->get->lease_fee_type != null)
                         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
+                        @endif
 
                         <!-- Lease-Option Details Sub-section -->
                         @if (@$auction->get->interested_lease_option_agreement != null)
@@ -1816,7 +1842,9 @@
                         </div>
                         @endif
 
+                        @if (@$auction->get->protection_period != null || @$auction->get->early_termination_fee_option != null || @$auction->get->retainer_fee_option != null || @$auction->get->agency_agreement_timeframe != null)
                         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
+                        @endif
 
                         <!-- Brokerage Relationship Sub-section -->
                         @if (@$auction->get->brokerage_relationship != null)
@@ -1830,7 +1858,9 @@
                         </div>
                         @endif
 
+                        @if (@$auction->get->brokerage_relationship != null)
                         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
+                        @endif
 
                         <!-- Additional Terms Sub-section -->
                         @if (@$auction->get->additional_details_broker != null)
