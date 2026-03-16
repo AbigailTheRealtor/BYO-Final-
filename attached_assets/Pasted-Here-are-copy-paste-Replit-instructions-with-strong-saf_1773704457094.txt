@@ -1,0 +1,243 @@
+Here are **copy-paste Replit instructions with strong safeguards** for this exact **Hire a Seller’s Agent** fix only.
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A SELLER’S AGENT ONLY — HIDE EMPTY INCOME UNIT TYPE CONFIGURATION ON LISTING
+
+## SCOPE
+
+Make this fix **only for Hire a Seller’s Agent**:
+
+### Current issue
+
+On **Income** listings, the actual listing page is showing the **Unit Type Configuration** section/table even when it was **not filled in**.
+
+It currently shows:
+
+* `Unit Type Configuration`
+* `Unit Type`
+* `Beds`
+* `Baths`
+* `Garage`
+* `Carport`
+* `Other Spaces`
+* `# Units`
+* `# Occupied`
+* `Expected Rent`
+* `Description`
+
+even when there is no meaningful data.
+
+### Required behavior
+
+If **Unit Type Configuration** was not filled in, the section/table should **not show at all** on the listing page.
+
+If there are no meaningful unit rows, hide:
+
+* the section title
+* the table headers
+* the whole table/block
+
+---
+
+## HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Only edit the Hire a Seller’s Agent flow.**
+2. **Do not modify Tenant, Buyer, or Landlord flows.**
+3. **Do not edit any unrelated file.**
+4. **Do not rename database columns.**
+5. **Do not rename Livewire properties.**
+6. **Do not rename wire:model bindings.**
+7. **Do not change routes.**
+8. **Do not run migrations.**
+9. **Do not change selection input format.**
+10. **Do not change Select2 initialization or behavior.**
+11. **Do not change field labels, tooltips, placeholders, icons, or field order.**
+12. **Do not change the table format when real data exists.**
+13. **Do not do a broad listing display refactor.**
+14. **Keep this surgical and display-only.**
+
+---
+
+## IMPORTANT
+
+We only want to fix the **Seller Income listing display** so empty Unit Type Configuration does not show.
+
+### Hard stop:
+
+Before editing anything, first confirm the **actual active Seller files** for:
+
+* Seller listing display
+* Seller Income listing display
+* the section/block/table responsible for **Unit Type Configuration**
+
+Do **not** assume.
+Do **not** edit shared files unless absolutely necessary.
+If a shared file must be touched, wrap the change so it affects **Seller only**.
+
+---
+
+## STEP 1 — CONFIRM THE CORRECT ACTIVE FILES FIRST
+
+Before making changes, identify the exact active files for **Hire a Seller’s Agent**:
+
+1. File/partial rendering the **actual Seller listing display**
+2. File/partial rendering the **Income** listing section
+3. File/partial responsible for the **Unit Type Configuration** table/block
+
+### Requirement
+
+Return the exact files first, then edit **only those files**.
+
+### Hard stop
+
+**No other file should be edited or changed.**
+
+---
+
+## STEP 2 — HIDE UNIT TYPE CONFIGURATION IF THERE IS NO MEANINGFUL DATA
+
+## Current bug
+
+The Seller Income listing shows the **Unit Type Configuration** section/table even when no actual data was entered.
+
+## Required behavior
+
+If there are **no meaningful configured unit rows**, do **not** show:
+
+* `Unit Type Configuration`
+* the table headers
+* the table block
+
+### Meaningful data rule
+
+Do not treat empty/blank rows as real rows.
+
+If the configuration data is:
+
+* `null`
+* empty array
+* rows containing only blank/default/placeholder values
+* rows with no meaningful values in any important columns
+
+then the whole section should be hidden.
+
+---
+
+## STEP 3 — KEEP THE TABLE IF REAL DATA EXISTS
+
+If the listing actually has real unit configuration data, keep the section/table exactly as it is.
+
+### Important
+
+Do **not**:
+
+* change the table columns
+* change table styling
+* change spacing
+* change labels
+* change layout when data exists
+
+This is only a conditional display fix:
+
+* show when real data exists
+* hide when no meaningful data exists
+
+---
+
+## STEP 4 — MATCH THE CLEANER HIDE-EMPTY DISPLAY BEHAVIOR USED ELSEWHERE
+
+If another listing type or another Seller section already correctly hides empty display blocks, use the same pattern here.
+
+Prefer to mirror existing hide-empty display logic rather than invent a brand-new structure.
+
+### Important
+
+Do not rewrite all listing display logic.
+Fix only this exact Seller Income section.
+
+---
+
+## STEP 5 — PRESERVE BACKWARD COMPATIBILITY
+
+Older Seller Income listings that already have saved unit configuration data must still:
+
+* display correctly
+* not require migrations
+* not lose data
+* not break existing listing output
+
+Older listings with empty/blank unit config must now correctly hide the section.
+
+---
+
+## STEP 6 — TEST THESE EXACT CASES
+
+### A. Income listing with no unit configuration entered
+
+* expected: `Unit Type Configuration` does **not** show
+* expected: no table headers show
+* expected: no empty table block shows
+
+### B. Income listing with real unit configuration data
+
+* expected: section still shows normally
+* expected: table layout remains unchanged
+
+### C. Non-Income Seller listing
+
+* expected: unchanged
+
+---
+
+## STEP 7 — VERIFY NOTHING ELSE CHANGED
+
+After the fix, explicitly confirm:
+
+* no Tenant files changed
+* no Buyer files changed
+* no Landlord files changed
+* no selection input format changed
+* no Select2 UI changed
+* no placeholders changed
+* no tooltips changed
+* no icons changed
+* no unrelated Seller sections changed
+
+---
+
+## STEP 8 — RETURN A FINAL REPORT
+
+After implementation, return:
+
+1. exact files changed
+2. confirmation the correct active Seller files were identified first
+3. exact root cause for the empty Unit Type Configuration section showing
+4. exact fix applied
+5. confirmation no other files were edited
+6. confirmation selection inputs/Select2 format were not changed
+7. proof empty Seller Income Unit Type Configuration no longer shows on listing
+
+---
+
+## IMPORTANT FINAL RULE
+
+This is a **Seller-only, surgical listing-display fix**.
+
+Do **not**:
+
+* edit unrelated files
+* change selection input format
+* refactor global listing logic
+* touch Tenant, Buyer, or Landlord
+* make broad UI changes
+
+The final result should be:
+
+* empty Seller Income **Unit Type Configuration** does not show on the listing
+* listings with real unit data still show the table normally
+* no other file or selection behavior is changed
+
+---
+
+If you want, I can also combine this with your other Seller display fixes into **one clean Replit message** so they all stay grouped together.

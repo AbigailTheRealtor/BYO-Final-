@@ -892,6 +892,10 @@
                                     if ($unitConfigs) {
                                         $unitConfigList = is_string($unitConfigs) ? (json_decode($unitConfigs, true) ?? []) : (array)$unitConfigs;
                                     }
+                                    $unitConfigList = array_values(array_filter($unitConfigList ?? [], function($unit) {
+                                        return !empty($unit['unit_type']) || !empty($unit['beds_unit']) || !empty($unit['baths_unit'])
+                                            || !empty($unit['number_of_units']) || !empty($unit['expected_rent']) || !empty($unit['unit_type_description']);
+                                    }));
                                 @endphp
                                 @if (!empty($unitConfigList))
                                     <div class="col-12 pt-3">

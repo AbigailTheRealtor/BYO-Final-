@@ -978,17 +978,27 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         @$auction->get->broker_fee_days_after_rent,
                         @$auction->get->broker_fee_days_after_due_event,
                     ])->filter(fn($v) => $v !== null && $v !== '')->first();
+                    if ($calendarDaysValue) {
+                        if ($rawBrokerTiming === 'Paid Within Calendar Days After Executed Lease') {
+                            $displayBrokerTiming = 'Paid Within ' . $calendarDaysValue . ' Calendar Days After Executed Lease';
+                            $calendarDaysValue = null;
+                        } elseif ($rawBrokerTiming === 'Paid Within Calendar Days of Tenant Rent Payment') {
+                            $displayBrokerTiming = 'Paid Within ' . $calendarDaysValue . ' Calendar Days of Tenant Rent Payment';
+                            $calendarDaysValue = null;
+                        } elseif ($rawBrokerTiming === 'Deducted from Rent Collected') {
+                            $displayBrokerTiming = 'Deducted from Rent Collected (' . $calendarDaysValue . ' Calendar Days to Pay Balance)';
+                            $calendarDaysValue = null;
+                        }
+                    }
                 @endphp
                 @if ($rawBrokerTiming != null || $calendarDaysValue)
                 <div class="col-md-12 col-12 pt-2 fw-bold">
                     Payment Timing for Broker Fees:
                     <span class="removeBold">
-                        @if ($rawBrokerTiming != null && $calendarDaysValue)
-                            {{ $displayBrokerTiming }} — {{ $calendarDaysValue }} calendar days to pay
-                        @elseif ($rawBrokerTiming != null)
-                            {{ $displayBrokerTiming }}
+                        @if ($calendarDaysValue)
+                            {{ $displayBrokerTiming }} — {{ $calendarDaysValue }} calendar days
                         @else
-                            {{ $calendarDaysValue }} calendar days to pay
+                            {{ $displayBrokerTiming }}
                         @endif
                     </span>
                 </div>

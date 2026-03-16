@@ -1158,14 +1158,18 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             $rentIncludesItems = $isRentNone ? [] : \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->rent_includes, @$auction->get->other_rent_include);
         @endphp
         @if ($isRentNone)
-        <div class="col-md-12 col-12 pt-2 fw-bold"> Rent Includes:
-            <span class="removeBold">None</span>
+        <div class="row" style="flex-wrap: wrap;">
+            <div class="col-12 fw-bold pt-2">Rent Includes:
+                <span class="removeBold">None</span>
+            </div>
         </div>
         @elseif (!empty($rentIncludesItems))
-        <div class="col-md-12 col-12 pt-2 fw-bold"> Rent Includes:
-            @foreach ($rentIncludesItems as $item)
-                <span class="removeBold badge bg-secondary">{{ $item }}</span>
-            @endforeach
+        <div class="row" style="flex-wrap: wrap;">
+            <div class="col-12 fw-bold pt-2">Rent Includes:
+                @foreach ($rentIncludesItems as $item)
+                    <span class="removeBold badge bg-secondary">{{ $item }}</span>
+                @endforeach
+            </div>
         </div>
         @endif
 
