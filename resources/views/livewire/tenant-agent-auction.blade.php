@@ -4238,6 +4238,7 @@ $lease_types = [
                 '#listing-details',
                 '#property-preferences',
                 '#property-details',
+                '#purchasing-terms',
                 '#sale-terms',
                 '#leasing-terms',
                 '#pre-screening',
@@ -4559,6 +4560,14 @@ $lease_types = [
                 'desired_rental_amount':   'Desired Rental Amount',
                 'lease_amount_frequency':  'Lease Amount Frequency',
                 'desired_lease_length':    'Desired Lease Term',
+                // Buyer-specific fields
+                'property_items':          'Acceptable Property Style',
+                'target_closing_date':     'Target Closing Date',
+                'maximum_budget':          'Maximum Budget',
+                'offered_financing':       'Offered Financing',
+                'tenant_require':          'Furnishings Needed',
+                'pets':                    'Pets',
+                'real_estate_purchase':    'Business & Real Estate Purchase Requirements',
             };
 
             // Returns the canonical property key for a field: wire:model value first,
@@ -4722,6 +4731,43 @@ $lease_types = [
                                         var _dllElGi = document.querySelector('.lease_term_options');
                                         var _dllTabGi = _dllElGi ? _dllElGi.closest('.tab-pane') : null;
                                         items.push({ field: _dllElGi || document.body, tab: _dllTabGi, fieldName: TENANT_FIELD_LABELS['desired_lease_length'] || 'Desired Lease Term', key: 'desired_lease_length' });
+                                    }
+                                } else if (_curUTgi === 'buyer') {
+                                    // Buyer-specific Select2 multi-selects that are wire:ignore — check Livewire state.
+                                    // property_items: required when property_type is selected
+                                    var _ptValBuyer = _comp.get('property_type');
+                                    if (_ptValBuyer && _ptValBuyer !== '') {
+                                        var _piValBuyer = _comp.get('property_items');
+                                        if (typeof _piValBuyer === 'string') { try { _piValBuyer = JSON.parse(_piValBuyer); } catch(exB1) {} }
+                                        var _piEmptyBuyer = !_piValBuyer || (Array.isArray(_piValBuyer) && _piValBuyer.length === 0) || _piValBuyer === '[]';
+                                        if (_piEmptyBuyer) {
+                                            var $piDomBuyer = $('#property_items');
+                                            if ($piDomBuyer.length) {
+                                                var _piDomValBuyer = $piDomBuyer.val();
+                                                if (_piDomValBuyer && Array.isArray(_piDomValBuyer) && _piDomValBuyer.length > 0) _piEmptyBuyer = false;
+                                            }
+                                        }
+                                        if (_piEmptyBuyer && !items.some(function(i) { return i.key === 'property_items'; })) {
+                                            var _piElBuyer = document.getElementById('property_items');
+                                            var _piTabBuyer = _piElBuyer ? _piElBuyer.closest('.tab-pane') : null;
+                                            items.push({ field: _piElBuyer || document.body, tab: _piTabBuyer, fieldName: TENANT_FIELD_LABELS['property_items'] || 'Acceptable Property Style', key: 'property_items' });
+                                        }
+                                    }
+                                    // offered_financing: always required for buyer
+                                    var _ofValBuyer = _comp.get('offered_financing');
+                                    if (typeof _ofValBuyer === 'string') { try { _ofValBuyer = JSON.parse(_ofValBuyer); } catch(exB2) {} }
+                                    var _ofEmptyBuyer = !_ofValBuyer || (Array.isArray(_ofValBuyer) && _ofValBuyer.length === 0) || _ofValBuyer === '' || _ofValBuyer === '[]';
+                                    if (_ofEmptyBuyer) {
+                                        var $ofDomBuyer = $('#offered_financing');
+                                        if ($ofDomBuyer.length) {
+                                            var _ofDomValBuyer = $ofDomBuyer.val();
+                                            if (_ofDomValBuyer && Array.isArray(_ofDomValBuyer) && _ofDomValBuyer.length > 0) _ofEmptyBuyer = false;
+                                        }
+                                    }
+                                    if (_ofEmptyBuyer && !items.some(function(i) { return i.key === 'offered_financing'; })) {
+                                        var _ofElBuyer = document.getElementById('offered_financing');
+                                        var _ofTabBuyer = _ofElBuyer ? _ofElBuyer.closest('.tab-pane') : null;
+                                        items.push({ field: _ofElBuyer || document.body, tab: _ofTabBuyer, fieldName: TENANT_FIELD_LABELS['offered_financing'] || 'Offered Financing', key: 'offered_financing' });
                                     }
                                 }
                             }

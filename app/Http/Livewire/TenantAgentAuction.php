@@ -3422,6 +3422,49 @@ class TenantAgentAuction extends Component
             $rules['email']        = 'required|email';
         }
 
+        // Buyer-specific required fields (full_service only)
+        if ($this->user_type === 'buyer' && $this->service_type === 'full_service') {
+            // Tab 1 – Listing Details
+            $rules['desired_agent_hire_date'] = 'required|date';
+            $rules['meeting_Preference']      = 'required';
+
+            if ($this->auction_type === 'Bidding Period') {
+                $rules['auction_time'] = 'required';
+            }
+
+            // Tab 2 – Property Preferences
+            $rules['state']         = 'required';
+            $rules['property_type'] = 'required';
+            $rules['counties']      = 'required|array|min:1';
+
+            if (!empty($this->property_type)) {
+                $rules['property_items'] = 'required|array|min:1';
+            }
+            if (in_array($this->property_type, ['Residential'])) {
+                $rules['bedrooms'] = 'required';
+            }
+            if (in_array($this->property_type, ['Residential', 'Commercial', 'Business'])) {
+                $rules['bathrooms'] = 'required';
+            }
+            if (in_array($this->property_type, ['Residential', 'Income'])) {
+                $rules['pets'] = 'required';
+            }
+            if ($this->property_type === 'Business') {
+                $rules['real_estate_purchase'] = 'required';
+            }
+
+            // Tab 3 – Purchasing Terms
+            $rules['target_closing_date'] = 'required';
+            $rules['maximum_budget']      = 'required';
+            $rules['offered_financing']   = 'required|array|min:1';
+
+            // Tab 7 – Buyer Information
+            $rules['first_name']   = 'required|string|max:255';
+            $rules['last_name']    = 'required|string|max:255';
+            $rules['phone_number'] = 'required';
+            $rules['email']        = 'required|email';
+        }
+
         if ($this->isDraft) {
             $filledRules = [];
             foreach ($rules as $field => $rule) {
