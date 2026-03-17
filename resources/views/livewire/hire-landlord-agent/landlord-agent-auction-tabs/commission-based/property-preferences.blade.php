@@ -343,6 +343,7 @@
     }
     $landlordConditionLabelMap = [
         'Older but Well Maintained' => 'Older but Clean & Well Maintained',
+        'Older but clean & well maintained' => 'Older but Clean & Well Maintained',
     ];
 @endphp
 <div class="form-group">

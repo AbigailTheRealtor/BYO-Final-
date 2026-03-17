@@ -4078,9 +4078,12 @@
                                 var lwChecks = [
                                     { prop: 'property_type', label: 'Property Type' },
                                 ];
-                                if (curUT === 'tenant' || curUT === 'landlord') {
+                                if (curUT === 'tenant') {
                                     lwChecks.push({ prop: 'lease_for', label: 'Offered Lease Term', isArray: true, domSel: '.lease_for' });
                                     lwChecks.push({ prop: 'leasing_spaces_tenant', label: 'Leasing Space', isArray: true, domSel: '#leasing_spaces_tenant' });
+                                } else if (curUT === 'landlord') {
+                                    lwChecks.push({ prop: 'desired_lease_length', label: 'Offered Lease Term', isArray: true, domSel: '.lease_term_options' });
+                                    lwChecks.push({ prop: 'leasing_spaces', label: 'Offered Lease Space', isArray: false });
                                 }
                                 lwChecks.forEach(function(chk) {
                                     var val = comp.get(chk.prop);
@@ -4224,9 +4227,12 @@
                                     var lwReqs2 = [
                                         { prop: 'property_type', label: 'Property Type' },
                                     ];
-                                    if (curUT2 === 'tenant' || curUT2 === 'landlord') {
+                                    if (curUT2 === 'tenant') {
                                         lwReqs2.push({ prop: 'lease_for', label: 'Offered Lease Term', isArray: true, domSel: '.lease_for' });
                                         lwReqs2.push({ prop: 'leasing_spaces_tenant', label: 'Leasing Space', isArray: true, domSel: '#leasing_spaces_tenant' });
+                                    } else if (curUT2 === 'landlord') {
+                                        lwReqs2.push({ prop: 'desired_lease_length', label: 'Offered Lease Term', isArray: true, domSel: '.lease_term_options' });
+                                        lwReqs2.push({ prop: 'leasing_spaces', label: 'Offered Lease Space', isArray: false });
                                     }
                                     lwReqs2.forEach(function(chk) {
                                         var val = comp2.get(chk.prop);
