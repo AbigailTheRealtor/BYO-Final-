@@ -341,6 +341,9 @@
             $landlordConditionOptions[] = ['name' => $condition_prop];
         }
     }
+    $landlordConditionLabelMap = [
+        'Older but Well Maintained' => 'Older but Clean & Well Maintained',
+    ];
 @endphp
 <div class="form-group">
     <label class="fw-bold">Property Condition:<span class="text-danger">*</span></label>
@@ -354,7 +357,7 @@
             data-icon="fa-solid fa-screwdriver-wrench" required>
             <option value="">Select</option>
             @foreach ($landlordConditionOptions as $row_pt)
-                <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
+                <option value="{{ $row_pt['name'] }}">{{ $landlordConditionLabelMap[$row_pt['name']] ?? $row_pt['name'] }}</option>
             @endforeach
         </select>
     </div>
