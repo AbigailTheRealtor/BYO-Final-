@@ -1,0 +1,377 @@
+Yes — I would keep the Buyer wording as:
+
+**Required Property or Business Assets:**
+**Required Income & Investment Metrics:**
+
+That reads cleaner than **Business/Property** and still matches the Buyer-side format well.
+
+Here are copy-paste-ready Replit instructions with safeguards:
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A BUYER’S AGENT — INCOME + COMMERCIAL/BUSINESS LISTING FIXES
+
+## GOAL
+
+Make the **Hire a Buyer’s Agent** flow and actual listing display more consistent with the Seller-style formatting where appropriate, while keeping Buyer wording clear.
+
+There are **3 targeted fixes only**:
+
+### 1) Buyer Income — edit bug
+
+For **Hire a Buyer’s Agent → Income**, when **Acceptable Exchange Item** is selected, the related custom input is **not showing on edits**.
+This must load correctly in edit mode and draft/edit reopen mode.
+
+### 2) Buyer Income — section format
+
+For **Hire a Buyer’s Agent → Income**, the display/summary format should be organized like Seller’s Income layout, using Buyer wording:
+
+* **Required Property or Business Assets:**
+* **Required Income & Investment Metrics:**
+
+Under **Required Income & Investment Metrics:** show:
+
+* Acceptable Number of Units:
+* Acceptable Unit Type:
+* Minimum Annual Net Income Needed:
+* Minimum Cap Rate Needed:
+* Additional Details:
+
+### 3) Buyer Commercial / Business Opportunity — actual listing display
+
+For **Hire a Buyer’s Agent → Commercial and Business Opportunity actual listing view**, add separate visible sections/tabs matching this structure:
+
+#### Tab / section 1
+
+**Required Property or Business Assets**
+
+Inside it show:
+
+* **Required Property or Business Assets:**
+
+#### Tab / section 2
+
+**Required Income & Investment Metrics**
+
+Inside it show fields like:
+
+* Minimum Annual Net Income Needed: $100,000
+* Minimum Cap Rate Needed: 6%
+
+---
+
+# HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Only work on Hire a Buyer’s Agent flow.**
+2. **Do not change Seller, Tenant, or Landlord files unless a shared file is proven to control Buyer output too.**
+3. **Do not rename, delete, or migrate database columns.**
+4. **Do not change wire:model names, backend property names, validation keys, or storage keys unless absolutely required for the edit bug.**
+5. **Do not do broad text replacements across all Buyer files.**
+6. **Do not duplicate sections or create two versions of the same block.**
+7. **Do not break create mode, edit mode, draft mode, or listing summary pages.**
+8. **Do not change Residential or Vacant Land unless the exact shared file requires a carefully scoped conditional.**
+9. **For display changes, edit the actual render file being used — not just form files.**
+10. **For edit bug fixes, preserve existing saved values and only restore missing visibility/hydration logic.**
+11. **If a shared partial is used, scope changes strictly to Buyer + relevant property type branch.**
+12. **Stop if the change would require destructive schema changes or a broad refactor.**
+
+---
+
+# LABELING DECISION
+
+## USE THIS WORDING
+
+* **Required Property or Business Assets:**
+* **Required Income & Investment Metrics:**
+
+## DO NOT CHANGE TO
+
+* Required Business/Property Assets
+
+Reason:
+
+* **Property or Business** reads more naturally
+* matches the rest of the platform better
+* avoids slash-style wording unless already required in the UI
+* looks more polished in listing summaries and actual listing pages
+
+---
+
+# FIX 1 — BUYER INCOME EDIT BUG
+
+## ISSUE
+
+For **Hire a Buyer’s Agent → Income**, when **Acceptable Exchange Item** is selected, the related custom input is not appearing when the user reopens:
+
+* Edit Listing
+* Saved Draft
+* Existing saved listing
+
+## REQUIRED RESULT
+
+If **Acceptable Exchange Item** was previously selected and/or a related custom value exists, then on edit reopen:
+
+* the related input must appear
+* the saved value must load
+* it must remain editable
+* it must save again correctly
+
+## WHAT TO CHECK FIRST
+
+Inspect the exact Buyer Income files controlling:
+
+* create form rendering
+* edit hydration
+* conditional show/hide logic
+* draft reload logic
+* saved listing reopen logic
+
+Check whether the problem is caused by:
+
+* missing conditional branch on edit
+* JS visibility not re-triggering on mount
+* missing old value hydration
+* field hidden because selection array/value is not being decoded on edit
+* wrong property type branch
+
+## IMPORTANT
+
+Do **not** just make the field always visible.
+Fix the actual conditional logic so it behaves correctly on create, draft, and edit.
+
+---
+
+# FIX 2 — BUYER INCOME FORMAT
+
+## REQUIRED FORMAT FOR BUYER INCOME
+
+In the Buyer Income display/summary/form presentation, organize this section as:
+
+### Section heading 1
+
+**Required Property or Business Assets:**
+
+### Section heading 2
+
+**Required Income & Investment Metrics:**
+
+Under **Required Income & Investment Metrics:** show:
+
+* **Acceptable Number of Units:**
+* **Acceptable Unit Type:**
+* **Minimum Annual Net Income Needed:**
+* **Minimum Cap Rate Needed:**
+* **Additional Details:**
+
+## IMPORTANT
+
+This is mainly a **presentation/heading/grouping** correction.
+Do **not** rename backend fields.
+
+## MATCH SELLER STYLE CAREFULLY
+
+Match the structure/style of Seller Income where helpful, but keep Buyer wording as Buyer criteria wording.
+
+---
+
+# FIX 3 — BUYER COMMERCIAL + BUSINESS OPPORTUNITY ACTUAL LISTING VIEW
+
+## SCOPE
+
+This is for the **actual listing display page**, not just the create/edit form.
+
+For **Hire a Buyer’s Agent → Commercial** and **Hire a Buyer’s Agent → Business Opportunity**, add or correct the visible listing sections so the actual listing shows:
+
+### Tab / section title
+
+**Required Property or Business Assets**
+
+Inside that section show:
+
+* **Required Property or Business Assets:**
+
+### Tab / section title
+
+**Required Income & Investment Metrics**
+
+Inside that section show fields such as:
+
+* **Minimum Annual Net Income Needed:** $100,000
+* **Minimum Cap Rate Needed:** 6%
+
+## IMPORTANT
+
+Before changing anything, identify the exact display file that renders the actual listing view for:
+
+* Buyer Commercial
+* Buyer Business Opportunity
+
+Do not assume the create/edit form file controls the actual listing display.
+
+---
+
+# FIRST STEP — TRACE THE CORRECT FILES BEFORE EDITING
+
+Before making changes, identify the exact files for each of these:
+
+## Buyer Income
+
+1. create/edit form file
+2. actual listing summary/detail file
+3. edit hydration logic for Acceptable Exchange Item conditional input
+
+## Buyer Commercial / Business Opportunity
+
+1. actual listing display file
+2. property-type-specific branch or partial for assets/metrics sections
+
+Do not rely on previously edited files unless you confirm they control the exact page being fixed.
+
+---
+
+# WHAT TO CHANGE
+
+## A) Buyer Income — edit behavior
+
+Fix the conditional input for **Acceptable Exchange Item** so it appears correctly on edit/draft reopen.
+
+## B) Buyer Income — headings/grouping
+
+Use:
+
+* **Required Property or Business Assets:**
+* **Required Income & Investment Metrics:**
+
+## C) Buyer Commercial / Business Opportunity actual listing
+
+Ensure the actual listing page has distinct sections/tabs for:
+
+* **Required Property or Business Assets**
+* **Required Income & Investment Metrics**
+
+and displays the relevant saved values inside those sections.
+
+---
+
+# DO NOT CHANGE
+
+* Seller section labels
+* Buyer Residential labels
+* Vacant Land labels
+* DB schema
+* validation architecture unless the edit bug requires a small scoped fix
+* unrelated summary pages
+* unrelated public listing cards
+* controller names or routes unless absolutely necessary
+
+---
+
+# ACCEPTANCE TESTS
+
+## Test 1 — Buyer Income create
+
+Create a Buyer Income listing.
+Select **Acceptable Exchange Item**.
+Enter related custom input.
+Save draft / save listing.
+
+Confirm the field saves correctly.
+
+---
+
+## Test 2 — Buyer Income edit
+
+Open that same Buyer Income listing in edit mode.
+
+Confirm:
+
+* **Acceptable Exchange Item** is still selected
+* the related custom input is visible
+* the saved value appears
+* it can be edited and re-saved
+
+---
+
+## Test 3 — Buyer Income display format
+
+Open Buyer Income actual listing/summary.
+
+Confirm it shows:
+
+* **Required Property or Business Assets:**
+* **Required Income & Investment Metrics:**
+
+and under metrics it shows:
+
+* Acceptable Number of Units:
+* Acceptable Unit Type:
+* Minimum Annual Net Income Needed:
+* Minimum Cap Rate Needed:
+* Additional Details:
+
+---
+
+## Test 4 — Buyer Commercial actual listing
+
+Open a Buyer Commercial listing.
+
+Confirm there is a visible section/tab:
+
+* **Required Property or Business Assets**
+
+and another:
+
+* **Required Income & Investment Metrics**
+
+Confirm saved values display under the correct section.
+
+---
+
+## Test 5 — Buyer Business Opportunity actual listing
+
+Open a Buyer Business Opportunity listing.
+
+Confirm the same structure appears:
+
+* **Required Property or Business Assets**
+* **Required Income & Investment Metrics**
+
+Confirm values display correctly.
+
+---
+
+## Test 6 — Seller unaffected
+
+Open Seller Income and Seller Commercial/Business listings.
+
+Confirm no unintended wording or section changes happened there.
+
+---
+
+## Test 7 — Other Buyer property types unaffected
+
+Open Buyer Residential and Vacant Land.
+
+Confirm no incorrect section changes were introduced.
+
+---
+
+# REPORT BACK AFTER CHANGES
+
+Please report back with:
+
+1. **Exact files changed**
+2. **Which file fixed the Buyer Income Acceptable Exchange Item edit bug**
+3. **Which file controls the Buyer Income actual listing display**
+4. **Which file controls the Buyer Commercial / Business Opportunity actual listing display**
+5. **Confirmation that only Buyer flow was changed**
+6. **Confirmation that backend field names and storage keys were not changed**
+
+---
+
+Yes — for Buyer format, I would keep it as:
+
+**Required Property or Business Assets**
+**Required Income & Investment Metrics**
+
+That is the cleanest wording.

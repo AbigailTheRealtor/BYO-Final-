@@ -673,77 +673,6 @@
                             @endif
                         @endif
 
-                        <!-- Business Specific Fields -->
-                        @if (@$auction->get->real_estate_purchase != null)
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Business & Real Estate Purchase Requirements:
-                                <span class="removeBold">{{ @$auction->get->real_estate_purchase }}</span>
-                            </div>
-                        @endif
-
-                        @if (@$auction->get->assets != null && count(@$auction->get->assets) > 0)
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Required Property or Business Assets:
-                                @foreach (@$auction->get->assets as $item)
-                                    @if ($item != 'Other')
-                                        <span class="removeBold badge bg-secondary">{{ $item }}</span>
-                                    @endif
-                                @endforeach
-                                @if (@$auction->get->assets_other)
-                                    <span class="removeBold badge bg-secondary">{{ @$auction->get->assets_other }}</span>
-                                @endif
-                            </div>
-                        @endif
-
-                        <!-- Income Property Specific Fields -->
-                        @if (@$auction->get->property_criteria != null)
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Required Income & Investment Metrics:
-                                <span class="removeBold">{{ @$auction->get->property_criteria }}</span>
-                            </div>
-                        @endif
-
-                        @if (@$auction->get->unit_size != null)
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Acceptable Number of Units:
-                                <span class="removeBold">
-                                    @if (@$auction->get->unit_size != 'Other')
-                                        {{ @$auction->get->unit_size }}
-                                    @else
-                                        {{ @$auction->get->unit_size_other }}
-                                    @endif
-                                </span>
-                            </div>
-                        @endif
-
-                        @if (@$auction->get->number_of_unit_type != null && count(@$auction->get->number_of_unit_type) > 0)
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Acceptable Unit Type:
-                                @if (count(@$auction->get->number_of_unit_type) === 1)
-                                    <span class="removeBold">{{ @$auction->get->number_of_unit_type[0] }}</span>
-                                @else
-                                    @foreach (@$auction->get->number_of_unit_type as $item)
-                                        <span class="removeBold badge bg-secondary">{{ $item }}</span>
-                                    @endforeach
-                                @endif
-                            </div>
-                        @endif
-
-                        <!-- Financial Fields -->
-                        @if (@$auction->get->minimum_annual_net_income != null)
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Minimum Annual Net Income Needed:
-                                <span class="removeBold">{{ \App\Support\Format::money(@$auction->get->minimum_annual_net_income) }}</span>
-                            </div>
-                        @endif
-
-                        @if (@$auction->get->minimum_cap_rate != null)
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Minimum Cap Rate Needed:
-                                <span class="removeBold">{{ @$auction->get->minimum_cap_rate }}%</span>
-                            </div>
-                        @endif
-
                         @if (@$auction->get->property_type != 'Income' && @$auction->get->pets != null)
                             <div class="col-md-12 col-12 pt-2 fw-bold">
                                 Pets:
@@ -787,16 +716,110 @@
                                 @endif
                             @endif
                         @endif
-                        @if (@$auction->get->preferance_details != null)
 
+                        </div>{{-- end Property Preferences row --}}
 
-                            <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Additional Details: <span class="removeBold">
-                                    {{ $auction->get->preferance_details ?? '' }}</span>
-                            </div>
+                        @php
+                            $buyerHasAssets = !empty(@$auction->get->assets) && count((array) @$auction->get->assets) > 0;
+                            $buyerHasRealEstate = !empty(@$auction->get->real_estate_purchase);
+                            $buyerHasMetrics = !empty(@$auction->get->property_criteria)
+                                || !empty(@$auction->get->unit_size)
+                                || (!empty(@$auction->get->number_of_unit_type) && count((array) @$auction->get->number_of_unit_type) > 0)
+                                || !empty(@$auction->get->minimum_annual_net_income)
+                                || !empty(@$auction->get->minimum_cap_rate)
+                                || !empty(@$auction->get->preferance_details);
+                        @endphp
+
+                        @if ($buyerHasAssets || $buyerHasRealEstate)
+                        <hr>
+                        <div class="card-header section-header">
+                            <h4 class="section-title">Required Property or Business Assets</h4>
+                        </div>
+                        <div class="row" style="flex-wrap: wrap;">
+                            @if ($buyerHasRealEstate)
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
+                                    Business & Real Estate Purchase Requirements:
+                                    <span class="removeBold">{{ @$auction->get->real_estate_purchase }}</span>
+                                </div>
+                            @endif
+
+                            @if ($buyerHasAssets)
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
+                                    Required Property or Business Assets:
+                                    @foreach (@$auction->get->assets as $item)
+                                        @if ($item != 'Other')
+                                            <span class="removeBold badge bg-secondary">{{ $item }}</span>
+                                        @endif
+                                    @endforeach
+                                    @if (@$auction->get->assets_other)
+                                        <span class="removeBold badge bg-secondary">{{ @$auction->get->assets_other }}</span>
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
                         @endif
 
+                        @if ($buyerHasMetrics)
+                        <hr>
+                        <div class="card-header section-header">
+                            <h4 class="section-title">Required Income & Investment Metrics</h4>
                         </div>
+                        <div class="row" style="flex-wrap: wrap;">
+                            @if (@$auction->get->property_criteria != null)
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
+                                    Additional Investment Criteria:
+                                    <span class="removeBold">{{ @$auction->get->property_criteria }}</span>
+                                </div>
+                            @endif
+
+                            @if (@$auction->get->unit_size != null)
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
+                                    Acceptable Number of Units:
+                                    <span class="removeBold">
+                                        @if (@$auction->get->unit_size != 'Other')
+                                            {{ @$auction->get->unit_size }}
+                                        @else
+                                            {{ @$auction->get->unit_size_other }}
+                                        @endif
+                                    </span>
+                                </div>
+                            @endif
+
+                            @if (@$auction->get->number_of_unit_type != null && count(@$auction->get->number_of_unit_type) > 0)
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
+                                    Acceptable Unit Type:
+                                    @if (count(@$auction->get->number_of_unit_type) === 1)
+                                        <span class="removeBold">{{ @$auction->get->number_of_unit_type[0] }}</span>
+                                    @else
+                                        @foreach (@$auction->get->number_of_unit_type as $item)
+                                            <span class="removeBold badge bg-secondary">{{ $item }}</span>
+                                        @endforeach
+                                    @endif
+                                </div>
+                            @endif
+
+                            @if (@$auction->get->minimum_annual_net_income != null)
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
+                                    Minimum Annual Net Income Needed:
+                                    <span class="removeBold">{{ \App\Support\Format::money(@$auction->get->minimum_annual_net_income) }}</span>
+                                </div>
+                            @endif
+
+                            @if (@$auction->get->minimum_cap_rate != null)
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
+                                    Minimum Cap Rate Needed:
+                                    <span class="removeBold">{{ @$auction->get->minimum_cap_rate }}%</span>
+                                </div>
+                            @endif
+
+                            @if (@$auction->get->preferance_details != null)
+                                <div class="col-md-12 col-12 pt-2 fw-bold">
+                                    Additional Details:
+                                    <span class="removeBold">{{ $auction->get->preferance_details ?? '' }}</span>
+                                </div>
+                            @endif
+                        </div>
+                        @endif
                         <hr>
                             <div class="card-header section-header">
                                 <h4 class="section-title">Purchasing Terms:</h4>
