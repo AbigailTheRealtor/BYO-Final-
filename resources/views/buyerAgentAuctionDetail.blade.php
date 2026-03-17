@@ -698,7 +698,7 @@
                         <!-- Income Property Specific Fields -->
                         @if (@$auction->get->property_criteria != null)
                             <div class="col-md-12 col-12 pt-2 fw-bold">
-                                Income Property Criteria:
+                                Required Income & Investment Metrics:
                                 <span class="removeBold">{{ @$auction->get->property_criteria }}</span>
                             </div>
                         @endif

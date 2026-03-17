@@ -534,7 +534,7 @@
                         @if (@$auction->get->titleListing == 'Income Property' || @$auction->get->titleListing == 'Commercial Property')
                             <div class="row align-items-center Listing Information mt-4">
                                 @if (@$auction->get->titleListing == 'Income Property')
-                                    <h5>Income Property Criteria:</h5>
+                                    <h5>Required Income & Investment Metrics:</h5>
                                 @else
                                     <h5>Preferred Commercial Property Criteria:</h5>
                                 @endif
