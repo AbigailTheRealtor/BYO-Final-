@@ -3775,6 +3775,19 @@ $lease_types = [
             });
         }
 
+        // Offered Financing (Select2 hides the native select — check explicitly for purchasing-terms tab)
+        if (currentTabContent.id === 'purchasing-terms') {
+            var ofErrorSpan = currentTabContent.querySelector('#offered_financing_error');
+            var ofJqVal = (typeof jQuery !== 'undefined') ? jQuery('#offered_financing').val() : null;
+            var ofIsEmpty = !ofJqVal || (Array.isArray(ofJqVal) && ofJqVal.length === 0);
+            if (ofIsEmpty) {
+                isValid = false;
+                if (ofErrorSpan) { ofErrorSpan.textContent = 'This field is required.'; }
+            } else {
+                if (ofErrorSpan) { ofErrorSpan.textContent = ''; }
+            }
+        }
+
         const citiesOptionalFor = ['buyer', 'tenant'];
 
         const citiesContainer = currentTabContent.querySelector('.cities-container');
@@ -4802,16 +4815,6 @@ $lease_types = [
                                             var _bathroomsElB = document.getElementById('bathrooms');
                                             var _bathroomsTabB = _bathroomsElB ? _bathroomsElB.closest('.tab-pane') : null;
                                             items.push({ field: _bathroomsElB || document.body, tab: _bathroomsTabB, fieldName: TENANT_FIELD_LABELS['bathrooms'] || 'Minimum Bathrooms Needed', key: 'bathrooms' });
-                                        }
-                                    }
-
-                                    // Buyer — pets: required for Residential and Income
-                                    if (_ptBuyer2 === 'Residential' || _ptBuyer2 === 'Income') {
-                                        var _petsValB = _comp.get('pets');
-                                        if ((!_petsValB || _petsValB === '') && !items.some(function(i) { return i.key === 'pets'; })) {
-                                            var _petsElB = document.getElementById('pets') || document.getElementById('pets_income');
-                                            var _petsTabB = _petsElB ? _petsElB.closest('.tab-pane') : null;
-                                            items.push({ field: _petsElB || document.body, tab: _petsTabB, fieldName: TENANT_FIELD_LABELS['pets'] || 'Pets', key: 'pets' });
                                         }
                                     }
 

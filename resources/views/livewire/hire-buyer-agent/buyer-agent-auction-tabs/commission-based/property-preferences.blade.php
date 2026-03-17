@@ -1150,7 +1150,7 @@
 {{-- Pets (Residential only - Income has it above Income Property Criteria) --}}
 @if ($property_type === 'Residential')
     <div class="form-group">
-        <label class="fw-bold">Pets:<span class="text-danger">*</span>
+        <label class="fw-bold">Pets:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Indicate whether the Buyer has pets. If so, enter details including the number, type, breed, weight, and whether the pet is a service animal or an emotional support animal.">
                 <i class="fa-solid fa-circle-info"></i>
@@ -1158,8 +1158,7 @@
         </label>
 
         <div class="input-cover">
-            <select wire:model="pets" id="pets" class="form-control has-icon" data-icon="fa-solid fa-paw"
-                required>
+            <select wire:model="pets" id="pets" class="form-control has-icon" data-icon="fa-solid fa-paw">
                 <option value="">Select</option>
                 <option value="Yes">Yes</option>
                 <option value="No">No</option>
