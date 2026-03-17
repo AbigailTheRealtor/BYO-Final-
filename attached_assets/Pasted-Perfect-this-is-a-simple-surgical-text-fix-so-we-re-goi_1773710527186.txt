@@ -1,0 +1,162 @@
+Perfect — this is a **simple, surgical text fix**, so we’re going to lock this down with **very strict safeguards** so nothing else breaks (especially Select2).
+
+---
+
+# ✅ COPY/PASTE REPLIT INSTRUCTIONS (SAFE MODE)
+
+## 🎯 GOAL
+
+Update **ONE label only** in **Hire a Landlord Agent → Property Condition dropdown**
+
+Change:
+
+```
+Older but Well Maintained
+```
+
+To:
+
+```
+Older but Clean & Well Maintained
+```
+
+---
+
+## 🚨 CRITICAL SAFEGUARDS (READ FIRST)
+
+* ❌ DO NOT modify:
+
+  * Select2 initialization
+  * wire:model bindings
+  * JS functions
+  * array keys / database values
+* ❌ DO NOT rename the value used in PHP/DB
+* ❌ DO NOT touch Tenant, Buyer, or Seller flows
+* ❌ DO NOT change option order
+* ❌ DO NOT change "value=" attributes
+* ❌ DO NOT edit any Livewire component logic
+
+✅ ONLY change the **display text (label)**
+
+---
+
+## 📂 STEP 1: FIND THE CORRECT FILE
+
+Search in Replit:
+
+```
+Acceptable Property Conditions
+```
+
+You are looking specifically inside:
+
+```
+resources/views/livewire/tenant-agent-auction-tabs/commission-based/property-details.blade.php
+```
+
+AND confirm this is inside the **LANDLORD conditional block**, something like:
+
+```
+@if($userRole === 'landlord')
+```
+
+---
+
+## ✏️ STEP 2: UPDATE DISPLAY TEXT ONLY
+
+### 🔴 BEFORE
+
+```html
+<option value="Older but Well Maintained">Older but Well Maintained</option>
+```
+
+### 🟢 AFTER (ONLY CHANGE TEXT)
+
+```html
+<option value="Older but Well Maintained">Older but Clean & Well Maintained</option>
+```
+
+---
+
+## ⚠️ IMPORTANT (DO NOT MISS THIS)
+
+👉 The **value stays EXACTLY the same**:
+
+```
+value="Older but Well Maintained"
+```
+
+👉 Only the **visible text changes**
+
+This ensures:
+
+* ✅ existing saved data still works
+* ✅ drafts still load correctly
+* ✅ no database migration needed
+* ✅ no Select2 break
+
+---
+
+## 🔍 STEP 3: CHECK FOR DUPLICATES
+
+Search:
+
+```
+Older but Well Maintained
+```
+
+Only update it in:
+
+* ✅ Landlord Property Conditions dropdown
+
+DO NOT change:
+
+* Tenant version
+* Buyer version
+* Seller version (unless you want global consistency later)
+
+---
+
+## 🧪 STEP 4: TEST (VERY IMPORTANT)
+
+### 1. Create new Landlord listing
+
+* Select: “Older but Clean & Well Maintained”
+* Save draft
+
+### 2. Edit draft
+
+* ✅ Should still show selected
+* ✅ Should NOT revert
+
+### 3. Submit listing
+
+* ✅ Should display:
+  **Older but Clean & Well Maintained**
+
+---
+
+## 🧠 WHY THIS APPROACH IS CORRECT
+
+* Keeps DB value stable → no bugs
+* Fixes UI clarity → better UX
+* Avoids Select2 breaking (critical based on your past issues)
+
+---
+
+## ✅ FINAL RESULT
+
+You will now have:
+
+```
+New Construction
+Updated / Renovated
+Partially Updated
+Older but Clean & Well Maintained
+```
+
+---
+
+If you want next step after this, I can:
+👉 standardize this across ALL roles safely (without breaking anything)
+👉 or map values → labels globally so you never deal with this again

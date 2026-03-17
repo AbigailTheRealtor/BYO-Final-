@@ -75,10 +75,12 @@ Do not start coding until this is confirmed. Respond with:
 ### Landlord
 
 - **Dedicated create path (landlord-type users):** `/landlord/hire/agent/auction` → `LandLordAgentAuction` → `hire-landlord-agent.blade.php`
+- **Dedicated edit path (landlord-type users):** `/landlord/hire/agent/auction/edit/{id}` → `LandLordAgentAuctionEdit` → `hire-landlord-agent-edit.blade.php`
 - **Shared create path (other user types):** `/hire/agent/auction/landlord` → `TenantAgentAuction` → `tenant-agent-auction.blade.php`
-- **Partials:** `hire-landlord-agent/landlord-agent-auction-tabs/commission-based/` (listing-details, property-preferences, lease-terms, services)
-- **Edit path:** `/hire/agent/auction/edit/{id}/landlord` → `TenantAgentAuctionEdit` → `tenant-agent-auction-edit.blade.php`
-- **PHP classes:** `app/Http/Livewire/HireLandLordAgent/LandLordAgentAuction.php` (dedicated), `TenantAgentAuction.php` (shared)
+- **Shared edit path (confirmed URL from browser):** `/hire/agent/auction/edit/{id}/landlord` → `TenantAgentAuctionEdit` → `tenant-agent-auction-edit.blade.php`
+- **Partials (both create paths use same partials):** `hire-landlord-agent/landlord-agent-auction-tabs/commission-based/` (listing-details, property-preferences, lease-terms, services)
+- **PHP classes:** `app/Http/Livewire/HireLandLordAgent/LandLordAgentAuction.php` (dedicated), `TenantAgentAuction.php` (shared create), `TenantAgentAuctionEdit.php` (shared edit)
+- **Desired Lease Term field:** uses class `lease_term_options` (NO id attribute) — selector must be `.lease_term_options`, never `#desired_lease_length`
 
 ---
 

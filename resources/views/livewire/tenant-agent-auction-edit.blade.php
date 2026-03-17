@@ -3171,16 +3171,19 @@
                         placeholder: "Select",
                         allowClear: true
                     });
+                    var savedLtVals = @json($desired_lease_length ?? []);
+                    if (savedLtVals && savedLtVals.length > 0) {
+                        $(this).val(savedLtVals).trigger('change');
+                    }
                     $(this).on('change', function() {
                         let selectedValues = $(this).val() || [];
-                        Livewire.emit('updateLeaseTermOptions', selectedValues);
                         if (selectedValues && selectedValues.includes('Other')) {
                             $('.other_lease_term').show();
                         } else {
                             $('.other_lease_term').hide();
                             @this.set('other_lease_term', null);
                         }
-                        debouncedSet('desired_lease_length', selectedValues);
+                        @this.set('desired_lease_length', selectedValues);
                     });
                 }
             });
