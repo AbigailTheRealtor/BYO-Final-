@@ -1358,7 +1358,10 @@ class SellerAgentAuctionEdit extends Component
         $auction->saveMeta('minimum_cap_rate', $this->minimum_cap_rate);
         $auction->saveMeta('unit_number', $this->unit_number);
         $auction->saveMeta('unit_buildings', $this->unit_buildings);
-        $auction->saveMeta('assets', $this->assets);
+        $assetsToSave = (!empty($this->business_assets) && is_array($this->business_assets))
+            ? json_encode($this->business_assets)
+            : (is_array($this->assets) ? json_encode($this->assets) : $this->assets);
+        $auction->saveMeta('assets', $assetsToSave);
         $auction->saveMeta('assets_other', $this->assets_other);
         $auction->saveMeta('property_criteria', $this->property_criteria);
         $auction->saveMeta('unit_size', $this->unit_size);

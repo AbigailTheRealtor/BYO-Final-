@@ -621,11 +621,23 @@
                             @if ($propType === 'Income')
                                 @if (@$auction->get->minimum_heated_square != null && @$auction->get->minimum_heated_square != 'null' && @$auction->get->minimum_heated_square != '')
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Total SqFt:
+                                        Heated SqFt:
                                         <span class="removeBold">
                                             @php
                                                 $sqftVal = str_replace(',', '', @$auction->get->minimum_heated_square);
                                                 echo is_numeric($sqftVal) ? number_format((float)$sqftVal, 0) : @$auction->get->minimum_heated_square;
+                                            @endphp
+                                        </span>
+                                    </div>
+                                @endif
+                                @php $totalSqFtInc = @$auction->get->total_square_feet; @endphp
+                                @if (!empty($totalSqFtInc) && $totalSqFtInc != 'null')
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Total Sqft:
+                                        <span class="removeBold">
+                                            @php
+                                                $totalSqFtIncClean = str_replace(',', '', $totalSqFtInc);
+                                                echo is_numeric($totalSqFtIncClean) ? number_format((float)$totalSqFtIncClean, 0) : $totalSqFtInc;
                                             @endphp
                                         </span>
                                     </div>
@@ -819,7 +831,11 @@
 
                             @if (in_array($propType, ['Commercial', 'Business', 'Income']))
                                 @php
-                                    $assetItems = \App\Helpers\ListingDisplayHelper::normalizeList(@$auction->get->assets, @$auction->get->assets_other);
+                                    $rawAssetsView = @$auction->get->assets;
+                                    if (empty($rawAssetsView) || $rawAssetsView === '[]' || $rawAssetsView === 'null') {
+                                        $rawAssetsView = @$auction->get->business_assets;
+                                    }
+                                    $assetItems = \App\Helpers\ListingDisplayHelper::normalizeList($rawAssetsView, @$auction->get->assets_other);
                                 @endphp
                                 @if (!empty($assetItems))
                                 </div>

@@ -1975,7 +1975,10 @@ class SellerAgentAuction extends Component
         $auction->saveMeta('min_acreage', $this->min_acreage);
         $auction->saveMeta('total_acreage', $this->total_acreage);
         $auction->saveMeta('minimum_cap_rate', $this->stripCommas($this->minimum_cap_rate));
-        $auction->saveMeta('assets', $this->assets);
+        $assetsToSave = (!empty($this->business_assets) && is_array($this->business_assets))
+            ? json_encode($this->business_assets)
+            : (is_array($this->assets) ? json_encode($this->assets) : $this->assets);
+        $auction->saveMeta('assets', $assetsToSave);
         $auction->saveMeta('assets_other', $this->assets_other);
         $auction->saveMeta('property_criteria', $this->property_criteria);
         $auction->saveMeta('unit_size', $this->unit_size);

@@ -157,6 +157,7 @@ class TenantAgentAuctionEdit extends Component
     public $other_appliances = '';
     public $assets = '';
     public $assets_other = '';
+    public $business_assets = [];
     public $unit_number = '';
     public $unit_size = '';
     public $unit_size_other = '';
@@ -1115,6 +1116,7 @@ class TenantAgentAuctionEdit extends Component
     {
         // update the main array
         $this->assets = $values;
+        $this->business_assets = $values;
 
         // toggle the "Other" field
         $this->assets_visible = in_array('Other', $values);
@@ -2395,7 +2397,11 @@ class TenantAgentAuctionEdit extends Component
         $this->other_business_type = $auction->info('other_business_type') ?? '';
         $this->real_estate_purchase = $auction->info('real_estate_purchase') ?? '';
         $rawAssets = $auction->info('assets');
+        if (empty($rawAssets) || $rawAssets === '[]') {
+            $rawAssets = $auction->info('business_assets');
+        }
         $this->assets = $rawAssets ? (is_string($rawAssets) ? json_decode($rawAssets, true) ?? [] : (array)$rawAssets) : [];
+        $this->business_assets = is_array($this->assets) ? $this->assets : [];
         $this->assets_other = $auction->info('assets_other') ?? '';
         $this->assets_visible = is_array($this->assets) && in_array('Other', $this->assets);
         $this->minimum_annual_net_income = $auction->info('minimum_annual_net_income') ?? '';
@@ -3159,6 +3165,7 @@ class TenantAgentAuctionEdit extends Component
             $auction->saveMeta('real_estate_purchase', $this->real_estate_purchase);
             $auction->saveMeta('assets', $this->assets);
             $auction->saveMeta('assets_other', $this->assets_other);
+            $auction->saveMeta('business_assets', json_encode(is_array($this->assets) ? $this->assets : []));
             $auction->saveMeta('property_criteria', $this->property_criteria);
             $auction->saveMeta('unit_size', $this->unit_size);
             $auction->saveMeta('unit_size_other', $this->unit_size_other);

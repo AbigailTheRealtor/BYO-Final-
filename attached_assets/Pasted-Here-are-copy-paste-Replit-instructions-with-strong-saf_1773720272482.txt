@@ -1,0 +1,297 @@
+Here are **copy-paste Replit instructions with strong safeguards** for this exact **Hire a Landlord Agent** fix only.
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A LANDLORD AGENT ONLY — PROPERTY CONDITION EDIT/DRAFT LABEL MUST MATCH CREATE LABEL
+
+## SCOPE
+
+Fix **Property Condition** for **Hire a Landlord Agent only**.
+
+### Current bug
+
+On **create listing**, the Landlord Property Condition option shows the updated wording:
+
+* **Older but Clean & Well Maintained**
+
+But when user:
+
+* clicks **Edit Listing**
+* or reopens a **draft**
+
+the field/listing is still showing the old wording:
+
+* **Older but Well Maintained**
+
+### Required behavior
+
+For **Hire a Landlord Agent only**:
+
+* the **edit listing** screen must show the same wording as create listing
+* the **draft** screen must show the same wording as create listing
+* the **listing display** must show the same wording as create listing
+* anywhere this Landlord Property Condition value is shown back to the user, it must display:
+
+**Older but Clean & Well Maintained**
+
+---
+
+## HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Only edit the Hire a Landlord Agent flow.**
+2. **Do not modify Tenant, Buyer, or Seller flows.**
+3. **Do not edit any unrelated file.**
+4. **Do not rename database columns.**
+5. **Do not rename Livewire properties.**
+6. **Do not rename wire:model bindings.**
+7. **Do not change routes.**
+8. **Do not run migrations.**
+9. **Do not change Select2 initialization.**
+10. **Do not change selection box format, layout, styling, placeholder behavior, width, badge style, or dropdown behavior.**
+11. **Do not change tooltips, icons, field labels, field order, or placeholders except this exact displayed label text.**
+12. **Do not do a broad cleanup or refactor.**
+13. **Do not change the saved database value unless absolutely necessary.**
+14. **Prefer a display/hydration compatibility fix rather than a storage/schema change.**
+15. **Keep this surgical and field-specific.**
+
+---
+
+## IMPORTANT
+
+We already know:
+
+* create listing is showing the new text correctly
+* edit/draft/listing display still shows the old text
+
+That strongly suggests the issue is in:
+
+* edit hydration / option rendering
+* display mapping
+* label normalization for older saved values
+
+### Hard stop:
+
+Before editing anything, first confirm the **actual active Landlord files** for:
+
+* Landlord create/edit form
+* Landlord Property Condition field
+* Landlord draft hydration/edit repopulation
+* Landlord listing display of Property Condition
+
+Do **not** assume.
+Do **not** edit shared files unless absolutely necessary.
+If a shared file must be touched, wrap the change so it affects **Landlord only**.
+
+---
+
+## STEP 1 — CONFIRM THE CORRECT ACTIVE FILES FIRST
+
+Before making changes, identify the exact active files for **Hire a Landlord Agent**:
+
+1. Livewire/component file handling Landlord create/edit/draft
+2. Blade/partial rendering the **Property Condition** field on create/edit
+3. File/partial responsible for edit-state/draft repopulation of Property Condition
+4. Blade/partial rendering the **actual Landlord listing display** of Property Condition
+
+### Requirement
+
+Return the exact files first, then edit **only those files**.
+
+### Hard stop
+
+**No other file should be edited or changed.**
+
+---
+
+## STEP 2 — FIND THE EXACT MISMATCH
+
+Trace why the label is inconsistent.
+
+### Most likely causes to check:
+
+* create field option list was updated, but edit field option list was not
+* old saved value is still stored as:
+  `Older but Well Maintained`
+  and edit/listing display is showing raw saved value instead of the new display label
+* draft/edit hydration is reading the old saved text directly
+* listing display is using old label text instead of a normalized display label
+
+### Important
+
+Do not guess.
+Find the exact reason the old phrase still appears in edit/draft/listing while create is already correct.
+
+---
+
+## STEP 3 — MAKE EDIT/DRAFT USE THE SAME DISPLAY LABEL AS CREATE
+
+For **Landlord Property Condition only**:
+
+Anywhere the user sees the Property Condition value on:
+
+* edit listing
+* reopen draft
+* listing display
+
+the visible label must be:
+
+**Older but Clean & Well Maintained**
+
+### Important
+
+If the stored/internal value is still:
+`Older but Well Maintained`
+
+that is okay **if needed for backward compatibility**, but the **displayed label** shown to the user must now be:
+
+**Older but Clean & Well Maintained**
+
+Prefer a safe mapping/normalization fix over changing stored data.
+
+---
+
+## STEP 4 — PRESERVE BACKWARD COMPATIBILITY
+
+If older Landlord drafts/listings already saved the old value:
+
+`Older but Well Maintained`
+
+they must still:
+
+* load correctly on edit
+* stay selected correctly in the field
+* display to the user as:
+  **Older but Clean & Well Maintained**
+* not require migrations
+* not lose data
+
+### Important
+
+Do not break existing saved listings/drafts.
+Do not force a database migration for this text fix unless absolutely unavoidable.
+
+---
+
+## STEP 5 — KEEP CREATE/EDIT/DRAFT/LISTING CONSISTENT
+
+After the fix, these must all match:
+
+### Create listing
+
+* `Older but Clean & Well Maintained`
+
+### Edit listing
+
+* `Older but Clean & Well Maintained`
+
+### Draft reopen
+
+* `Older but Clean & Well Maintained`
+
+### Listing display
+
+* `Older but Clean & Well Maintained`
+
+There should be **no place** in Landlord flow where the user still sees:
+`Older but Well Maintained`
+
+---
+
+## STEP 6 — DO NOT CHANGE OTHER LANDLORD PROPERTY CONDITION OPTIONS
+
+Keep the rest of the Landlord list exactly as intended.
+
+Do **not** change:
+
+* New Construction
+* Updated / Renovated
+* Partially Updated
+
+Only fix the mismatched old label so it consistently appears as:
+
+**Older but Clean & Well Maintained**
+
+---
+
+## STEP 7 — TEST THESE EXACT CASES
+
+### A. New create listing
+
+* select Property Condition
+* expected: `Older but Clean & Well Maintained`
+
+### B. Existing draft that used old value
+
+* open draft
+* expected: field shows `Older but Clean & Well Maintained`
+
+### C. Existing saved listing that used old value
+
+* click Edit
+* expected: field shows `Older but Clean & Well Maintained`
+
+### D. Listing display
+
+* expected: displays `Older but Clean & Well Maintained`
+
+### E. Other flows
+
+* Tenant unchanged
+* Buyer unchanged
+* Seller unchanged
+
+---
+
+## STEP 8 — VERIFY NOTHING ELSE CHANGED
+
+After the fix, explicitly confirm:
+
+* no Tenant files changed
+* no Buyer files changed
+* no Seller files changed
+* no selection input format changed
+* no Select2 UI changed
+* no placeholders changed
+* no tooltips changed
+* no icons changed
+* no unrelated Landlord fields changed
+
+---
+
+## STEP 9 — RETURN A FINAL REPORT
+
+After implementation, return:
+
+1. exact files changed
+2. confirmation the correct active Landlord files were identified first
+3. exact root cause for why edit/draft/listing still showed the old text
+4. exact fix applied
+5. confirmation no other files were edited
+6. confirmation selection inputs/Select2 format were not changed
+7. proof edit, draft, and listing display now all show:
+   **Older but Clean & Well Maintained**
+
+---
+
+## IMPORTANT FINAL RULE
+
+This is a **Landlord-only, surgical text consistency fix**.
+
+Do **not**:
+
+* edit unrelated files
+* change selection box format
+* refactor global select logic
+* touch Tenant, Buyer, or Seller
+* make broad UI changes
+
+The final result should be:
+
+* Landlord Property Condition uses the same updated wording everywhere
+* create, edit, draft, and listing display all match
+* old saved values still work
+* no other file or selection input behavior is changed
+
+---
+
+If you want, I can also make this into a **shorter hard-stop version** for Replit.
