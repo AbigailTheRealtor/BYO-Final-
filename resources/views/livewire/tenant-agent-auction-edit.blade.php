@@ -1918,6 +1918,8 @@
 
                                 <button type="button" class="btn btn-primary wizard-step-next">Next</button>
 
+                                <button type="button" wire:click="update" class="btn btn-warning ms-2 wizard-save-edit" wire:loading.attr="disabled">Save Edit</button>
+
                                 <button type="submit" class="btn btn-success wizard-step-finish"
                                     id="save-button">
                                     Submit

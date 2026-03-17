@@ -1,0 +1,373 @@
+Yes — this is a good idea.
+
+It improves usability because users editing a listing should not have to go all the way to the last tab just to save changes. If “Save Draft” is available throughout, “Save Edit” should behave the same way for consistency.
+
+The main caution is this:
+
+“Save Edit” should save the full listing safely from any tab, without breaking validation, tab logic, or role-specific flows.
+
+So the best approach is:
+show a persistent “Save Edit” action on every tab during edit mode only, and have it submit the full edit form exactly like the final-tab save currently does.
+
+Here are copy-paste-ready Replit instructions with safeguards:
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — ADD “SAVE EDIT” ON EVERY TAB FOR ALL LISTING TYPES
+
+## GOAL
+
+For **edit listing mode only**, add a **Save Edit** button on **every tab/page** so the user does **not** have to go to the final tab to save changes.
+
+Apply this to **all listing types**:
+
+* Hire a Seller’s Agent
+* Hire a Buyer’s Agent
+* Hire a Landlord’s Agent
+* Hire a Tenant’s Agent
+
+This should behave similarly to **Save Draft**, but for existing listings being edited.
+
+---
+
+# HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Do not rename, remove, or migrate any database columns.**
+2. **Do not change create-listing behavior unless absolutely necessary for shared rendering.**
+3. **Do not break existing Save Draft behavior.**
+4. **Do not change final submit/save logic in a way that affects listing creation.**
+5. **Do not refactor unrelated tabs, unrelated Livewire components, or shared code unless required for this exact feature.**
+6. **Only add the minimum code needed to expose the same edit-save action from every tab.**
+7. **Do not create separate save methods per tab unless the codebase already requires it. Prefer reusing the existing edit save/update action.**
+8. **Do not remove the final-tab Save/Edit action unless specifically desired later.**
+9. **If a shared component is used, confirm it affects only these listing edit flows and not other unrelated pages.**
+10. **Stop if implementation would risk breaking per-role validation, Save Draft, or existing edit persistence.**
+
+---
+
+# EXPECTED UX
+
+## Edit Mode
+
+When a user opens an existing listing in edit mode:
+
+* Every tab should show a **Save Edit** button.
+* User can click **Save Edit** from any tab.
+* The listing should save successfully without requiring the user to go to the final tab.
+* User should remain in edit context after saving.
+* Existing entered values should remain intact.
+* Same role-specific fields should continue to save correctly.
+
+## Create Mode
+
+When a user is creating a new listing:
+
+* Existing behavior should remain unchanged unless there is already a shared draft/save UI.
+* Do **not** accidentally show “Save Edit” on new listings.
+* Continue showing existing actions like **Next**, **Previous**, **Save Draft**, etc. as currently intended.
+
+---
+
+# IMPLEMENTATION STRATEGY
+
+## 1) FIND THE SHARED EDIT FLOW FIRST
+
+Before editing code, identify the exact shared Livewire/component structure that powers these listing flows.
+
+Per project rule, these flows go through the shared component structure. Confirm the correct files before touching anything.
+
+Check the files currently responsible for:
+
+* tab navigation
+* bottom action buttons
+* edit mode detection
+* final save/update action
+* save draft action rendering
+
+Do **not** assume each role uses separate logic if they are actually routed through the same shared Livewire component.
+
+---
+
+## 2) REUSE THE EXISTING EDIT SAVE METHOD
+
+Do **not** build a new database-saving workflow.
+
+Instead:
+
+* find the **existing method** that runs when the user saves edits on the final tab
+* expose that same method through a **Save Edit** button on every tab
+
+The goal is:
+**same method, same save logic, more access points**
+
+This reduces risk and keeps behavior consistent.
+
+---
+
+## 3) SHOW “SAVE EDIT” ONLY WHEN EDITING AN EXISTING LISTING
+
+Add logic so the button appears only when all of the following are true:
+
+* user is in **edit mode**
+* listing already exists
+* page is not in brand-new create state
+
+Do not rely on button text alone. Use the same mode-detection logic already used by the current edit screen or final save button.
+
+Examples of acceptable logic patterns:
+
+* existing record ID is present
+* component has edit flag / isEditMode / editing = true
+* route or mounted state indicates edit mode
+
+Use the project’s existing pattern — do not invent a conflicting one.
+
+---
+
+## 4) PLACE “SAVE EDIT” IN THE SAME BUTTON AREA AS TAB NAVIGATION
+
+Wherever each tab currently shows actions like:
+
+* Previous
+* Next
+* Save Draft
+
+Add **Save Edit** into that same action area during edit mode.
+
+Recommended behavior:
+
+* Keep button placement consistent across tabs
+* Do not make the user hunt for it
+* Use the same styling family as Save Draft / existing action buttons
+* Label must be exactly: **Save Edit**
+
+Do not add different labels like:
+
+* Update
+* Save Changes
+* Submit Edit
+
+Use one consistent label: **Save Edit**
+
+---
+
+## 5) SAVE FROM ANY TAB MUST SYNC CURRENT TAB VALUES FIRST
+
+Before calling the existing edit save/update method, make sure the current tab’s fields are synced exactly the same way they are when the user saves normally.
+
+This is especially important for:
+
+* Select2 multi-selects
+* conditional fields
+* “Other” text inputs
+* fields hidden/shown by property type
+* dynamically displayed sections
+* checkboxes / radios
+* deferred Livewire fields
+
+If there is already a helper like:
+
+* syncAllSelect2BeforeSave()
+* pushCurrentTabValues()
+* normalizeFormDataBeforeSubmit()
+
+reuse it.
+
+Do **not** create a second inconsistent save path that misses JS-enhanced fields.
+
+---
+
+## 6) DO NOT FORCE USER TO PASS FINAL-TAB-ONLY VALIDATION JUST TO SAVE AN EDIT
+
+Important safeguard:
+
+If the current edit-save flow is intended to save the entire edited listing from the last tab, verify whether clicking Save Edit from any tab would incorrectly trigger validation errors for fields the user is not working on.
+
+Preferred behavior:
+
+* **Save Edit should save the existing listing changes safely without requiring the user to advance to the last tab**
+* It should not become unusable because of unrelated tab validation issues unless those fields are truly required for edit persistence
+
+Use the same validation model already used by the final edit save, but verify it works from any tab.
+
+If needed, preserve existing full-save behavior while ensuring tab-state syncing occurs before save.
+
+Do not weaken core required-field protection globally. Be surgical.
+
+---
+
+## 7) KEEP SAVE DRAFT AND SAVE EDIT SEPARATE
+
+Do not merge these concepts.
+
+Expected distinction:
+
+* **Save Draft** = incomplete/new or editable draft-saving behavior already in the system
+* **Save Edit** = update an existing listing from any tab
+
+Both can appear if that is already consistent with the UI, but do not let one call the wrong backend method.
+
+---
+
+# FILE SAFETY CHECKLIST
+
+Before changing code, identify and confirm the exact files that control:
+
+1. shared edit-mode action buttons
+2. tab footer/button rendering
+3. existing final-tab edit save button
+4. existing backend save/update method
+5. any JS sync helper required before save
+
+Likely areas to inspect first:
+
+* shared Livewire component used by all role flows
+* Blade view for tab footer/navigation buttons
+* edit-specific Blade partials
+* JS helpers tied to Select2 or tab form syncing
+
+Do **not** edit multiple role-specific files if one shared file controls all flows.
+
+Do **not** duplicate the same UI change across Seller, Buyer, Landlord, and Tenant views unless the codebase truly requires separate files.
+
+---
+
+# WHAT TO CHANGE
+
+## FRONTEND / BLADE
+
+Add a **Save Edit** button in the tab action/footer area on every tab when in edit mode.
+
+Button requirements:
+
+* visible on every tab in edit mode
+* hidden in create mode unless there is already a specific approved reason
+* uses same style family as current action buttons
+* calls the same save/update action already used for edit save
+* runs the same pre-save sync logic as the final save button
+
+## BACKEND / LIVEWIRE
+
+Reuse the existing update/save-edit method.
+
+Only adjust backend logic if needed to safely allow invocation from any tab without depending on being physically on the last tab.
+
+Do not rewrite persistence logic unless unavoidable.
+
+## JS / SYNC
+
+If Save Edit is triggered outside the final tab, ensure all JS-managed inputs on the current page are pushed into Livewire before save runs.
+
+This must include any field types already known to be fragile in this project.
+
+---
+
+# ACCEPTANCE TESTS
+
+## Test 1 — Seller Edit
+
+Open an existing Seller listing.
+Go to Tab 1.
+Change a field.
+Click **Save Edit**.
+Confirm changes persist after reload.
+
+## Test 2 — Buyer Edit
+
+Open an existing Buyer listing.
+Go to a middle tab.
+Change a field.
+Click **Save Edit**.
+Confirm changes persist after reload.
+
+## Test 3 — Landlord Edit
+
+Open an existing Landlord listing.
+Go to a tab with dynamic fields.
+Change values.
+Click **Save Edit**.
+Confirm conditional values save correctly.
+
+## Test 4 — Tenant Edit
+
+Open an existing Tenant listing.
+Change a Select2/multi-select field.
+Click **Save Edit** from that same tab.
+Confirm selections remain saved and visible after reload.
+
+## Test 5 — Final Tab Still Works
+
+Go to the final tab in edit mode.
+Click the existing save action.
+Confirm original behavior still works.
+
+## Test 6 — Create Flow Not Broken
+
+Open a brand-new listing flow for each role.
+Confirm **Save Edit** does not incorrectly appear in create mode.
+Confirm existing Save Draft / Next / Previous behavior still works.
+
+## Test 7 — No Data Loss
+
+Edit a listing from Tab 2 or Tab 3.
+Save.
+Reload.
+Confirm previously saved values on untouched tabs are not cleared.
+
+---
+
+# IMPORTANT EDGE CASES TO CHECK
+
+1. **Select2 fields**
+
+   * must save from current tab without losing selections
+
+2. **Conditional “Other” fields**
+
+   * if “Other” is selected, custom input must remain saved
+
+3. **Property-type-specific fields**
+
+   * residential/commercial/income/vacant land fields must not disappear or get reset
+
+4. **Hidden fields**
+
+   * saving from one tab must not wipe unrelated hidden values already stored
+
+5. **Validation**
+
+   * Save Edit must remain usable and not become blocked by unrelated tab-navigation assumptions
+
+---
+
+# PREFERRED RESULT
+
+A user editing any listing can click **Save Edit** from whatever tab they are currently on, exactly like the convenience of **Save Draft**, without having to go to the final tab.
+
+---
+
+# DO NOT DO THESE
+
+* Do not build a brand-new parallel save architecture
+* Do not rename routes, methods, or DB fields
+* Do not remove final submit/update button behavior
+* Do not touch unrelated dashboards or listing display pages
+* Do not apply broad validation rewrites across all workflows
+* Do not duplicate code in four places if one shared file can handle it
+
+---
+
+# REPORT BACK AFTER CHANGES
+
+Please report back with:
+
+1. **Exact files changed**
+2. **Exact method/button/action reused for Save Edit**
+3. **How edit mode was detected**
+4. **Whether a shared file handled all four listing types or separate files were required**
+5. **Any validation caveat discovered**
+6. **Confirmation that Save Draft behavior was not changed**
+
+---
+
+My recommendation: keep the final-tab save too. Just add Save Edit on every tab as a convenience, not a replacement.
