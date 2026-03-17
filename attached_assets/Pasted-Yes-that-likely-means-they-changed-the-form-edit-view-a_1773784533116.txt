@@ -1,0 +1,209 @@
+Yes — that likely means they changed the **form/edit view** and maybe a **detail view**, but **not the actual Listing Summary file/branch you are looking at**.
+
+From that report, this is the red flag:
+
+* `property-preferences.blade.php` = form
+* `buyerAgentAuctionDetail.blade.php` = one detail page
+* `buyer_criteria/view.blade.php` = another criteria view
+
+But your complaint is specifically about **Listing Summary**, so the safest next step is to tell Replit to **find the exact file rendering the Listing Summary section for Hire a Buyer’s Agent → Income** before changing anything else.
+
+Here are copy-paste-ready instructions with safeguards:
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A BUYER’S AGENT (INCOME) — FIX LISTING SUMMARY LABEL IN THE CORRECT FILE
+
+## ISSUE
+
+The prior change appears to have updated the **form/edit labels** and possibly another detail/view file, but I still do **not** see the updated wording on the actual **Listing Summary**.
+
+That likely means the wrong display file was edited, or only part of the display chain was updated.
+
+We need to fix the **actual Listing Summary output** for:
+
+* **Hire a Buyer’s Agent**
+* **Income property type**
+
+so the summary matches the intended wording.
+
+---
+
+# REQUIRED WORDING
+
+For **Buyer Income** listing summary, use:
+
+**Required Property or Business Assets:**
+**Required Income & Investment Metrics:**
+
+Under **Required Income & Investment Metrics:** the summary area should align with the Buyer Income fields such as:
+
+* Acceptable Number of Units:
+* Acceptable Unit Type:
+* Minimum Annual Net Income Needed:
+* Minimum Cap Rate Needed:
+* Additional Details:
+
+---
+
+# HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Do not guess the file. First identify the exact file that renders the Listing Summary I am actually viewing.**
+2. **Do not make more blind text replacements across multiple Buyer files.**
+3. **Do not change Seller files.**
+4. **Do not change Commercial, Residential, Business Opportunity, or Vacant Land branches unless they truly share the same summary template and the change is strictly scoped to Buyer Income.**
+5. **Do not rename database columns, wire:model names, validation keys, backend properties, or storage keys.**
+6. **This is a display-layer correction only unless a shared presenter/view-model requires a tiny scoped change.**
+7. **Do not duplicate labels or create a second summary block.**
+8. **Do not alter create/edit persistence logic.**
+9. **Do not modify unrelated public listing pages, dashboards, or search cards.**
+10. **If multiple views exist (detail view, summary partial, export/PDF view, modal summary), confirm which exact one drives the page I am referring to before editing.**
+11. **Stop if the file cannot be confirmed from route/component inspection.**
+12. **Report the exact rendering chain before changing more files.**
+
+---
+
+# FIRST STEP — TRACE THE EXACT LISTING SUMMARY FILE
+
+Before editing anything, inspect the actual page/render chain for the **Listing Summary** screen I am looking at.
+
+## Find the exact file path that renders:
+
+* Hire a Buyer’s Agent
+* Income property type
+* Listing Summary section
+* the label currently still showing old wording
+
+### Do not assume it is already fixed just because these files were changed:
+
+* `property-preferences.blade.php`
+* `buyerAgentAuctionDetail.blade.php`
+* `buyer_criteria/view.blade.php`
+
+One of these may not be the actual summary template I am looking at.
+
+---
+
+# WHAT TO CHECK FIRST
+
+Please inspect and confirm:
+
+1. **What route/controller/Livewire component renders the Listing Summary page?**
+2. **What Blade file or partial outputs the Income-specific summary block?**
+3. **Is the Listing Summary using a separate summary partial from the detail view?**
+4. **Is there a shared component for Buyer criteria display that overrides the label?**
+5. **Is there conditional logic for property type that still contains the old Buyer Income wording in another file?**
+6. **Is the page cached or compiled from another included partial?**
+
+---
+
+# SEARCH INSTRUCTIONS
+
+Search specifically for the old text still appearing in the Listing Summary, such as:
+
+* `Income Property Criteria`
+* `Required Property or Business Asset`
+* any nearby label text shown in the summary page
+
+Also search by neighboring field labels that appear in that same summary block, such as:
+
+* `Acceptable Number of Units`
+* `Minimum Cap Rate Needed`
+* `Minimum Annual Net Income Needed`
+
+This should help locate the exact summary partial if it is not one of the already edited files.
+
+---
+
+# REQUIRED FIX
+
+Once the exact Listing Summary file is confirmed, update **only that summary display branch** for:
+
+* Buyer
+* Income property type
+
+so it shows:
+
+### Section label 1
+
+**Required Property or Business Assets:**
+
+### Section label 2
+
+**Required Income & Investment Metrics:**
+
+Do not alter stored values or field logic.
+
+---
+
+# IMPORTANT — KEEP SCOPE NARROW
+
+This is **not** permission to update every file with similar text.
+
+Only update:
+
+* the actual Listing Summary file/partial being rendered
+* and only the Buyer Income branch
+
+If there is a shared partial, scope the change with Buyer + Income conditions only.
+
+---
+
+# ACCEPTANCE TESTS
+
+## Test 1 — Actual page I am viewing
+
+Open the exact **Listing Summary** page for a **Hire a Buyer’s Agent — Income** listing.
+
+Confirm it now shows:
+
+* **Required Property or Business Assets:**
+* **Required Income & Investment Metrics:**
+
+---
+
+## Test 2 — Buyer Income create/edit form unchanged
+
+Open Buyer Income form.
+
+Confirm form labels still display correctly and are not broken.
+
+---
+
+## Test 3 — Existing values preserved
+
+Open an existing Buyer Income listing summary.
+
+Confirm the values still show correctly under the updated headings.
+
+---
+
+## Test 4 — Seller unaffected
+
+Open Seller Income summary.
+
+Confirm Seller wording/layout was not unintentionally changed.
+
+---
+
+## Test 5 — Other Buyer property types unaffected
+
+Open Buyer Residential / Commercial / Vacant Land / Business Opportunity summary views.
+
+Confirm no incorrect text changes appeared there.
+
+---
+
+# REPORT BACK BEFORE MORE FILE CHANGES
+
+Please report back with:
+
+1. **The exact route/component that renders the Listing Summary page**
+2. **The exact file/partial that renders the Buyer Income summary block**
+3. **Whether one of the previously edited files was not actually the page I was viewing**
+4. **The exact file finally changed for the Listing Summary**
+5. **Confirmation that only Buyer Income summary wording was changed**
+
+---
+
+You were right to question it. If you still cannot see it on the **Listing Summary**, then they probably did **not** fix the exact render file you meant.
