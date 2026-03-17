@@ -4197,6 +4197,8 @@ class TenantAgentAuction extends Component
             $photoPath = $this->photo->storeAs('auction/images', $photoName, 'public');
             $auction->saveMeta('photo', $photoName);
             $this->photo = $photoName;
+        } elseif ($this->photo && is_string($this->photo)) {
+            $auction->saveMeta('photo', $this->photo);
         }
 
         // Save video - handle new uploads, existing paths, and deletions

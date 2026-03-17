@@ -1,0 +1,412 @@
+Here are **copy-paste Replit instructions with strong safeguards** for these exact edits.
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — PERSONAL PHOTO DRAFT SAVE FIX FOR ALL FOUR FLOWS + SELLER “INCLUDED PROPERTY OR BUSINESS ASSETS” DUPLICATE/OTHER FIX
+
+## SCOPE
+
+Make these fixes **only** for the following flows:
+
+* **Hire a Landlord Agent**
+* **Hire a Buyer Agent**
+* **Hire a Seller Agent**
+* **Hire a Tenant Agent**
+
+### Fix 1 — All 4 flows
+
+**Personal Photo** must save to draft **every time the draft is saved**, not just the first time.
+
+### Fix 2 — Seller only
+
+In **Hire a Seller Agent**:
+
+* **Included Property or Business Assets** is showing **twice** in create listing and draft/edit
+* delete the duplicate one **after View**
+* keep only the correct/original field
+* if user selects **Other**, it must show the custom input box
+
+---
+
+## HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Only make the exact changes listed in this request.**
+2. **Do not modify any other fields, tabs, labels, placeholders, icons, tooltips, or layout.**
+3. **Do not modify selection box format, Select2 styling, dropdown behavior, width, badge/tag style, or placeholders.**
+4. **Do not rename database columns.**
+5. **Do not rename Livewire properties.**
+6. **Do not rename wire:model bindings.**
+7. **Do not change routes.**
+8. **Do not run migrations unless absolutely unavoidable.**
+9. **Do not do a broad refactor.**
+10. **Do not change any unrelated draft-save logic.**
+11. **Do not touch any other duplicate fields besides the exact Seller field listed below.**
+12. **Do not delete the wrong Included Property or Business Assets field.**
+13. **For Seller, delete only the duplicate field that appears after `View`.**
+14. **If any shared file must be touched, wrap the logic carefully so it affects only the intended flows/field.**
+15. **No other file should be edited or changed beyond the minimum files required for these exact fixes.**
+
+---
+
+# PART 1 — PERSONAL PHOTO MUST SAVE ON EVERY DRAFT SAVE
+
+## Applies to:
+
+* Hire a Landlord Agent
+* Hire a Buyer Agent
+* Hire a Seller Agent
+* Hire a Tenant Agent
+
+---
+
+## CURRENT BUG
+
+**Personal Photo** only saves the first time the draft is saved.
+
+After that, when the user updates the draft and saves again, the Personal Photo is not consistently re-saved/updated.
+
+---
+
+## REQUIRED BEHAVIOR
+
+For all four flows:
+
+* every time user saves a draft, **Personal Photo** must save correctly
+* if photo already exists and user keeps it, it must remain attached to the draft
+* if photo is changed/replaced, the updated photo must save with the draft
+* if user saves the draft multiple times, the Personal Photo must still persist each time
+* this should work the same on:
+
+  * first draft save
+  * second draft save
+  * later draft saves
+  * edit existing draft and save again
+
+---
+
+## IMPORTANT SAFEGUARDS FOR PERSONAL PHOTO FIX
+
+### Do not:
+
+* break any existing photo upload UI
+* change image preview layout
+* change file picker behavior
+* change other file uploads
+* affect submit/final listing save logic unless necessary for the same photo field
+* alter unrelated draft-save logic
+
+### Keep this targeted to:
+
+* the exact Personal Photo save/hydration/persistence path
+* the draft save flow for these four listing types only
+
+---
+
+## STEP 1 — CONFIRM THE CORRECT ACTIVE FILES FIRST
+
+Before editing anything, identify the exact active files for the **Personal Photo** field and its draft-save path across these four flows:
+
+* component/class handling create + draft save
+* blade/partial rendering Personal Photo
+* any upload handler/helper
+* any draft save method
+* any hydration/reload logic for previously saved photo
+
+### Requirement
+
+Return the exact files first.
+
+### Hard stop
+
+Do not edit anything until the correct active files are confirmed.
+
+---
+
+## STEP 2 — TRACE WHY PERSONAL PHOTO ONLY SAVES THE FIRST TIME
+
+Find the exact reason the photo saves on first draft save but not on later draft saves.
+
+Check for issues like:
+
+* only storing photo on initial create, not on update
+* draft update path not reprocessing the existing photo field
+* upload property being cleared after first save
+* draft save method excluding the photo field after initial save
+* hydration path not restoring the photo reference properly
+* temporary upload path not being persisted on subsequent saves
+* save method using conditional logic like “only if empty” instead of “save current value every time”
+
+### Important
+
+Do not guess.
+Find the exact save/update gap.
+
+---
+
+## STEP 3 — FIX PERSONAL PHOTO DRAFT SAVE FOR ALL FOUR FLOWS
+
+For all four flows:
+
+* make sure draft save always persists the current Personal Photo state
+* if a new photo is uploaded, save/update it
+* if the current photo is unchanged, preserve it
+* if draft is edited and saved again, do not lose the photo
+* if the user reopens the draft, the saved Personal Photo must still be there
+
+### Important
+
+Do not rewrite all draft logic globally.
+Apply the smallest safe fix needed.
+
+---
+
+## STEP 4 — VERIFY PERSONAL PHOTO RELOADS CORRECTLY
+
+After saving the draft:
+
+* reopen the draft
+* Personal Photo should still show correctly
+* save draft again
+* Personal Photo should still persist
+* replace Personal Photo, save again
+* updated photo should now persist
+
+This must work consistently across:
+
+* Landlord
+* Buyer
+* Seller
+* Tenant
+
+---
+
+# PART 2 — SELLER ONLY — INCLUDED PROPERTY OR BUSINESS ASSETS DUPLICATE + OTHER INPUT FIX
+
+## Applies only to:
+
+* **Hire a Seller Agent**
+
+---
+
+## CURRENT BUGS
+
+### Bug A
+
+**Included Property or Business Assets** appears **twice** in:
+
+* creating a listing
+* draft/edit
+
+You want the duplicate removed.
+
+### Important detail
+
+Delete the duplicate one **after `View`**.
+
+### Bug B
+
+If user selects **Other**, it needs to show the custom input box.
+
+---
+
+## REQUIRED BEHAVIOR
+
+For **Hire a Seller Agent only**:
+
+* only one correct **Included Property or Business Assets** field should remain
+* delete the duplicate field that appears **after View**
+* if user selects **Other**, the custom input box must appear
+* if editing a saved draft/listing and `Other` was selected, the custom input box must still appear and repopulate correctly
+
+---
+
+## IMPORTANT SAFEGUARDS FOR SELLER FIX
+
+### Do not:
+
+* change any other Seller fields
+* remove the wrong copy of the field
+* change the selection format
+* change the option list
+* change unrelated “Other” fields
+* change layout outside removing the duplicate
+
+### This must be:
+
+* Seller-only
+* field-specific
+* minimal
+
+---
+
+## STEP 5 — CONFIRM THE CORRECT SELLER FILES FIRST
+
+Before editing anything, identify the exact active Seller files for:
+
+* create form rendering of **Included Property or Business Assets**
+* draft/edit rendering of **Included Property or Business Assets**
+* the duplicate instance that appears **after `View`**
+* the conditional “Other” input rendering for this field
+* save/hydration logic for this field
+
+### Requirement
+
+Return the exact files first.
+
+### Hard stop
+
+Do not edit until the exact duplicate location is confirmed.
+
+---
+
+## STEP 6 — REMOVE ONLY THE DUPLICATE FIELD AFTER “VIEW”
+
+Delete only the duplicated **Included Property or Business Assets** field that appears **after `View`**.
+
+### Important
+
+* do not delete the original/correct field
+* do not remove the field entirely
+* do not alter the saved property binding for the correct field
+* do not change nearby unrelated fields
+
+Only remove the extra duplicate rendering.
+
+---
+
+## STEP 7 — FIX “OTHER” INPUT FOR INCLUDED PROPERTY OR BUSINESS ASSETS
+
+For the correct remaining Seller field:
+
+* if user selects **Other**, show the custom input box
+* if saved record includes **Other**, show the custom input box on edit
+* repopulate the custom input value correctly
+* do not change field format or options
+
+### Trace and fix
+
+Confirm:
+
+* main property name
+* “Other” custom property name
+* conditional rendering logic
+* save/update path
+* edit hydration path
+
+### Important
+
+Do not rewrite all “Other” logic globally.
+Fix only this exact Seller field path.
+
+---
+
+# TESTING REQUIRED
+
+## PERSONAL PHOTO — test all four flows
+
+### Test A
+
+Create draft with Personal Photo
+Save draft
+Expected: photo saved
+
+### Test B
+
+Open same draft again
+Save draft again without changing photo
+Expected: photo still saved
+
+### Test C
+
+Replace/change photo
+Save draft again
+Expected: new photo saved
+
+### Test D
+
+Repeat for:
+
+* Landlord
+* Buyer
+* Seller
+* Tenant
+
+---
+
+## SELLER INCLUDED PROPERTY OR BUSINESS ASSETS
+
+### Test E
+
+Open create listing
+Expected: field appears only once
+
+### Test F
+
+Open draft/edit
+Expected: field appears only once
+
+### Test G
+
+Select `Other`
+Expected: custom input appears
+
+### Test H
+
+Save draft/listing with `Other` custom value
+Open edit
+Expected: `Other` still selected and custom input value repopulates
+
+---
+
+# VERIFY NOTHING ELSE CHANGED
+
+After the fix, explicitly confirm:
+
+* no unrelated files changed
+* no Select2 formatting changed
+* no selection input behavior changed
+* no tooltips changed
+* no icons changed
+* no placeholders changed
+* no unrelated draft-save behavior changed
+* no Tenant/Landlord/Buyer/Seller fields other than those listed were changed
+
+---
+
+# RETURN A FINAL REPORT
+
+After implementation, return:
+
+1. exact files changed
+2. confirmation the correct active files were identified first
+3. exact root cause for why Personal Photo only saved on first draft save
+4. exact fix applied for Personal Photo
+5. confirmation Personal Photo now saves on every draft save for:
+
+   * Landlord
+   * Buyer
+   * Seller
+   * Tenant
+6. exact root cause for Seller duplicate **Included Property or Business Assets**
+7. confirmation only the duplicate after `View` was removed
+8. exact fix for the `Other` input box
+9. confirmation no other files were edited
+10. confirmation no selection inputs or formatting were changed
+
+---
+
+## IMPORTANT FINAL RULE
+
+This is a **surgical fix only**.
+
+The final result should be:
+
+* Personal Photo saves every time a draft is saved for Landlord, Buyer, Seller, and Tenant
+* Seller **Included Property or Business Assets** appears only once
+* the duplicate after `View` is removed
+* `Other` shows the custom input box correctly
+* no unrelated file, select field, or layout behavior is changed
+
+---
+
+If you want, I can also turn this into a **shorter hard-stop version** for Replit with even tighter wording.

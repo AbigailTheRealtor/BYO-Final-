@@ -2284,7 +2284,7 @@ class SellerAgentAuction extends Component
         $auction->saveMeta('current_status', $this->current_status);
         $auction->saveMeta('video_link', $this->video_link);
 
-        // Save photo - only process if it's a new upload (UploadedFile), not an existing string path
+        // Save photo - process new uploads; preserve existing saved filename on re-save
         if ($this->photo && !is_string($this->photo)) {
             $extensionPhoto = $this->photo->getClientOriginalExtension(); // Get file extension
             $uuid = (string) Str::uuid(); // Generate a unique UUID
@@ -2295,6 +2295,8 @@ class SellerAgentAuction extends Component
 
             // Save file name to database
             $auction->saveMeta('photo', $photoName);
+        } elseif ($this->photo && is_string($this->photo)) {
+            $auction->saveMeta('photo', $this->photo);
         }
 
         // Save video - only process if it's a new upload (UploadedFile), not an existing string path

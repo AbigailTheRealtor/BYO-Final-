@@ -3648,6 +3648,8 @@ class TenantAgentAuctionEdit extends Component
 
                 $auction->saveMeta('photo', $photoName);
                 $this->photo = $photoName;
+            } elseif ($this->photo && is_string($this->photo)) {
+                $auction->saveMeta('photo', $this->photo);
             }
 
 

@@ -1001,7 +1001,7 @@
             <select id="appliances" class="form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-plug input-icon2" multiple>
                 @foreach ($applianceOptions as $row_pt)
-                    <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $appliances ?? []) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
+                    <option value="{{ $row_pt['name'] }}" {{ is_array($appliances) && in_array($row_pt['name'], $appliances) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
                 @endforeach
             </select>
         </div>
@@ -1014,7 +1014,7 @@
         <input type="text" wire:model.defer="other_appliances" class="form-control has-icon"
             data-icon="fa-solid fa-plug"
             placeholder="Enter appliances (e.g., Air Fryer Oven, Induction Cooktop, Double Oven)"
-            @if (in_array('Other', $appliances ?? [])) required @endif>
+            @if (is_array($appliances) && in_array('Other', $appliances)) required @endif>
     </div>
     <span class="error mt-2" id="other_appliances_error"></span>
 </div>
@@ -1163,7 +1163,7 @@
             <select id="garage_parking_spaces_option_landlord"
                 class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse input-icon2" multiple>
                 @foreach ($garage_parking_spaces as $row_pt)
-                    <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $garage_parking_spaces_option ?? []) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
+                    <option value="{{ $row_pt['name'] }}" {{ is_array($garage_parking_spaces_option) && in_array($row_pt['name'], $garage_parking_spaces_option) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
                 @endforeach
             </select>
         </div>
@@ -1232,7 +1232,7 @@
             class="form-control has-icon select2-multiple" data-icon="fa-solid fa-tree input-icon2" multiple>
             @foreach ($preferences as $row_pt)
                 <option value="{{ $row_pt['name'] }}"
-                    {{ in_array($row_pt['name'], $view_preference ?? []) ? 'selected' : '' }}>
+                    {{ is_array($view_preference) && in_array($row_pt['name'], $view_preference) ? 'selected' : '' }}>
                     {{ $row_pt['name'] }}
                 </option>
             @endforeach
@@ -1242,7 +1242,7 @@
 </div>
 
 <!-- Other View Input — shown directly under View when Other is selected -->
-<div class="form-group" id="other_preferences" style="display: {{ in_array('Other', $view_preference ?? []) ? 'block' : 'none' }}">
+<div class="form-group" id="other_preferences" style="display: {{ is_array($view_preference) && in_array('Other', $view_preference) ? 'block' : 'none' }}">
     <div class="input-cover">
         <input type="text" wire:model.defer="other_preferences" class="form-control has-icon"
             data-icon="fa-solid fa-tree" placeholder="Enter view (e.g., Lake, Desert, Courtyard)">
@@ -1265,7 +1265,7 @@
             class="form-control has-icon select2-multiple" data-icon="fa-solid fa-briefcase input-icon2" multiple>
             @foreach ($included_assets as $row_pt)
                 <option value="{{ $row_pt['name'] }}"
-                    {{ in_array($row_pt['name'], $business_assets ?? []) ? 'selected' : '' }}>
+                    {{ is_array($business_assets) && in_array($row_pt['name'], $business_assets) ? 'selected' : '' }}>
                     {{ $row_pt['name'] }}
                 </option>
             @endforeach
@@ -1273,6 +1273,15 @@
     </div>
     <span class="error mt-2" id="included_assets_error"></span>
 </div>
+@if (is_array($business_assets) && in_array('Other', $business_assets))
+    <div class="form-group other_assets mt-3">
+        <div class="input-cover">
+            <input type="text" wire:model.defer="assets_other" class="form-control has-icon"
+                data-icon="fas fa-building"
+                placeholder=" Enter any included assets (e.g., Inventory, Customer Lists, Trademarks, Software Rights)">
+        </div>
+    </div>
+@endif
 @endif
 
 
@@ -1319,13 +1328,13 @@
                 @if (in_array($property_type, ['Residential', 'Income']))
                     @foreach ($non_negotialble_terms_landlord as $item)
                         @if (str_contains($item['class'], 'residential-length'))
-                            <option value="{{ $item['name'] }}" {{ in_array($item['name'], $non_negotiable_amenities ?? []) ? 'selected' : '' }}>{{ $item['name'] }}</option>
+                            <option value="{{ $item['name'] }}" {{ is_array($non_negotiable_amenities) && in_array($item['name'], $non_negotiable_amenities) ? 'selected' : '' }}>{{ $item['name'] }}</option>
                         @endif
                     @endforeach
                 @elseif(in_array($property_type, ['Business', 'Commercial']))
                     @foreach ($non_negotialble_terms_landlord as $item)
                         @if (str_contains($item['class'], 'commercial-length'))
-                            <option value="{{ $item['name'] }}" {{ in_array($item['name'], $non_negotiable_amenities ?? []) ? 'selected' : '' }}>{{ $item['name'] }}</option>
+                            <option value="{{ $item['name'] }}" {{ is_array($non_negotiable_amenities) && in_array($item['name'], $non_negotiable_amenities) ? 'selected' : '' }}>{{ $item['name'] }}</option>
                         @endif
                     @endforeach
                 @endif
@@ -1334,7 +1343,7 @@
         <span class="error mt-2" id="non_negotiable_amenities_error"></span>
     </div>
     <!-- Other Non-Negotiable Amenities and Property Features Input (Hidden by Default) -->
-    <div class="form-group other_non_negotiable_amenities @if (!in_array('Other', $non_negotiable_amenities ?? [])) d-none @endif">
+    <div class="form-group other_non_negotiable_amenities @if (!(is_array($non_negotiable_amenities) && in_array('Other', $non_negotiable_amenities))) d-none @endif">
         <div class="input-cover">
             @if (in_array($property_type, ['Residential', 'Income']))
                 <input type="text" wire:model.defer="other_non_negotiable_amenities" class="form-control has-icon"
@@ -1454,54 +1463,6 @@
         </div>
         <span class="error mt-2" id="pets_error"></span>
     </div>
-@endif
-@if (in_array($property_type, ['Commercial', 'Business', 'Income']))
-
-    <div>
-        <div class="form-group">
-            <label class="fw-bold">Included Property or Business Assets:</label>
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select the assets included in the sale (e.g., equipment, intellectual property, rights, or licenses).">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-
-            <div class="input-cover" wire:ignore>
-                <select wire:model="assets" id="assets" class="form-control has-icon select2-multiple"
-                    data-icon="fas fa-building input-icon2" multiple>
-                    <option value="Goodwill and Business Name">Goodwill and Business Name</option>
-                    <option value="Furniture, Fixtures, and Equipment (as per attached inventory)">
-                        Furniture, Fixtures, and Equipment (as per attached inventory)
-                    </option>
-                    <option value="Advertising Materials">Advertising Materials</option>
-                    <option value="Contract Rights">Contract Rights</option>
-                    <option value="Leases">Leases</option>
-                    <option value="Licenses">Licenses</option>
-                    <option value="Rights under any Agreement for Interests">
-                        Rights under any Agreement for Interests
-                    </option>
-                    <option value="Other">Other</option>
-                </select>
-            </div>
-            @error('assets')
-                <span class="error text-danger">{{ $message }}</span>
-            @enderror
-        </div>
-
-        {{-- this block truly only appears when $assets_visible is true --}}
-        @if ($assets_visible)
-            <div class="form-group other_assets mt-3">
-                <div class="input-cover">
-                    <input type="text" wire:model.defer="assets_other" class="form-control has-icon"
-                        data-icon="fas fa-building"
-                        placeholder=" Enter any included assets (e.g., Inventory, Customer Lists, Trademarks, Software Rights)">
-                </div>
-                @error('assets_other')
-                    <span class="error text-danger">{{ $message }}</span>
-                @enderror
-            </div>
-        @endif
-    </div>
-
 @endif
 @if ($property_type === 'Income')
     <div class="form-group">

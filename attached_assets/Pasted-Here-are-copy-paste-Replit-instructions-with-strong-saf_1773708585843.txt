@@ -1,0 +1,323 @@
+Here are **copy-paste Replit instructions with strong safeguards** for these exact **Hire a Landlord Agent** edits only.
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A LANDLORD AGENT ONLY — DESIRED LEASE TERM EDIT REPOPULATION + LEASING TERMS LISTING SPACING FIX
+
+## SCOPE
+
+Make these fixes **only for Hire a Landlord Agent**:
+
+1. **Desired Lease Term**
+
+   * when user clicks **Edit**, the previously selected options must show correctly
+   * selected options must not disappear
+   * if this field includes an `Other` option and a custom value was saved, preserve that too
+
+2. **Leasing Terms spacing on the actual listing**
+
+   * keep the subquestions under **Leasing Space**
+   * fix the vertical spacing so the main Leasing Terms rows are evenly spaced
+   * specifically, `Occupant Type`, `Occupied Until`, and `Leasing Space` currently have too little spacing compared to rows like:
+
+     * `Desired Rental Amount`
+     * `Lease Amount Frequency`
+     * `Desired Lease Term`
+   * the spacing for `Desired Rental Amount`, `Lease Amount Frequency`, and `Desired Lease Term` is the correct reference spacing
+   * keep sub-items under **Leasing Space** nested underneath it, but do not let the top-level rows above look cramped
+
+---
+
+## HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Only edit the Hire a Landlord Agent flow.**
+2. **Do not modify Tenant, Buyer, or Seller flows.**
+3. **Do not edit any unrelated file.**
+4. **Do not rename database columns.**
+5. **Do not rename Livewire properties.**
+6. **Do not rename wire:model bindings.**
+7. **Do not change routes.**
+8. **Do not run migrations.**
+9. **Do not change Select2 initialization.**
+10. **Do not change selection box format, layout, styling, placeholder behavior, width, badge style, or dropdown behavior.**
+11. **Do not change tooltips, icons, field labels, field order, or placeholders.**
+12. **Do not do a broad cleanup or refactor.**
+13. **Do not touch any other Landlord fields except the exact Desired Lease Term field and the listing-display spacing for Leasing Terms.**
+14. **Keep this surgical and field-specific.**
+
+---
+
+## IMPORTANT
+
+We have had issues before with Replit editing the wrong file or breaking selection inputs.
+
+### Hard stop:
+
+Before editing anything, first confirm the **actual active Landlord files** for:
+
+* Landlord create/edit form
+* Landlord field for **Desired Lease Term**
+* Landlord listing display
+* Landlord **Leasing Terms** listing section
+
+Do **not** assume.
+Do **not** edit shared files unless absolutely necessary.
+If a shared file must be touched, wrap changes so they affect **Landlord only**.
+
+---
+
+## STEP 1 — CONFIRM THE CORRECT ACTIVE FILES FIRST
+
+Before making changes, identify the exact active files for **Hire a Landlord Agent**:
+
+1. Livewire/component file handling Landlord create/edit
+2. Blade/partial rendering **Desired Lease Term**
+3. File/partial responsible for edit-state repopulation of **Desired Lease Term**
+4. Blade/partial rendering the **actual Landlord listing display**
+5. Blade/partial rendering the **Leasing Terms** section on the Landlord listing display
+
+### Requirement
+
+Return the exact files first, then edit **only those files**.
+
+### Hard stop
+
+**No other file should be edited or changed.**
+
+---
+
+## STEP 2 — FIX DESIRED LEASE TERM SO SELECTED OPTIONS SHOW ON EDIT
+
+## Current bug
+
+When user clicks **Edit**, the selected **Desired Lease Term** options do not show.
+
+The screenshot shows the edit form rendering the field, but the previously selected values are not repopulating correctly.
+
+## Required behavior
+
+For **Landlord Desired Lease Term only**:
+
+* previously selected options must appear when editing
+* if `Other` is part of this field and a custom value exists, preserve that too
+* do not change the selection box format
+* do not change Select2 behavior globally
+* do not break save logic
+
+## What to trace and fix
+
+Confirm:
+
+* exact `wire:model`
+* how the values are stored
+* whether they are stored as array / JSON / string
+* how the values are decoded/hydrated for edit mode
+* how selected options are re-applied on load
+* whether the edit page is reading the correct saved value
+* whether the field is failing because the DOM/select is not being rehydrated with saved selections
+
+### Important
+
+Use the same working repopulation pattern already used by Landlord/Tenant fields that correctly reload saved selections.
+Do **not** do a broad Select2 rewrite.
+
+---
+
+## STEP 3 — PRESERVE `OTHER` IF APPLICABLE
+
+If **Desired Lease Term** includes an `Other` selection:
+
+* if the saved values include `Other`, keep it selected on edit
+* if there is a separate custom text value, repopulate it
+* do not change the field format
+* do not affect other fields
+
+If there is no `Other` branch for this field, do not invent one.
+
+---
+
+## STEP 4 — FIX LEASING TERMS SPACING ON THE ACTUAL LANDLORD LISTING
+
+## Current bug
+
+On the actual Landlord listing, the **Leasing Terms** rows are not evenly spaced.
+
+From the screenshot:
+
+* `Occupant Type`
+* `Occupied Until`
+* `Leasing Space`
+
+appear too close together / cramped compared with:
+
+* `Desired Rental Amount`
+* `Lease Amount Frequency`
+* `Desired Lease Term`
+
+You want the spacing of the latter group to be the reference for the top-level Leasing Terms rows.
+
+## Required behavior
+
+On the **Landlord listing display only**:
+
+### Top-level Leasing Terms rows
+
+These should have **consistent spacing**:
+
+* Occupant Type
+* Occupied Until
+* Leasing Space
+* Desired Rental Amount
+* Lease Amount Frequency
+* Desired Lease Term
+* Rent Includes
+* any other main Leasing Terms rows
+
+### Subquestions under Leasing Space
+
+Keep these nested under **Leasing Space**, for example:
+
+* Restrictions Include
+* Maintenance and Repairs Are Handled By
+* Maintenance Response Time
+* Included Storage Space
+* Storage Space Size
+
+These subquestions should remain visually subordinate/nested under **Leasing Space**, but the parent `Leasing Space` row itself should have the same main-row spacing as the other main Leasing Terms rows.
+
+### Important
+
+Do **not** flatten the subquestions.
+Do **not** remove indentation for subquestions.
+Do **not** make every row use the same indentation.
+Only fix the vertical spacing so the main questions are evenly spaced.
+
+---
+
+## STEP 5 — USE THE CORRECT SPACING REFERENCE
+
+Use the existing spacing of these rows as the reference for correct top-level spacing:
+
+* `Desired Rental Amount`
+* `Lease Amount Frequency`
+* `Desired Lease Term`
+
+Match `Occupant Type`, `Occupied Until`, and `Leasing Space` to that same top-level row spacing.
+
+---
+
+## STEP 6 — FIX ONLY LISTING DISPLAY SPACING, NOT FORM SPACING
+
+This spacing fix must apply only to the **actual Landlord listing display**.
+
+Do **not**:
+
+* change create form spacing
+* change edit form spacing
+* change field labels
+* change stored values
+* change subquestion content
+* affect Tenant, Buyer, or Seller listing spacing
+
+This is a **Landlord listing display layout fix only**.
+
+---
+
+## STEP 7 — PRESERVE BACKWARD COMPATIBILITY
+
+Older Landlord records that already have:
+
+* Desired Lease Term selections saved
+* existing Leasing Terms content
+
+must still:
+
+* load correctly on edit
+* display correctly on listing
+* not require migrations
+* not break existing saved data
+
+---
+
+## STEP 8 — TEST THESE EXACT CASES
+
+### A. Desired Lease Term
+
+* save selected options
+* click Edit
+* expected: previously selected options show correctly
+* expected: nothing disappears
+
+### B. Desired Lease Term with `Other` if applicable
+
+* save selection including `Other`
+* click Edit
+* expected: `Other` stays selected
+* expected: custom value repopulates if that field exists
+
+### C. Leasing Terms listing spacing
+
+* open actual Landlord listing
+* expected: `Occupant Type`, `Occupied Until`, and `Leasing Space` have the same top-level spacing style as `Desired Rental Amount`, `Lease Amount Frequency`, and `Desired Lease Term`
+* expected: subquestions under `Leasing Space` remain nested underneath
+* expected: no cramped top-level rows
+* expected: labels/values align cleanly
+
+---
+
+## STEP 9 — VERIFY NOTHING ELSE CHANGED
+
+After the fix, explicitly confirm:
+
+* no Tenant files changed
+* no Buyer files changed
+* no Seller files changed
+* no selection input format changed
+* no Select2 UI changed
+* no placeholders changed
+* no tooltips changed
+* no icons changed
+* no unrelated Landlord fields changed
+
+---
+
+## STEP 10 — RETURN A FINAL REPORT
+
+After implementation, return:
+
+1. exact files changed
+2. confirmation the correct active Landlord files were identified first
+3. exact root cause for:
+
+   * Desired Lease Term selections not showing on edit
+   * Leasing Terms uneven spacing on actual listing
+4. exact fix applied for each
+5. confirmation no other files were edited
+6. confirmation selection inputs/Select2 format were not changed
+7. proof Desired Lease Term now repopulates correctly on edit
+8. proof Leasing Terms spacing is now even on the Landlord listing display while keeping subquestions nested under Leasing Space
+
+---
+
+## IMPORTANT FINAL RULE
+
+This is a **Landlord-only, surgical fix**.
+
+Do **not**:
+
+* edit unrelated files
+* change selection box format
+* refactor global select logic
+* touch Tenant, Buyer, or Seller
+* make broad UI changes
+
+The final result should be:
+
+* Desired Lease Term selections show correctly on edit
+* Leasing Terms top-level rows are evenly spaced
+* subquestions remain nested under Leasing Space
+* no other file or selection input behavior is changed
+
+---
+
+I can also make you a **shorter hard-stop version** if you want something even tighter to paste into Replit.
