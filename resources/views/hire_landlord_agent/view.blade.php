@@ -509,6 +509,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         if (empty($landlordConditionItems) && !empty($rawLandlordCondition)) {
                             $landlordConditionItems = is_array($rawLandlordCondition) ? $rawLandlordCondition : [$rawLandlordCondition];
                         }
+                        $landlordConditionLabelMap = [
+                            'Older but Well Maintained'           => 'Older but Clean & Well Maintained',
+                            'Older but clean & well maintained'   => 'Older but Clean & Well Maintained',
+                        ];
+                        $landlordConditionItems = array_map(function($item) use ($landlordConditionLabelMap) {
+                            return $landlordConditionLabelMap[$item] ?? $item;
+                        }, $landlordConditionItems);
                     @endphp
                     @if (!empty($landlordConditionItems))
                     <div class="col-md-12 col-12 pt-2 fw-bold"> Property Condition:
