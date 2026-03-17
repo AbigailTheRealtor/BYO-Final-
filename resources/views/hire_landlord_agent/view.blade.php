@@ -829,14 +829,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->occupant_status))
         <div class="row" style="flex-wrap: wrap;">
-            <div class="col-12 fw-bold">  Occupant Type:
+            <div class="col-12 fw-bold pt-2">  Occupant Type:
                 <span class="removeBold">{{ @$auction->get->occupant_status }}</span>
             </div>
         </div>
         @endif
         @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->occupant_tenant))
             <div class="row" style="flex-wrap: wrap;">
-                <div class="col-12 fw-bold">  Occupied Until:
+                <div class="col-12 fw-bold pt-2">  Occupied Until:
                     <span class="removeBold">
                         @php
                             $date = \Carbon\Carbon::parse($auction->get->occupant_tenant);
@@ -885,7 +885,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
         @if ($hlp::hasValue($lsType))
         <div class="row" style="flex-wrap: wrap;">
-            <div class="col-12 fw-bold">  Leasing Space:
+            <div class="col-12 fw-bold pt-2">  Leasing Space:
                 <span class="removeBold">{{ $lsType }}</span>
             </div>
         </div>

@@ -1659,7 +1659,7 @@ $tenantPays = [
                 }
                 var savedValues = @json($desired_lease_length ?? []);
                 if (savedValues && savedValues.length) {
-                    $dlt.val(savedValues).trigger('change.select2');
+                    $dlt.val(savedValues).trigger('change');
                 }
                 var otherWrapper = document.querySelector('.other_lease_term_wrapper');
                 if (otherWrapper) {
