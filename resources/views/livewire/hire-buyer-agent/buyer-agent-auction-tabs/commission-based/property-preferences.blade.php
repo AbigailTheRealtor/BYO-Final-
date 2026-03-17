@@ -1070,9 +1070,9 @@
 {{-- 3) Income-only fields --}}
 @if ($property_type === 'Income')
 
-    {{-- a) Income Property Criteria --}}
+    {{-- a) Required Income & Investment Metrics --}}
     <div class="form-group">
-        <label class="fw-bold">Income Property Criteria:
+        <label class="fw-bold">Required Income & Investment Metrics:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Enter high-level investment preferences or deal characteristics not captured in the fields below.">
                 <i class="fa-solid fa-circle-info"></i>
