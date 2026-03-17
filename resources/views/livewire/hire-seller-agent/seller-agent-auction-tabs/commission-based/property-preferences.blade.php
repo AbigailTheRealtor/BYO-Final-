@@ -401,6 +401,8 @@
         ['name' => 'Warehouse Space', 'class' => 'commercial-length'],
         ['name' => 'Other', 'class' => 'commercial-length'],
     ];
+
+    $business_assets = $business_assets ?? [];
 @endphp
 <style>
     .input-cover .input-icon2 {
