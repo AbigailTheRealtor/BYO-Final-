@@ -2528,6 +2528,21 @@ $lease_types = [
             });
         }
 
+        if ($('#included_assets').length && !$('#included_assets').hasClass('select2-hidden-accessible')) {
+            $('#included_assets').select2({
+                placeholder: "Select included assets",
+                allowClear: true
+            });
+            var savedBusinessAssets = @this.get('business_assets') || [];
+            if (savedBusinessAssets.length > 0) {
+                $('#included_assets').val(savedBusinessAssets).trigger('change');
+            }
+            $('#included_assets').on('change', function() {
+                let selectedValues = $(this).val() || [];
+                @this.set('business_assets', selectedValues, false);
+            });
+        }
+
         initExchangeItemSelect2();
 
         // Enable Bootstrap tooltips for the entire document

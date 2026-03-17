@@ -151,6 +151,7 @@ class TenantAgentAuction extends Component
     public $other_appliances = '';
     public $assets = [];
     public $assets_other = '';
+    public $business_assets = [];
     public $unit_number = '';
     public $unit_size = '';
     public $unit_size_other = '';
@@ -2812,6 +2813,9 @@ class TenantAgentAuction extends Component
             $this->assets = $rawAssets ? (is_string($rawAssets) ? json_decode($rawAssets, true) ?? [] : (array)$rawAssets) : [];
             $this->assets_other = $auction->get->assets_other ?? '';
             $this->assets_visible = is_array($this->assets) && in_array('Other', $this->assets);
+            $this->business_assets = is_string($auction->get->business_assets ?? '') && ($auction->get->business_assets ?? '') !== ''
+                ? (json_decode($auction->get->business_assets, true) ?? [])
+                : [];
             $this->property_criteria = $auction->get->property_criteria ?? '';
             $this->unit_size = $auction->get->unit_size ?? '';
             $this->unit_size_other = $auction->get->unit_size_other ?? '';
@@ -3738,6 +3742,7 @@ class TenantAgentAuction extends Component
         $auction->saveMeta('real_estate_purchase', $this->real_estate_purchase);
         $auction->saveMeta('assets', $this->assets);
         $auction->saveMeta('assets_other', $this->assets_other);
+        $auction->saveMeta('business_assets', json_encode(is_array($this->business_assets) ? $this->business_assets : []));
         $auction->saveMeta('property_criteria', $this->property_criteria);
         $auction->saveMeta('unit_size', $this->unit_size);
         $auction->saveMeta('unit_size_other', $this->unit_size_other);

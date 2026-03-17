@@ -1716,6 +1716,25 @@
                                 $photoEnhancements = is_string($photoEnhRaw) ? (json_decode($photoEnhRaw, true) ?? []) : (array)$photoEnhRaw;
                             }
                             $customEnhancement = @$auction->get->custom_enhancement ?? '';
+
+                            // Filter and reorder enhancements by the valid set for the property type
+                            $enhancementValidMap = [
+                                'Residential'  => ['Basic edits (brightness, contrast, cropping)', 'Twilight conversion (convert daytime photo to sunset look)', 'Object removal (e.g., cars, trash cans, furniture, etc.)', 'Virtual twilight photography', 'Color correction or sky replacement'],
+                                'Income'       => ['Basic edits (brightness, contrast, cropping)', 'Twilight conversion (convert daytime photo to sunset look)', 'Object removal (e.g., cars, trash cans, furniture, etc.)', 'Virtual twilight photography', 'Color correction or sky replacement'],
+                                'Commercial'   => ['Basic edits (brightness, contrast, cropping)', 'Twilight conversion (convert daytime photo to sunset look)', 'Object removal (e.g., cars, trash cans, furniture, etc.)', 'Virtual twilight photography', 'Color correction or sky replacement'],
+                                'Business'     => ['Basic edits (brightness, contrast, cropping)', 'Twilight conversion (convert daytime photo to sunset look)', 'Object removal (e.g., cars, trash cans, furniture)', 'Virtual twilight photography', 'Color correction or sky replacement'],
+                                'Vacant Land'  => ['Basic edits (brightness, contrast, cropping)', 'Twilight conversion', 'Object removal (e.g., clutter, signage)', 'Sky replacement or color correction', 'Virtual twilight effect'],
+                            ];
+                            $validEnhSet = $enhancementValidMap[$propType] ?? null;
+                            if ($validEnhSet !== null && !empty($photoEnhancements)) {
+                                $filtered = array_values(array_filter($validEnhSet, function($opt) use ($photoEnhancements) {
+                                    return in_array($opt, $photoEnhancements);
+                                }));
+                                if (in_array('Other', $photoEnhancements)) {
+                                    $filtered[] = 'Other';
+                                }
+                                $photoEnhancements = $filtered;
+                            }
                         @endphp
 
                         <div class="col-md-12 col-12 pt-2">

@@ -49,6 +49,7 @@ class SellerAgentAuctionEdit extends Component
     public $bedrooms = '';
     public $other_bedrooms = '';
     public $minimum_heated_square = '';
+    public $total_square_feet = '';
     public $minimum_leaseable = '';
     public $min_acreage = '';
     public $tenant_require = '';
@@ -1009,6 +1010,7 @@ class SellerAgentAuctionEdit extends Component
             $this->bedrooms = $auction->get->bedrooms;
             $this->other_bedrooms = $auction->get->other_bedrooms;
             $this->minimum_heated_square = $auction->get->minimum_heated_square;
+            $this->total_square_feet = $auction->get->total_square_feet ?? '';
             $this->minimum_leaseable = $auction->get->minimum_leaseable;
             $this->min_acreage = $auction->get->min_acreage;
             $this->total_acreage = $auction->get->total_acreage;
@@ -1349,6 +1351,7 @@ class SellerAgentAuctionEdit extends Component
         $auction->saveMeta('bedrooms', $this->bedrooms);
         $auction->saveMeta('other_bedrooms', $this->other_bedrooms);
         $auction->saveMeta('minimum_heated_square', $this->minimum_heated_square);
+        $auction->saveMeta('total_square_feet', $this->total_square_feet ?? '');
         $auction->saveMeta('minimum_leaseable', $this->minimum_leaseable);
         $auction->saveMeta('min_acreage', $this->min_acreage);
         $auction->saveMeta('total_acreage', $this->total_acreage);
