@@ -1,0 +1,349 @@
+Here are **copy-paste Replit instructions with extra-strong safeguards** for this exact **Hire a Seller’s Agent** issue only.
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A SELLER’S AGENT ONLY — INCLUDED PROPERTY OR BUSINESS ASSETS MUST SAVE/REPOPULATE CORRECTLY ON DRAFT + EDIT
+
+## SCOPE
+
+Fix **Included Property or Business Assets** for **Hire a Seller’s Agent only**, specifically for:
+
+* **Income**
+* **Commercial**
+* **Vacant Land**
+
+### Current bug
+
+This field is still not working correctly:
+
+* selected options are not reliably showing back up on **Edit Listing**
+* if user selects **Other**, the custom input box is not opening correctly
+* when reopening edit, it shows blank even though values were previously selected/saved
+* there was previously a duplicate version of this field, and it is possible the wrong one was deleted, causing the remaining field not to line up with the saved property/hydration logic
+
+### Required behavior
+
+For **Seller only**:
+
+* selected options must save correctly on **draft save**
+* selected options must save correctly on **edit/update save**
+* when reopening edit, previously selected options must repopulate correctly
+* if user selects **Other**, the custom input box must open immediately
+* if `Other` was saved, the custom input box must appear automatically on edit
+* the saved custom `Other` value must repopulate correctly
+* listing display must continue showing the saved values correctly
+
+---
+
+## HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Only edit the Hire a Seller’s Agent flow.**
+2. **Do not modify Tenant, Buyer, or Landlord flows.**
+3. **Do not edit any unrelated file.**
+4. **Do not rename database columns.**
+5. **Do not rename Livewire properties.**
+6. **Do not rename wire:model bindings.**
+7. **Do not change routes.**
+8. **Do not run migrations.**
+9. **Do not change Select2 initialization.**
+10. **Do not change selection box format, width, styling, placeholder behavior, badge style, dropdown behavior, or general UI structure.**
+11. **Do not change field labels, tooltips, icons, placeholders, or field order.**
+12. **Do not do a broad cleanup or refactor.**
+13. **Do not touch any Seller fields other than the exact Included Property or Business Assets field and its `Other` input behavior.**
+14. **Do not delete any more copies of the field unless you first prove which rendered instance is the correct one and which one is the duplicate.**
+15. **Keep this surgical and field-specific.**
+16. **Make sure the correct active Seller files are identified first before editing anything.**
+
+---
+
+## IMPORTANT
+
+This has already been attempted multiple times and still is not working.
+
+That means the next step must be **precise tracing**, not another guess.
+
+It is very possible that:
+
+* the wrong rendered copy was deleted
+* the visible field is no longer aligned with the saved property
+* the create/edit blade is using one field instance while save/hydration logic expects another
+* the `Other` input visibility is tied to the wrong property
+* the listing display works because it reads saved data directly, but edit hydration is attached to the wrong markup
+
+### Hard stop:
+
+Before changing anything, first confirm the **actual active Seller files** for:
+
+* Seller create form
+* Seller edit form
+* Seller draft save path
+* Seller update/edit save path
+* Seller field for **Included Property or Business Assets**
+* Seller custom `Other` input for this field
+* Seller listing display for this field
+
+Do **not** assume.
+Do **not** edit shared files unless absolutely necessary.
+If a shared file must be touched, wrap the change so it affects **Seller only**.
+
+---
+
+# STEP 1 — CONFIRM THE CORRECT ACTIVE FILES FIRST
+
+Before making changes, identify the exact active files for **Hire a Seller’s Agent**:
+
+1. Livewire/component file handling Seller create/edit/draft save
+2. Blade/partial rendering **Included Property or Business Assets**
+3. Blade/partial rendering the custom `Other` input for this field
+4. File/partial responsible for save/update/hydration of this field
+5. Blade/partial rendering the **actual Seller listing display** for this field
+
+### Requirement
+
+Return the exact files first, then edit **only those files**.
+
+### Hard stop
+
+**No other file should be edited or changed.**
+
+---
+
+# STEP 2 — TRACE THE FIELD END TO END BEFORE CHANGING ANYTHING
+
+For **Included Property or Business Assets** only, trace the full path:
+
+### Confirm all of these exactly:
+
+* visible field label
+* HTML `id`
+* HTML `name`
+* exact `wire:model`
+* exact custom `Other` property name
+* whether the field is rendered more than once
+* which rendered field is the active one the user is interacting with
+* which property the **listing display** reads from
+* which property the **draft save** path saves
+* which property the **edit hydration** path restores
+
+### Goal
+
+Prove whether the remaining rendered field is the correct one or whether the duplicate removal broke alignment.
+
+Do **not** guess.
+
+---
+
+# STEP 3 — VERIFY WHETHER THE WRONG COPY WAS DELETED
+
+Because this field used to appear twice, first verify:
+
+* which instance was the real intended field
+* which instance was the duplicate
+* whether the currently visible field’s `wire:model` matches the save/display/hydration logic
+
+### If the wrong one was deleted
+
+Restore the correct field wiring and remove only the wrong rendering.
+
+### Important
+
+Do **not** randomly add or delete another duplicate.
+Only change the rendered field after confirming which instance lines up with the real saved property.
+
+---
+
+# STEP 4 — FIX SAVE + DRAFT + EDIT REPOPULATION FOR THIS FIELD ONLY
+
+For **Seller Included Property or Business Assets only**:
+
+Make sure the selected options:
+
+* save on initial create
+* save on draft save
+* save on edit/update
+* reopen correctly on edit
+* remain selected in the UI
+* do not disappear after Livewire re-render
+
+### Important
+
+Use the same stable pattern as other working Seller multi-select fields that already:
+
+* save selections correctly
+* repopulate correctly on edit
+* keep `Other` visible when selected
+
+Do **not** do a broad Select2 rewrite.
+
+---
+
+# STEP 5 — FIX THE `OTHER` INPUT BOX
+
+## Current bug
+
+If user selects **Other**, the custom input box is still not opening correctly, and on edit it shows blank.
+
+## Required behavior
+
+For **Seller Included Property or Business Assets only**:
+
+* selecting `Other` must open the custom input box immediately
+* if `Other` was previously saved, the custom input box must be visible on edit
+* the saved custom `Other` value must repopulate correctly
+* the custom input must not flash and disappear
+* the custom input visibility must be based on the actual saved/current field state, not only a temporary JS event
+
+### Important
+
+Do **not** rewrite all `Other` logic globally.
+Fix only this exact field.
+
+---
+
+# STEP 6 — DO NOT CHANGE LISTING DISPLAY EXCEPT TO KEEP IT ALIGNED
+
+The listing display in your screenshot is already showing the saved values.
+
+That means the saved data likely exists.
+
+So this fix should primarily target:
+
+* form field wiring
+* save path
+* edit hydration
+* `Other` visibility logic
+
+Only touch listing display if needed to keep it aligned with the same property names.
+
+---
+
+# STEP 7 — PRESERVE FIELD FORMAT
+
+This is critical.
+
+For **Included Property or Business Assets**:
+
+* do **not** change the selection input format
+* do **not** change Select2 structure
+* do **not** change placeholder behavior
+* do **not** change width/layout
+* do **not** change badge/tag appearance
+* do **not** change options list wording
+
+Only fix:
+
+* correct field/property alignment
+* save/draft/edit repopulation
+* `Other` input visibility/persistence
+
+---
+
+# STEP 8 — PRESERVE BACKWARD COMPATIBILITY
+
+Older Seller records that already have saved:
+
+* Included Property or Business Assets selections
+* custom `Other` values
+
+must still:
+
+* load correctly on edit
+* display correctly on listing
+* not require migrations
+* not lose data
+* not break existing saved listings
+
+---
+
+# STEP 9 — TEST THESE EXACT CASES
+
+### A. Create listing
+
+* select multiple Included Property or Business Assets options
+* save draft
+* expected: selections persist
+
+### B. Reopen draft
+
+* expected: previously selected options show correctly
+* expected: not blank
+
+### C. Edit existing listing
+
+* expected: previously selected options show correctly
+* expected: not blank
+
+### D. Select `Other`
+
+* expected: custom input opens immediately
+
+### E. Save with `Other`
+
+* enter custom value
+* save draft or update
+* reopen edit
+* expected: `Other` is still selected
+* expected: custom input is visible
+* expected: custom value is populated
+
+### F. Listing display
+
+* expected: saved values continue to show correctly
+
+---
+
+# STEP 10 — VERIFY NOTHING ELSE CHANGED
+
+After the fix, explicitly confirm:
+
+* no Tenant files changed
+* no Buyer files changed
+* no Landlord files changed
+* no selection input format changed
+* no Select2 UI changed
+* no placeholders changed
+* no tooltips changed
+* no icons changed
+* no unrelated Seller fields changed
+
+---
+
+# STEP 11 — RETURN A FINAL REPORT
+
+After implementation, return:
+
+1. exact files changed
+2. confirmation the correct active Seller files were identified first
+3. confirmation whether the wrong duplicate was previously deleted or not
+4. exact root cause for why the field still showed blank on edit
+5. exact root cause for why `Other` was not opening/repopulating
+6. exact fix applied
+7. confirmation no other files were edited
+8. confirmation selection inputs/Select2 format were not changed
+9. proof selected options now save and repopulate correctly on draft + edit
+10. proof `Other` now opens and repopulates correctly
+
+---
+
+## IMPORTANT FINAL RULE
+
+This is a **Seller-only, surgical fix**.
+
+Do **not**:
+
+* edit unrelated files
+* change selection box format
+* refactor global select logic
+* touch Tenant, Buyer, or Landlord
+* make broad UI changes
+
+The final result should be:
+
+* Included Property or Business Assets saves correctly on draft and edit
+* selected options show correctly when reopening edit
+* `Other` opens immediately and repopulates correctly
+* no other file or selection input behavior is changed
+
+---
+
+If you want, I can also turn this into a **shorter hard-stop version** for Replit with even tighter wording.

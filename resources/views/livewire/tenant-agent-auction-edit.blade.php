@@ -2740,6 +2740,24 @@
             }
 
             //// End •  Business & Real Estate Purchase Requirements
+
+            // Seller — Included Property or Business Assets (#included_assets)
+            const $sellerAssetsSelect = $('#included_assets');
+            if ($sellerAssetsSelect.length) {
+                if ($sellerAssetsSelect.hasClass('select2-hidden-accessible')) {
+                    $sellerAssetsSelect.select2('destroy');
+                }
+                $sellerAssetsSelect.select2({ placeholder: "Select", allowClear: true });
+                const _sellerSavedAssets = @json(is_array($business_assets) ? $business_assets : []);
+                if (Array.isArray(_sellerSavedAssets) && _sellerSavedAssets.length > 0) {
+                    $sellerAssetsSelect.val(_sellerSavedAssets).trigger('change.select2');
+                }
+                $sellerAssetsSelect.on('change', function() {
+                    const vals = $(this).val() || [];
+                    Livewire.emit('assetsOption', vals);
+                });
+            }
+
             ///// Selected the business type other then
 
             function toggleOtherBusinessInput() {
