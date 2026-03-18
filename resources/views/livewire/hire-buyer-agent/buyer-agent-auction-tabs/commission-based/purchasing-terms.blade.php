@@ -640,7 +640,7 @@
         </div>
     </div>
 
-    @if ($exchange_item === 'Other')
+    @if ($exchange_item === 'Other' || (is_array($exchange_item) && in_array('Other', $exchange_item)))
         <div class="form-group">
             <div class="input-cover">
                 <input type="text" wire:model="other_exchange_item" class="form-control has-icon"

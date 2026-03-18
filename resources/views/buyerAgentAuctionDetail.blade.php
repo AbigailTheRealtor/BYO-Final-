@@ -760,17 +760,7 @@
                         @endif
 
                         @if ($buyerHasMetrics)
-                        <hr>
-                        <div class="card-header section-header">
-                            <h4 class="section-title">Required Income & Investment Metrics</h4>
-                        </div>
                         <div class="row" style="flex-wrap: wrap;">
-                            @if (@$auction->get->property_criteria != null)
-                                <div class="col-md-12 col-12 pt-2 fw-bold">
-                                    Additional Investment Criteria:
-                                    <span class="removeBold">{{ @$auction->get->property_criteria }}</span>
-                                </div>
-                            @endif
 
                             @if (@$auction->get->unit_size != null)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">

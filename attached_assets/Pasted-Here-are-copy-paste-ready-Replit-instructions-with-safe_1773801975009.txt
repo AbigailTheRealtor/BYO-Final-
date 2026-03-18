@@ -1,0 +1,238 @@
+Here are copy-paste-ready Replit instructions with safeguards:
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A BUYER’S AGENT — “OTHER” INPUT FOR ACCEPTABLE EXCHANGE ITEM NOT SHOWING ON EDIT
+
+## GOAL
+
+Fix **Hire a Buyer’s Agent** so that when a user selected **Other** for **Acceptable Exchange Item**, the related custom **Other** input shows correctly when the user later clicks **Edit Listing**.
+
+Right now, the saved “Other” value is not showing properly on edit.
+
+---
+
+# ISSUE
+
+For **Hire a Buyer’s Agent**:
+
+* user selects **Other** under **Acceptable Exchange Item**
+* user enters a custom value
+* user saves the listing
+* later, user clicks **Edit Listing**
+* the custom **Other** input does **not** appear
+
+That is wrong.
+
+If **Other** was selected and saved, then the related custom input must appear automatically on edit and load the saved value.
+
+---
+
+# REQUIRED RESULT
+
+If **Other** was previously selected for **Acceptable Exchange Item**, then on **Edit Listing**:
+
+* **Other** must still appear selected
+* the related custom **Other** input must be visible automatically
+* the saved custom value must populate into that input
+* the user must be able to edit it
+* it must save correctly again after re-save
+
+This should also work for:
+
+* draft reopen, if applicable
+* normal edit/reopen flow
+* create → save → edit cycle
+
+---
+
+# HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Only work on Hire a Buyer’s Agent flow.**
+2. **Do not change Seller, Tenant, or Landlord files unless a shared file is proven to control Buyer too and can be safely scoped.**
+3. **Do not rename, delete, or migrate any database columns.**
+4. **Do not rename wire:model names, backend property names, validation keys, or storage keys.**
+5. **Do not make the Other input always visible.**
+6. **Do not break create mode, draft mode, or edit mode.**
+7. **Do not duplicate the Acceptable Exchange Item field or the Other input.**
+8. **Do not remove existing conditional logic — fix it.**
+9. **Do not guess the file. Confirm the exact Buyer file first.**
+10. **If shared TenantAgentAuction-based logic is used, inspect that first before changing multiple files.**
+11. **Do not change unrelated fields or sections.**
+12. **Stop if this would require a broad refactor. Use the smallest safe fix.**
+
+---
+
+# FIRST STEP — FIND THE CORRECT FILES
+
+Before changing anything, identify the exact Buyer files controlling:
+
+* **Acceptable Exchange Item**
+* the related **Other** custom input
+* edit hydration / mount logic
+* draft reopen logic if applicable
+* conditional visibility logic on page load
+* save/update logic
+
+Do **not** assume the issue is only Blade markup until you confirm whether the saved value is hydrating correctly.
+
+---
+
+# WHAT TO CHECK FIRST
+
+Inspect whether the root cause is one of these:
+
+## A) Saved selection is not hydrating correctly on edit
+
+Example:
+
+* the saved value includes **Other**
+* but the edit component is not restoring that selected value properly
+
+## B) The custom Other text is saved, but the visibility condition is not re-triggering on edit
+
+Example:
+
+* the Other text exists in the backend
+* but the UI logic that shows the field only runs on change, not on page load
+
+## C) JS/Select2 visibility logic is not firing on mount/edit reopen
+
+Example:
+
+* field appears when manually selecting Other
+* but not when loading an already-saved record
+
+## D) The edit form is reading the wrong property or stale property
+
+Example:
+
+* the main field restores correctly
+* but the “show Other input” condition is tied to a different or empty value
+
+## E) Draft/edit hydration path differs from create path
+
+Example:
+
+* create works
+* edit and draft reopen do not restore the conditional state properly
+
+---
+
+# REQUIRED IMPLEMENTATION RULE
+
+Do **not** solve this by making the Other input permanently visible.
+
+The correct fix is:
+
+* when **Other** is part of the saved **Acceptable Exchange Item** value,
+* the edit form must automatically detect that,
+* and the corresponding custom input must render/open with the saved value.
+
+---
+
+# SCOPE
+
+Apply this fix only to:
+
+* **Hire a Buyer’s Agent**
+* **Acceptable Exchange Item**
+* its related custom **Other** input
+
+Do not broaden this to unrelated “Other” fields unless the same exact shared Buyer file requires a carefully scoped fix.
+
+---
+
+# DO NOT CHANGE
+
+* DB schema
+* route names
+* controller names
+* unrelated Buyer fields
+* Seller/Tenant/Landlord flows
+* validation rules unless a tiny scoped fix is needed for hydration
+* actual listing display unless the same field’s saved value is also broken there
+
+---
+
+# ACCEPTANCE TESTS
+
+## Test 1 — Create with Other
+
+Create a Buyer listing.
+
+Under **Acceptable Exchange Item**:
+
+* select **Other**
+* enter a custom value
+
+Save the listing.
+
+---
+
+## Test 2 — Edit reopen
+
+Open that same Buyer listing in **Edit** mode.
+
+Confirm:
+
+* **Other** is still selected
+* the related custom input is visible automatically
+* the saved custom value is populated
+
+---
+
+## Test 3 — Edit and re-save
+
+Change the custom Other value.
+
+Save again.
+
+Reopen Edit.
+
+Confirm the updated custom value persists and still shows correctly.
+
+---
+
+## Test 4 — Non-Other case still works
+
+Open a Buyer listing where **Other** was not selected.
+
+Confirm the custom Other input does **not** appear unnecessarily.
+
+---
+
+## Test 5 — Draft reopen if applicable
+
+Save a draft with **Other** selected and custom text entered.
+
+Reopen the draft.
+
+Confirm:
+
+* **Other** is still selected
+* custom input is visible
+* saved custom value is populated
+
+---
+
+# REPORT BACK AFTER CHANGES
+
+Please report back with:
+
+1. **Exact file(s) changed**
+2. **Which file controls Acceptable Exchange Item for Hire a Buyer’s Agent**
+3. **What the root cause was**
+4. **Whether the issue was Blade visibility, JS/init, or hydration/mount logic**
+5. **Confirmation that only Buyer flow was changed**
+6. **Confirmation that DB fields, wire:model names, and storage keys were not renamed**
+
+---
+
+## IMPORTANT NOTE
+
+Do **not** tell me it is fixed unless you verify all of these on edit:
+
+* **Other** remains selected
+* the custom Other input is visible
+* the saved custom value appears inside it
