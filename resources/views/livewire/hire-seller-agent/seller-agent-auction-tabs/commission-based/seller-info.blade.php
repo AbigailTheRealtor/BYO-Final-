@@ -15,7 +15,7 @@
 
     <div class="input-cover">
         <input type="text" wire:model="first_name" class="form-control has-icon" data-icon="fa-solid fa-user"
-            placeholder="Enter first name">
+            placeholder="Enter first name" required>
     </div>
 </div>
 
@@ -24,7 +24,7 @@
     <label class="fw-bold">Last Name: <span class="text-danger">*</span></label>
     <div class="input-cover">
         <input type="text" wire:model="last_name" class="form-control has-icon" data-icon="fa-solid fa-user"
-            placeholder="Enter last name">
+            placeholder="Enter last name" required>
     </div>
 </div>
 
@@ -34,7 +34,7 @@
     <div class="input-cover">
         <input type="text" wire:model.defer="phone_number" class="form-control has-icon" data-icon="fa-solid fa-phone"
             placeholder="(555) 555-5555" id="seller_phone_number" inputmode="numeric" autocomplete="tel" maxlength="14"
-            oninput="formatSellerPhone(this)">
+            oninput="formatSellerPhone(this)" required>
     </div>
 </div>
 
@@ -43,7 +43,7 @@
     <label class="fw-bold">Email Address:<span class="text-danger">*</span></label>
     <div class="input-cover">
         <input type="email" wire:model="email" class="form-control has-icon" data-icon="fa-solid fa-envelope"
-            placeholder="Enter email address ">
+            placeholder="Enter email address " required>
     </div>
 </div>
 
@@ -58,7 +58,7 @@
 
     </span>
     <div class="input-cover">
-        <select wire:model="current_status" class="form-control has-icon" data-icon="fa-solid fa-chart-pie">
+        <select wire:model="current_status" class="form-control has-icon" data-icon="fa-solid fa-chart-pie" required>
             <option value="">Select status</option>
             <option value="First-Time Seller">First-Time Seller</option>
             <option value="Selling Primary Residence">Selling Primary Residence</option>

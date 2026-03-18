@@ -54,7 +54,7 @@
 
     </span>
     <div class="input-cover">
-        <select wire:model="current_status" class="form-control has-icon" data-icon="fa-solid fa-chart-pie">
+        <select wire:model="current_status" class="form-control has-icon" data-icon="fa-solid fa-chart-pie" required>
             <option value="">Select status</option>
             <option value="Currently Renting">Currently Renting</option>
             <option value="First-Time Buyer">First-Time Buyer</option>
