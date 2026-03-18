@@ -2141,20 +2141,20 @@
             if ($cpb.length && $cpb.hasClass('select2-hidden-accessible')) {
                 var cpbVals = $cpb.val() || [];
                 cpbVals = [...new Set(cpbVals)];
-                @this.set('condition_prop_buyer', cpbVals);
+                @this.set('condition_prop_buyer', cpbVals, true);
             }
 
             var $numUnit = $('.number_of_unit_type');
             if ($numUnit.length && $numUnit.hasClass('select2-hidden-accessible')) {
                 var nuVals = $numUnit.val() || [];
                 nuVals = [...new Set(nuVals)];
-                @this.set('number_of_unit_type', nuVals);
+                @this.set('number_of_unit_type', nuVals, true);
                 var nutJsonInput = document.querySelector('input[wire\\:model\\.defer="number_of_unit_type_json"]');
                 if (nutJsonInput) {
                     nutJsonInput.value = JSON.stringify(nuVals);
                     nutJsonInput.dispatchEvent(new Event('input', { bubbles: true }));
                 }
-                @this.set('number_of_unit_type_json', JSON.stringify(nuVals));
+                @this.set('number_of_unit_type_json', JSON.stringify(nuVals), true);
             }
 
             var $pi = $('#property_items');
@@ -2171,42 +2171,42 @@
 
             var $sp = $('#sale_provision');
             if ($sp.length && $sp.hasClass('select2-hidden-accessible')) {
-                @this.set('sale_provision', $sp.val());
+                @this.set('sale_provision', $sp.val(), true);
             }
 
             var $of = $('#offered_financing');
             if ($of.length && $of.hasClass('select2-hidden-accessible')) {
-                @this.set('offered_financing', $of.val());
+                @this.set('offered_financing', $of.val(), true);
             }
 
             var $gps = $('#garage_parking_spaces_option_landlord');
             if ($gps.length && $gps.hasClass('select2-hidden-accessible')) {
-                @this.set('garage_parking_spaces_option', $gps.val());
+                @this.set('garage_parking_spaces_option', $gps.val(), true);
             }
 
             var $gpsT = $('#garage_parking_spaces_option');
             if ($gpsT.length && $gpsT.hasClass('select2-hidden-accessible')) {
-                @this.set('garage_parking_spaces_option', $gpsT.val() || []);
+                @this.set('garage_parking_spaces_option', $gpsT.val() || [], true);
             }
 
             var $ls = $('#leasing_spaces_tenant');
             if ($ls.length && $ls.hasClass('select2-hidden-accessible')) {
-                @this.set('leasing_spaces_tenant', $ls.val() || []);
+                @this.set('leasing_spaces_tenant', $ls.val() || [], true);
             }
 
             var $vp = $('#view_preference');
             if ($vp.length && $vp.hasClass('select2-hidden-accessible')) {
-                @this.set('view_preference', $vp.val() || []);
+                @this.set('view_preference', $vp.val() || [], true);
             }
 
             var $tp = $('.tenant_pays');
             if ($tp.length && $tp.hasClass('select2-hidden-accessible')) {
-                @this.set('tenant_pays', $tp.val() || []);
+                @this.set('tenant_pays', $tp.val() || [], true);
             }
 
             var $dll = $('.lease_term_options');
             if ($dll.length && $dll.hasClass('select2-hidden-accessible')) {
-                @this.set('desired_lease_length', $dll.val() || []);
+                @this.set('desired_lease_length', $dll.val() || [], true);
             }
 
             var $lf = $('.lease_for');
@@ -2217,7 +2217,7 @@
 
             var $nna = $('#non_negotiable_amenities');
             if ($nna.length && $nna.hasClass('select2-hidden-accessible')) {
-                @this.set('non_negotiable_amenities', $nna.val() || []);
+                @this.set('non_negotiable_amenities', $nna.val() || [], true);
             }
         }
 
@@ -2257,22 +2257,13 @@
                 }
             }
 
-            // All required fields satisfied — proceed with save
-            _saveEditSyncPending = true;
-            setTimeout(function() {
-                if (_saveEditSyncPending) {
-                    _saveEditSyncPending = false;
-                    @this.call('update');
-                }
-            }, 600);
+            // All required fields satisfied — call update().
+            // All @this.set() calls above used defer=true, so their values
+            // are batched into this single request atomically.
+            @this.call('update');
         }
 
         Livewire.hook('message.processed', function() {
-            if (_saveEditSyncPending) {
-                _saveEditSyncPending = false;
-                @this.call('update');
-                return;
-            }
             // Guided correction: advance to next missing required field after each re-render
             if (_editCorrectionMode && typeof window._editAdvanceCorrection === 'function') {
                 window._editAdvanceCorrection();
@@ -2287,7 +2278,7 @@
                 if ($cpb.length && $cpb.hasClass('select2-hidden-accessible')) {
                     var cpbVals = $cpb.val() || [];
                     cpbVals = [...new Set(cpbVals)];
-                    @this.set('condition_prop_buyer', cpbVals);
+                    @this.set('condition_prop_buyer', cpbVals, true);
                     if (typeof syncConditionJsonBridge === 'function') {
                         syncConditionJsonBridge(cpbVals);
                     }

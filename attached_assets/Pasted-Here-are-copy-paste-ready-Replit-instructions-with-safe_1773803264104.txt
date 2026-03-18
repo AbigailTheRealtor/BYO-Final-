@@ -1,0 +1,356 @@
+Here are copy-paste-ready Replit instructions with safeguards focused on the **flicker/jumping bug** caused by the required-field-on-edit fix.
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — FIX EDIT REQUIRED-FIELD VALIDATION FLICKER / SCREEN JUMPING FOR SELLER / BUYER / LANDLORD / TENANT
+
+## ISSUE
+
+After the recent fix for required fields on **Edit Listing**, the screen now **flickers / jumps up and down** when it tries to take the user to a required field.
+
+That makes it hard to type into the field.
+
+This needs to be fixed for:
+
+* Seller
+* Buyer
+* Landlord
+* Tenant
+
+and for these **Edit Listing** actions:
+
+* **Save Draft**
+* **Submit / Save Edit**
+
+This is **not** for the separate new-listing draft button.
+
+---
+
+# GOAL
+
+Keep the required-field enforcement on **Edit Listing**, but stop the screen from:
+
+* jumping up and down repeatedly
+* re-scrolling over and over
+* re-focusing the field continuously
+* making it hard to type into the required field
+
+The behavior should still:
+
+* block save when required fields are missing
+* identify the missing field(s)
+* take the user to the missing field/tab like create does
+
+But it should do that **once in a stable way**, not repeatedly.
+
+---
+
+# REQUIRED RESULT
+
+On **Edit Listing** for Seller / Buyer / Landlord / Tenant:
+
+* required fields should still be enforced on **Save Draft** and **Submit / Save Edit**
+* user should still be taken to the missing required field/tab
+* but the screen should **not flicker or bounce repeatedly**
+* once the user is taken to the required field, the page should stay stable so they can type
+
+---
+
+# HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Do not remove required-field enforcement on edit.**
+2. **Do not revert the fix entirely.**
+3. **Do not rename, remove, or migrate any database columns.**
+4. **Do not change unrelated flows, dashboards, or public pages.**
+5. **Do not weaken create-mode validation.**
+6. **Do not weaken edit validation for Save Draft or Submit / Save Edit.**
+7. **Do not change the separate new-listing draft button behavior.**
+8. **Do not create a totally different edit validation system if the create system can be reused safely.**
+9. **Do not duplicate validation rules across multiple files if one shared source of truth already exists.**
+10. **Do not hardcode repeated scroll or focus calls.**
+11. **Do not attach repeated listeners every render cycle.**
+12. **If the project uses shared TenantAgentAuction-based logic for create/edit flows, inspect that first before changing multiple role files.**
+13. **Do not touch DB schema, routes, or controller names unless absolutely necessary.**
+14. **Use the smallest safe fix. Stop if this requires a broad refactor.**
+
+---
+
+# MOST LIKELY ROOT CAUSE TO CHECK
+
+The new edit validation likely caused one of these problems:
+
+## A) Scroll/focus logic is firing repeatedly
+
+Example:
+
+* validation finds missing field
+* scrolls to field
+* rerender happens
+* scroll runs again
+* focus runs again
+* page keeps bouncing
+
+## B) Livewire rerender is retriggering the required-field navigation loop
+
+Example:
+
+* after every state update, the “go to required field” logic runs again
+
+## C) Event listeners were attached multiple times
+
+Example:
+
+* same submit or validation listener is being bound again after each render
+* one click triggers several scroll/focus actions
+
+## D) Auto-focus and auto-scroll are fighting each other
+
+Example:
+
+* one script scrolls to field
+* another tries to focus another element
+* then the page jumps back again
+
+## E) Validation loop keeps trying to move to the “next” missing field before user can type
+
+Example:
+
+* instead of stopping on first missing field and waiting,
+* it keeps cycling through missing fields continuously
+
+---
+
+# FIRST STEP — TRACE THE EXACT REQUIRED-FIELD NAVIGATION LOGIC
+
+Before changing anything, inspect the exact edit validation path for:
+
+* Seller
+* Buyer
+* Landlord
+* Tenant
+
+Specifically identify:
+
+1. what function is triggered when **Save Draft** is clicked on edit
+2. what function is triggered when **Submit / Save Edit** is clicked on edit
+3. what logic names the missing required field(s)
+4. what logic scrolls to the missing field/tab
+5. what logic focuses the field
+6. whether this logic is running more than once per click
+7. whether it is attached again after Livewire rerender
+
+Do **not** guess.
+
+---
+
+# REQUIRED IMPLEMENTATION RULE
+
+The required-field guidance should happen **once per user action**, not repeatedly.
+
+## Correct behavior
+
+When user clicks **Save Draft** or **Submit / Save Edit** on edit:
+
+1. validate fields
+2. identify first missing required field
+3. open correct tab/section if needed
+4. scroll to that field once
+5. focus it once if appropriate
+6. stop and let the user type
+
+## Incorrect behavior
+
+* repeated scrolling
+* repeated focusing
+* repeated jumping between missing fields
+* refiring after every keystroke or rerender
+
+---
+
+# PREFERRED FIX APPROACH
+
+Use the existing create-style validation UX, but make the edit path stable.
+
+Possible safe approaches if applicable:
+
+* add a guard so required-field scroll/focus runs only **once per submit attempt**
+* clear/reset that guard only when the user submits again
+* prevent duplicate event binding after rerender
+* debounce or single-fire the scroll/focus routine
+* stop the loop after the **first missing required field** instead of continuously cycling
+
+Do **not** remove the tab-jump / required-field behavior entirely unless absolutely necessary. Just stop the repeated triggering.
+
+---
+
+# IMPORTANT UX REQUIREMENT
+
+Once the user is taken to the missing field, they should be able to type without the screen jumping away from them.
+
+So if create-style UX currently keeps trying to move to each missing field automatically in edit mode, adjust it so:
+
+* it takes user to the first missing field
+* waits for user interaction
+* does not keep auto-jumping while they are typing
+
+---
+
+# SCOPE
+
+Apply this flicker fix to **Edit Listing** required-field behavior for:
+
+* Hire a Seller’s Agent
+* Hire a Buyer’s Agent
+* Hire a Landlord’s Agent
+* Hire a Tenant’s Agent
+
+and only for:
+
+* **Save Draft**
+* **Submit / Save Edit**
+
+Do not change unrelated create-mode behavior unless the shared code requires a tightly scoped stabilization fix.
+
+---
+
+# DO NOT CHANGE
+
+* which fields are required
+* the fact that required fields must block edit save
+* DB schema
+* route names
+* controller names
+* unrelated listing display pages
+* unrelated field labels
+* optional fields
+* unrelated submit flows
+
+---
+
+# ACCEPTANCE TESTS
+
+## Test 1 — Seller edit missing required field
+
+Open an existing Seller listing.
+Delete a required field.
+Click **Save Draft**.
+
+Confirm:
+
+* save is blocked
+* user is taken to the missing field/tab
+* screen does **not** flicker or bounce repeatedly
+* user can type normally into the field
+
+Then test **Submit / Save Edit** the same way.
+
+---
+
+## Test 2 — Buyer edit missing required field
+
+Open an existing Buyer listing.
+Delete a required field.
+Click **Save Draft**.
+
+Confirm:
+
+* save is blocked
+* user is taken to the missing field/tab
+* screen remains stable
+* user can type normally
+
+Then test **Submit / Save Edit** the same way.
+
+---
+
+## Test 3 — Landlord edit missing required field
+
+Open an existing Landlord listing.
+Delete a required field.
+Click **Save Draft**.
+
+Confirm:
+
+* save is blocked
+* user is taken to the missing field/tab
+* screen remains stable
+* user can type normally
+
+Then test **Submit / Save Edit** the same way.
+
+---
+
+## Test 4 — Tenant edit missing required field
+
+Open an existing Tenant listing.
+Delete a required field.
+Click **Save Draft**.
+
+Confirm:
+
+* save is blocked
+* user is taken to the missing field/tab
+* screen remains stable
+* user can type normally
+
+Then test **Submit / Save Edit** the same way.
+
+---
+
+## Test 5 — Multiple missing required fields
+
+Create a case with more than one missing required field on edit.
+
+Confirm:
+
+* system does not continuously jump between fields
+* it stops on the first missing required field in a stable way
+* after user fixes that field, the next submit attempt moves to the next one cleanly
+
+---
+
+## Test 6 — Valid edit still saves
+
+For each role, make a valid edit without clearing required fields.
+
+Confirm:
+
+* **Save Draft** works normally
+* **Submit / Save Edit** works normally
+* no flicker occurs
+
+---
+
+## Test 7 — No duplicate listeners
+
+Verify that repeated Livewire rerenders or tab changes do not cause multiple identical listeners or repeated scroll/focus calls to stack up.
+
+---
+
+# REPORT BACK AFTER CHANGES
+
+Please report back with:
+
+1. **Exact files changed**
+2. **What caused the flicker/jumping**
+3. **Whether the issue was duplicate listeners, repeated rerender scroll/focus, or another loop**
+4. **Where the required-field navigation logic lives**
+5. **Whether all 4 roles were fixed through a shared file or separate files**
+6. **How the required-field UX is now stabilized**
+7. **Confirmation that Save Draft and Submit / Save Edit still enforce required fields**
+8. **Confirmation that create behavior was not weakened**
+9. **Confirmation that DB fields, wire:model names, and storage keys were not renamed**
+
+---
+
+## QUICK SUMMARY
+
+Keep the edit required-field validation fix, but stop the page from repeatedly jumping.
+
+The correct behavior is:
+
+* click **Save Draft** or **Submit / Save Edit**
+* missing required field is identified
+* user is taken there once
+* page stays stable
+* user can type normally
