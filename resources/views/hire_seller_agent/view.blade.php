@@ -1073,7 +1073,7 @@
 
                         @php
                             $financingPills = \App\Helpers\ListingDisplayHelper::normalizeList($financingArray, $displayOtherFinancing);
-                            $financingDisplayOrder = ['Assumable','Cash','Conventional','FHA','Jumbo','VA','No-Doc','Non-QM','USDA','Cryptocurrency','Exchange/Trade','Lease Option','Lease Purchase','Non-Fungible Token (NFT)','Seller Financing'];
+                            $financingDisplayOrder = ['Assumable','Cash','Conventional','Cryptocurrency','Exchange/Trade','FHA','Jumbo','Lease Option','Lease Purchase','No-Doc','Non-QM','NFT','Non-Fungible Token (NFT)','Seller Financing','USDA','VA'];
                             usort($financingPills, function($a, $b) use ($financingDisplayOrder) {
                                 $aIdx = array_search($a, $financingDisplayOrder);
                                 $bIdx = array_search($b, $financingDisplayOrder);

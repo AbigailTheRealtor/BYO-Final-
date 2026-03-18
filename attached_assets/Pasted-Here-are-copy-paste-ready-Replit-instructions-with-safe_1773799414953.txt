@@ -1,0 +1,291 @@
+Here are copy-paste-ready Replit instructions with safeguards:
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A SELLER’S AGENT — OFFERED FINANCING/CURRENCY ORDER MUST MATCH BUYER FORMAT
+
+## GOAL
+
+For **Hire a Seller’s Agent**, under **Offered Financing/Currency**, make the displayed options follow the same formatting pattern used in **Hire a Buyer’s Agent**:
+
+* show financing/currency options in **alphabetical order**
+* if the user selected **Other** and entered custom text, show that **last**
+* this must be consistent in:
+
+  * listing creation
+  * edit listing
+  * saved draft
+  * actual listing display
+
+---
+
+# REQUIRED RESULT
+
+## Seller Offered Financing/Currency should display in alphabetical order
+
+Example desired order style:
+
+* Assumable
+* Cash
+* Conventional
+* Cryptocurrency
+* Exchange/Trade
+* FHA
+* Jumbo
+* Lease Option
+* Lease Purchase
+* No-Doc
+* Non-QM
+* Non-Fungible Token (NFT)
+* Seller Financing
+* USDA
+* VA
+
+If the user selected **Other** and entered a custom value, that custom **Other** entry should appear **last**, after the standard options.
+
+## Important
+
+This must work consistently anywhere Seller financing is shown:
+
+* create form display/preview if applicable
+* edit/reopen
+* draft reopen
+* actual listing page
+
+---
+
+# HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Only work on Hire a Seller’s Agent flow.**
+2. **Do not change Buyer formatting. Buyer is the reference format.**
+3. **Do not change Tenant or Landlord financing logic unless a shared file is proven to control Seller too and can be safely scoped.**
+4. **Do not rename, delete, or migrate any database columns.**
+5. **Do not rename wire:model names, backend property names, validation keys, or storage keys.**
+6. **Do not change what values are stored — only how they are ordered/rendered, unless the “Other” save/display path needs a small scoped fix.**
+7. **Do not do broad string replacements across unrelated views.**
+8. **Do not hardcode the entire financing line separately in multiple files if one shared formatter/helper can safely control Seller output.**
+9. **Do not break create, edit, draft, or actual listing display.**
+10. **Do not remove any selected options; only fix ordering and “Other” placement.**
+11. **If a shared renderer exists, scope the change so Seller output matches Buyer format without breaking Buyer.**
+12. **Stop if this would require destructive schema changes or a broad refactor. Use the smallest safe fix.**
+
+---
+
+# FIRST STEP — TRACE THE EXACT SELLER FILES BEFORE EDITING
+
+Before making changes, identify the exact Seller files controlling Offered Financing/Currency in these contexts:
+
+1. **listing creation form / preview**
+2. **edit listing form / preview**
+3. **draft reopen / draft display**
+4. **actual Seller listing page**
+
+Also identify whether Seller uses:
+
+* a shared formatter/helper
+* inline Blade rendering
+* a summary-builder
+* a presenter/view-model
+* a separate stored display string
+
+Do **not** assume the create/edit form file controls the actual listing output.
+
+---
+
+# WHAT TO CHANGE
+
+## 1) STANDARD OPTIONS MUST RENDER IN ALPHABETICAL ORDER
+
+For Seller Offered Financing/Currency, display the selected standard options alphabetically.
+
+Use the Buyer display ordering as the visual reference.
+
+Do **not** rely on arbitrary save order or selection order if Buyer is already using a standardized alphabetical display.
+
+## 2) “OTHER” MUST ALWAYS DISPLAY LAST
+
+If user selected **Other** and entered custom text:
+
+* show the standard selected financing options first, alphabetically
+* then show the custom **Other** value last
+
+### Example
+
+If selected:
+
+* VA
+* FHA
+* Cash
+* Other = “Private Equity Group”
+
+Then display as:
+
+* Cash
+* FHA
+* VA
+* Private Equity Group
+
+## 3) APPLY THIS CONSISTENTLY IN ALL SELLER VIEWS
+
+This ordering rule must be consistent in:
+
+* create
+* edit
+* draft
+* actual listing
+
+The same Seller listing should not show one order in edit and a different order on the actual listing page.
+
+---
+
+# IMPORTANT IMPLEMENTATION RULE
+
+Prefer fixing this through a **single shared Seller render/format path** if one exists.
+
+For example, if there is already a formatter/helper or a repeated Blade snippet for Seller financing display, update that one path rather than copying sorting logic into multiple unrelated files.
+
+But if create/edit/draft/actual listing truly use separate files, update each carefully and keep the ordering rule identical.
+
+---
+
+# DO NOT CHANGE
+
+* the stored financing option names
+* the set of allowed financing options
+* Buyer financing display
+* Seller validation rules
+* DB structure
+* routes
+* controllers unless absolutely necessary
+* unrelated listing summary sections
+
+---
+
+# OTHER FIELD BEHAVIOR
+
+Also verify that if **Other** is selected:
+
+* the custom “Other” input still appears correctly on create/edit/draft
+* the saved custom value still persists
+* the actual listing shows the custom value last
+
+Do **not** lose or hide the custom Other value while fixing the order.
+
+---
+
+# ACCEPTANCE TESTS
+
+## Test 1 — Seller create
+
+Create a Seller listing and select these financing options in random order:
+
+* VA
+* FHA
+* Cash
+* Conventional
+* Seller Financing
+
+Save.
+
+Confirm display shows them alphabetically, not in random click order.
+
+---
+
+## Test 2 — Seller with Other
+
+Create/edit a Seller listing and select:
+
+* Jumbo
+* Cash
+* Other
+
+Enter custom Other value:
+
+* `Private Equity Group`
+
+Save.
+
+Confirm display order is:
+
+* Cash
+* Jumbo
+* Private Equity Group
+
+with the custom Other value last.
+
+---
+
+## Test 3 — Seller edit
+
+Edit an existing Seller listing and remove/add some financing options.
+
+Confirm:
+
+* standard selected options still render alphabetically
+* removed options no longer show
+* Other custom value still shows last if selected
+
+---
+
+## Test 4 — Seller draft
+
+Save a draft with several financing options plus Other.
+
+Reopen draft.
+
+Confirm the order is still:
+
+* alphabetical for standard options
+* Other last
+
+---
+
+## Test 5 — Actual listing page
+
+Open the actual Seller listing page.
+
+Confirm Offered Financing/Currency displays:
+
+* alphabetically
+* Other last
+
+---
+
+## Test 6 — Buyer unaffected
+
+Open a Buyer listing.
+
+Confirm Buyer formatting remains unchanged and still serves as the reference pattern.
+
+---
+
+# PREFERRED SORTING RULE
+
+Use this rule for Seller display:
+
+1. take currently selected **standard** options
+2. sort those alphabetically by display label
+3. append custom **Other** value last if present
+
+Do not alphabetize the custom Other text into the middle of the list.
+
+---
+
+# REPORT BACK AFTER CHANGES
+
+Please report back with:
+
+1. **Exact files changed**
+2. **Which file controls the actual Seller listing financing display**
+3. **Whether a shared formatter/helper was used or separate files were required**
+4. **How alphabetical ordering is now applied**
+5. **How the custom Other value is appended last**
+6. **Confirmation that create, edit, draft, and actual listing now all match**
+7. **Confirmation that Buyer, Tenant, and Landlord were not changed**
+
+---
+
+Yes — that is the right way to do it.
+
+For **Seller**, make **Offered Financing/Currency** match the **Buyer** formatting:
+**alphabetical standard options, with Other always last.**
