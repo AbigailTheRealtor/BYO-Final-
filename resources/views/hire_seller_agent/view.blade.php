@@ -817,17 +817,6 @@
                                 @endif
                             @endif
 
-                            @if ($propType === 'Business')
-                                @php
-                                    $realEstatePurchase = @$auction->get->real_estate_purchase;
-                                @endphp
-                                @if (!empty($realEstatePurchase) && $realEstatePurchase != 'null')
-                                    <div class="col-md-12 col-12 pt-2 fw-bold">
-                                        Business & Real Estate Purchase Requirements:
-                                        <span class="removeBold">{{ $realEstatePurchase }}</span>
-                                    </div>
-                                @endif
-                            @endif
 
                             @if (in_array($propType, ['Commercial', 'Business', 'Income']))
                                 @php
@@ -852,6 +841,18 @@
                                     </div>
                                 @endif
                             @endif
+                            @if ($propType === 'Business')
+                                @php
+                                    $realEstatePurchase = @$auction->get->real_estate_purchase;
+                                @endphp
+                                @if (!empty($realEstatePurchase) && $realEstatePurchase != 'null')
+                                    <div class="col-md-12 col-12 pt-2 fw-bold">
+                                        Business & Real Estate Purchase Requirements:
+                                        <span class="removeBold">{{ $realEstatePurchase }}</span>
+                                    </div>
+                                @endif
+                            @endif
+
 
                             @if (in_array($propType, ['Commercial', 'Business', 'Income']))
                                 @php

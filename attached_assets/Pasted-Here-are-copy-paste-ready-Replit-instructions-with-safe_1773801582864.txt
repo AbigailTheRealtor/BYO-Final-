@@ -1,0 +1,317 @@
+Here are copy-paste-ready Replit instructions with safeguards:
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A SELLER’S AGENT — REORDER INCLUDED PROPERTY OR BUSINESS ASSETS / PURCHASE REQUIREMENTS FOR INCOME + BUSINESS/COMMERCIAL
+
+## GOAL
+
+Make targeted ordering changes for **Hire a Seller listing** only.
+
+There are **2 separate ordering fixes** needed:
+
+### 1) Income / Seller — listing creation
+
+On **listing creation**, move:
+
+**Included Property or Business Assets:**
+
+so it appears **above Annual Net Income**.
+
+### 2) Business / Commercial Seller
+
+#### On listing creation
+
+Move:
+
+**Included Property or Business Assets:**
+
+so it appears **after Amenities and Property Features**.
+
+#### On actual listing
+
+Move:
+
+**Business & Real Estate Purchase Requirements**
+
+so it appears **after Included Property or Business Assets**.
+
+---
+
+# HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Only work on Hire a Seller’s Agent flow.**
+2. **Do not change Buyer, Landlord, or Tenant files unless a shared file is proven to control Seller too and can be safely scoped.**
+3. **Do not rename, delete, or migrate any database columns.**
+4. **Do not rename wire:model names, backend property names, validation keys, or storage keys.**
+5. **This is an order/layout change only — not a schema change.**
+6. **Do not change labels or wording unless absolutely required to preserve existing text.**
+7. **Do not break listing creation, draft reopen, edit listing, or actual listing display.**
+8. **Do not duplicate sections or leave old copies behind.**
+9. **Do not alter required-field rules or conditional logic unless a tiny scoped fix is needed because markup is moved.**
+10. **If these sections are rendered by shared Seller partials, scope the changes carefully to only the intended property-type branches.**
+11. **Do not edit the wrong file — creation order and actual listing order may be controlled by different files.**
+12. **Stop if this would require a broad refactor. Use the smallest safe reordering change.**
+
+---
+
+# SCOPE
+
+Apply only to **Hire a Seller’s Agent** and only to these property-type contexts:
+
+* **Income / Seller**
+* **Business / Commercial Seller**
+
+There are two different page types involved:
+
+1. **listing creation / draft / edit form order**
+2. **actual listing display order**
+
+Do not assume they are controlled by the same file.
+
+---
+
+# REQUIRED CHANGES
+
+## CHANGE 1 — INCOME / SELLER — LISTING CREATION ORDER
+
+### Current issue
+
+On **listing creation**, **Included Property or Business Assets** is too low.
+
+### Required result
+
+Move:
+
+**Included Property or Business Assets:**
+
+so it appears **above Annual Net Income**.
+
+## Desired Income / Seller order
+
+At minimum, ensure:
+
+* **Included Property or Business Assets**
+* **Annual Net Income**
+
+with **Included Property or Business Assets** appearing first.
+
+If nearby related metrics/fields exist, preserve their existing logic and only adjust order as needed.
+
+---
+
+## CHANGE 2 — BUSINESS / COMMERCIAL SELLER — LISTING CREATION ORDER
+
+### Current issue
+
+On **listing creation**, **Included Property or Business Assets** is not in the right position.
+
+### Required result
+
+Move:
+
+**Included Property or Business Assets:**
+
+so it appears **after Amenities and Property Features**.
+
+## Desired Business / Commercial Seller creation order
+
+At minimum, ensure:
+
+* **Amenities and Property Features**
+* **Included Property or Business Assets**
+
+with **Included Property or Business Assets** directly after that section.
+
+---
+
+## CHANGE 3 — BUSINESS / COMMERCIAL SELLER — ACTUAL LISTING ORDER
+
+### Current issue
+
+On the **actual listing**, **Business & Real Estate Purchase Requirements** is in the wrong place.
+
+### Required result
+
+Move:
+
+**Business & Real Estate Purchase Requirements**
+
+so it appears **after Included Property or Business Assets**.
+
+## Desired actual listing order
+
+At minimum, ensure:
+
+* **Included Property or Business Assets**
+* **Business & Real Estate Purchase Requirements**
+
+with **Business & Real Estate Purchase Requirements** directly after **Included Property or Business Assets**.
+
+---
+
+# FIRST STEP — FIND THE CORRECT FILES BEFORE EDITING
+
+Before changing anything, identify the exact Seller files controlling:
+
+## Income / Seller — listing creation order
+
+Find the form file/partial rendering:
+
+* Included Property or Business Assets
+* Annual Net Income
+
+## Business / Commercial Seller — listing creation order
+
+Find the form file/partial rendering:
+
+* Amenities and Property Features
+* Included Property or Business Assets
+
+## Business / Commercial Seller — actual listing display order
+
+Find the actual listing file/partial rendering:
+
+* Included Property or Business Assets
+* Business & Real Estate Purchase Requirements
+
+Do **not** edit the actual listing view when the request is about form order, and do **not** edit the form file when the request is about actual listing order.
+
+---
+
+# IMPORTANT IMPLEMENTATION RULE
+
+This should be a **layout/order change only**.
+
+That means:
+
+* keep the same field bindings
+* keep the same labels
+* keep the same validation
+* keep the same saved values
+* keep the same conditional logic
+* only move the rendering order
+
+If moving markup affects:
+
+* JS hooks
+* dynamic section toggles
+* Select2 init
+* collapsible sections
+* required-field focus logic
+
+make sure those still work after the move.
+
+---
+
+# DO NOT CHANGE
+
+* DB schema
+* routes/controllers
+* field names
+* validation rules
+* required logic
+* Buyer/Tenant/Landlord flows
+* unrelated Seller property types
+* unrelated listing summary sections
+
+---
+
+# ACCEPTANCE TESTS
+
+## Test 1 — Income / Seller create
+
+Open **Hire a Seller’s Agent** for **Income** on listing creation.
+
+Confirm:
+
+* **Included Property or Business Assets** appears **above Annual Net Income**
+
+---
+
+## Test 2 — Income / Seller draft/edit
+
+Save a draft or open edit for an Income Seller listing.
+
+Confirm:
+
+* the same order is preserved
+* values remain loaded correctly
+* moving the section did not break saved values
+
+---
+
+## Test 3 — Business / Commercial Seller create
+
+Open **Hire a Seller’s Agent** for **Business / Commercial** on listing creation.
+
+Confirm:
+
+* **Included Property or Business Assets** appears **after Amenities and Property Features**
+
+---
+
+## Test 4 — Business / Commercial Seller draft/edit
+
+Save a draft or open edit for a Business / Commercial Seller listing.
+
+Confirm:
+
+* the same order is preserved
+* values still load correctly
+* no section disappeared because of the move
+
+---
+
+## Test 5 — Business / Commercial actual listing
+
+Open the **actual Seller listing** for Business / Commercial.
+
+Confirm:
+
+* **Included Property or Business Assets** appears first
+* **Business & Real Estate Purchase Requirements** appears directly after it
+
+---
+
+## Test 6 — No duplication
+
+Confirm there are not two copies of:
+
+* Included Property or Business Assets
+* Business & Real Estate Purchase Requirements
+
+after the reordering.
+
+---
+
+# REPORT BACK AFTER CHANGES
+
+Please report back with:
+
+1. **Exact file(s) changed**
+2. **Which file controls Income / Seller listing creation order**
+3. **Which file controls Business / Commercial Seller listing creation order**
+4. **Which file controls Business / Commercial actual listing order**
+5. **Confirmation that this was only a layout/order change**
+6. **Confirmation that field bindings, validation, and storage keys were not changed**
+7. **Confirmation that draft, edit, and actual listing were not broken**
+
+---
+
+## QUICK SUMMARY OF REQUIRED ORDER
+
+### Income / Seller — listing creation
+
+* **Included Property or Business Assets**
+* **Annual Net Income**
+
+### Business / Commercial Seller — listing creation
+
+* **Amenities and Property Features**
+* **Included Property or Business Assets**
+
+### Business / Commercial Seller — actual listing
+
+* **Included Property or Business Assets**
+* **Business & Real Estate Purchase Requirements**
