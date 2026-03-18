@@ -1914,7 +1914,7 @@
                                 <button type="button" class="btn btn-secondary wizard-step-back">Back</button>
                             </div>
                             <div>
-                                <button type="button" wire:click="update" class="btn btn-outline-primary me-2 wizard-save-edit" wire:loading.attr="disabled" wire:target="update">
+                                <button type="button" onclick="doSaveEditWithSync()" class="btn btn-outline-primary me-2 wizard-save-edit" wire:loading.attr="disabled" wire:target="update">
                                     <span wire:loading.remove wire:target="update"><i class="fas fa-save me-1"></i> Save Edit</span>
                                     <span wire:loading wire:target="update">Saving...</span>
                                 </button>
@@ -2220,6 +2220,26 @@
                 @this.set('non_negotiable_amenities', $nna.val() || []);
             }
         }
+
+        var _saveEditSyncPending = false;
+
+        function doSaveEditWithSync() {
+            _saveEditSyncPending = true;
+            syncAllSelect2BeforeSave();
+            setTimeout(function() {
+                if (_saveEditSyncPending) {
+                    _saveEditSyncPending = false;
+                    @this.call('update');
+                }
+            }, 600);
+        }
+
+        Livewire.hook('message.processed', function() {
+            if (_saveEditSyncPending) {
+                _saveEditSyncPending = false;
+                @this.call('update');
+            }
+        });
 
         document.addEventListener('submit', function(e) {
             if (e.target && e.target.tagName === 'FORM') {
