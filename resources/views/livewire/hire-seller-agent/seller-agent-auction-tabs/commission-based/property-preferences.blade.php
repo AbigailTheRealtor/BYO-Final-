@@ -1466,34 +1466,6 @@
         <span class="error mt-2" id="pets_error"></span>
     </div>
 @endif
-@if ($property_type === 'Income')
-    <div class="form-group">
-        <label class="fw-bold">Total Number of Units:</label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the total number of units.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <input type="number" wire:model="unit_number" class="form-control has-icon"
-                data-icon="fa-solid fa-layer-group" placeholder="Enter total number of units (e.g., 4)">
-        </div>
-    </div>
-
-    <div class="form-group">
-        <label class="fw-bold">Total Number of Buildings:</label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the number of separate buildings located on the property.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-
-        <div class="input-cover">
-            <input type="number" wire:model="unit_buildings" class="form-control has-icon"
-                data-icon="fa-solid fa-building" placeholder="Enter total number of buildings (e.g., 2)">
-        </div>
-    </div>
-@endif
 @if (in_array($property_type, ['Income', 'Commercial', 'Business']))
     <div class="form-group">
         <label class="fw-bold"> Annual Net Income:</label>
@@ -1540,6 +1512,34 @@
 
         </div>
         <span class="error mt-2" id="minimum_cap_rate_error"></span>
+    </div>
+@endif
+@if ($property_type === 'Income')
+    <div class="form-group">
+        <label class="fw-bold">Total Number of Units:</label>
+
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the total number of units.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <input type="number" wire:model="unit_number" class="form-control has-icon"
+                data-icon="fa-solid fa-layer-group" placeholder="Enter total number of units (e.g., 4)">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="fw-bold">Total Number of Buildings:</label>
+
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the number of separate buildings located on the property.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+
+        <div class="input-cover">
+            <input type="number" wire:model="unit_buildings" class="form-control has-icon"
+                data-icon="fa-solid fa-building" placeholder="Enter total number of buildings (e.g., 2)">
+        </div>
     </div>
 @endif
 
