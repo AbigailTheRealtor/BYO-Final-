@@ -1327,39 +1327,6 @@
     </div>
 @endif
 
-<!-- Included Property or Business Assets — only for Business, Commercial, Income -->
-@if (in_array($property_type, ['Business', 'Commercial', 'Income']))
-<div class="form-group" wire:ignore wire:key="included-assets-{{ $property_type }}">
-    <label class="fw-bold">Included Property or Business Assets:</label>
-
-    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Select any property or business assets included in the sale.">
-        <i class="fa-solid fa-circle-info"></i>
-    </span>
-
-    <div class="input-cover" wire:ignore>
-        <select id="included_assets"
-            class="form-control has-icon select2-multiple" data-icon="fa-solid fa-briefcase input-icon2" multiple>
-            @foreach ($included_assets as $row_pt)
-                <option value="{{ $row_pt['name'] }}"
-                    {{ is_array($business_assets) && in_array($row_pt['name'], $business_assets) ? 'selected' : '' }}>
-                    {{ $row_pt['name'] }}
-                </option>
-            @endforeach
-        </select>
-    </div>
-    <span class="error mt-2" id="included_assets_error"></span>
-</div>
-@if (is_array($business_assets) && in_array('Other', $business_assets))
-    <div class="form-group other_assets mt-3">
-        <div class="input-cover">
-            <input type="text" wire:model.defer="assets_other" class="form-control has-icon"
-                data-icon="fas fa-building"
-                placeholder=" Enter any included assets (e.g., Inventory, Customer Lists, Trademarks, Software Rights)">
-        </div>
-    </div>
-@endif
-@endif
 
 @if (in_array($property_type, ['Residential', 'Income']))
     <div class="form-group">
@@ -1466,6 +1433,40 @@
         </div>
         <span class="error mt-2" id="pets_error"></span>
     </div>
+@endif
+
+<!-- Included Property or Business Assets — only for Business, Commercial, Income -->
+@if (in_array($property_type, ['Business', 'Commercial', 'Income']))
+<div class="form-group" wire:ignore wire:key="included-assets-{{ $property_type }}">
+    <label class="fw-bold">Included Property or Business Assets:</label>
+
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Select any property or business assets included in the sale.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+
+    <div class="input-cover" wire:ignore>
+        <select id="included_assets"
+            class="form-control has-icon select2-multiple" data-icon="fa-solid fa-briefcase input-icon2" multiple>
+            @foreach ($included_assets as $row_pt)
+                <option value="{{ $row_pt['name'] }}"
+                    {{ is_array($business_assets) && in_array($row_pt['name'], $business_assets) ? 'selected' : '' }}>
+                    {{ $row_pt['name'] }}
+                </option>
+            @endforeach
+        </select>
+    </div>
+    <span class="error mt-2" id="included_assets_error"></span>
+</div>
+@if (is_array($business_assets) && in_array('Other', $business_assets))
+    <div class="form-group other_assets mt-3">
+        <div class="input-cover">
+            <input type="text" wire:model.defer="assets_other" class="form-control has-icon"
+                data-icon="fas fa-building"
+                placeholder=" Enter any included assets (e.g., Inventory, Customer Lists, Trademarks, Software Rights)">
+        </div>
+    </div>
+@endif
 @endif
 @if (in_array($property_type, ['Income', 'Commercial', 'Business']))
     <div class="form-group">

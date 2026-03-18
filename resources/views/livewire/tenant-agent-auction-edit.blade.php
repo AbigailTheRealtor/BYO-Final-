@@ -2222,10 +2222,43 @@
         }
 
         var _saveEditSyncPending = false;
+        var _editCorrectionMode = false;
+        var _editMissingItems   = [];
 
         function doSaveEditWithSync() {
-            _saveEditSyncPending = true;
+            // Sync Select2 fields first so their values are current for validation
             syncAllSelect2BeforeSave();
+
+            // Run required-field validation before saving
+            if (typeof window._editGetInvalidItems === 'function') {
+                var invalidItems = window._editGetInvalidItems();
+                if (invalidItems.length > 0) {
+                    var _banner = document.getElementById('submit-error-banner');
+                    var _errList = document.getElementById('submit-error-list');
+                    if (_banner && _errList) {
+                        _errList.innerHTML = '';
+                        var _seen = new Set();
+                        invalidItems.forEach(function(item) {
+                            if (!_seen.has(item.fieldName)) {
+                                _seen.add(item.fieldName);
+                                var li = document.createElement('li');
+                                li.textContent = item.fieldName;
+                                _errList.appendChild(li);
+                            }
+                        });
+                        _banner.classList.remove('d-none');
+                    }
+                    _editCorrectionMode = true;
+                    _editMissingItems   = invalidItems;
+                    if (typeof window._editNavigateToItem === 'function') {
+                        window._editNavigateToItem(invalidItems[0]);
+                    }
+                    return; // abort — do not save
+                }
+            }
+
+            // All required fields satisfied — proceed with save
+            _saveEditSyncPending = true;
             setTimeout(function() {
                 if (_saveEditSyncPending) {
                     _saveEditSyncPending = false;
@@ -2238,6 +2271,11 @@
             if (_saveEditSyncPending) {
                 _saveEditSyncPending = false;
                 @this.call('update');
+                return;
+            }
+            // Guided correction: advance to next missing required field after each re-render
+            if (_editCorrectionMode && typeof window._editAdvanceCorrection === 'function') {
+                window._editAdvanceCorrection();
             }
         });
 
@@ -4208,6 +4246,141 @@
                 });
             }
 
+            // ---------------------------------------------------------------
+            // EDIT VALIDATION HELPERS — exposed as window globals so that
+            // doSaveEditWithSync() (defined in global scope) can call them.
+            // ---------------------------------------------------------------
+
+            function editGetInvalidItemsFull() {
+                var inv = [];
+                var _fc = document.getElementById('wizard-form-container');
+                if (!_fc) return inv;
+
+                var rFields = getAllRequiredFields();
+                rFields.forEach(function(field) {
+                    var isS2Multi = (field.tagName === 'SELECT' && field.multiple && $(field).hasClass('select2-hidden-accessible'));
+                    if (!isS2Multi && typeof isElementVisible === 'function' && !isElementVisible(field)) {
+                        return;
+                    }
+                    if (!isFieldValid(field)) {
+                        var tab  = field.closest('.tab-pane');
+                        var lbl  = field.closest('.form-group') && field.closest('.form-group').querySelector('label');
+                        var name = lbl ? lbl.textContent.replace(/[*:]/g, '').trim()
+                                       : (field.getAttribute('placeholder') || field.name || field.id || 'Required field');
+                        inv.push({ field: field, tab: tab, fieldName: name });
+                    }
+                });
+
+                // Cities / counties (role-dependent)
+                var _curUT = (typeof CURRENT_USER_TYPE !== 'undefined') ? CURRENT_USER_TYPE : '';
+                var _citiesOptional = ['buyer', 'tenant'];
+                var _citiesCont = document.querySelector('.cities-container');
+                if (_citiesCont && !_citiesOptional.includes(_curUT)) {
+                    if (!_citiesCont.querySelectorAll('.badge').length) {
+                        inv.push({ field: _citiesCont, tab: _citiesCont.closest('.tab-pane'), fieldName: 'City' });
+                    }
+                }
+                var _countiesCont = document.querySelector('.counties-container');
+                if (_countiesCont && !_countiesCont.querySelectorAll('.badge').length) {
+                    inv.push({ field: _countiesCont, tab: _countiesCont.closest('.tab-pane'), fieldName: 'County' });
+                }
+
+                // Livewire array / special fields
+                try {
+                    var _wireEl = document.querySelector('[wire\\:id]');
+                    if (_wireEl && typeof Livewire !== 'undefined') {
+                        var _comp = Livewire.find(_wireEl.getAttribute('wire:id'));
+                        if (_comp && _comp.get) {
+                            var _svc = _fc.getAttribute('data-service-type');
+                            if (_svc === 'full_service') {
+                                var _lwReqs = [{ prop: 'property_type', label: 'Property Type' }];
+                                if (_curUT === 'tenant') {
+                                    _lwReqs.push({ prop: 'lease_for',           label: 'Offered Lease Term',  isArray: true,  domSel: '.lease_for' });
+                                    _lwReqs.push({ prop: 'leasing_spaces_tenant', label: 'Leasing Space',    isArray: false });
+                                } else if (_curUT === 'landlord') {
+                                    _lwReqs.push({ prop: 'desired_lease_length', label: 'Offered Lease Term', isArray: true, domSel: '.lease_term_options' });
+                                    _lwReqs.push({ prop: 'leasing_spaces',       label: 'Offered Lease Space', isArray: false });
+                                }
+                                _lwReqs.forEach(function(chk) {
+                                    var v = _comp.get(chk.prop), isEmpty;
+                                    if (chk.isArray) {
+                                        if (typeof v === 'string') { try { v = JSON.parse(v); } catch(e2) {} }
+                                        isEmpty = !v || (Array.isArray(v) && v.length === 0) || v === '' || v === '[]';
+                                        if (isEmpty && chk.domSel) {
+                                            var $d = $(chk.domSel);
+                                            if ($d.length) {
+                                                var dv = $d.val();
+                                                if (dv && ((Array.isArray(dv) && dv.length > 0) || (typeof dv === 'string' && dv !== ''))) isEmpty = false;
+                                            }
+                                        }
+                                    } else {
+                                        isEmpty = !v || v === '';
+                                    }
+                                    if (isEmpty) inv.push({ field: document.body, tab: null, fieldName: chk.label });
+                                });
+                            }
+                        }
+                    }
+                } catch(e) {}
+
+                return inv;
+            }
+            window._editGetInvalidItems = editGetInvalidItemsFull;
+
+            function editNavigateToItem(item) {
+                if (item && item.tab) {
+                    var tId = item.tab.id;
+                    var tEl = document.querySelector('[data-bs-target="#' + tId + '"], [href="#' + tId + '"]');
+                    if (tEl) {
+                        new bootstrap.Tab(tEl).show();
+                        var wc = tEl.getAttribute('wire:click') || '';
+                        var m  = wc.match(/setActiveTab\((\d+)\)/);
+                        if (m) { try { @this.call('setActiveTab', parseInt(m[1])); } catch(ex) {} }
+                    }
+                }
+                setTimeout(function() {
+                    if (item && item.field && item.field !== document.body) {
+                        item.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        if (typeof item.field.focus === 'function' && item.field.tagName !== 'DIV') {
+                            item.field.focus();
+                        }
+                        item.field.classList.add('is-invalid');
+                    }
+                    var bn = document.getElementById('submit-error-banner');
+                    if (bn) { bn.classList.remove('d-none'); bn.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+                }, 350);
+            }
+            window._editNavigateToItem = editNavigateToItem;
+
+            function editAdvanceCorrection() {
+                if (!_editCorrectionMode) return;
+                var fresh = editGetInvalidItemsFull();
+
+                var _errList3 = document.getElementById('submit-error-list');
+                var _banner4  = document.getElementById('submit-error-banner');
+                if (_errList3) {
+                    _errList3.innerHTML = '';
+                    fresh.forEach(function(item) {
+                        var li = document.createElement('li');
+                        li.textContent = item.fieldName;
+                        _errList3.appendChild(li);
+                    });
+                }
+
+                if (fresh.length === 0) {
+                    _editCorrectionMode = false;
+                    _editMissingItems   = [];
+                    if (_banner4) _banner4.classList.add('d-none');
+                    return;
+                }
+
+                if (_banner4) _banner4.classList.remove('d-none');
+                _editMissingItems = fresh;
+                editNavigateToItem(fresh[0]);
+            }
+            window._editAdvanceCorrection = editAdvanceCorrection;
+            // ---------------------------------------------------------------
+
             const editForm = document.getElementById('edit-auction-form');
             if (editForm) {
                 editForm.addEventListener('submit', function(e) {
@@ -4319,26 +4492,14 @@
                         });
                         banner.classList.remove('d-none');
 
-                        const firstItem = invalidItems[0];
-                        if (firstItem.tab) {
-                            const tabId = firstItem.tab.id;
-                            const tabTrigger = document.querySelector('[data-bs-target="#' + tabId + '"], [href="#' + tabId + '"]');
-                            if (tabTrigger) {
-                                const bsTab = new bootstrap.Tab(tabTrigger);
-                                bsTab.show();
-                            }
-                        }
+                        // Enter guided correction mode so subsequent Livewire
+                        // re-renders auto-advance the user to the next missing field.
+                        _editCorrectionMode = true;
+                        _editMissingItems   = invalidItems.slice();
 
-                        setTimeout(() => {
-                            if (firstItem.field) {
-                                firstItem.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                if (typeof firstItem.field.focus === 'function' && firstItem.field.tagName !== 'DIV') {
-                                    firstItem.field.focus();
-                                }
-                                firstItem.field.classList.add('is-invalid');
-                            }
-                            banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }, 300);
+                        // Use editNavigateToItem so setActiveTab is synced server-side,
+                        // preventing morphdom from snapping back to the wrong tab.
+                        editNavigateToItem(invalidItems[0]);
 
                         return false;
                     }

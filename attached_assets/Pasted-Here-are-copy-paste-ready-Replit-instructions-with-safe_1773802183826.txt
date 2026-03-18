@@ -1,0 +1,225 @@
+Here are copy-paste-ready Replit instructions with safeguards:
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A SELLER’S AGENT — INCOME / LISTING CREATION — MOVE INCLUDED PROPERTY OR BUSINESS ASSETS
+
+## GOAL
+
+For **Hire a Seller listing** under **Income / Seller**, update the **listing creation / draft / edit form order** so that:
+
+**Included Property or Business Assets:**
+
+* appears **below Pets Allowed**
+* appears **above Annual Net Income**
+
+This is a **form order/layout change** for the Seller Income flow.
+
+---
+
+# REQUIRED ORDER
+
+For the relevant **Income / Seller** section on listing creation, the order should be:
+
+1. **Pets Allowed**
+2. **Included Property or Business Assets**
+3. **Annual Net Income**
+
+At minimum, ensure:
+
+* **Included Property or Business Assets** is directly **below Pets Allowed**
+* and directly **above Annual Net Income**
+
+If there are nearby pet-related follow-up questions, preserve their logic and place this section in the correct intended position without breaking those fields.
+
+---
+
+# HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Only work on Hire a Seller’s Agent flow.**
+2. **Only change the Income / Seller form order.**
+3. **Do not change Buyer, Landlord, or Tenant files unless a shared file is proven to control Seller too and can be safely scoped.**
+4. **Do not rename, delete, or migrate any database columns.**
+5. **Do not rename wire:model names, backend property names, validation keys, or storage keys.**
+6. **This is an order/layout change only — not a schema change.**
+7. **Do not change labels or wording unless absolutely required to preserve existing text.**
+8. **Do not break listing creation, draft reopen, or edit listing.**
+9. **Do not duplicate the Included Property or Business Assets section.**
+10. **Do not alter required-field rules or conditional logic unless a tiny scoped fix is needed because markup is moved.**
+11. **Do not edit the actual listing display file by mistake if this request is for listing creation/form order.**
+12. **If the section is rendered by a shared Seller partial, scope the change carefully to only the Income / Seller branch.**
+13. **Stop if this would require a broad refactor. Use the smallest safe reordering change.**
+
+---
+
+# SCOPE
+
+Apply only to:
+
+* **Hire a Seller’s Agent**
+* **Income / Seller**
+* **listing creation / draft / edit form order**
+
+This request is **not** for:
+
+* actual listing display order unless the same exact form file also controls it and the change can be safely scoped
+* Buyer / Landlord / Tenant
+* unrelated Seller property types
+
+---
+
+# FIRST STEP — FIND THE CORRECT FILE
+
+Before changing anything, identify the exact Seller form file/partial that renders:
+
+* **Pets Allowed**
+* **Included Property or Business Assets**
+* **Annual Net Income**
+
+Do **not** assume the actual listing file controls the create/edit form.
+
+Confirm the exact file used by:
+
+* listing creation
+* draft reopen
+* edit listing
+
+for **Seller → Income**.
+
+---
+
+# WHAT TO CHANGE
+
+## Reorder the form markup only
+
+Move:
+
+**Included Property or Business Assets**
+
+so that it renders:
+
+* **after Pets Allowed**
+* **before Annual Net Income**
+
+## Desired relative order
+
+* Pets Allowed
+* Included Property or Business Assets
+* Annual Net Income
+
+If nearby conditional pet fields exist, keep them functioning correctly and do not break their display logic.
+
+---
+
+# IMPORTANT IMPLEMENTATION RULE
+
+This should be a **layout/order update only**.
+
+That means:
+
+* keep the same field bindings
+* keep the same saved values
+* keep the same validation
+* keep the same conditional logic
+* only move the render position in the form
+
+If moving the markup affects:
+
+* JS hooks
+* Select2 init
+* conditional field visibility
+* required-field focus/navigation
+
+make sure those still work after the move.
+
+---
+
+# DO NOT CHANGE
+
+* actual listing output order unless specifically needed and separately requested
+* DB structure
+* routes/controllers
+* field names
+* validation rules
+* required logic
+* Buyer/Tenant/Landlord flows
+* unrelated Seller property types
+
+---
+
+# ACCEPTANCE TESTS
+
+## Test 1 — Seller Income create
+
+Open **Hire a Seller’s Agent → Income** on listing creation.
+
+Confirm:
+
+* **Included Property or Business Assets** appears **below Pets Allowed**
+* **Included Property or Business Assets** appears **above Annual Net Income**
+
+---
+
+## Test 2 — Seller Income draft reopen
+
+Save a draft with values in those fields.
+
+Reopen draft.
+
+Confirm:
+
+* the new order is preserved
+* values remain loaded correctly
+* no field is blank because of the move
+
+---
+
+## Test 3 — Seller Income edit
+
+Open an existing Seller Income listing in edit mode.
+
+Confirm:
+
+* the same reordered layout appears
+* values remain in the correct fields
+* moving the section did not break saved values
+
+---
+
+## Test 4 — Conditional logic still works
+
+If pet-related follow-up questions or asset-related conditional inputs exist nearby, confirm they still behave normally after the move.
+
+---
+
+## Test 5 — No duplication
+
+Confirm there is only one **Included Property or Business Assets** section after the reorder.
+
+---
+
+# REPORT BACK AFTER CHANGES
+
+Please report back with:
+
+1. **Exact file(s) changed**
+2. **Which file controls Seller Income listing creation order**
+3. **Confirmation that this was only a layout/order change**
+4. **Confirmation that field bindings, validation, and storage keys were not changed**
+5. **Confirmation that create, draft, and edit now all show the new order**
+6. **Confirmation that no duplicate section was left behind**
+
+---
+
+## QUICK SUMMARY
+
+For **Hire a Seller’s Agent → Income → listing creation/form order**:
+
+Move:
+
+**Included Property or Business Assets**
+
+so it is:
+
+* **below Pets Allowed**
+* **above Annual Net Income**
