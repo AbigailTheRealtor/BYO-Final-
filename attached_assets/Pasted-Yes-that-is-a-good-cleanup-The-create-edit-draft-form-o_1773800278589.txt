@@ -1,0 +1,259 @@
+Yes — that is a good cleanup. The create/edit/draft form order should match the actual listing order if that listing order is the one you prefer.
+
+Here are copy-paste-ready Replit instructions with safeguards:
+
+---
+
+# REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A BUYER’S AGENT — REORDER BUYER INCOME FORM FIELDS TO MATCH ACTUAL LISTING ORDER
+
+## GOAL
+
+For **Hire a Buyer’s Agent**, update the **listing creation / draft / edit form order** so it matches the order currently shown on the **actual listing**, for the relevant Buyer Income section.
+
+I like the order shown on the actual listing better, so I want the form to follow that same order.
+
+This should apply to:
+
+* listing creation
+* save draft / reopen draft
+* edit listing
+
+for **Hire a Buyer’s Agent** in the relevant Income section.
+
+---
+
+# REQUIRED NEW ORDER
+
+Reorder the Buyer form so the fields/sections appear in this order:
+
+1. Pet questions
+2. **Included Property or Business Assets**
+3. **Annual Net Income**
+4. **Cap Rate**
+5. **Total Number of Units**
+6. **Total Number of Buildings**
+7. **Unit Type Configuration**
+
+## More specifically
+
+### Keep pet-related questions first, including:
+
+* Pets Allowed
+* Number of Pets Allowed
+* Acceptable Pet Types
+* Maximum Weight Per Pet (lbs)
+* Pet Restrictions
+
+### Then show:
+
+* **Included Property or Business Assets**
+
+### Then show:
+
+* **Annual Net Income**
+* **Cap Rate**
+* **Total Number of Units**
+* **Total Number of Buildings**
+
+### Then show:
+
+* **Unit Type Configuration**
+
+---
+
+# HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. **Only work on Hire a Buyer’s Agent flow.**
+2. **Do not change Seller, Tenant, or Landlord forms unless a shared file is proven to control Buyer too and can be safely scoped.**
+3. **Do not rename, delete, or migrate any database columns.**
+4. **Do not rename wire:model names, backend property names, validation keys, or storage keys.**
+5. **This is a form-order/layout change only — not a schema change.**
+6. **Do not change the actual listing order unless absolutely needed. The actual listing order is the preferred reference.**
+7. **Do not break create mode, draft mode, edit mode, or saved values.**
+8. **Do not change which fields are required.**
+9. **Do not change validation rules or conditional logic unless a tiny scoped update is required because of moved markup.**
+10. **Do not duplicate sections or leave old copies behind.**
+11. **If the Buyer form uses a shared partial, scope the reordering carefully so only the intended Buyer branch changes.**
+12. **Stop if this would require a broad refactor. Use the smallest safe reordering change.**
+
+---
+
+# ISSUE TO FIX
+
+Right now, in the **Buyer form**, the order is different from the actual listing.
+
+## Current problem
+
+* **Included Property or Business Assets** appears earlier in the form
+* **Total Number of Units** and **Total Number of Buildings** are appearing before **Annual Net Income** and **Cap Rate**
+* **Unit Type Configuration** is lower, but the grouping/order is not matching the actual listing format I want
+
+## Desired result
+
+Make the Buyer form order match the actual listing order I prefer.
+
+---
+
+# FIRST STEP — FIND THE CORRECT BUYER FORM FILE
+
+Before changing anything, identify the exact file controlling this Buyer create/edit/draft section.
+
+Confirm the exact file/partial that renders:
+
+* Pet questions
+* Included Property or Business Assets
+* Annual Net Income
+* Cap Rate
+* Total Number of Units
+* Total Number of Buildings
+* Unit Type Configuration
+
+Do **not** edit the actual listing display file by mistake.
+This change is for the **form order** in create/edit/draft.
+
+---
+
+# WHAT TO CHANGE
+
+## Reorder the form markup only
+
+Move the form sections so the Buyer form follows this exact order:
+
+### First
+
+Pet questions:
+
+* Pets Allowed
+* Number of Pets Allowed
+* Acceptable Pet Types
+* Maximum Weight Per Pet (lbs)
+* Pet Restrictions
+
+### Second
+
+Included Property or Business Assets
+
+### Third
+
+Annual Net Income
+
+### Fourth
+
+Cap Rate
+
+### Fifth
+
+Total Number of Units
+
+### Sixth
+
+Total Number of Buildings
+
+### Seventh
+
+Unit Type Configuration
+
+---
+
+# IMPORTANT IMPLEMENTATION RULE
+
+This should be a **layout/order update only**.
+
+That means:
+
+* keep the same field bindings
+* keep the same labels unless already separately approved to change
+* keep the same conditional logic
+* keep the same validation
+* keep the same saved values
+* only move the render order in the form
+
+If there are anchor links, JS hooks, Select2 init hooks, or dynamic show/hide logic tied to these sections, make sure moving the markup does not break them.
+
+---
+
+# DO NOT CHANGE
+
+* actual listing output order unless necessary
+* DB structure
+* routes/controllers
+* field names
+* validation rules
+* Buyer summary text
+* Seller/Tenant/Landlord order
+* unrelated Buyer property types unless the exact same form partial is intentionally shared and carefully scoped
+
+---
+
+# ACCEPTANCE TESTS
+
+## Test 1 — Buyer create form
+
+Open **Hire a Buyer’s Agent** create form in the relevant section.
+
+Confirm the order is now:
+
+1. Pet questions
+2. Included Property or Business Assets
+3. Annual Net Income
+4. Cap Rate
+5. Total Number of Units
+6. Total Number of Buildings
+7. Unit Type Configuration
+
+---
+
+## Test 2 — Buyer draft reopen
+
+Save a draft with values in all of those fields.
+
+Reopen draft.
+
+Confirm:
+
+* same order is preserved
+* values remain loaded correctly
+
+---
+
+## Test 3 — Buyer edit
+
+Open an existing Buyer listing in edit mode.
+
+Confirm:
+
+* same reordered layout appears
+* values remain in the correct fields
+* no fields are blank because of the move
+
+---
+
+## Test 4 — Actual listing unchanged
+
+Open the actual Buyer listing.
+
+Confirm the actual listing order still looks correct and was not broken by the form reordering.
+
+---
+
+## Test 5 — Dynamic logic intact
+
+If Unit Type Configuration or any nearby section has dynamic row logic, add/edit rows and confirm it still works after the form reorder.
+
+---
+
+# REPORT BACK AFTER CHANGES
+
+Please report back with:
+
+1. **Exact file(s) changed**
+2. **Whether the Buyer form used a shared partial or Buyer-specific file**
+3. **Confirmation that this was only a layout/order change**
+4. **Confirmation that field bindings, validation, and storage keys were not changed**
+5. **Confirmation that create, draft, and edit now all show the new order**
+6. **Confirmation that the actual listing view was not broken**
+
+---
+
+That order makes sense:
+**Pet questions → Included Property or Business Assets → Annual Net Income → Cap Rate → Total Number of Units → Total Number of Buildings → Unit Type Configuration**.
