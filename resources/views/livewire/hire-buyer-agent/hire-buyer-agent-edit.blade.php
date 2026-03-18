@@ -1238,9 +1238,9 @@
             cpb = [...new Set(cpb)];
             nut = [...new Set(nut)];
             pi = [...new Set(pi)];
-            @this.set('condition_prop_buyer', cpb);
-            @this.set('number_of_unit_type', nut);
-            @this.set('property_items', pi);
+            @this.set('condition_prop_buyer', cpb, true);
+            @this.set('number_of_unit_type', nut, true);
+            @this.set('property_items', pi, true);
             setJsonModel('condition_prop_buyer_json', cpb);
             setJsonModel('number_of_unit_type_json', nut);
             setJsonModel('property_items_json', pi);
@@ -1264,12 +1264,12 @@
             sp = [...new Set(sp)];
             of = [...new Set(of)];
 
-            @this.set('condition_prop_buyer', cpb);
-            @this.set('number_of_unit_type', nut);
-            @this.set('property_items', pi);
-            @this.set('non_negotiable_amenities', nna);
-            @this.set('sale_provision', sp);
-            @this.set('offered_financing', of);
+            @this.set('condition_prop_buyer', cpb, true);
+            @this.set('number_of_unit_type', nut, true);
+            @this.set('property_items', pi, true);
+            @this.set('non_negotiable_amenities', nna, true);
+            @this.set('sale_provision', sp, true);
+            @this.set('offered_financing', of, true);
 
             setJsonModel('condition_prop_buyer_json', cpb);
             setJsonModel('number_of_unit_type_json', nut);
