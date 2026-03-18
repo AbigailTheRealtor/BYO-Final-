@@ -1615,9 +1615,11 @@
 
                 <div id="wizard-form-container" class="container pt-5 pb-5" data-service-type="{{ $service_type }}">
 
-                    <div id="submit-error-banner" class="alert alert-danger d-none" role="alert" style="position: sticky; top: 0; z-index: 1050;">
-                        <strong>Please complete the required fields before submitting.</strong>
-                        <ul id="submit-error-list" class="mb-0 mt-2"></ul>
+                    <div wire:ignore>
+                        <div id="submit-error-banner" class="alert alert-danger d-none" role="alert" style="position: sticky; top: 0; z-index: 1050;">
+                            <strong>Please complete the required fields before submitting.</strong>
+                            <ul id="submit-error-list" class="mb-0 mt-2"></ul>
+                        </div>
                     </div>
 
                     <form id="edit-auction-form" wire:submit.prevent="update" novalidate>
@@ -2248,8 +2250,9 @@
                         });
                         _banner.classList.remove('d-none');
                     }
-                    _editCorrectionMode = true;
-                    _editMissingItems   = invalidItems;
+                    // Navigate to first missing field once — do not enter repeated
+                    // correction mode to prevent message.processed loop flicker.
+                    _editMissingItems = invalidItems;
                     if (typeof window._editNavigateToItem === 'function') {
                         window._editNavigateToItem(invalidItems[0]);
                     }
@@ -2263,12 +2266,8 @@
             @this.call('update');
         }
 
-        Livewire.hook('message.processed', function() {
-            // Guided correction: advance to next missing required field after each re-render
-            if (_editCorrectionMode && typeof window._editAdvanceCorrection === 'function') {
-                window._editAdvanceCorrection();
-            }
-        });
+        // message.processed auto-advance removed — it caused repeated scroll/focus
+        // flicker. Required fields are now enforced and navigated once per save click.
 
         document.addEventListener('submit', function(e) {
             if (e.target && e.target.tagName === 'FORM') {
@@ -4326,6 +4325,9 @@
                         new bootstrap.Tab(tEl).show();
                         var wc = tEl.getAttribute('wire:click') || '';
                         var m  = wc.match(/setActiveTab\((\d+)\)/);
+                        // Call setActiveTab once to sync server-side $activeTab so subsequent
+                        // Livewire re-renders don't snap the tab back. The message.processed
+                        // loop is broken separately (auto-advance hook removed).
                         if (m) { try { @this.call('setActiveTab', parseInt(m[1])); } catch(ex) {} }
                     }
                 }
@@ -4483,13 +4485,9 @@
                         });
                         banner.classList.remove('d-none');
 
-                        // Enter guided correction mode so subsequent Livewire
-                        // re-renders auto-advance the user to the next missing field.
-                        _editCorrectionMode = true;
-                        _editMissingItems   = invalidItems.slice();
-
-                        // Use editNavigateToItem so setActiveTab is synced server-side,
-                        // preventing morphdom from snapping back to the wrong tab.
+                        // Navigate once to the first missing field.
+                        // Correction-mode auto-advance removed to prevent flicker.
+                        _editMissingItems = invalidItems.slice();
                         editNavigateToItem(invalidItems[0]);
 
                         return false;
