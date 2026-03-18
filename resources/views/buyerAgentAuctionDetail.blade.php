@@ -1038,12 +1038,12 @@
 
                             @php
                                 $loanTypes = ['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'];
-                                $selectedLoanTypes = array_intersect($financingArray, $loanTypes);
+                                $selectedLoanTypes = array_values(array_intersect($loanTypes, $financingArray));
                                 $hasAnyLoanType = count($selectedLoanTypes) > 0;
                             @endphp
                             @if ($hasAnyLoanType)
                                 <div class="col-12 mt-3 mb-1">
-                                    <h6 class="financing-subsection-header">Conventional / FHA / Jumbo / VA / No-Doc / Non-QM / USDA</h6>
+                                    <h6 class="financing-subsection-header">{{ implode(' / ', $selectedLoanTypes) }}</h6>
                                 </div>
                                 @if (@$auction->get->pre_approved)
                                     <div class="col-md-12 col-12 pt-2 fw-bold">
