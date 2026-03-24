@@ -133,6 +133,14 @@ All three listing-view pages (`hire_seller_agent/view.blade.php`, `hire_landlord
 - `.bak` copies of all three files were made before editing.
 - Tenant view (`hire_tenant_agent/view.blade.php`) is the source of truth; do not change it.
 
+### Buyer Agent Search Visibility Rule
+`/search/buyer-agent-needed` uses `BuyerAgentAuctionController::searchListing()`. It filters records with `is_approved IN ('true', '1', 1)` AND `is_draft = false`. Key facts:
+- `is_approved` is a **varchar** column — Eloquent's boolean cast applies on reads only; writes store the raw string. Always use the string literal `'true'` (not PHP bool `true`) when setting approval via Eloquent for reliable varchar storage.
+- Drafts set `is_approved = 'false'` (TenantAgentAuction draft save); submission corrects it to `'true'`.
+- The dedicated buyer `store()` (`HireBuyerAgent/BuyerAgentAuction.php`) now explicitly sets `is_approved = 'true'` on submit — this was the missing step causing Bidding Period and other buyer listings to not appear on search.
+- Bidding Period auction_type is **not filtered** by the search — both Traditional and Bidding Period buyer listings are returned equally as long as `is_approved` and `is_draft` pass.
+- A data fix was applied on 2026-03-24 updating 18 records (IDs: 67,96,97,102,119,121,123,124,125,133,134,136,139,140,142,143,145,146) from `is_approved='false'` to `'true'`.
+
 ### System Design Choices
 The architecture emphasizes modularity, clear separation of concerns, and a database-first approach utilizing local database solutions. The system is optimized for production deployment, and the existing database schema for fees is immutable, with display-only formatting updates.
 

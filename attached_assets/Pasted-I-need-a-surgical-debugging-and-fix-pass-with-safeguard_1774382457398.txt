@@ -1,0 +1,173 @@
+I need a surgical debugging and fix pass with safeguards for Buyer Agent search visibility.
+
+PROBLEM:
+These Buyer Agent listings exist and have working view pages, but they are NOT showing on the Buyer search page:
+
+Search page:
+- /search/buyer-agent-needed
+
+Example listings that should be showing but are not:
+- /buyer/agent/auction/view/145
+- /buyer/agent/auction/view/146
+
+My concern is that bidding period listings may not be showing up on the Buyer search page.
+
+GOAL:
+Find out exactly why these Buyer Agent listings are missing from:
+- /search/buyer-agent-needed
+
+and fix it so valid Buyer Agent listings appear correctly, including bidding period listings if they are supposed to be visible there.
+
+HARD SAFEGUARDS:
+- Do not rename DB columns
+- Do not run migrations
+- Do not refactor unrelated search architecture
+- Do not touch Seller, Landlord, or Tenant search pages unless absolutely necessary
+- Do not change unrelated listing creation/edit behavior
+- Do not change public visibility rules globally unless confirmed necessary
+- Make .bak copies before editing files
+- Keep this limited to the Buyer Agent search/results flow unless root cause proves a shared scope/helper issue
+
+WHAT TO DO FIRST:
+Do not guess. Start by tracing the exact data path for:
+1. the Buyer search page route/controller/component for:
+   - /search/buyer-agent-needed
+2. the query/model scope/filter logic used to fetch listings for that page
+3. the database records for listing IDs 145 and 146
+4. why those two records are being excluded
+
+REQUIRED DEBUGGING STEPS:
+
+1) Confirm listings 145 and 146 actually exist and are valid
+For both records backing:
+- /buyer/agent/auction/view/145
+- /buyer/agent/auction/view/146
+
+verify:
+- listing exists in DB
+- correct role/type = Buyer Agent listing
+- status is active/published/visible according to app rules
+- not soft deleted
+- not draft-only
+- not expired unless search is intended to show only active listings
+- listing type and bidding period fields are populated as expected
+
+2) Find the exact Buyer search route and query
+Trace:
+- route for /search/buyer-agent-needed
+- controller/livewire/component/blade involved
+- exact DB query / model scope / filters used
+
+Need to identify whether the search page is filtering by:
+- wrong role
+- wrong route model
+- wrong status
+- wrong listing type
+- expiration date
+- traditional vs bidding period
+- auction visibility flag
+- publication state
+
+3) Compare included vs excluded listings
+Take one Buyer listing that DOES appear on /search/buyer-agent-needed and compare it directly to 145/146.
+
+Compare fields such as:
+- role/category
+- status
+- listing_type / auction_type
+- bidding period fields
+- expiration date
+- published flag
+- approval/moderation flag
+- search scope inclusion logic
+
+Goal:
+Find the exact field/condition that excludes 145/146.
+
+4) Specifically test whether bidding period listings are excluded
+Because both missing examples are bidding period listings, check if the Buyer search query is mistakenly doing something like:
+- only showing traditional listings
+- excluding auction/bidding records
+- requiring a null auction deadline
+- filtering with expiration logic that hides bidding period listings prematurely
+- using the wrong visibility scope for auction-type Buyer listings
+
+5) Check shared scopes/helpers
+If /search/buyer-agent-needed uses a shared search scope/helper/query builder, inspect it carefully.
+But do not change shared logic unless you confirm the shared logic is the actual cause.
+
+If the bug is Buyer-specific, keep the fix Buyer-specific.
+
+6) Fix only the true exclusion logic
+Once root cause is confirmed, fix the query/scope so valid Buyer Agent listings show on:
+- /search/buyer-agent-needed
+
+If bidding period listings are supposed to be visible there, they must be included.
+
+Do not blindly remove all filters.
+Preserve intended rules like:
+- no drafts
+- no deleted items
+- no truly expired/inactive listings
+- no wrong-role listings
+
+IMPORTANT:
+This is a trace-and-fix task.
+I want the real reason 145 and 146 are excluded, not a guess.
+
+POSSIBLE ROOT CAUSES TO CHECK:
+- Buyer search query only includes traditional listings
+- query excludes auction_type = bidding_period
+- search page is pulling the wrong model/table
+- status mapping is wrong for bidding period listings
+- expiration-date logic is incorrectly hiding bidding period listings
+- published/approved flag missing on submit for Buyer bidding-period listings
+- route/view works, but search scope ignores auction Buyer listings
+
+FILES TO CHECK FIRST:
+Search for the route/component/controller for:
+- /search/buyer-agent-needed
+
+Then inspect:
+- corresponding controller or Livewire component
+- query builder / model scope
+- any shared search helper
+- any Buyer listing scope/model methods used by that page
+
+Do not start by editing random blades.
+
+TESTING REQUIRED:
+
+A. TRACE TEST
+- Confirm why listing 145 is excluded
+- Confirm why listing 146 is excluded
+- State the exact condition excluding them
+
+B. FIX TEST
+After fix, verify that:
+- /buyer/agent/auction/view/145 still works
+- /buyer/agent/auction/view/146 still works
+- both now appear on /search/buyer-agent-needed
+
+C. REGRESSION TEST
+Verify:
+- drafts still do not show if they are not supposed to
+- deleted/inactive listings still do not show
+- non-Buyer listings do not bleed into Buyer search
+- traditional Buyer listings that already showed still still show
+
+D. BIDDING PERIOD TEST
+Create or use:
+- one traditional Buyer listing
+- one bidding period Buyer listing
+
+Expected:
+- both appear on /search/buyer-agent-needed if both are valid published active listings
+- bidding period listings are not excluded just because they are bidding period
+
+SUCCESS CRITERIA:
+- exact root cause identified for why listings 145 and 146 were missing
+- Buyer search page includes valid Buyer bidding period listings
+- /search/buyer-agent-needed shows 145 and 146 if they meet visibility rules
+- no DB schema changes
+- no unrelated regressions

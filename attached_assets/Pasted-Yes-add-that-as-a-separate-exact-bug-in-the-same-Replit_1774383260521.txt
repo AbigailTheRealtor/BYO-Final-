@@ -1,0 +1,206 @@
+Yes — add that as a separate exact bug in the same Replit instruction set.
+
+Here is the updated **copy-paste version** with the Seller issue included too:
+
+```text
+I need a surgical fix with safeguards for lingering edit-validation parity bugs.
+
+PROBLEM:
+Edit save is still not enforcing all required fields for all tabs.
+
+SPECIFIC LINGERING BUGS:
+
+1) Hire a Buyer Agent — Edit
+Not all required fields are being enforced before final edit save.
+Example:
+On Tab 3, required fields such as:
+- Target Closing Timeframe
+- Maximum Budget
+were left blank, but the edit still saved.
+
+2) Hire a Landlord — Edit
+Not all required fields are being enforced before final edit save.
+Example:
+On Tab 2, required fields were left blank, but the edit still saved.
+
+3) Hire a Seller Agent — Edit/UI required indicator
+Property Style is required, but when the user selects Other, it is not showing as required.
+
+GOAL:
+Fix final edit submit validation so that any field required on create is also required on edit, including the missing Buyer Tab 3 and Landlord Tab 2 requirements, and fix the Seller Property Style required indicator issue when Other is selected.
+
+HARD SAFEGUARDS:
+- Do not rename DB columns
+- Do not run migrations
+- Do not refactor architecture
+- Do not touch unrelated Seller/Buyer/Landlord/Tenant logic unless the root cause is in a truly shared edit validation method
+- Do not edit unrelated listing display pages
+- Make .bak copies before editing any file
+- Keep this focused on final EDIT submit validation parity and the specific Seller required-indicator bug
+
+IMPORTANT:
+Do not guess which fields are required.
+Use the exact same required-field source/rules used by CREATE for Buyer, Landlord, and Seller, then apply that to EDIT where needed.
+
+CONFIRMED ROUTES:
+- Buyer edit example: /buyer/agent/auction/edit/115/buyer
+- Buyer create: /hire/agent/auction/buyer
+- Landlord edit example: /hire/agent/auction/edit/43/landlord
+- Landlord create: /hire/agent/auction/landlord
+- Seller edit example: /hire/agent/auction/edit/53/seller
+- Seller create: confirm exact current seller create route from app routes before editing
+
+ROOT ISSUE TO INVESTIGATE:
+The prior edit-validation fix is incomplete.
+It appears final edit submit is still missing some role/tab-specific required rules, and Seller required-field UI parity is also incomplete.
+
+Likely causes:
+- edit validation only partially mirrors create validation
+- Buyer Tab 3 required rules are not included in edit submit
+- Landlord Tab 2 required rules are not included in edit submit
+- validation may still be using incomplete per-tab or per-role mappings
+- hidden/non-active tab required fields may still not be included in final edit validation
+- only front-end indicators were updated, but server-side final edit validation is still incomplete
+- Seller Property Style “Other” required-state UI is not matching create logic
+
+TASK 1 — FIND THE TRUE CREATE REQUIRED RULES
+For Buyer create, Landlord create, and Seller create, identify the actual required validation source for final create submission.
+
+Specifically verify:
+- BUYER create required fields on Tab 3
+- LANDLORD create required fields on Tab 2
+- SELLER create logic for Property Style and the Other option
+
+Do not rely only on blade asterisks or HTML required attributes.
+Find the real source-of-truth validation rules/methods.
+
+TASK 2 — COMPARE CREATE VS EDIT FOR THESE EXACT GAPS
+Compare:
+- Buyer create Tab 3 required rules vs Buyer edit final submit required rules
+- Landlord create Tab 2 required rules vs Landlord edit final submit required rules
+- Seller create Property Style required UI/logic vs Seller edit Property Style required UI/logic
+
+Identify the exact missing fields/rules causing:
+- Target Closing Timeframe to pass when blank on Buyer edit
+- Maximum Budget to pass when blank on Buyer edit
+- required Tab 2 fields to pass when blank on Landlord edit
+- Seller Property Style to not show as required when Other is selected
+
+TASK 3 — FIX FINAL EDIT SUBMIT TO USE THE SAME RULES AS CREATE
+In the edit final submit/save method:
+- make Buyer edit use the exact same create-required rules for Buyer Tab 3
+- make Landlord edit use the exact same create-required rules for Landlord Tab 2
+- ensure final edit submit validates across all tabs, not only active tab
+
+IMPORTANT:
+This is about FINAL EDIT SUBMIT only.
+Do not change Save Draft behavior unless absolutely necessary.
+The problem is that final edit save is still going through when required fields are blank.
+
+TASK 4 — FIX SELLER PROPERTY STYLE REQUIRED INDICATOR
+For Seller:
+- Property Style is required
+- when the user selects Other, it must still show as required properly
+- make the required indicator/required-state match create behavior
+- if there is a dependent custom input for Other, make sure the required treatment is correct and consistent
+
+IMPORTANT:
+Do not just make it look required visually if validation does not match.
+UI and validation should be consistent.
+
+TASK 5 — CHECK SHARED EDIT FLOW FIRST
+Start by confirming the actual shared edit files.
+Likely:
+- app/Http/Livewire/TenantAgentAuctionEdit.php
+- resources/views/livewire/tenant-agent-auction-edit.blade.php
+
+Also inspect any shared validation helper/trait or role-specific rule method used by Buyer, Landlord, and Seller.
+
+If the issue is in a shared required-rule builder, fix it there.
+If the issue is in Buyer/Landlord/Seller-specific conditional validation or field rendering, fix only those exact missing branches.
+
+TASK 6 — DO NOT PATCH ONLY THE FRONT END
+Do not solve Buyer/Landlord by only adding front-end required markers.
+Server-side final edit validation must block the save.
+
+Even if JS fails, the final save must not persist invalid edits.
+
+For Seller Property Style, do not solve it by only changing text styling if the required logic is still inconsistent.
+
+TASK 7 — VERIFY THE EXACT EXAMPLES
+For Buyer:
+Specifically verify that final edit submit is blocked when:
+- Target Closing Timeframe is blank
+- Maximum Budget is blank
+
+For Landlord:
+Specifically verify that final edit submit is blocked when required Tab 2 fields are blank.
+
+For Seller:
+Specifically verify that Property Style shows as required correctly when Other is selected.
+
+DO NOT DO:
+- do not mass-edit all roles unless the shared edit method is the cause
+- do not add fake required stars without matching validation
+- do not rely only on the active tab
+- do not rely only on JS/banner logic
+- do not touch DB schema
+- do not break create validation
+
+TESTING REQUIRED:
+
+A. BUYER EDIT TEST
+Route:
+- /buyer/agent/auction/edit/115/buyer
+
+1. Clear Target Closing Timeframe
+2. Clear Maximum Budget
+3. Click final Submit / Save Edit
+4. Expected: blocked
+
+Then:
+5. Restore those required fields
+6. Click final Submit / Save Edit
+7. Expected: save succeeds
+
+Also test with another required field on a different tab to confirm cross-tab validation still works.
+
+B. LANDLORD EDIT TEST
+Route:
+- /hire/agent/auction/edit/43/landlord
+
+1. Clear required fields on Tab 2
+2. Click final Submit / Save Edit
+3. Expected: blocked
+
+Then:
+4. Restore required Tab 2 fields
+5. Click final Submit / Save Edit
+6. Expected: save succeeds
+
+C. SELLER REQUIRED INDICATOR TEST
+Route:
+- /hire/agent/auction/edit/53/seller
+
+1. Go to Property Style
+2. Select Other if applicable
+3. Expected: Property Style still clearly shows as required
+4. If there is an Other custom input, verify required treatment is correct and consistent with create
+
+D. REGRESSION TEST
+Verify:
+- create behavior is unchanged
+- valid edits still save
+- unrelated roles are not broken
+- required-field blocking still works across multiple tabs
+
+SUCCESS CRITERIA:
+- Buyer final edit submit now blocks when Tab 3 required fields like Target Closing Timeframe and Maximum Budget are missing
+- Landlord final edit submit now blocks when required Tab 2 fields are missing
+- Seller Property Style shows as required correctly when Other is selected
+- edit required validation matches create for these lingering gaps
+- no DB schema changes
+- no unrelated regressions
+```
+
+This version keeps it tight and adds your Seller issue without muddying the Buyer/Landlord validation problem.
