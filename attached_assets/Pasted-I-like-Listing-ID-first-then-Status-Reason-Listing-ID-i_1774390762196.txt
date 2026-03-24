@@ -1,0 +1,315 @@
+I like **Listing ID first, then Status**.
+
+Reason:
+
+* **Listing ID** is more like the permanent reference number
+* **Status** is the changing state
+* visually it feels cleaner to show:
+
+  1. title
+  2. listing ID
+  3. status
+* it also matches how Seller, Buyer, and Landlord already look, so I would standardize Tenant to that same order
+
+For colors, I would recommend:
+
+* **Active** = green
+* **Pending** = amber / orange
+* **Hired Agent** = blue
+* **Expired** = gray
+
+That gives each status a distinct meaning:
+
+* green = open/live
+* amber = paused/in review
+* blue = completed/selected
+* gray = closed/inactive
+
+And yes, the behavior you described is clearly wrong:
+
+* **Seller / Tenant / Landlord:** Active and Pending change, but Hired Agent incorrectly shows as Active on actual listing
+* **Buyer:** actual listing always shows Hired Agent no matter what is selected
+
+So this needs to be fixed as both:
+
+1. **UI standardization**
+2. **actual status-resolution bug fix**
+
+Here is the Replit instruction block:
+
+```text
+I need a surgical listing header/status display fix with safeguards.
+
+GOAL:
+Standardize the listing header display order and fix incorrect status rendering on actual listing pages for:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+-------------------------------------
+RECOMMENDED HEADER FORMAT
+-------------------------------------
+
+Please standardize the listing header format to:
+
+1. Listing Title
+2. Listing ID
+3. Status
+4. Action buttons (Edit Listing / Download Listing Snapshot PDF)
+
+Use this order for ALL roles:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+This means Tenant should be updated to match the same order already used by Seller / Buyer / Landlord:
+- Listing ID first
+- Status second
+
+Do not leave Tenant as Status first if the others are Listing ID first.
+Standardize them all.
+
+-------------------------------------
+RECOMMENDED STATUS COLORS
+-------------------------------------
+
+Use these status colors consistently across all listing headers and status badges:
+
+- Active = green
+- Pending = amber / orange
+- Hired Agent = blue
+- Expired = gray
+
+IMPORTANT:
+- Pending and Hired Agent should NOT share the same color family as Active
+- Hired Agent should look visually distinct from Pending
+- Keep the styling clean and readable
+
+-------------------------------------
+CURRENT STATUS BUGS TO FIX
+-------------------------------------
+
+1. Seller / Tenant / Landlord:
+- Status changes to Pending and Active correctly
+- But when status should be Hired Agent, the actual listing still shows Active
+- That is wrong
+
+2. Buyer:
+- Actual listing automatically shows Hired Agent no matter which option is selected
+- That is wrong
+
+So status rendering on actual listing pages is not correctly reflecting the real saved/current status.
+
+-------------------------------------
+HARD SAFEGUARDS
+-------------------------------------
+
+- Do NOT rename DB columns
+- Do NOT run migrations
+- Do NOT refactor architecture broadly
+- Do NOT touch unrelated create/edit validation logic
+- Do NOT break listing status transition rules already being implemented
+- Do NOT change unrelated card/search pages unless the same header partial is shared
+- Make .bak copies before editing any file
+- Keep this focused on actual listing page header/status rendering and badge styling
+
+-------------------------------------
+TASK 1 — STANDARDIZE HEADER ORDER
+-------------------------------------
+
+On the actual listing page header for all 4 roles, standardize the order to:
+
+1. Title
+2. Listing ID
+3. Status
+4. Buttons
+
+Tenant currently has Status first.
+Update Tenant to match the same order as Seller / Buyer / Landlord.
+
+Do this only on actual listing header display.
+
+-------------------------------------
+TASK 2 — STANDARDIZE STATUS COLORS
+-------------------------------------
+
+Update the status badge styling so:
+- Active = green
+- Pending = amber/orange
+- Hired Agent = blue
+- Expired = gray
+
+Check whether the badges are using:
+- hardcoded classes in blade
+- shared status helper
+- conditional CSS classes
+
+Apply the color mapping consistently anywhere the actual listing header status badge is shown.
+
+-------------------------------------
+TASK 3 — FIND TRUE STATUS SOURCE OF TRUTH
+-------------------------------------
+
+Before changing rendering logic, confirm the actual source of truth for listing status on the actual listing page:
+
+- DB field?
+- computed accessor?
+- shared helper?
+- controller variable?
+- Livewire/component property?
+
+Need to determine why:
+
+- Seller / Tenant / Landlord render Hired Agent as Active
+- Buyer renders everything as Hired Agent
+
+Do not guess.
+Trace the exact status-resolution path for each actual listing page.
+
+-------------------------------------
+TASK 4 — FIX STATUS RENDERING BUGS ON ACTUAL LISTINGS
+-------------------------------------
+
+Fix the actual listing page so the header status badge reflects the true current listing status.
+
+Correct behavior:
+
+- If status is Active → show Active
+- If status is Pending → show Pending
+- If status is Hired Agent → show Hired Agent
+- If status is Expired → show Expired
+
+SPECIFIC BUG FIXES NEEDED:
+
+Seller / Tenant / Landlord:
+- Hired Agent must no longer render as Active
+
+Buyer:
+- Must stop rendering Hired Agent for every status
+- Must reflect the actual selected/current status correctly
+
+-------------------------------------
+TASK 5 — CHECK WHETHER ROLES USE DIFFERENT VIEW FILES OR A SHARED HEADER PARTIAL
+-------------------------------------
+
+Inspect the actual listing page files for:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+Need to determine whether:
+- they share one listing header partial
+- or each role has separate header markup/status logic
+
+If shared partial exists and is safe to update, do that.
+If role-specific files differ, fix each role carefully.
+
+Minimal-risk fix is preferred.
+
+-------------------------------------
+TASK 6 — DO NOT BREAK EXISTING STATUS TRANSITION LOGIC
+-------------------------------------
+
+This task is about DISPLAYING the correct status on the actual listing page header.
+
+Do NOT break:
+- Active / Pending / Hired Agent / Expired status transitions
+- bidding restrictions
+- timer logic
+- edit status save logic
+
+Only correct the actual listing page header so it shows the real status, and standardize the order/colors.
+
+-------------------------------------
+DO NOT DO
+-------------------------------------
+
+- do not hardcode Buyer to Hired Agent
+- do not hardcode Seller/Tenant/Landlord Hired Agent back to Active
+- do not leave Tenant in a different header order from the others
+- do not change DB schema
+- do not touch unrelated search-card layouts unless a shared partial forces it
+- do not create inconsistent status color mapping across roles
+
+-------------------------------------
+TESTING REQUIRED
+-------------------------------------
+
+A. HEADER ORDER TEST
+For each role actual listing page:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+Expected order:
+1. Title
+2. Listing ID
+3. Status
+4. Buttons
+
+Tenant should now match the others.
+
+B. STATUS COLOR TEST
+Verify:
+- Active badge is green
+- Pending badge is amber/orange
+- Hired Agent badge is blue
+- Expired badge is gray
+
+C. SELLER TEST
+Use a Seller listing for each status if available:
+- Active → shows Active
+- Pending → shows Pending
+- Hired Agent → shows Hired Agent (NOT Active)
+- Expired → shows Expired
+
+D. LANDLORD TEST
+Use a Landlord listing for each status if available:
+- Active → shows Active
+- Pending → shows Pending
+- Hired Agent → shows Hired Agent (NOT Active)
+- Expired → shows Expired
+
+E. TENANT TEST
+Use a Tenant listing for each status if available:
+- Active → shows Active
+- Pending → shows Pending
+- Hired Agent → shows Hired Agent (NOT Active)
+- Expired → shows Expired
+
+F. BUYER TEST
+Use Buyer listings with different selected statuses:
+- Active → shows Active
+- Pending → shows Pending
+- Hired Agent → shows Hired Agent
+- Expired → shows Expired
+
+IMPORTANT:
+Buyer must no longer always show Hired Agent.
+
+-------------------------------------
+SUCCESS CRITERIA
+-------------------------------------
+
+- All 4 roles use the same listing header order:
+  Title → Listing ID → Status → Buttons
+- Status colors are standardized:
+  Active green, Pending amber/orange, Hired Agent blue, Expired gray
+- Seller / Tenant / Landlord no longer show Hired Agent as Active
+- Buyer no longer shows Hired Agent for every status
+- Actual listing page header reflects the real status correctly
+- No DB changes
+- No unrelated regressions
+```
+
+My recommendation is definitely:
+
+* **Listing ID first**
+* **Status second**
+* **Distinct colors for every status**
+
+That will look cleaner and feel more intentional.
