@@ -33,15 +33,6 @@ class TenantAgentAuctionBidController extends Controller
     {
         // dd($request->all());
 
-        // Backend guard: reject bid if listing is not Active
-        $_listingGuard = TenantAgentAuction::find($request->auction_id);
-        if (!$_listingGuard) {
-            return redirect()->back()->with('error', 'Listing not found.');
-        }
-        if (in_array($_listingGuard->status, ['Hired Agent', 'Pending', 'Expired'])) {
-            return redirect()->back()->with('error', 'This listing is not currently accepting new bids.');
-        }
-
         $allowedPhotos = ['jpg', 'png', 'jpeg', 'gif', 'svg'];
         $allowedFiles = ['jpg', 'png', 'jpeg', 'gif', 'svg', 'csv', 'txt', 'xlx', 'xls', 'pdf', 'doc', 'docs', 'docm', 'docx', 'dot', 'dotm', 'dotx', 'odt', 'rtf', 'wps', 'xml', 'xps']; //csv,txt,xlx,xls,pdf
         $allowedVideos = ['mp4', 'mov', 'wmv', 'avi', 'mkv', 'mpeg-2'];
@@ -162,7 +153,6 @@ class TenantAgentAuctionBidController extends Controller
             $pa->is_sold = true;
             $pa->sold_date = date('Y-m-d H:i:s');
             $pa->save();
-            $pa->saveMeta('listing_status', 'Hired Agent');
             
             TenantAgentAuctionBid::where('tenant_agent_auction_id', $pa->id)
                 ->where('id', '!=', $pab->id)
@@ -314,7 +304,6 @@ class TenantAgentAuctionBidController extends Controller
             $pa->is_sold = true;
             $pa->sold_date = date('Y-m-d H:i:s');
             $pa->save();
-            $pa->saveMeta('listing_status', 'Hired Agent');
             
             TenantAgentAuctionBid::where('tenant_agent_auction_id', $pa->id)
                 ->where('id', '!=', $originalBid->id)

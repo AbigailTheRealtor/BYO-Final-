@@ -23,11 +23,12 @@ class TenantAgentAuction extends Model
         if ($this->is_sold) {
             return 'Hired Agent';
         }
+        $metaStatus = $this->info('listing_status');
+        if ($metaStatus === 'Pending') {
+            return 'Pending';
+        }
         if ($this->auction_ended) {
             return 'Expired';
-        }
-        if (!$this->is_approved) {
-            return 'Pending';
         }
         return 'Active';
     }

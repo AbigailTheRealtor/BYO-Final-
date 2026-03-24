@@ -24,15 +24,6 @@ class BuyerAgentAuctionBidController extends Controller
     }
     public function saveBABid(Request $request)
     {
-        // Backend guard: reject bid if listing is not Active
-        $_listingGuard = BuyerAgentAuction::find($request->auction_id);
-        if (!$_listingGuard) {
-            return redirect()->back()->with('error', 'Listing not found.');
-        }
-        if (in_array($_listingGuard->status, ['Hired Agent', 'Pending', 'Expired'])) {
-            return redirect()->back()->with('error', 'This listing is not currently accepting new bids.');
-        }
-
         // dd($request->all());
         // dd($request);
         try {
@@ -189,7 +180,6 @@ class BuyerAgentAuctionBidController extends Controller
         $ua->save();
 
         if ($pab->save() && $pa->save()) {
-            $pa->saveMeta('listing_status', 'Hired Agent');
             return redirect()->back()->with('success', 'Bid Accepted successfully!');
         } else {
             return redirect()->back()->with('error', 'Some problem in bid acceptance!');
@@ -228,7 +218,6 @@ class BuyerAgentAuctionBidController extends Controller
         $ua->save();
 
         if ($pab->save() && $pa->save()) {
-            $pa->saveMeta('listing_status', 'Hired Agent');
             return redirect()->back()->with('success', 'Counter Bid Accepted successfully!');
         } else {
             return redirect()->back()->with('error', 'Some problem in bid acceptance!');

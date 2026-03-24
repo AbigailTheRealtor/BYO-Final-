@@ -1,0 +1,383 @@
+Got it — the right framing is:
+
+* **Tenant is only the partial reference**
+* It already has the **hire-agent flow pattern**
+* But Tenant still **also needs to be fixed and tested**
+* So Replit should **borrow the hire-agent/status transition pattern from Tenant**, while still correcting Tenant itself and then making Seller, Buyer, and Landlord match the corrected version
+
+Here is the **fully rewritten copy-paste instruction block** with that clarified:
+
+```text
+I need a surgical listing status system fix with safeguards.
+
+This includes BOTH:
+1) Correct status DISPLAY under the listing title
+2) Correct AUTOMATIC + MANUAL STATUS LOGIC
+3) Correct BIDDING PERMISSION rules tied to listing status
+
+This must apply to ALL Hire an Agent roles:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+For BOTH listing types:
+- Traditional
+- Bidding Period
+
+-------------------------------------
+IMPORTANT REFERENCE RULE (CRITICAL)
+-------------------------------------
+
+Hire a Tenant’s Agent currently has the general hire-agent flow pattern that should be used as the reference for how status should move to Hired Agent when an agent is selected.
+
+However, Tenant is NOT fully correct yet and still needs to be fixed and tested too.
+
+So the correct approach is:
+- First trace the current Tenant hire/select-agent flow to understand the intended pattern
+- Then correct Tenant so it behaves properly
+- Then apply that corrected logic to Seller, Buyer, and Landlord
+
+IMPORTANT:
+Do NOT assume Tenant is fully correct as-is.
+Tenant is only the closest existing reference for hire-agent flow behavior, but it still needs the same fixes/testing as the other roles.
+
+-------------------------------------
+GOAL
+-------------------------------------
+
+Fix and standardize listing status so:
+
+1. Listing Status appears under the listing title for ALL roles
+2. Status is dynamic (not hardcoded to Active)
+3. Status updates correctly based on:
+   - user actions
+   - bidding timer (for bidding period)
+   - expiration date
+4. Bidding is ONLY allowed when listing status is Active
+
+-------------------------------------
+STATUS DEFINITIONS (FINAL RULES)
+-------------------------------------
+
+ACTIVE
+- Default state when listing is live and accepting bids
+
+PENDING
+- Bidding Period:
+  → Automatically set to Pending when bidding timer ends
+  → ONLY if no agent has been selected yet
+
+- Traditional:
+  → NEVER automatically set to Pending from counters
+  → ONLY set manually by the user if they want to pause new bids
+
+HIRED AGENT
+- Automatically set when user selects/hires an agent
+- Applies to BOTH Traditional and Bidding Period
+- Overrides Active and Pending
+
+EXPIRED
+- Automatically set when expiration date is reached
+- ONLY if listing is NOT already Hired Agent
+- If already Hired Agent → DO NOT override with Expired
+
+-------------------------------------
+BIDDING PERMISSION RULE (CRITICAL)
+-------------------------------------
+
+Agents are ONLY allowed to submit bids when listing status is:
+- Active
+
+Agents must NOT be able to bid when listing status is:
+- Pending
+- Hired Agent
+- Expired
+
+This must apply to ALL roles:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+And for BOTH listing types:
+- Traditional
+- Bidding Period
+
+REQUIRED BEHAVIOR:
+
+1. If listing status is Pending:
+   - bidding must be disabled
+   - no new bids allowed
+
+2. If listing status is Hired Agent:
+   - bidding must be disabled
+   - no new bids allowed
+
+3. If listing status is Expired:
+   - bidding must be disabled
+   - no new bids allowed
+
+4. Only when status = Active:
+   - bidding is allowed
+
+IMPORTANT:
+- Do NOT rely only on UI (button disabled)
+- Must enforce this on backend as well (server-side validation)
+- Even if someone bypasses UI, bid must be rejected
+
+UI REQUIREMENTS:
+- Hide or disable “Submit Bid” button when status is not Active
+- Optionally show message:
+  “This listing is no longer accepting bids.”
+
+BACKEND REQUIREMENTS:
+- Before saving a bid, check listing status
+- If status is not Active → reject submission
+
+-------------------------------------
+CRITICAL BUSINESS RULES
+-------------------------------------
+
+- DO NOT auto-set Pending for Traditional listings when a counteroffer occurs
+- Counteroffers DO NOT change listing status
+- Users must still be able to receive multiple bids during negotiation
+- Pending represents “pausing bids,” not “negotiation”
+- Selecting/hiring an agent should automatically set status to Hired Agent
+- Bidding Period timer ending should automatically set status to Pending only if no agent has been hired yet
+
+-------------------------------------
+CURRENT PROBLEMS
+-------------------------------------
+
+1. Listing Status under title only appears on some Tenant listings
+2. It is currently stuck on "Active" or otherwise not behaving correctly
+3. Seller, Buyer, Landlord do NOT show status under title
+4. Status does NOT update correctly when user selects:
+   - Pending
+   - Hired Agent
+5. Bidding Period listings may not correctly transition to Pending when timer ends
+6. Bidding is not currently restricted properly based on status
+7. Tenant also still needs full correction/testing — it is not fully working, it only partially demonstrates the hire-agent flow pattern
+
+-------------------------------------
+HARD SAFEGUARDS
+-------------------------------------
+
+- Do NOT rename DB columns
+- Do NOT run migrations
+- Do NOT refactor full architecture
+- Do NOT break bidding logic
+- Do NOT touch unrelated search or validation flows
+- Do NOT change timer system except where needed for Pending transition
+- Make .bak copies before editing files
+
+-------------------------------------
+TASK 1 — FIND STATUS SOURCE OF TRUTH
+-------------------------------------
+
+Identify how listing status is currently determined:
+- DB field?
+- computed accessor?
+- expiration-based?
+- timer-based?
+
+Confirm:
+- how each status is set
+- whether Expired is stored or computed
+
+Do not guess.
+
+-------------------------------------
+TASK 2 — ANALYZE TENANT IMPLEMENTATION
+-------------------------------------
+
+Tenant is the partial reference for hire/select-agent flow only.
+
+Find:
+- where Tenant status is rendered under title
+- how Tenant changes to Hired Agent when an agent is selected
+- how Tenant status currently updates
+- why Tenant still is not working correctly
+
+Then:
+- fix Tenant
+- use the corrected Tenant logic as the model for Seller, Buyer, and Landlord
+
+-------------------------------------
+TASK 3 — APPLY STATUS DISPLAY TO ALL ROLES
+-------------------------------------
+
+Add status display under title for:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+Use shared logic if safe.
+
+-------------------------------------
+TASK 4 — MAKE STATUS DYNAMIC
+-------------------------------------
+
+Replace any hardcoded "Active" with real status logic.
+
+Display must reflect:
+- Active
+- Pending
+- Hired Agent
+- Expired
+
+-------------------------------------
+TASK 5 — IMPLEMENT STATUS TRANSITIONS
+-------------------------------------
+
+ACTIVE
+- default when listing is live
+
+PENDING
+- Bidding Period:
+  → when timer ends AND no agent selected
+
+- Traditional:
+  → manual only
+  → not triggered by counters
+
+HIRED AGENT
+- automatically when agent is selected
+- trace current Tenant pattern, fix it, then apply to all roles
+
+EXPIRED
+- when expiration reached
+- ONLY if not already Hired Agent
+
+-------------------------------------
+TASK 6 — PRIORITY ORDER
+-------------------------------------
+
+Status priority:
+
+1. Hired Agent
+2. Pending
+3. Active
+4. Expired
+
+Rules:
+- Hired Agent overrides everything
+- Pending only applies if no agent selected
+- Expired must NOT override Hired Agent
+
+-------------------------------------
+TASK 7 — DO NOT BREAK TIMER LOGIC
+-------------------------------------
+
+Only ADD:
+- Pending transition when bidding timer ends
+
+Do NOT tie status incorrectly to expiration date.
+Do NOT override bidding timer behavior.
+
+-------------------------------------
+TASK 8 — ENFORCE BIDDING RESTRICTIONS
+-------------------------------------
+
+Update BOTH:
+1. Frontend (button visibility/disable state)
+2. Backend (bid submission validation)
+
+This must work for ALL 4 roles, including Tenant.
+
+-------------------------------------
+TASK 9 — CHECK ACTUAL LISTING VIEW FILES
+-------------------------------------
+
+Inspect listing view files for:
+- Tenant
+- Seller
+- Buyer
+- Landlord
+
+Find listing title section and place status directly under it.
+
+-------------------------------------
+DO NOT DO
+-------------------------------------
+
+- do not hardcode Active
+- do not allow bids when not Active
+- do not auto Pending on counteroffers
+- do not treat Tenant as already fully correct
+- do not change DB schema
+
+-------------------------------------
+TESTING REQUIRED
+-------------------------------------
+
+TENANT
+Tenant needs the SAME full testing as all other roles.
+
+Verify:
+- Status appears under title
+- Active → can bid
+- Manual Pending (if supported) → cannot bid
+- Select agent → becomes Hired Agent
+- Hired Agent → cannot bid
+- Expired → cannot bid
+- Bidding Period timer ends → Pending if no agent selected
+- Traditional counteroffer → remains Active
+
+SELLER
+- Status appears under title
+- Active → can bid
+- Pending → cannot bid
+- Hired Agent → cannot bid
+- Expired → cannot bid
+- Select agent → becomes Hired Agent
+- Bidding Period timer ends → Pending if no agent selected
+
+BUYER
+- Status appears under title
+- Active → can bid
+- Pending → cannot bid
+- Hired Agent → cannot bid
+- Expired → cannot bid
+- Select agent → becomes Hired Agent
+- Bidding Period timer ends → Pending if no agent selected
+
+LANDLORD
+- Status appears under title
+- Active → can bid
+- Pending → cannot bid
+- Hired Agent → cannot bid
+- Expired → cannot bid
+- Select agent → becomes Hired Agent
+- Bidding Period timer ends → Pending if no agent selected
+
+EXPIRATION TEST FOR ALL
+- Expired only if NOT already Hired Agent
+- Hired Agent remains Hired Agent even after expiration
+
+TRADITIONAL TEST FOR ALL
+- Counteroffer does NOT auto-change to Pending
+- Manual Pending works
+- Select agent → Hired Agent
+
+-------------------------------------
+SUCCESS CRITERIA
+-------------------------------------
+
+- Status shows under title for all roles
+- Status is dynamic and accurate
+- Tenant is fixed too, not just used as a rough reference
+- Corrected Tenant hire-agent pattern is applied to Seller, Buyer, and Landlord
+- Bidding Period → Pending works correctly
+- Traditional does NOT auto Pending on counters
+- Hired Agent auto-trigger works across all roles
+- Expired logic works without overriding Hired Agent
+- Bidding ONLY allowed when Active
+- Backend prevents invalid bids
+- No DB changes
+- No regressions
+```
+
+This version makes the key point clearly: **Tenant is not “done,” it just has the closest existing hire-agent flow to copy from.**

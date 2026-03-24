@@ -1999,20 +1999,6 @@ $auser = $auctionUser::find(@$auction->user_id);
         <span class="badge bg-secondary" style="font-size: 0.9rem;">Listing ID: {{ @$auction->listing_id }}</span>
     </div>
     @endif
-    @if(@$auction->status)
-    <div class="mb-2">
-        @php
-            $_statusColors = [
-                'Active' => 'bg-success',
-                'Pending' => 'bg-warning text-dark',
-                'Hired Agent' => 'bg-info',
-                'Expired' => 'bg-danger',
-            ];
-            $_statusClass = $_statusColors[$auction->status] ?? 'bg-secondary';
-        @endphp
-        <span class="badge {{ $_statusClass }}" style="font-size: 0.9rem;">Status: {{ $auction->status }}</span>
-    </div>
-    @endif
 
     @php
         $auth_id = auth()->id();
@@ -2136,7 +2122,6 @@ $auser = $auctionUser::find(@$auction->user_id);
     // 🧾 Determine if expired
     $isExpired = $expiration ? $carbon::now()->gte($expiration) : false;
     $isSold = $auction->is_sold;
-    $isPending = ($auction->status === 'Pending');
 
     // 🔹 For Bidding Period: timer active means actions are locked
     // For Traditional: actions are always unlocked (no timer restriction)
@@ -2213,7 +2198,7 @@ $auser = $auctionUser::find(@$auction->user_id);
 
         {{-- 🔹 Bid Button --}}
         @if ($auth_id && in_array(auth()->user()->user_type, ['agent']))
-            @if (!$isExpired && !$isSold && !$isPending && $auction->status !== 'Hired Agent')
+            @if (!$isExpired && !$isSold)
                 @if ($userHasBid)
                 {{-- User already placed a bid --}}
                 <div class="alert alert-info text-center mb-2">
@@ -2231,19 +2216,12 @@ $auser = $auctionUser::find(@$auction->user_id);
                     <span class="badge bg-light float-end text-dark">${{ @$auction->get->budget }}</span>
                 </button>
                 @endif
-            @elseif($auction->status === 'Hired Agent' || $isSold)
+            @elseif($isSold)
                 <div class="alert alert-success text-center mb-2">
-                    <i class="fa fa-trophy"></i> <strong>An agent has been hired</strong>
+                    <i class="fa fa-trophy"></i> <strong>This listing has been sold</strong>
                 </div>
                 <button class="btn w-100 btn-success" disabled>
-                    <span class="bid">Hired Agent</span>
-                </button>
-            @elseif($isPending)
-                <div class="alert alert-warning text-center mb-2">
-                    <i class="fa fa-pause-circle"></i> <strong>This listing is pending &mdash; not accepting new bids</strong>
-                </div>
-                <button class="btn w-100 btn-warning" disabled>
-                    <span class="bid">Pending</span>
+                    <span class="bid">Sold</span>
                 </button>
             @else
                 <div class="alert alert-warning text-center mb-2">

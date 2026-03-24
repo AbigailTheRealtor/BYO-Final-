@@ -2055,20 +2055,6 @@
                     <span class="badge bg-secondary" style="font-size: 0.9rem;">Listing ID: {{ @$auction->listing_id }}</span>
                 </div>
                 @endif
-                @if(@$auction->status)
-                <div class="mb-2">
-                    @php
-                        $_statusColors = [
-                            'Active' => 'bg-success',
-                            'Pending' => 'bg-warning text-dark',
-                            'Hired Agent' => 'bg-info',
-                            'Expired' => 'bg-danger',
-                        ];
-                        $_statusClass = $_statusColors[$auction->status] ?? 'bg-secondary';
-                    @endphp
-                    <span class="badge {{ $_statusClass }}" style="font-size: 0.9rem;">Status: {{ $auction->status }}</span>
-                </div>
-                @endif
 
                 @php
                     $auth_id = auth()->id();
@@ -2215,7 +2201,7 @@
 
         {{-- 🔹 Bid Button --}}
         @if ($auth_id && in_array(auth()->user()->user_type, ['agent']))
-        @if (!$isExpired && !data_get($auction, 'is_sold') && $auction->status !== 'Pending' && $auction->status !== 'Hired Agent')
+        @if (!$isExpired)
         @if ($userHasBid)
         {{-- User already placed a bid --}}
         <div class="alert alert-info text-center mb-2">
@@ -2240,24 +2226,6 @@
         </button>
         @endif
 
-        @elseif($auction->status === 'Hired Agent' || data_get($auction, 'is_sold'))
-        <div class="alert alert-success text-center mb-2">
-            <i class="fa fa-trophy"></i> <strong>An agent has been hired</strong>
-        </div>
-        <button class="btn w-100 btn-success" disabled>
-            <span class="bid">Hired Agent</span>
-        </button>
-        @elseif($auction->status === 'Pending')
-        <div class="alert alert-warning text-center mb-2">
-            <i class="fa fa-pause-circle"></i> <strong>This listing is pending &mdash; not accepting new bids</strong>
-        </div>
-        <button class="btn w-100 btn-warning" disabled>
-            <span class="bid">Pending</span>
-        </button>
-        @else
-        <div class="alert alert-warning text-center mb-2">
-            <strong>Bidding Period Ended</strong>
-        </div>
         @endif
 
         @if (@$auction->sold)

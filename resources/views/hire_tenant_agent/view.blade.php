@@ -1470,7 +1470,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
         {{-- 🔹 Bid Button --}}
         @if ($auth_id && in_array(auth()->user()->user_type, ['agent']))
-        @if (!$isExpired)
+        @if (!$isExpired && !$auction->is_sold && $auction->status !== 'Pending' && $auction->status !== 'Hired Agent')
         @if ($userHasBid)
         {{-- User already placed a bid --}}
         <div class="alert alert-info text-center mb-2">
@@ -1495,6 +1495,24 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </button>
         @endif
 
+        @elseif($auction->status === 'Hired Agent' || $auction->is_sold)
+        <div class="alert alert-success text-center mb-2">
+            <i class="fa fa-trophy"></i> <strong>An agent has been hired</strong>
+        </div>
+        <button class="btn w-100 btn-success" disabled>
+            <span class="bid">Hired Agent</span>
+        </button>
+        @elseif($auction->status === 'Pending')
+        <div class="alert alert-warning text-center mb-2">
+            <i class="fa fa-pause-circle"></i> <strong>This listing is pending &mdash; not accepting new bids</strong>
+        </div>
+        <button class="btn w-100 btn-warning" disabled>
+            <span class="bid">Pending</span>
+        </button>
+        @else
+        <div class="alert alert-warning text-center mb-2">
+            <strong>Bidding Period Ended</strong>
+        </div>
         @endif
 
         @if (@$auction->sold)

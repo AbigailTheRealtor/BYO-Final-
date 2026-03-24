@@ -11,7 +11,7 @@ class SellerAgentAuction extends Model
 {
     use HasFactory, HasListingId;
     protected $guarded = [];
-    protected $appends = ["get", "status"];
+    protected $appends = ["get"];
     
     protected $casts = [
         'is_draft' => 'boolean',
@@ -73,23 +73,6 @@ public function deleteMeta($key)
         } else {
             return false;
         }
-    }
-
-    public function getStatusAttribute()
-    {
-        $isSold = in_array($this->is_sold, [true, 'true', 1, '1'], true);
-        if ($isSold) {
-            return 'Hired Agent';
-        }
-        $metaStatus = $this->info('listing_status');
-        if ($metaStatus === 'Pending') {
-            return 'Pending';
-        }
-        $expirationDate = $this->info('expiration_date');
-        if ($expirationDate && \Carbon\Carbon::now()->gte(\Carbon\Carbon::parse($expirationDate))) {
-            return 'Expired';
-        }
-        return 'Active';
     }
 
     public function getGetAttribute()

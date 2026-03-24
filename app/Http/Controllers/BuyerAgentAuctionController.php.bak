@@ -396,8 +396,6 @@ class BuyerAgentAuctionController extends Controller
     {
 
         $auction = BuyerAgentAuction::find($id);
-        // Auto-transition Bidding Period listing to Pending when timer ends
-        $this->autoTransitionBpToPending($auction);
 
         $page_data['title'] = $auction->address;
         $counties = County::all();

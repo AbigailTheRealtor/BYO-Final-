@@ -503,8 +503,6 @@ class LandlordAgentAuctionController extends Controller
         // return $data->get;
 
         $page_data['auction'] = $auction = LandlordAgentAuction::find($id);
-        // Auto-transition Bidding Period listing to Pending when timer ends
-        $this->autoTransitionBpToPending($auction);
         $page_data['title'] = $auction->title;
         $page_data['counties'] = County::all();
         $page_data['id'] = $id;

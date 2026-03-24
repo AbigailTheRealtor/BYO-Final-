@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 class LandlordAgentAuction extends Model
 {
     use HasFactory, HasListingId;
-    protected $appends = ["get"];
+    protected $appends = ["get", "status"];
     protected $guarded = [];
     
     protected $attributes = [
@@ -69,6 +69,22 @@ class LandlordAgentAuction extends Model
         } else {
             return false;
         }
+    }
+
+    public function getStatusAttribute()
+    {
+        if ($this->is_sold) {
+            return 'Hired Agent';
+        }
+        $metaStatus = $this->info('listing_status');
+        if ($metaStatus === 'Pending') {
+            return 'Pending';
+        }
+        $expirationDate = $this->info('expiration_date');
+        if ($expirationDate && \Carbon\Carbon::now()->gte(\Carbon\Carbon::parse($expirationDate))) {
+            return 'Expired';
+        }
+        return 'Active';
     }
 
     public function getGetAttribute()

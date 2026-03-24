@@ -7,21 +7,45 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class SellerAgentAuction extends Model
+class TenantAgentAuction extends Model
 {
     use HasFactory, HasListingId;
-    protected $guarded = [];
     protected $appends = ["get", "status"];
     
-    protected $casts = [
-        'is_draft' => 'boolean',
-    ];
-    
     protected $attributes = [
-        'is_approved' => 'true',
+        'is_approved' => true,
         'is_draft' => false,
-        'is_sold' => 'false',
+        'is_sold' => false,
     ];
+
+    public function getStatusAttribute()
+    {
+        if ($this->is_sold) {
+            return 'Hired Agent';
+        }
+        if ($this->auction_ended) {
+            return 'Expired';
+        }
+        if (!$this->is_approved) {
+            return 'Pending';
+        }
+        return 'Active';
+    }
+
+    public function isBiddingPeriodType(): bool
+    {
+        return in_array($this->auction_type, ['Auction (Timer)', 'Bidding Period']);
+    }
+
+    public function isBiddingPeriodActive(): bool
+    {
+        return $this->isBiddingPeriodType() && !$this->auction_ended && $this->is_approved && !$this->is_sold;
+    }
+
+    public function bidData()
+    {
+        return $this->hasMany(TenantAgentAuctionBid::class, 'tenant_agent_auction_id');
+    }
 
     public function user()
     {
@@ -32,7 +56,6 @@ class SellerAgentAuction extends Model
     {
         return $this->morphMany(BotQuestion::class, 'auction');
     }
-
 
     public function unanswered_bot_questions()
     {
@@ -46,12 +69,12 @@ class SellerAgentAuction extends Model
 
     public function bids()
     {
-        return $this->hasMany(SellerAgentAuctionBid::class);
+        return $this->hasMany(TenantAgentAuctionBid::class);
     }
 
     public function meta()
     {
-        return $this->hasMany(SellerAgentAuctionMeta::class);
+        return $this->hasMany(TenantAgentAuctionMeta::class);
     }
 
     public function saveMeta($key, $val)
@@ -61,7 +84,8 @@ class SellerAgentAuction extends Model
         }
         return $this->meta()->updateOrCreate(["meta_key" => $key], ["meta_value" => $val]);
     }
-public function deleteMeta($key)
+    
+    public function deleteMeta($key)
     {
         return $this->meta()->where('meta_key', $key)->delete();
     }
@@ -75,27 +99,10 @@ public function deleteMeta($key)
         }
     }
 
-    public function getStatusAttribute()
-    {
-        $isSold = in_array($this->is_sold, [true, 'true', 1, '1'], true);
-        if ($isSold) {
-            return 'Hired Agent';
-        }
-        $metaStatus = $this->info('listing_status');
-        if ($metaStatus === 'Pending') {
-            return 'Pending';
-        }
-        $expirationDate = $this->info('expiration_date');
-        if ($expirationDate && \Carbon\Carbon::now()->gte(\Carbon\Carbon::parse($expirationDate))) {
-            return 'Expired';
-        }
-        return 'Active';
-    }
-
     public function getGetAttribute()
     {
         $data = [];
-        $metas = SellerAgentAuctionMeta::where('seller_agent_auction_id', $this->id)->get();
+        $metas = TenantAgentAuctionMeta::where('tenant_agent_auction_id', $this->id)->get();
         foreach ($metas as $row) {
             $decoded = json_decode($row->meta_value, true);
             if (json_last_error() === JSON_ERROR_NONE && (is_array($decoded) || is_object($decoded))) {

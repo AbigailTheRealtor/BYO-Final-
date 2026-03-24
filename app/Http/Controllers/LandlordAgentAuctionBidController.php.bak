@@ -27,15 +27,6 @@ class LandlordAgentAuctionBidController extends Controller
 
     public function save_bid(Request $request)
     {
-        // Backend guard: reject bid if listing is not Active
-        $_listingGuard = LandlordAgentAuction::find($request->auction_id);
-        if (!$_listingGuard) {
-            return redirect()->back()->with('error', 'Listing not found.');
-        }
-        if (in_array($_listingGuard->status, ['Hired Agent', 'Pending', 'Expired'])) {
-            return redirect()->back()->with('error', 'This listing is not currently accepting new bids.');
-        }
-
         // dd($request->all());
 
         $allowedPhotos = ['jpg', 'png', 'jpeg', 'gif', 'svg'];
@@ -187,7 +178,6 @@ class LandlordAgentAuctionBidController extends Controller
             $auction->is_sold = true;
             $auction->sold_date = date('Y-m-d H:i:s');
             $auction->save();
-            $auction->saveMeta('listing_status', 'Hired Agent');
 
             $ua = new UserAgent();
             $ua->user_id = Auth::user()->id;
@@ -257,7 +247,6 @@ class LandlordAgentAuctionBidController extends Controller
         // Send notification to counter bidder
         $pab->user->notify(new CounterBidAcceptedNotification($pab, $pa));
         if ($pab->save() && $pa->save()) {
-            $pa->saveMeta('listing_status', 'Hired Agent');
             return redirect()->back()->with('success', 'Counter Bid Accepted successfully!');
         } else {
             return redirect()->back()->with('error', 'Some problem in bid acceptance!');

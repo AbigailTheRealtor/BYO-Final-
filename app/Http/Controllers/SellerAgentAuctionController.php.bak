@@ -432,8 +432,6 @@ class SellerAgentAuctionController extends Controller
         $data = SellerAgentAuction::with('meta')->find($id);
         
         $auction = SellerAgentAuction::find($id);
-        // Auto-transition Bidding Period listing to Pending when timer ends
-        $this->autoTransitionBpToPending($auction);
 
         \Log::info('[SELLER_LISTING_VERBIAGE_FIX]', [
             'listing_id' => $id,
@@ -645,7 +643,6 @@ class SellerAgentAuctionController extends Controller
             $ua->type = 'seller';
             $ua->save();
             if ($pab->save() && $pa->save()) {
-                $pa->saveMeta('listing_status', 'Hired Agent');
                 return redirect()->back()->with('success', 'Bid Accepted successfully!');
             } else {
                 return redirect()->back()->with('error', 'Some problem in bid acceptance!');
