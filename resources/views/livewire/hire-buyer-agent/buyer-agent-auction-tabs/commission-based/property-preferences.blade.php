@@ -1131,6 +1131,28 @@
 
 @endif
 
+@if (in_array($property_type, ['Income']))
+    <div class="form-group">
+        <label class="fw-bold">Acceptable Unit Type:
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter the types of units included in the sale. ">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+        </label>
+
+
+        <div class="input-cover" wire:ignore>
+            <select wire:model="number_of_unit_type"
+                class="number_of_unit_type form-control has-icon select2-multiple"
+                data-icon="fa-solid fa-home input-icon2" multiple>
+                @foreach ($unit_types as $row_pt)
+                    <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
+                @endforeach
+            </select>
+        </div>
+    </div>
+@endif
+
 {{-- 4) Net Income & Cap Rate (Income, Commercial, Business Opportunity) --}}
 
 {{-- Pets (Residential only - Income has it above Income Property Criteria) --}}
@@ -1301,27 +1323,6 @@
                     onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                 <span class="input-group-text-seller">%</span>
             </div>
-        </div>
-    </div>
-@endif
-@if (in_array($property_type, ['Income']))
-    <div class="form-group">
-        <label class="fw-bold">Acceptable Unit Type:
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter the types of units included in the sale. ">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-        </label>
-
-
-        <div class="input-cover" wire:ignore>
-            <select wire:model="number_of_unit_type"
-                class="number_of_unit_type form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-home input-icon2" multiple>
-                @foreach ($unit_types as $row_pt)
-                    <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
-                @endforeach
-            </select>
         </div>
     </div>
 @endif

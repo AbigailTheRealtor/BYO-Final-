@@ -467,6 +467,13 @@
 
                                     @php
                                         $detailConditions = \App\Helpers\ListingDisplayHelper::normalizeListDeduped(@$auction->get->condition_prop_buyer, @$auction->get->other_property_condition);
+                                    $conditionDisplayMap = [
+                                        'Older but Clean'                => 'Older but Clean & Well Maintained',
+                                        'Older but clean & well maintained' => 'Older but Clean & Well Maintained',
+                                    ];
+                                    $detailConditions = array_map(function($c) use ($conditionDisplayMap) {
+                                        return $conditionDisplayMap[$c] ?? $c;
+                                    }, $detailConditions);
                                     @endphp
                                     @if (!empty($detailConditions))
                                         <div class="col-md-12 col-12 pt-2 fw-bold">
