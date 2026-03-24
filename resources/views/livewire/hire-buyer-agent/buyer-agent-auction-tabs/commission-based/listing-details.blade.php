@@ -396,20 +396,28 @@
                         </span>
             </label>
 
-        <div class="input-cover">
-            <i class="input-icon fa-solid fa-handshake"></i>
-            <select wire:model="working_with_agent" id="working_with_agent" class="form-control has-icon"
-                data-icon="fa-solid fa-handshake" required>
-                <option value="">Select</option>
-                <option value="Represented">Represented</option>
-                <option value="Not Represented">Not Represented</option>
-            </select>
-        </div>
-        <span class="error mt-2" id="working_with_agent_error"></span>
-        <!-- Representation Notice (hidden by default) -->
-        <div id="representation_notice" class="alert alert-danger mt-2 d-none">
-            This service is only available to Buyers who are not currently represented by a Broker.
-        </div>
+        @if (!empty($isEditMode))
+            <div class="input-cover">
+                <i class="input-icon fa-solid fa-lock"></i>
+                <input type="text" class="form-control has-icon" value="{{ $working_with_agent }}" disabled style="background:#f8f9fa; cursor:not-allowed;">
+            </div>
+            <p class="text-danger small mt-2 mb-0"><i class="fa-solid fa-lock me-1"></i> Current Representation Status with Broker cannot be changed after the listing has been created.</p>
+        @else
+            <div class="input-cover">
+                <i class="input-icon fa-solid fa-handshake"></i>
+                <select wire:model="working_with_agent" id="working_with_agent" class="form-control has-icon"
+                    data-icon="fa-solid fa-handshake" required>
+                    <option value="">Select</option>
+                    <option value="Represented">Represented</option>
+                    <option value="Not Represented">Not Represented</option>
+                </select>
+            </div>
+            <span class="error mt-2" id="working_with_agent_error"></span>
+            <!-- Representation Notice (hidden by default) -->
+            <div id="representation_notice" class="alert alert-danger mt-2 d-none">
+                This service is only available to Buyers who are not currently represented by a Broker.
+            </div>
+        @endif
     </div>
     @if ($service_type === 'full_service')
         <!--Desired Agent Hire Date -->
@@ -467,15 +475,23 @@
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
-        <div class="input-cover">
-            <select wire:model="auction_type" id="auction_type" class="form-control has-icon"
-                data-icon="fa-solid fa-file-alt" required>
-                <option value="">Select</option>
-                <option value="Bidding Period">Bidding Period</option>
-                <option value="Traditional">Traditional</option>
-            </select>
-        </div>
-        <span class="error mt-2" id="auction_type_error"></span>
+        @if (!empty($isEditMode))
+            <div class="input-cover">
+                <i class="input-icon fa-solid fa-lock"></i>
+                <input type="text" class="form-control has-icon" value="{{ $auction_type }}" disabled style="background:#f8f9fa; cursor:not-allowed;">
+            </div>
+            <p class="text-danger small mt-2 mb-0"><i class="fa-solid fa-lock me-1"></i> Listing Type cannot be changed after the listing has been created.</p>
+        @else
+            <div class="input-cover">
+                <select wire:model="auction_type" id="auction_type" class="form-control has-icon"
+                    data-icon="fa-solid fa-file-alt" required>
+                    <option value="">Select</option>
+                    <option value="Bidding Period">Bidding Period</option>
+                    <option value="Traditional">Traditional</option>
+                </select>
+            </div>
+            <span class="error mt-2" id="auction_type_error"></span>
+        @endif
     </div>
 
     @if ($auction_type === 'Bidding Period')

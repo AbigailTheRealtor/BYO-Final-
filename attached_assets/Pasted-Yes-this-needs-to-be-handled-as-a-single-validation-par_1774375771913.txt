@@ -1,0 +1,527 @@
+Yes — this needs to be handled as a **single validation parity fix across all 4 roles**, but with **very hard safeguards** so Replit does not touch the wrong flow.
+
+Below is the **copy-paste Replit instruction block with safeguards**.
+
+---
+
+# Replit Instructions With Safeguards
+
+## Goal
+
+Fix **Edit validation parity** for:
+
+* Hire a Seller’s Agent
+* Hire a Buyer’s Agent
+* Hire a Landlord’s Agent
+* Hire a Tenant’s Agent
+
+### Required behavior
+
+1. Any field that is **required on listing creation** must also be **required on Edit**.
+2. This must apply to both:
+
+   * **Save Edit / Save Changes / Submit on Edit**
+   * **Save Draft on Edit**
+3. If the user deletes a required field while editing, the edit must **not save**.
+4. The system must block saving until **all required fields across all tabs** are filled in.
+5. Do not just show a notification — actually **prevent the save**.
+6. If missing required fields exist in multiple tabs, the user must fill in **every required field** before edit submission is allowed.
+7. For **Listing Type** and **Current Representation Status with Broker:**
+
+   * user must **not** be allowed to change them after listing creation
+   * show a **red validation-style notice** if they try
+   * field should be locked / non-editable on edit
+
+---
+
+# HARD SAFEGUARDS — DO NOT SKIP
+
+## 1) Do not touch unrelated architecture
+
+Do **not**:
+
+* rename DB columns
+* add or run migrations
+* refactor component structure
+* rewrite create flow validation from scratch
+* touch unrelated Seller/Buyer/Landlord/Tenant logic outside create/edit validation parity
+* touch listing view pages unless required for identifying edit routes
+* change Select2 logic unless required to ensure edit validation reads actual DOM values
+
+---
+
+## 2) Use the provided routes as source of truth
+
+### Seller edit
+
+`/hire/agent/auction/edit/53/seller`
+
+### Buyer edit
+
+`/buyer/agent/auction/edit/115/buyer`
+
+### Landlord
+
+User says this is from the listing view route:
+`/hire/agent/auction/view/28`
+
+Use the actual Edit button from that listing page to confirm the real landlord edit route before changing files.
+
+### Tenant edit
+
+`/hire/agent/auction/edit/126/tenant`
+
+### Create routes
+
+* Seller create: confirm from existing seller create route pattern
+* Buyer create: `/hire/agent/auction/buyer`
+* Landlord create: `/hire/agent/auction/landlord`
+* Tenant create: `/hire/agent/auction/tenant`
+
+---
+
+## 3) Confirm active edit component/file before changing anything
+
+Before making changes, identify which Livewire component + blade is actually used for:
+
+* Seller edit
+* Buyer edit
+* Landlord edit
+* Tenant edit
+
+Do **not** assume all roles use separate files.
+This project often uses shared auction/edit flows.
+
+If shared files are used, make the fix in the shared edit validation path **only if it safely applies to all 4 roles**.
+
+---
+
+## 4) Back up every edited file
+
+Before editing, create `.bak` copies of each changed file.
+
+Example:
+
+* `TenantAgentAuction.php.bak_required_edit_fix`
+* `tenant-agent-auction-edit.blade.php.bak_required_edit_fix`
+
+---
+
+# WHAT TO FIX
+
+## PART A — Edit must enforce the same required fields as Create
+
+### Problem
+
+Right now, on Edit, a user can:
+
+* delete a required field
+* click Save Draft or Submit/Save Edit
+* and the edit still saves
+
+That is wrong.
+
+### Required result
+
+On Edit, if any required field is blank:
+
+* block save
+* show required-field error state
+* show the missing-fields notification/banner
+* do not allow save until all required fields are filled in
+
+This must work across all tabs, not just the current tab.
+
+---
+
+## PART B — Required fields across all tabs must be enforced before edit save
+
+### Required behavior
+
+When editing a listing:
+
+* if tab 1 has a missing required field
+* and tab 3 has another missing required field
+* and tab 6 has another missing required field
+
+then:
+
+* Save Draft must fail
+* Submit/Save Edit must fail
+* user must fill in all of them before save is allowed
+
+### Important
+
+Do not only validate visible tab fields.
+Validate **all required fields for the listing**, across the entire edit form.
+
+---
+
+## PART C — Listing Type and Current Representation Status with Broker must not be editable after creation
+
+### Required result
+
+On Edit for Seller, Buyer, Landlord, and Tenant:
+
+* **Listing Type** cannot be changed
+* **Current Representation Status with Broker:** cannot be changed
+
+### Required UX
+
+* these fields should be locked/disabled/read-only on edit
+* if the user somehow tries to change them:
+
+  * show a **red validation-style notice**
+  * message should clearly say they cannot be changed after listing creation
+* do not let altered values save
+
+### Important
+
+Do not only disable visually.
+Also enforce this server-side or in the edit save handler so modified posted values are ignored/rejected.
+
+---
+
+# IMPLEMENTATION PLAN
+
+## STEP 1 — Find the actual edit save handlers
+
+Search the codebase for the edit flow used by these routes.
+
+Look for:
+
+* Livewire components handling auction edit
+* edit blades for seller/buyer/tenant/landlord
+* submit/update/saveDraft methods for edit mode
+
+Likely candidates include shared auction edit files and route-specific wrappers.
+
+### Find methods such as:
+
+* `submit`
+* `update`
+* `saveDraft`
+* `saveEdit`
+* `submitForm`
+* `validateCurrentStep`
+* `validateAllTabs`
+* client-side JS submit interceptors
+
+---
+
+## STEP 2 — Compare create validation vs edit validation
+
+For each role flow, compare:
+
+* Create route required validation
+  vs
+* Edit route required validation
+
+### Goal
+
+Edit must use the same required field rules as Create.
+
+### Important
+
+If create already has the correct master required-field map, reuse that.
+Do **not** create a second inconsistent required list for edit.
+
+Preferred approach:
+
+* centralize or reuse the same required-field definitions
+* use the same missing-field detection on edit as creation
+* apply it to both Save Draft and Submit on edit
+
+---
+
+## STEP 3 — Make DOM values the source of truth during edit submit
+
+There has been a past issue where stale Livewire property fallback allowed deleted required fields to still pass.
+
+### Required safeguard
+
+During edit save validation:
+
+* use the actual current field state
+* do not let stale server-side values pass validation when the DOM field is now blank
+
+If there is an existing helper like:
+
+* `isFieldValid()`
+* `syncAllBeforeSave()`
+* `collectMissingFields()`
+
+make sure it reads the **current edit form values**, not stale pre-edit values.
+
+---
+
+## STEP 4 — Apply validation to BOTH edit actions
+
+Make sure the same required-field blocking runs for:
+
+1. **Save Draft on Edit**
+2. **Submit / Save Edit**
+
+### Important
+
+Do not leave Save Draft weaker than Submit.
+For edit mode, both must block if required fields are missing.
+
+---
+
+## STEP 5 — Validate across all tabs before edit save
+
+If the current implementation validates only the active tab, change it so edit save validates **all required fields across the full listing**.
+
+### Required result
+
+Edit save should fail until the entire listing is valid.
+
+### UX requirement
+
+The existing missing-fields notification/banner should still be shown, but save must also be blocked.
+
+---
+
+## STEP 6 — Lock Listing Type and Current Representation Status with Broker on Edit
+
+### UI side
+
+In the edit blade(s), for these two fields only:
+
+* render them as disabled/read-only in edit mode
+* keep styling consistent with the form
+* optionally show a small note beneath or in the red notice area:
+
+  * “This field cannot be changed after listing creation.”
+
+### Server side
+
+In the edit update/save method:
+
+* ignore any changed value submitted for those two fields
+* or explicitly fail validation with a red error message
+
+This prevents tampering even if a user removes `disabled` in dev tools.
+
+---
+
+# EXACT RULES FOR THE 2 LOCKED FIELDS
+
+## 1. Listing Type
+
+Once the listing is created:
+
+* cannot be changed on edit
+* original value must remain
+
+## 2. Current Representation Status with Broker:
+
+Once the listing is created:
+
+* cannot be changed on edit
+* original value must remain
+
+### Red notice text suggestion
+
+Use consistent wording like:
+
+* **Listing Type cannot be changed after the listing has been created.**
+* **Current Representation Status with Broker cannot be changed after the listing has been created.**
+
+Use the same red styling family as required-field errors.
+
+---
+
+# SAFEST TECHNICAL APPROACH
+
+## Preferred pattern
+
+If there is already a shared create validation map:
+
+* extract/reuse that exact required-field logic
+* apply it in edit mode before save
+* do not hand-maintain a second required list for edit
+
+## Preferred locking approach
+
+For the two immutable fields:
+
+* disable them in the edit UI
+* preserve hidden/original value if needed for display/submission
+* re-check server-side and reject/ignore changes
+
+---
+
+# DO NOT DO THESE THINGS
+
+* Do not only gray out the fields without server-side protection
+* Do not only show a red banner while still saving the edit
+* Do not only validate the active tab
+* Do not let Save Draft bypass edit required validation
+* Do not create separate required rules that drift from creation rules
+* Do not hardcode role-specific fixes unless necessary
+* Do not touch unrelated listing display views
+* Do not change public listing data structure
+* Do not mass-edit all auction files without first confirming the real edit component(s)
+
+---
+
+# TEST PLAN — MUST PASS
+
+## Seller
+
+Using:
+`/hire/agent/auction/edit/53/seller`
+
+### Test 1
+
+* remove one required field on tab 1
+* click Save Draft
+* result: save blocked
+
+### Test 2
+
+* remove one required field on tab 3 and one on tab 6
+* click Submit/Save Edit
+* result: save blocked until both are filled in
+
+### Test 3
+
+* try changing Listing Type
+* result: cannot change, red notice shown, original value preserved
+
+### Test 4
+
+* try changing Current Representation Status with Broker
+* result: cannot change, red notice shown, original value preserved
+
+---
+
+## Buyer
+
+Using:
+`/buyer/agent/auction/edit/115/buyer`
+
+Repeat same 4 tests.
+
+---
+
+## Landlord
+
+From:
+`/hire/agent/auction/view/28`
+
+First confirm the actual landlord edit route by clicking Edit from that listing.
+
+Then repeat same 4 tests.
+
+---
+
+## Tenant
+
+Using:
+`/hire/agent/auction/edit/126/tenant`
+
+Repeat same 4 tests.
+
+---
+
+# SUCCESS CRITERIA
+
+The fix is complete only if all of the following are true:
+
+1. A required field deleted during Edit blocks saving
+2. Save Draft on Edit blocks when required fields are missing
+3. Submit/Save Edit blocks when required fields are missing
+4. Missing required fields across multiple tabs all block save
+5. Red required-field notification still appears
+6. Listing Type cannot be changed after creation
+7. Current Representation Status with Broker cannot be changed after creation
+8. Even dev-tools/manual posted changes to those two fields do not persist
+9. No changes were made to DB schema or unrelated role flows
+
+---
+
+# COPY-PASTE VERSION FOR REPLIT
+
+```text
+Surgical fix only. Do not rename DB columns, do not run migrations, do not refactor architecture, do not touch unrelated Seller/Buyer/Landlord/Tenant files, and do not change listing display logic unless needed to identify the correct edit flow.
+
+Goal:
+Make Edit validation match Create validation for Seller, Buyer, Landlord, and Tenant listings.
+
+Routes provided:
+- Seller edit: /hire/agent/auction/edit/53/seller
+- Buyer edit: /buyer/agent/auction/edit/115/buyer
+- Landlord listing view provided: /hire/agent/auction/view/28
+  -> First confirm the actual Landlord edit route by clicking the Edit button from that listing page before editing code
+- Tenant edit: /hire/agent/auction/edit/126/tenant
+
+Create routes:
+- Buyer create: /hire/agent/auction/buyer
+- Landlord create: /hire/agent/auction/landlord
+- Tenant create: /hire/agent/auction/tenant
+- Seller create: confirm existing seller create route from current app routes
+
+Tasks:
+1. Any field required during listing creation must also be required during Edit.
+2. This must apply to BOTH edit actions:
+   - Save Draft
+   - Submit / Save Edit
+3. If the user deletes a required field during Edit, the edit must not save.
+4. Validation must check ALL required fields across ALL tabs before allowing edit save.
+5. Do not only show the notification banner; actually block the save until all required fields are filled in.
+6. If missing required fields exist in multiple tabs, the user must fill in every one before save is allowed.
+7. Listing Type and Current Representation Status with Broker must not be editable after listing creation for Seller, Buyer, Landlord, and Tenant.
+8. If the user tries to change those two fields on Edit:
+   - show a red validation-style notice
+   - do not allow the changed value to save
+
+Implementation safeguards:
+- First identify the exact Livewire component(s), blade(s), and submit/saveDraft methods actually used by these edit routes.
+- Do not assume separate role files if the app uses shared auction edit components.
+- Create .bak copies of every edited file before changing anything.
+- Compare create validation vs edit validation and reuse the SAME required-field definitions/rules if possible.
+- Make sure edit validation uses the CURRENT form state, not stale pre-edit Livewire fallback values.
+- Apply the same blocking validation to both Save Draft and Submit/Save Edit in edit mode.
+- Validate all required fields across the entire listing, not just the active tab.
+- For Listing Type and Current Representation Status with Broker:
+  - disable/read-only these fields in edit mode
+  - also enforce immutability server-side by ignoring or rejecting changed submitted values
+  - show red notice text if the user attempts to change them
+
+Do not do:
+- do not only gray out the fields visually
+- do not only show a banner while still saving
+- do not only validate the current tab
+- do not let Save Draft bypass required validation on Edit
+- do not create a second inconsistent required-field list for Edit
+- do not mass-edit unrelated files
+
+Testing required:
+Seller:
+- /hire/agent/auction/edit/53/seller
+Buyer:
+- /buyer/agent/auction/edit/115/buyer
+Landlord:
+- confirm real edit route first from /hire/agent/auction/view/28
+Tenant:
+- /hire/agent/auction/edit/126/tenant
+
+For each role:
+1. Delete one required field on Edit -> Save Draft must fail
+2. Delete required fields across multiple tabs -> Submit/Save Edit must fail until all are restored
+3. Try changing Listing Type -> blocked, red notice shown, original value preserved
+4. Try changing Current Representation Status with Broker -> blocked, red notice shown, original value preserved
+
+Success criteria:
+- Edit required validation now matches Create
+- Save Draft and Submit both block invalid edits
+- all tabs are checked
+- immutable fields cannot be changed after listing creation
+- no DB schema changes
+- no unrelated role regressions
+```
+
+I can also turn this into a **more aggressive file-targeting version** once you send the Seller create link and the actual Landlord edit link.

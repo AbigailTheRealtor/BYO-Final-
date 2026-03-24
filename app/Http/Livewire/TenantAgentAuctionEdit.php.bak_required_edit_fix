@@ -3045,10 +3045,7 @@ class TenantAgentAuctionEdit extends Component
             $auction->saveMeta('listing_status', $this->listing_status);
             // LOCKED: auction_type cannot be changed after listing creation
             // $auction->saveMeta('auction_type', $this->auction_type);
-            // LOCKED: working_with_agent cannot be changed after listing creation
-            // Re-read the original value from DB and re-save it, ignoring any client-submitted change.
-            $_lockedWwa = $auction->info('working_with_agent');
-            $auction->saveMeta('working_with_agent', $_lockedWwa ?: $this->working_with_agent);
+            $auction->saveMeta('working_with_agent', $this->working_with_agent);
             $auction->saveMeta('listing_date', $this->listing_date);
             $auction->saveMeta('desired_agent_hire_date', $this->desired_agent_hire_date);
             $auction->saveMeta('expiration_date', $this->expiration_date);

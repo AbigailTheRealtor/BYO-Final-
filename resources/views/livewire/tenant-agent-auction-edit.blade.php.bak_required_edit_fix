@@ -1736,7 +1736,6 @@
                             <div class="tab-pane fade {{ $activeTab === 0 ? 'show active' : '' }}" id="listing-details"
                                 role="tabpanel" aria-labelledby="listing-details-tab">
                                 @if ($user_type === 'tenant')
-                                    @php $isEditMode = true; @endphp
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.listing-details')
                                 @elseif($user_type === 'seller')
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.listing-details')
@@ -1924,7 +1923,7 @@
 
                                 <button type="button" class="btn btn-primary wizard-step-next">Next</button>
 
-                                <button type="button" onclick="doSaveEditWithSync()" class="btn btn-success wizard-step-finish"
+                                <button type="submit" class="btn btn-success wizard-step-finish"
                                     id="save-button">
                                     Submit
                                 </button>
@@ -4250,26 +4249,8 @@
                 var rFields = getAllRequiredFields();
                 rFields.forEach(function(field) {
                     var isS2Multi = (field.tagName === 'SELECT' && field.multiple && $(field).hasClass('select2-hidden-accessible'));
-                    if (!isS2Multi) {
-                        // For fields inside a .tab-pane, skip only if they are conditionally hidden
-                        // WITHIN the pane (by blade conditionals). Do NOT skip just because the
-                        // Bootstrap tab is inactive — inactive panes are display:none at the
-                        // .tab-pane level but required fields on other tabs must still be validated.
-                        var tabPane = field.closest ? field.closest('.tab-pane') : null;
-                        if (tabPane) {
-                            var _el = field.parentElement;
-                            var _condHidden = false;
-                            while (_el && _el !== tabPane) {
-                                if (window.getComputedStyle(_el).display === 'none') {
-                                    _condHidden = true;
-                                    break;
-                                }
-                                _el = _el.parentElement;
-                            }
-                            if (_condHidden) return;
-                        } else {
-                            if (typeof isElementVisible === 'function' && !isElementVisible(field)) return;
-                        }
+                    if (!isS2Multi && typeof isElementVisible === 'function' && !isElementVisible(field)) {
+                        return;
                     }
                     if (!isFieldValid(field)) {
                         var tab  = field.closest('.tab-pane');

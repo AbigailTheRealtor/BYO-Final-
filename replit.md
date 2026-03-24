@@ -106,6 +106,14 @@ The platform is built on Laravel 8.x, PHP 8.2.23, and PostgreSQL, with Node.js v
 ### Seller Sale Terms Conditional Visibility (both paths)
 `applySellerProvisionVisibility()` and `applySellerFinancingVisibility()` handle immediate show/hide for all dependent sections. Both functions exist in `hire-seller-agent.blade.php` (dedicated path) and `tenant-agent-auction.blade.php` (shared path). The `@this.set()` / `debouncedSet()` pattern syncs values to Livewire so server-side re-renders keep sections visible.
 
+### Edit-Form Validation Parity & Immutable Fields
+All shared-edit routes (`/hire/agent/auction/edit/{id}/{role}` and `/buyer/agent/auction/edit/{id}/buyer`) use `TenantAgentAuctionEdit` / `tenant-agent-auction-edit.blade.php`. Key rules implemented:
+- **Submit button** routes through `doSaveEditWithSync()` (not a bare form submit) so full JS validation fires.
+- **`editGetInvalidItemsFull()`** validates required fields on ALL tabs, not just the active one. It uses `.closest('.tab-pane')` DOM traversal to distinguish Bootstrap tab hiding (ignored) from conditional `@if`-hidden fields (respected).
+- **`$isEditMode = true`** is set in the shared-edit blade before listing-details includes, making locked-field logic available inside the partials.
+- **Locked fields** — `Listing Type` and `Current Representation Status with Broker` — render as disabled text inputs with a red lock notice when `$isEditMode` is set. The PHP `update()` method re-reads `working_with_agent` from the DB (`$_lockedWwa`) and ignores any client-submitted value.
+- **Caution:** Avoid putting `@directive` keywords (e.g. `@if`, `@this`) inside `<script>` comments — Blade processes them everywhere and will emit a parse error. Use escaped `@@` or rephrase the comment.
+
 ### System Design Choices
 The architecture emphasizes modularity, clear separation of concerns, and a database-first approach utilizing local database solutions. The system is optimized for production deployment, and the existing database schema for fees is immutable, with display-only formatting updates.
 
