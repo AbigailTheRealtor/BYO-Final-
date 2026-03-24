@@ -1,0 +1,123 @@
+Use this Replit instruction block:
+
+```text
+Need a surgical rollback/fix with safeguards.
+
+PROBLEM:
+When removing the "Download Listing Snapshot (PDF)" button, the Edit Listing button was accidentally removed too.
+
+GOAL:
+Restore the Edit Listing button on all actual listing pages, while keeping the "Download Listing Snapshot (PDF)" button removed.
+
+APPLIES TO:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+HARD SAFEGUARDS:
+- Do NOT rename DB columns
+- Do NOT run migrations
+- Do NOT refactor architecture
+- Do NOT touch unrelated listing logic
+- Do NOT restore the PDF button
+- Do NOT change status logic, status colors, or header order
+- Make .bak copies before editing files
+- Keep this focused only on restoring the Edit Listing button UI
+
+TASK 1 — FIND THE HEADER ACTION BUTTON FILE(S)
+Inspect the actual listing page header/action section for:
+- Seller listing view
+- Buyer listing view
+- Landlord listing view
+- Tenant listing view
+
+Determine whether:
+- all roles share one header/action partial
+- or each role has separate button markup
+
+Do not guess.
+Do not edit random blades.
+
+TASK 2 — RESTORE ONLY THE EDIT LISTING BUTTON
+Restore the Edit Listing button on all actual listing pages.
+
+Expected result:
+- Edit Listing button is visible again
+- It links to the correct existing edit route for that role/listing
+- Styling remains consistent with the current header/button layout
+
+IMPORTANT:
+- Only restore the Edit Listing button
+- Keep the Download Listing Snapshot (PDF) button removed
+
+TASK 3 — VERIFY ROLE-SPECIFIC EDIT ROUTES STILL WORK
+Make sure the restored Edit button points to the correct route for each role.
+
+Examples already known:
+- Seller edit: /hire/agent/auction/edit/{id}/seller
+- Buyer edit: /buyer/agent/auction/edit/{id}/buyer
+- Landlord edit: /hire/agent/auction/edit/{id}/landlord
+- Tenant edit: /hire/agent/auction/edit/{id}/tenant
+
+If the header uses route helpers or conditional role routing, restore that logic exactly.
+
+TASK 4 — DO NOT REINTRODUCE THE PDF BUTTON
+Keep "Download Listing Snapshot (PDF)" removed from the UI.
+
+Do not:
+- restore the PDF button
+- restore placeholder spacing for a missing second button if it breaks alignment
+- leave the action area empty
+
+TASK 5 — KEEP CURRENT HEADER/STYLING INTACT
+Do not change:
+- Title
+- Listing ID
+- Status badge
+- Status colors
+- Status icons
+- Header order
+
+This is ONLY to restore the Edit Listing button that was accidentally removed.
+
+DO NOT DO:
+- do not restore both buttons
+- do not touch DB schema
+- do not change status rendering
+- do not change search cards
+- do not alter unrelated listing content
+
+TESTING REQUIRED:
+
+A. SELLER
+- Open actual Seller listing page
+- Expected: Edit Listing button is visible
+- Expected: PDF button is NOT visible
+- Click Edit Listing → correct edit page opens
+
+B. BUYER
+- Open actual Buyer listing page
+- Expected: Edit Listing button is visible
+- Expected: PDF button is NOT visible
+- Click Edit Listing → correct edit page opens
+
+C. LANDLORD
+- Open actual Landlord listing page
+- Expected: Edit Listing button is visible
+- Expected: PDF button is NOT visible
+- Click Edit Listing → correct edit page opens
+
+D. TENANT
+- Open actual Tenant listing page
+- Expected: Edit Listing button is visible
+- Expected: PDF button is NOT visible
+- Click Edit Listing → correct edit page opens
+
+SUCCESS CRITERIA:
+- Edit Listing button is restored on all actual listing pages
+- Download Listing Snapshot (PDF) button stays removed
+- Edit routes work correctly
+- No DB changes
+- No unrelated regressions
+```

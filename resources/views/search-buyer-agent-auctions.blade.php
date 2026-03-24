@@ -149,7 +149,84 @@
             <div class="cardsDetails row  justify-content-start">
 
                 @inject('carbon', 'Carbon\Carbon')
-                @forelse ($pAuctions as $auction)
+@forelse ($pAuctions as $auction)
+                    @php
+                        $resolveOther = function($selectedValue, $otherText) {
+                            if (strtolower(trim($selectedValue ?? '')) === 'other' && !empty($otherText)) {
+                                return $otherText;
+                            }
+                            return $selectedValue;
+                        };
+
+                        $propTypeRaw = strtolower(trim(@$auction->get->property_type ?? ''));
+                        $isResidential = (strpos($propTypeRaw, 'residential') !== false);
+                        $isCommercial = (strpos($propTypeRaw, 'commercial') !== false) || (strpos($propTypeRaw, 'income') !== false);
+                        $propertyTypeLabel = $isResidential ? 'Residential' : ($isCommercial ? 'Commercial' : (@$auction->get->property_type ?: ''));
+
+                        $propertyItems = @$auction->get->property_items;
+                        $propertyStyleDisplay = '';
+                        if (is_array($propertyItems) && count($propertyItems) > 0) {
+                            $firstItem = $propertyItems[0] ?? '';
+                            if (strtolower(trim($firstItem)) === 'other' && !empty(@$auction->get->other_property_items)) {
+                                $propertyStyleDisplay = $auction->get->other_property_items;
+                            } else {
+                                $propertyStyleDisplay = $firstItem;
+                            }
+                        } elseif (is_string($propertyItems) && !empty($propertyItems)) {
+                            $decoded = json_decode($propertyItems, true);
+                            if (is_array($decoded) && count($decoded) > 0) {
+                                $firstItem = $decoded[0] ?? '';
+                                if (strtolower(trim($firstItem)) === 'other' && !empty(@$auction->get->other_property_items)) {
+                                    $propertyStyleDisplay = $auction->get->other_property_items;
+                                } else {
+                                    $propertyStyleDisplay = $firstItem;
+                                }
+                            } else {
+                                $propertyStyleDisplay = $propertyItems;
+                            }
+                        }
+
+                        $bedsDisplay = $resolveOther(@$auction->get->bedrooms, @$auction->get->other_bedrooms);
+                        $bathsDisplay = $resolveOther(@$auction->get->bathrooms, @$auction->get->other_bathrooms);
+                        $sqftDisplay = @$auction->get->minimum_heated_square ?? '';
+
+                        $rawCounties = @$auction->get->counties ?? [];
+                        $countyDisplay = '';
+                        if (is_array($rawCounties) && count($rawCounties) > 0) {
+                            $countyDisplay = $rawCounties[0];
+                        } elseif (is_string($rawCounties) && !empty($rawCounties)) {
+                            $decoded2 = json_decode($rawCounties, true);
+                            if (is_array($decoded2) && count($decoded2) > 0) {
+                                $countyDisplay = $decoded2[0];
+                            } elseif (trim($rawCounties, '[]') !== '') {
+                                $countyDisplay = $rawCounties;
+                            }
+                        }
+                        if (!empty($countyDisplay) && stripos($countyDisplay, 'County') === false) {
+                            $countyDisplay .= ' County';
+                        }
+
+                        $commissionStructure = @$auction->get->commission_structure ?? '';
+
+                        $rawDays = trim((string) ($auction->get->auction_time ?? ''));
+                        $lengthDays = 0;
+                        $remainingSeconds = 0;
+                        $pretty = null;
+                        if ($rawDays !== '') {
+                            preg_match('/\d+/', $rawDays, $m);
+                            $lengthDays = isset($m[0]) ? (int) $m[0] : 0;
+                            $now = \Carbon\Carbon::now();
+                            $end = \Carbon\Carbon::parse($auction->created_at)->addDays($lengthDays);
+                            $remainingSeconds = $now->diffInSeconds($end, false);
+                            $pretty = function (int $sec) {
+                                if ($sec <= 0) { return 'Expired'; }
+                                $d = intdiv($sec, 86400); $sec %= 86400;
+                                $h = intdiv($sec, 3600); $sec %= 3600;
+                                $i = intdiv($sec, 60); $s = $sec % 60;
+                                return sprintf('%dd %02d:%02d:%02d', $d, $h, $i, $s);
+                            };
+                        }
+                    @endphp
                     <div class="col-sm-6 col-md-12 col-lg-4 mb-3">
                         <div class="card" style="overflow: hidden;">
                             <div class="card-body pb-2 pt-2">
@@ -158,127 +235,62 @@
                                             href="{{ route('buyer.view-auction', @$auction->id) }}">{{ @$auction->title }}</a>
                                     </h5>
                                 </div>
-                                {{-- <div class="'qr-code" style="width: 50px; height:50px; position: absolute; top:0; right:0;">
-                                    {{ qr_code(route('tenant.agent.auction.view', @$auction->id), 150) }}
-                                </div> --}}
 
                                 <div class="houseDetails mb-1">
-                                    <span>
-                                        <span class="d-inline-flex justify-content-center align-items-center gap-1"><img
-                                                src="{{ asset('assets/fontawesome/svgs/thin/bed-front.svg') }}"
-                                                alt="bed icon" width="15"><b>
-                                                {{ @$auction->get->bedrooms }}</b></span>
-                                        <span class="d-inline-flex justify-content-center align-items-center gap-1"><img
-                                                src="{{ asset('assets/fontawesome/svgs/thin/bath.svg') }}" alt="bed icon"
-                                                width="15"><b>
-                                                {{ @$auction->get->bathrooms }}</b></span>
-                                        <span class="d-inline-flex justify-content-center align-items-center gap-1"><img
-                                                src="{{ asset('assets/fontawesome/svgs/thin/ruler-triangle.svg') }}"
-                                                alt="bed icon" width="15"><b>
-                                                {{ isset($auction->get->minimum_heated_square) ? $auction->get->minimum_heated_square : '' }}
-                                            </b>Sq Ft</span>
-                                        <span class="d-inline-flex justify-content-center align-items-center gap-1">
-                                            <img src="{{ asset('assets/fontawesome/svgs/thin/house.svg') }}"
-                                                alt="condition icon" width="15">
+                                    <p class="mb-1 fw-bold text-muted small">Buyer &bull; {{ $propertyTypeLabel }}</p>
 
-                                            <b>
-                                                @if (!empty($auction->get->condition_prop_buyer))
-                                                    @foreach ($auction->get->condition_prop_buyer as $condition)
-                                                        {{ $condition }}@if (!$loop->last)
-                                                            ,
-                                                        @endif
-                                                    @endforeach
-                                                @endif
-                                            </b>
-                                        </span>
-                                        <span class="d-inline-flex justify-content-center align-items-center gap-1">
-                                            <img src="{{ asset('assets/fontawesome/svgs/thin/user.svg') }}" alt="user icon"
-                                                width="15">
-                                            <b>{{ $auction->get->user_type ?? '' }}</b>
-                                        </span>
+                                    @if (!empty($propertyStyleDisplay))
+                                        <p class="mb-1">
+                                            @if ($isResidential)
+                                                &#x1F3E0;
+                                            @elseif ($isCommercial)
+                                                &#x1F3E2;
+                                            @else
+                                                &#x1F3E0;
+                                            @endif
+                                            <b>{{ $propertyStyleDisplay }}</b>
+                                        </p>
+                                    @endif
 
-                                    </span><br>
+                                    @if (!empty($bedsDisplay) || !empty($bathsDisplay))
+                                        <p class="mb-1">
+                                            <span class="d-inline-flex align-items-center gap-1">
+                                                &#x1F6CF; <b>{{ $bedsDisplay ?: '-' }}</b> Beds
+                                            </span>
+                                            |
+                                            <span class="d-inline-flex align-items-center gap-1">
+                                                &#x1F6C1; <b>{{ $bathsDisplay ?: '-' }}</b> Baths
+                                            </span>
+                                            @if (!empty($sqftDisplay))
+                                                |
+                                                <span class="d-inline-flex align-items-center gap-1">
+                                                    &#x1F4D0; <b>{{ $sqftDisplay }}</b> Sq Ft
+                                                </span>
+                                            @endif
+                                        </p>
+                                    @elseif (!empty($sqftDisplay))
+                                        <p class="mb-1">
+                                            <span class="d-inline-flex align-items-center gap-1">
+                                                &#x1F4D0; <b>{{ $sqftDisplay }}</b> Sq Ft
+                                            </span>
+                                        </p>
+                                    @endif
 
-                                    Buyer’s Agent required
+                                    @if (!empty($countyDisplay))
+                                        <p class="mb-1">&#x1F4CD; {{ $countyDisplay }}</p>
+                                    @endif
+
+                                    <p class="mb-1">&#x1F464; Buyer's Agent Required</p>
+
+                                    @if (!empty($commissionStructure))
+                                        <p class="mb-1">&#x1F4BC; <b>Commission:</b> {{ $commissionStructure }}</p>
+                                    @endif
                                 </div>
-
-                                {{-- @if ($auction->get->auction_time != null || $auction->get->auction_time === '')
-
-
-                                    <p class="m-0"><svg xmlns="http://www.w3.org/2000/svg" class="clock" fill="none"
-                                            viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                            @php
-                                                $start = $carbon::now();
-                                                $end = $carbon::parse(@$auction->created_at)->addDays(30);
-                                                $diff = $end->diffInDays($start);
-                                            @endphp
-                                        </svg>
-                                        @php
-                                            $days = intval($auction->get->auction_time);
-
-                                        @endphp
-
-                                        <b
-                                            class="timer-{{ @$auction->id }} badge bg-info">{{ round($days) <= 0 ? 'No Time Limit' : $diff . 'd ' . $start->diff($end)->format('%H:%I:%S') }}</b>
-                                    </p>
-                                @endif --}}
-
-
-                               {{-- <p class="m-0"><svg xmlns="http://www.w3.org/2000/svg" class="clock" fill="none"
-                                            viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-
-                                        </svg>
-
-                                    </p> --}}
-
-                                @php
-
-
-                                    $rawDays = trim((string) ($auction->get->auction_time ?? ''));
-
-                                    $lengthDays = 0;
-                                    $remainingSeconds = 0;
-                                    $pretty = null;
-
-                                    if ($rawDays !== '') {
-
-
-                                    preg_match('/\d+/', $rawDays, $m);
-                                        $lengthDays = isset($m[0]) ? (int) $m[0] : 0;
-
-                                        $now = \Carbon\Carbon::now();
-                                        $end = \Carbon\Carbon::parse($auction->created_at)->addDays($lengthDays);
-
-                                        $remainingSeconds = $now->diffInSeconds($end, false);
-
-                                        $pretty = function (int $sec) {
-                                            if ($sec <= 0) {
-                                                return 'Expired';
-                                            }
-                                            $d = intdiv($sec, 86400);
-                                            $sec %= 86400;
-                                            $h = intdiv($sec, 3600);
-                                            $sec %= 3600;
-                                            $i = intdiv($sec, 60);
-                                            $s = $sec % 60;
-                                            return sprintf('%dd %02d:%02d:%02d', $d, $h, $i, $s);
-                                        };
-                                    }
-                                @endphp
-
-
-
-
 
                                 @if ($rawDays !== '')
                                     <p class="m-0">
-                                        <b class="badge bg-info timer-{{ $auction->id }}" {{-- only add data-seconds if there IS a limit and it’s in the future --}}
+                                        <b class="badge bg-info timer-{{ $auction->id }}"
                                             @if ($lengthDays > 0 && $remainingSeconds > 0) data-seconds="{{ $remainingSeconds }}" @endif>
-                                            {{-- initial server-side text --}}
                                             @if ($lengthDays <= 0)
                                                 No Time Limit
                                             @else
@@ -293,16 +305,6 @@
                             <div class="card-footer bg-light">
                                 <div class="row">
                                     <div class="col-6 left">
-                                        <!-- Barcode  -->
-                                        {{-- <svg data-bs-container="body" tabindex="0" data-bs-toggle="popover"
-                                            data-bs-trigger="hover focus" data-bs-placement="top"
-                                            data-bs-content="Scan Qr Code" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                            viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z">
-                                            </path>
-                                        </svg> --}}
-                                        <!-- Message  -->
                                         <svg data-bs-container="body" tabindex="0" data-bs-toggle="popover"
                                             data-bs-trigger="hover focus" data-bs-placement="top"
                                             data-bs-content="Send Message" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -311,7 +313,6 @@
                                                 d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z">
                                             </path>
                                         </svg>
-                                        <!-- Favourite  -->
                                         <svg data-bs-container="body" tabindex="0" data-bs-toggle="popover"
                                             data-bs-trigger="hover focus" data-bs-placement="top"
                                             data-bs-content="Add Favorites" xmlns="http://www.w3.org/2000/svg"
