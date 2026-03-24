@@ -1046,7 +1046,7 @@
 </div>
 
 <div class="form-group" wire:key="landlord-desired-lease-{{ $property_type ?? 'none' }}">
-    <label class="fw-bold">Desired Lease Term: <span class="text-danger">*</span></label>
+    <label class="fw-bold">Desired Lease Term:</label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Select the lease term the Landlord prefers to offer.">

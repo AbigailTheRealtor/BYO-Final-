@@ -4183,7 +4183,7 @@
                                     lwChecks.push({ prop: 'lease_for', label: 'Offered Lease Term', isArray: true, domSel: '.lease_for' });
                                     lwChecks.push({ prop: 'leasing_spaces_tenant', label: 'Leasing Space', isArray: true, domSel: '#leasing_spaces_tenant' });
                                 } else if (curUT === 'landlord') {
-                                    lwChecks.push({ prop: 'desired_lease_length', label: 'Desired Lease Term', isArray: true, domSel: '.lease_term_options' });
+                                    lwChecks.push({ prop: 'desired_lease_length', label: 'Offered Lease Term', isArray: true, domSel: '.lease_term_options' });
                                     lwChecks.push({ prop: 'leasing_spaces', label: 'Offered Lease Space', isArray: false });
                                 }
                                 lwChecks.forEach(function(chk) {
@@ -4322,7 +4322,7 @@
                 }
                 var _countiesCont = document.querySelector('.counties-container');
                 if (_countiesCont && !_countiesCont.querySelectorAll('.badge').length) {
-                    inv.push({ field: _countiesCont, tab: _countiesCont.closest('.tab-pane'), fieldName: 'Acceptable Counties' });
+                    inv.push({ field: _countiesCont, tab: _countiesCont.closest('.tab-pane'), fieldName: 'County' });
                 }
 
                 // Livewire array / special fields
@@ -4338,7 +4338,7 @@
                                     _lwReqs.push({ prop: 'lease_for',           label: 'Offered Lease Term',  isArray: true,  domSel: '.lease_for' });
                                     _lwReqs.push({ prop: 'leasing_spaces_tenant', label: 'Leasing Space',    isArray: false });
                                 } else if (_curUT === 'landlord') {
-                                    _lwReqs.push({ prop: 'desired_lease_length', label: 'Desired Lease Term', isArray: true, domSel: '.lease_term_options' });
+                                    _lwReqs.push({ prop: 'desired_lease_length', label: 'Offered Lease Term', isArray: true, domSel: '.lease_term_options' });
                                     _lwReqs.push({ prop: 'leasing_spaces',       label: 'Offered Lease Space', isArray: false });
                                 }
                                 _lwReqs.forEach(function(chk) {
@@ -4469,7 +4469,7 @@
                         const countyBadges = countiesContainer.querySelectorAll('.badge');
                         if (!countyBadges || countyBadges.length === 0) {
                             const tab = countiesContainer.closest('.tab-pane');
-                            invalidItems.push({ field: countiesContainer, tab, fieldName: 'Acceptable Counties' });
+                            invalidItems.push({ field: countiesContainer, tab, fieldName: 'County' });
                         }
                     }
 
@@ -4488,7 +4488,7 @@
                                         lwReqs2.push({ prop: 'lease_for', label: 'Offered Lease Term', isArray: true, domSel: '.lease_for' });
                                         lwReqs2.push({ prop: 'leasing_spaces_tenant', label: 'Leasing Space', isArray: true, domSel: '#leasing_spaces_tenant' });
                                     } else if (curUT2 === 'landlord') {
-                                        lwReqs2.push({ prop: 'desired_lease_length', label: 'Desired Lease Term', isArray: true, domSel: '.lease_term_options' });
+                                        lwReqs2.push({ prop: 'desired_lease_length', label: 'Offered Lease Term', isArray: true, domSel: '.lease_term_options' });
                                         lwReqs2.push({ prop: 'leasing_spaces', label: 'Offered Lease Space', isArray: false });
                                     }
                                     lwReqs2.forEach(function(chk) {
