@@ -82,6 +82,9 @@ public function deleteMeta($key)
             return 'Hired Agent';
         }
         $metaStatus = $this->info('listing_status');
+        if ($metaStatus === 'Hired Agent') {
+            return 'Hired Agent';
+        }
         if ($metaStatus === 'Pending') {
             return 'Pending';
         }

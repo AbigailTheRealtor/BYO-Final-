@@ -1,0 +1,187 @@
+Use this Replit instruction block:
+
+```text
+I need a surgical listing status rendering fix with safeguards.
+
+GOAL:
+Fix the actual listing page so the displayed Listing Status always matches the real status selected by the user when creating or editing the listing.
+
+APPLIES TO:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+IMPORTANT:
+The status shown on the actual listing page must reflect the status selected/saved by the user.
+It must not default incorrectly to Active or Hired Agent.
+
+CURRENT BUGS:
+
+1. Seller / Tenant / Landlord
+- Status changes to Pending and Active correctly
+- But when the selected/saved status is Hired Agent, the actual listing page still shows Active
+- That is wrong
+
+2. Buyer
+- The actual listing page automatically shows Hired Agent even when the selected/saved status is Active or Pending
+- That is wrong
+
+CORRECT BEHAVIOR:
+On the actual listing page, the displayed status must always match the real current saved status:
+- Active → show Active
+- Pending → show Pending
+- Hired Agent → show Hired Agent
+- Expired → show Expired if the app’s expiration logic determines it is expired
+
+IMPORTANT:
+This fix is about the ACTUAL LISTING PAGE DISPLAY/RESOLUTION of status.
+Do not change unrelated listing logic unless the root cause is in a shared status helper.
+The listing page should read and display the true status correctly.
+
+HARD SAFEGUARDS:
+- Do NOT rename DB columns
+- Do NOT run migrations
+- Do NOT refactor architecture broadly
+- Do NOT change unrelated create/edit validation logic
+- Do NOT change unrelated search/listing card layouts
+- Do NOT break status save logic if it is already saving correctly
+- Make .bak copies before editing files
+- Keep this focused on status display/rendering on the actual listing page
+
+TASK 1 — FIND THE TRUE STATUS SOURCE OF TRUTH
+Before changing anything, identify the actual source of truth for listing status on the actual listing page.
+
+Confirm:
+- which DB field/property stores the selected listing status
+- whether there is a shared helper/accessor used to resolve the status for display
+- whether expiration logic overlays the stored status
+- whether each role is using a separate view conditional or a shared status partial
+
+Do NOT guess.
+
+TASK 2 — VERIFY WHETHER STATUS IS SAVING CORRECTLY
+First confirm whether the listing status selected during create/edit is actually being saved correctly in the database/model.
+
+Need to determine:
+- is the saved value correct, but the view is displaying it wrong?
+- or is the saved value itself being overwritten incorrectly before display?
+
+This is important because:
+- Seller / Tenant / Landlord showing Hired Agent as Active may be a display-mapping bug
+- Buyer always showing Hired Agent may be a wrong conditional/helper/default bug
+
+TASK 3 — TRACE THE ACTUAL LISTING PAGE STATUS RENDERING
+Inspect the actual listing page files for:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+Find:
+- where the status badge/text is rendered
+- whether it uses:
+  - a raw field
+  - an accessor
+  - a controller variable
+  - a Livewire/component property
+  - a shared partial/helper
+
+Need to identify the exact logic causing:
+- Seller / Tenant / Landlord → Hired Agent displays as Active
+- Buyer → everything displays as Hired Agent
+
+TASK 4 — FIX STATUS DISPLAY TO MATCH SAVED STATUS
+Update the actual listing page rendering so the status display matches the true saved/current status.
+
+Expected:
+- saved/selected Active → display Active
+- saved/selected Pending → display Pending
+- saved/selected Hired Agent → display Hired Agent
+- expired according to app logic → display Expired
+
+SPECIFIC FIXES:
+Seller / Tenant / Landlord:
+- when saved status is Hired Agent, do NOT display Active
+- display Hired Agent correctly
+
+Buyer:
+- stop displaying Hired Agent for every status
+- display the true selected/current status correctly
+
+TASK 5 — KEEP EXPIRATION LOGIC INTACT
+If the app has expiration logic that computes Expired based on expiration date, keep that intact.
+
+But:
+- do not let expiration logic incorrectly force non-expired listings into wrong states
+- do not let non-expired Buyer listings default to Hired Agent
+- do not let Hired Agent incorrectly display as Active
+
+TASK 6 — CHECK WHETHER ROLES SHARE A COMMON STATUS RESOLVER
+If all four roles use one shared status helper/partial/accessor:
+- fix it there, carefully
+
+If roles use separate files/conditionals:
+- fix each role-specific bug carefully
+
+Minimal-risk fix is preferred over broad refactor.
+
+TASK 7 — DO NOT CHANGE STATUS SAVE UX UNLESS NECESSARY
+This task is about making the actual listing page display the status correctly based on the selected/saved status.
+
+Do NOT change:
+- create form fields
+- edit form fields
+- status dropdown options
+- timer logic
+- bidding logic
+unless the root cause proves those are actually corrupting the saved status before display
+
+DO NOT DO:
+- do not hardcode Seller/Tenant/Landlord Hired Agent to Active
+- do not hardcode Buyer to Hired Agent
+- do not change DB schema
+- do not touch unrelated UI
+- do not create inconsistent logic between roles
+
+TESTING REQUIRED:
+
+A. SELLER
+Use Seller listings with different selected statuses:
+- Active listing → actual listing page shows Active
+- Pending listing → actual listing page shows Pending
+- Hired Agent listing → actual listing page shows Hired Agent (NOT Active)
+
+B. LANDLORD
+Use Landlord listings with different selected statuses:
+- Active listing → shows Active
+- Pending listing → shows Pending
+- Hired Agent listing → shows Hired Agent (NOT Active)
+
+C. TENANT
+Use Tenant listings with different selected statuses:
+- Active listing → shows Active
+- Pending listing → shows Pending
+- Hired Agent listing → shows Hired Agent (NOT Active)
+
+D. BUYER
+Use Buyer listings with:
+- Active selected → actual listing page shows Active
+- Pending selected → actual listing page shows Pending
+- Hired Agent selected → actual listing page shows Hired Agent
+
+IMPORTANT:
+Buyer must no longer always show Hired Agent.
+
+E. OPTIONAL EXPIRED TEST
+If an expired test record is available:
+- expired listing should show Expired according to existing expiration logic
+
+SUCCESS CRITERIA:
+- Seller, Tenant, and Landlord no longer show Hired Agent as Active
+- Buyer no longer shows Hired Agent for every status
+- Actual listing page status always matches the selected/saved status
+- Expiration logic remains intact
+- No DB changes
+- No unrelated regressions
+```

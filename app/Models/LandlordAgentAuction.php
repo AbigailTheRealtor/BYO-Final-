@@ -73,10 +73,14 @@ class LandlordAgentAuction extends Model
 
     public function getStatusAttribute()
     {
-        if ($this->is_sold) {
+        $isSold = in_array($this->is_sold, [true, 'true', 1, '1'], true);
+        if ($isSold) {
             return 'Hired Agent';
         }
         $metaStatus = $this->info('listing_status');
+        if ($metaStatus === 'Hired Agent') {
+            return 'Hired Agent';
+        }
         if ($metaStatus === 'Pending') {
             return 'Pending';
         }
