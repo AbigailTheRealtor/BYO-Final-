@@ -107,12 +107,18 @@ The platform is built on Laravel 8.x, PHP 8.2.23, and PostgreSQL, with Node.js v
 `applySellerProvisionVisibility()` and `applySellerFinancingVisibility()` handle immediate show/hide for all dependent sections. Both functions exist in `hire-seller-agent.blade.php` (dedicated path) and `tenant-agent-auction.blade.php` (shared path). The `@this.set()` / `debouncedSet()` pattern syncs values to Livewire so server-side re-renders keep sections visible.
 
 ### Edit-Form Validation Parity & Immutable Fields
-All shared-edit routes (`/hire/agent/auction/edit/{id}/{role}` and `/buyer/agent/auction/edit/{id}/buyer`) use `TenantAgentAuctionEdit` / `tenant-agent-auction-edit.blade.php`. Key rules implemented:
-- **Submit button** routes through `doSaveEditWithSync()` (not a bare form submit) so full JS validation fires.
-- **`editGetInvalidItemsFull()`** validates required fields on ALL tabs, not just the active one. It uses `.closest('.tab-pane')` DOM traversal to distinguish Bootstrap tab hiding (ignored) from conditional `@if`-hidden fields (respected).
+All shared-edit routes (`/hire/agent/auction/edit/{id}/{role}`) use `TenantAgentAuctionEdit` / `tenant-agent-auction-edit.blade.php`. Key rules implemented:
+- **Three action buttons:** "Save Draft" (grey/outline) → `saveDraftOnly()`, no validation, no redirect, green toast; "Save Edit" (blue) and "Submit" (green) → `doSaveEditWithSync()`, full validation, redirect on success.
+- **`doSaveEditWithSync()`** runs `editGetInvalidItemsFull()` (checks all tabs) before calling `update()`. Both "Save Edit" and "Submit" use this path.
+- **`doSaveDraftWithSync()`** only syncs Select2 then calls `saveDraftOnly()` — skips all required-field validation so partial saves are always allowed.
+- **`editGetInvalidItemsFull()`** validates required fields on ALL tabs. It uses `.closest('.tab-pane')` DOM traversal to distinguish Bootstrap tab hiding (ignored) from conditional blade-hidden fields (respected).
+- **PHP server-side validation in `update()`** — checks `listing_title`, `listing_date`, `expiration_date`, `meeting_Preference` as a bypass safety net. Dispatches `edit-validation-failed` browser event if any are missing; skipped when `$_isDraftSave` is true.
+- **`saveDraftOnly()`** — sets `$_isDraftSave = true`, calls `update()` (which skips PHP validation and redirect), then resets the flag. Dispatches `draft-saved` browser event on success.
 - **`$isEditMode = true`** is set in the shared-edit blade before listing-details includes, making locked-field logic available inside the partials.
-- **Locked fields** — `Listing Type` and `Current Representation Status with Broker` — render as disabled text inputs with a red lock notice when `$isEditMode` is set. The PHP `update()` method re-reads `working_with_agent` from the DB (`$_lockedWwa`) and ignores any client-submitted value.
-- **Caution:** Avoid putting `@directive` keywords (e.g. `@if`, `@this`) inside `<script>` comments — Blade processes them everywhere and will emit a parse error. Use escaped `@@` or rephrase the comment.
+- **Locked fields** — `Listing Type` and `Current Representation Status with Broker` — render as disabled text inputs with a red lock notice when `$isEditMode` is set. Each has a `.locked-field-overlay` div (transparent, z-index 2, inset 0) so clicks can be intercepted even though the underlying input is disabled.
+- **Locked field click handler** — a global `click` listener on `.locked-field-overlay` shows a `.locked-click-notice` red alert below the field with the field-specific message. Auto-hides after 5 s.
+- **Server-side immutability** — `working_with_agent`: re-read from DB before saving; `auction_type` / `auction_time`: commented out of `saveMeta()` call so client submissions are ignored.
+- **Caution:** Avoid putting `@directive` keywords (e.g. `@if`, `@this`) inside `<script>` comments — Blade processes them everywhere and will emit a parse error. Rephrase or use `@@`.
 
 ### System Design Choices
 The architecture emphasizes modularity, clear separation of concerns, and a database-first approach utilizing local database solutions. The system is optimized for production deployment, and the existing database schema for fees is immutable, with display-only formatting updates.

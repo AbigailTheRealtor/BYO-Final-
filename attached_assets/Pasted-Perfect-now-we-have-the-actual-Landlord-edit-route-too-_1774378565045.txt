@@ -1,0 +1,207 @@
+Perfect — now we have the actual **Landlord edit route too**:
+
+* **Seller edit:** `/hire/agent/auction/edit/53/seller`
+* **Buyer edit:** `/buyer/agent/auction/edit/115/buyer`
+* **Landlord edit:** `/hire/agent/auction/edit/43/landlord`
+* **Tenant edit:** `/hire/agent/auction/edit/126/tenant`
+
+Here is the corrected **copy-paste Replit instruction block** with Landlord included properly.
+
+```text
+Surgical fix only. Do not rename DB columns, do not run migrations, do not refactor architecture, and do not touch unrelated role flows. Make .bak copies before editing any file.
+
+CONFIRMED EDIT ROUTES:
+- Seller edit: /hire/agent/auction/edit/53/seller
+- Buyer edit: /buyer/agent/auction/edit/115/buyer
+- Landlord edit: /hire/agent/auction/edit/43/landlord
+- Tenant edit: /hire/agent/auction/edit/126/tenant
+
+CONFIRMED CREATE ROUTES:
+- Buyer create: /hire/agent/auction/buyer
+- Landlord create: /hire/agent/auction/landlord
+- Tenant create: /hire/agent/auction/tenant
+- Seller create: confirm current seller create route from app routes before editing, then compare create vs edit validation from that exact route
+
+GOAL:
+For Seller, Buyer, Landlord, and Tenant edit flows:
+
+1. Save Draft should still work even if required fields are blank
+2. Submit / Save Edits must use the exact same required-field validation as listing creation
+3. If any required field is missing on any tab, Submit / Save Edits must fail
+4. Listing Type and Current Representation Status with Broker must remain locked on edit
+5. If the user tries to interact with either locked field, show a red validation-style notification that the field cannot be edited after creation
+
+IMPORTANT:
+- Save Draft is allowed with incomplete required fields
+- Final Submit / Save Edit is NOT allowed with missing required fields
+- Do not confuse draft-save rules with final-submit rules
+
+LIKELY SHARED EDIT FLOW:
+Start by confirming the actual shared edit flow for all 4 routes. Most likely files:
+- app/Http/Livewire/TenantAgentAuctionEdit.php
+- resources/views/livewire/tenant-agent-auction-edit.blade.php
+
+Also inspect any role-specific partials included by the shared edit blade only if needed.
+
+TASK 1 — FINAL EDIT SUBMIT MUST MATCH CREATE VALIDATION EXACTLY
+
+Root issue:
+The current edit flow is still allowing deleted required fields to save. This means final edit submit is not using the exact same required validation source as create.
+
+Fix:
+- Find the exact required validation logic used during CREATE for:
+  - Seller
+  - Buyer
+  - Landlord
+  - Tenant
+- Reuse that exact same rule source for FINAL edit submission
+- Do not create a second hand-maintained “edit required fields” list unless absolutely unavoidable
+
+In the shared edit Livewire class:
+- find the final edit submit method, for example:
+  - update()
+  - submit()
+  - saveEdit()
+  - whatever method actually finalizes edits
+- before any persistence happens, run the SAME required validation used by create
+- validation failure must fully block save
+
+CRITICAL:
+- Final edit submit must check ALL required fields across ALL tabs
+- Not just the current tab
+- Not just visible fields
+- It must match create logic exactly, including conditional property-type/role requirements
+
+TASK 2 — SAVE DRAFT MUST STILL ALLOW INCOMPLETE FIELDS
+
+Do NOT apply full required validation to Save Draft.
+
+In the edit draft-save method:
+- keep draft saving allowed even when required fields are blank
+- do not block draft save because of missing required fields
+- draft save should preserve progress only
+
+TASK 3 — CURRENT FORM STATE MUST BE USED ON FINAL SUBMIT
+
+Past bug pattern:
+Deleting a required field on the screen may still pass because stale Livewire/server state is being used instead of the actual current form value.
+
+Fix:
+- make sure final edit submit validates the current synced form values
+- do not let stale pre-edit values satisfy validation after the user cleared a field
+- if Select2/DOM sync is involved, sync current values before final validation runs
+- but the real enforcement must still happen server-side
+
+TASK 4 — LOCKED FIELD NOTICE FOR:
+- Listing Type
+- Current Representation Status with Broker
+
+Current state:
+These fields are already non-editable on edit, which is correct.
+
+Missing behavior:
+If the user tries to interact with either field, show a red notice explaining it cannot be edited after listing creation.
+
+Implement safely:
+- keep both fields visually locked / disabled / read-only in edit mode
+- add a wrapper, overlay, or focusable click target so user interaction can still be detected
+- on click / mousedown / focus attempt, show red validation-style message:
+
+  Listing Type cannot be edited once the listing is created.
+  Current Representation Status with Broker cannot be edited once the listing is created.
+
+IMPORTANT:
+Disabled inputs alone do not reliably fire events, so do not rely only on the disabled field itself.
+
+SERVER-SIDE IMMUTABILITY ALSO REQUIRED:
+Even if someone tampers in dev tools:
+- listing type must remain original DB value
+- current representation status must remain original DB value
+- ignore or reject submitted changes to those two fields in the edit save logic
+
+DO NOT DO:
+- do not require full validation for Save Draft
+- do not only show a JS banner while still allowing final save
+- do not validate only the active tab
+- do not rely on HTML required attributes alone
+- do not rely only on disabled UI for locked fields
+- do not mass-edit unrelated Seller/Buyer/Landlord/Tenant files
+- do not touch DB schema
+
+FILES TO CHECK FIRST:
+1. app/Http/Livewire/TenantAgentAuctionEdit.php
+2. resources/views/livewire/tenant-agent-auction-edit.blade.php
+3. any shared validation helper/trait used by create flows
+4. only then inspect role-specific create components to find the exact source-of-truth required rules
+
+VALIDATION PARITY AUDIT REQUIRED:
+Explicitly compare create vs edit required rules for:
+- Seller create vs Seller edit
+- Buyer create vs Buyer edit
+- Landlord create vs Landlord edit
+- Tenant create vs Tenant edit
+
+If edit rules differ from create rules, fix by reusing create rules.
+
+TESTING REQUIRED:
+
+SELLER
+Edit route:
+- /hire/agent/auction/edit/53/seller
+
+BUYER
+Edit route:
+- /buyer/agent/auction/edit/115/buyer
+
+LANDLORD
+Edit route:
+- /hire/agent/auction/edit/43/landlord
+
+TENANT
+Edit route:
+- /hire/agent/auction/edit/126/tenant
+
+For EACH role, test:
+
+A. SAVE DRAFT
+1. Delete one required field
+2. Click Save Draft
+3. Expected: draft saves successfully
+
+B. FINAL SUBMIT / SAVE EDIT
+1. Delete one required field on tab 1
+2. Click Submit / Save Edit
+3. Expected: blocked
+
+4. Delete required fields across multiple tabs
+5. Click Submit / Save Edit
+6. Expected: blocked until ALL required fields are restored
+
+7. Restore all required fields
+8. Click Submit / Save Edit
+9. Expected: save succeeds
+
+C. LOCKED FIELD NOTICE
+1. Try clicking/interacting with Listing Type
+2. Expected: red notice appears, value unchanged
+
+3. Try clicking/interacting with Current Representation Status with Broker
+4. Expected: red notice appears, value unchanged
+
+D. TAMPER TEST
+1. Change either locked field in dev tools
+2. Submit final edit
+3. Expected: original DB values are preserved
+
+SUCCESS CRITERIA:
+- Save Draft allows incomplete fields
+- Final Submit / Save Edit uses the exact same required validation as create
+- Missing required fields on any tab block final save
+- Seller, Buyer, Landlord, and Tenant all behave the same
+- Locked fields cannot be changed
+- Red attempted-edit notification appears for both locked fields
+- No DB schema changes
+- No unrelated regressions
+```
+
+If Replit sends back another “fixed” message and it still doesn’t work, paste that response here and I’ll tighten it further so it forces them to target the exact validation method.

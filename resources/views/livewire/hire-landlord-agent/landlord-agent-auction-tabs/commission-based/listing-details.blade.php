@@ -401,9 +401,10 @@ $auction_lengths_seller = [
             title="Indicate whether the Landlord is currently under a signed agreement with a Broker. “Represented” means the Landlord has signed a Landlord representation agreement; “Not Represented” means no agreement has been signed, and the Landlord is free to hire a Broker.">
             <i class="fa-solid fa-circle-info"></i> </span>
         @if (!empty($isEditMode))
-            <div class="input-cover">
+            <div class="input-cover locked-field-wrapper position-relative" data-lock-msg="Current Representation Status with Broker cannot be edited once the listing is created.">
                 <i class="input-icon fa-solid fa-lock"></i>
                 <input type="text" class="form-control has-icon" value="{{ $working_with_agent }}" disabled style="background:#f8f9fa; cursor:not-allowed;">
+                <div class="locked-field-overlay" style="position:absolute;inset:0;cursor:not-allowed;z-index:2;"></div>
             </div>
             <p class="text-danger small mt-2 mb-0"><i class="fa-solid fa-lock me-1"></i> Current Representation Status with Broker cannot be changed after the listing has been created.</p>
         @else
@@ -538,9 +539,10 @@ $auction_lengths_seller = [
             </span>
         </label>
         @if (!empty($isEditMode))
-            <div class="input-cover">
+            <div class="input-cover locked-field-wrapper position-relative" data-lock-msg="Listing Type cannot be edited once the listing is created.">
                 <i class="input-icon fa-solid fa-lock"></i>
                 <input type="text" class="form-control has-icon" value="{{ $auction_type }}" disabled style="background:#f8f9fa; cursor:not-allowed;">
+                <div class="locked-field-overlay" style="position:absolute;inset:0;cursor:not-allowed;z-index:2;"></div>
             </div>
             <p class="text-danger small mt-2 mb-0"><i class="fa-solid fa-lock me-1"></i> Listing Type cannot be changed after the listing has been created.</p>
         @else

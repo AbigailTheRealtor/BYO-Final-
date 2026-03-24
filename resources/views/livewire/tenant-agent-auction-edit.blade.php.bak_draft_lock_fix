@@ -1917,10 +1917,6 @@
                                 <button type="button" class="btn btn-secondary wizard-step-back">Back</button>
                             </div>
                             <div>
-                                <button type="button" onclick="doSaveDraftWithSync()" class="btn btn-outline-secondary me-2 wizard-save-draft" wire:loading.attr="disabled" wire:target="saveDraftOnly">
-                                    <span wire:loading.remove wire:target="saveDraftOnly"><i class="fas fa-cloud-arrow-up me-1"></i> Save Draft</span>
-                                    <span wire:loading wire:target="saveDraftOnly">Saving...</span>
-                                </button>
                                 <button type="button" onclick="doSaveEditWithSync()" class="btn btn-outline-primary me-2 wizard-save-edit" wire:loading.attr="disabled" wire:target="update">
                                     <span wire:loading.remove wire:target="update"><i class="fas fa-save me-1"></i> Save Edit</span>
                                     <span wire:loading wire:target="update">Saving...</span>
@@ -2269,16 +2265,6 @@
             // All @this.set() calls above used defer=true, so their values
             // are batched into this single request atomically.
             @this.call('update');
-        }
-
-        // Save Draft — syncs Select2 but bypasses JS validation so partial saves are allowed.
-        // The PHP saveDraftOnly() method also skips server-side required validation.
-        function doSaveDraftWithSync() {
-            syncAllSelect2BeforeSave();
-            // Clear any existing error banner so it does not confuse the user.
-            var _banner = document.getElementById('submit-error-banner');
-            if (_banner) _banner.classList.add('d-none');
-            @this.call('saveDraftOnly');
         }
 
         // message.processed auto-advance removed — it caused repeated scroll/focus
@@ -5028,82 +5014,6 @@
         validateInput(input);
     }
 
-    // -------------------------------------------------------------------
-    // LOCKED FIELD CLICK INTERCEPTOR
-    // Disabled inputs do not fire events. A transparent overlay div
-    // (.locked-field-overlay) inside .locked-field-wrapper intercepts
-    // clicks and shows a contextual red notice.
-    // -------------------------------------------------------------------
-    (function() {
-        function showLockedNotice(wrapper, msg) {
-            var notice = wrapper.parentElement.querySelector('.locked-click-notice');
-            if (!notice) {
-                notice = document.createElement('div');
-                notice.className = 'alert alert-danger mt-1 py-1 px-2 small locked-click-notice';
-                notice.style.cssText = 'border-left:4px solid #dc3545;';
-                wrapper.insertAdjacentElement('afterend', notice);
-            }
-            notice.innerHTML = '<i class="fa-solid fa-lock me-1"></i>' + msg;
-            notice.style.display = 'block';
-            clearTimeout(notice._hideTimer);
-            notice._hideTimer = setTimeout(function() {
-                if (notice && notice.parentElement) notice.style.display = 'none';
-            }, 5000);
-        }
-
-        document.addEventListener('click', function(e) {
-            var overlay = e.target.closest('.locked-field-overlay');
-            if (overlay) {
-                var wrapper = overlay.closest('.locked-field-wrapper');
-                if (wrapper) {
-                    var msg = wrapper.getAttribute('data-lock-msg') || 'This field cannot be edited after the listing is created.';
-                    showLockedNotice(wrapper, msg);
-                }
-            }
-        }, true);
-    })();
-
-    // -------------------------------------------------------------------
-    // BROWSER EVENT LISTENERS — draft-saved & edit-validation-failed
-    // -------------------------------------------------------------------
-    window.addEventListener('draft-saved', function(e) {
-        var msg = (e.detail && e.detail.message) ? e.detail.message : 'Draft saved successfully!';
-        var container = document.getElementById('wizard-form-container') || document.body;
-        var toast = document.getElementById('draft-saved-toast');
-        if (!toast) {
-            toast = document.createElement('div');
-            toast.id = 'draft-saved-toast';
-            toast.className = 'alert alert-success alert-dismissible mb-3';
-            toast.style.cssText = 'position:sticky;top:70px;z-index:999;';
-            toast.innerHTML = '<i class="fas fa-check-circle me-1"></i><span id="draft-saved-msg"></span>'
-                + '<button type="button" class="btn-close" onclick="this.parentElement.style.display=\'none\'"></button>';
-            var firstChild = container.firstElementChild;
-            if (firstChild) container.insertBefore(toast, firstChild); else container.appendChild(toast);
-        }
-        var msgEl = document.getElementById('draft-saved-msg');
-        if (msgEl) msgEl.textContent = msg;
-        toast.style.display = 'block';
-        clearTimeout(toast._draftTimer);
-        toast._draftTimer = setTimeout(function() { if (toast) toast.style.display = 'none'; }, 5000);
-        var errBanner = document.getElementById('submit-error-banner');
-        if (errBanner) errBanner.classList.add('d-none');
-    });
-
-    window.addEventListener('edit-validation-failed', function(e) {
-        var fields = (e.detail && e.detail.fields) ? e.detail.fields : [];
-        var _banner = document.getElementById('submit-error-banner');
-        var _errList = document.getElementById('submit-error-list');
-        if (_banner && _errList) {
-            _errList.innerHTML = '';
-            fields.forEach(function(name) {
-                var li = document.createElement('li');
-                li.textContent = name;
-                _errList.appendChild(li);
-            });
-            _banner.classList.remove('d-none');
-            _banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-    });
     function reformatNumber(input) {
         const errorEl = getErrorEl(input);
         let v = input.value.replace(/,/g, '');

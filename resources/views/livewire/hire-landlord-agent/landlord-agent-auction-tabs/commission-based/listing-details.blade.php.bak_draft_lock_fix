@@ -1,19 +1,30 @@
+@php
+$auction_lengths_seller = [
+    ['name' => '1 Day'],
+    ['name' => '3 Days'],
+    ['name' => '5 Days'],
+    ['name' => '7 Days'],
+    ['name' => '10 Days'],
+    ['name' => '14 Days'],
+];
+@endphp
 <div class="dashboard-section">
     <h3>Listing Details</h3>
     <div class="alert alert-info bg-light-info border-info mb-4">
         <div class="d-flex align-items-center">
             <div>
                 <strong>📌 Provide the key details for this request, including the preferred Agent hire date and whether
-                    the Buyer is currently represented by a Broker.</strong>
+                    the Landlord is currently represented by a Broker.</strong>
             </div>
         </div>
     </div>
+
     <!-- Service Type Selection -->
 
     <div class="form-group mb-4 d-none">
-        <div class="row">
+        <div class="row container-sm">
             <!-- Full Service (Commission-Based) Option -->
-            <div class="col-md-6 mb-3">
+            <div class="col-md-12 mb-3">
                 <div class="card service-option-card h-100 {{ $service_type === 'full_service' ? 'active-service border-primary' : '' }}"
                     wire:click="$set('service_type', 'full_service')" style="cursor: pointer;">
                     <div class="card-body p-4">
@@ -48,7 +59,7 @@
             </div>
 
             <!-- Limited Service (Flat Fee) Option -->
-            <div class="col-md-6 mb-3">
+            {{-- <div class="col-md-6 mb-3">
                 <div class="card service-option-card h-100 {{ $service_type === 'limited_service' ? 'active-service border-primary' : '' }}"
                     wire:click="$set('service_type', 'limited_service')" style="cursor: pointer;">
                     <div class="card-body p-4">
@@ -79,7 +90,7 @@
                         <span class="badge bg-secondary bg-opacity-10 text-secondary">(Flat Fee)</span>
                     </div>
                 </div>
-            </div>
+            </div> --}}
         </div>
     </div>
 
@@ -182,7 +193,7 @@
         </div>
     @endisset --}}
 
-@isset($user_type)
+    @isset($user_type)
 
         <!-- User Type Selection -->
         <div class="form-group mb-4 text-center">
@@ -225,7 +236,7 @@
                                     id="userTypeBuyer" value="buyer" {{ $user_type === 'buyer' ? 'checked' : '' }}>
                                 <label class="form-check-label" for="userTypeBuyer">
                                     <i class="fas fa-user fa-2x mb-2" style="color: #0ce7ef;"></i>
-                                    <p class="mb-1 user-selected" >Hire a Buyer’s Agent</p>
+                                    <p class="mb-1 user-selected">Hire a Buyer’s Agent</p>
                                 </label>
                             </div>
                         </div>
@@ -244,8 +255,7 @@
                             @endif
                             <div class="form-check p-0">
                                 <input class="form-check-input card-check" type="radio" wire:model="user_type"
-                                    id="userTypeLandlord" value="landlord"
-                                    {{ $user_type === 'landlord' ? 'checked' : '' }}>
+                                    id="userTypeLandlord" value="landlord" {{ $user_type === 'landlord' ? 'checked' : '' }}>
                                 <label class="form-check-label" for="userTypeLandlord">
                                     <i class="fas fa-user-tie fa-2x mb-2" style="color: #0ce7ef;"></i>
                                     <p class="mb-1 user-selected">Hire a Landlord’s Agent</p>
@@ -272,6 +282,7 @@
                                     <i class="fas fa-user fa-2x mb-2" style="color: #0ce7ef;"></i>
                                     <p class="mb-1 user-selected">Hire a Tenant’s Agent</p>
                                 </label>
+
                             </div>
                         </div>
                     </div>
@@ -352,15 +363,12 @@
                     <span class="expired_tooltip">
                         The listing has ended without a hired Agent. You cannot select this status — it is
                         applied automatically when the listing expires.
-
                     </span>
                 </div>
 
             </div>
         </div>
-    @endif
 
-    @if ($service_type === 'full_service')
         <div class="alert alert-warning mt-3 p-2 small">
 
             Fields marked with <span class="text-danger">*</span> are required. You do not need to fill in all other
@@ -370,17 +378,16 @@
     @endif
     <!-- Listing Title -->
     <div class="form-group">
-        <label class="fw-bold">Listing Title: <span class="text-danger">*</span></label>
-
+        <label class="fw-bold">Listing Title: <span class="text-danger">*</span>
+        </label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter a short, clear title describing the type of Agent the Buyer needs and the location.">
+            title="Enter a short, clear title describing the type of Agent the Landlord needs and the location.">
             <i class="fa-solid fa-circle-info"></i> </span>
-
         <div class="input-cover">
             <i class="input-icon fa-solid fa-tag"></i>
             <input type="text" wire:model="listing_title" id="listing_title" class="form-control has-icon"
                 data-icon="fa-solid fa-tag"
-                placeholder="Enter listing title (e.g., Need a Buyer’s Agent in Tampa, FL to Help Me Purchase a Property)"
+                placeholder="Enter listing title (e.g., Need a Leasing Agent in Tampa, FL to Rent Out My Property)"
                 required>
         </div>
         <span class="error mt-2" id="listing_title_error"></span>
@@ -388,19 +395,15 @@
 
     <!-- Current Representation Agreement Status with Broker -->
     <div class="form-group">
-        <label class="fw-bold">Current Representation Agreement Status with Broker:<span
-                class="text-danger">*</span>
-                        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                            title="Indicate whether the Buyer is currently under a signed agreement with a Broker. “Represented” means the Buyer has signed a Buyer representation agreement; “Not Represented” means no agreement has been signed, and the Buyer is free to hire a Broker.">
-                            <i class="fa-solid fa-circle-info"></i>
-                        </span>
-            </label>
-
+        <label class="fw-bold">Current Representation Status with Broker:<span class="text-danger">*</span>
+        </label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Indicate whether the Landlord is currently under a signed agreement with a Broker. “Represented” means the Landlord has signed a Landlord representation agreement; “Not Represented” means no agreement has been signed, and the Landlord is free to hire a Broker.">
+            <i class="fa-solid fa-circle-info"></i> </span>
         @if (!empty($isEditMode))
-            <div class="input-cover locked-field-wrapper position-relative" data-lock-msg="Current Representation Status with Broker cannot be edited once the listing is created.">
+            <div class="input-cover">
                 <i class="input-icon fa-solid fa-lock"></i>
                 <input type="text" class="form-control has-icon" value="{{ $working_with_agent }}" disabled style="background:#f8f9fa; cursor:not-allowed;">
-                <div class="locked-field-overlay" style="position:absolute;inset:0;cursor:not-allowed;z-index:2;"></div>
             </div>
             <p class="text-danger small mt-2 mb-0"><i class="fa-solid fa-lock me-1"></i> Current Representation Status with Broker cannot be changed after the listing has been created.</p>
         @else
@@ -412,11 +415,12 @@
                     <option value="Represented">Represented</option>
                     <option value="Not Represented">Not Represented</option>
                 </select>
+
             </div>
             <span class="error mt-2" id="working_with_agent_error"></span>
             <!-- Representation Notice (hidden by default) -->
             <div id="representation_notice" class="alert alert-danger mt-2 d-none">
-                This service is only available to Buyers who are not currently represented by a Broker.
+                This service is only available to Landlords who are not currently represented by a Broker.
             </div>
         @endif
     </div>
@@ -425,11 +429,11 @@
         <div class="form-group">
             <label class="fw-bold">Desired Agent Hire Date:<span class="text-danger">*</span>
 
-                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Select the date the Buyer needs to hire an Agent.    ">
-                    <i class="fa-solid fa-circle-info"></i> </span>
             </label>
 
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select the date the Landlord needs to hire an Agent.">
+                <i class="fa-solid fa-circle-info"></i> </span>
             <div class="input-cover">
                 <input type="date" wire:model="desired_agent_hire_date" class="form-control has-icon"
                     data-icon="fa-regular fa-calendar-days" required>
@@ -441,10 +445,11 @@
     <div class="form-group">
         <label class="fw-bold">Listing Date:<span class="text-danger">*</span>
 
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select today’s date to make your request live and visible to Agents on the platform.">
-                <i class="fa-solid fa-circle-info"></i> </span>
         </label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select today’s date to make your request live and visible to Agents on the platform.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
         <div class="input-cover">
             <input type="date" wire:model="listing_date" class="form-control has-icon"
                 data-icon="fa-regular fa-calendar-days" required>
@@ -455,11 +460,12 @@
     <!-- Expiration Date -->
     <div class="form-group">
         <label class="fw-bold">Expiration Date:<span class="text-danger">*</span>
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="The date your Agent request will expire. To keep it active, extend the expiration before this date.">
-                <i class="fa-solid fa-circle-info"></i> </span>
-        </label>
 
+        </label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="The date your Agent request will expire. To keep it active, extend the expiration before this date.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
 
         <div class="input-cover">
             <input type="date" wire:model="expiration_date" class="form-control has-icon"
@@ -468,8 +474,63 @@
         <span class="error mt-2" id="expiration_date_error"></span>
     </div>
 
+    {{-- <div class="form-group">
+        <label class="fw-bold">Listing Type:<span class="text-danger">*</span></label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select how Agents submit bids for this listing. This choice controls timing, bid visibility, and how Agent bids are reviewed.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <select wire:model="auction_type" id="auction_type" class="form-control has-icon"
+                data-icon="fa-solid fa-file-alt" required>
+                <option value="">Select</option>
+                <option value="Auction">Auction</option>
+                <option value="Traditional">Traditional</option>
+            </select>
+        </div>
+        <span class="error mt-2" id="auction_type_error"></span>
+    </div>
 
-     <div class="form-group">
+    <!-- Auction Length (Only for Auction) -->
+    <div class="form-group mt-3" @if ($auction_type !== 'Auction') style="display: none;" @endif>
+        <label class="fw-bold">Auction Length: <span class="text-danger">*</span>
+
+        </label>
+
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Agents can submit bids until the countdown ends. Each bid will display the Agent's Offered Services and Broker Compensation &amp; Agency Agreement Terms. Once the timer expires, you may select the Agent who best meets your needs—you are not required to choose the highest or lowest bid.">
+            <i class="fa-solid fa-circle-info"></i> </span>
+        <div class="input-cover">
+            <select wire:model="auction_time" id="auction_time" class="form-control has-icon"
+                data-icon="fa-regular fa-clock" @if ($auction_type === 'Auction') required @endif>
+                <option value="">Select</option>
+                @foreach ($auction_lengths_seller as $row_pt)
+                    <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
+                @endforeach
+            </select>
+        </div>
+        <span class="error mt-2" id="auction_time_error"></span>
+    </div>
+
+    <!-- Agent Bid Visibility (Only for Traditional) -->
+    <div class="form-group mt-3" @if ($auction_type !== 'Traditional') style="display: none;" @endif>
+        <label class="fw-bold">Agent Bid Visibility Preference:<span class="text-danger">*</span></label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Choose whether Agent bids will be public or private. Public bids encourage competition; private bids are only visible to the listing creator.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <select wire:model="agent_bid_visibility" id="agent_bid_visibility" class="form-control has-icon"
+                data-icon="fa-solid fa-eye" @if ($auction_type === 'Traditional') required @endif>
+                <option value="">Select</option>
+                <option value="public">Agent bids will be visible to other Agents</option>
+                <option value="private">Agent bids will remain private</option>
+            </select>
+        </div>
+        <span class="error mt-2" id="agent_bid_visibility_error"></span>
+    </div> --}}
+
+<div class="form-group">
         <label class="fw-bold">Listing Type:<span class="text-danger">*</span>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Select how Agents submit bids for this listing. &lt;br&gt;&lt;br&gt;&lt;strong&gt;Bidding Period:&lt;/strong&gt; Agents may submit bids until the bidding timer ends. During the bidding period, bids cannot be accepted or finalized. Once the timer ends, all Agent bids are revealed for review and comparison. &lt;br&gt;&lt;br&gt;&lt;strong&gt;Traditional:&lt;/strong&gt; Agents may submit bids at any time. Bids are visible as received and may be reviewed, accepted, countered, or rejected immediately.">
@@ -477,10 +538,9 @@
             </span>
         </label>
         @if (!empty($isEditMode))
-            <div class="input-cover locked-field-wrapper position-relative" data-lock-msg="Listing Type cannot be edited once the listing is created.">
+            <div class="input-cover">
                 <i class="input-icon fa-solid fa-lock"></i>
                 <input type="text" class="form-control has-icon" value="{{ $auction_type }}" disabled style="background:#f8f9fa; cursor:not-allowed;">
-                <div class="locked-field-overlay" style="position:absolute;inset:0;cursor:not-allowed;z-index:2;"></div>
             </div>
             <p class="text-danger small mt-2 mb-0"><i class="fa-solid fa-lock me-1"></i> Listing Type cannot be changed after the listing has been created.</p>
         @else
@@ -515,16 +575,11 @@
             <select wire:model="auction_time" id="auction_time" class="form-control has-icon"
                 data-icon="fa-regular fa-clock" @if ($auction_type === 'Bidding Period') required @endif>
                 <option value="">Select</option>
-                {{-- @foreach ($auction_lengths as $row_pt)
+                @foreach ($auction_lengths_seller as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
-                @endforeach --}}
+                @endforeach
 
-                  <option value="1 Day">1 Day</option>
-                <option value="3 Days">3 Days</option>
-                <option value="5 Days">5 Days</option>
-                <option value="7 Days">7 Days</option>
-                <option value="10 Days">10 Days</option>
-                <option value="14 Days">14 Days</option>
+           
             </select>
         </div>
         <span class="error mt-2" id="auction_time_error"></span>
@@ -623,24 +678,18 @@
         cursor: pointer;
     }
 
-    /* Hide emoji spans when not in dropdown */
-    select option>.dropdown-only {
-        display: none;
-    }
-
-    /* Show emoji spans only in dropdown */
-    select:focus option>.dropdown-only,
-    select:active option>.dropdown-only {
-        display: inline;
+    #expired_tooltip {
+        position: relative;
     }
 
     /* Tooltip box styling */
     .expired_tooltip {
         display: none;
         position: absolute;
-        bottom: calc(100% + 12px);
-        left: 50%;
-        transform: translateX(-50%);
+        top: -104px;
+        /* Adjust as needed */
+        left: 10%;
+        /* Adjust as needed */
         padding: 14px;
         background-color: #000000c9;
         color: #fff;
@@ -650,10 +699,7 @@
         z-index: 10000 !important;
         box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
         text-align: center;
-    }
-    
-    #expired_tooltip {
-        position: relative;
+        position: absolute;
     }
 
     /* Tooltip arrow */
@@ -818,6 +864,62 @@
         }
     }
 </style>
+{{-- <script>
+    document.addEventListener('livewire:load', function() {
+        const select = document.getElementById('auction_type');
+        let isDropdownOpen = false;
+
+        // Store original options with emojis
+        const originalOptions = {
+            'Auction': '🔨 Auction',
+            'Traditional': '📝 Traditional'
+        };
+
+        // When clicking the select (before dropdown opens)
+        select.addEventListener('mousedown', function(e) {
+            isDropdownOpen = true;
+
+            // Temporarily show options with emojis
+            Array.from(this.options).forEach(option => {
+                if (option.value && originalOptions[option.value]) {
+                    option.text = originalOptions[option.value];
+                }
+            });
+        });
+
+        // When selection changes or dropdown closes
+        select.addEventListener('change', function() {
+            isDropdownOpen = false;
+
+            // Revert to text without emojis
+            Array.from(this.options).forEach(option => {
+                if (option.value && option.hasAttribute('data-display')) {
+                    option.text = option.getAttribute('data-display');
+                }
+            });
+        });
+
+        // Handle cases where user clicks away without selecting
+        document.addEventListener('click', function(e) {
+            if (isDropdownOpen && e.target !== select) {
+                isDropdownOpen = false;
+
+                Array.from(select.options).forEach(option => {
+                    if (option.value && option.hasAttribute('data-display')) {
+                        option.text = option.getAttribute('data-display');
+                    }
+                });
+            }
+        });
+
+        // Initialize with correct display
+        Array.from(select.options).forEach(option => {
+            if (option.value && option.hasAttribute('data-display')) {
+                option.text = option.getAttribute('data-display');
+            }
+        });
+    });
+</script> --}}
 
 <script>
     (function() {
@@ -963,6 +1065,45 @@
         
         // Also listen for Livewire updated events
         window.addEventListener('livewire:updated', safeInit);
+
+        // Function to toggle "auction time" input field
+        function toggleAuctionTime1(selectElement1) {
+            const auctionTimeDiv1 = document.querySelector('.auction_time1');
+
+            if (!auctionTimeDiv1) {
+                return;
+            }
+
+            if (selectElement1.value === 'Bidding Period') {
+                auctionTimeDiv1.classList.remove('d-none');
+            } else {
+                auctionTimeDiv1.classList.add('d-none');
+            }
+        }
+
+        // Function to attach the event listener to the auction type dropdown
+        function attachAuctionDropdownListener1() {
+            const auctionDropdown1 = document.getElementById('auction_type1');
+            if (auctionDropdown1) {
+                auctionDropdown1.addEventListener('change', function() {
+                    toggleAuctionTime1(this);
+                });
+                toggleAuctionTime1(auctionDropdown1);
+            }
+        }
+
+        // Attach the event listener initially
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', attachAuctionDropdownListener1);
+        } else {
+            attachAuctionDropdownListener1();
+        }
+
+        // Re-attach the event listener after Livewire re-renders the DOM
+        document.addEventListener('livewire:load', function() {
+            if (window.Livewire) {
+                Livewire.hook('message.processed', attachAuctionDropdownListener1);
+            }
+        });
     })();
 </script>
-

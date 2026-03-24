@@ -25,7 +25,6 @@ class TenantAgentAuctionEdit extends Component
     use WithFileUploads;
 
     public $isLoadingData = false;
-    private bool $_isDraftSave = false;
 
     // Livewire properties for form fields
     public $hasDrafts = false;
@@ -3011,20 +3010,6 @@ class TenantAgentAuctionEdit extends Component
     {
 
         try {
-            // Server-side required-field validation (safety net — JS validates first via doSaveEditWithSync).
-            // Skipped when called from saveDraftOnly() so partial/in-progress drafts can be saved.
-            if (!$this->_isDraftSave) {
-                $_svErrors = [];
-                if (empty(trim($this->listing_title ?? ''))) $_svErrors[] = 'Listing Title';
-                if (empty(trim($this->listing_date ?? ''))) $_svErrors[] = 'Listing Date';
-                if (empty(trim($this->expiration_date ?? ''))) $_svErrors[] = 'Expiration Date';
-                if (empty(trim($this->meeting_Preference ?? ''))) $_svErrors[] = 'Meeting Preference';
-                if (!empty($_svErrors)) {
-                    $this->dispatchBrowserEvent('edit-validation-failed', ['fields' => $_svErrors]);
-                    return;
-                }
-            }
-
             // dump($this->services);
             // dd($this->other_services);
 
@@ -3695,45 +3680,24 @@ class TenantAgentAuctionEdit extends Component
 
 
             DB::commit();
+            session()->flash('success', 'Listing updated successfully!');
 
-            if (!$this->_isDraftSave) {
-                // Final submit — flash success and redirect to listing view.
-                session()->flash('success', 'Listing updated successfully!');
+            $routeName = match ($this->user_type) {
+                'tenant'   => 'tenant.agent.auction.view',
+                'landlord' => 'landlord.agent.auction.view',
+                'buyer'    => 'buyer.view-auction',
+                'seller'   => 'seller.agent.auction.detail',
+                default    => 'tenant.agent.auction.view',
+            };
 
-                $routeName = match ($this->user_type) {
-                    'tenant'   => 'tenant.agent.auction.view',
-                    'landlord' => 'landlord.agent.auction.view',
-                    'buyer'    => 'buyer.view-auction',
-                    'seller'   => 'seller.agent.auction.detail',
-                    default    => 'tenant.agent.auction.view',
-                };
+            $url = route($routeName, ['id' => $this->auctionId]);
 
-                $url = route($routeName, ['id' => $this->auctionId]);
+            $this->dispatchBrowserEvent('force-redirect', ['url' => $url]);
 
-                $this->dispatchBrowserEvent('force-redirect', ['url' => $url]);
-
-                return redirect()->to($url);
-            } else {
-                // Draft save — stay on the edit page and emit a toast event.
-                $this->dispatchBrowserEvent('draft-saved', ['message' => 'Draft saved successfully!']);
-            }
+            return redirect()->to($url);
         } catch (\Exception $e) {
             DB::rollBack();
             session()->flash('error', 'Error updating auction: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Save the edit form as a draft — no required-field validation, no redirect.
-     * Allows the user to preserve partial progress without meeting all validation rules.
-     */
-    public function saveDraftOnly(): void
-    {
-        $this->_isDraftSave = true;
-        try {
-            $this->update();
-        } finally {
-            $this->_isDraftSave = false;
         }
     }
 }
