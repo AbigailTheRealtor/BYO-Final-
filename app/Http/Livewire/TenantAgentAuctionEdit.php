@@ -3023,6 +3023,12 @@ class TenantAgentAuctionEdit extends Component
                 if (empty(trim($this->last_name ?? ''))) $_svErrors[] = 'Last Name';
                 if (empty(trim($this->phone_number ?? ''))) $_svErrors[] = 'Phone Number';
                 if (empty(trim($this->email ?? ''))) $_svErrors[] = 'Email Address';
+                // Seller: when Property Style is "Other", the custom input is required
+                if ($this->user_type === 'seller'
+                    && is_string($this->property_items) && $this->property_items === 'Other'
+                    && empty(trim($this->other_property_items ?? ''))) {
+                    $_svErrors[] = 'Other Property Style';
+                }
                 if (!empty($_svErrors)) {
                     $this->dispatchBrowserEvent('edit-validation-failed', ['fields' => $_svErrors]);
                     return;

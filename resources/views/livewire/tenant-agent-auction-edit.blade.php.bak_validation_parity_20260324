@@ -2222,15 +2222,6 @@
             if ($nna.length && $nna.hasClass('select2-hidden-accessible')) {
                 @this.set('non_negotiable_amenities', $nna.val() || [], true);
             }
-
-            // Seller: property style is a plain (non-Select2) single select — sync explicitly
-            var _curUT2 = (typeof CURRENT_USER_TYPE !== 'undefined') ? CURRENT_USER_TYPE : '';
-            if (_curUT2 === 'seller') {
-                var _pss = document.getElementById('property_style_select');
-                if (_pss) {
-                    @this.set('property_items', _pss.value, true);
-                }
-            }
         }
 
         var _saveEditSyncPending = false;
@@ -2714,14 +2705,10 @@
                     return;
                 }
 
-                const otherInput = otherFieldContainer.querySelector('input[type="text"]');
-
                 if (selectElement.value === 'Other') {
-                    otherFieldContainer.classList.remove('d-none');
-                    if (otherInput) otherInput.setAttribute('required', '');
+                    otherFieldContainer.classList.remove('d-none'); // Show the "Other" input field
                 } else {
-                    otherFieldContainer.classList.add('d-none');
-                    if (otherInput) otherInput.removeAttribute('required');
+                    otherFieldContainer.classList.add('d-none'); // Hide the "Other" input field
                 }
             }
 
@@ -4102,21 +4089,18 @@
                 const _curRole = (typeof CURRENT_USER_TYPE !== 'undefined') ? CURRENT_USER_TYPE : 'tenant';
                 const infoTabId = '#' + _curRole + '-information';
 
-                // Seller and Landlord use #property-details; Buyer and Tenant use #property-preferences
-                const propertyTabId = (_curRole === 'seller' || _curRole === 'landlord')
-                    ? '#property-details'
-                    : '#property-preferences';
-
                 const tabSelector = serviceType === 'full_service' ? [
                     '#listing-details',
-                    propertyTabId,
-                    '#purchasing-terms',
+                    '#property-preferences',
+
+                    //  '#property-details',
                     '#sale-terms',
                     '#leasing-terms',
                     '#pre-screening',
+
                     '#services',
                     '#additional-details',
-                    '#broker-compensation-agency-agreement-terms',
+                    '#broker-compensation',
                     infoTabId
                 ] : [
                     '#listing-details',
