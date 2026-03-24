@@ -2002,11 +2002,11 @@ $auser = $auctionUser::find(@$auction->user_id);
     @if(@$auction->status)
     <div class="mb-2">
         @php
-            $_statusColors = [
-                'Active'       => 'bg-success',
-                'Pending'      => 'bg-warning text-dark',
-                'Hired Agent'  => 'bg-primary',
-                'Expired'      => 'bg-secondary',
+            $_statusStyles = [
+                'Active'       => 'background-color:#16a34a;color:#fff;',
+                'Pending'      => 'background-color:#d97706;color:#fff;',
+                'Hired Agent'  => 'background-color:#2563eb;color:#fff;',
+                'Expired'      => 'background-color:#6b7280;color:#fff;',
             ];
             $_statusIcons = [
                 'Active'       => 'fa-check-circle',
@@ -2014,10 +2014,10 @@ $auser = $auctionUser::find(@$auction->user_id);
                 'Hired Agent'  => 'fa-user',
                 'Expired'      => 'fa-times-circle',
             ];
-            $_statusClass = $_statusColors[$auction->status] ?? 'bg-secondary';
+            $_statusStyle = $_statusStyles[$auction->status] ?? 'background-color:#6b7280;color:#fff;';
             $_statusIcon  = $_statusIcons[$auction->status] ?? 'fa-circle';
         @endphp
-        <span class="badge {{ $_statusClass }}" style="font-size: 0.9rem;"><i class="fa {{ $_statusIcon }} me-1"></i>Status: {{ $auction->status }}</span>
+        <span class="badge" style="{{ $_statusStyle }} font-size:0.875rem;border-radius:9999px;padding:0.25rem 0.75rem;font-weight:500;box-shadow:0 1px 2px rgba(0,0,0,.05);"><i class="fa {{ $_statusIcon }} me-1"></i>Status: {{ $auction->status }}</span>
     </div>
     @endif
 

@@ -1308,11 +1308,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
     @if(@$auction->status)
     <div class="mb-2">
         @php
-            $statusColors = [
-                'Active'       => 'bg-success',
-                'Pending'      => 'bg-warning text-dark',
-                'Hired Agent'  => 'bg-primary',
-                'Expired'      => 'bg-secondary',
+            $statusStyles = [
+                'Active'       => 'background-color:#16a34a;color:#fff;',
+                'Pending'      => 'background-color:#d97706;color:#fff;',
+                'Hired Agent'  => 'background-color:#2563eb;color:#fff;',
+                'Expired'      => 'background-color:#6b7280;color:#fff;',
             ];
             $statusIcons = [
                 'Active'       => 'fa-check-circle',
@@ -1320,10 +1320,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 'Hired Agent'  => 'fa-user',
                 'Expired'      => 'fa-times-circle',
             ];
-            $statusClass = $statusColors[@$auction->status] ?? 'bg-secondary';
+            $statusStyle = $statusStyles[@$auction->status] ?? 'background-color:#6b7280;color:#fff;';
             $statusIcon  = $statusIcons[@$auction->status] ?? 'fa-circle';
         @endphp
-        <span class="badge {{ $statusClass }}" style="font-size: 0.9rem;"><i class="fa {{ $statusIcon }} me-1"></i>Status: {{ @$auction->status }}</span>
+        <span class="badge" style="{{ $statusStyle }} font-size:0.875rem;border-radius:9999px;padding:0.25rem 0.75rem;font-weight:500;box-shadow:0 1px 2px rgba(0,0,0,.05);"><i class="fa {{ $statusIcon }} me-1"></i>Status: {{ @$auction->status }}</span>
     </div>
     @endif
 
