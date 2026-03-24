@@ -294,15 +294,17 @@
                                             <span class="d-inline-flex align-items-center gap-1">
                                                 🛁 <b>{{ $bathsDisplay ?: '-' }}</b> Baths
                                             </span>
-                                            |
-                                            <span class="d-inline-flex align-items-center gap-1">
-                                                📐 <b>{{ $sqftDisplay ?: '-' }}</b> Sq Ft
-                                            </span>
+                                            @if (!empty($sqftDisplay))
+                                                |
+                                                <span class="d-inline-flex align-items-center gap-1">
+                                                    📐 <b>{{ $sqftDisplay }}</b> Sq Ft
+                                                </span>
+                                            @endif
                                         </p>
-                                    @elseif ($isCommercial)
+                                    @elseif ($isCommercial && !empty($sqftDisplay))
                                         <p class="mb-1">
                                             <span class="d-inline-flex align-items-center gap-1">
-                                                📐 <b>{{ $sqftDisplay ?: '-' }}</b> Sq Ft
+                                                📐 <b>{{ $sqftDisplay }}</b> Sq Ft
                                             </span>
                                         </p>
                                     @endif

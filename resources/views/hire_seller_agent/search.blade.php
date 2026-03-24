@@ -159,36 +159,55 @@
                         };
 
                         $propTypeRaw = strtolower(trim(@$auction->get->property_type ?? ''));
-                        $isResidential = (strpos($propTypeRaw, 'residential') !== false);
-                        $isCommercial = (strpos($propTypeRaw, 'commercial') !== false) || (strpos($propTypeRaw, 'income') !== false);
-                        $propertyTypeLabel = $isResidential ? 'Residential' : ($isCommercial ? 'Commercial' : (@$auction->get->property_type ?: ''));
+                        $isResidential = (strpos($propTypeRaw, 'residential') !== false) || ($propTypeRaw === 'income');
+                        $isLand = (strpos($propTypeRaw, 'vacant land') !== false) || (strpos($propTypeRaw, 'land/lots') !== false) || ($propTypeRaw === 'agricultural');
+                        $isCommercial = !$isResidential && !$isLand && $propTypeRaw !== '';
+                        $propertyTypeLabel = @$auction->get->property_type ?: '';
 
                         $propertyItems = @$auction->get->property_items;
                         $propertyStyleDisplay = '';
+                        $rawItemsList = [];
                         if (is_array($propertyItems) && count($propertyItems) > 0) {
-                            $firstItem = $propertyItems[0] ?? '';
-                            if (strtolower(trim($firstItem)) === 'other' && !empty(@$auction->get->other_property_items)) {
-                                $propertyStyleDisplay = $auction->get->other_property_items;
-                            } else {
-                                $propertyStyleDisplay = $firstItem;
-                            }
+                            $rawItemsList = $propertyItems;
                         } elseif (is_string($propertyItems) && !empty($propertyItems)) {
                             $decoded = json_decode($propertyItems, true);
-                            if (is_array($decoded) && count($decoded) > 0) {
-                                $firstItem = $decoded[0] ?? '';
-                                if (strtolower(trim($firstItem)) === 'other' && !empty(@$auction->get->other_property_items)) {
-                                    $propertyStyleDisplay = $auction->get->other_property_items;
-                                } else {
-                                    $propertyStyleDisplay = $firstItem;
-                                }
+                            $rawItemsList = is_array($decoded) ? $decoded : (strlen($propertyItems) > 0 ? [$propertyItems] : []);
+                        }
+                        $allStyleItems = [];
+                        foreach ($rawItemsList as $item) {
+                            if (strtolower(trim($item)) === 'other' && !empty(@$auction->get->other_property_items)) {
+                                $allStyleItems[] = $auction->get->other_property_items;
                             } else {
-                                $propertyStyleDisplay = $propertyItems;
+                                $allStyleItems[] = $item;
                             }
                         }
+                        $propertyStyleDisplay = implode(', ', $allStyleItems);
 
                         $bedsDisplay = $resolveOther(@$auction->get->bedrooms, @$auction->get->other_bedrooms);
                         $bathsDisplay = $resolveOther(@$auction->get->bathrooms, @$auction->get->other_bathrooms);
                         $sqftDisplay = @$auction->get->minimum_heated_square ?? '';
+
+                        $fmtMoney = function($v) { return '$' . number_format((float)$v, 2); };
+                        $fmtPct   = function($v) { return $v . '%'; };
+                        $sellerFeeType = @$auction->get->purchase_fee_type ?? '';
+                        $sellerFeeCombined = '';
+                        if ($sellerFeeType === 'flat' && !empty(@$auction->get->purchase_fee_flat)) {
+                            $sellerFeeCombined = $fmtMoney($auction->get->purchase_fee_flat);
+                        } elseif ($sellerFeeType === 'percentage' && !empty(@$auction->get->purchase_fee_percentage)) {
+                            $sellerFeeCombined = $fmtPct($auction->get->purchase_fee_percentage) . ' of Total Purchase Price';
+                        } elseif ($sellerFeeType === 'combo') {
+                            $pts = [];
+                            if (!empty(@$auction->get->purchase_fee_percentage_combo)) $pts[] = $fmtPct($auction->get->purchase_fee_percentage_combo) . ' of Total Purchase Price';
+                            if (!empty(@$auction->get->purchase_fee_flat_combo)) $pts[] = $fmtMoney($auction->get->purchase_fee_flat_combo);
+                            $sellerFeeCombined = implode(' + ', $pts);
+                        } elseif ($sellerFeeType === 'other' && !empty(@$auction->get->purchase_fee_other)) {
+                            $sellerFeeCombined = @$auction->get->purchase_fee_other;
+                        } elseif ($sellerFeeType) {
+                            $sellerFeeCombined = $sellerFeeType;
+                        }
+                        if (empty($sellerFeeCombined)) {
+                            $sellerFeeCombined = @$auction->get->commission_structure ?? '';
+                        }
 
                         $rawCounties = @$auction->get->counties ?? [];
                         $countyDisplay = '';
@@ -252,7 +271,7 @@
                                         </p>
                                     @endif
 
-                                    @if (!empty($bedsDisplay) || !empty($bathsDisplay))
+                                    @if ($isResidential && (!empty($bedsDisplay) || !empty($bathsDisplay)))
                                         <p class="mb-1">
                                             <span class="d-inline-flex align-items-center gap-1">
                                                 &#x1F6CF; <b>{{ $bedsDisplay ?: '-' }}</b> Beds
@@ -268,7 +287,7 @@
                                                 </span>
                                             @endif
                                         </p>
-                                    @elseif (!empty($sqftDisplay))
+                                    @elseif (!$isResidential && !empty($sqftDisplay))
                                         <p class="mb-1">
                                             <span class="d-inline-flex align-items-center gap-1">
                                                 &#x1F4D0; <b>{{ $sqftDisplay }}</b> Sq Ft
@@ -282,8 +301,8 @@
 
                                     <p class="mb-1">&#x1F464; Seller's Agent Required</p>
 
-                                    @if (!empty($commissionStructure))
-                                        <p class="mb-1">&#x1F4BC; <b>Commission:</b> {{ $commissionStructure }}</p>
+                                    @if (!empty($sellerFeeCombined))
+                                        <p class="mb-1">&#x1F4BC; <b>Seller's Broker Purchase Fee:</b> {{ $sellerFeeCombined }}</p>
                                     @endif
                                 </div>
 

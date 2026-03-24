@@ -161,34 +161,50 @@
                         $propTypeRaw = strtolower(trim(@$auction->get->property_type ?? ''));
                         $isResidential = (strpos($propTypeRaw, 'residential') !== false);
                         $isCommercial = (strpos($propTypeRaw, 'commercial') !== false) || (strpos($propTypeRaw, 'income') !== false);
-                        $propertyTypeLabel = $isResidential ? 'Residential' : ($isCommercial ? 'Commercial' : (@$auction->get->property_type ?: ''));
+                        $propertyTypeLabel = @$auction->get->property_type ?: '';
 
                         $propertyItems = @$auction->get->property_items;
                         $propertyStyleDisplay = '';
+                        $rawItemsList = [];
                         if (is_array($propertyItems) && count($propertyItems) > 0) {
-                            $firstItem = $propertyItems[0] ?? '';
-                            if (strtolower(trim($firstItem)) === 'other' && !empty(@$auction->get->other_property_items)) {
-                                $propertyStyleDisplay = $auction->get->other_property_items;
-                            } else {
-                                $propertyStyleDisplay = $firstItem;
-                            }
+                            $rawItemsList = $propertyItems;
                         } elseif (is_string($propertyItems) && !empty($propertyItems)) {
                             $decoded = json_decode($propertyItems, true);
-                            if (is_array($decoded) && count($decoded) > 0) {
-                                $firstItem = $decoded[0] ?? '';
-                                if (strtolower(trim($firstItem)) === 'other' && !empty(@$auction->get->other_property_items)) {
-                                    $propertyStyleDisplay = $auction->get->other_property_items;
-                                } else {
-                                    $propertyStyleDisplay = $firstItem;
-                                }
+                            $rawItemsList = is_array($decoded) ? $decoded : (strlen($propertyItems) > 0 ? [$propertyItems] : []);
+                        }
+                        $allStyleItems = [];
+                        foreach ($rawItemsList as $item) {
+                            if (strtolower(trim($item)) === 'other' && !empty(@$auction->get->other_property_items)) {
+                                $allStyleItems[] = $auction->get->other_property_items;
                             } else {
-                                $propertyStyleDisplay = $propertyItems;
+                                $allStyleItems[] = $item;
                             }
                         }
+                        $propertyStyleDisplay = implode(', ', $allStyleItems);
 
                         $bedsDisplay = $resolveOther(@$auction->get->bedrooms, @$auction->get->other_bedrooms);
                         $bathsDisplay = $resolveOther(@$auction->get->bathrooms, @$auction->get->other_bathrooms);
                         $sqftDisplay = @$auction->get->minimum_heated_square ?? '';
+
+                        $fmtMoney = function($v) { return '$' . number_format((float)$v, 2); };
+                        $fmtPct   = function($v) { return $v . '%'; };
+                        $buyerCommStructure = str_replace('"', '', @$auction->get->commission_structure ?? '');
+                        $buyerFeeType = @$auction->get->purchase_fee_type ?? '';
+                        $buyerFeeCombined = '';
+                        if ($buyerFeeType === 'flat' && !empty(@$auction->get->purchase_fee_flat)) {
+                            $buyerFeeCombined = $fmtMoney($auction->get->purchase_fee_flat);
+                        } elseif ($buyerFeeType === 'percentage' && !empty(@$auction->get->purchase_fee_percentage)) {
+                            $buyerFeeCombined = $fmtPct($auction->get->purchase_fee_percentage) . ' of Total Purchase Price';
+                        } elseif ($buyerFeeType === 'combo') {
+                            $pts = [];
+                            if (!empty(@$auction->get->purchase_fee_percentage_combo)) $pts[] = $fmtPct($auction->get->purchase_fee_percentage_combo) . ' of Total Purchase Price';
+                            if (!empty(@$auction->get->purchase_fee_flat_combo)) $pts[] = $fmtMoney($auction->get->purchase_fee_flat_combo);
+                            $buyerFeeCombined = implode(' + ', $pts);
+                        } elseif ($buyerFeeType === 'other' && !empty(@$auction->get->purchase_fee_other)) {
+                            $buyerFeeCombined = @$auction->get->purchase_fee_other;
+                        } elseif ($buyerFeeType) {
+                            $buyerFeeCombined = $buyerFeeType;
+                        }
 
                         $rawCounties = @$auction->get->counties ?? [];
                         $countyDisplay = '';
@@ -206,7 +222,7 @@
                             $countyDisplay .= ' County';
                         }
 
-                        $commissionStructure = @$auction->get->commission_structure ?? '';
+
 
                         $rawDays = trim((string) ($auction->get->auction_time ?? ''));
                         $lengthDays = 0;
@@ -282,8 +298,11 @@
 
                                     <p class="mb-1">&#x1F464; Buyer's Agent Required</p>
 
-                                    @if (!empty($commissionStructure))
-                                        <p class="mb-1">&#x1F4BC; <b>Commission:</b> {{ $commissionStructure }}</p>
+                                    @if (!empty($buyerCommStructure))
+                                        <p class="mb-1">&#x1F4BC; <b>Buyer's Broker Commission Structure:</b> {{ $buyerCommStructure }}</p>
+                                    @endif
+                                    @if (!empty($buyerFeeCombined))
+                                        <p class="mb-1">&#x1F4BC; <b>Buyer's Broker Purchase Fee:</b> {{ $buyerFeeCombined }}</p>
                                     @endif
                                 </div>
 

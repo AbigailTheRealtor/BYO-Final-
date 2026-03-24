@@ -205,7 +205,34 @@
                             $countyDisplay .= ' County';
                         }
 
-                        $commissionStructure = @$auction->get->commission_structure ?? '';
+                        $fmtMoney = function($v) { return '$' . number_format((float)$v, 2); };
+                        $fmtPct   = function($v) { return $v . '%'; };
+                        $landlordFeeType = strtolower(trim(@$auction->get->purchase_fee_type ?? ''));
+                        $landlordFeeCombined = '';
+                        if ($landlordFeeType === 'flat fee' && !empty(@$auction->get->purchase_fee_flat)) {
+                            $landlordFeeCombined = $fmtMoney($auction->get->purchase_fee_flat);
+                        } elseif ($landlordFeeType === 'percentage of the rent due each rental period' && !empty(@$auction->get->purchase_fee_rental_period)) {
+                            $landlordFeeCombined = $fmtPct($auction->get->purchase_fee_rental_period) . ' of rent due each rental period';
+                        } elseif ($landlordFeeType === 'percentage of the gross lease value' && !empty(@$auction->get->purchase_fee_percentage_combo)) {
+                            $landlordFeeCombined = $fmtPct($auction->get->purchase_fee_percentage_combo) . ' of Gross Lease Value';
+                        } elseif ($landlordFeeType === "percentage of the first month's rent" && !empty(@$auction->get->purchase_fee_flat_combo)) {
+                            $landlordFeeCombined = $fmtPct($auction->get->purchase_fee_flat_combo) . " of First Month's Rent";
+                        } elseif ($landlordFeeType === 'percentage of the net aggregate rent' && !empty(@$auction->get->purchase_fee_net_aggregate)) {
+                            $landlordFeeCombined = $fmtPct($auction->get->purchase_fee_net_aggregate) . ' of Net Aggregate Rent';
+                        } elseif ($landlordFeeType === 'percentage of the gross rent' && !empty(@$auction->get->purchase_fee_gross_rent)) {
+                            $landlordFeeCombined = $fmtPct($auction->get->purchase_fee_gross_rent) . ' of Gross Rent';
+                        } elseif ($landlordFeeType === "percentage of month's rent") {
+                            $display = '';
+                            if (!empty(@$auction->get->purchase_fee_monthly_percentage)) {
+                                $display = $fmtPct($auction->get->purchase_fee_monthly_percentage) . " of Month's Rent";
+                                if (!empty(@$auction->get->purchase_fee_months)) $display .= ' x ' . $auction->get->purchase_fee_months . ' Months';
+                            }
+                            $landlordFeeCombined = $display;
+                        } elseif ($landlordFeeType === 'other') {
+                            $landlordFeeCombined = @$auction->get->purchase_fee_other ?? @$auction->get->purchase_fee_other_commercial ?? '';
+                        } elseif ($landlordFeeType) {
+                            $landlordFeeCombined = @$auction->get->purchase_fee_type;
+                        }
 
                         $rawDays = trim((string) ($auction->get->auction_time ?? ''));
                         $lengthDays = 0;
@@ -251,7 +278,7 @@
                                         </p>
                                     @endif
 
-                                    @if (!empty($bedsDisplay) || !empty($bathsDisplay))
+                                    @if ($isResidential && (!empty($bedsDisplay) || !empty($bathsDisplay)))
                                         <p class="mb-1">
                                             <span class="d-inline-flex align-items-center gap-1">
                                                 &#x1F6CF; <b>{{ $bedsDisplay ?: '-' }}</b> Beds
@@ -267,7 +294,7 @@
                                                 </span>
                                             @endif
                                         </p>
-                                    @elseif (!empty($sqftDisplay))
+                                    @elseif (!$isResidential && !empty($sqftDisplay))
                                         <p class="mb-1">
                                             <span class="d-inline-flex align-items-center gap-1">
                                                 &#x1F4D0; <b>{{ $sqftDisplay }}</b> Sq Ft
@@ -281,8 +308,8 @@
 
                                     <p class="mb-1">&#x1F464; Landlord's Agent Required</p>
 
-                                    @if (!empty($commissionStructure))
-                                        <p class="mb-1">&#x1F4BC; <b>Commission:</b> {{ $commissionStructure }}</p>
+                                    @if (!empty($landlordFeeCombined))
+                                        <p class="mb-1">&#x1F4BC; <b>Landlord's Broker Lease Fee:</b> {{ $landlordFeeCombined }}</p>
                                     @endif
                                 </div>
 

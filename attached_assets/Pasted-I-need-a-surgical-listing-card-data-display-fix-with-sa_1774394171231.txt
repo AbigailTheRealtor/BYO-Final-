@@ -1,0 +1,218 @@
+I need a surgical listing card data + display fix with safeguards.
+
+GOAL:
+Fix listing cards for Seller, Buyer, Tenant, and Landlord so they:
+
+1. Show correct role-specific fields
+2. Do NOT show invalid fields (like Beds for vacant land)
+3. Do NOT show empty/unfilled fields
+4. Show correct commission/fee labels (NOT generic "Commission")
+5. Correctly reflect selected data (property styles, etc.)
+
+-------------------------------------
+HARD SAFEGUARDS
+-------------------------------------
+
+- Do NOT rename DB columns
+- Do NOT run migrations
+- Do NOT refactor architecture broadly
+- Do NOT change listing creation or edit logic
+- Do NOT change search query logic
+- Do NOT break existing card layout structure
+- Make .bak copies before editing files
+- Keep this focused ONLY on listing card rendering logic
+
+-------------------------------------
+GLOBAL RULES (APPLY TO ALL ROLES)
+-------------------------------------
+
+1. DO NOT show fields if they are empty/null
+   Example:
+   - if Beds is empty → do NOT render Beds row
+   - if SqFt is empty → do NOT render SqFt
+
+2. DO NOT show invalid fields for that property type
+   Example:
+   - Vacant Land → NO Beds, NO Baths, NO SqFt
+   - Commercial → NO Beds (unless explicitly valid)
+
+3. Only show fields that are:
+   - valid for that property type
+   - actually filled in
+
+-------------------------------------
+SELLER LISTING CARDS FIXES
+-------------------------------------
+
+1. Replace:
+   "Seller to Pay Buyer’s Broker Separately"
+
+   WITH:
+   "Seller’s Broker Purchase Fee"
+
+2. Ensure correct fee value displays
+
+3. Remove invalid fields:
+   - For Business, Commercial, Vacant Land, Income:
+     → DO NOT show Beds if not applicable
+
+4. Fix bug:
+   Listings currently showing Beds/Baths/SqFt for Vacant Land
+   → remove those unless actually valid + filled
+
+-------------------------------------
+BUYER LISTING CARDS FIXES
+-------------------------------------
+
+1. Acceptable Property Styles:
+   - Currently only showing one value
+   - Must show ALL selected values
+   - Properly loop through selected array
+
+2. Fix incorrect mapping:
+   - Example: Income property showing as Commercial
+   - Ensure correct property type displays
+
+3. Commission label fix:
+   Replace generic "Commission" with:
+
+   "Buyer’s Broker Commission Structure"
+   AND
+   "Buyer’s Broker Purchase Fee"
+
+-------------------------------------
+TENANT LISTING CARDS FIXES
+-------------------------------------
+
+1. Hide empty fields:
+   - If SqFt is empty → do NOT display it
+
+2. Fix missing field:
+   Ensure this shows when filled:
+
+   "Tenant’s Broker Commission Fee"
+
+   Currently:
+   - missing on some listings (especially commercial)
+
+3. Keep:
+   Commission Structure visible if filled
+
+-------------------------------------
+LANDLORD LISTING CARDS FIXES
+-------------------------------------
+
+1. Hide Beds for Commercial:
+   - If not applicable → do NOT show at all
+   - Do NOT show blank row
+
+2. Add missing field:
+   "Landlord’s Broker Lease Fee"
+
+   Ensure:
+   - shows when filled
+   - uses correct value
+
+-------------------------------------
+FIELD DISPLAY RULE (VERY IMPORTANT)
+-------------------------------------
+
+For ALL listing cards:
+
+- NEVER render a label without a value
+- NEVER render placeholder/empty values
+- ALWAYS conditionally render rows
+
+Example pattern:
+IF value exists → show row
+ELSE → do not render row at all
+
+-------------------------------------
+TASK 1 — FIND LISTING CARD FILES
+-------------------------------------
+
+Locate card rendering files for:
+- Seller
+- Buyer
+- Tenant
+- Landlord
+
+Check if:
+- shared card partial exists
+- or role-specific card templates
+
+-------------------------------------
+TASK 2 — FIX FIELD MAPPING
+-------------------------------------
+
+Ensure each card pulls:
+- correct field name
+- correct role-specific data
+- correct property-type data
+
+-------------------------------------
+TASK 3 — FIX CONDITIONAL DISPLAY
+-------------------------------------
+
+Wrap all fields in conditionals:
+
+- only render if value exists
+- only render if valid for property type
+
+-------------------------------------
+TASK 4 — FIX ARRAYS (BUYER STYLES)
+-------------------------------------
+
+Ensure multi-select fields:
+- loop through all values
+- display properly (comma-separated or list)
+
+-------------------------------------
+DO NOT DO
+-------------------------------------
+
+- do not hardcode values
+- do not show fallback fake data
+- do not display incorrect property type
+- do not show empty labels
+- do not change DB structure
+- do not break card layout
+
+-------------------------------------
+TESTING REQUIRED
+-------------------------------------
+
+SELLER:
+- correct fee label shows
+- no invalid Beds for land/commercial
+- no empty fields shown
+
+BUYER:
+- Acceptable Property Styles shows ALL values
+- correct property type displayed
+- correct commission labels
+
+TENANT:
+- SqFt hidden if empty
+- Tenant Broker Commission Fee shows when filled
+
+LANDLORD:
+- no blank Beds row
+- Lease Fee shows correctly
+
+GLOBAL:
+- no empty fields displayed
+- no incorrect data shown
+- cards remain visually consistent
+
+-------------------------------------
+SUCCESS CRITERIA
+-------------------------------------
+
+- Cards show only valid + filled data
+- No incorrect fields (Beds on land, etc.)
+- All commission labels are role-specific (NOT generic)
+- Buyer styles correctly display all selections
+- UI looks clean (no empty rows)
+- No DB changes
+- No regressions
