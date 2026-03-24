@@ -3019,6 +3019,10 @@ class TenantAgentAuctionEdit extends Component
                 if (empty(trim($this->listing_date ?? ''))) $_svErrors[] = 'Listing Date';
                 if (empty(trim($this->expiration_date ?? ''))) $_svErrors[] = 'Expiration Date';
                 if (empty(trim($this->meeting_Preference ?? ''))) $_svErrors[] = 'Meeting Preference';
+                if (empty(trim($this->first_name ?? ''))) $_svErrors[] = 'First Name';
+                if (empty(trim($this->last_name ?? ''))) $_svErrors[] = 'Last Name';
+                if (empty(trim($this->phone_number ?? ''))) $_svErrors[] = 'Phone Number';
+                if (empty(trim($this->email ?? ''))) $_svErrors[] = 'Email Address';
                 if (!empty($_svErrors)) {
                     $this->dispatchBrowserEvent('edit-validation-failed', ['fields' => $_svErrors]);
                     return;

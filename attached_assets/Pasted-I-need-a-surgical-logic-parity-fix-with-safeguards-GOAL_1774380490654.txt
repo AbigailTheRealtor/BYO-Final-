@@ -1,0 +1,169 @@
+I need a surgical logic-parity fix with safeguards.
+
+GOAL:
+Analyze exactly how “Traditional” vs “Bidding Period” currently works in Hire a Tenant’s Agent, and then apply that same behavior to:
+- Hire a Seller’s Agent
+- Hire a Landlord’s Agent
+- Hire a Buyer’s Agent
+
+CURRENT BUG:
+For Seller, Landlord, and Buyer, the timer is currently showing based on the listing expiration date.
+That is wrong.
+
+CORRECT BEHAVIOR:
+1. The countdown timer should show ONLY if the user selected “Bidding Period”
+2. The countdown timer should be based on the selected bidding period length/value
+3. The timer should NOT be linked to the expiration date
+4. If the listing type is “Traditional”, there should be NO bidding countdown timer
+5. Expiration date and bidding period are separate concepts and must not be treated as the same thing
+
+SOURCE OF TRUTH:
+Use Hire a Tenant’s Agent as the working reference implementation.
+First analyze exactly how Tenant handles:
+- listing type selection
+- bidding period timer start/end
+- traditional listing behavior
+- visibility rules for the countdown timer
+- any status transitions tied to bidding period ending
+
+Then mirror that exact behavior into Seller, Landlord, and Buyer.
+
+HARD SAFEGUARDS:
+- Do not rename DB columns
+- Do not run migrations
+- Do not change unrelated listing behavior
+- Do not refactor architecture unless absolutely necessary
+- Do not touch unrelated tabs/fields
+- Do not change expiration-date logic globally unless required for these 4 hire-an-agent listing flows
+- Do not break Traditional listings
+- Make .bak copies before editing any file
+
+IMPORTANT:
+This is not just a front-end display bug.
+Please verify both:
+1. how the timer is rendered/displayed
+2. what backend/date field the timer is actually using
+
+We need to identify whether Seller/Landlord/Buyer are:
+- incorrectly calculating countdown from expiration_date
+- incorrectly reusing a generic listing countdown helper
+- missing the Tenant bidding-period logic entirely
+- or mixing up “auction/bidding deadline” with “listing expiration”
+
+TASKS:
+
+1. Find the actual Tenant implementation first
+Identify the exact files/methods used by Hire a Tenant’s Agent for:
+- create/save listing type
+- bidding period storage
+- countdown/timer rendering
+- traditional vs bidding period branching logic
+- any deadline/end-time calculation
+
+Do not guess. Confirm the actual source files and logic.
+
+2. Compare Tenant vs Seller/Buyer/Landlord
+Identify the exact difference causing Seller, Buyer, and Landlord to use expiration date for the timer.
+
+3. Fix Seller, Buyer, and Landlord to match Tenant
+Apply the same logic used by Tenant so that:
+- if listing type = Bidding Period:
+  - show bidding countdown
+  - use bidding-period deadline/end timestamp
+- if listing type = Traditional:
+  - hide bidding countdown completely
+
+4. Keep expiration date separate
+Expiration date may still exist for listing lifecycle, but it must NOT drive the bidding timer for Seller, Buyer, or Landlord.
+Do not remove expiration date functionality entirely unless Tenant already handles it that way.
+Just make sure the bidding countdown is based on bidding period only.
+
+5. Preserve current Tenant behavior
+Do not break or rewrite Tenant if it is already correct.
+Tenant is the reference implementation.
+
+6. Check all views where timer appears
+Verify timer behavior in all relevant places for Seller, Buyer, Landlord, and Tenant:
+- listing view page
+- dashboard cards if applicable
+- edit/review page if applicable
+- any partial/shared timer component
+
+7. If there is a shared timer component/helper
+If Seller/Buyer/Landlord use a shared countdown component that is pulling expiration date:
+- update it carefully so it branches by listing type
+- only show countdown for bidding period listings
+- only use bidding deadline/end time for countdown
+- do not accidentally affect unrelated non-agent listing systems
+
+ROUTES TO VERIFY:
+Use the Hire an Agent flows for:
+- Tenant
+- Seller
+- Landlord
+- Buyer
+
+We already know Buyer/Landlord/Seller are wrong because timer is tied to expiration date.
+Tenant should be analyzed first and treated as correct reference behavior.
+
+EXPECTED BEHAVIOR AFTER FIX:
+
+TENANT
+- keep current correct behavior
+
+SELLER / BUYER / LANDLORD
+- Bidding Period listing:
+  - timer shows
+  - timer counts down from bidding period
+- Traditional listing:
+  - no timer shown
+- expiration date no longer drives the bidding timer
+
+TESTING REQUIRED:
+
+1. TENANT CONTROL TEST
+Create one Tenant listing with Traditional
+- expected: no bidding timer
+
+Create one Tenant listing with Bidding Period
+- expected: timer appears and uses bidding period
+
+2. SELLER TEST
+Create one Seller Traditional listing
+- expected: no bidding timer
+
+Create one Seller Bidding Period listing
+- expected: timer appears
+- expected: timer is based on bidding period, NOT expiration date
+
+3. BUYER TEST
+Create one Buyer Traditional listing
+- expected: no bidding timer
+
+Create one Buyer Bidding Period listing
+- expected: timer appears
+- expected: timer is based on bidding period, NOT expiration date
+
+4. LANDLORD TEST
+Create one Landlord Traditional listing
+- expected: no bidding timer
+
+Create one Landlord Bidding Period listing
+- expected: timer appears
+- expected: timer is based on bidding period, NOT expiration date
+
+5. EDGE CASE TEST
+For Seller/Buyer/Landlord:
+- set expiration date far in future
+- set short bidding period
+- expected: timer follows bidding period only
+- expected: once bidding period ends, timer reflects bidding deadline behavior, not expiration date
+
+SUCCESS CRITERIA:
+- Tenant remains the working reference
+- Seller, Buyer, and Landlord now behave exactly like Tenant
+- Timer only shows for Bidding Period listings
+- Timer is no longer tied to expiration date for Seller/Buyer/Landlord
+- Traditional listings do not show a bidding timer
+- No DB schema changes
+- No regressions in unrelated flows

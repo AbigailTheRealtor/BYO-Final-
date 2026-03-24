@@ -114,10 +114,13 @@ All shared-edit routes (`/hire/agent/auction/edit/{id}/{role}`) use `TenantAgent
 - **`editGetInvalidItemsFull()`** validates required fields on ALL tabs. It uses `.closest('.tab-pane')` DOM traversal to distinguish Bootstrap tab hiding (ignored) from conditional blade-hidden fields (respected).
 - **PHP server-side validation in `update()`** — checks `listing_title`, `listing_date`, `expiration_date`, `meeting_Preference` as a bypass safety net. Dispatches `edit-validation-failed` browser event if any are missing; skipped when `$_isDraftSave` is true.
 - **`saveDraftOnly()`** — sets `$_isDraftSave = true`, calls `update()` (which skips PHP validation and redirect), then resets the flag. Dispatches `draft-saved` browser event on success.
-- **`$isEditMode = true`** is set in the shared-edit blade before listing-details includes, making locked-field logic available inside the partials.
+- **`$isEditMode = true`** is set in the shared-edit blade BEFORE the `@if ($user_type === ...)` branch so it applies to all 4 roles' listing-details includes. Do not move it back inside the tenant-only branch.
 - **Locked fields** — `Listing Type` and `Current Representation Status with Broker` — render as disabled text inputs with a red lock notice when `$isEditMode` is set. Each has a `.locked-field-overlay` div (transparent, z-index 2, inset 0) so clicks can be intercepted even though the underlying input is disabled.
 - **Locked field click handler** — a global `click` listener on `.locked-field-overlay` shows a `.locked-click-notice` red alert below the field with the field-specific message. Auto-hides after 5 s.
 - **Server-side immutability** — `working_with_agent`: re-read from DB before saving; `auction_type` / `auction_time`: commented out of `saveMeta()` call so client submissions are ignored.
+- **PHP safety-net validation** (non-draft only) checks: `listing_title`, `listing_date`, `expiration_date`, `meeting_Preference`, `first_name`, `last_name`, `phone_number`, `email`. Dispatches `edit-validation-failed` browser event on any missing field.
+- **`getAllRequiredFields()` JS function** uses `CURRENT_USER_TYPE` to build the correct info-tab selector (`#{role}-information`) so First Name/Last Name/Phone/Email are validated on edit submit for all 4 roles.
+- **No Save Draft button on edit pages** — removed from `tenant-agent-auction-edit.blade.php`. Save Draft remains on create pages only.
 - **Caution:** Avoid putting `@directive` keywords (e.g. `@if`, `@this`) inside `<script>` comments — Blade processes them everywhere and will emit a parse error. Rephrase or use `@@`.
 
 ### Bidding Period Timer (Seller / Buyer / Landlord)

@@ -1735,8 +1735,8 @@
                             <!-- Listing Details Tab -->
                             <div class="tab-pane fade {{ $activeTab === 0 ? 'show active' : '' }}" id="listing-details"
                                 role="tabpanel" aria-labelledby="listing-details-tab">
-                                @php $isEditMode = true; @endphp
                                 @if ($user_type === 'tenant')
+                                    @php $isEditMode = true; @endphp
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.listing-details')
                                 @elseif($user_type === 'seller')
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.listing-details')
@@ -1917,6 +1917,10 @@
                                 <button type="button" class="btn btn-secondary wizard-step-back">Back</button>
                             </div>
                             <div>
+                                <button type="button" onclick="doSaveDraftWithSync()" class="btn btn-outline-secondary me-2 wizard-save-draft" wire:loading.attr="disabled" wire:target="saveDraftOnly">
+                                    <span wire:loading.remove wire:target="saveDraftOnly"><i class="fas fa-cloud-arrow-up me-1"></i> Save Draft</span>
+                                    <span wire:loading wire:target="saveDraftOnly">Saving...</span>
+                                </button>
                                 <button type="button" onclick="doSaveEditWithSync()" class="btn btn-outline-primary me-2 wizard-save-edit" wire:loading.attr="disabled" wire:target="update">
                                     <span wire:loading.remove wire:target="update"><i class="fas fa-save me-1"></i> Save Edit</span>
                                     <span wire:loading wire:target="update">Saving...</span>
@@ -4084,11 +4088,6 @@
                 const requiredFields = [];
                 const serviceType = formContainer.getAttribute('data-service-type');
 
-                // Build the correct info-tab selector based on role
-                // Tab pane IDs: tenant-information, seller-information, buyer-information, landlord-information
-                const _curRole = (typeof CURRENT_USER_TYPE !== 'undefined') ? CURRENT_USER_TYPE : 'tenant';
-                const infoTabId = '#' + _curRole + '-information';
-
                 const tabSelector = serviceType === 'full_service' ? [
                     '#listing-details',
                     '#property-preferences',
@@ -4101,12 +4100,12 @@
                     '#services',
                     '#additional-details',
                     '#broker-compensation',
-                    infoTabId
+                    '#tenant-info'
                 ] : [
                     '#listing-details',
                     '#location-and-meeting-details',
                     '#service-selection-and-pricing',
-                    infoTabId
+                    '#tenant-info'
                 ];
 
                 tabSelector.forEach(selector => {
