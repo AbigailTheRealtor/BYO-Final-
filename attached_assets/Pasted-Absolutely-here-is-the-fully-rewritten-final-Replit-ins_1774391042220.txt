@@ -1,0 +1,284 @@
+Absolutely — here is the **fully rewritten final Replit instruction block** with the added **field-mapping rule** built in:
+
+```text
+I need a surgical listing-card UI parity update with safeguards.
+
+GOAL:
+Use the current Hire a Tenant’s Agent listing card format as the visual/layout reference, and update the listing cards for:
+- Buyer
+- Landlord
+- Seller
+
+so they follow the same overall Tenant card structure, but show their own corresponding role-specific fields.
+
+IMPORTANT:
+Do NOT copy Tenant text/fields blindly.
+Use the Tenant card as the design/layout/template reference only.
+Buyer, Landlord, and Seller cards must display their own correct role-specific information.
+
+-------------------------------------
+REFERENCE
+-------------------------------------
+
+Use the current Hire a Tenant’s Agent listing card format as the source-of-truth layout reference for:
+- title spacing/layout
+- subtitle placement
+- icon/field row styling
+- bold emphasis styling
+- timer placement
+- bottom metadata row
+- overall card spacing and visual hierarchy
+
+The attached screenshot shows the Tenant listing card format that users currently see when browsing Hire a Tenant’s Agent listings.
+
+That format now needs to be mirrored for:
+- Hire a Buyer’s Agent listings
+- Hire a Landlord’s Agent listings
+- Hire a Seller’s Agent listings
+
+But with each role’s own correct fields.
+
+-------------------------------------
+IMPORTANT FIELD-MAPPING RULE
+-------------------------------------
+
+Do not just make Buyer, Landlord, and Seller cards “look similar.”
+Map each Tenant row to the closest equivalent role-specific field for that card.
+
+Use Tenant as the visual/template reference, but use the most relevant corresponding fields for each role.
+
+Preferred approach:
+- Keep the same overall row count and hierarchy as Tenant where possible
+- Show the most decision-useful fields first
+- Keep labels role-correct and natural
+- Do not force Tenant-specific row names onto other roles
+
+Examples:
+- Tenant property subtype/location/sqft row pattern should become the closest equivalent subtype/location/size row for Buyer, Landlord, and Seller
+- Tenant “Agent Required” row should become the correct equivalent for the role if applicable
+- Tenant commission/compensation rows should become the correct compensation structure rows for that role
+
+IMPORTANT:
+If there is any doubt, use the role’s most useful high-level summary fields first, not a literal Tenant copy.
+
+-------------------------------------
+HARD SAFEGUARDS
+-------------------------------------
+
+- Do NOT rename DB columns
+- Do NOT run migrations
+- Do NOT refactor the search/listing architecture
+- Do NOT touch listing-detail pages unless absolutely necessary
+- Do NOT change validation/edit/create logic
+- Do NOT break existing search queries
+- Do NOT hardcode wrong role labels
+- Make .bak copies before editing files
+- Keep this focused on listing card rendering only
+
+-------------------------------------
+WHAT TO DO FIRST
+-------------------------------------
+
+First identify the exact file(s) rendering the Tenant listing cards and the exact file(s) rendering:
+- Buyer listing cards
+- Landlord listing cards
+- Seller listing cards
+
+Need to determine whether:
+- Tenant uses a dedicated card partial
+- Buyer/Landlord/Seller use different card partials
+- there is already a shared card component that Tenant differs from
+- or separate search pages each have their own listing-card markup
+
+Do NOT guess.
+Do NOT start by editing random blades.
+
+-------------------------------------
+TASK 1 — FIND THE TENANT CARD TEMPLATE
+-------------------------------------
+
+Locate the exact Tenant listing card UI that matches the screenshot.
+
+Need to identify:
+- where the card title is rendered
+- where the role/property subtitle is rendered
+- where field rows are rendered
+- where the timer badge is rendered
+- where bottom row/counts are rendered
+
+This Tenant card is the layout/style reference.
+
+-------------------------------------
+TASK 2 — FIND BUYER / LANDLORD / SELLER CARD TEMPLATES
+-------------------------------------
+
+Locate the exact listing-card files used for:
+- Buyer browse/search cards
+- Landlord browse/search cards
+- Seller browse/search cards
+
+Compare them against Tenant and identify the layout differences.
+
+-------------------------------------
+TASK 3 — APPLY TENANT CARD FORMAT TO BUYER / LANDLORD / SELLER
+-------------------------------------
+
+Update Buyer, Landlord, and Seller listing cards so they visually follow the same format as Tenant:
+
+Match Tenant card structure for:
+- card padding and spacing
+- title position and wrapping
+- subtitle style under title
+- icon/field row spacing
+- bold emphasis treatment
+- timer badge placement
+- bottom metadata row placement
+- overall consistent card height/flow as much as possible
+
+IMPORTANT:
+Do NOT force identical content.
+Only match the layout/presentation style.
+
+-------------------------------------
+TASK 4 — USE ROLE-SPECIFIC CORRECT FIELDS
+-------------------------------------
+
+The Buyer, Landlord, and Seller cards must show their own correct fields, not Tenant fields.
+
+Use the corresponding role-appropriate fields already available for those cards.
+
+Examples of the rule:
+- Buyer cards should show Buyer-related criteria/details
+- Landlord cards should show Landlord/property-for-lease details
+- Seller cards should show Seller/property-for-sale details
+
+Do NOT show:
+- Tenant’s Agent Required on Buyer/Seller/Landlord cards unless that is actually the correct field
+- Tenant commission labels on other role cards
+- Tenant-specific terminology on other role cards
+
+If there are existing role-specific labels/rows already used on those cards, keep the correct data but restyle them to match Tenant format.
+
+-------------------------------------
+TASK 5 — KEEP FIELD HIERARCHY CONSISTENT
+-------------------------------------
+
+Use the Tenant card’s hierarchy as the model:
+
+1. Title
+2. Subtitle / category / property type line
+3. Key property/details summary lines
+4. Representation / requirement / compensation rows
+5. Timer badge (if applicable)
+6. Bottom metadata row
+
+Apply that same information hierarchy to Buyer, Landlord, and Seller using their own relevant fields.
+
+Do not bury the most important role-specific details too low on the card.
+
+-------------------------------------
+TASK 6 — PRESERVE TIMER / STATUS / COUNTS LOGIC
+-------------------------------------
+
+Do not break any existing dynamic behavior already on cards, including:
+- countdown timer badge for bidding period listings
+- bottom view/comment/favorite/count rows
+- status-related visibility already used in card logic
+- click-through links to listing detail pages
+
+If Tenant has a timer badge and the other roles should also support timer badges, keep that working in the same relative location/style.
+
+-------------------------------------
+TASK 7 — DO NOT CHANGE THE WRONG THINGS
+-------------------------------------
+
+This is a presentation/layout-parity task.
+
+Do NOT:
+- rewrite card business logic unless necessary
+- change which listings appear in search
+- change route/controller queries
+- change listing status system
+- change bidding validation
+- change field data source unless the current card is pulling the wrong role-specific field
+
+Only fix the listing card format/layout and corresponding field presentation.
+
+-------------------------------------
+TASK 8 — IF POSSIBLE, USE A SAFE SHARED PARTIAL
+-------------------------------------
+
+If the codebase safely supports using one shared card partial with role-based conditional rows, that is acceptable.
+
+But only do that if:
+- it is minimal and low risk
+- it does not break existing search pages
+- it does not require big architecture refactors
+
+If separate card partials are safer, use separate partials.
+
+Minimal-risk change is preferred over “clean refactor.”
+
+-------------------------------------
+ROLE-SPECIFIC EXPECTATION
+-------------------------------------
+
+TENANT
+- Keep current Tenant card as the layout reference
+- Do not break it
+
+BUYER
+- Update card to match Tenant visual format
+- Use Buyer-specific fields/content
+
+LANDLORD
+- Update card to match Tenant visual format
+- Use Landlord-specific fields/content
+
+SELLER
+- Update card to match Tenant visual format
+- Use Seller-specific fields/content
+
+-------------------------------------
+TESTING REQUIRED
+-------------------------------------
+
+A. TENANT
+- Confirm Tenant card still looks correct
+- Confirm no regressions to title, subtitle, timer, field rows, or bottom row
+
+B. BUYER
+- Open Buyer search/browse page
+- Confirm card now follows Tenant layout style
+- Confirm Buyer-specific data is shown, not Tenant data
+- Confirm card link still works
+
+C. LANDLORD
+- Open Landlord search/browse page
+- Confirm card now follows Tenant layout style
+- Confirm Landlord-specific data is shown, not Tenant data
+- Confirm card link still works
+
+D. SELLER
+- Open Seller search/browse page
+- Confirm card now follows Tenant layout style
+- Confirm Seller-specific data is shown, not Tenant data
+- Confirm card link still works
+
+E. TIMER / DYNAMIC ELEMENTS
+- For at least one bidding-period listing in each role, confirm timer badge still displays correctly
+- For at least one traditional listing in each role, confirm no broken timer rendering
+- Confirm bottom metadata row still renders correctly
+
+-------------------------------------
+SUCCESS CRITERIA
+-------------------------------------
+
+- Buyer, Landlord, and Seller cards visually match the Tenant card format
+- Each role still shows its own correct role-specific fields
+- Tenant card remains intact
+- Timer badge / bottom row / links still work
+- No DB schema changes
+- No search/query regressions
+- No unrelated UI regressions
+```

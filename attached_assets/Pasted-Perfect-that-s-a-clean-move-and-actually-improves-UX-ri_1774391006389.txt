@@ -1,0 +1,271 @@
+Perfect — that’s a clean move and actually improves UX right now.
+
+Here is your **FINAL updated Replit instruction block** with:
+
+* ✅ Listing ID first
+* ✅ Status second
+* ✅ Color system
+* ✅ Status bug fixes
+* ✅ Icons added
+* ✅ 🚫 Download PDF button removed
+
+---
+
+```text
+I need a surgical listing header/status display fix with safeguards.
+
+GOAL:
+Standardize the listing header display order, fix incorrect status rendering, improve UI with icons/colors, and remove the "Download Listing Snapshot (PDF)" button.
+
+Apply to:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+-------------------------------------
+RECOMMENDED HEADER FORMAT
+-------------------------------------
+
+Standardize ALL listing headers to:
+
+1. Listing Title
+2. Listing ID
+3. Status
+4. Action button: Edit Listing ONLY
+
+REMOVE:
+- "Download Listing Snapshot (PDF)" button from all roles
+
+IMPORTANT:
+- Tenant must be updated to match Seller / Buyer / Landlord
+- Listing ID must appear BEFORE Status for all roles
+
+-------------------------------------
+REMOVE DOWNLOAD BUTTON
+-------------------------------------
+
+Remove the button:
+"Download Listing Snapshot (PDF)"
+
+From:
+- Seller listings
+- Buyer listings
+- Landlord listings
+- Tenant listings
+
+IMPORTANT:
+- Do NOT delete backend logic or routes yet
+- Only remove the button from the UI
+- Keep it easy to re-enable later
+
+-------------------------------------
+STATUS COLORS (FINAL)
+-------------------------------------
+
+- Active = green
+- Pending = amber / orange
+- Hired Agent = blue
+- Expired = gray
+
+-------------------------------------
+OPTIONAL UPGRADE — STATUS ICONS (REQUIRED IMPLEMENTATION)
+-------------------------------------
+
+Add icons to each status badge for better UX.
+
+Recommended icons (use Heroicons or similar if already available):
+
+- Active → check-circle icon
+- Pending → clock icon
+- Hired Agent → user-check / user icon
+- Expired → x-circle or calendar icon
+
+UI REQUIREMENTS:
+- icon should appear left of text
+- consistent spacing across all statuses
+- do not oversize icons
+- keep badges clean and readable
+
+-------------------------------------
+CURRENT STATUS BUGS TO FIX
+-------------------------------------
+
+1. Seller / Tenant / Landlord:
+- Hired Agent incorrectly shows as Active
+
+2. Buyer:
+- Always shows Hired Agent regardless of selection
+
+This means status rendering is NOT using the true status.
+
+-------------------------------------
+HARD SAFEGUARDS
+-------------------------------------
+
+- Do NOT rename DB columns
+- Do NOT run migrations
+- Do NOT refactor architecture broadly
+- Do NOT change create/edit logic
+- Do NOT break listing status transitions
+- Do NOT touch unrelated search or card layouts
+- Make .bak copies before editing files
+
+-------------------------------------
+TASK 1 — STANDARDIZE HEADER ORDER
+-------------------------------------
+
+All roles must follow:
+
+Title  
+Listing ID  
+Status  
+Edit Button  
+
+Tenant must be updated to match.
+
+-------------------------------------
+TASK 2 — APPLY STATUS COLORS + ICONS
+-------------------------------------
+
+Update status badge UI:
+
+- Apply correct colors
+- Add icons per status
+- Ensure consistency across roles
+
+-------------------------------------
+TASK 3 — FIND TRUE STATUS SOURCE
+-------------------------------------
+
+Trace how status is determined:
+
+- DB field?
+- accessor?
+- helper?
+- Livewire property?
+
+Identify why:
+- Hired Agent becomes Active (Seller/Tenant/Landlord)
+- Buyer always shows Hired Agent
+
+-------------------------------------
+TASK 4 — FIX STATUS RENDERING
+-------------------------------------
+
+Correct behavior:
+
+- Active → Active
+- Pending → Pending
+- Hired Agent → Hired Agent
+- Expired → Expired
+
+Fix:
+
+Seller / Tenant / Landlord:
+- Hired Agent must NOT display as Active
+
+Buyer:
+- Must reflect true selected status (not always Hired Agent)
+
+-------------------------------------
+TASK 5 — CHECK HEADER FILE STRUCTURE
+-------------------------------------
+
+Inspect:
+
+- Seller listing view
+- Buyer listing view
+- Landlord listing view
+- Tenant listing view
+
+Determine:
+- shared partial vs separate files
+
+Fix safely with minimal risk.
+
+-------------------------------------
+TASK 6 — DO NOT BREAK LOGIC
+-------------------------------------
+
+Do NOT change:
+- status transitions
+- bidding logic
+- expiration logic
+- edit/save logic
+
+This is a DISPLAY + UI fix only.
+
+-------------------------------------
+DO NOT DO
+-------------------------------------
+
+- do not hardcode status values
+- do not remove backend PDF functionality
+- do not break routing
+- do not create inconsistent styling across roles
+- do not change DB schema
+
+-------------------------------------
+TESTING REQUIRED
+-------------------------------------
+
+A. HEADER FORMAT
+All roles must display:
+Title → Listing ID → Status → Edit Button
+
+B. BUTTON REMOVAL
+- Confirm PDF button is gone everywhere
+- Confirm Edit button still works
+
+C. STATUS COLORS + ICONS
+- Active = green + check icon
+- Pending = amber + clock icon
+- Hired Agent = blue + user icon
+- Expired = gray + x/calendar icon
+
+D. STATUS ACCURACY
+
+Seller:
+- Active → correct
+- Pending → correct
+- Hired Agent → correct (NOT Active)
+- Expired → correct
+
+Landlord:
+- same expectations
+
+Tenant:
+- same expectations
+
+Buyer:
+- must stop always showing Hired Agent
+- must reflect actual status
+
+-------------------------------------
+SUCCESS CRITERIA
+-------------------------------------
+
+- All roles use same header format
+- Listing ID appears before Status
+- PDF button removed everywhere
+- Status colors are correct
+- Status icons are added and consistent
+- Status displays correctly for all roles
+- Buyer bug fixed (no longer always Hired Agent)
+- Seller/Tenant/Landlord bug fixed (Hired Agent not showing as Active)
+- No DB changes
+- No regressions
+```
+
+---
+
+This is now:
+
+* **cleaner UI**
+* **more professional look**
+* **correct logic**
+* **future-proof (you can re-add PDF later easily)**
+
+If you want next, I can:
+👉 give you exact Tailwind classes for each badge + icon so Replit doesn’t guess styling at all

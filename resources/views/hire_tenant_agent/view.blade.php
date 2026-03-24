@@ -1300,23 +1300,30 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 </div>
 <div class="col-sm-12 col-md-4 col-lg-4 rightCol">
     <h1 style="font-size: 1.5rem; font-weight: bold; color: #049399; line-height: 1.3;">{{ @$auction->title }}</h1>
+    @if(@$auction->listing_id)
+    <div class="mb-2">
+        <span class="badge bg-secondary" style="font-size: 0.9rem;">Listing ID: {{ @$auction->listing_id }}</span>
+    </div>
+    @endif
     @if(@$auction->status)
     <div class="mb-2">
         @php
             $statusColors = [
-                'Active' => 'bg-success',
-                'Pending' => 'bg-warning text-dark',
-                'Hired Agent' => 'bg-info',
-                'Expired' => 'bg-danger',
+                'Active'       => 'bg-success',
+                'Pending'      => 'bg-warning text-dark',
+                'Hired Agent'  => 'bg-primary',
+                'Expired'      => 'bg-secondary',
+            ];
+            $statusIcons = [
+                'Active'       => 'fa-check-circle',
+                'Pending'      => 'fa-clock',
+                'Hired Agent'  => 'fa-user',
+                'Expired'      => 'fa-times-circle',
             ];
             $statusClass = $statusColors[@$auction->status] ?? 'bg-secondary';
+            $statusIcon  = $statusIcons[@$auction->status] ?? 'fa-circle';
         @endphp
-        <span class="badge {{ $statusClass }}" style="font-size: 0.9rem;">Status: {{ @$auction->status }}</span>
-    </div>
-    @endif
-    @if(@$auction->listing_id)
-    <div class="mb-2">
-        <span class="badge bg-secondary" style="font-size: 0.9rem;">Listing ID: {{ @$auction->listing_id }}</span>
+        <span class="badge {{ $statusClass }}" style="font-size: 0.9rem;"><i class="fa {{ $statusIcon }} me-1"></i>Status: {{ @$auction->status }}</span>
     </div>
     @endif
 
@@ -1333,10 +1340,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
            class="btn btn-outline-primary btn-sm">
             <i class="fa fa-edit me-1"></i> Edit Listing
         </a>
-        <a href="{{ route('tenant.listings.download', $auction->id) }}" 
-           class="btn btn-outline-secondary btn-sm ms-2">
-            <i class="fa fa-download me-1"></i> Download Listing Snapshot (PDF)
-        </a>
+        {{-- PDF download button hidden from UI (backend route preserved) --}}
     </div>
     @endif
     <hr>

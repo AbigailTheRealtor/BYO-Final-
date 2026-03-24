@@ -2358,14 +2358,21 @@
                 <div class="mb-2">
                     @php
                         $_statusColors = [
-                            'Active' => 'bg-success',
-                            'Pending' => 'bg-warning text-dark',
-                            'Hired Agent' => 'bg-info',
-                            'Expired' => 'bg-danger',
+                            'Active'       => 'bg-success',
+                            'Pending'      => 'bg-warning text-dark',
+                            'Hired Agent'  => 'bg-primary',
+                            'Expired'      => 'bg-secondary',
+                        ];
+                        $_statusIcons = [
+                            'Active'       => 'fa-check-circle',
+                            'Pending'      => 'fa-clock',
+                            'Hired Agent'  => 'fa-user',
+                            'Expired'      => 'fa-times-circle',
                         ];
                         $_statusClass = $_statusColors[$auction->status] ?? 'bg-secondary';
+                        $_statusIcon  = $_statusIcons[$auction->status] ?? 'fa-circle';
                     @endphp
-                    <span class="badge {{ $_statusClass }}" style="font-size: 0.9rem;">Status: {{ $auction->status }}</span>
+                    <span class="badge {{ $_statusClass }}" style="font-size: 0.9rem;"><i class="fa {{ $_statusIcon }} me-1"></i>Status: {{ $auction->status }}</span>
                 </div>
                 @endif
 
@@ -2378,10 +2385,7 @@
                        class="btn btn-outline-primary btn-sm">
                         <i class="fa fa-edit me-1"></i> Edit Listing
                     </a>
-                    <a href="{{ route('seller.listings.download', $auction->id) }}" 
-                       class="btn btn-outline-secondary btn-sm ms-2">
-                        <i class="fa fa-download me-1"></i> Download Listing Snapshot (PDF)
-                    </a>
+                    {{-- PDF download button hidden from UI (backend route preserved) --}}
                 </div>
                 @endif
                 <hr>

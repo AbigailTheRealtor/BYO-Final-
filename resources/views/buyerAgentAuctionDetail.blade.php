@@ -2059,14 +2059,21 @@
                 <div class="mb-2">
                     @php
                         $_statusColors = [
-                            'Active' => 'bg-success',
-                            'Pending' => 'bg-warning text-dark',
-                            'Hired Agent' => 'bg-info',
-                            'Expired' => 'bg-danger',
+                            'Active'       => 'bg-success',
+                            'Pending'      => 'bg-warning text-dark',
+                            'Hired Agent'  => 'bg-primary',
+                            'Expired'      => 'bg-secondary',
+                        ];
+                        $_statusIcons = [
+                            'Active'       => 'fa-check-circle',
+                            'Pending'      => 'fa-clock',
+                            'Hired Agent'  => 'fa-user',
+                            'Expired'      => 'fa-times-circle',
                         ];
                         $_statusClass = $_statusColors[$auction->status] ?? 'bg-secondary';
+                        $_statusIcon  = $_statusIcons[$auction->status] ?? 'fa-circle';
                     @endphp
-                    <span class="badge {{ $_statusClass }}" style="font-size: 0.9rem;">Status: {{ $auction->status }}</span>
+                    <span class="badge {{ $_statusClass }}" style="font-size: 0.9rem;"><i class="fa {{ $_statusIcon }} me-1"></i>Status: {{ $auction->status }}</span>
                 </div>
                 @endif
 
