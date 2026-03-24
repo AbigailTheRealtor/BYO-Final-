@@ -2375,11 +2375,6 @@
                  @inject('carbon', 'Carbon\Carbon')
 
     @php
-    // 🔹 Determine listing type: Traditional vs Bidding Period
-    $listingType = trim($auction->get->auction_type ?? '');
-    $isTraditionalListing = (strtolower($listingType) === 'traditional' || empty($listingType));
-    $isBiddingPeriodListing = (strtolower($listingType) === 'bidding period');
-
     // 🕒 Auction start time (when auction began)
     $start_time = $auction->get->created_at ?? $auction->created_at ?? $carbon::now();
 
@@ -2387,8 +2382,8 @@
     $auction_time = trim($auction->get->auction_time ?? '');
     $useAuctionTime = !empty($auction_time) && strtolower($auction_time) !== 'null';
 
-    if ($useAuctionTime && $isBiddingPeriodListing) {
-    // 🔸 CASE 1: Use auction_time (e.g. "14 Days", "2 Weeks", "5 Hours") for Bidding Period
+    if ($useAuctionTime) {
+    // 🔸 CASE 1: Use auction_time (e.g. "14 Days", "2 Weeks", "5 Hours")
     $auction_duration = $auction_time;
     $duration_parts = explode(' ', trim($auction_duration)); // e.g. ['14', 'Days']
     $duration_value = (int) ($duration_parts[0] ?? 0);
@@ -2416,13 +2411,8 @@
     $expiration = $carbon::parse($start_time)->addDays($duration_value);
     break;
     }
-    } elseif ($isTraditionalListing) {
-    // 🔸 CASE 2: Traditional listing - use expiration_date for listing lifecycle only (no timer)
-    $expiration = !empty($auction->get->expiration_date)
-    ? $carbon::parse($auction->get->expiration_date)
-    : null;
     } else {
-    // 🔸 CASE 3: Fallback
+    // 🔸 CASE 2: Fallback to expiration_date (Traditional)
     $expiration = !empty($auction->get->expiration_date)
     ? $carbon::parse($auction->get->expiration_date)
     : null;
@@ -2431,13 +2421,8 @@
     // 🧾 Determine if expired
     $isExpired = $expiration ? $carbon::now()->gte($expiration) : false;
 
-    // 🔹 For Bidding Period: timer active means actions are locked
-    // For Traditional: actions are always unlocked (no timer restriction)
-    $isBiddingTimerActive = $isBiddingPeriodListing && $expiration && !$isExpired;
-    $canTakeAction = $isTraditionalListing || ($isBiddingPeriodListing && $isExpired);
-
-    // ⏱ Calculate remaining time if not expired (only for Bidding Period)
-    if ($isBiddingPeriodListing && $expiration && !$isExpired) {
+    // ⏱ Calculate remaining time if not expired
+    if ($expiration && !$isExpired) {
     $now = $carbon::now();
     $diff_d = $now->diffInDays($expiration);
     $diff_H = $now->diff($expiration)->format('%H');
@@ -2463,34 +2448,31 @@
         </a>
 
 
-        {{-- ⏳ Countdown Timer - Only shown for Bidding Period listings --}}
-        @if ($isBiddingPeriodListing)
-            @if ($isBiddingTimerActive)
-            <div class="time d-flex justify-content-between text-center flex-wrap pb-2"
-                data-expiration="{{ $expiration->toIso8601String() }}">
-                <div>
-                    <h5><b class="timer-d">{{ $diff_d }}</b></h5>
-                    <h6 class="opacity-50">Days</h6>
-                </div>
-                <div>
-                    <h5><b class="timer-h">{{ $diff_H }}</b></h5>
-                    <h6 class="opacity-50">Hrs</h6>
-                </div>
-                <div>
-                    <h5><b class="timer-m">{{ $diff_I }}</b></h5>
-                    <h6 class="opacity-50">Mins</h6>
-                </div>
-                <div>
-                    <h5><b class="timer-s">{{ $diff_S }}</b></h5>
-                    <h6 class="opacity-50">Secs</h6>
-                </div>
+        {{-- ⏳ Countdown Timer --}}
+        @if ($expiration && !$isExpired)
+        <div class="time d-flex justify-content-between text-center flex-wrap pb-2"
+            data-expiration="{{ $expiration->toIso8601String() }}">
+            <div>
+                <h5><b class="timer-d">{{ $diff_d }}</b></h5>
+                <h6 class="opacity-50">Days</h6>
             </div>
-            @else
-            <div class="alert alert-warning text-center mt-2 mb-0 p-2">
-                <strong>Bidding Ended</strong>
+            <div>
+                <h5><b class="timer-h">{{ $diff_H }}</b></h5>
+                <h6 class="opacity-50">Hrs</h6>
             </div>
-            @endif
-        {{-- Traditional listings: No timer displayed --}}
+            <div>
+                <h5><b class="timer-m">{{ $diff_I }}</b></h5>
+                <h6 class="opacity-50">Mins</h6>
+            </div>
+            <div>
+                <h5><b class="timer-s">{{ $diff_S }}</b></h5>
+                <h6 class="opacity-50">Secs</h6>
+            </div>
+        </div>
+        @else
+        <div class="alert alert-warning text-center mt-2 mb-0 p-2">
+            <strong>Bidding Ended</strong>
+        </div>
         @endif
 
 

@@ -120,6 +120,16 @@ All shared-edit routes (`/hire/agent/auction/edit/{id}/{role}`) use `TenantAgent
 - **Server-side immutability** — `working_with_agent`: re-read from DB before saving; `auction_type` / `auction_time`: commented out of `saveMeta()` call so client submissions are ignored.
 - **Caution:** Avoid putting `@directive` keywords (e.g. `@if`, `@this`) inside `<script>` comments — Blade processes them everywhere and will emit a parse error. Rephrase or use `@@`.
 
+### Bidding Period Timer (Seller / Buyer / Landlord)
+All three listing-view pages (`hire_seller_agent/view.blade.php`, `hire_landlord_agent/view.blade.php`, `buyerAgentAuctionDetail.blade.php`) now mirror the Tenant reference implementation for timer logic:
+- `$listingType`, `$isTraditionalListing`, `$isBiddingPeriodListing` are derived from `$auction->get->auction_type`.
+- `$expiration` is calculated from `auction_time` duration only when `$isBiddingPeriodListing` is true. Otherwise, `expiration_date` is used for listing lifecycle only.
+- `$isBiddingTimerActive` gates the visible countdown widget; `$canTakeAction` gates action buttons.
+- The countdown timer (`div.time` / `timer-d` / `timer-h` etc.) is wrapped in `@if ($isBiddingPeriodListing)` — Traditional listings render neither the timer nor "Bidding Ended".
+- "Bidding Ended" alert only shows inside the Bidding Period branch when the period has elapsed.
+- `.bak` copies of all three files were made before editing.
+- Tenant view (`hire_tenant_agent/view.blade.php`) is the source of truth; do not change it.
+
 ### System Design Choices
 The architecture emphasizes modularity, clear separation of concerns, and a database-first approach utilizing local database solutions. The system is optimized for production deployment, and the existing database schema for fees is immutable, with display-only formatting updates.
 
