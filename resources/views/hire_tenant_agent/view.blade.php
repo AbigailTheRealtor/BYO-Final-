@@ -1495,7 +1495,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         <button class="btn w-100 bid-btn"
             onclick="window.location='{{ route('agent.tenant.agent.auction.bid', @$auction->id) }}';">
             <span class="bid">Bid Now</span>
-            <span class="badge bg-light float-end text-dark">${{ @$auction->get->budget }}</span>
         </button>
         @endif
 

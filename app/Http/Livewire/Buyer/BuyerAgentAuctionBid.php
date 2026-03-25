@@ -323,8 +323,8 @@ public $additional_details_broker = '';
         $this->services = is_string($auction->get->services) ? json_decode($auction->get->services, true) ?? [] : (array)$auction->get->services;
         $this->other_services = is_string($auction->get->other_services) ? json_decode($auction->get->other_services, true) ?? [] : (array)$auction->get->other_services;
 
-        $this->other_services_enabled = $auction->get->other_services_enabled;
-        $this->service_type = $auction->get->service_type;
+        $this->other_services_enabled = (bool)($auction->get->other_services_enabled ?? false);
+        $this->service_type = $auction->get->service_type ?? '';
         $this->user_type = $auction->get->user_type ?? '';
         $this->property_type = $auction->get->property_type ?? '';
 

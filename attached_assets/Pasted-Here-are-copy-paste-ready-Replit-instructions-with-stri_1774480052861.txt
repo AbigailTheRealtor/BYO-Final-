@@ -1,0 +1,196 @@
+Here are **copy-paste ready Replit instructions with strict safeguards** to remove **“Maximum Monthly Lease Price” next to the “Bid Now” button** for **Hire a Tenant listings only** 👇
+
+---
+
+# ✅ TASK: Remove “Maximum Monthly Lease Price” next to Bid Now (Tenant Listings Only)
+
+## 🎯 GOAL
+
+* Remove the price (e.g. `$8,000`) displayed next to **“Bid Now”**
+* Apply **ONLY to Hire a Tenant listings**
+* Do **NOT** affect Buyer, Seller, or Landlord listings
+* Do **NOT** remove the field from database or forms (display only)
+
+---
+
+# 🔒 SAFEGUARDS (MANDATORY)
+
+### 1. DO NOT TOUCH:
+
+* ❌ Database columns (e.g. `max_monthly_lease_price`)
+* ❌ Livewire properties
+* ❌ Form inputs (creation/edit pages)
+* ❌ Buyer / Seller / Landlord views
+* ❌ Any shared/global bid button components
+
+---
+
+### 2. ONLY MODIFY:
+
+* Tenant listing **card view**
+* Tenant listing **detail page (if shown there too)**
+
+---
+
+### 3. CONFIRM ROUTE BEFORE EDITING
+
+Check URL or route:
+
+```
+/tenant-agent-needed
+/hire-a-tenant-agent
+/tenant listings
+```
+
+👉 Only proceed if it's **Tenant-related listing views**
+
+---
+
+# 🔍 STEP 1: LOCATE THE FILE
+
+Search for:
+
+```
+Bid Now
+max_monthly_lease_price
+maximum_monthly_lease_price
+```
+
+Likely files:
+
+```
+resources/views/livewire/tenant-agent-search.blade.php
+resources/views/components/listings/tenant-card.blade.php
+resources/views/livewire/tenant-agent-needed.blade.php
+```
+
+---
+
+# ✂️ STEP 2: REMOVE PRICE NEXT TO BUTTON
+
+### You will see something like:
+
+```blade
+<div class="flex items-center gap-2">
+    <button class="btn btn-primary">Bid Now</button>
+
+    <span class="text-sm font-semibold">
+        ${{ number_format($listing->max_monthly_lease_price) }}
+    </span>
+</div>
+```
+
+---
+
+# ✅ REPLACE WITH:
+
+```blade
+<div class="flex items-center gap-2">
+    <button class="btn btn-primary">Bid Now</button>
+</div>
+```
+
+---
+
+# ⚠️ IF CONDITIONAL EXISTS:
+
+```blade
+@if($listing->max_monthly_lease_price)
+    <span>${{ number_format($listing->max_monthly_lease_price) }}</span>
+@endif
+```
+
+👉 REMOVE ONLY THIS BLOCK — leave everything else untouched
+
+---
+
+# 🧠 OPTIONAL (SAFER METHOD)
+
+Instead of deleting, you can **hide it for Tenant only**:
+
+```blade
+@if(false)
+    <span>${{ number_format($listing->max_monthly_lease_price) }}</span>
+@endif
+```
+
+OR:
+
+```blade
+{{-- Hidden per UX update: do not display max lease price on tenant bid cards --}}
+```
+
+---
+
+# 🚨 DO NOT DO THIS
+
+* ❌ Do NOT remove the variable globally
+* ❌ Do NOT rename anything
+* ❌ Do NOT touch shared bid components used across roles
+* ❌ Do NOT affect API responses
+
+---
+
+# 🧪 TESTING CHECKLIST (REQUIRED)
+
+### Tenant Listings:
+
+* ✅ “Bid Now” button still visible
+* ✅ Price next to it is **gone**
+* ✅ No layout break
+
+### Other Roles:
+
+* ✅ Buyer listings still show price (if applicable)
+* ✅ Seller listings unchanged
+* ✅ Landlord listings unchanged
+
+### Functional:
+
+* ✅ Bidding still works
+* ✅ No console errors
+* ✅ No Livewire errors
+
+---
+
+# 🧩 IF USING SHARED COMPONENT (IMPORTANT)
+
+If the price is coming from a **shared component**, wrap it like this:
+
+```blade
+@if($listing->type !== 'tenant')
+    <span>${{ number_format($listing->max_monthly_lease_price) }}</span>
+@endif
+```
+
+---
+
+# ✅ FINAL RESULT
+
+Before:
+
+```
+[ Bid Now ]   $8,000
+```
+
+After:
+
+```
+[ Bid Now ]
+```
+
+---
+
+If you want next level UX (highly recommend):
+👉 Replace that space with something like:
+
+* “View Criteria”
+* “See Requirements”
+* or leave clean (best for now)
+
+---
+
+If you want, I can also:
+
+* Standardize this across ALL cards cleanly
+* Or redesign the entire bid button section for better conversions (this is a big opportunity)
