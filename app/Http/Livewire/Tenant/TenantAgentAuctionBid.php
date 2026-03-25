@@ -528,8 +528,8 @@ class TenantAgentAuctionBid extends Component
         $rawOtherServices = $auction->get->other_services ?? null;
         $this->other_services = is_string($rawOtherServices) ? (json_decode($rawOtherServices, true) ?? []) : (is_array($rawOtherServices) ? $rawOtherServices : []);
 
-        $this->other_services_enabled = $auction->get->other_services_enabled;
-        $this->service_type = $auction->get->service_type;
+        $this->other_services_enabled = $auction->get->other_services_enabled ?? null;
+        $this->service_type = $auction->get->service_type ?? '';
         $this->user_type = $auction->get->user_type ?? '';
         $this->property_type = $auction->get->property_type ?? '';
         // Load broker compensation fields
