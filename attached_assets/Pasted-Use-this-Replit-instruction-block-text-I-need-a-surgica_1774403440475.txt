@@ -1,0 +1,214 @@
+Use this Replit instruction block:
+
+```text
+I need a surgical fix with safeguards for specific listing-card display issues and one Seller create-form conditional input issue.
+
+GOAL:
+Fix these exact items only:
+
+1. Buyer Listing Cards
+   - For Business, Income, and Commercial listings, show SqFt on the listing card when it is filled in
+
+2. Tenant Listing Cards
+   - For Commercial listings, show SqFt on the listing card when it is filled in
+
+3. Seller Create Listing
+   - Under Included Property or Business Assets, if the user selects Other, the custom input should appear immediately
+   - Right now nothing pops up
+
+-------------------------------------
+HARD SAFEGUARDS
+-------------------------------------
+
+- Do NOT rename DB columns
+- Do NOT run migrations
+- Do NOT refactor architecture broadly
+- Do NOT change search query logic
+- Do NOT change unrelated listing-card layout structure
+- Do NOT change unrelated create/edit validation logic
+- Do NOT touch unrelated roles/fields beyond these exact fixes
+- Make .bak copies before editing any file
+- Keep this focused only on:
+  - Buyer card SqFt display
+  - Tenant commercial card SqFt display
+  - Seller create “Other” conditional input for Included Property or Business Assets
+
+-------------------------------------
+GLOBAL DISPLAY RULE
+-------------------------------------
+
+Only show SqFt on listing cards if:
+- the field is valid for that property type
+- AND it actually has a filled value
+
+Do NOT show:
+- blank SqFt rows
+- placeholder SqFt rows
+- invalid SqFt rows for property types where it should not appear
+
+-------------------------------------
+TASK 1 — FIND THE EXACT LISTING CARD FILES
+-------------------------------------
+
+Locate the exact listing-card rendering files used for:
+- Buyer listing cards
+- Tenant listing cards
+
+Need to determine whether:
+- both use a shared card partial
+- or separate role-specific card templates
+- or a shared row partial with role/property-type conditionals
+
+Do NOT guess.
+Do NOT start by editing random blades.
+
+-------------------------------------
+BUYER LISTING CARD FIX
+-------------------------------------
+
+For Buyer listing cards:
+- Business listings → show SqFt when filled
+- Income listings → show SqFt when filled
+- Commercial listings → show SqFt when filled
+
+IMPORTANT:
+- Only show SqFt if value exists
+- Do not show a blank row if SqFt is empty
+- Do not break other Buyer card fields
+
+If the current card template is incorrectly excluding SqFt for these Buyer property types, fix the property-type conditional so these three types can render SqFt.
+
+-------------------------------------
+TENANT LISTING CARD FIX
+-------------------------------------
+
+For Tenant listing cards:
+- Commercial listings → show SqFt when filled
+
+IMPORTANT:
+- Only show SqFt if value exists
+- Do not show blank row if SqFt is empty
+- Do not change other Tenant card fields
+
+-------------------------------------
+TASK 2 — VERIFY THE CORRECT SQFT FIELD SOURCE
+-------------------------------------
+
+Before changing rendering logic, confirm the actual field/property used for SqFt on:
+- Buyer Business / Income / Commercial listings
+- Tenant Commercial listings
+
+Need to verify:
+- correct field name
+- correct role-specific data source
+- whether the value is stored consistently or role-specific
+
+Do NOT hardcode values.
+
+-------------------------------------
+TASK 3 — SELLER CREATE FORM “OTHER” INPUT FIX
+-------------------------------------
+
+Problem:
+When creating a Seller listing, under:
+- Included Property or Business Assets
+
+if the user selects:
+- Other
+
+the custom input should appear immediately, but currently nothing pops up.
+
+Fix:
+- restore/show the conditional custom input when “Other” is selected
+- use the same behavior pattern used by other working “Other” fields in the app, if applicable
+- ensure this works in Seller create flow
+
+IMPORTANT:
+- do not break existing selected options
+- do not change save structure unless necessary
+- do not affect unrelated create fields
+
+-------------------------------------
+TASK 4 — FIND THE EXACT SELLER CREATE FILE
+-------------------------------------
+
+Locate the actual Seller create form file/component for:
+- Included Property or Business Assets
+
+Need to determine whether the “Other” input visibility depends on:
+- Alpine/JS conditional
+- Livewire state
+- blade conditional
+- select2/multiselect handling
+- a missing data-binding hook
+
+Do NOT guess.
+
+-------------------------------------
+TASK 5 — KEEP THE FIX MINIMAL
+-------------------------------------
+
+This task is ONLY for:
+- Buyer card SqFt display
+- Tenant commercial card SqFt display
+- Seller create Other input display
+
+Do NOT:
+- rewrite card architecture
+- change unrelated property-type rows
+- alter search results
+- alter create form structure broadly
+
+Minimal-risk fix is preferred.
+
+-------------------------------------
+DO NOT DO
+-------------------------------------
+
+- do not hardcode SqFt values
+- do not show SqFt when the value is empty
+- do not show blank rows
+- do not change DB schema
+- do not break Buyer or Tenant card layout
+- do not touch unrelated Seller create fields
+- do not remove existing options for Included Property or Business Assets
+
+-------------------------------------
+TESTING REQUIRED
+-------------------------------------
+
+A. BUYER LISTING CARDS
+1. Open a Buyer Business listing with SqFt filled
+   - Expected: SqFt shows on card
+2. Open a Buyer Income listing with SqFt filled
+   - Expected: SqFt shows on card
+3. Open a Buyer Commercial listing with SqFt filled
+   - Expected: SqFt shows on card
+4. Open same listing types with empty SqFt
+   - Expected: SqFt row does NOT show
+
+B. TENANT LISTING CARDS
+1. Open a Tenant Commercial listing with SqFt filled
+   - Expected: SqFt shows on card
+2. Open a Tenant Commercial listing with empty SqFt
+   - Expected: SqFt row does NOT show
+
+C. SELLER CREATE FORM
+1. Start a Seller listing create flow
+2. Go to Included Property or Business Assets
+3. Select Other
+4. Expected: custom input appears immediately
+5. Deselect Other / switch selection if applicable
+6. Expected: visibility behaves correctly and does not break other options
+
+-------------------------------------
+SUCCESS CRITERIA
+-------------------------------------
+
+- Buyer Business / Income / Commercial cards show SqFt when filled
+- Tenant Commercial cards show SqFt when filled
+- No blank SqFt rows appear when empty
+- Seller create “Other” input appears correctly for Included Property or Business Assets
+- No DB changes
+- No unrelated regressions
+```
