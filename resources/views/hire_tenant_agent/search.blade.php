@@ -121,15 +121,33 @@
                     </div>
                     <div class="right d-flex align-items-center mb-3 flex-wrap">
                         <select name="sort" class="sortby" onchange="javascript:$('.search-form').submit();">
-                            <option value="">Most Relevant</option>
-                            <option value="1" {{ request()->sort == 1 ? 'selected' : '' }}>Title: (Z-a)</option>
-                            <option value="2" {{ request()->sort == 2 ? 'selected' : '' }}>Title: (A-z)</option>
-                            <option value="3" {{ request()->sort == 3 ? 'selected' : '' }}>Date: (New)</option>
-                            <option value="4" {{ request()->sort == 4 ? 'selected' : '' }}>Date: (Old)</option>
+                            <option value="newest" {{ (request()->sort ?? 'newest') === 'newest' ? 'selected' : '' }}>Newest</option>
+                            <option value="most_viewed" {{ request()->sort === 'most_viewed' ? 'selected' : '' }}>Most Viewed</option>
+                            <option value="ending_soon" {{ request()->sort === 'ending_soon' ? 'selected' : '' }}>Ending Soon</option>
                         </select>
                     </div>
                 </div>
             </form>
+
+            @php
+                $activeType = request()->property_type ?? '';
+                $typeBaseQuery = request()->except(['property_type', 'page']);
+                $pillTypes = ['All' => '', 'Residential' => 'Residential', 'Commercial' => 'Commercial'];
+            @endphp
+            <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
+                @foreach ($pillTypes as $label => $typeValue)
+                    @php
+                        $isActive = ($label === 'All') ? ($activeType === '') : ($activeType === $typeValue);
+                        $pillQuery = ($typeValue === '') ? $typeBaseQuery : array_merge($typeBaseQuery, ['property_type' => $typeValue]);
+                        $pillUrl = request()->url() . ($pillQuery ? '?' . http_build_query($pillQuery) : '');
+                    @endphp
+                    <a href="{{ $pillUrl }}"
+                       class="btn btn-sm {{ $isActive ? 'btn-dark' : 'btn-outline-secondary' }}"
+                       style="{{ $isActive ? '' : 'opacity:0.75;' }}">
+                        {{ $label }}
+                    </a>
+                @endforeach
+            </div>
 
             <div class="cardsDetails row  justify-content-start">
 

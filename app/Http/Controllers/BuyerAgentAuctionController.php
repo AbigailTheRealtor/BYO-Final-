@@ -475,31 +475,11 @@ class BuyerAgentAuctionController extends Controller
             });
         }
 
-        if ($request->sort) {
-            $sort = $request->sort;
-            if ($sort == 1) {
-                $sort_by = 'title';
-                $sort_type = 'DESC';
-            } elseif ($sort == 2) {
-                $sort_by = 'title';
-                $sort_type = 'ASC';
-            } elseif ($sort == 3) {
-                $sort_by = 'created_at';
-                $sort_type = 'DESC';
-            } elseif ($sort == 4) {
-                $sort_by = 'created_at';
-                $sort_type = 'ASC';
-            }/*  else if ($sort == 5) {
-                $sort_by = 'price';
-                $sort_type = 'DESC';
-            } else if ($sort == 6) {
-                $sort_by = 'price';
-                $sort_type = 'ASC';
-            } */ else {
-                $sort_by = 'id';
-                $sort_type = 'ASC';
-            }
-            $auctions->orderBy($sort_by, $sort_type);
+        $sort = $request->sort ?? 'newest';
+        if ($sort === 'most_viewed') {
+            $auctions->orderByRaw('(SELECT COUNT(*) FROM buyer_agent_auction_bids WHERE buyer_agent_auction_bids.buyer_agent_auction_id = buyer_agent_auctions.id) DESC');
+        } elseif ($sort === 'ending_soon') {
+            $auctions->orderByRaw("(SELECT meta_value FROM buyer_agent_auction_metas WHERE buyer_agent_auction_metas.buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'expiration_date' LIMIT 1) ASC NULLS LAST");
         } else {
             $auctions->orderBy('created_at', 'DESC');
         }

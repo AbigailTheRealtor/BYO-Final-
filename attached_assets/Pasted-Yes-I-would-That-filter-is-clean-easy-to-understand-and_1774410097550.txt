@@ -1,0 +1,294 @@
+Yes — I would.
+
+That filter is clean, easy to understand, and especially useful for your platform because the roles already break naturally into property types.
+
+My recommendation:
+
+* **Buyer:** keep it
+* **Seller:** yes, add it
+* **Landlord:** yes, add it
+* **Tenant:** yes, add it
+
+Why I’d add it:
+
+* users can get to the right listings faster
+* it makes the inventory feel more organized
+* it highlights that your platform supports more than just residential
+* it reduces the chance people think certain property types are missing
+
+I would keep the same basic pattern across all 4 roles:
+
+* **All**
+* role-specific property type buttons/tabs
+* same placement
+* same style
+* same behavior
+
+The only thing I’d change is to make sure each role uses the **correct property type list** for that role, instead of forcing identical categories if they do not fit.
+
+Recommended setup:
+
+**Seller / Buyer**
+
+* All
+* Residential
+* Income
+* Commercial
+* Business
+* Vacant Land
+
+**Landlord / Tenant**
+
+* All
+* Residential
+* Commercial
+
+That is probably the cleanest version unless you have a reason to split Commercial further.
+
+A few important rules:
+
+* make **All** the default
+* keep the currently selected type visually obvious
+* combine it properly with sort/filter/pagination
+* do not hide listings because of bad label mismatches
+* make sure the filter uses the same stored property-type values the DB actually uses
+
+So yes — I think you should absolutely add it to the other three. It will make the whole platform feel more consistent.
+
+Here are Replit instructions with safeguards:
+
+```text
+I need a surgical UI/filter enhancement with safeguards.
+
+GOAL:
+Add the same property-type filter bar/tabs used on Hire a Buyer’s Agent search to:
+- Seller
+- Landlord
+- Tenant
+
+The Buyer search already has property-type filter tabs.
+I want the same filtering experience added to the other Hire an Agent search pages so the platform is consistent.
+
+IMPORTANT:
+Use the Buyer property-type filter UI as the visual/interaction reference, but use the correct property-type options for each role.
+
+-------------------------------------
+RECOMMENDED FILTER SETS
+-------------------------------------
+
+Seller and Buyer:
+- All
+- Residential
+- Income
+- Commercial
+- Business
+- Vacant Land
+
+Landlord and Tenant:
+- All
+- Residential
+- Commercial
+
+Use the correct property types actually supported by each role’s listing flow.
+Do NOT force categories that do not belong to that role.
+
+-------------------------------------
+GOAL OF THE FILTER
+-------------------------------------
+
+Users should be able to quickly filter listings by property type on:
+- Seller search page
+- Landlord search page
+- Tenant search page
+
+Buyer already has this behavior and should remain working.
+
+-------------------------------------
+HARD SAFEGUARDS
+-------------------------------------
+
+- Do NOT rename DB columns
+- Do NOT run migrations
+- Do NOT refactor architecture broadly
+- Do NOT change unrelated search logic
+- Do NOT break pagination
+- Do NOT break sort dropdowns
+- Do NOT change listing card layout beyond what is necessary to place the filter bar
+- Make .bak copies before editing any file
+- Keep this focused on adding property-type filter UI/logic to Seller, Landlord, and Tenant search pages
+
+-------------------------------------
+TASK 1 — FIND THE BUYER FILTER IMPLEMENTATION
+-------------------------------------
+
+First trace the exact implementation currently used on the Buyer search page for the property-type tabs/filter.
+
+Identify:
+- route
+- controller / Livewire component
+- blade/partial
+- where the filter buttons are rendered
+- where the selected property type is applied to the query
+
+Use Buyer as the reference implementation.
+
+-------------------------------------
+TASK 2 — FIND SELLER / LANDLORD / TENANT SEARCH PAGES
+-------------------------------------
+
+Find the exact routes/components/blades for:
+- Seller search page
+- Landlord search page
+- Tenant search page
+
+Need to identify whether:
+- they already share a common search layout
+- or each role has its own separate search template/query
+
+Do NOT guess.
+
+-------------------------------------
+TASK 3 — ADD PROPERTY-TYPE FILTER UI
+-------------------------------------
+
+Add the same style of property-type filter tabs/buttons to:
+- Seller search page
+- Landlord search page
+- Tenant search page
+
+Requirements:
+- All should be the default
+- selected filter should be visually obvious
+- styling should match Buyer as closely as possible
+- placement should be consistent with Buyer
+
+-------------------------------------
+TASK 4 — USE ROLE-CORRECT PROPERTY TYPES
+-------------------------------------
+
+Do not blindly reuse Buyer’s exact options if the role does not support them.
+
+Use:
+Seller:
+- All
+- Residential
+- Income
+- Commercial
+- Business
+- Vacant Land
+
+Landlord:
+- All
+- Residential
+- Commercial
+
+Tenant:
+- All
+- Residential
+- Commercial
+
+If the app already uses different stored labels/values internally, map the UI buttons to the exact DB values correctly.
+
+-------------------------------------
+TASK 5 — WIRE FILTERS TO LIVE QUERY
+-------------------------------------
+
+Make sure clicking a property-type tab actually filters the live search results.
+
+Requirements:
+- All = no property-type restriction
+- each property type = only that type
+- filter must work with:
+  - pagination
+  - search keywords (if present)
+  - sort dropdown (if present)
+  - approval/visibility rules
+
+Do NOT break existing search behavior.
+
+-------------------------------------
+TASK 6 — KEEP FILTER + SORT + PAGINATION COMPATIBLE
+-------------------------------------
+
+The property-type filter must work cleanly with:
+- default sort
+- user-selected sort
+- pagination
+
+Changing property type should not break page navigation or sorting.
+
+-------------------------------------
+TASK 7 — DO NOT CREATE LABEL MISMATCH BUGS
+-------------------------------------
+
+Very important:
+Make sure the filter buttons use the actual stored property-type values the DB/query uses.
+
+Do NOT create situations where:
+- UI says Commercial
+- DB expects commercial_property
+- nothing matches
+
+Verify exact values before wiring the filter.
+
+-------------------------------------
+DO NOT DO
+-------------------------------------
+
+- do NOT change Buyer filter behavior unless needed for consistency/bug fix
+- do NOT add unsupported property types to Landlord/Tenant
+- do NOT break search results
+- do NOT break sort/pagination
+- do NOT change DB schema
+- do NOT touch unrelated card logic
+
+-------------------------------------
+TESTING REQUIRED
+-------------------------------------
+
+A. BUYER
+- Confirm Buyer property-type filter still works
+- No regressions
+
+B. SELLER
+- Filter tabs appear
+- All works
+- Residential works
+- Income works
+- Commercial works
+- Business works
+- Vacant Land works
+
+C. LANDLORD
+- Filter tabs appear
+- All works
+- Residential works
+- Commercial works
+
+D. TENANT
+- Filter tabs appear
+- All works
+- Residential works
+- Commercial works
+
+E. COMPATIBILITY
+For each role:
+- filter + sort works together
+- filter + pagination works together
+- no empty/incorrect results caused by label mismatch
+
+-------------------------------------
+SUCCESS CRITERIA
+-------------------------------------
+
+- Seller search has property-type filter tabs
+- Landlord search has property-type filter tabs
+- Tenant search has property-type filter tabs
+- Buyer remains working
+- Each role uses correct property-type options
+- Filters work with sort and pagination
+- No DB changes
+- No unrelated regressions
+```
+
+My recommendation is definitely yes — it will make the experience feel much more intentional and consistent across the whole platform.

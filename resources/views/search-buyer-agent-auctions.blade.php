@@ -118,13 +118,9 @@
                     <div class="right d-flex align-items-center mb-3 flex-wrap">
                         <!-- Select Box  -->
                         <select name="sort" class="sortby" onchange="javascript:$('.search-form').submit();">
-                            <option value="">Most Relevant</option>
-                            <option value="1" {{ request()->sort == 1 ? 'selected' : '' }}>Title: (Z-a)</option>
-                            <option value="2" {{ request()->sort == 2 ? 'selected' : '' }}>Title: (A-z)</option>
-                            <option value="3" {{ request()->sort == 3 ? 'selected' : '' }}>Date: (New)</option>
-                            <option value="4" {{ request()->sort == 4 ? 'selected' : '' }}>Date: (Old)</option>
-                            {{-- <option value="5" {{request()->sort == 5 ? "selected":""}}>Price: (Highest)</option>
-                            <option value="6" {{request()->sort == 6 ? "selected":""}}>Price: (Lowest)</option> --}}
+                            <option value="newest" {{ (request()->sort ?? 'newest') === 'newest' ? 'selected' : '' }}>Newest</option>
+                            <option value="most_viewed" {{ request()->sort === 'most_viewed' ? 'selected' : '' }}>Most Viewed</option>
+                            <option value="ending_soon" {{ request()->sort === 'ending_soon' ? 'selected' : '' }}>Ending Soon</option>
                         </select>
                     </div>
                 </div>

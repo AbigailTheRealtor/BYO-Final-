@@ -317,43 +317,19 @@ class TenantAgentAuctionController extends Controller
         }
 
         if ($request->property_type != "") {
-            // $auctions->whereHas('meta', function ($meta) use ($request) {
-            //     $meta->where('meta_key', 'property_items')->where('meta_value', $request->property_type);
-            // });
             $auctions->whereHas('meta', function ($meta) use ($request) {
-                $meta->where('meta_key', 'property_items')
-                    ->where('meta_value', 'LIKE', '%"' . $request->property_type . '"%');
+                $meta->where('meta_key', 'property_type')
+                    ->where('meta_value', 'LIKE', '%' . $request->property_type . '%');
             });
         }
 
-
-        if ($request->sort) {
-            $sort = $request->sort;
-            if ($sort == 1) {
-                $sort_by = 'title';
-                $sort_type = 'DESC';
-            } elseif ($sort == 2) {
-                $sort_by = 'title';
-                $sort_type = 'ASC';
-            } elseif ($sort == 3) {
-                $sort_by = 'created_at';
-                $sort_type = 'DESC';
-            } elseif ($sort == 4) {
-                $sort_by = 'created_at';
-                $sort_type = 'ASC';
-            }/*  else if ($sort == 5) {
-                $sort_by = 'price';
-                $sort_type = 'DESC';
-            } else if ($sort == 6) {
-                $sort_by = 'price';
-                $sort_type = 'ASC';
-            } */ else {
-                $sort_by = 'id';
-                $sort_type = 'ASC';
-            }
-            $auctions->orderBy($sort_by, $sort_type);
+        $sort = $request->sort ?? 'newest';
+        if ($sort === 'most_viewed') {
+            $auctions->orderByRaw('(SELECT COUNT(*) FROM tenant_agent_auction_bids WHERE tenant_agent_auction_bids.tenant_agent_auction_id = tenant_agent_auctions.id) DESC');
+        } elseif ($sort === 'ending_soon') {
+            $auctions->orderByRaw("(SELECT meta_value FROM tenant_agent_auction_metas WHERE tenant_agent_auction_metas.tenant_agent_auction_id = tenant_agent_auctions.id AND meta_key = 'expiration_date' LIMIT 1) ASC NULLS LAST");
         } else {
-            // $auctions->orderBy(DB::raw('RAND()'));
+            $auctions->orderBy('created_at', 'DESC');
         }
 
         $page_data['count'] = $auctions->clone()->count();

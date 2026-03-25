@@ -1,0 +1,228 @@
+I need a surgical search-sort enhancement with safeguards.
+
+GOAL:
+Add a user-facing sort dropdown to all Hire an Agent search/browse pages.
+
+APPLIES TO:
+- Seller listings
+- Buyer listings
+- Landlord listings
+- Tenant listings
+
+DEFAULT SORT:
+- Newest
+
+SORT OPTIONS TO ADD:
+1. Newest
+2. Most Viewed
+3. Ending Soon
+
+IMPORTANT:
+- Default page load should still show Newest first
+- User can change the sort from the dropdown
+- Sorting must work consistently with pagination and filters
+
+-------------------------------------
+SORT DEFINITIONS
+-------------------------------------
+
+1. Newest
+- Sort by actual listing created/published/listed timestamp descending
+- newest listings first
+
+Preferred:
+- listed_at / published_at DESC if the app has that field intentionally
+- otherwise created_at DESC
+
+2. Most Viewed
+- Sort by view count descending
+- highest-viewed listings first
+
+Use the actual existing view-count field/source already used by the app.
+Do not invent fake view counts.
+
+3. Ending Soon
+- Sort by soonest relevant deadline first
+
+For Bidding Period listings:
+- sort by bidding/timer end ascending
+
+For Traditional listings:
+- if there is no bidding deadline, use expiration date ascending
+- or place them after true timed listings if that is how the current data model works best
+
+IMPORTANT:
+Do not guess. Use the app’s actual fields.
+
+-------------------------------------
+HARD SAFEGUARDS
+-------------------------------------
+
+- Do NOT rename DB columns
+- Do NOT run migrations
+- Do NOT refactor architecture broadly
+- Do NOT change approval rules
+- Do NOT change active/inactive visibility rules
+- Do NOT change listing card layout except to add the sort control
+- Do NOT change unrelated search filters
+- Make .bak copies before editing any file
+- Keep this focused only on adding a sort dropdown and wiring the query order correctly
+
+-------------------------------------
+TASK 1 — FIND THE SEARCH/BROWSE PAGES
+-------------------------------------
+
+Identify the exact route/controller/Livewire/component/blade used for:
+- Seller search/browse page
+- Buyer search/browse page
+- Landlord search/browse page
+- Tenant search/browse page
+
+Need to determine:
+- whether each role has a separate query
+- whether they share one common search component/helper
+- where the current default ordering is applied
+
+Do NOT guess.
+
+-------------------------------------
+TASK 2 — ADD SORT DROPDOWN UI
+-------------------------------------
+
+Add a sort dropdown to each Hire an Agent search/browse page.
+
+Label can be:
+- Sort By
+
+Options:
+- Newest
+- Most Viewed
+- Ending Soon
+
+IMPORTANT:
+- Keep styling consistent with the rest of the search page
+- Place it somewhere obvious near the search/filter controls
+- Do not clutter the layout
+
+-------------------------------------
+TASK 3 — MAKE NEWEST THE DEFAULT
+-------------------------------------
+
+On initial page load, the selected/default sort must be:
+- Newest
+
+This should be the fallback if no explicit sort is selected.
+
+-------------------------------------
+TASK 4 — WIRE EACH SORT TO THE REAL QUERY
+-------------------------------------
+
+Implement sorting using the actual query used for each page.
+
+Newest:
+- created/published/listed timestamp DESC
+
+Most Viewed:
+- actual view-count field DESC
+
+Ending Soon:
+- use real deadline field(s)
+- bidding/timer end first for bidding listings
+- expiration date handling for traditional listings as appropriate
+
+IMPORTANT:
+Do NOT fake Ending Soon with arbitrary data.
+Use the actual fields the app already stores.
+
+-------------------------------------
+TASK 5 — KEEP FILTERS + PAGINATION WORKING
+-------------------------------------
+
+Sorting must work together with:
+- property type filters
+- keyword/search filters
+- approval/visibility rules
+- pagination
+
+Changing sort should not break current filters.
+Pagination should reflect the selected sort correctly.
+
+-------------------------------------
+TASK 6 — DO NOT LET SIMPLE EDITS CHANGE NEWEST
+-------------------------------------
+
+For Newest:
+- use listed/created timestamp
+- do NOT use updated_at unless there is already a deliberate product rule for that
+
+Simple edits should not push old listings back to the top.
+
+-------------------------------------
+TASK 7 — PRESERVE ROLE CONSISTENCY
+-------------------------------------
+
+Use the same sort options and same default for:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+Do not make Buyer behave differently from Seller unless there is a deliberate product rule requiring that.
+
+-------------------------------------
+DO NOT DO
+-------------------------------------
+
+- do not use random/default DB order
+- do not sort by updated_at unless explicitly intended
+- do not invent fake view counts
+- do not fake Ending Soon with wrong date fields
+- do not change DB schema
+- do not break pagination
+- do not break approval/visibility rules
+- do not remove existing filters
+
+-------------------------------------
+TESTING REQUIRED
+-------------------------------------
+
+For each role:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+Verify:
+
+A. NEWEST
+1. Default page load shows newest listings first
+2. Older listings follow after newer ones
+
+B. MOST VIEWED
+1. Switch sort to Most Viewed
+2. Highest-viewed visible listings appear first
+
+C. ENDING SOON
+1. Switch sort to Ending Soon
+2. Listings with the soonest relevant deadline appear first
+
+D. FILTER COMPATIBILITY
+1. Apply a property type filter
+2. Change sort
+3. Expected: filtered results remain correct and sort updates properly
+
+E. PAGINATION
+1. Move to next page
+2. Expected: selected sort order remains consistent across pages
+
+-------------------------------------
+SUCCESS CRITERIA
+-------------------------------------
+
+- Sort dropdown appears on Seller, Buyer, Landlord, and Tenant search pages
+- Default sort is Newest
+- Users can switch to Most Viewed and Ending Soon
+- Sorting uses real data fields
+- Filters and pagination still work
+- No DB changes
+- No unrelated regressions

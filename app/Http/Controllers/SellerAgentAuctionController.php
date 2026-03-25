@@ -693,30 +693,13 @@ class SellerAgentAuctionController extends Controller
             });
         }
 
-        if ($request->sort) {
-            $sort = $request->sort;
-            if ($sort == 1) {
-                $sort_by = 'address';
-                $sort_type = 'DESC';
-            } elseif ($sort == 2) {
-                $sort_by = 'address';
-                $sort_type = 'ASC';
-            } elseif ($sort == 3) {
-                $sort_by = 'created_at';
-                $sort_type = 'DESC';
-            } elseif ($sort == 4) {
-                $sort_by = 'created_at';
-                $sort_type = 'ASC';
-            } elseif ($sort == 5) {
-                $sort_by = 'price';
-                $sort_type = 'DESC';
-            } elseif ($sort == 6) {
-                $sort_by = 'price';
-                $sort_type = 'ASC';
-            }
-            $auctions->orderBy($sort_by, $sort_type);
+        $sort = $request->sort ?? 'newest';
+        if ($sort === 'most_viewed') {
+            $auctions->orderByRaw('(SELECT COUNT(*) FROM seller_agent_auction_bids WHERE seller_agent_auction_bids.seller_agent_auction_id = seller_agent_auctions.id) DESC');
+        } elseif ($sort === 'ending_soon') {
+            $auctions->orderByRaw("(SELECT meta_value FROM seller_agent_auction_metas WHERE seller_agent_auction_metas.seller_agent_auction_id = seller_agent_auctions.id AND meta_key = 'expiration_date' LIMIT 1) ASC NULLS LAST");
         } else {
-            // $auctions->orderBy(DB::raw('RAND()'));
+            $auctions->orderBy('created_at', 'DESC');
         }
         $auctions_c = $auctions;
 
