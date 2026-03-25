@@ -479,7 +479,33 @@ class BuyerAgentAuctionController extends Controller
         if ($sort === 'most_viewed') {
             $auctions->orderByRaw('(SELECT COUNT(*) FROM buyer_agent_auction_bids WHERE buyer_agent_auction_bids.buyer_agent_auction_id = buyer_agent_auctions.id) DESC');
         } elseif ($sort === 'ending_soon') {
-            $auctions->orderByRaw("(SELECT meta_value FROM buyer_agent_auction_metas WHERE buyer_agent_auction_metas.buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'expiration_date' LIMIT 1) ASC NULLS LAST");
+            $auctions->orderByRaw("
+                CASE
+                    WHEN NULLIF(REGEXP_REPLACE(COALESCE(
+                            (SELECT meta_value FROM buyer_agent_auction_metas
+                             WHERE buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'auction_time' LIMIT 1)
+                        , ''), '[^0-9]', '', 'g'), '') IS NOT NULL
+                        AND NULLIF(REGEXP_REPLACE(COALESCE(
+                            (SELECT meta_value FROM buyer_agent_auction_metas
+                             WHERE buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'auction_time' LIMIT 1)
+                        , ''), '[^0-9]', '', 'g'), '')::int > 0
+                        AND (buyer_agent_auctions.created_at + INTERVAL '1 day' * NULLIF(REGEXP_REPLACE(COALESCE(
+                            (SELECT meta_value FROM buyer_agent_auction_metas
+                             WHERE buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'auction_time' LIMIT 1)
+                        , ''), '[^0-9]', '', 'g'), '')::int) > NOW()
+                    THEN EXTRACT(EPOCH FROM (buyer_agent_auctions.created_at + INTERVAL '1 day' * NULLIF(REGEXP_REPLACE(COALESCE(
+                            (SELECT meta_value FROM buyer_agent_auction_metas
+                             WHERE buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'auction_time' LIMIT 1)
+                        , ''), '[^0-9]', '', 'g'), '')::int))
+                    WHEN COALESCE((SELECT meta_value FROM buyer_agent_auction_metas
+                        WHERE buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'expiration_date' LIMIT 1), '') <> ''
+                        AND (SELECT meta_value FROM buyer_agent_auction_metas
+                            WHERE buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'expiration_date' LIMIT 1)::date >= CURRENT_DATE
+                    THEN EXTRACT(EPOCH FROM (SELECT meta_value FROM buyer_agent_auction_metas
+                        WHERE buyer_agent_auction_id = buyer_agent_auctions.id AND meta_key = 'expiration_date' LIMIT 1)::date::timestamp)
+                    ELSE 9999999999
+                END ASC, buyer_agent_auctions.created_at DESC
+            ");
         } else {
             $auctions->orderBy('created_at', 'DESC');
         }

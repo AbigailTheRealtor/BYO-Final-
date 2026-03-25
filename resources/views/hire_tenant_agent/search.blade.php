@@ -373,9 +373,6 @@
                                             </path>
                                         </svg>
                                     </div>
-                                    <div class="col-6 right text-end">
-                                        <b>{{ @$auction->get->budget }}</b>
-                                    </div>
                                 </div>
                             </div>
                         </div>
