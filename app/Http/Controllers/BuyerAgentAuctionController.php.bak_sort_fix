@@ -501,14 +501,14 @@ class BuyerAgentAuctionController extends Controller
             }
             $auctions->orderBy($sort_by, $sort_type);
         } else {
-            $auctions->orderBy('created_at', 'DESC');
+            // $auctions->orderBy(DB::raw('RAND()'));
         }
 
 
         $auctions_c = $auctions;
         $count = $auctions_c->count();
         // dd($page_data['count']);
-        $pAuctions = $auctions->paginate(15);
+        $pAuctions = $auctions->paginate(12);
         $buyers = BuyerAgentAuction::where('is_approved', 1)->get();
         return view('search-buyer-agent-auctions', compact('count', 'pAuctions', 'buyers'));
     }
