@@ -1,0 +1,193 @@
+Use this Replit instruction block:
+
+```text
+I need a surgical Buyer listing-card display fix with safeguards.
+
+GOAL:
+On Hire a Buyer listing cards, for these property types:
+- Income
+- Commercial
+- Business
+
+do NOT show Beds or Baths.
+Show ONLY SqFt for those non-residential card summary fields.
+
+IMPORTANT:
+This is specifically for Hire a Buyer listing cards.
+Do not apply this blindly to other roles unless the exact same shared card partial forces it and is already correct for them.
+
+LIVE PAGE TO VERIFY:
+- /search/buyer-agent-needed
+
+-------------------------------------
+HARD SAFEGUARDS
+-------------------------------------
+
+- Do NOT rename DB columns
+- Do NOT run migrations
+- Do NOT refactor architecture broadly
+- Do NOT change search query logic
+- Do NOT change unrelated listing card layout
+- Do NOT change unrelated Buyer fields/labels
+- Do NOT touch Seller / Landlord / Tenant card behavior unless a shared partial absolutely requires a safe conditional fix
+- Make .bak copies before editing any file
+- Keep this focused only on Buyer card display for Income / Commercial / Business
+
+-------------------------------------
+REQUIRED DISPLAY RULE
+-------------------------------------
+
+For Hire a Buyer listing cards:
+
+1. Income
+- show SqFt when filled
+- do NOT show Beds
+- do NOT show Baths
+
+2. Commercial
+- show SqFt when filled
+- do NOT show Beds
+- do NOT show Baths
+
+3. Business
+- show SqFt when filled
+- do NOT show Beds
+- do NOT show Baths
+
+If SqFt is empty:
+- do NOT show a blank row
+- do NOT fall back to Beds/Baths for these three property types
+
+-------------------------------------
+TASK 1 — TRACE THE ACTUAL BUYER CARD FILE
+-------------------------------------
+
+Find the exact live file used to render Buyer cards on:
+- /search/buyer-agent-needed
+
+Identify:
+- route
+- controller / Livewire component
+- exact blade/partial rendering the Buyer card
+
+Do NOT guess.
+Do NOT edit a similar file that is not actually used by the live route.
+
+-------------------------------------
+TASK 2 — FIND THE NON-RESIDENTIAL SUMMARY ROW LOGIC
+-------------------------------------
+
+In the live Buyer card template, find the section that renders the property summary row(s), especially where it chooses between:
+- Beds / Baths
+- SqFt
+
+Need to identify the exact conditional currently causing Beds/Baths to appear for:
+- Income
+- Commercial
+- Business
+
+-------------------------------------
+TASK 3 — FIX THE PROPERTY-TYPE CONDITIONALS
+-------------------------------------
+
+Update the live Buyer card logic so that for:
+- Income
+- Commercial
+- Business
+
+the card renders only:
+- SqFt (when present)
+
+and never renders:
+- Beds
+- Baths
+
+IMPORTANT:
+- This should be a property-type-aware conditional
+- Do NOT just hide beds/baths globally
+- Residential Buyer cards should still behave normally if beds/baths are valid there
+
+-------------------------------------
+TASK 4 — KEEP EMPTY ROWS CLEAN
+-------------------------------------
+
+If SqFt is empty for Income / Commercial / Business:
+- do not show a blank SqFt row
+- do not show fallback Beds/Baths
+- simply omit that summary row
+
+-------------------------------------
+TASK 5 — DO NOT BREAK OTHER BUYER PROPERTY TYPES
+-------------------------------------
+
+Buyer Residential cards should still display their normal residential summary fields if that is the current intended behavior.
+
+Do not accidentally remove Beds/Baths from valid residential Buyer cards.
+
+-------------------------------------
+DO NOT DO
+-------------------------------------
+
+- do NOT hardcode fake SqFt values
+- do NOT show blank rows
+- do NOT hide Beds/Baths for Residential if they are supposed to remain
+- do NOT change DB schema
+- do NOT touch unrelated Buyer search logic
+- do NOT touch unrelated roles/cards
+
+-------------------------------------
+TESTING REQUIRED
+-------------------------------------
+
+A. BUYER INCOME CARD
+On /search/buyer-agent-needed:
+- Open a Buyer Income listing card with SqFt filled
+Expected:
+- SqFt shows
+- Beds does NOT show
+- Baths does NOT show
+
+If SqFt is empty:
+- no blank row
+- no Beds/Baths fallback
+
+B. BUYER COMMERCIAL CARD
+Expected:
+- SqFt shows when filled
+- Beds does NOT show
+- Baths does NOT show
+
+C. BUYER BUSINESS CARD
+Expected:
+- SqFt shows when filled
+- Beds does NOT show
+- Baths does NOT show
+
+D. BUYER RESIDENTIAL CARD
+Expected:
+- existing intended residential behavior remains intact
+- do not break valid residential Beds/Baths display
+
+-------------------------------------
+RESPONSE REQUIREMENT
+-------------------------------------
+
+When done, report back with:
+1. Exact live file(s) changed
+2. Exact conditional/root cause that was causing Beds/Baths to show for Income / Commercial / Business
+3. Confirmation that the live Buyer cards on /search/buyer-agent-needed now show only SqFt for those property types
+
+Do NOT respond with only code assumptions.
+
+-------------------------------------
+SUCCESS CRITERIA
+-------------------------------------
+
+- Buyer Income cards show only SqFt (no Beds/Baths)
+- Buyer Commercial cards show only SqFt (no Beds/Baths)
+- Buyer Business cards show only SqFt (no Beds/Baths)
+- Residential Buyer cards are not broken
+- No blank rows
+- No DB changes
+- No unrelated regressions
+```

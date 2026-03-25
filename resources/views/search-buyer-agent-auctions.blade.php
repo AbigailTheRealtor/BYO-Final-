@@ -274,7 +274,7 @@
                                         </p>
                                     @endif
 
-                                    @if (!empty($bedsDisplay) || !empty($bathsDisplay))
+                                    @if ($isResidential && (!empty($bedsDisplay) || !empty($bathsDisplay)))
                                         <p class="mb-1">
                                             <span class="d-inline-flex align-items-center gap-1">
                                                 &#x1F6CF; <b>{{ $bedsDisplay ?: '-' }}</b> Beds
