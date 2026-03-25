@@ -1,0 +1,45 @@
+Fix a Buyer-role-only bug with safeguards.
+
+ISSUE:
+All live Hire a Buyer’s Agent listings are incorrectly showing "An Agent Has Been Hired" even though the listing is Active, and agents cannot bid.
+
+GOAL:
+Fix the real hired-state / bid-gating logic for Hire a Buyer’s Agent so Active Buyer listings are open for bidding and do NOT show "An Agent Has Been Hired" unless the listing is truly in a hired/final-awarded state.
+
+HARD SAFEGUARDS:
+- do not rename columns
+- do not create or run migrations
+- do not change Seller, Tenant, or Landlord logic
+- do not change search sorting or unrelated UI
+- do not hardcode an always-allow-bids bypass
+- do not remove hired-state functionality
+- only fix the incorrect Buyer hired-state condition and any matching backend bid guard if needed
+- first confirm the actual live Buyer route/component/blade before editing
+
+STEPS:
+1. Find the exact live Buyer listing detail/card/component that shows:
+   - "An Agent Has Been Hired"
+   - the bid button or bid form
+2. Find the exact condition currently causing Active Buyer listings to be treated as hired/closed.
+3. Verify the actual Buyer status values and any accepted/winning bid relationships used in the live code.
+4. Fix the logic so:
+   - Active + open Buyer listings do not show hired message
+   - existing bids/countered bids do not automatically mean hired
+   - only a true final hired state blocks bidding and shows the hired message
+5. Check the backend submit-bid guard too, so the UI and backend use the same correct rule.
+6. Do not change other roles unless the shared helper is universally wrong and safe to fix without regressions.
+
+TESTS REQUIRED:
+- Active Buyer listing with no hired agent: bid button/form visible, no hired message
+- Active Buyer listing with existing non-final bids: still open, no hired message
+- Truly hired Buyer listing: hired message still shows, bidding blocked
+- Expired but not hired Buyer listing: do not misleadingly show hired unless truly hired
+
+REPORT BACK WITH:
+- exact files changed
+- exact live route/component confirmed
+- exact old condition that caused the bug
+- exact new condition now used
+- whether backend bid guard was updated
+- proof of test results
+- confirmation no Seller/Tenant/Landlord regression

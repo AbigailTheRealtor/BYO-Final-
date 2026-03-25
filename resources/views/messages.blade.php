@@ -900,7 +900,7 @@
                                         @foreach ($chat_tokens as $chat_token)
                                         @php
 
-                                                $contact = $chat_token->chat_users->first()->user;
+                                                $contact = optional($chat_token->chat_users->first())->user;
                                                 // dd($contact);
                                                 if ($chat_token->token == $token) {
                                                     $current_token = $chat_token;
@@ -925,14 +925,14 @@
                                                 } elseif ($ctype == 'buyer-criteria') {
                                                     // dd('buyer-criteria');
                                                     // $chat_title = $chat_token->title;
-                                                    $chat_title = $chat_token->auction->get->property_type;
+                                                    $chat_title = optional(optional($chat_token->auction)->get)->property_type;
                                                     // dd('3');
                                                     // dd('3');
                                                     // $auction_link = route('view-pl', $chat_token->auction->id);
                                                 } elseif ($ctype == 'tenant-criteria') {
                                                     // $chat_title = $chat_token->title;
                                                     // dd('4');
-                                                    $chat_title = $chat_token->auction->get->property_type;
+                                                    $chat_title = optional(optional($chat_token->auction)->get)->property_type;
                                                     // $auction_link = route('view-pl', $chat_token->auction->id);
                                                 } elseif ($ctype == 'buyer-agent') {
                                                     // dd('5');
@@ -950,7 +950,7 @@
                                                 $avatar = @$contact->avatar ? asset('images/avatar/' . @$contact->avatar) : 'https://ppt1080.b-cdn.net/images/avatar/none.png';
                                             @endphp
                                             <li class="contact @if ($chat_token->token == $token) active @endif "
-                                                data-avatar="{{ $avatar?$avatar:'' }}" data-name="{{ $contact->name?$contact->name:'' }}"
+                                                data-avatar="{{ $avatar?$avatar:'' }}" data-name="{{ optional($contact)->name?optional($contact)->name:'' }}"
                                                 data-token="{{ $chat_token->token }}">
                                                 <div class="wrap d-flex">
 
@@ -961,7 +961,7 @@
                                                     </div>
 
                                                     <div class="meta ps-2">
-                                                        <div>{{ $contact->name?$contact->name:'' }}</div>
+                                                        <div>{{ optional($contact)->name?optional($contact)->name:'' }}</div>
                                                         <div class="name"
                                                             style="width:200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                                                             {{ $chat_title?$chat_title:'' }}</div>
@@ -1009,33 +1009,35 @@
                                                     {{-- @dd('ok'); --}}
                                                     @php
                                                         $type = $current_token->auction_type;
+                                                        $auction_link = '#';
+                                                        $chat_title = '';
                                                         if ($type == 'seller-property') {
-                                                            $chat_title = optional($chat_token->auction)->address;
-                                                            $auction_link = route('view-pl', $current_token->auction->id);
+                                                            $chat_title = optional($current_token->auction)->address;
+                                                            $auction_link = $current_token->auction ? route('view-pl', $current_token->auction->id) : '#';
                                                         } elseif ($type == 'landlord-property') {
-                                                            $chat_title = optional($chat_token->auction)->address;
-                                                            $auction_link = route('agent.landlord.auction', $current_token->auction->id);
+                                                            $chat_title = optional($current_token->auction)->address;
+                                                            $auction_link = $current_token->auction ? route('agent.landlord.auction', $current_token->auction->id) : '#';
                                                         } elseif ($type == 'buyer-criteria') {
-                                                            $chat_title = $current_token->auction->get->property_type;
-                                                            $auction_link = route('buyer.criteria.view', $current_token->auction->id);
+                                                            $chat_title = optional(optional($current_token->auction)->get)->property_type;
+                                                            $auction_link = $current_token->auction ? route('buyer.criteria.view', $current_token->auction->id) : '#';
                                                         } elseif ($type == 'tenant-criteria') {
-                                                            $chat_title = $current_token->auction->get->property_type;
-                                                            $auction_link = route('tenant.criteria.auction.view', $current_token->auction->id);
+                                                            $chat_title = optional(optional($current_token->auction)->get)->property_type;
+                                                            $auction_link = $current_token->auction ? route('tenant.criteria.auction.view', $current_token->auction->id) : '#';
                                                         } elseif ($type == 'buyer-agent') {
-                                                            $chat_title = $current_token->auction->title;
-                                                            $auction_link = route('buyer.view-auction', $current_token->auction->id);
+                                                            $chat_title = optional($current_token->auction)->title;
+                                                            $auction_link = $current_token->auction ? route('buyer.view-auction', $current_token->auction->id) : '#';
                                                         } elseif ($type == 'seller-agent') {
-                                                            $chat_title = optional($chat_token->auction)->address;
-                                                            $auction_link = route('seller.agent.auction.detail', $current_token->auction->id);
+                                                            $chat_title = optional($current_token->auction)->address;
+                                                            $auction_link = $current_token->auction ? route('seller.agent.auction.detail', $current_token->auction->id) : '#';
                                                         } elseif ($type == 'landlord-agent') {
-                                                            $chat_title = optional($chat_token->auction)->address;
-                                                            $auction_link = route('landlord.agent.auction.view', $current_token->auction->id);
+                                                            $chat_title = optional($current_token->auction)->address;
+                                                            $auction_link = $current_token->auction ? route('landlord.agent.auction.view', $current_token->auction->id) : '#';
                                                         } elseif ($type == 'tenant-agent') {
-                                                            $chat_title = $current_token->auction->title;
-                                                            $auction_link = route('tenant.agent.view.auction.view', $current_token->auction->id);
+                                                            $chat_title = optional($current_token->auction)->title;
+                                                            $auction_link = $current_token->auction ? route('tenant.agent.view.auction.view', $current_token->auction->id) : '#';
                                                         } elseif ($type == 'agent-service') {
-                                                            $chat_title = optional($chat_token->auction)->address;
-                                                            $auction_link = route('agent.service.auction.view', $current_token->auction->id);
+                                                            $chat_title = optional($current_token->auction)->address;
+                                                            $auction_link = $current_token->auction ? route('agent.service.auction.view', $current_token->auction->id) : '#';
                                                         }
                                                     @endphp
                                                     <a href="{{ $auction_link }}" target="_blank">

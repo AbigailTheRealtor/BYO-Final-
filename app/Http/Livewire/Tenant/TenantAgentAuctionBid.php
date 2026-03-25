@@ -510,8 +510,10 @@ class TenantAgentAuctionBid extends Component
         }
         // $this->additional_details = $auction->get->additional_details ?? '';
 
-        $this->services = is_string($auction->get->services) ? json_decode($auction->get->services, true) ?? [] : (array)$auction->get->services;
-        $this->other_services = is_string($auction->get->other_services) ? json_decode($auction->get->other_services, true) ?? [] : (array)$auction->get->other_services;
+        $rawServices = $auction->get->services ?? null;
+        $this->services = is_string($rawServices) ? (json_decode($rawServices, true) ?? []) : (is_array($rawServices) ? $rawServices : []);
+        $rawOtherServices = $auction->get->other_services ?? null;
+        $this->other_services = is_string($rawOtherServices) ? (json_decode($rawOtherServices, true) ?? []) : (is_array($rawOtherServices) ? $rawOtherServices : []);
 
         $this->other_services_enabled = $auction->get->other_services_enabled;
         $this->service_type = $auction->get->service_type;
