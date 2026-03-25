@@ -316,7 +316,7 @@
                         <span class="status-icon"><i class="fas fa-clock me-2"></i></span>
                         <span class="status-text">Pending</span>
                         <span
-                            class="status-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
+                            class="status-badge position-absolute top-0 start-100 translate-middle badge rounded-pill" style="background-color:#d97706;color:#fff;">
                             <i class="fas fa-exclamation"></i>
                         </span>
                     </label>

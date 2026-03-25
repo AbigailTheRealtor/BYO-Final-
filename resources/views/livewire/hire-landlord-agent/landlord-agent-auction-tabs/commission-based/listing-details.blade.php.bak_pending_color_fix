@@ -1,86 +1,25 @@
+@php
+$auction_lengths_seller = [
+    ['name' => '1 Day'],
+    ['name' => '3 Days'],
+    ['name' => '5 Days'],
+    ['name' => '7 Days'],
+    ['name' => '10 Days'],
+    ['name' => '14 Days'],
+];
+@endphp
 <div class="dashboard-section">
     <h3>Listing Details</h3>
     <div class="alert alert-info bg-light-info border-info mb-4">
         <div class="d-flex align-items-center">
             <div>
                 <strong>📌 Provide the key details for this request, including the preferred Agent hire date and whether
-                    the Tenant is currently represented by a Broker. </strong>
+                    the Landlord is currently represented by a Broker.</strong>
             </div>
         </div>
     </div>
-    {{--
-    <div class="form-group mb-4">
-        <div class="row">
-            <!-- Full Service (Commission-Based) Option -->
-            <div class="col-md-6 mb-3">
-                <div class="card service-option-card h-100 {{ $service_type === 'full_service' ? 'active-service border-primary' : '' }}"
-                    wire:click="$set('service_type', 'full_service')" style="cursor: pointer;">
-                    <div class="card-body p-4">
-                        <div class="form-check">
-                            <input class="form-check-input card-check" type="radio" wire:model="service_type"
-                                id="fullService" value="full_service"
-                                {{ $service_type === 'full_service' ? 'checked' : '' }}>
-                            <label class="form-check-label fw-bold" for="fullService">
-                                <div class="d-flex align-items-center commission-based-agent">
-                                    <i class="fas fa-crown text-warning me-2 fs-5"></i>
-                                    <h5 class="mb-0">Hire a Commission-Based Agent (Full Service)</h5>
-                                    @if ($service_type === 'full_service')
-                                        <span class="ms-2 text-success"><i class="fas fa-check-circle"></i></span>
-                                    @endif
-                                </div>
-                                @if ($service_type === 'full_service')
-                                    <p class="text-success mt-2">
-                                        ✓ Pay only when your transaction closes or lease is signed.
-                                        Includes full-service representation from start to finish.
-                                    </p>
-                                @else
-                                    <p class="text-muted mt-2">Pay only when your transaction closes or lease is signed.
-                                    </p>
-                                @endif
-                            </label>
-                        </div>
-                    </div>
-                    <div class="card-footer bg-transparent border-top-0 text-end">
-                        <span class="badge bg-primary bg-opacity-10 text-primary">(Commission-Based)</span>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Limited Service (Flat Fee) Option -->
-            <div class="col-md-6 mb-3">
-                <div class="card service-option-card h-100 {{ $service_type === 'limited_service' ? 'active-service border-primary' : '' }}"
-                    wire:click="$set('service_type', 'limited_service')" style="cursor: pointer;">
-                    <div class="card-body p-4">
-                        <div class="form-check">
-                            <input class="form-check-input card-check" type="radio" wire:model="service_type"
-                                id="limitedService" value="limited_service"
-                                {{ $service_type === 'limited_service' ? 'checked' : '' }}>
-                            <label class="form-check-label fw-bold" for="limitedService">
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-file-invoice-dollar text-info me-2 fs-5"></i>
-                                    <h5 class="mb-0">Hire a Flat Fee Agent (Limited Service)</h5>
-                                    @if ($service_type === 'limited_service')
-                                        <span class="ms-2 text-success"><i class="fas fa-check-circle"></i></span>
-                                    @endif
-                                </div>
-                                @if ($service_type === 'limited_service')
-                                    <p class="text-success mt-2">
-                                        ✓ Pay a set fee upfront for specific services.
-                                        No ongoing commitment or commission.
-                                    </p>
-                                @else
-                                    <p class="text-muted mt-2">Pay a set fee upfront for specific services.</p>
-                                @endif
-                            </label>
-                        </div>
-                    </div>
-                    <div class="card-footer bg-transparent border-top-0 text-end">
-                        <span class="badge bg-secondary bg-opacity-10 text-secondary">(Flat Fee)</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div> --}}
+    <!-- Service Type Selection -->
 
     <div class="form-group mb-4 d-none">
         <div class="row container-sm">
@@ -154,6 +93,106 @@
             </div> --}}
         </div>
     </div>
+
+    {{-- @isset($user_type)
+
+        <!-- User Type Selection -->
+        <!-- User Type Selection -->
+        <div class="form-group mb-4">
+            <label class="fw-bold mb-3">I am a:</label>
+            <div class="row">
+                <!-- Seller Option -->
+                <div class="col-md-3 mb-3">
+                    <div class="card user-type-card {{ $user_type === 'seller' ? 'active-user-type border-primary' : '' }}"
+                        wire:click="$set('user_type', 'seller')" style="cursor: pointer;">
+                        <div class="card-body text-center position-relative">
+                            @if ($user_type === 'seller')
+                                <div class="position-absolute top-0 end-0 mt-2 me-2 text-success">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                            @endif
+                            <div class="form-check">
+                                <input class="form-check-input card-check" type="radio" wire:model="user_type"
+                                    id="userTypeSeller" value="seller" {{ $user_type === 'seller' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="userTypeSeller">
+                                    <i class="fas fa-user-tie fa-2x mb-2" style="color: #0ce7ef;"></i>
+                                    <h5 class="mb-1">Seller</h5>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Buyer Option -->
+                <div class="col-md-3 mb-3">
+                    <div class="card user-type-card {{ $user_type === 'buyer' ? 'active-user-type border-primary' : '' }}"
+                        wire:click="$set('user_type', 'buyer')" style="cursor: pointer;">
+                        <div class="card-body text-center position-relative">
+                            @if ($user_type === 'buyer')
+                                <div class="position-absolute top-0 end-0 mt-2 me-2 text-success">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                            @endif
+                            <div class="form-check">
+                                <input class="form-check-input card-check" type="radio" wire:model="user_type"
+                                    id="userTypeBuyer" value="buyer" {{ $user_type === 'buyer' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="userTypeBuyer">
+                                    <i class="fas fa-user fa-2x mb-2" style="color: #0ce7ef;"></i>
+                                    <h5 class="mb-1">Buyer</h5>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Landlord Option -->
+                <div class="col-md-3 mb-3">
+                    <div class="card user-type-card {{ $user_type === 'landlord' ? 'active-user-type border-primary' : '' }}"
+                        wire:click="$set('user_type', 'landlord')" style="cursor: pointer;">
+                        <div class="card-body text-center position-relative">
+                            @if ($user_type === 'landlord')
+                                <div class="position-absolute top-0 end-0 mt-2 me-2 text-success">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                            @endif
+                            <div class="form-check">
+                                <input class="form-check-input card-check" type="radio" wire:model="user_type"
+                                    id="userTypeLandlord" value="landlord"
+                                    {{ $user_type === 'landlord' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="userTypeLandlord">
+                                    <i class="fas fa-user-tie fa-2x mb-2" style="color: #0ce7ef;"></i>
+                                    <h5 class="mb-1">Landlord</h5>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tenant Option -->
+                <div class="col-md-3 mb-3">
+                    <div class="card user-type-card {{ $user_type === 'tenant' ? 'active-user-type border-primary' : '' }}"
+                        wire:click="$set('user_type', 'tenant')" style="cursor: pointer;">
+                        <div class="card-body text-center position-relative">
+                            @if ($user_type === 'tenant')
+                                <div class="position-absolute top-0 end-0 mt-2 me-2 text-success">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                            @endif
+                            <div class="form-check">
+                                <input class="form-check-input card-check" type="radio" wire:model="user_type"
+                                    id="userTypeTenant" value="tenant" {{ $user_type === 'tenant' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="userTypeTenant">
+                                    <i class="fas fa-user fa-2x mb-2" style="color: #0ce7ef;"></i>
+                                    <h5 class="mb-1">Tenant</h5>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endisset --}}
+
     @isset($user_type)
 
         <!-- User Type Selection -->
@@ -243,6 +282,7 @@
                                     <i class="fas fa-user fa-2x mb-2" style="color: #0ce7ef;"></i>
                                     <p class="mb-1 user-selected">Hire a Tenant’s Agent</p>
                                 </label>
+
                             </div>
                         </div>
                     </div>
@@ -287,7 +327,7 @@
                         <span class="status-icon"><i class="fas fa-clock me-2"></i></span>
                         <span class="status-text">Pending</span>
                         <span
-                            class="status-badge position-absolute top-0 start-100 translate-middle badge rounded-pill" style="background-color:#d97706;color:#fff;">
+                            class="status-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
                             <i class="fas fa-exclamation"></i>
                         </span>
                     </label>
@@ -323,7 +363,6 @@
                     <span class="expired_tooltip">
                         The listing has ended without a hired Agent. You cannot select this status — it is
                         applied automatically when the listing expires.
-
                     </span>
                 </div>
 
@@ -337,30 +376,30 @@
 
         </div>
     @endif
-
+    <!-- Listing Title -->
     <div class="form-group">
         <label class="fw-bold">Listing Title: <span class="text-danger">*</span>
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter a short, clear title describing the type of Agent the Tenant needs and the location.">
-                <i class="fa-solid fa-circle-info"></i></span>
         </label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter a short, clear title describing the type of Agent the Landlord needs and the location.">
+            <i class="fa-solid fa-circle-info"></i> </span>
         <div class="input-cover">
-            <input type="text" wire:model="listing_title" class="form-control has-icon"
+            <i class="input-icon fa-solid fa-tag"></i>
+            <input type="text" wire:model="listing_title" id="listing_title" class="form-control has-icon"
                 data-icon="fa-solid fa-tag"
-                placeholder="Enter listing title (e.g., Need a Rental Agent in Tampa, FL to Help Me Find a Rental Property)"
+                placeholder="Enter listing title (e.g., Need a Leasing Agent in Tampa, FL to Rent Out My Property)"
                 required>
         </div>
         <span class="error mt-2" id="listing_title_error"></span>
-        <!-- Error message for validation failure -->
     </div>
 
     <!-- Current Representation Agreement Status with Broker -->
     <div class="form-group">
         <label class="fw-bold">Current Representation Status with Broker:<span class="text-danger">*</span>
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Indicate whether the Tenant is currently under a signed agreement with a Broker. “Represented” means the Tenant has signed a Tenant representation agreement; “Not Represented” means no agreement has been signed, and the Tenant is free to hire a Broker.">
-                <i class="fa-solid fa-circle-info"></i> </span>
         </label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Indicate whether the Landlord is currently under a signed agreement with a Broker. “Represented” means the Landlord has signed a Landlord representation agreement; “Not Represented” means no agreement has been signed, and the Landlord is free to hire a Broker.">
+            <i class="fa-solid fa-circle-info"></i> </span>
         @if (!empty($isEditMode))
             <div class="input-cover locked-field-wrapper position-relative" data-lock-msg="Current Representation Status with Broker cannot be edited once the listing is created.">
                 <i class="input-icon fa-solid fa-lock"></i>
@@ -370,17 +409,19 @@
             <p class="text-danger small mt-2 mb-0"><i class="fa-solid fa-lock me-1"></i> Current Representation Status with Broker cannot be changed after the listing has been created.</p>
         @else
             <div class="input-cover">
+                <i class="input-icon fa-solid fa-handshake"></i>
                 <select wire:model="working_with_agent" id="working_with_agent" class="form-control has-icon"
                     data-icon="fa-solid fa-handshake" required>
                     <option value="">Select</option>
-                    <option value="Represented" {{ $working_with_agent == 'Represented' ? 'selected' : '' }}>Represented</option>
-                    <option value="Not Represented" {{ $working_with_agent == 'Not Represented' ? 'selected' : '' }}>Not Represented</option>
+                    <option value="Represented">Represented</option>
+                    <option value="Not Represented">Not Represented</option>
                 </select>
+
             </div>
             <span class="error mt-2" id="working_with_agent_error"></span>
             <!-- Representation Notice (hidden by default) -->
             <div id="representation_notice" class="alert alert-danger mt-2 d-none">
-                This service is only available to Tenants who are not currently represented by a Broker.
+                This service is only available to Landlords who are not currently represented by a Broker.
             </div>
         @endif
     </div>
@@ -388,10 +429,12 @@
         <!--Desired Agent Hire Date -->
         <div class="form-group">
             <label class="fw-bold">Desired Agent Hire Date:<span class="text-danger">*</span>
-                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Select the date the Tenant needs to hire an Agent.">
-                    <i class="fa-solid fa-circle-info"></i></span>
+
             </label>
+
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Select the date the Landlord needs to hire an Agent.">
+                <i class="fa-solid fa-circle-info"></i> </span>
             <div class="input-cover">
                 <input type="date" wire:model="desired_agent_hire_date" class="form-control has-icon"
                     data-icon="fa-regular fa-calendar-days" required>
@@ -432,51 +475,39 @@
         <span class="error mt-2" id="expiration_date_error"></span>
     </div>
 
- 
-
     {{-- <div class="form-group">
         <label class="fw-bold">Listing Type:<span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Choose Bidding Period to allow Agents to submit bids until the countdown timer ends, with each bid showing the Agent's Offered Services and Broker Compensation & Agency Agreement Terms. Choose Traditional to hire an Agent at any time, with the option to hide or display the Agent's Offered Services and Broker Compensation & Agency Agreement Terms.">
+            title="Select how Agents submit bids for this listing. This choice controls timing, bid visibility, and how Agent bids are reviewed.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-
         <div class="input-cover">
-            <select wire:model="auction_type" id="auction_type"  class="form-control has-icon"
+            <select wire:model="auction_type" id="auction_type" class="form-control has-icon"
                 data-icon="fa-solid fa-file-alt" required>
-                <option value="" title="">Select</option>
-                <option value="Bidding Period" data-display="Bidding Period"
-                    title="Agents can submit bids until the countdown timer ends. Each bid will display the Agent’s Offered Services and Broker Compensation & Agency Agreement Terms.">
-                    Bidding Period</option>
-                <option value="Traditional" data-display="Traditional"
-                    title="You may hire an Agent at any time and choose whether to show or hide bids. If shown, bids will display the Agent’s Offered Services and Broker Compensation & Agency Agreement Terms.">
-                    Traditional</option>
+                <option value="">Select</option>
+                <option value="Auction">Auction</option>
+                <option value="Traditional">Traditional</option>
             </select>
         </div>
         <span class="error mt-2" id="auction_type_error"></span>
-
     </div>
 
     <!-- Auction Length (Only for Auction) -->
-    <div class="form-group mt-3" @if ($auction_type !== 'Bidding Period') style="display: none;" @endif>
-        <label class="fw-bold">Bidding Period Length: <span class="text-danger">*</span>
+    <div class="form-group mt-3" @if ($auction_type !== 'Auction') style="display: none;" @endif>
+        <label class="fw-bold">Auction Length: <span class="text-danger">*</span>
 
         </label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Agents can submit bids until the countdown ends. Each bid will display the Agent’s Offered Services and Broker Compensation & Agency Agreement Terms. Once the timer expires, you may select the Agent who best meets your needs—you are not required to choose the highest or lowest bid.">
+            title="Agents can submit bids until the countdown ends. Each bid will display the Agent's Offered Services and Broker Compensation &amp; Agency Agreement Terms. Once the timer expires, you may select the Agent who best meets your needs—you are not required to choose the highest or lowest bid.">
             <i class="fa-solid fa-circle-info"></i> </span>
         <div class="input-cover">
-            <select wire:model="auction_time" id="auction_time1" class="form-control has-icon"
-                data-icon="fa-regular fa-clock" @if ($auction_type === 'Bidding Period')  @endif required>
+            <select wire:model="auction_time" id="auction_time" class="form-control has-icon"
+                data-icon="fa-regular fa-clock" @if ($auction_type === 'Auction') required @endif>
                 <option value="">Select</option>
-                <option value="1 Day">1 Day</option>
-                <option value="3 Days">3 Days</option>
-                <option value="5 Days">5 Days</option>
-                <option value="7 Days">7 Days</option>
-                <option value="10 Days">10 Days</option>
-                <option value="14 Days">14 Days</option>
-
+                @foreach ($auction_lengths_seller as $row_pt)
+                    <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
+                @endforeach
             </select>
         </div>
         <span class="error mt-2" id="auction_time_error"></span>
@@ -491,20 +522,16 @@
         </span>
         <div class="input-cover">
             <select wire:model="agent_bid_visibility" id="agent_bid_visibility" class="form-control has-icon"
-                data-icon="fa-solid fa-eye" @if ($auction_type === 'Traditional') @endif required>
+                data-icon="fa-solid fa-eye" @if ($auction_type === 'Traditional') required @endif>
                 <option value="">Select</option>
-                <option value="Agent bids will be visible to other Agents">Agent bids will be visible to other Agents
-                </option>
-                <option value="Agent bids will remain private">Agent bids will remain private</option>
+                <option value="public">Agent bids will be visible to other Agents</option>
+                <option value="private">Agent bids will remain private</option>
             </select>
         </div>
         <span class="error mt-2" id="agent_bid_visibility_error"></span>
     </div> --}}
 
-
-
-
-    <div class="form-group">
+<div class="form-group">
         <label class="fw-bold">Listing Type:<span class="text-danger">*</span>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Select how Agents submit bids for this listing. &lt;br&gt;&lt;br&gt;&lt;strong&gt;Bidding Period:&lt;/strong&gt; Agents may submit bids until the bidding timer ends. During the bidding period, bids cannot be accepted or finalized. Once the timer ends, all Agent bids are revealed for review and comparison. &lt;br&gt;&lt;br&gt;&lt;strong&gt;Traditional:&lt;/strong&gt; Agents may submit bids at any time. Bids are visible as received and may be reviewed, accepted, countered, or rejected immediately.">
@@ -550,16 +577,11 @@
             <select wire:model="auction_time" id="auction_time" class="form-control has-icon"
                 data-icon="fa-regular fa-clock" @if ($auction_type === 'Bidding Period') required @endif>
                 <option value="">Select</option>
-                {{-- @foreach ($auction_lengths as $row_pt)
+                @foreach ($auction_lengths_seller as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
-                @endforeach --}}
+                @endforeach
 
-                  <option value="1 Day">1 Day</option>
-                <option value="3 Days">3 Days</option>
-                <option value="5 Days">5 Days</option>
-                <option value="7 Days">7 Days</option>
-                <option value="10 Days">10 Days</option>
-                <option value="14 Days">14 Days</option>
+           
             </select>
         </div>
         <span class="error mt-2" id="auction_time_error"></span>
@@ -583,8 +605,6 @@
         <span class="error mt-2" id="meeting_Preference_error"></span>
     </div>
 </div>
-
-
 
 <style>
     .user-type-icon {
@@ -658,17 +678,6 @@
 
     .form-check-label {
         cursor: pointer;
-    }
-
-    /* Hide emoji spans when not in dropdown */
-    select option>.dropdown-only {
-        display: none;
-    }
-
-    /* Show emoji spans only in dropdown */
-    select:focus option>.dropdown-only,
-    select:active option>.dropdown-only {
-        display: inline;
     }
 
     #expired_tooltip {
@@ -809,7 +818,6 @@
         background-color: #e7f1ff;
     }
 
-
     .listing-type-option-tooltip {
         display: none;
         position: absolute;
@@ -858,6 +866,62 @@
         }
     }
 </style>
+{{-- <script>
+    document.addEventListener('livewire:load', function() {
+        const select = document.getElementById('auction_type');
+        let isDropdownOpen = false;
+
+        // Store original options with emojis
+        const originalOptions = {
+            'Auction': '🔨 Auction',
+            'Traditional': '📝 Traditional'
+        };
+
+        // When clicking the select (before dropdown opens)
+        select.addEventListener('mousedown', function(e) {
+            isDropdownOpen = true;
+
+            // Temporarily show options with emojis
+            Array.from(this.options).forEach(option => {
+                if (option.value && originalOptions[option.value]) {
+                    option.text = originalOptions[option.value];
+                }
+            });
+        });
+
+        // When selection changes or dropdown closes
+        select.addEventListener('change', function() {
+            isDropdownOpen = false;
+
+            // Revert to text without emojis
+            Array.from(this.options).forEach(option => {
+                if (option.value && option.hasAttribute('data-display')) {
+                    option.text = option.getAttribute('data-display');
+                }
+            });
+        });
+
+        // Handle cases where user clicks away without selecting
+        document.addEventListener('click', function(e) {
+            if (isDropdownOpen && e.target !== select) {
+                isDropdownOpen = false;
+
+                Array.from(select.options).forEach(option => {
+                    if (option.value && option.hasAttribute('data-display')) {
+                        option.text = option.getAttribute('data-display');
+                    }
+                });
+            }
+        });
+
+        // Initialize with correct display
+        Array.from(select.options).forEach(option => {
+            if (option.value && option.hasAttribute('data-display')) {
+                option.text = option.getAttribute('data-display');
+            }
+        });
+    });
+</script> --}}
 
 <script>
     (function() {
@@ -1003,5 +1067,45 @@
         
         // Also listen for Livewire updated events
         window.addEventListener('livewire:updated', safeInit);
+
+        // Function to toggle "auction time" input field
+        function toggleAuctionTime1(selectElement1) {
+            const auctionTimeDiv1 = document.querySelector('.auction_time1');
+
+            if (!auctionTimeDiv1) {
+                return;
+            }
+
+            if (selectElement1.value === 'Bidding Period') {
+                auctionTimeDiv1.classList.remove('d-none');
+            } else {
+                auctionTimeDiv1.classList.add('d-none');
+            }
+        }
+
+        // Function to attach the event listener to the auction type dropdown
+        function attachAuctionDropdownListener1() {
+            const auctionDropdown1 = document.getElementById('auction_type1');
+            if (auctionDropdown1) {
+                auctionDropdown1.addEventListener('change', function() {
+                    toggleAuctionTime1(this);
+                });
+                toggleAuctionTime1(auctionDropdown1);
+            }
+        }
+
+        // Attach the event listener initially
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', attachAuctionDropdownListener1);
+        } else {
+            attachAuctionDropdownListener1();
+        }
+
+        // Re-attach the event listener after Livewire re-renders the DOM
+        document.addEventListener('livewire:load', function() {
+            if (window.Livewire) {
+                Livewire.hook('message.processed', attachAuctionDropdownListener1);
+            }
+        });
     })();
 </script>

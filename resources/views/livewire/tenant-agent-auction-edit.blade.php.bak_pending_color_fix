@@ -248,8 +248,8 @@
         }
 
         .btn-check:checked+.btn-outline-warning {
-            background-color: #d97706;
-            color: #fff !important;
+            background-color: var(--bs-warning);
+            color: #000 !important;
         }
 
         .btn-check:checked+.btn-outline-primary {

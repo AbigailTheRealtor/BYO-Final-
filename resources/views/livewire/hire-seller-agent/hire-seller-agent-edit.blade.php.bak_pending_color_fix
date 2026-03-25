@@ -112,7 +112,7 @@
 
         .badge {
             /* font-size: 0.9rem;
-                                                                                                        padding: 0.5em 0.75em; */
+                                                                                                padding: 0.5em 0.75em; */
             display: inline-flex;
             align-items: center;
         }
@@ -220,8 +220,8 @@
         }
 
         .btn-check:checked+.btn-outline-warning {
-            background-color: #d97706;
-            color: #fff !important;
+            background-color: var(--bs-warning);
+            color: #000 !important;
         }
 
         .btn-check:checked+.btn-outline-primary {
@@ -285,13 +285,18 @@
     $property_types = [['name' => 'Residential Property'], ['name' => 'Commercial Property']];
 
     $property_condition = [
-        ['name' => 'Updated/Renovated', 'display' => 'Updated / Renovated'],
-        ['name' => 'Partially Updated', 'display' => 'Partially Updated'],
-        ['name' => 'Older but Clean', 'display' => 'Older but Clean & Well Maintained'],
-        ['name' => 'No Preference', 'display' => 'No Preference'],
+        ['name' => 'Completely Updated: No updates needed'],
+        ['name' => 'Currently Being Built'],
+        ['name' => 'New Construction'],
+        ['name' => 'Not Updated: Requires a complete update'],
+        ['name' => 'Open to any type of property condition'],
+        ['name' => 'Pre-Construction'],
+        ['name' => 'Semi-updated: Needs minor updates'],
+        ['name' => 'Tear Down: Requires complete demolition and reconstruction'],
+        // ['name' => 'Open to any type of property condition.'],
+        // ['name' => 'Semi-updated: Needs minor updates.'],
+        // ['name' => 'Other'],
     ];
-
-    $property_condition_seller = $property_condition;
 
     $bedroomsRes = [
         ['name' => '1'],
@@ -348,51 +353,6 @@
         ['name' => 'Turnkey'],
         ['name' => 'Unfurnished'],
     ];
-
-    // Appliances list matching Landlord Agent with legacy options for backwards compatibility
-    $applianceOptions = [
-        ['name' => 'Bar Fridge'],
-        ['name' => 'Built-In Oven'],
-        ['name' => 'Central Vacuum'],
-        ['name' => 'Convection Oven'],
-        ['name' => 'Cooktop'],
-        ['name' => 'Dishwasher'],
-        ['name' => 'Disposal'],
-        ['name' => 'Dryer'],
-        ['name' => 'Electric Water Heater'],
-        ['name' => 'Exhaust Fan'],
-        ['name' => 'Freezer'],
-        ['name' => 'Garbage Disposal'],
-        ['name' => 'Gas Water Heater'],
-        ['name' => 'Ice Maker'],
-        ['name' => 'Indoor Grill'],
-        ['name' => 'Kitchen Reverse Osmosis System'],
-        ['name' => 'Microwave'],
-        ['name' => 'Oven'],
-        ['name' => 'Range Electric'],
-        ['name' => 'Range Gas'],
-        ['name' => 'Range Hood'],
-        ['name' => 'Refrigerator'],
-        ['name' => 'Solar Hot Water'],
-        ['name' => 'Solar Hot Water Owned'],
-        ['name' => 'Solar Hot Water Rented'],
-        ['name' => 'Stove/Range'],
-        ['name' => 'Tankless Water Heater'],
-        ['name' => 'Touchless Faucet'],
-        ['name' => 'Trash Compactor'],
-        ['name' => 'Washer'],
-        ['name' => 'Washer/Dryer Combo'],
-        ['name' => 'Water Filtration System'],
-        ['name' => 'Water Heater'],
-        ['name' => 'Water Purifier'],
-        ['name' => 'Water Softener'],
-        ['name' => 'Whole House R.O. System'],
-        ['name' => 'Wine Cooler'],
-        ['name' => 'Wine Refrigerator'],
-        ['name' => 'None'],
-        ['name' => 'Other'],
-    ];
-
     $preferences = [
         ['name' => 'Beach'],
         ['name' => 'City'],
@@ -485,26 +445,27 @@
         ['name' => 'Other', 'class' => 'commercial-length'],
     ];
     $unit_types = [
-        ['name' => '1 Bed/1 Bath'],
-        ['name' => '1 Bedroom'],
-        ['name' => '2 Bed/1 Bath'],
-        ['name' => '2 Bed/2 Bath'],
-        ['name' => '2 Bedroom'],
-        ['name' => '3 Bed/1 Bath'],
-        ['name' => '3 Bed/2 Bath'],
-        ['name' => '3 Bedroom'],
-        ['name' => '4 Bedroom or More'],
-        ['name' => '4+ Bed/1 Bath'],
-        ['name' => '4+ Bed/2 Bath'],
-        ['name' => 'Apartments'],
-        ['name' => 'Efficiency'],
-        ['name' => 'Loft'],
-        ['name' => "Manager's Unit"],
-        ['name' => 'Multi-Level'],
-        ['name' => 'Penthouse'],
-        ['name' => 'Studio'],
-        ['name' => 'Other'],
-    ];
+                                    ['name' => '1 Bed/1 Bath'],
+                                    ['name' => '1 Bedroom'],
+                                    ['name' => '2 Bed/1 Bath'],
+                                    ['name' => '2 Bed/2 Bath'],
+                                    ['name' => '2 Bedroom'],
+                                    ['name' => '3 Bed/1 Bath'],
+                                    ['name' => '3 Bed/2 Bath'],
+                                    ['name' => '3 Bedroom'],
+                                    ['name' => '4 Bedroom or More'],
+                                    ['name' => '4+ Bed/1 Bath'],
+                                    ['name' => '4+ Bed/2 Bath'],
+                                    ['name' => 'Apartments'],
+                                    ['name' => 'Efficiency'],
+                                    ['name' => 'Loft'],
+                                    ['name' => "Manager's Unit"],
+                                    ['name' => 'Multi-Level'],
+                                    ['name' => 'Penthouse'],
+                                    ['name' => 'Studio'],
+                                    ['name' => 'Other'],
+                                ];
+
 
     $purchasing_props = [['name' => 'Not Age-Restricted'], ['name' => '55+ Community'], ['name' => '62+ Community']];
 
@@ -574,42 +535,44 @@
     ];
 
     $property_items = [
-        // Residential (alphabetical order)
-        ['name' => '½ Duplex', 'class' => 'residential-length'],
-        ['name' => '1/3 Triplex', 'class' => 'residential-length'],
-        ['name' => '1/4 Quadplex', 'class' => 'residential-length'],
-        ['name' => 'Condo-Hotel', 'class' => 'residential-length'],
-        ['name' => 'Condominium', 'class' => 'residential-length'],
-        ['name' => 'Dock-Rackominium', 'class' => 'residential-length'],
-        ['name' => 'Farm', 'class' => 'residential-length'],
-        ['name' => 'Garage Condo', 'class' => 'residential-length'],
-        ['name' => 'Manufactured Home- Post 1977', 'class' => 'residential-length'],
-        ['name' => 'Mobile Home- Pre 1976', 'class' => 'residential-length'],
-        ['name' => 'Modular Home', 'class' => 'residential-length'],
-        ['name' => 'Single Family Residence', 'class' => 'residential-length'],
-        ['name' => 'Townhouse', 'class' => 'residential-length'],
-        ['name' => 'Villa', 'class' => 'residential-length'],
+    // Residential (alphabetical order)
+    ['name' => '½ Duplex', 'class' => 'residential-length'],
+    ['name' => '1/3 Triplex', 'class' => 'residential-length'],
+    ['name' => '1/4 Quadplex', 'class' => 'residential-length'],
+    ['name' => 'Condo-Hotel', 'class' => 'residential-length'],
+    ['name' => 'Condominium', 'class' => 'residential-length'],
+    ['name' => 'Dock-Rackominium', 'class' => 'residential-length'],
+    ['name' => 'Farm', 'class' => 'residential-length'],
+    ['name' => 'Garage Condo', 'class' => 'residential-length'],
+    ['name' => 'Manufactured Home- Post 1977', 'class' => 'residential-length'],
+    ['name' => 'Mobile Home- Pre 1976', 'class' => 'residential-length'],
+    ['name' => 'Modular Home', 'class' => 'residential-length'],
+    ['name' => 'Single Family Residence', 'class' => 'residential-length'],
+    ['name' => 'Townhouse', 'class' => 'residential-length'],
+    ['name' => 'Villa', 'class' => 'residential-length'],
 
-        // Income (alphabetical order)
-        ['name' => 'Duplex', 'class' => 'income-length'],
-        ['name' => 'Five or More', 'class' => 'income-length'],
-        ['name' => 'Quadplex', 'class' => 'income-length'],
-        ['name' => 'Triplex', 'class' => 'income-length'],
+    // Income (alphabetical order)
+    ['name' => 'Duplex', 'class' => 'income-length'],
+    ['name' => 'Five or More', 'class' => 'income-length'],
+    ['name' => 'Quadplex', 'class' => 'income-length'],
+    ['name' => 'Triplex', 'class' => 'income-length'],
 
-        // Business (alphabetical order)
-        ['name' => 'Agriculture', 'class' => 'business-length'],
-        ['name' => 'Assembly Building', 'class' => 'business-length'],
-        ['name' => 'Business', 'class' => 'business-length'],
-        ['name' => 'Five or More', 'class' => 'business-length'],
-        ['name' => 'Hotel/Motel', 'class' => 'business-length'],
-        ['name' => 'Industrial', 'class' => 'business-length'],
-        ['name' => 'Mixed Use', 'class' => 'business-length'],
-        ['name' => 'Office', 'class' => 'business-length'],
-        ['name' => 'Restaurant', 'class' => 'business-length'],
-        ['name' => 'Retail', 'class' => 'business-length'],
-        ['name' => 'Warehouse', 'class' => 'business-length'],
 
-        ['name' => 'Agriculture', 'class' => 'commercial-length'],
+    // Business (alphabetical order)
+    ['name' => 'Agriculture', 'class' => 'business-length'],
+    ['name' => 'Assembly Building', 'class' => 'business-length'],
+    ['name' => 'Business', 'class' => 'business-length'],
+    ['name' => 'Five or More', 'class' => 'business-length'],
+    ['name' => 'Hotel/Motel', 'class' => 'business-length'],
+    ['name' => 'Industrial', 'class' => 'business-length'],
+    ['name' => 'Mixed Use', 'class' => 'business-length'],
+    ['name' => 'Office', 'class' => 'business-length'],
+    ['name' => 'Restaurant', 'class' => 'business-length'],
+    ['name' => 'Retail', 'class' => 'business-length'],
+    ['name' => 'Warehouse', 'class' => 'business-length'],
+
+
+     ['name' => 'Agriculture', 'class' => 'commercial-length'],
         ['name' => 'Assembly Building', 'class' => 'commercial-length'],
         ['name' => 'Business', 'class' => 'commercial-length'],
         ['name' => 'Five or More ', 'class' => 'commercial-length'],
@@ -621,40 +584,41 @@
         ['name' => 'Retail', 'class' => 'commercial-length'],
         ['name' => 'Warehouse', 'class' => 'commercial-length'],
 
-        // Vacant Land
+    // Vacant Land
 
-        ['name' => 'Agricultural', 'class' => 'vacant-land-length'],
-        ['name' => 'Billboard Site', 'class' => 'vacant-land-length'],
-        ['name' => 'Business', 'class' => 'vacant-land-length'],
-        ['name' => 'Cattle', 'class' => 'vacant-land-length'],
-        ['name' => 'Commercial', 'class' => 'vacant-land-length'],
-        ['name' => 'Farm', 'class' => 'vacant-land-length'],
-        ['name' => 'Fishery', 'class' => 'vacant-land-length'],
-        ['name' => 'Highway Frontage', 'class' => 'vacant-land-length'],
-        ['name' => 'Horses', 'class' => 'vacant-land-length'],
-        ['name' => 'Industrial', 'class' => 'vacant-land-length'],
-        ['name' => 'Land Fill', 'class' => 'vacant-land-length'],
-        ['name' => 'Livestock', 'class' => 'vacant-land-length'],
-        ['name' => 'Mixed Use', 'class' => 'vacant-land-length'],
-        ['name' => 'Multi Family', 'class' => 'vacant-land-length'],
-        ['name' => 'Nursery', 'class' => 'vacant-land-length'],
-        ['name' => 'Orchard', 'class' => 'vacant-land-length'],
-        ['name' => 'Pasture', 'class' => 'vacant-land-length'],
-        ['name' => 'Poultry', 'class' => 'vacant-land-length'],
-        ['name' => 'Ranch', 'class' => 'vacant-land-length'],
-        ['name' => 'Residential', 'class' => 'vacant-land-length'],
-        ['name' => 'Retail', 'class' => 'vacant-land-length'],
-        ['name' => 'Row Crops', 'class' => 'vacant-land-length'],
-        ['name' => 'Sod Farm', 'class' => 'vacant-land-length'],
-        ['name' => 'Subdivision', 'class' => 'vacant-land-length'],
-        ['name' => 'Timber', 'class' => 'vacant-land-length'],
-        ['name' => 'Tracts', 'class' => 'vacant-land-length'],
-        ['name' => 'Trans/Cell Tower', 'class' => 'vacant-land-length'],
-        ['name' => 'Tree Farm', 'class' => 'vacant-land-length'],
-        ['name' => 'Unimproved Land', 'class' => 'vacant-land-length'],
-        ['name' => 'Well Field', 'class' => 'vacant-land-length'],
-        ['name' => 'Other', 'class' => 'vacant-land-length', 'id' => 'vacant-land-length-other'],
-    ];
+    ['name' => 'Agricultural', 'class' => 'vacant-land-length'],
+    ['name' => 'Billboard Site', 'class' => 'vacant-land-length'],
+    ['name' => 'Business', 'class' => 'vacant-land-length'],
+    ['name' => 'Cattle', 'class' => 'vacant-land-length'],
+    ['name' => 'Commercial', 'class' => 'vacant-land-length'],
+    ['name' => 'Farm', 'class' => 'vacant-land-length'],
+    ['name' => 'Fishery', 'class' => 'vacant-land-length'],
+    ['name' => 'Highway Frontage', 'class' => 'vacant-land-length'],
+    ['name' => 'Horses', 'class' => 'vacant-land-length'],
+    ['name' => 'Industrial', 'class' => 'vacant-land-length'],
+    ['name' => 'Land Fill', 'class' => 'vacant-land-length'],
+    ['name' => 'Livestock', 'class' => 'vacant-land-length'],
+    ['name' => 'Mixed Use', 'class' => 'vacant-land-length'],
+    ['name' => 'Multi Family', 'class' => 'vacant-land-length'],
+    ['name' => 'Nursery', 'class' => 'vacant-land-length'],
+    ['name' => 'Orchard', 'class' => 'vacant-land-length'],
+    ['name' => 'Pasture', 'class' => 'vacant-land-length'],
+    ['name' => 'Poultry', 'class' => 'vacant-land-length'],
+    ['name' => 'Ranch', 'class' => 'vacant-land-length'],
+    ['name' => 'Residential', 'class' => 'vacant-land-length'],
+    ['name' => 'Retail', 'class' => 'vacant-land-length'],
+    ['name' => 'Row Crops', 'class' => 'vacant-land-length'],
+    ['name' => 'Sod Farm', 'class' => 'vacant-land-length'],
+    ['name' => 'Subdivision', 'class' => 'vacant-land-length'],
+    ['name' => 'Timber', 'class' => 'vacant-land-length'],
+    ['name' => 'Tracts', 'class' => 'vacant-land-length'],
+    ['name' => 'Trans/Cell Tower', 'class' => 'vacant-land-length'],
+    ['name' => 'Tree Farm', 'class' => 'vacant-land-length'],
+    ['name' => 'Unimproved Land', 'class' => 'vacant-land-length'],
+    ['name' => 'Well Field', 'class' => 'vacant-land-length'],
+    ['name' => 'Other', 'class' => 'vacant-land-length' ,'id'=>'vacant-land-length-other']
+
+];
     $credit_score = [['name' => 'Poor'], ['name' => 'Fair'], ['name' => 'Good'], ['name' => 'Excellent']];
 
     $auction_lengths = [
@@ -739,52 +703,6 @@
         <div class="row">
             <div class="col-12 p-4">
 
-                @if ($hasDrafts && !$listingId)
-                    <div class="modal fade" id="draftModal" tabindex="-1" aria-labelledby="draftModalLabel"
-                        aria-hidden="true" wire:ignore.self>
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="draftModalLabel">Load Saved Draft</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                        aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <p>You have saved drafts. Would you like to load one?</p>
-                                    <div class="list-group">
-                                        @foreach ($this->getDrafts() as $draft)
-                                            @php $draftVersion = $draft->info('draft_version') ?? null; @endphp
-                                            <div
-                                                class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                                                <a class="btn btn-link text-start flex-grow-1"
-                                                    href="{{ route('hire.agent.auction.draft', ['user_type' => $user_type, 'listingId' => $draft->id]) }}">
-                                                    {{ $draft->title }}@if($draftVersion) <span class="badge bg-secondary">v{{ $draftVersion }}</span>@endif ({{ $draft->updated_at->format('m/d/Y H:i') }})
-                                                </a>
-                                                <button type="button" class="btn btn-sm btn-outline-danger" style="border-color: #dc3545; color: #dc3545;"
-                                                    data-bs-dismiss="modal"
-                                                    wire:click="deleteDraft('{{ $draft->id }}')" wire:ignore.self
-                                                    onclick="setTimeout(() => { window.location = '{{ route('hire.agent.auction' , ['user_type' => $user_type])}}' }, 100)">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" style="background-color: #6c757d; color: #fff; border-color: #6c757d;" data-bs-dismiss="modal"
-                                        wire:click="startNew">
-                                        Start New
-                                    </button>
-                                    <button type="button" class="btn btn-danger" style="background-color: #dc3545; color: #fff; border-color: #dc3545;" data-bs-dismiss="modal"
-                                        wire:click="deleteAllDrafts" wire:ignore.self
-                                        onclick="setTimeout(() => { window.location = '{{ route('hire.agent.auction' , ['user_type' => $user_type])}}' }, 100)">
-                                        <i class="fas fa-trash me-1"></i> Delete All Drafts
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                @endif
 
                 @if (session()->has('success'))
                     <div class="alert alert-success">
@@ -800,20 +718,15 @@
 
                 <div id="wizard-form-container" class="container pt-5 pb-5" data-service-type="{{ $service_type }}">
 
-                    <form id="create-auction-form" wire:submit.prevent="store" novalidate>
-                        <div id="submit-error-banner" class="alert alert-danger d-none" role="alert" style="position: sticky; top: 0; z-index: 1050;">
-                            <strong>Please complete the required fields before submitting.</strong>
-                            <ul id="submit-error-list" class="mb-0 mt-2"></ul>
-                        </div>
+                    <form wire:submit.prevent="update">
                         <!-- Tab Navigation -->
 
                         @if ($service_type === 'full_service')
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Preferences', 'sale Terms', 'Services', 'Additional Details', 'Broker Compensation', 'Seller Information'] as $index => $tab)
+                                @foreach (['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Services', 'Additional Details', 'Broker Compensation', 'Seller Information'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
-                                            wire:click="setActiveTab({{ $index }})"
                                             id="{{ str_replace(' ', '-', strtolower($tab)) }}-tab" data-bs-toggle="tab"
                                             data-bs-target="#{{ str_replace(' ', '-', strtolower($tab)) }}"
                                             type="button" role="tab"
@@ -829,7 +742,6 @@
                                 @foreach (['Listing Details', 'Location and Meeting Details', 'Service Selection and Pricing', 'Additional Details'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
-                                            wire:click="setActiveTab({{ $index }})"
                                             id="{{ str_replace(' ', '-', strtolower($tab)) }}-tab" data-bs-toggle="tab"
                                             data-bs-target="#{{ str_replace(' ', '-', strtolower($tab)) }}"
                                             type="button" role="tab"
@@ -840,10 +752,9 @@
                                     </li>
                                 @endforeach
 
-                                <!-- Dynamic Information Tab Based on User Type -->
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(4)" id="information-tab" data-bs-toggle="tab"
+                                        id="information-tab" data-bs-toggle="tab"
                                         data-bs-target="#information" type="button" role="tab"
                                         aria-controls="information"
                                         aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
@@ -868,136 +779,78 @@
                             <!-- Listing Details Tab -->
                             <div class="tab-pane fade {{ $activeTab === 0 ? 'show active' : '' }}" id="listing-details"
                                 role="tabpanel" aria-labelledby="listing-details-tab">
-                                @if ($user_type === 'tenant')
-                                    @include('livewire.tenant-agent-auction-tabs.commission-based.listing-details')
-                                @elseif($user_type === 'seller')
-                                    @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.listing-details')
-                                @elseif($user_type === 'buyer')
-                                    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.listing-details')
-                                @elseif($user_type === 'landlord')
-                                    @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.listing-details')
+                                @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.listing-details')
 
-                                @endif
                             </div>
                             @if ($service_type === 'full_service')
                                 <div class="tab-pane fade {{ $activeTab === 1 ? 'show active' : '' }}"
                                     id="property-preferences" role="tabpanel"
                                     aria-labelledby="property-preferences-tab">
-
-                                    @if ($user_type === 'tenant')
-                                        @include('livewire.tenant-agent-auction-tabs.commission-based.property-details')
-                                    @elseif($user_type === 'seller')
-                                        @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.property-preferences')
-                                    @elseif($user_type === 'buyer')
-                                        @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.property-preferences')
-                                    @elseif($user_type === 'landlord')
-                                        @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.property-preferences')
-                                    @endif
+                                    @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.property-preferences')
 
                                 </div>
 
-                                <!-- Leasing Terms Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}" id="sale-terms"
-                                    role="tabpanel" aria-labelledby="sale-terms-tab">
-                                    @if ($user_type === 'tenant')
-                                        @include('livewire.tenant-agent-auction-tabs.commission-based.leasing-terms')
-                                    @elseif($user_type === 'seller')
-                                        @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-terms')
-                                    @elseif($user_type === 'buyer')
-                                        @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.purchasing-terms')
-                                    @elseif($user_type === 'landlord')
-                                        @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.purchasing-terms')
-                                    @endif
+                                <!-- Sale Terms Tab -->
+                                <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
+                                    id="purchasing-terms" role="tabpanel" aria-labelledby="purchasing-terms-tab">
+
+                                    @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-terms')
                                 </div>
+
+
 
                                 <!-- Services Tab -->
                                 <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}" id="services"
                                     role="tabpanel" aria-labelledby="services-tab">
-
-                                    @if ($user_type === 'tenant')
-                                        @include('livewire.tenant-agent-auction-tabs.commission-based.services')
-                                    @elseif($user_type === 'seller')
-                                        @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.services')
-                                    @elseif($user_type === 'buyer')
-                                        @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.services')
-                                    @elseif($user_type === 'landlord')
-                                        @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.services')
-                                    @endif
-
+                                    @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.services')
                                 </div>
-
                                 <!-- Additional Details Tab -->
                                 <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
                                     id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
 
-                                    @if ($user_type === 'tenant')
-                                        @include('livewire.tenant-agent-auction-tabs.commission-based.additional-details')
-                                    @elseif($user_type === 'seller')
-                                        @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.additional-details')
-                                    @elseif($user_type === 'buyer')
-                                        @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.additional-details')
-                                    @elseif($user_type === 'landlord')
-                                        @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.additional-details')
-                                    @endif
+                                    @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.additional-details')
+
                                 </div>
 
                                 <!-- Broker Compensation Tab -->
                                 <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
-                                    id="broker-compensation" role="tabpanel" aria-labelledby="broker-compensation-tab">
+                                    id="broker-compensation" role="tabpanel"
+                                    aria-labelledby="broker-compensation-tab">
 
-                                    @if ($user_type === 'tenant')
-                                        @include('livewire.tenant-agent-auction-tabs.commission-based.broker-compensation')
-                                    @elseif($user_type === 'seller')
-                                        @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.broker-compensation')
-                                    @elseif($user_type === 'buyer')
-                                        @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.broker-compensation')
-                                    @elseif($user_type === 'landlord')
-                                        @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.broker-compensation')
-                                    @endif
+                                    @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.broker-compensation')
+
                                 </div>
 
                                 <!-- Seller Info Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}" id="seller-information"
-                                    role="tabpanel" aria-labelledby="seller-information-tab">
-                                    @if ($user_type === 'tenant')
-                                        @include('livewire.tenant-agent-auction-tabs.commission-based.tenant-info')
-                                    @elseif($user_type === 'seller')
-                                        @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-info')
-                                    @elseif($user_type === 'buyer')
-                                        @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.buyer-info')
-                                    @elseif($user_type === 'landlord')
-                                        @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.landlord-info')
-                                    @endif
+                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
+                                    id="seller-information" role="tabpanel" aria-labelledby="seller-information-tab">
+                                    @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-info')
                                 </div>
-                    @endif
+                            @elseif($service_type === 'limited_service')
+
+                            @endif
+                        </div>
+                        <!-- Navigation Buttons -->
+                        <div class="d-flex justify-content-between form-group mt-4">
+                            <div>
+                                <button type="button" class="btn btn-secondary wizard-step-back">Back</button>
+                            </div>
+                            <div>
+                                <button type="button" class="btn btn-primary wizard-step-next">Next</button>
+
+                                <button type="submit" class="btn btn-success wizard-step-finish disabled"
+                                    id="save-button">
+                                    Submit
+                                </button>
+                            </div>
+
+                        </div>
+                    </form>
                 </div>
-                <!-- Navigation Buttons -->
-                <div class="d-flex justify-content-between form-group mt-4">
-                    <div>
-                        <button type="button" class="btn btn-secondary wizard-step-back">Back</button>
-                    </div>
-                    <div>
 
-                        <button type="button" class="btn btn-outline-primary me-2" onclick="syncAllSelect2BeforeSave(); @this.call('saveDraft');" wire:loading.attr="disabled" wire:target="saveDraft">
-                            <span wire:loading.remove wire:target="saveDraft"><i class="fas fa-save me-1"></i> Save Draft</span>
-                            <span wire:loading wire:target="saveDraft">Saving...</span>
-                        </button>
-
-                        <button type="button" class="btn btn-primary wizard-step-next">Next</button>
-
-                        <button type="submit" class="btn btn-success wizard-step-finish" id="save-button" wire:loading.attr="disabled" wire:target="store">
-                            <span wire:loading.remove wire:target="store">Submit</span>
-                            <span wire:loading wire:target="store">Submitting...</span>
-                        </button>
-                    </div>
-
-                </div>
-                </form>
             </div>
-
         </div>
     </div>
-</div>
 </div>
 
 @push('scripts')
@@ -1005,7 +858,6 @@
         let currentServiceType = null;
         let _s2Timers = {};
         let _lastInitTime = 0;
-        let _bathroomsDropdownHandler = null;
 
         function debouncedSet(field, value, delay) {
             clearTimeout(_s2Timers[field]);
@@ -1020,11 +872,8 @@
             var fields = {
                 property_items: '#property_items',
                 non_negotiable_amenities: '#non_negotiable_amenities',
-                appliances: '#appliances',
                 exchange_item: '#exchange_item',
-                sale_provision: '#sale_provision',
-                offered_financing: '#offered_financing',
-                view_preference: '#view_preference',
+                business_assets: '#included_assets',
             };
             Object.entries(fields).forEach(function([field, selector]) {
                 var el = $(selector);
@@ -1034,154 +883,11 @@
             });
         }
 
-        // Initialize Bootstrap tooltips and handle Livewire re-renders
-        function initializeTooltips() {
-            // Dispose of existing tooltips first to prevent sticking
-            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
-                const existingTooltip = bootstrap.Tooltip.getInstance(el);
-                if (existingTooltip) {
-                    existingTooltip.dispose();
-                }
-            });
-            // Initialize fresh tooltips
-            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
-                new bootstrap.Tooltip(el, {
-                    trigger: 'hover focus',
-                    container: 'body'
-                });
-            });
-        }
-
-        // Hide all tooltips when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('[data-bs-toggle="tooltip"]')) {
-                document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
-                    const tooltip = bootstrap.Tooltip.getInstance(el);
-                    if (tooltip) {
-                        tooltip.hide();
-                    }
-                });
-            }
-        });
-
-        // Hide all tooltips when pressing Escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
-                    const tooltip = bootstrap.Tooltip.getInstance(el);
-                    if (tooltip) {
-                        tooltip.hide();
-                    }
-                });
-            }
-        });
-
-        // Seller Sale Terms visibility logic must remain identical between the dedicated Seller path and the shared TenantAgentAuction seller path.
-        // If changes are made to one path, they must also be applied to the other to keep both Seller flows consistent.
-        function applyFinancingVisibility() {
-            var data = ($('#offered_financing').val() || []);
-            var financingMap = {
-                'Assumable': '#seller-financing-assumable-section',
-                'Cryptocurrency': '#seller-financing-crypto-section',
-                'Exchange/Trade': '#seller-financing-exchange-section',
-                'Lease Option': '#seller-financing-leaseoption-section',
-                'Lease Purchase': '#seller-financing-leasepurchase-section',
-                'Non-Fungible Token (NFT)': '#seller-financing-nft-section',
-                'Seller Financing': '#seller-financing-sellerfinancing-section',
-                'Other': '#seller-financing-other-section',
-            };
-            Object.keys(financingMap).forEach(function(option) {
-                if (data.includes(option)) {
-                    $(financingMap[option]).show();
-                } else {
-                    $(financingMap[option]).hide();
-                }
-            });
-        }
-
-        function applyProvisionVisibility() {
-            var data = ($('#sale_provision').val() || []);
-            var provisionMap = {
-                'Assignment Contract': '#seller-provision-assignment-section',
-                'Other': '#seller-provision-other-section',
-            };
-            Object.keys(provisionMap).forEach(function(option) {
-                if (data.includes(option)) {
-                    $(provisionMap[option]).show();
-                } else {
-                    $(provisionMap[option]).hide();
-                }
-            });
-        }
-
-        // Document-level event delegation for sale provision and financing visibility.
-        // Using $(document).on() means these handlers survive any DOM replacement,
-        // morphdom patching, or Select2 re-initialization — they are bound once and
-        // never need to be re-registered.
-        // @this.set() syncs the value into the Livewire component so that every
-        // subsequent server-side re-render keeps sections visible (mirrors Appliances pattern).
-        $(document).on('change', '#sale_provision', function() {
-            var selectedValues = $(this).val() || [];
-            @this.set('sale_provision', selectedValues, false);
-            applyProvisionVisibility();
-        });
-        $(document).on('change', '#offered_financing', function() {
-            var selectedValues = $(this).val() || [];
-            @this.set('offered_financing', selectedValues, false);
-            applyFinancingVisibility();
-        });
-
-        // Re-initialize tooltips after Livewire updates
-        document.addEventListener('livewire:load', function() {
-            initializeTooltips();
-
-            Livewire.hook('message.processed', (message, component) => {
-                initializeTooltips();
-
-                if ($('#offered_financing').length) { applyFinancingVisibility(); }
-                if ($('#sale_provision').length) { applyProvisionVisibility(); }
-
-                var $appliances = $('#appliances');
-                if ($appliances.length) {
-                    if (!$appliances.hasClass('select2-hidden-accessible')) {
-                        $appliances.select2({ placeholder: "Select Appliances", allowClear: true });
-                        if (!$appliances.data('appliances-change-bound')) {
-                            $appliances.on('change', function() {
-                                var selectedValues = $(this).val() || [];
-                                @this.set('appliances', selectedValues, false);
-                                if (selectedValues.includes('Other')) {
-                                    $('#other_appliances').show();
-                                } else {
-                                    $('#other_appliances').hide();
-                                }
-                            });
-                            $appliances.data('appliances-change-bound', true);
-                        }
-                    }
-                    var aData = $appliances.val() || [];
-                    if (aData.includes('Other')) {
-                        $('#other_appliances').show();
-                    } else {
-                        $('#other_appliances').hide();
-                    }
-                }
-
-                var $viewPref = $('#view_preference');
-                if ($viewPref.length && $viewPref.hasClass('select2-hidden-accessible')) {
-                    var vData = $viewPref.val() || [];
-                    if (vData.includes('Other')) {
-                        $('#other_preferences').show();
-                    } else {
-                        $('#other_preferences').hide();
-                    }
-                }
-            });
-        });
+        document.addEventListener('submit', function(e) {
+            syncAllSelect2BeforeSave();
+        }, true);
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Initialize tooltips on page load
-            initializeTooltips();
-
             // Detect which service is preselected on load
             if (document.getElementById('fullService')?.checked) {
                 currentServiceType = 'full_service';
@@ -1189,98 +895,10 @@
             } else if (document.getElementById('limitedService')?.checked) {
                 currentServiceType = 'limited_service';
                 initializeLimitedService();
-            } else {
-                // Default to full service if no service type radio buttons found (limited service removed)
-                currentServiceType = 'full_service';
-                initializeFullService();
             }
 
             addIconsToInputs();
             checkRepresentationStatus();
-
-            // Polling safety net: ensures sections show/hide within 100ms of any Select2 change,
-            // regardless of whether jQuery event binding caught the change event.
-            var _lastProvVal = '';
-            var _lastFinVal = '';
-            setInterval(function() {
-                var $sp = $('#sale_provision');
-                var $of = $('#offered_financing');
-                if ($sp.length) {
-                    var pv = JSON.stringify($sp.val() || []);
-                    if (pv !== _lastProvVal) {
-                        _lastProvVal = pv;
-                        applyProvisionVisibility();
-                    }
-                }
-                if ($of.length) {
-                    var fv = JSON.stringify($of.val() || []);
-                    if (fv !== _lastFinVal) {
-                        _lastFinVal = fv;
-                        applyFinancingVisibility();
-                    }
-                }
-            }, 100);
-        });
-        
-        // Sync select element values from Livewire component data
-        function syncSelectValues() {
-            const wireEl = document.querySelector('[wire\\:id]');
-            if (!wireEl || typeof Livewire === 'undefined') return;
-            const component = Livewire.find(wireEl.getAttribute('wire:id'));
-            if (!component) return;
-            document.querySelectorAll('select[wire\\:model]').forEach(select => {
-                const wireModel = select.getAttribute('wire:model');
-                if (wireModel && component.get) {
-                    try {
-                        const lwValue = component.get(wireModel);
-                        if (lwValue && select.value !== lwValue) {
-                            console.log('[SyncSelect] Syncing ' + wireModel + ': DOM="' + select.value + '" -> LW="' + lwValue + '"');
-                            select.value = lwValue;
-                        }
-                    } catch (e) {}
-                }
-            });
-        }
-        
-        // Listen for draftLoaded browser event
-        window.addEventListener('draftLoaded', function() {
-            console.log('[DraftLoaded] Event received - syncing select values');
-            setTimeout(function() {
-                syncSelectValues();
-                rehydrateSelect2MultiFields();
-                if (typeof window.updateSaveButton === 'function') {
-                    window.updateSaveButton();
-                }
-            }, 100);
-        });
-
-        function rehydrateSelect2MultiFields() {
-            var multiFields = {
-                '#exchange_item': 'exchange_item',
-                '#non_negotiable_amenities': 'non_negotiable_amenities',
-                '#sale_provision': 'sale_provision',
-                '#offered_financing': 'offered_financing',
-                '#view_preference': 'view_preference',
-                '#appliances': 'appliances',
-                '#included_assets': 'business_assets',
-            };
-            Object.keys(multiFields).forEach(function(selector) {
-                var $el = $(selector);
-                if ($el.length && $el.hasClass('select2-hidden-accessible')) {
-                    var prop = multiFields[selector];
-                    var saved = @this.get(prop) || [];
-                    if (saved.length > 0) {
-                        $el.val(saved).trigger('change.select2');
-                        console.log('[DraftLoaded] Rehydrated ' + prop + ':', saved);
-                    }
-                }
-            });
-        }
-
-        // Listen for force-redirect event to ensure redirect works after submit
-        window.addEventListener('force-redirect', function(event) {
-            console.log('[ForceRedirect] Redirecting to:', event.detail.url);
-            window.location.href = event.detail.url;
         });
 
         function selectService(serviceType) {
@@ -1321,41 +939,6 @@
         }
 
         function initializeFullService() {
-            if ($('#offered_financing').length) {
-                if (!$('#offered_financing').hasClass('select2-hidden-accessible')) {
-                    $('#offered_financing').select2({
-                        placeholder: "Select offered financing",
-                        allowClear: true,
-                    });
-                }
-                if (!$('#offered_financing').data('of-change-bound')) {
-                    $('#offered_financing').on('change', function() {
-                        var selectedValues = $(this).val() || [];
-                        @this.set('offered_financing', selectedValues, false);
-                        applyFinancingVisibility();
-                    });
-                    $('#offered_financing').data('of-change-bound', true);
-                }
-                applyFinancingVisibility();
-            }
-
-            if ($('#sale_provision').length) {
-                if (!$('#sale_provision').hasClass('select2-hidden-accessible')) {
-                    $('#sale_provision').select2({
-                        placeholder: "Select sale provisions",
-                        allowClear: true,
-                    });
-                }
-                if (!$('#sale_provision').data('sp-change-bound')) {
-                    $('#sale_provision').on('change', function() {
-                        var selectedValues = $(this).val() || [];
-                        @this.set('sale_provision', selectedValues, false);
-                        applyProvisionVisibility();
-                    });
-                    $('#sale_provision').data('sp-change-bound', true);
-                }
-                applyProvisionVisibility();
-            }
 
 
             if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
@@ -1375,35 +958,54 @@
                     allowClear: true,
                 });
                 $('#non_negotiable_amenities').on('change', function(e) {
-                    let selectedValues = $(this).val() || [];
-                    @this.set('non_negotiable_amenities', selectedValues, false);
+                    let selectedValues = $(this).val();
+                    debouncedSet('non_negotiable_amenities', selectedValues);
                 });
             }
 
-            if ($('#exchange_item').length) {
-                var $exEl = $('#exchange_item');
-                if (!$exEl.hasClass('select2-hidden-accessible')) {
-                    $exEl.select2({
-                        placeholder: "Select acceptable exchange items",
-                        allowClear: true,
-                    });
-                }
-                var savedExchangeItems = [];
-                try { savedExchangeItems = JSON.parse($exEl.attr('data-selected') || '[]'); } catch(e) {}
-                if (!savedExchangeItems.length) {
-                    savedExchangeItems = @this.get('exchange_item') || [];
-                }
+            if ($('#exchange_item').length && !$('#exchange_item').hasClass('select2-hidden-accessible')) {
+                $('#exchange_item').select2({
+                    placeholder: "Select acceptable exchange items",
+                    allowClear: true,
+                });
+                var savedExchangeItems = @this.get('exchange_item') || [];
                 if (savedExchangeItems.length > 0) {
-                    $exEl.val(savedExchangeItems).trigger('change.select2');
+                    $('#exchange_item').val(savedExchangeItems).trigger('change.select2');
                 }
-                if (!$exEl.data('exchange-change-bound')) {
-                    $exEl.on('change', function(e) {
-                        var selectedValues = $(this).val() || [];
-                        @this.set('exchange_item', selectedValues);
-                    });
-                    $exEl.data('exchange-change-bound', true);
+                $('#exchange_item').on('change', function(e) {
+                    var selectedValues = $(this).val() || [];
+                    @this.set('exchange_item', selectedValues);
+                });
+            } else if ($('#exchange_item').length && $('#exchange_item').hasClass('select2-hidden-accessible')) {
+                var savedExchangeItems = @this.get('exchange_item') || [];
+                var currentVal = $('#exchange_item').val() || [];
+                if (savedExchangeItems.length > 0 && currentVal.length === 0) {
+                    $('#exchange_item').val(savedExchangeItems).trigger('change.select2');
                 }
             }
+
+            if ($('#included_assets').length && !$('#included_assets').hasClass('select2-hidden-accessible')) {
+                $('#included_assets').select2({
+                    placeholder: "Select included assets",
+                    allowClear: true,
+                });
+                var savedBusinessAssets = @this.get('business_assets') || [];
+                if (savedBusinessAssets.length > 0) {
+                    $('#included_assets').val(savedBusinessAssets).trigger('change.select2');
+                }
+                $('#included_assets').on('change', function(e) {
+                    var selectedValues = $(this).val() || [];
+                    @this.set('business_assets', selectedValues, false);
+                });
+            } else if ($('#included_assets').length && $('#included_assets').hasClass('select2-hidden-accessible')) {
+                var savedBusinessAssets = @this.get('business_assets') || [];
+                var currentAssets = $('#included_assets').val() || [];
+                if (savedBusinessAssets.length > 0 && currentAssets.length === 0) {
+                    $('#included_assets').val(savedBusinessAssets).trigger('change.select2');
+                }
+            }
+
+
 
             // Function to toggle "auction time" input field
             function toggleAuctionTime(selectElement) {
@@ -1441,29 +1043,6 @@
             // Re-attach the event listener after Livewire re-renders the DOM
             Livewire.hook('message.processed', () => {
                 attachAuctionDropdownListener();
-                if ($('#exchange_item').length) {
-                    var $exEl = $('#exchange_item');
-                    if (!$exEl.hasClass('select2-hidden-accessible')) {
-                        $exEl.select2({
-                            placeholder: "Select acceptable exchange items",
-                            allowClear: true,
-                        });
-                    }
-                    var saved = [];
-                    try { saved = JSON.parse($exEl.attr('data-selected') || '[]'); } catch(e) {}
-                    if (!saved.length) { saved = @this.get('exchange_item') || []; }
-                    var current = $exEl.val() || [];
-                    if (saved.length > 0 && current.length === 0) {
-                        $exEl.val(saved).trigger('change.select2');
-                    }
-                    if (!$exEl.data('exchange-change-bound')) {
-                        $exEl.on('change', function(e) {
-                            var selectedValues = $(this).val() || [];
-                            @this.set('exchange_item', selectedValues);
-                        });
-                        $exEl.data('exchange-change-bound', true);
-                    }
-                }
             });
 
 
@@ -1486,11 +1065,9 @@
             function attachBathroomsDropdownListener() {
                 const bathroomsDropdown = document.getElementById('bathrooms');
                 if (bathroomsDropdown) {
-                    if (_bathroomsDropdownHandler) {
-                        bathroomsDropdown.removeEventListener('change', _bathroomsDropdownHandler);
-                    }
-                    _bathroomsDropdownHandler = function(e) { toggleOtherBathrooms(e.currentTarget); };
-                    bathroomsDropdown.addEventListener('change', _bathroomsDropdownHandler);
+                    bathroomsDropdown.addEventListener('change', function() {
+                        toggleOtherBathrooms(this);
+                    });
 
                     // Manually trigger the toggle function on page load or after Livewire re-renders
                     toggleOtherBathrooms(bathroomsDropdown);
@@ -1499,6 +1076,11 @@
 
             // Attach the event listener initially
             attachBathroomsDropdownListener();
+
+            // Re-attach the event listener after Livewire re-renders the DOM
+            Livewire.hook('message.processed', () => {
+                attachBathroomsDropdownListener();
+            });
 
 
 
@@ -1587,60 +1169,18 @@
                 toggleSpaceInput('garage-needed', 'other-garage-needed');
             });
 
-            if ($('#included_assets').length && !$('#included_assets').hasClass('select2-hidden-accessible')) {
-                $('#included_assets').select2({
-                    placeholder: "Select included assets",
-                    allowClear: true
-                });
-                $('#included_assets').on('change', function() {
-                    let selectedValues = $(this).val() || [];
-                    @this.set('business_assets', selectedValues, false);
-                });
-            }
-
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
                 $('#view_preference').select2({
                     placeholder: "Select Preference",
                     allowClear: true
                 });
                 $('#view_preference').on('change', function() {
-                    let selectedValues = $(this).val() || [];
-                    @this.set('view_preference', selectedValues, false);
+                    let selectedValues = $(this).val();
+                    Livewire.emit('updatePreference', selectedValues);
                     if (selectedValues.includes('Other')) {
                         $('#other_preferences').show();
                     } else {
                         $('#other_preferences').hide();
-                    }
-                });
-            }
-
-            if ($('#appliances').length && !$('#appliances').hasClass('select2-hidden-accessible')) {
-                $('#appliances').select2({
-                    placeholder: "Select Appliances",
-                    allowClear: true
-                });
-                $('#appliances').on('change', function() {
-                    let selectedValues = $(this).val() || [];
-                    @this.set('appliances', selectedValues, false);
-                    if (selectedValues && selectedValues.includes('Other')) {
-                        $('#other_appliances').closest('.form-group').show();
-                    } else {
-                        $('#other_appliances').closest('.form-group').hide();
-                    }
-                });
-            }
-
-            if ($('#garage_parking_spaces_option_landlord').length && !$('#garage_parking_spaces_option_landlord').hasClass('select2-hidden-accessible')) {
-                $('#garage_parking_spaces_option_landlord').select2({
-                    placeholder: "Select garage/parking features",
-                    allowClear: true
-                });
-                $('#garage_parking_spaces_option_landlord').on('change', function() {
-                    let selectedValues = $(this).val() || [];
-                    @this.set('garage_parking_spaces_option', selectedValues, false);
-                    const otherDiv = document.getElementById('other_garage_parking_spaces_option_landlord');
-                    if (otherDiv) {
-                        otherDiv.style.display = selectedValues.includes('Other') ? '' : 'none';
                     }
                 });
             }
@@ -1653,8 +1193,7 @@
                 if (!otherAmenitiesDiv) {
                     return;
                 }
-                var vals = $(selectElement).val() || [];
-                if (vals.includes('Other')) {
+                if (selectElement.value === 'Other') {
                     otherAmenitiesDiv.classList.remove('d-none'); // Show the "Other" input field
                 } else {
                     otherAmenitiesDiv.classList.add('d-none'); // Hide the "Other" input field
@@ -1759,7 +1298,7 @@
 
 
 
-            function toggleOtherPropertyItems(selectElement) {
+               function toggleOtherPropertyItems(selectElement) {
                 const otherConditionItemDiv = document.querySelector('.other_property_items');
 
                 if (!otherConditionItemDiv) {
@@ -1915,81 +1454,23 @@
             });
 
 
-            // Helper function to check if element is visible (not hidden by d-none, display:none, collapse, etc.)
-            function isElementVisible(element) {
-                if (!element) return false;
-                if (element.disabled) return false;
-                if (element.type === 'hidden') return false;
-                
-                if (element.offsetParent === null && element.tagName !== 'BODY' && element.tagName !== 'HTML') {
-                    if (element.offsetHeight === 0 && element.offsetWidth === 0) {
-                        return false;
-                    }
-                }
-                
-                if (element.offsetHeight === 0 || element.offsetWidth === 0) {
-                    return false;
-                }
-                
-                if (element.getAttribute('aria-hidden') === 'true') {
-                    return false;
-                }
-                
-                let el = element;
-                while (el && el !== document.body) {
-                    if (el.classList && (
-                        el.classList.contains('d-none') || 
-                        el.classList.contains('hidden') ||
-                        el.classList.contains('collapse') && !el.classList.contains('show')
-                    )) {
-                        return false;
-                    }
-                    
-                    if (el.getAttribute('aria-hidden') === 'true') {
-                        return false;
-                    }
-                    
-                    const style = window.getComputedStyle(el);
-                    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
-                        return false;
-                    }
-                    
-                    if (parseFloat(style.height) === 0 || parseFloat(style.maxHeight) === 0) {
-                        return false;
-                    }
-                    
-                    el = el.parentElement;
-                }
-                return true;
-            }
-
             // Function to check if all required fields are filled
             function checkFormValidity() {
                 let allValid = true;
 
-                // Check all tabs for required fields (skip hidden/disabled fields)
+                // Check all tabs for required fields
                 document.querySelectorAll('.tab-pane').forEach(tabPane => {
                     tabPane.querySelectorAll('[required]').forEach(field => {
-                        // Skip hidden or disabled fields - they should not block form validity
-                        if (!isElementVisible(field)) {
-                            return;
-                        }
                         if (!field.value) {
                             allValid = false;
                         }
                     });
                 });
 
-                // Enable/disable save button (both CSS class and attribute)
+                // Enable/disable save button
                 const saveButton = document.querySelector('.wizard-step-finish');
                 if (saveButton) {
-                    if (allValid) {
-                        saveButton.classList.remove('disabled');
-                        saveButton.removeAttribute('disabled');
-                    } else {
-                        saveButton.classList.add('disabled');
-                        saveButton.setAttribute('disabled', 'disabled');
-                    }
+                    saveButton.disabled = !allValid;
                 }
 
                 return allValid;
@@ -2131,52 +1612,36 @@
                     isValid = isValid && validateServicesTab(currentTabContent);
                 }
 
-                // If all fields are valid, proceed to the next tab (your existing code)
                 if (isValid) {
                     const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector(
                         '.nav-link');
                     if (nextTab) {
-                        const tabs = document.querySelectorAll('.nav-link');
-                        if (tabs) {
-                            const tabIndex = Array.from(tabs).indexOf(nextTab);
-                            if (tabIndex !== -1) {
-                                Livewire.emit('setActiveTab', tabIndex);
-                                nextTab.click();
-                            }
-                        }
+                        new bootstrap.Tab(nextTab).show();
                     }
                 }
 
-                // Update save button state after validation (your existing code)
                 const saveButton = document.querySelector('.wizard-step-finish');
                 if (saveButton) {
                     saveButton.disabled = !isValid;
                 }
             });
 
-            // Handle back button click (new implementation that works with your code)
             document.querySelector('.wizard-step-back')?.addEventListener('click', function() {
                 const currentTab = document.querySelector('.nav-tabs .nav-link.active');
                 const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
                 if (prevTab) {
-                    Livewire.emit('setActiveTab', Array.from(document.querySelectorAll('.nav-link'))
-                        .indexOf(prevTab));
-                    prevTab.click();
+                    new bootstrap.Tab(prevTab).show();
                 }
             });
 
-            // Add event listeners to update save button state when fields change
             document.addEventListener('DOMContentLoaded', function() {
-                // Initial check
                 checkFormValidity();
 
-                // Update on any input change
                 document.querySelectorAll('input, select, textarea').forEach(field => {
                     field.addEventListener('change', checkFormValidity);
                     field.addEventListener('keyup', checkFormValidity);
                 });
 
-                // Special handling for Livewire-updated fields
                 document.addEventListener('livewire:update', function() {
                     setTimeout(checkFormValidity, 100);
                 });
@@ -2187,81 +1652,23 @@
 
         function initializeLimitedService() {
 
-            // Helper function to check if element is visible (not hidden by d-none, display:none, collapse, etc.)
-            function isElementVisible(element) {
-                if (!element) return false;
-                if (element.disabled) return false;
-                if (element.type === 'hidden') return false;
-                
-                if (element.offsetParent === null && element.tagName !== 'BODY' && element.tagName !== 'HTML') {
-                    if (element.offsetHeight === 0 && element.offsetWidth === 0) {
-                        return false;
-                    }
-                }
-                
-                if (element.offsetHeight === 0 || element.offsetWidth === 0) {
-                    return false;
-                }
-                
-                if (element.getAttribute('aria-hidden') === 'true') {
-                    return false;
-                }
-                
-                let el = element;
-                while (el && el !== document.body) {
-                    if (el.classList && (
-                        el.classList.contains('d-none') || 
-                        el.classList.contains('hidden') ||
-                        el.classList.contains('collapse') && !el.classList.contains('show')
-                    )) {
-                        return false;
-                    }
-                    
-                    if (el.getAttribute('aria-hidden') === 'true') {
-                        return false;
-                    }
-                    
-                    const style = window.getComputedStyle(el);
-                    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
-                        return false;
-                    }
-                    
-                    if (parseFloat(style.height) === 0 || parseFloat(style.maxHeight) === 0) {
-                        return false;
-                    }
-                    
-                    el = el.parentElement;
-                }
-                return true;
-            }
-
             // Function to check if all required fields are filled
             function checkFormValidity() {
                 let allValid = true;
 
-                // Check all tabs for required fields (skip hidden/disabled fields)
+                // Check all tabs for required fields
                 document.querySelectorAll('.tab-pane').forEach(tabPane => {
                     tabPane.querySelectorAll('[required]').forEach(field => {
-                        // Skip hidden or disabled fields - they should not block form validity
-                        if (!isElementVisible(field)) {
-                            return;
-                        }
                         if (!field.value) {
                             allValid = false;
                         }
                     });
                 });
 
-                // Enable/disable save button (both CSS class and attribute)
+                // Enable/disable save button
                 const saveButton = document.querySelector('.wizard-step-finish');
                 if (saveButton) {
-                    if (allValid) {
-                        saveButton.classList.remove('disabled');
-                        saveButton.removeAttribute('disabled');
-                    } else {
-                        saveButton.classList.add('disabled');
-                        saveButton.setAttribute('disabled', 'disabled');
-                    }
+                    saveButton.disabled = !allValid;
                 }
 
                 return allValid;
@@ -2377,52 +1784,36 @@
 
 
 
-                // If all fields are valid, proceed to the next tab (your existing code)
                 if (isValid) {
                     const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector(
                         '.nav-link');
                     if (nextTab) {
-                        const tabs = document.querySelectorAll('.nav-link');
-                        if (tabs) {
-                            const tabIndex = Array.from(tabs).indexOf(nextTab);
-                            if (tabIndex !== -1) {
-                                Livewire.emit('setActiveTab', tabIndex);
-                                nextTab.click();
-                            }
-                        }
+                        new bootstrap.Tab(nextTab).show();
                     }
                 }
 
-                // Update save button state after validation (your existing code)
                 const saveButton = document.querySelector('.wizard-step-finish');
                 if (saveButton) {
                     saveButton.disabled = !isValid;
                 }
             });
 
-            // Handle back button click (new implementation that works with your code)
             document.querySelector('.wizard-step-back')?.addEventListener('click', function() {
                 const currentTab = document.querySelector('.nav-tabs .nav-link.active');
                 const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
                 if (prevTab) {
-                    Livewire.emit('setActiveTab', Array.from(document.querySelectorAll('.nav-link'))
-                        .indexOf(prevTab));
-                    prevTab.click();
+                    new bootstrap.Tab(prevTab).show();
                 }
             });
 
-            // Add event listeners to update save button state when fields change
             document.addEventListener('DOMContentLoaded', function() {
-                // Initial check
                 checkFormValidity();
 
-                // Update on any input change
                 document.querySelectorAll('input, select, textarea').forEach(field => {
                     field.addEventListener('change', checkFormValidity);
                     field.addEventListener('keyup', checkFormValidity);
                 });
 
-                // Special handling for Livewire-updated fields
                 document.addEventListener('livewire:update', function() {
                     setTimeout(checkFormValidity, 100);
                 });
@@ -2434,12 +1825,11 @@
         function addIconsToInputs() {
             document.querySelectorAll('.has-icon').forEach(input => {
                 const iconClass = input.getAttribute('data-icon');
-                const parent = input.parentNode;
-                if (!iconClass || !parent || !parent.classList || !parent.classList.contains('input-cover')) return;
-                if (parent.querySelector(':scope > .input-icon')) return;
-                const icon = document.createElement('i');
-                icon.className = `input-icon ${iconClass}`;
-                parent.insertBefore(icon, input);
+                if (iconClass && !input.previousElementSibling?.classList.contains('input-icon')) {
+                    const icon = document.createElement('i');
+                    icon.className = `input-icon ${iconClass}`;
+                    input.parentNode.insertBefore(icon, input);
+                }
             });
         }
 
@@ -2457,22 +1847,27 @@
             }
         }
 
+        document.querySelectorAll('#myTab .nav-link').forEach(function(tabEl) {
+            tabEl.addEventListener('shown.bs.tab', function(e) {
+                var targetId = e.target.getAttribute('data-bs-target') || e.target.getAttribute('id');
+                if (targetId) {
+                    sessionStorage.setItem('seller_edit_active_tab', targetId);
+                }
+            });
+        });
+
         Livewire.hook('message.processed', () => {
             addIconsToInputs();
             checkRepresentationStatus();
 
-            // Re-detect selected service type after DOM update
-            const fullServiceChecked = document.getElementById('fullService')?.checked;
-            const limitedServiceChecked = document.getElementById('limitedService')?.checked;
+            var fullServiceChecked = document.getElementById('fullService')?.checked;
+            var limitedServiceChecked = document.getElementById('limitedService')?.checked;
 
-            let newServiceType = null;
+            var newServiceType = null;
             if (fullServiceChecked) {
                 newServiceType = 'full_service';
             } else if (limitedServiceChecked) {
                 newServiceType = 'limited_service';
-            } else {
-                // Default to full service if no service type radio buttons found
-                newServiceType = 'full_service';
             }
 
             if (newServiceType !== currentServiceType) {
@@ -2490,6 +1885,27 @@
                     initializeLimitedService();
                 }
             }
+
+            var savedTab = sessionStorage.getItem('seller_edit_active_tab');
+            if (savedTab) {
+                var tabTrigger = document.querySelector('#myTab .nav-link[data-bs-target="' + savedTab + '"]');
+                if (tabTrigger && !tabTrigger.classList.contains('active')) {
+                    new bootstrap.Tab(tabTrigger).show();
+                }
+            }
+
+            document.querySelectorAll('#myTab .nav-link').forEach(function(tabEl) {
+                tabEl.removeEventListener('shown.bs.tab', window.__sellerTabPersist);
+            });
+            window.__sellerTabPersist = function(e) {
+                var targetId = e.target.getAttribute('data-bs-target') || e.target.getAttribute('id');
+                if (targetId) {
+                    sessionStorage.setItem('seller_edit_active_tab', targetId);
+                }
+            };
+            document.querySelectorAll('#myTab .nav-link').forEach(function(tabEl) {
+                tabEl.addEventListener('shown.bs.tab', window.__sellerTabPersist);
+            });
         });
     </script>
 
@@ -2506,16 +1922,16 @@
                 const tabSelector = serviceType === 'full_service' ? [
                     '#listing-details',
                     '#property-preferences',
-                    '#sale-terms',
+                    '#purchasing-terms',
                     '#services',
                     '#additional-details',
                     '#broker-compensation',
-                    '#tenant-info'
+                    '#seller-information'
                 ] : [
                     '#listing-details',
                     '#location-and-meeting-details',
                     '#service-selection-and-pricing',
-                    '#tenant-info'
+                    '#seller-information'
                 ];
 
                 tabSelector.forEach(selector => {
@@ -2569,12 +1985,9 @@
                     saveButton.removeAttribute('disabled');
                 } else {
                     saveButton.classList.add('disabled');
-                    saveButton.removeAttribute('disabled');
+                    saveButton.setAttribute('disabled', 'disabled');
                 }
             }
-            
-            // Expose updateSaveButton globally for draftLoaded event
-            window.updateSaveButton = updateSaveButton;
 
             function setupGlobalListeners() {
                 const allTabs = document.querySelectorAll('.tab-pane');
@@ -2612,173 +2025,7 @@
                     }, 300);
                 });
             }
-
-            // Form submit listener: block submission and show banner when required fields are missing
-            const createForm = document.getElementById('create-auction-form');
-            if (createForm) {
-                document.addEventListener('submit', function(e) {
-                    if (!e.target || e.target.id !== 'create-auction-form') return;
-                    const banner = document.getElementById('submit-error-banner');
-                    const errorList = document.getElementById('submit-error-list');
-                    if (banner) banner.classList.add('d-none');
-                    if (errorList) errorList.innerHTML = '';
-
-                    const requiredFields = getAllRequiredFields();
-                    let invalidItems = [];
-
-                    requiredFields.forEach(function(field) {
-                        if (field.disabled || field.type === 'hidden') return;
-                        if (!isFieldValid(field)) {
-                            const tab = field.closest('.tab-pane');
-                            const labelEl = field.closest('.form-group') && field.closest('.form-group').querySelector('label');
-                            const fieldName = labelEl ? labelEl.textContent.replace(/[*:]/g, '').trim() : (field.getAttribute('placeholder') || field.name || field.id || 'Required field');
-                            invalidItems.push({ field: field, tab: tab, fieldName: fieldName });
-                        }
-                    });
-
-                    if (invalidItems.length > 0) {
-                        e.preventDefault();
-                        e.stopImmediatePropagation();
-
-                        if (banner && errorList) {
-                            const seen = new Set();
-                            invalidItems.forEach(function(item) {
-                                if (!seen.has(item.fieldName)) {
-                                    seen.add(item.fieldName);
-                                    const li = document.createElement('li');
-                                    li.textContent = item.fieldName;
-                                    errorList.appendChild(li);
-                                }
-                            });
-                            banner.querySelector('strong').textContent = 'Please complete the required fields before submitting.';
-                            banner.classList.remove('d-none');
-                        }
-
-                        const firstItem = invalidItems[0];
-                        if (firstItem.tab) {
-                            const tabId = firstItem.tab.id;
-                            const tabTrigger = document.querySelector('[data-bs-target="#' + tabId + '"], [href="#' + tabId + '"]');
-                            if (tabTrigger) {
-                                bootstrap.Tab.getOrCreateInstance(tabTrigger).show();
-                                const allTabPanes = [...document.querySelectorAll('.tab-pane')];
-                                const tabIndex = allTabPanes.indexOf(firstItem.tab);
-                                if (tabIndex >= 0 && typeof Livewire !== 'undefined') {
-                                    Livewire.emit('setActiveTab', tabIndex);
-                                }
-                            }
-                        }
-
-                        setTimeout(function() {
-                            if (firstItem.field && firstItem.field.classList) {
-                                firstItem.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                if (typeof firstItem.field.focus === 'function' && firstItem.field.tagName !== 'DIV') {
-                                    firstItem.field.focus();
-                                }
-                                firstItem.field.classList.add('is-invalid');
-                            }
-                            if (banner) banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }, 300);
-
-                        return false;
-                    }
-
-                    syncAllSelect2BeforeSave();
-                    if (banner) banner.classList.add('d-none');
-                }, true);
-            }
         });
     </script>
-    <script>
-        document.addEventListener('livewire:load', function() {
-            var draftEl = document.getElementById('draftModal');
-            if (draftEl) {
-                var draftModal = new bootstrap.Modal(draftEl);
-                draftModal.show();
-            }
-        });
-    </script>
-
-    <script>
-        // Global money input helper functions for comma-formatted currency inputs
-        function getErrorEl(input) {
-            const errorId = input.getAttribute('data-error-id');
-            return errorId ? document.getElementById(errorId) : null;
-        }
-
-        function formatWithCommas(input) {
-            let value = input.value.replace(/[^\d.]/g, '');
-            let parts = value.split('.');
-            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-            input.value = parts.length > 1 ? parts[0] + '.' + parts[1].substring(0, 2) : parts[0];
-        }
-
-        function validateInput(input) {
-            let v = input.value;
-            v = v.replace(/[^0-9.,]/g, '');
-            const firstDot = v.indexOf('.');
-            if (firstDot !== -1) {
-                v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g, '');
-            }
-            input.value = v;
-        }
-
-        function reformatNumber(input) {
-            const errorEl = getErrorEl(input);
-            let v = input.value.replace(/,/g, '');
-            const parts = v.split('.');
-            let intPart = parts[0] || '';
-            let decPart = parts[1] || '';
-
-            if (decPart) decPart = decPart.slice(0, 2);
-
-            intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-            input.value = decPart ? `${intPart}.${decPart}` : intPart;
-
-            errorEl && (errorEl.innerText = "");
-        }
-
-        function handlePaste(event) {
-            event.preventDefault();
-            const paste = (event.clipboardData || window.clipboardData).getData('text');
-            let clean = paste.replace(/[^0-9.]/g, '');
-            const parts = clean.split('.');
-            if (parts.length > 2) {
-                clean = parts[0] + '.' + parts.slice(1).join('');
-            }
-            let intPart = parts[0] || '';
-            let decPart = parts[1] || '';
-            if (decPart) decPart = decPart.slice(0, 2);
-            intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-            event.target.value = decPart ? `${intPart}.${decPart}` : intPart;
-            event.target.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-
-        // Re-initialize money formatting after Livewire updates
-        function initializeMoneyInputs() {
-            // Format lease_value input if it's a $ (flat) type
-            const leaseInput = document.querySelector('[wire\\:key^="lease-value-input-flat"]');
-            if (leaseInput && leaseInput.value) {
-                formatWithCommas(leaseInput);
-            }
-            // Format purchase_value input if it's a $ (flat) type  
-            const purchaseInput = document.querySelector('[wire\\:key^="purchase-value-input-flat"]');
-            if (purchaseInput && purchaseInput.value) {
-                formatWithCommas(purchaseInput);
-            }
-        }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeMoneyInputs();
-        });
-
-        // Re-initialize after Livewire updates (Livewire v2)
-        if (typeof Livewire !== 'undefined') {
-            document.addEventListener('livewire:load', function() {
-                Livewire.hook('message.processed', function() {
-                    initializeMoneyInputs();
-                });
-            });
-        }
-    </script>
+  
 @endpush

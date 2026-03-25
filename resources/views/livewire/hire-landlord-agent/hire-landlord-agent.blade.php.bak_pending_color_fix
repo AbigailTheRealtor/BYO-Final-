@@ -112,7 +112,7 @@
 
         .badge {
             /* font-size: 0.9rem;
-                                                                                                        padding: 0.5em 0.75em; */
+                                                                                                            padding: 0.5em 0.75em; */
             display: inline-flex;
             align-items: center;
         }
@@ -220,8 +220,8 @@
         }
 
         .btn-check:checked+.btn-outline-warning {
-            background-color: #d97706;
-            color: #fff !important;
+            background-color: var(--bs-warning);
+            color: #000 !important;
         }
 
         .btn-check:checked+.btn-outline-primary {
@@ -277,40 +277,6 @@
                 font-size: 1rem;
             }
         }
-
-        /* Agent type selection button text styling */
-        .user-selected {
-            color: #0ce7ef;
-            font-weight: 600;
-        }
-
-        .user-type-icon {
-            color: #0ce7ef;
-        }
-
-        /* Dollar sign prefix styling for currency inputs */
-        .input-group-text-seller {
-            display: flex;
-            align-items: center;
-            padding: 0.7rem 0.75rem;
-            font-size: 1rem;
-            font-weight: 400;
-            line-height: 1.5;
-            color: #212529;
-            text-align: center;
-            white-space: nowrap;
-            background-color: #e9ecef;
-            border: 1px solid #ced4da;
-            border-radius: .375rem;
-        }
-
-        .input-group-text-seller+input.form-control {
-            padding-left: 8px;
-        }
-
-        .percentage-value-set {
-            padding-left: 9px !important;
-        }
     </style>
 @endpush
 
@@ -323,6 +289,12 @@
         ['name' => 'Partially Updated', 'display' => 'Partially Updated'],
         ['name' => 'Older but Clean', 'display' => 'Older but Clean & Well Maintained'],
         ['name' => 'No Preference', 'display' => 'No Preference'],
+    ];
+    $property_condition_landlord = [
+        ['name' => 'New Construction'],
+        ['name' => 'Updated / Renovated'],
+        ['name' => 'Partially Updated'],
+        ['name' => 'Older but Well Maintained'],
     ];
 
     $bedroomsRes = [
@@ -339,7 +311,7 @@
         ['name' => 'Other'],
     ];
 
-    $bathroomsRes = [
+    $bathrooms = [
         ['name' => '1'],
         ['name' => '1.5'],
         ['name' => '2'],
@@ -382,16 +354,13 @@
     ];
     $preferences = [
         ['name' => 'Beach'],
-        ['name' => 'City'],
-        ['name' => 'Garden'],
-        ['name' => 'Golf Course'],
-        ['name' => 'Greenbelt'],
-        ['name' => 'Mountain(s)'],
-        ['name' => 'Park'],
-        ['name' => 'Pool'],
-        ['name' => 'Tennis Court'],
-        ['name' => 'Trees/Woods'],
-        ['name' => 'Water'],
+        ['name' => 'Furniture, Fixtures, and Equipment (as per attached inventory)'],
+        ['name' => 'Advertising Materials'],
+        ['name' => 'Contract Rights'],
+        ['name' => 'Leases'],
+        ['name' => 'Licenses'],
+        ['name' => 'Rights under any Agreement for Interests'],
+
         ['name' => 'Other'],
     ];
 
@@ -495,25 +464,6 @@
 
     $purchasing_props = [['name' => 'Yes'], ['name' => 'No']];
 
-    $financing_options = [
-        ['name' => 'Assumable', 'description' => 'Allows an existing mortgage to be assumed by a Buyer, subject to lender approval. This may be beneficial if the existing interest rate is lower than current market rates.'],
-        ['name' => 'Cash', 'description' => 'Purchase is completed without financing, with the full price paid in cash and no financing contingency.'],
-        ['name' => 'Conventional', 'description' => 'Uses a traditional mortgage that meets standard underwriting guidelines.'],
-        ['name' => 'FHA', 'description' => 'Uses a loan backed by the Federal Housing Administration, typically requiring the property to meet condition standards.'],
-        ['name' => 'Jumbo', 'description' => 'Uses a loan that exceeds conforming loan limits and often requires stricter borrower qualifications.'],
-        ['name' => 'VA', 'description' => 'Uses a VA-backed loan available to eligible veterans and active-duty service members.'],
-        ['name' => 'No-Doc', 'description' => 'Uses a loan requiring limited or no income documentation.'],
-        ['name' => 'Non-QM', 'description' => 'Uses a Non-Qualified Mortgage that allows alternative income verification methods.'],
-        ['name' => 'USDA', 'description' => 'Uses a USDA-backed loan for eligible rural properties and qualifying buyers.'],
-        ['name' => 'Cryptocurrency', 'description' => 'Uses digital currency (e.g., Bitcoin or Ethereum) as full or partial consideration, subject to Seller acceptance.'],
-        ['name' => 'Exchange/Trade', 'description' => 'Includes another asset as part of the purchase consideration in a trade.'],
-        ['name' => 'Lease Option', 'description' => 'Allows the property to be leased with an option to purchase later under pre-agreed terms.'],
-        ['name' => 'Lease Purchase', 'description' => 'Allows the property to be leased now with a commitment to purchase later, often with a portion of rent credited toward the purchase price.'],
-        ['name' => 'Non-Fungible Token (NFT)', 'description' => 'Uses a verified digital asset as full or partial consideration, subject to Seller approval.'],
-        ['name' => 'Seller Financing', 'description' => 'Purchase price is financed in whole or in part directly by the Seller.'],
-        ['name' => 'Other', 'description' => 'Uses an alternative financing or consideration method not listed above.'],
-    ];
-
     $lease_for = [
         ['name' => '3 Months'],
         ['name' => '6 Months'],
@@ -522,6 +472,42 @@
         ['name' => '2 Years'],
         ['name' => '3-5 Years'],
         ['name' => '5+ Years'],
+        ['name' => 'Other'],
+    ];
+
+    $appliances = [
+        ['name' => 'Bar Fridge'],
+        ['name' => 'Built-In Oven'],
+        ['name' => 'Convection Oven'],
+        ['name' => 'Cooktop'],
+        ['name' => 'Dishwasher'],
+        ['name' => 'Disposal'],
+        ['name' => 'Dryer'],
+        ['name' => 'Electric Water Heater'],
+        ['name' => 'Exhaust Fan'],
+        ['name' => 'Freezer'],
+        ['name' => 'Gas Water Heater'],
+        ['name' => 'Ice Maker'],
+        ['name' => 'Indoor Grill'],
+        ['name' => 'Kitchen Reverse Osmosis System'],
+        ['name' => 'Microwave'],
+        ['name' => 'Range Electric'],
+        ['name' => 'Range Gas'],
+        ['name' => 'Range Hood'],
+        ['name' => 'Refrigerator'],
+        ['name' => 'Solar Hot Water'],
+        ['name' => 'Solar Hot Water Owned'],
+        ['name' => 'Solar Hot Water Rented'],
+        ['name' => 'Tankless Water Heater'],
+        ['name' => 'Touchless Faucet'],
+        ['name' => 'Trash Compactor'],
+        ['name' => 'Washer'],
+        ['name' => 'Water Filtration System'],
+        ['name' => 'Water Purifier'],
+        ['name' => 'Water Softener'],
+        ['name' => 'Whole House R.O. System'],
+        ['name' => 'Wine Refrigerator'],
+        ['name' => 'None'],
         ['name' => 'Other'],
     ];
 
@@ -579,7 +565,7 @@
         ['name' => 'Other – Specify additional services as needed.'],
     ];
 
-    $property_items_options = [
+    $property_items = [
         // Residential (alphabetical order)
         ['name' => '½ Duplex', 'class' => 'residential-length'],
         ['name' => '1/3 Triplex', 'class' => 'residential-length'],
@@ -663,60 +649,6 @@
     ];
     $credit_score = [['name' => 'Poor'], ['name' => 'Fair'], ['name' => 'Good'], ['name' => 'Excellent']];
 
-    $business_type = [
-        ['name' => 'Aeronautical'],
-        ['name' => 'Agriculture'],
-        ['name' => 'Arts and Entertainment'],
-        ['name' => 'Assembly Hall'],
-        ['name' => 'Assisted Living'],
-        ['name' => 'Auto Dealer'],
-        ['name' => 'Auto Service'],
-        ['name' => 'Bar/Tavern/Lounge'],
-        ['name' => 'Barber/Beauty'],
-        ['name' => 'Car Wash'],
-        ['name' => 'Child Care'],
-        ['name' => 'Church'],
-        ['name' => 'Commercial'],
-        ['name' => 'Concession Trailers/Vehicles'],
-        ['name' => 'Construction/Contractor'],
-        ['name' => 'Convenience Store'],
-        ['name' => 'Distribution'],
-        ['name' => 'Distributor Routine Ven'],
-        ['name' => 'Education/School'],
-        ['name' => 'Farm'],
-        ['name' => 'Fashion/Specialty'],
-        ['name' => 'Flex Space'],
-        ['name' => 'Florist/Nursery'],
-        ['name' => 'Food & Beverage'],
-        ['name' => 'Gas Station'],
-        ['name' => 'Grocery'],
-        ['name' => 'Heavy Weight Sales Service'],
-        ['name' => 'Hotel/Motel'],
-        ['name' => 'Industrial'],
-        ['name' => 'Light Items Sales Only'],
-        ['name' => 'Manufacturing'],
-        ['name' => 'Marine/Marina'],
-        ['name' => 'Medical'],
-        ['name' => 'Mixed'],
-        ['name' => 'Mobile/Trailer Park'],
-        ['name' => 'Personal Service'],
-        ['name' => 'Professional Service'],
-        ['name' => 'Professional/Office'],
-        ['name' => 'Recreation'],
-        ['name' => 'Research & Development'],
-        ['name' => 'Residential'],
-        ['name' => 'Restaurant'],
-        ['name' => 'Retail'],
-        ['name' => 'Shopping Center/Strip Center'],
-        ['name' => 'Storage'],
-        ['name' => 'Theatre'],
-        ['name' => 'Timberland'],
-        ['name' => 'Veterinary'],
-        ['name' => 'Warehouse'],
-        ['name' => 'Wholesale'],
-        ['name' => 'Other'],
-    ];
-
     $auction_lengths = [
         ['name' => '1 Day'],
         ['name' => '3 Days'],
@@ -783,14 +715,262 @@
     ];
 
     $seller_property = [
-        ['name' => 'Assignment Contract', 'description' => 'The Buyer is open to purchasing an assignment contract from a wholesaler.'],
-        ['name' => 'Auction', 'description' => 'The Buyer is open to purchasing a property at auction.'],
-        ['name' => 'Bank Owned/REO', 'description' => 'The Buyer is open to properties that have been foreclosed on and are now owned by the bank (Real Estate Owned).'],
-        ['name' => 'Government Owned', 'description' => 'The Buyer is open to purchasing government-owned properties.'],
-        ['name' => 'None', 'description' => 'The Buyer is not interested in special sale provisions.'],
-        ['name' => 'Probate Listing', 'description' => 'The Buyer is open to purchasing properties being sold through probate court.'],
-        ['name' => 'Short Sale', 'description' => 'The Buyer is open to purchasing a property where the sale price is less than the outstanding mortgage balance.'],
-        ['name' => 'Other', 'description' => 'The Buyer is open to other special sale provisions not listed here.'],
+        ['name' => 'Assignment Contract'],
+        ['name' => 'Auction'],
+        ['name' => 'Bank Owned/REO'],
+        ['name' => 'Government Owned'],
+        ['name' => 'None'],
+        ['name' => 'Probate Listing'],
+        ['name' => 'Short Sale'],
+        ['name' => 'Other'],
+    ];
+
+    $occupant_types = [['name' => 'Tenant'], ['name' => 'Vacant'], ['name' => 'Occupied']];
+    $desired_rental_amount = [['name' => 'Tenant'], ['name' => 'Vacant'], ['name' => 'Occupied']];
+
+    $leasing_space = [
+        [
+            'name' =>
+                'Guests are [allowed/not allowed]; any restrictions include [insert details, e.g., visiting hours, overnight stay rules]',
+            'class' => 'residential-length',
+        ],
+        [
+            'name' => 'Tenants have access to common areas such as the [kitchen/living room/backyard]',
+            'class' => 'residential-length',
+        ],
+        [
+            'name' =>
+                'Maintenance issues are handled by [landlord/property manager/agent/tenant]; response time is typically [insert timeframe]',
+            'class' => 'residential-length',
+        ],
+        [
+            'name' => 'Utilities: [included in rent/split among tenants/individually metered]',
+            'class' => 'residential-length',
+        ],
+        [
+            'name' =>
+                'Common areas are cleaned and maintained [insert frequency and by whom, e.g., weekly by landlord]',
+            'class' => 'residential-length',
+        ],
+        [
+            'name' =>
+                'Storage space available includes [insert size or type, e.g., closet, basement section, garage shelf]',
+            'class' => 'residential-length',
+        ],
+        [
+            'name' => 'Bathroom facilities are [private/shared]',
+            'class' => 'residential-length',
+        ],
+        [
+            'name' => 'The room available for lease is approximately [insert square footage]',
+            'class' => 'residential-length',
+        ],
+
+        [
+            'name' => 'Shared amenities include [e.g., conference rooms, parking facilities]',
+            'class' => 'commercial-length',
+        ],
+        [
+            'name' => 'Building hours are [insert hours], with [yes/no] 24/7 access available',
+            'class' => 'commercial-length',
+        ],
+        [
+            'name' => 'Zoning allows for [insert permitted uses]; restrictions may apply',
+            'class' => 'commercial-length',
+        ],
+        [
+            'name' =>
+                'Maintenance and repairs are handled by [e.g., property management, agent, landlord, tenant responsibilities]',
+            'class' => 'commercial-length',
+        ],
+        [
+            'name' => 'Utilities are [insert details on how they\'re divided or included]',
+            'class' => 'commercial-length',
+        ],
+        [
+            'name' => 'Common areas are professionally cleaned and maintained on a [daily/weekly] basis',
+            'class' => 'commercial-length',
+        ],
+        [
+            'name' => 'The space features a [describe layout, e.g., open floor plan, private offices, etc.]',
+            'class' => 'commercial-length',
+        ],
+        [
+            'name' => 'Storage space of [insert size or description] is included',
+            'class' => 'commercial-length',
+        ],
+        [
+            'name' => 'A designated reception area is [included/not included]',
+            'class' => 'commercial-length',
+        ],
+        [
+            'name' => 'The leasable unit is approximately [insert square footage]',
+            'class' => 'commercial-length',
+        ],
+        [
+            'name' => 'Neighboring tenants include [list business types or names if notable]',
+            'class' => 'commercial-length',
+        ],
+    ];
+    $rent_includes = [
+        ['name' => 'Cable TV'],
+        ['name' => 'Electricity'],
+        ['name' => 'Gas'],
+        ['name' => 'Grounds Care'],
+        ['name' => 'Insurance'],
+        ['name' => 'Internet'],
+        ['name' => 'Laundry'],
+        ['name' => 'Management'],
+        ['name' => 'Pest Control'],
+        ['name' => 'Pool Maintenance'],
+        ['name' => 'Recreational'],
+        ['name' => 'Repairs'],
+        ['name' => 'Security'],
+        ['name' => 'Sewer'],
+        ['name' => 'Taxes'],
+        ['name' => 'Telephone'],
+        ['name' => 'Trash Collection'],
+        ['name' => 'Water'],
+        ['name' => 'None'],
+        // ['name' => 'Other'],
+    ];
+
+    $termLease = [
+        ['name' => 'Absolute (Triple) Net'],
+        ['name' => 'Gross Lease'],
+        ['name' => 'Gross Percentages'],
+        ['name' => 'Ground Lease'],
+        ['name' => 'Lease Option'],
+        ['name' => 'Modified Gross'],
+        ['name' => 'Net Lease'],
+        ['name' => 'Net Net'],
+        ['name' => 'Other'],
+        ['name' => 'Pass Throughs'],
+        ['name' => 'Purchase Option'],
+        ['name' => 'Renewal Option'],
+        ['name' => 'Sale-Leaseback'],
+        ['name' => 'Seasonal'],
+        ['name' => 'Special Available (CLO)'],
+        ['name' => 'Varied Terms'],
+        // ['name' => 'Other', 'target' => '.other_terms_lease'],
+    ];
+    $tenantPays = [
+        ['name' => 'Association Fees'],
+        ['name' => 'Capital Expenses'],
+        ['name' => 'Common Area Maintenance'],
+        ['name' => 'Condominium Fees'],
+        ['name' => 'Electricity'],
+        ['name' => 'Gas'],
+        ['name' => 'Liability Insurance'],
+        ['name' => 'Parking Fee'],
+        ['name' => 'Pro-Rated'],
+        ['name' => 'Property Insurance'],
+        ['name' => 'Property Taxes'],
+        ['name' => 'Reserves'],
+        ['name' => 'Sewer'],
+        ['name' => 'Trash Collection'],
+        ['name' => 'Water'],
+        ['name' => 'None '],
+        // ['name' => 'Other', 'target' => '.otherTenantPays'],
+    ];
+
+    $ownerPays = [
+        ['name' => 'Cable TV'],
+        ['name' => 'Electricity'],
+        ['name' => 'Gas'],
+        ['name' => 'Grounds Care'],
+        ['name' => 'Insurance'],
+        ['name' => 'Internet'],
+        ['name' => 'Laundry'],
+        ['name' => 'Management'],
+        ['name' => 'Pest Control'],
+        ['name' => 'Pool Maintenance'],
+        ['name' => 'Recreational'],
+        ['name' => 'Repairs'],
+        ['name' => 'Security'],
+        ['name' => 'Sewer'],
+        ['name' => 'Taxes'],
+        ['name' => 'Telephone'],
+        ['name' => 'Trash Collection'],
+        ['name' => 'Water'],
+        ['name' => 'None'],
+        // ['name' => 'Other', 'target' => '.otherOwnerPays'],
+    ];
+
+    $non_negotialble_terms_landlord = [
+        ['name' => 'Accessibility Features', 'class' => 'residential-length'],
+        ['name' => 'Balcony/Patio', 'class' => 'residential-length'],
+        ['name' => 'Carpet Floors', 'class' => 'residential-length'],
+        ['name' => 'Carport', 'class' => 'residential-length'],
+        ['name' => 'Central Air Conditioning', 'class' => 'residential-length'],
+        ['name' => 'Central Heating', 'class' => 'residential-length'],
+        ['name' => 'Clubhouse', 'class' => 'residential-length'],
+        ['name' => 'Covered Carport', 'class' => 'residential-length'],
+        ['name' => 'Elevator', 'class' => 'residential-length'],
+        ['name' => 'Fireplace', 'class' => 'residential-length'],
+        ['name' => 'First Floor Unit', 'class' => 'residential-length'],
+        ['name' => 'Fitness Center/Gym', 'class' => 'residential-length'],
+        ['name' => 'Garage', 'class' => 'residential-length'],
+        ['name' => 'Gated Community', 'class' => 'residential-length'],
+        ['name' => 'Hardwood Floors', 'class' => 'residential-length'],
+        ['name' => 'HOA Community', 'class' => 'residential-length'],
+        ['name' => 'In-Unit Laundry', 'class' => 'residential-length'],
+        ['name' => 'On-site Laundry', 'class' => 'residential-length'],
+        ['name' => 'On-site Maintenance', 'class' => 'residential-length'],
+        ['name' => 'On-site Management', 'class' => 'residential-length'],
+        ['name' => 'Outdoor Space', 'class' => 'residential-length'],
+        ['name' => 'Pet Friendly', 'class' => 'residential-length'],
+        ['name' => 'Playground', 'class' => 'residential-length'],
+        ['name' => 'Pool', 'class' => 'residential-length'],
+        ['name' => 'Security System', 'class' => 'residential-length'],
+        ['name' => 'Specific School District', 'class' => 'residential-length'],
+        ['name' => 'Storage Space', 'class' => 'residential-length'],
+        ['name' => 'Study/Den/Office', 'class' => 'residential-length'],
+        ['name' => 'Tile Floors', 'class' => 'residential-length'],
+        ['name' => 'Updated Bathroom', 'class' => 'residential-length'],
+        ['name' => 'Updated Kitchen', 'class' => 'residential-length'],
+        ['name' => 'Walk-in Closet', 'class' => 'residential-length'],
+        ['name' => 'Washer and Dryer', 'class' => 'residential-length'],
+        ['name' => 'Washer and Dryer Hookup', 'class' => 'residential-length'],
+        ['name' => 'Waterfront', 'class' => 'residential-length'],
+        ['name' => 'Other', 'class' => 'residential-length'],
+
+        ['name' => 'Access to Public Transportation', 'class' => 'commercial-length'],
+        ['name' => 'Business Center', 'class' => 'commercial-length'],
+        ['name' => 'Common Areas', 'class' => 'commercial-length'],
+        ['name' => 'Conference Room', 'class' => 'commercial-length'],
+        ['name' => 'Elevator', 'class' => 'commercial-length'],
+        ['name' => 'Fire Safety Systems', 'class' => 'commercial-length'],
+        ['name' => 'Flexibility for Renovations', 'class' => 'commercial-length'],
+        ['name' => 'Green Building Certification', 'class' => 'commercial-length'],
+        ['name' => 'Gym/Fitness Facilities', 'class' => 'commercial-length'],
+        ['name' => 'Handicap Accessibility', 'class' => 'commercial-length'],
+        ['name' => 'High-Speed Internet', 'class' => 'commercial-length'],
+        ['name' => 'HVAC System', 'class' => 'commercial-length'],
+        ['name' => 'Industrial Features', 'class' => 'commercial-length'],
+        ['name' => 'Kitchenette/Break Room', 'class' => 'commercial-length'],
+        ['name' => 'Loading Dock', 'class' => 'commercial-length'],
+        ['name' => 'Lounge Area', 'class' => 'commercial-length'],
+        ['name' => 'Natural Lighting', 'class' => 'commercial-length'],
+        ['name' => 'Office Space', 'class' => 'commercial-length'],
+        ['name' => 'On-site Maintenance', 'class' => 'commercial-length'],
+        ['name' => 'On-site Management', 'class' => 'commercial-length'],
+        ['name' => 'Open Floor Plan', 'class' => 'commercial-length'],
+        ['name' => 'Outdoor Space/Garden', 'class' => 'commercial-length'],
+        ['name' => 'Parking Spaces', 'class' => 'commercial-length'],
+        ['name' => 'Proximity to Highways', 'class' => 'commercial-length'],
+        ['name' => 'Reception Area', 'class' => 'commercial-length'],
+        ['name' => 'Restaurant Space', 'class' => 'commercial-length'],
+        ['name' => 'Restrooms', 'class' => 'commercial-length'],
+        ['name' => 'Retail Frontage', 'class' => 'commercial-length'],
+        ['name' => 'Security Guard', 'class' => 'commercial-length'],
+        ['name' => 'Security System', 'class' => 'commercial-length'],
+        ['name' => 'Signage Opportunities', 'class' => 'commercial-length'],
+        ['name' => 'Storage Space', 'class' => 'commercial-length'],
+        ['name' => 'Utilities Included', 'class' => 'commercial-length'],
+        ['name' => 'Visibility from Main Road', 'class' => 'commercial-length'],
+        ['name' => 'Warehouse Space', 'class' => 'commercial-length'],
+        ['name' => 'Other', 'class' => 'commercial-length'],
     ];
 @endphp
 
@@ -870,7 +1050,7 @@
                         @if ($service_type === 'full_service')
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Services', 'Additional Details', 'Broker Compensation', 'Buyer Information'] as $index => $tab)
+                                @foreach (['Listing Details', 'Property Preferences', 'Leasing Terms', 'Services', 'Additional Details', 'Broker Compensation', 'LandLord Information'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             wire:click="setActiveTab({{ $index }})"
@@ -942,6 +1122,7 @@
                                 <div class="tab-pane fade {{ $activeTab === 1 ? 'show active' : '' }}"
                                     id="property-preferences" role="tabpanel"
                                     aria-labelledby="property-preferences-tab">
+
                                     @if ($user_type === 'tenant')
                                         @include('livewire.tenant-agent-auction-tabs.commission-based.property-details')
                                     @elseif($user_type === 'seller')
@@ -955,7 +1136,7 @@
 
                                 <!-- Leasing Terms Tab -->
                                 <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}"
-                                    id="purchasing-terms" role="tabpanel" aria-labelledby="purchasing-terms-tab">
+                                    id="leasing-terms" role="tabpanel" aria-labelledby="leasing-terms-tab">
 
                                     @if ($user_type === 'tenant')
                                         @include('livewire.tenant-agent-auction-tabs.commission-based.leasing-terms')
@@ -964,7 +1145,7 @@
                                     @elseif($user_type === 'buyer')
                                         @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.purchasing-terms')
                                     @elseif($user_type === 'landlord')
-                                        @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.purchasing-terms')
+                                        @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.lease-terms')
                                     @endif
                                 </div>
 
@@ -981,11 +1162,11 @@
                                     @elseif($user_type === 'landlord')
                                         @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.services')
                                     @endif
+
                                 </div>
                                 <!-- Additional Details Tab -->
                                 <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
                                     id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
-
                                     @if ($user_type === 'tenant')
                                         @include('livewire.tenant-agent-auction-tabs.commission-based.additional-details')
                                     @elseif($user_type === 'seller')
@@ -995,6 +1176,7 @@
                                     @elseif($user_type === 'landlord')
                                         @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.additional-details')
                                     @endif
+
                                 </div>
 
                                 <!-- Broker Compensation Tab -->
@@ -1011,11 +1193,12 @@
                                     @elseif($user_type === 'landlord')
                                         @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.broker-compensation')
                                     @endif
+
                                 </div>
 
-                                <!-- Buyer Info Tab -->
+                                <!-- Landlord Info Tab -->
                                 <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
-                                    id="buyer-information" role="tabpanel" aria-labelledby="buyer-information-tab">
+                                    id="landlord-information" role="tabpanel" aria-labelledby="landlord-information-tab">
                                     @if ($user_type === 'tenant')
                                         @include('livewire.tenant-agent-auction-tabs.commission-based.tenant-info')
                                     @elseif($user_type === 'seller')
@@ -1035,16 +1218,14 @@
                                 <button type="button" class="btn btn-secondary wizard-step-back">Back</button>
                             </div>
                             <div>
-
-                                <button type="button" class="btn btn-outline-primary me-2" onclick="if(typeof syncBuyerSelect2BeforeSave==='function')syncBuyerSelect2BeforeSave()" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="saveDraft">
+                                <button type="button" class="btn btn-outline-primary me-2" onclick="syncLandlordSelect2BeforeSave()" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="saveDraft">
                                     <span wire:loading.remove wire:target="saveDraft"><i class="fas fa-save me-1"></i> Save Draft</span>
                                     <span wire:loading wire:target="saveDraft">Saving...</span>
                                 </button>
-
                                 <button type="button" class="btn btn-primary wizard-step-next">Next</button>
-
                                 <button type="submit" class="btn btn-success wizard-step-finish disabled"
-                                    id="save-button" wire:loading.attr="disabled" wire:target="store">
+                                    id="save-button" wire:loading.attr="disabled" wire:target="store"
+                                    onclick="syncLandlordSelect2BeforeSave()">
                                     <span wire:loading.remove wire:target="store">Submit</span>
                                     <span wire:loading wire:target="store">Submitting...</span>
                                 </button>
@@ -1062,21 +1243,7 @@
 @push('scripts')
     <script>
         let currentServiceType = null;
-        let _s2Timers = {};
-        let _lastInitTime = 0;
         let _bathroomsDropdownHandler = null;
-
-        function debouncedSet(field, value, delay) {
-            clearTimeout(_s2Timers[field]);
-            // Use shorter delay for visibility-critical fields
-            var effectiveDelay = delay || 200;
-            if (field === 'offered_financing' || field === 'sale_provision') {
-                effectiveDelay = 50;
-            }
-            _s2Timers[field] = setTimeout(function() {
-                @this.set(field, value);
-            }, effectiveDelay);
-        }
 
         document.addEventListener('DOMContentLoaded', () => {
             // Detect which service is preselected on load
@@ -1107,50 +1274,71 @@
                 if (wireModel && component.get) {
                     try {
                         const lwValue = component.get(wireModel);
-                        if (lwValue && select.value !== lwValue) {
-                            console.log('[SyncSelect] Syncing ' + wireModel + ': DOM="' + select.value + '" -> LW="' + lwValue + '"');
-                            select.value = lwValue;
+                        if (lwValue === null || lwValue === undefined) return;
+
+                        if (select.multiple) {
+                            const values = Array.isArray(lwValue) ? lwValue : [lwValue];
+                            if (values.length > 0) {
+                                console.log('[SyncSelect] Syncing multi-select ' + wireModel + ' with ' + values.length + ' values');
+                                $(select).val(values).trigger('change');
+                            }
+                        } else {
+                            if (lwValue && select.value !== lwValue) {
+                                console.log('[SyncSelect] Syncing ' + wireModel + ': DOM="' + select.value + '" -> LW="' + lwValue + '"');
+                                select.value = lwValue;
+                            }
                         }
                     } catch (e) {}
                 }
             });
         }
         
-        // Listen for draftLoaded browser event
-        window.addEventListener('draftLoaded', function() {
-            console.log('[DraftLoaded] Event received - syncing select values');
+        window.addEventListener('draftLoaded', function(event) {
+            console.log('[DraftLoaded] Event received - syncing select values', event.detail);
             setTimeout(function() {
-                syncSelectValues();
-                addIconsToInputs(); // Re-add icons after draft data loads
-                // Rehydrate Select2 multi-select fields from Livewire state
-                var multiFields = {
-                    '#sale_provision': 'sale_provision',
-                    '#offered_financing': 'offered_financing',
-                    '#non_negotiable_amenities': 'non_negotiable_amenities',
-                    '#view_preference': 'view_preference',
-                    '#condition_prop_buyer': 'condition_prop_buyer',
-                    '#garage_parking_spaces_option': 'garage_parking_spaces_option',
-                    '#assets': 'assets',
+                var data = event.detail || {};
+                var select2Fields = {
+                    'appliances': data.appliances || [],
+                    'offered_financing': data.offered_financing || [],
+                    'tenant_pays': data.tenant_pays || [],
+                    'owner_pays': data.owner_pays || [],
+                    'terms_of_lease': data.terms_of_lease || [],
+                    'rent_includes': data.rent_includes || [],
+                    'desired_lease_length': data.desired_lease_length || [],
+                    'view_preference': data.view_preference || [],
+                    'non_negotiable_amenities': data.non_negotiable_amenities || [],
+                    'lease_for': data.lease_for || [],
+                    'credit_scroe_rating': data.credit_scroe_rating || [],
+                    'services': data.services || [],
+                    'pool_type': data.pool_type || [],
+                    'photo_enhancements': data.photo_enhancements || [],
+                    'property_items': data.property_items || [],
+                    'tenant_require': data.tenant_require || [],
                 };
-                Object.entries(multiFields).forEach(function([selector, prop]) {
-                    var $el = $(selector);
-                    if ($el.length && $el.hasClass('select2-hidden-accessible')) {
-                        var saved = @this.get(prop) || [];
-                        if (saved.length > 0) {
-                            $el.val(saved).trigger('change.select2');
-                            console.log('[DraftLoaded] Rehydrated ' + prop + ':', saved);
+                Object.keys(select2Fields).forEach(function(fieldName) {
+                    var values = select2Fields[fieldName];
+                    if (values && values.length > 0) {
+                        var selectEl = document.querySelector('select[wire\\:model="' + fieldName + '"]');
+                        if (selectEl && $(selectEl).hasClass('select2-multiple')) {
+                            console.log('[DraftLoaded] Hydrating Select2: ' + fieldName + ' with ' + values.length + ' values');
+                            $(selectEl).val(values).trigger('change');
                         }
                     }
                 });
-                jsonRestoreSelect2();
+                syncSelectValues();
                 if (typeof window.updateSaveButton === 'function') {
                     window.updateSaveButton();
                 }
-            }, 100);
-            // Additional delayed call to ensure FontAwesome has fully loaded
-            setTimeout(function() {
-                addIconsToInputs();
-            }, 500);
+                try {
+                    setTimeout(function() {
+                        @this.call('finishDraftLoad');
+                        console.log('[DraftLoaded] Called finishDraftLoad - updated* hooks re-enabled');
+                    }, 500);
+                } catch (e) {
+                    console.error('[DraftLoaded] Error calling finishDraftLoad, forcing clear:', e);
+                    @this.set('isLoadingDraft', false);
+                }
+            }, 200);
         });
 
         // Listen for force-redirect event to ensure redirect works after submit
@@ -1196,77 +1384,6 @@
             if (backBtn && backClone) backBtn.parentNode.replaceChild(backClone, backBtn);
         }
 
-        function setJsonModel(modelName, arr) {
-            var json = JSON.stringify(arr || []);
-            var input = document.querySelector('input[wire\\:model\\.defer="' + modelName + '"]')
-                     || document.querySelector('input[wire\\:model="' + modelName + '"]');
-            if (input) {
-                input.value = json;
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-                input.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-            if (typeof @this !== 'undefined' && @this) {
-                @this.set(modelName, json);
-            }
-            console.log('[JSON BRIDGE]', modelName, json, 'input found?', !!input);
-        }
-
-        function jsonRestoreSelect2() {
-            try {
-                var cond = JSON.parse(@this.get('condition_prop_buyer_json') || '[]');
-                if (cond.length) $('#condition_prop_buyer').val(cond).trigger('change.select2');
-
-                var units = JSON.parse(@this.get('number_of_unit_type_json') || '[]');
-                if (units.length) $('.number_of_unit_type').each(function(){ $(this).val(units).trigger('change.select2'); });
-
-                var items = JSON.parse(@this.get('property_items_json') || '[]');
-                if (items.length) $('#property_items').val(items).trigger('change.select2');
-
-                console.log('[JSON RESTORE OK]', {cond: cond, units: units, items: items});
-            } catch(e) {
-                console.log('[JSON RESTORE ERROR]', e);
-            }
-        }
-
-        function syncBuyerSelect2BeforeSave() {
-            Object.keys(_s2Timers).forEach(function(k) { clearTimeout(_s2Timers[k]); });
-            _s2Timers = {};
-
-            var cpb = $('#condition_prop_buyer').val() || [];
-            var nut = $('.number_of_unit_type').val() || [];
-            var pi = $('#property_items').val() || [];
-            var nna = $('#non_negotiable_amenities').val() || [];
-            var sp = $('#sale_provision').val() || [];
-            var of = $('#offered_financing').val() || [];
-            var vp = $('#view_preference').val() || [];
-            var gps = $('#garage_parking_spaces_option').val() || [];
-            var ass = $('#assets').val() || [];
-
-            cpb = [...new Set(cpb)];
-            nut = [...new Set(nut)];
-            pi = [...new Set(pi)];
-            nna = [...new Set(nna)];
-            sp = [...new Set(sp)];
-            of = [...new Set(of)];
-            vp = [...new Set(vp)];
-            gps = [...new Set(gps)];
-            ass = [...new Set(ass)];
-
-            @this.set('condition_prop_buyer', cpb);
-            @this.set('number_of_unit_type', nut);
-            @this.set('property_items', pi);
-            @this.set('non_negotiable_amenities', nna);
-            @this.set('sale_provision', sp);
-            @this.set('offered_financing', of);
-            @this.set('view_preference', vp);
-            @this.set('garage_parking_spaces_option', gps);
-            @this.set('assets', ass);
-
-            setJsonModel('condition_prop_buyer_json', cpb);
-            setJsonModel('number_of_unit_type_json', nut);
-            setJsonModel('property_items_json', pi);
-        }
-
         function initializeFullService() {
 
 
@@ -1275,19 +1392,9 @@
                     placeholder: "Select property style",
                     allowClear: true,
                 });
-
-                $('#property_items').off('change.piSync').on('change.piSync', function(e) {
-                    let selectedValues = $(this).val() || [];
-                    
-                    if (selectedValues.includes('All') && selectedValues.length > 1) {
-                        selectedValues = ['All'];
-                        $(this).val(selectedValues).trigger('change.select2');
-                    }
-                    
-                    selectedValues = [...new Set(selectedValues)];
-                    
-                    debouncedSet('property_items', selectedValues);
-                    setJsonModel('property_items_json', selectedValues);
+                $('#property_items').on('change', function(e) {
+                    let selectedValues = $(this).val();
+                    @this.set('property_items', selectedValues);
                 });
             }
 
@@ -1296,84 +1403,11 @@
                     placeholder: "Select credit score rating(s)",
                     allowClear: true,
                 });
-
-                $('#non_negotiable_amenities').off('change.nnaSync').on('change.nnaSync', function(e) {
-                    let selectedValues = $(this).val() || [];
-                    
-                    if (selectedValues.includes('All') && selectedValues.length > 1) {
-                        selectedValues = ['All'];
-                        $(this).val(selectedValues).trigger('change.select2');
-                    }
-                    
-                    selectedValues = [...new Set(selectedValues)];
-                    
-                    debouncedSet('non_negotiable_amenities', selectedValues);
+                $('#non_negotiable_amenities').on('change', function(e) {
+                    let selectedValues = $(this).val();
+                    @this.set('non_negotiable_amenities', selectedValues);
                 });
             }
-
-            if ($('#condition_prop_buyer').length && !$('#condition_prop_buyer').hasClass('select2-hidden-accessible')) {
-                $('#condition_prop_buyer').select2({
-                    placeholder: "Select property conditions",
-                    allowClear: true,
-                });
-
-                $('#condition_prop_buyer').off('change.cpbSync').on('change.cpbSync', function(e) {
-                    let selectedValues = $(this).val() || [];
-                    selectedValues = [...new Set(selectedValues)];
-                    debouncedSet('condition_prop_buyer', selectedValues);
-                    setJsonModel('condition_prop_buyer_json', selectedValues);
-                });
-            }
-
-            if ($('#garage_parking_spaces_option').length && !$('#garage_parking_spaces_option').hasClass('select2-hidden-accessible')) {
-                $('#garage_parking_spaces_option').select2({
-                    placeholder: "Select parking features",
-                    allowClear: true,
-                });
-
-                $('#garage_parking_spaces_option').off('change.gpsSync').on('change.gpsSync', function() {
-                    let selectedValues = $(this).val() || [];
-                    selectedValues = [...new Set(selectedValues)];
-                    debouncedSet('garage_parking_spaces_option', selectedValues);
-                    var hasOther = selectedValues.includes('Other');
-                    var otherWrapper = document.getElementById('other_parking_space_wrapper');
-                    var garageMainSelect = document.getElementById('garage_parking_spaces');
-                    if (otherWrapper && garageMainSelect && garageMainSelect.value === 'Yes') {
-                        otherWrapper.classList.toggle('d-none', !hasOther);
-                    }
-                });
-            }
-
-            if ($('#assets').length && !$('#assets').hasClass('select2-hidden-accessible')) {
-                $('#assets').select2({
-                    placeholder: "Select required assets",
-                    allowClear: true,
-                });
-
-                $('#assets').off('change.assetsSync').on('change.assetsSync', function() {
-                    let selectedValues = $(this).val() || [];
-                    selectedValues = [...new Set(selectedValues)];
-                    debouncedSet('assets', selectedValues);
-                });
-            }
-
-            $('.number_of_unit_type').each(function() {
-                var $el = $(this);
-                if (!$el.hasClass('select2-hidden-accessible')) {
-                    $el.attr('multiple', 'multiple');
-                    $el.select2({
-                        placeholder: "Select unit types",
-                        allowClear: true,
-                    });
-
-                    $el.off('change.nutSync').on('change.nutSync', function(e) {
-                        let selectedValues = $el.val() || [];
-                        selectedValues = [...new Set(selectedValues)];
-                        debouncedSet('number_of_unit_type', selectedValues);
-                        setJsonModel('number_of_unit_type_json', selectedValues);
-                    });
-                }
-            });
 
             // Function to toggle "auction time" input field
             function toggleAuctionTime(selectElement) {
@@ -1411,7 +1445,6 @@
             // Re-attach the event listener after Livewire re-renders the DOM
             Livewire.hook('message.processed', () => {
                 attachAuctionDropdownListener();
-                attachBathroomsDropdownListener();
             });
 
 
@@ -1448,10 +1481,6 @@
             // Attach the event listener initially
             attachBathroomsDropdownListener();
 
-
-
-
-
             function toggleGarageOptions() {
                 let garageSelect = document.getElementById('garage_parking_spaces');
                 let optionsWrapper = document.getElementById('garage_parking_spaces_option_wrapper');
@@ -1459,26 +1488,19 @@
                 let garageOptions = document.getElementById('garage_parking_spaces_option');
 
                 // First check the main garage/parking spaces selection
-                if (garageSelect && optionsWrapper) {
+                if (garageSelect) {
                     if (garageSelect.value === "Yes") {
-                        optionsWrapper.classList.remove('d-none');
+                        optionsWrapper.classList.remove('d-none'); // Show options dropdown
                     } else {
-                        optionsWrapper.classList.add('d-none');
-                        if (otherInputWrapper) otherInputWrapper.classList.add('d-none');
+                        optionsWrapper.classList.add('d-none'); // Hide options dropdown
+                        otherInputWrapper.classList.add('d-none'); // Also hide other input
                     }
                 }
-
-                // Then check if "Other" is selected in the options dropdown (handles both native and Select2 multi-select)
-                var garageOptionValues = [];
-                if (garageOptions) {
-                    garageOptionValues = $('#garage_parking_spaces_option').hasClass('select2-hidden-accessible')
-                        ? ($('#garage_parking_spaces_option').val() || [])
-                        : Array.from(garageOptions.selectedOptions || []).map(function(o) { return o.value; });
-                }
-                if (otherInputWrapper && garageOptions && garageOptionValues.includes("Other") && garageSelect && garageSelect.value === "Yes") {
-                    otherInputWrapper.classList.remove('d-none');
-                } else if (otherInputWrapper) {
-                    otherInputWrapper.classList.add('d-none');
+                // Then check if "Other" is selected in the options dropdown
+                if (garageOptions && garageOptions.value === "Other" && garageSelect.value === "Yes") {
+                    otherInputWrapper.classList.remove('d-none'); // Show input field
+                } else {
+                    otherInputWrapper.classList.add('d-none'); // Hide input field
                 }
             }
 
@@ -1488,17 +1510,6 @@
             // Listen for Livewire updates
             Livewire.hook('message.processed', () => {
                 toggleGarageOptions();
-                if ($('#garage_parking_spaces_option').length && !$('#garage_parking_spaces_option').hasClass('select2-hidden-accessible')) {
-                    $('#garage_parking_spaces_option').select2({
-                        placeholder: "Select parking features",
-                        allowClear: true,
-                    });
-                    $('#garage_parking_spaces_option').off('change.gpsSync').on('change.gpsSync', function() {
-                        let selectedValues = $(this).val() || [];
-                        selectedValues = [...new Set(selectedValues)];
-                        debouncedSet('garage_parking_spaces_option', selectedValues);
-                    });
-                }
             });
 
             // Add event listeners
@@ -1548,29 +1559,21 @@
 
             // Reinitialize after Livewire updates
             Livewire.hook('message.processed', () => {
-                toggleSpaceInput('carport-needed', 'other-carport-needed');
-                toggleSpaceInput('garage-needed', 'other-garage-needed');
+                setTimeout(() => {
+                    attachBathroomsDropdownListener();
+                    toggleSpaceInput('carport-needed', 'other-carport-needed');
+                    toggleSpaceInput('garage-needed', 'other-garage-needed');
+                }, 150);
             });
 
-            // Initialize Select2 for multi-select
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
                 $('#view_preference').select2({
                     placeholder: "Select Preference",
                     allowClear: true
                 });
-
                 $('#view_preference').on('change', function() {
-                    let selectedValues = $(this).val() || [];
-                    
-                    if (selectedValues.includes('All') && selectedValues.length > 1) {
-                        selectedValues = ['All'];
-                        $(this).val(selectedValues).trigger('change.select2');
-                    }
-                    
-                    selectedValues = [...new Set(selectedValues)];
-                    
-                    debouncedSet('view_preference', selectedValues);
-
+                    let selectedValues = $(this).val();
+                    Livewire.emit('updatePreference', selectedValues);
                     if (selectedValues.includes('Other')) {
                         $('#other_preferences').show();
                     } else {
@@ -1578,70 +1581,6 @@
                     }
                 });
             }
-
-            // Global Helpers: immediately update section visibility via Alpine events
-            window.updateAssignmentContractSection = function(selectedValues) {
-                if (!Array.isArray(selectedValues)) selectedValues = [selectedValues];
-                var isVisible = selectedValues.includes('Assignment Contract');
-                window.dispatchEvent(new CustomEvent('update-assignment-visibility', { detail: { visible: isVisible } }));
-            };
-
-            window.updateFinancingSections = function(selectedValues) {
-                if (!Array.isArray(selectedValues)) selectedValues = [selectedValues];
-                var traditionalLoanTypes = ['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'];
-                
-                var types = ['Assumable', 'Cryptocurrency', 'Exchange/Trade', 'Lease Option', 'Lease Purchase', 'Non-Fungible Token (NFT)', 'Seller Financing'];
-                
-                types.forEach(function(type) {
-                    window.dispatchEvent(new CustomEvent('update-financing-visibility', { 
-                        detail: { type: type, visible: selectedValues.includes(type) } 
-                    }));
-                });
-
-                // Traditional check
-                var traditionalVisible = traditionalLoanTypes.some(function(t) { return selectedValues.includes(t); });
-                window.dispatchEvent(new CustomEvent('update-financing-visibility', { 
-                    detail: { type: 'Traditional', visible: traditionalVisible } 
-                }));
-            };
-
-            // Initialize Select2 for sale_provision (Purchasing Terms tab)
-            if ($('#sale_provision').length && !$('#sale_provision').hasClass('select2-hidden-accessible')) {
-                $('#sale_provision').select2({
-                    placeholder: "Select",
-                    allowClear: true,
-                });
-                // Initial visibility sync
-                window.updateAssignmentContractSection($('#sale_provision').val() || []);
-            }
-            // Bind sale_provision change handler
-            $('#sale_provision').off('change.spSync select2:select.spSync select2:unselect.spSync')
-                .on('change.spSync select2:select.spSync select2:unselect.spSync', function() {
-                    let selectedValues = $('#sale_provision').val() || [];
-                    window.updateAssignmentContractSection(selectedValues);
-                    debouncedSet('sale_provision', selectedValues, 50);
-                });
-
-            // Global flag to prevent Livewire sync during draft/edit load
-            window.financingSyncInProgress = false;
-            
-            // Initialize Select2 for offered_financing (Purchasing Terms tab)
-            if ($('#offered_financing').length && !$('#offered_financing').hasClass('select2-hidden-accessible')) {
-                $('#offered_financing').select2({
-                    placeholder: "Select",
-                    allowClear: true,
-                });
-                // Initial visibility sync
-                window.updateFinancingSections($('#offered_financing').val() || []);
-            }
-            // Bind offered_financing change handler
-            $('#offered_financing').off('change.ofSync select2:select.ofSync select2:unselect.ofSync')
-                .on('change.ofSync select2:select.ofSync select2:unselect.ofSync', function() {
-                    if (window.financingSyncInProgress) return;
-                    let selectedValues = $('#offered_financing').val() || [];
-                    window.updateFinancingSections(selectedValues);
-                    debouncedSet('offered_financing', selectedValues, 50);
-                });
 
             // Function to toggle Non-Negotiable Amenities and Property Features:" input field
 
@@ -1677,13 +1616,6 @@
             // Re-attach the event listener after Livewire re-renders the DOM
             Livewire.hook('message.processed', () => {
                 attachAmenitiesDropdownListener();
-                // Re-sync financing sections with current Select2 state (prevents Livewire re-render from overriding JS visibility)
-                if ($('#offered_financing').hasClass('select2-hidden-accessible')) {
-                    if (window.updateFinancingSections) window.updateFinancingSections($('#offered_financing').val() || []);
-                }
-                if ($('#sale_provision').hasClass('select2-hidden-accessible')) {
-                    if (window.updateAssignmentContractSection) window.updateAssignmentContractSection($('#sale_provision').val() || []);
-                }
             });
 
             // Function to toggle "Other Bedrooms" input field
@@ -1764,29 +1696,239 @@
 
 
 
-            function toggleVacantLandOther(clearOnDeselect) {
-                var vals = $('#property_items').val() || [];
-                var otherDiv = document.querySelector('.other_property_items');
-                if (!otherDiv) return;
+            function toggleOtherPropertyItems(selectElement) {
+                const otherConditionItemDiv = document.querySelector('.other_property_items');
+
+                if (!otherConditionItemDiv) {
+                    return;
+                }
+
+                var vals = $(selectElement).val() || [];
                 if (vals.includes('Other')) {
-                    otherDiv.classList.remove('d-none');
+                    otherConditionItemDiv.classList.remove('d-none'); // Show the "Other" input field
                 } else {
-                    otherDiv.classList.add('d-none');
-                    if (clearOnDeselect) {
-                        @this.set('other_property_items', '');
-                    }
+                    otherConditionItemDiv.classList.add('d-none'); // Hide the "Other" input field
                 }
             }
 
-            toggleVacantLandOther(false);
+            // Function to attach the event listener to the condition dropdown
+            function attachItemConditionDropdownListener() {
+                const conditionDropdownItem = document.getElementById('property_items');
+                if (conditionDropdownItem) {
+                    conditionDropdownItem.addEventListener('change', function() {
+                        toggleOtherPropertyItems(this);
+                    });
 
-            $('#property_items').off('change.vacantOther').on('change.vacantOther', function() {
-                toggleVacantLandOther(true);
+                    // Manually trigger the toggle function on page load or after Livewire re-renders
+                    toggleOtherPropertyItems(conditionDropdownItem);
+                }
+            }
+
+            // Attach the event listener initially
+            document.addEventListener('DOMContentLoaded', () => {
+                attachItemConditionDropdownListener();
             });
+
+            // Re-attach the event listener after Livewire re-renders the DOM
+            Livewire.hook('message.processed', () => {
+                attachItemConditionDropdownListener();
+            });
+
+
+
+            function toggleOccupantTypesTenant(selectElement) {
+                const tenantDateDiv = document.querySelector('.occupant_types_tenant');
+
+                if (!tenantDateDiv) {
+                    return;
+                }
+
+                // Show the date input field if "Tenant" is selected
+                if (selectElement.value === 'Tenant') {
+                    tenantDateDiv.classList.remove('d-none'); // Show the date input
+                } else {
+                    tenantDateDiv.classList.add('d-none'); // Hide the date input
+                }
+            }
+
+            // Function to attach the event listener to the occupant types dropdown
+            function attachOccupantTypesDropdownListener() {
+                const occupantTypesSelect = document.getElementById('occupant_types');
+                if (occupantTypesSelect) {
+                    occupantTypesSelect.addEventListener('change', function() {
+                        toggleOccupantTypesTenant(this);
+                    });
+
+                    // Manually trigger the toggle function on page load or after Livewire re-renders
+                    toggleOccupantTypesTenant(occupantTypesSelect);
+                }
+            }
+
+            // Attach the event listener initially
+            document.addEventListener('DOMContentLoaded', () => {
+                attachOccupantTypesDropdownListener();
+            });
+
+            // Re-attach the event listener after Livewire re-renders the DOM
+            Livewire.hook('message.processed', () => {
+                attachOccupantTypesDropdownListener();
+            });
+
+
+            ////////////        Desired Rental Amount
+
+
+            function toggleDesiredRentalAmountTenant(selectElement) {
+                const tenantDesiredRentalDiv = document.querySelector('.desired_rental_amount_tenant');
+
+                if (!tenantDesiredRentalDiv) {
+                    return;
+                }
+
+                // Show the date input field if "Tenant" is selected
+                if (selectElement.value === 'Tenant') {
+                    tenantDesiredRentalDiv.classList.remove('d-none'); // Show the date input
+                } else {
+                    tenantDesiredRentalDiv.classList.add('d-none'); // Hide the date input
+                }
+            }
+
+            // Function to attach the event listener to the occupant types dropdown
+            function attachDesiredRentalAmountDropdownListener() {
+                const desiredRentalSelect = document.getElementById('desired_rental_amount');
+                if (desiredRentalSelect) {
+                    desiredRentalSelect.addEventListener('change', function() {
+                        toggleDesiredRentalAmountTenant(this);
+                    });
+
+                    // Manually trigger the toggle function on page load or after Livewire re-renders
+                    toggleDesiredRentalAmountTenant(desiredRentalSelect);
+                }
+            }
+
+            // Attach the event listener initially
+            document.addEventListener('DOMContentLoaded', () => {
+                attachDesiredRentalAmountDropdownListener();
+            });
+
+            // Re-attach the event listener after Livewire re-renders the DOM
+            Livewire.hook('message.processed', () => {
+                attachDesiredRentalAmountDropdownListener();
+            });
+
+
+            if ($('#appliances').length && !$('#appliances').hasClass('select2-hidden-accessible')) {
+                $('#appliances').select2({
+                    placeholder: "Select appliances",
+                    allowClear: true,
+                });
+                $('#appliances').on('change', function(e) {
+                    let selectedValues = $(this).val() || [];
+                    @this.set('appliances', selectedValues);
+                    @this.call('updateAppliances', selectedValues);
+                });
+            }
+
+            if ($('#rent_includes').length && !$('#rent_includes').hasClass('select2-hidden-accessible')) {
+                $('#rent_includes').select2({
+                    placeholder: "Select rent",
+                    allowClear: true,
+                });
+                $('#rent_includes').on('change', function(e) {
+                    let selectedValues = $(this).val() || [];
+                    @this.set('rent_includes', selectedValues);
+                    @this.call('updateRentIncludes', selectedValues);
+                });
+            }
+
+            if ($('#terms_of_lease').length && !$('#terms_of_lease').hasClass('select2-hidden-accessible')) {
+                $('#terms_of_lease').select2({
+                    placeholder: "Select terms of lease",
+                    allowClear: true,
+                });
+                $('#terms_of_lease').on('change', function(e) {
+                    let selectedValues = $(this).val() || [];
+                    @this.set('terms_of_lease', selectedValues);
+                    var container = document.getElementById('otherLeaseContainer');
+                    if (container) {
+                        if (selectedValues.includes('Other')) {
+                            container.classList.remove('d-none');
+                        } else {
+                            container.classList.add('d-none');
+                        }
+                    }
+                });
+            }
+
+            if ($('#tenant_pays').length && !$('#tenant_pays').hasClass('select2-hidden-accessible')) {
+                $('#tenant_pays').select2({
+                    placeholder: "Select tenant pays",
+                    allowClear: true,
+                });
+                $('#tenant_pays').on('change', function(e) {
+                    let selectedValues = $(this).val() || [];
+                    @this.set('tenant_pays', selectedValues);
+                    @this.call('updateTenantPays', selectedValues);
+                });
+            }
+
+            if ($('#owner_pays').length && !$('#owner_pays').hasClass('select2-hidden-accessible')) {
+                $('#owner_pays').select2({
+                    placeholder: "Select owner pays",
+                    allowClear: true,
+                });
+                $('#owner_pays').on('change', function(e) {
+                    let selectedValues = $(this).val() || [];
+                    @this.set('owner_pays', selectedValues);
+                    @this.call('updateOwnerPays', selectedValues);
+                });
+            }
+
+            function initLeaseTermSelect2() {
+                var $dlt = $('.lease_term_options');
+                if (!$dlt.length || $dlt.hasClass('select2-hidden-accessible')) return;
+                $dlt.select2({
+                    placeholder: "Select desired lease term",
+                    allowClear: true,
+                });
+                $dlt.off('change.ltsSync').on('change.ltsSync', function() {
+                    var selectedValues = $(this).val() || [];
+                    @this.set('desired_lease_length', selectedValues);
+                    var otherWrapper = document.querySelector('.other_lease_term_wrapper');
+                    if (otherWrapper) {
+                        otherWrapper.style.display = selectedValues.includes('Other') ? 'block' : 'none';
+                    }
+                });
+            }
+
+            initLeaseTermSelect2();
 
             Livewire.hook('message.processed', () => {
-                toggleVacantLandOther(false);
+                initLeaseTermSelect2();
             });
+
+            window.syncLandlordSelect2BeforeSave = function() {
+                var selects2Map = {
+                    'appliances': '#appliances',
+                    'rent_includes': '#rent_includes',
+                    'terms_of_lease': '#terms_of_lease',
+                    'tenant_pays': '#tenant_pays',
+                    'owner_pays': '#owner_pays',
+                    'non_negotiable_amenities': '#non_negotiable_amenities',
+                    'property_items': '#property_items',
+                    'view_preference': '#view_preference',
+                };
+                Object.entries(selects2Map).forEach(function([field, selector]) {
+                    var $el = $(selector);
+                    if ($el.length && $el.hasClass('select2-hidden-accessible')) {
+                        @this.set(field, $el.val() || []);
+                    }
+                });
+                var $dlt = $('.lease_term_options');
+                if ($dlt.length && $dlt.hasClass('select2-hidden-accessible')) {
+                    @this.set('desired_lease_length', $dlt.val() || []);
+                }
+            };
 
             const photoInput = document.getElementById("photo-input");
             const photoError = document.getElementById("photo-error");
@@ -1904,32 +2046,6 @@
                     videoLoader.style.visibility = "hidden";
                 }, 30000);
             });
-            
-            // State tracking for Buyer form validation (populated by browser events from Livewire)
-            window.buyerState = {
-                countiesCount: {{ count($counties ?? []) }},
-                auctionType: '{{ $auction_type ?? '' }}'
-            };
-            
-            // Listen for Livewire browser events to update state
-            window.addEventListener('buyer-state-init', (e) => {
-                window.buyerState.countiesCount = e.detail.countiesCount || 0;
-                window.buyerState.auctionType = e.detail.auctionType || '';
-                console.log('[Buyer] State init:', window.buyerState);
-                checkFormValidity();
-            });
-            
-            window.addEventListener('buyer-counties-updated', (e) => {
-                window.buyerState.countiesCount = e.detail.count || 0;
-                console.log('[Buyer] Counties updated:', window.buyerState.countiesCount);
-                checkFormValidity();
-            });
-            
-            window.addEventListener('buyer-auction-type-changed', (e) => {
-                window.buyerState.auctionType = e.detail.type || '';
-                console.log('[Buyer] Auction type changed:', window.buyerState.auctionType);
-                checkFormValidity();
-            });
 
 
             // Helper function to check if element is visible (not hidden by d-none, display:none, collapse, etc.)
@@ -1981,77 +2097,21 @@
             }
 
             // Function to check if all required fields are filled
-            // Split logic by listing type: Traditional vs Bidding Period
             function checkFormValidity() {
                 let allValid = true;
-                let invalidFields = []; // TEMP DEBUG
 
-                // Get auction type from buyerState (set by browser events) - authoritative source
-                let currentListingType = window.buyerState ? window.buyerState.auctionType : '';
-                
-                // Fallback to hidden input if buyerState not set
-                if (!currentListingType) {
-                    const auctionTypeHidden = document.getElementById('auction_type_hidden');
-                    currentListingType = auctionTypeHidden ? auctionTypeHidden.value : '';
-                }
-                console.log('[Buyer] Current listing type:', currentListingType);
-
-                // Define fields that are ONLY required for Bidding Period
-                const biddingPeriodOnlyFields = ['auction_time'];
-                
-                // EXPLICIT CHECK: Counties are REQUIRED (use buyerState - authoritative source)
-                let hasCounties = window.buyerState ? window.buyerState.countiesCount > 0 : false;
-                console.log('[Buyer] Counties count from state:', window.buyerState ? window.buyerState.countiesCount : 'N/A');
-                
-                if (!hasCounties) {
-                    allValid = false;
-                    invalidFields.push('counties (at least one required)');
-                }
-                
                 // Check all tabs for required fields (skip hidden/disabled fields)
                 document.querySelectorAll('.tab-pane').forEach(tabPane => {
                     tabPane.querySelectorAll('[required]').forEach(field => {
-                        const fieldName = field.name || field.id || field.getAttribute('wire:model') || 'unknown';
-                        
-                        // Skip the counties_hidden field - we check badges explicitly above
-                        if (field.id === 'counties_hidden') {
-                            return;
-                        }
-                        
                         // Skip hidden or disabled fields - they should not block form validity
                         if (!isElementVisible(field)) {
                             return;
                         }
-                        // Skip disabled fields
-                        if (field.disabled) {
-                            return;
-                        }
-                        
-                        // SPLIT LOGIC: Skip Bidding Period-only fields when Traditional is selected
-                        if (currentListingType === 'Traditional' && biddingPeriodOnlyFields.includes(field.id)) {
-                            console.log('[Buyer] Skipping Bidding Period field for Traditional:', fieldName);
-                            return;
-                        }
-                        
-                        // SPLIT LOGIC: Skip auction_type validation for hidden required field if value exists
-                        if (field.id === 'auction_type_hidden' && field.value) {
-                            return;
-                        }
-                        
                         if (!field.value) {
                             allValid = false;
-                            // TEMP DEBUG: Log which fields are failing
-                            invalidFields.push(fieldName);
                         }
                     });
                 });
-
-                // TEMP DEBUG: Log invalid fields to console
-                if (invalidFields.length > 0) {
-                    console.log('[Buyer validity check failing]:', invalidFields.join(', '));
-                } else {
-                    console.log('[Buyer validity check] All fields valid');
-                }
 
                 // Enable/disable save button (both CSS class and attribute)
                 const saveButton = document.querySelector('.wizard-step-finish');
@@ -2059,14 +2119,11 @@
                     if (allValid) {
                         saveButton.classList.remove('disabled');
                         saveButton.removeAttribute('disabled');
-                        console.log('[Buyer Submit] Button ENABLED');
                     } else {
                         saveButton.classList.add('disabled');
                         saveButton.setAttribute('disabled', 'disabled');
-                        console.log('[Buyer Submit] Button DISABLED');
                     }
                 }
-
                 return allValid;
             }
 
@@ -2157,20 +2214,47 @@
                     });
                 }
 
-                // Cities and Counties are OPTIONAL - no validation required
-                // Clear any existing error messages for cities/counties
+                // Validate cities array (your existing code)
                 const citiesContainer = currentTabContent.querySelector('.cities-container');
                 if (citiesContainer) {
-                    const existingCitiesError = citiesContainer.parentNode.querySelector('.error');
-                    if (existingCitiesError) {
-                        existingCitiesError.remove();
+                    const cityBadges = citiesContainer.querySelectorAll('.badge');
+                    if (!cityBadges || cityBadges.length === 0) {
+                        isValid = false;
+                        const existingError = citiesContainer.parentNode.querySelector('.error');
+                        if (!existingError) {
+                            const citiesError = document.createElement('div');
+                            citiesError.className = 'error';
+                            citiesError.textContent = 'At least one city is required.';
+                            citiesContainer.parentNode.insertBefore(citiesError, citiesContainer
+                                .nextSibling);
+                        }
+                    } else {
+                        const existingError = citiesContainer.parentNode.querySelector('.error');
+                        if (existingError) {
+                            existingError.remove();
+                        }
                     }
                 }
+
+                // Validate counties array (your existing code)
                 const countiesContainer = currentTabContent.querySelector('.counties-container');
                 if (countiesContainer) {
-                    const existingCountiesError = countiesContainer.parentNode.querySelector('.error');
-                    if (existingCountiesError) {
-                        existingCountiesError.remove();
+                    const countyBadges = countiesContainer.querySelectorAll('.badge');
+                    if (!countyBadges || countyBadges.length === 0) {
+                        isValid = false;
+                        const existingError = countiesContainer.parentNode.querySelector('.error');
+                        if (!existingError) {
+                            const countiesError = document.createElement('div');
+                            countiesError.className = 'error';
+                            countiesError.textContent = 'At least one county is required.';
+                            countiesContainer.parentNode.insertBefore(countiesError, countiesContainer
+                                .nextSibling);
+                        }
+                    } else {
+                        const existingError = countiesContainer.parentNode.querySelector('.error');
+                        if (existingError) {
+                            existingError.remove();
+                        }
                     }
                 }
 
@@ -2199,6 +2283,7 @@
                 const saveButton = document.querySelector('.wizard-step-finish');
                 if (saveButton) {
                     saveButton.disabled = !isValid;
+                    saveButton.classList.toggle('disabled', !isValid);
                 }
             });
 
@@ -2213,21 +2298,17 @@
                 }
             });
 
-            // Add event listeners to update save button state when fields change
-            document.addEventListener('DOMContentLoaded', function() {
-                // Initial check
+            // Run initial validity check now (already inside DOMContentLoaded when called)
+            setTimeout(function() {
                 checkFormValidity();
-
-                // Update on any input change
-                document.querySelectorAll('input, select, textarea').forEach(field => {
+                document.querySelectorAll('input, select, textarea').forEach(function(field) {
                     field.addEventListener('change', checkFormValidity);
                     field.addEventListener('keyup', checkFormValidity);
                 });
+            }, 150);
 
-                // Special handling for Livewire-updated fields
-                document.addEventListener('livewire:update', function() {
-                    setTimeout(checkFormValidity, 100);
-                });
+            Livewire.hook('message.processed', function() {
+                setTimeout(checkFormValidity, 150);
             });
 
 
@@ -2284,77 +2365,21 @@
             }
 
             // Function to check if all required fields are filled
-            // Split logic by listing type: Traditional vs Bidding Period
             function checkFormValidity() {
                 let allValid = true;
-                let invalidFields = []; // TEMP DEBUG
 
-                // Get auction type from buyerState (set by browser events) - authoritative source
-                let currentListingType = window.buyerState ? window.buyerState.auctionType : '';
-                
-                // Fallback to hidden input if buyerState not set
-                if (!currentListingType) {
-                    const auctionTypeHidden = document.getElementById('auction_type_hidden');
-                    currentListingType = auctionTypeHidden ? auctionTypeHidden.value : '';
-                }
-                console.log('[Buyer] Current listing type:', currentListingType);
-
-                // Define fields that are ONLY required for Bidding Period
-                const biddingPeriodOnlyFields = ['auction_time'];
-                
-                // EXPLICIT CHECK: Counties are REQUIRED (use buyerState - authoritative source)
-                let hasCounties = window.buyerState ? window.buyerState.countiesCount > 0 : false;
-                console.log('[Buyer] Counties count from state:', window.buyerState ? window.buyerState.countiesCount : 'N/A');
-                
-                if (!hasCounties) {
-                    allValid = false;
-                    invalidFields.push('counties (at least one required)');
-                }
-                
                 // Check all tabs for required fields (skip hidden/disabled fields)
                 document.querySelectorAll('.tab-pane').forEach(tabPane => {
                     tabPane.querySelectorAll('[required]').forEach(field => {
-                        const fieldName = field.name || field.id || field.getAttribute('wire:model') || 'unknown';
-                        
-                        // Skip the counties_hidden field - we check badges explicitly above
-                        if (field.id === 'counties_hidden') {
-                            return;
-                        }
-                        
                         // Skip hidden or disabled fields - they should not block form validity
                         if (!isElementVisible(field)) {
                             return;
                         }
-                        // Skip disabled fields
-                        if (field.disabled) {
-                            return;
-                        }
-                        
-                        // SPLIT LOGIC: Skip Bidding Period-only fields when Traditional is selected
-                        if (currentListingType === 'Traditional' && biddingPeriodOnlyFields.includes(field.id)) {
-                            console.log('[Buyer] Skipping Bidding Period field for Traditional:', fieldName);
-                            return;
-                        }
-                        
-                        // SPLIT LOGIC: Skip auction_type validation for hidden required field if value exists
-                        if (field.id === 'auction_type_hidden' && field.value) {
-                            return;
-                        }
-                        
                         if (!field.value) {
                             allValid = false;
-                            // TEMP DEBUG: Log which fields are failing
-                            invalidFields.push(fieldName);
                         }
                     });
                 });
-
-                // TEMP DEBUG: Log invalid fields to console
-                if (invalidFields.length > 0) {
-                    console.log('[Buyer validity check failing]:', invalidFields.join(', '));
-                } else {
-                    console.log('[Buyer validity check] All fields valid');
-                }
 
                 // Enable/disable save button (both CSS class and attribute)
                 const saveButton = document.querySelector('.wizard-step-finish');
@@ -2362,11 +2387,9 @@
                     if (allValid) {
                         saveButton.classList.remove('disabled');
                         saveButton.removeAttribute('disabled');
-                        console.log('[Buyer Submit] Button ENABLED');
                     } else {
                         saveButton.classList.add('disabled');
                         saveButton.setAttribute('disabled', 'disabled');
-                        console.log('[Buyer Submit] Button DISABLED');
                     }
                 }
 
@@ -2417,42 +2440,49 @@
                     });
                 }
 
-                // Cities and Counties are OPTIONAL - no validation required
-                // Clear any existing error messages for cities/counties
-                const citiesContainer2 = currentTabContent.querySelector('.cities-container');
-                if (citiesContainer2) {
-                    const existingCitiesError2 = citiesContainer2.parentNode.querySelector('.error');
-                    if (existingCitiesError2) {
-                        existingCitiesError2.remove();
-                    }
-                }
-                const countiesContainer2 = currentTabContent.querySelector('.counties-container');
-                if (countiesContainer2) {
-                    const existingCountiesError2 = countiesContainer2.parentNode.querySelector('.error');
-                    if (existingCountiesError2) {
-                        existingCountiesError2.remove();
-                    }
-                }
-
-                // Offered Financing is required in purchasing-terms — Select2 removes 'required' so check manually
-                if (currentTabContent.id === 'purchasing-terms') {
-                    var ofErrorSpan2 = currentTabContent.querySelector('#offered_financing_error');
-                    var ofJqVal = (typeof jQuery !== 'undefined') ? jQuery('#offered_financing').val() : null;
-                    var ofIsEmpty = !ofJqVal || (Array.isArray(ofJqVal) && ofJqVal.length === 0);
-                    if (ofIsEmpty) {
-                        var ofNativeEl = currentTabContent.querySelector('#offered_financing');
-                        if (ofNativeEl && ofNativeEl.selectedOptions && ofNativeEl.selectedOptions.length > 0) {
-                            ofIsEmpty = false;
+                // Validate cities array (your existing code)
+                const citiesContainer = currentTabContent.querySelector('.cities-container');
+                if (citiesContainer) {
+                    const cityBadges = citiesContainer.querySelectorAll('.badge');
+                    if (!cityBadges || cityBadges.length === 0) {
+                        isValid = false;
+                        const existingError = citiesContainer.parentNode.querySelector('.error');
+                        if (!existingError) {
+                            const citiesError = document.createElement('div');
+                            citiesError.className = 'error';
+                            citiesError.textContent = 'At least one city is required.';
+                            citiesContainer.parentNode.insertBefore(citiesError, citiesContainer
+                                .nextSibling);
+                        }
+                    } else {
+                        const existingError = citiesContainer.parentNode.querySelector('.error');
+                        if (existingError) {
+                            existingError.remove();
                         }
                     }
-                    if (ofIsEmpty) {
-                        isValid = false;
-                        if (ofErrorSpan2) { ofErrorSpan2.textContent = 'This field is required.'; }
-                    } else {
-                        if (ofErrorSpan2) { ofErrorSpan2.textContent = ''; }
-                    }
                 }
 
+                // Validate counties array (your existing code)
+                const countiesContainer = currentTabContent.querySelector('.counties-container');
+                if (countiesContainer) {
+                    const countyBadges = countiesContainer.querySelectorAll('.badge');
+                    if (!countyBadges || countyBadges.length === 0) {
+                        isValid = false;
+                        const existingError = countiesContainer.parentNode.querySelector('.error');
+                        if (!existingError) {
+                            const countiesError = document.createElement('div');
+                            countiesError.className = 'error';
+                            countiesError.textContent = 'At least one county is required.';
+                            countiesContainer.parentNode.insertBefore(countiesError, countiesContainer
+                                .nextSibling);
+                        }
+                    } else {
+                        const existingError = countiesContainer.parentNode.querySelector('.error');
+                        if (existingError) {
+                            existingError.remove();
+                        }
+                    }
+                }
                 if (currentTabContent.id === 'service-selection-and-pricing') {
                     const understandTerms = currentTabContent.querySelector('#understandTerms');
                     if (understandTerms && !understandTerms.checked) {
@@ -2496,6 +2526,7 @@
                 const saveButton = document.querySelector('.wizard-step-finish');
                 if (saveButton) {
                     saveButton.disabled = !isValid;
+                    saveButton.classList.toggle('disabled', !isValid);
                 }
             });
 
@@ -2510,21 +2541,17 @@
                 }
             });
 
-            // Add event listeners to update save button state when fields change
-            document.addEventListener('DOMContentLoaded', function() {
-                // Initial check
+            // Run initial validity check now (already inside DOMContentLoaded when called)
+            setTimeout(function() {
                 checkFormValidity();
-
-                // Update on any input change
-                document.querySelectorAll('input, select, textarea').forEach(field => {
+                document.querySelectorAll('input, select, textarea').forEach(function(field) {
                     field.addEventListener('change', checkFormValidity);
                     field.addEventListener('keyup', checkFormValidity);
                 });
+            }, 150);
 
-                // Special handling for Livewire-updated fields
-                document.addEventListener('livewire:update', function() {
-                    setTimeout(checkFormValidity, 100);
-                });
+            Livewire.hook('message.processed', function() {
+                setTimeout(checkFormValidity, 150);
             });
         }
 
@@ -2551,7 +2578,11 @@
                 const isRepresented = select.value === 'Represented';
                 notice.classList.toggle('d-none', !isRepresented);
                 nextBtn.disabled = isRepresented;
-                saveBtn.disabled = isRepresented;
+                if (isRepresented) {
+                    saveBtn.disabled = true;
+                    saveBtn.classList.add('disabled');
+                }
+                // When NOT represented, let updateSaveButton() control the button state
             }
         }
 
@@ -2559,7 +2590,6 @@
             addIconsToInputs();
             checkRepresentationStatus();
 
-            // Re-detect selected service type after DOM update
             const fullServiceChecked = document.getElementById('fullService')?.checked;
             const limitedServiceChecked = document.getElementById('limitedService')?.checked;
 
@@ -2569,7 +2599,6 @@
             } else if (limitedServiceChecked) {
                 newServiceType = 'limited_service';
             } else {
-                // Default to full service if no service type radio buttons found
                 newServiceType = 'full_service';
             }
 
@@ -2577,17 +2606,12 @@
                 currentServiceType = newServiceType;
             }
 
-            var now = Date.now();
-            var propertyItemsNeedsInit = $('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible');
-            if (propertyItemsNeedsInit || now - _lastInitTime > 300) {
-                _lastInitTime = now;
-                removeWizardEventListeners();
+            removeWizardEventListeners();
 
-                if (currentServiceType === 'full_service') {
-                    initializeFullService();
-                } else if (currentServiceType === 'limited_service') {
-                    initializeLimitedService();
-                }
+            if (currentServiceType === 'full_service') {
+                initializeFullService();
+            } else if (currentServiceType === 'limited_service') {
+                initializeLimitedService();
             }
         });
     </script>
@@ -2605,16 +2629,16 @@
                 const tabSelector = serviceType === 'full_service' ? [
                     '#listing-details',
                     '#property-preferences',
-                    '#purchasing-terms',
+                    '#leasing-terms',
                     '#services',
                     '#additional-details',
                     '#broker-compensation',
-                    '#buyer-information'
+                    '#landlord-information'
                 ] : [
                     '#listing-details',
                     '#location-and-meeting-details',
                     '#service-selection-and-pricing',
-                    '#buyer-information'
+                    '#landlord-information'
                 ];
 
                 tabSelector.forEach(selector => {
@@ -2637,11 +2661,26 @@
                 return field.value.trim() !== '';
             }
 
+            function isFieldVisibleAndEnabled(field) {
+                if (!field) return false;
+                if (field.disabled) return false;
+                if (field.getAttribute('aria-hidden') === 'true') return false;
+                if (field.offsetWidth === 0 && field.offsetHeight === 0) return false;
+                let el = field.parentElement;
+                while (el && el !== document.body) {
+                    const style = window.getComputedStyle(el);
+                    if (style.display === 'none' || el.classList.contains('d-none')) return false;
+                    el = el.parentElement;
+                }
+                return true;
+            }
+
             function validateAllTabsStrictly() {
                 const requiredFields = getAllRequiredFields();
                 let invalidFields = [];
 
                 requiredFields.forEach(field => {
+                    if (!isFieldVisibleAndEnabled(field)) return;
                     if (!isFieldValid(field)) {
                         const tab = field.closest('.tab-pane');
                         const tabIndex = [...document.querySelectorAll('.tab-pane')].indexOf(tab) + 1;
@@ -2695,315 +2734,296 @@
             setupGlobalListeners();
             updateSaveButton();
 
-            // Livewire reactivity hook
+            // Re-run validation whenever a Bootstrap tab becomes visible
+            // (covers both Next-button navigation and direct tab-link clicks)
+            document.addEventListener('shown.bs.tab', function() {
+                setTimeout(updateSaveButton, 100);
+            });
+
+            // ---- LANDLORD GUIDED CORRECTION MODE ----------------------------------------
+
+            // Stable label map: property name -> exact user-facing label shown in the UI.
+            var LANDLORD_FIELD_LABELS = {
+                'listing_title':           'Listing Title',
+                'working_with_agent':      'Currently Working with an Agent',
+                'desired_agent_hire_date': 'Desired Agent Hire Date',
+                'listing_date':            'Listing Date',
+                'expiration_date':         'Expiration Date',
+                'auction_type':            'Listing Type',
+                'auction_time':            'Bidding Period Length',
+                'address':                 'Street Address',
+                'property_city':           'Property City',
+                'property_state':          'Property State',
+                'property_county':         'Property County',
+                'property_zip':            'Property Zip Code',
+                'property_type':           'Property Type',
+                'property_items':          'Property Style',
+                'condition_prop':          'Property Condition',
+                'bedrooms':                'Minimum Bedrooms',
+                'bathrooms':               'Minimum Bathrooms',
+                'minimum_heated_square':   'Minimum Heated SqFt',
+                'minimum_leaseable':       'Net Leasable SqFt',
+                'occupant_status':         'Current Occupant Status',
+                'occupant_tenant':         'Occupied Until',
+                'leasing_spaces':          'Leasing Space Type',
+                'desired_lease_length':    'Desired Lease Term',
+                'meeting_Preference':      'Meeting Preference',
+                'first_name':              'First Name',
+                'last_name':               'Last Name',
+                'phone_number':            'Phone Number',
+                'email':                   'Email Address',
+            };
+
+            // Returns the canonical deduplication key for a DOM field.
+            function resolveLandlordFieldKey(field) {
+                var wm = field.getAttribute('wire:model') ||
+                         field.getAttribute('wire:model.defer') ||
+                         field.getAttribute('wire:model.lazy') ||
+                         field.getAttribute('wire:model.live') ||
+                         field.getAttribute('wire:model.debounce.300ms');
+                if (wm) {
+                    var base = wm.split('.')[0];
+                    return LANDLORD_FIELD_LABELS[base] ? base : (field.id || base);
+                }
+                return field.id || field.name || 'field';
+            }
+
+            // Returns the exact user-facing label for a field.
+            function resolveLandlordFieldLabel(field) {
+                var key = resolveLandlordFieldKey(field);
+                if (LANDLORD_FIELD_LABELS[key]) return LANDLORD_FIELD_LABELS[key];
+                var labelEl = field.closest('.form-group') && field.closest('.form-group').querySelector('label');
+                return labelEl ? labelEl.textContent.replace(/[*:]/g, '').trim()
+                               : (field.getAttribute('placeholder') || key || 'Required field');
+            }
+
+            // Returns true when a field is hidden by a d-none or display:none ancestor
+            // within its tab pane (i.e. conditionally hidden, not just on an inactive tab).
+            function isLandlordFieldHiddenWithinTab(field) {
+                var tabPane = field.closest('.tab-pane');
+                if (!tabPane) return false;
+                var el = field.parentElement;
+                while (el && el !== tabPane) {
+                    if (el.classList && el.classList.contains('d-none')) return true;
+                    if (el.style && el.style.display === 'none') return true;
+                    el = el.parentElement;
+                }
+                return false;
+            }
+
+            // Collects all currently-missing required Landlord fields across every tab.
+            function landlordGetInvalidItems() {
+                var items = [];
+                var seen  = new Set();
+
+                // DOM-based required fields (respects conditional visibility)
+                var reqFields = getAllRequiredFields();
+                reqFields.forEach(function(field) {
+                    if (isLandlordFieldHiddenWithinTab(field)) return;
+                    // Select2-initialised multi-selects: checked via Livewire property below
+                    if (field.tagName === 'SELECT' && field.multiple &&
+                        field.classList.contains('select2-hidden-accessible')) return;
+                    var isEmpty = false;
+                    if (field.type === 'checkbox' || field.type === 'radio') {
+                        isEmpty = !field.checked;
+                    } else if (field.type === 'select-one' || field.type === 'select-multiple') {
+                        isEmpty = (field.value === '' || field.value === null ||
+                                   field.value === undefined);
+                    } else {
+                        isEmpty = !field.value || field.value.trim() === '';
+                    }
+                    if (isEmpty) {
+                        var fKey = resolveLandlordFieldKey(field);
+                        if (!seen.has(fKey)) {
+                            seen.add(fKey);
+                            items.push({
+                                field:     field,
+                                tab:       field.closest('.tab-pane'),
+                                fieldName: resolveLandlordFieldLabel(field),
+                                key:       fKey,
+                            });
+                        }
+                    }
+                });
+
+                // Livewire property fallback: desired_lease_length (Select2 multi-select,
+                // class="lease_term_options"; wire:ignore parent means DOM value is unreliable)
+                try {
+                    var _wireIdEl = document.querySelector('[wire\\:id]');
+                    var _comp2 = _wireIdEl ? (window.livewire
+                        ? window.livewire.find(_wireIdEl.getAttribute('wire:id'))
+                        : null) : null;
+                    if (_comp2) {
+                        var _dll = _comp2.get('desired_lease_length');
+                        if (!Array.isArray(_dll) || _dll.length === 0) {
+                            if (!seen.has('desired_lease_length')) {
+                                seen.add('desired_lease_length');
+                                var _dllEl  = document.querySelector('.lease_term_options');
+                                var _dllTab = _dllEl
+                                    ? _dllEl.closest('.tab-pane')
+                                    : document.querySelector('#leasing-terms');
+                                items.push({
+                                    field:     _dllEl || null,
+                                    tab:       _dllTab,
+                                    fieldName: 'Desired Lease Term',
+                                    key:       'desired_lease_length',
+                                });
+                            }
+                        }
+                    }
+                } catch(exLl) {}
+
+                return items;
+            }
+
+            // Guided-correction mode state
+            var _landlordCorrectionMode = false;
+            var _landlordMissingItems   = [];
+
+            // Navigate to the tab containing item, sync server-side $activeTab,
+            // then scroll to and focus the field.
+            function landlordNavigateToItem(item) {
+                if (!item || !item.tab) return;
+                var tabPane = item.tab;
+                var tabId   = tabPane.id;
+                var trigger = document.querySelector('[data-bs-target="#' + tabId + '"]');
+                if (trigger) {
+                    new bootstrap.Tab(trigger).show();
+                    var allPanes = [...document.querySelectorAll('.tab-pane')];
+                    var idx = allPanes.indexOf(tabPane);
+                    if (idx >= 0) {
+                        try { @this.call('setActiveTab', idx); } catch(exNav) {}
+                    }
+                }
+                setTimeout(function() {
+                    if (item.field && item.field.classList) {
+                        item.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        if (typeof item.field.focus === 'function' &&
+                            item.field.tagName !== 'DIV') {
+                            item.field.focus();
+                        }
+                        item.field.classList.add('is-invalid');
+                    }
+                }, 350);
+            }
+
+            // Called after each Livewire round-trip while in correction mode.
+            // Re-checks missing fields; navigates to the next one or exits when all are done.
+            function landlordAdvanceCorrection() {
+                if (!_landlordCorrectionMode) return;
+
+                var freshMissing = landlordGetInvalidItems();
+                var prevKeys = new Set(
+                    _landlordMissingItems.map(function(i) { return i.key || i.fieldName; })
+                );
+                var someFixed = freshMissing.length < _landlordMissingItems.length ||
+                    freshMissing.some(function(i) {
+                        return !prevKeys.has(i.key || i.fieldName);
+                    });
+
+                var _banner4  = document.getElementById('submit-error-banner');
+                var _errList4 = document.getElementById('submit-error-list');
+                if (_errList4) {
+                    _errList4.innerHTML = '';
+                    freshMissing.forEach(function(i) {
+                        var li = document.createElement('li');
+                        li.textContent = i.fieldName;
+                        _errList4.appendChild(li);
+                    });
+                }
+
+                if (freshMissing.length === 0) {
+                    // All required fields complete — exit correction and return to submit tab
+                    _landlordCorrectionMode = false;
+                    _landlordMissingItems   = [];
+                    if (_banner4) _banner4.classList.add('d-none');
+                    var _submitTrigger = document.querySelector(
+                        '[data-bs-target="#landlord-information"]'
+                    );
+                    if (_submitTrigger) {
+                        new bootstrap.Tab(_submitTrigger).show();
+                        try { @this.call('setActiveTab', 6); } catch(exExit) {}
+                    }
+                    return;
+                }
+
+                // Re-show banner — Livewire DOM-diff re-adds d-none on every setActiveTab
+                // round-trip, so we must explicitly remove it after each re-render.
+                if (_banner4) _banner4.classList.remove('d-none');
+
+                if (someFixed) {
+                    _landlordMissingItems = freshMissing;
+                    landlordNavigateToItem(freshMissing[0]);
+                }
+            }
+
+            // Livewire reactivity hook: drives button state AND guided correction
             if (typeof Livewire !== 'undefined') {
                 Livewire.hook('message.processed', () => {
                     setTimeout(() => {
-                        // Refresh listeners and service type
                         const updatedServiceType = document.querySelector('[data-service-type]');
                         if (updatedServiceType) {
-                            formContainer.setAttribute('data-service-type', updatedServiceType
-                                .getAttribute('data-service-type'));
+                            formContainer.setAttribute(
+                                'data-service-type',
+                                updatedServiceType.getAttribute('data-service-type')
+                            );
                         }
-
                         setupGlobalListeners();
                         updateSaveButton();
+                        if (_landlordCorrectionMode) {
+                            landlordAdvanceCorrection();
+                        }
                     }, 300);
                 });
             }
 
-            // Form submit listener: block submission and show banner when required fields are missing
+            // Form submit handler with full guided correction
             const createForm = document.getElementById('create-auction-form');
             if (createForm) {
-
-                // Stable label map for every required Buyer field.
-                // Keyed by wire:model property name.  Labels match exact wording shown in the live UI.
-                const BUYER_FIELD_LABELS = {
-                    'listing_title':           'Listing Title',
-                    'working_with_agent':      'Current Representation Status with Broker',
-                    'desired_agent_hire_date': 'Desired Agent Hire Date',
-                    'listing_date':            'Listing Date',
-                    'expiration_date':         'Expiration Date',
-                    'auction_type':            'Listing Type',
-                    'auction_time':            'Bidding Period Length',
-                    'meeting_Preference':      'Meeting Preference',
-                    'state':                   'Acceptable State',
-                    'property_type':           'Acceptable Property Type',
-                    'property_items':          'Acceptable Property Style',
-                    'bedrooms':                'Minimum Bedrooms Needed',
-                    'bathrooms':               'Minimum Bathrooms Needed',
-                    'counties':                'Acceptable Counties',
-                    'target_closing_date':     'Target Closing Date',
-                    'maximum_budget':          'Maximum Budget',
-                    'offered_financing':       'Offered Financing',
-                    'tenant_require':          'Furnishings Needed',
-                    'real_estate_purchase':    'Business & Real Estate Purchase Requirements',
-                    'first_name':              'First Name',
-                    'last_name':               'Last Name',
-                    'phone_number':            'Phone Number',
-                    'email':                   'Email Address',
-                };
-
-                // Returns the canonical property key for a field: wire:model value first,
-                // then wire:model.defer / wire:model.lazy, then id, then name.
-                function resolveBuyerFieldKey(field) {
-                    return field.getAttribute('wire:model')
-                        || field.getAttribute('wire:model.defer')
-                        || field.getAttribute('wire:model.lazy')
-                        || field.id
-                        || field.name
-                        || '';
-                }
-
-                // Returns the user-facing label for a Buyer field.
-                // Prefers BUYER_FIELD_LABELS (stable); falls back to DOM label text.
-                function resolveBuyerFieldLabel(field) {
-                    var key = resolveBuyerFieldKey(field);
-                    if (key && BUYER_FIELD_LABELS[key]) {
-                        return BUYER_FIELD_LABELS[key];
-                    }
-                    var label = field.closest('.form-group') && field.closest('.form-group').querySelector('label');
-                    if (label) {
-                        return label.textContent.replace(/[*:]/g, '').trim();
-                    }
-                    return field.getAttribute('placeholder') || field.name || field.id || 'Required field';
-                }
-
-                // Returns true if the field is hidden by conditional rendering WITHIN its
-                // tab pane (d-none / inline display:none), but does NOT treat an inactive
-                // tab-pane as hidden, enabling cross-tab validation.
-                function isBuyerFieldHiddenWithinTab(field) {
-                    var tabPane = field.closest('.tab-pane');
-                    if (!tabPane) return false;
-                    var el = field.parentElement;
-                    while (el && el !== tabPane) {
-                        if (el.classList && el.classList.contains('d-none')) return true;
-                        if (el.style && el.style.display === 'none') return true;
-                        el = el.parentElement;
-                    }
-                    return false;
-                }
-
-                // ---- BUYER CORRECTION MODE -------------------------------------------
-                // Tracks whether the form is in guided-correction mode (submit was blocked
-                // and we are walking the user through each still-missing required field).
-                var _buyerCorrectionMode = false;
-                var _buyerMissingItems = [];
-
-                // Re-runs all buyer required checks and returns the current ordered list
-                // of still-missing required fields.
-                function buyerGetInvalidItems() {
-                    var items = [];
-                    var reqFields = getAllRequiredFields();
-                    reqFields.forEach(function(field) {
-                        if (isBuyerFieldHiddenWithinTab(field)) return;
-                        // Skip Select2-managed multi-selects — handled via Livewire state check below.
-                        if (field.tagName === 'SELECT' && field.multiple &&
-                            field.classList.contains('select2-hidden-accessible')) return;
-                        var isEmpty = false;
-                        if (field.type === 'checkbox' || field.type === 'radio') {
-                            isEmpty = !field.checked;
-                        } else if (field.type === 'select-one' || field.type === 'select-multiple') {
-                            isEmpty = field.value === '' || field.value === null || field.value === undefined;
-                        } else {
-                            isEmpty = !field.value || field.value.trim() === '';
-                        }
-                        if (isEmpty) {
-                            var _fKey = resolveBuyerFieldKey(field);
-                            items.push({ field: field, tab: field.closest('.tab-pane'), fieldName: resolveBuyerFieldLabel(field), key: _fKey });
-                        }
-                    });
-
-                    // Counties badge check
-                    var countiesContainer = document.querySelector('.counties-container');
-                    if (countiesContainer) {
-                        var countyBadges = countiesContainer.querySelectorAll('.badge');
-                        if (!countyBadges || countyBadges.length === 0) {
-                            items.push({ field: countiesContainer, tab: countiesContainer.closest('.tab-pane'), fieldName: BUYER_FIELD_LABELS['counties'] || 'Acceptable Counties', key: 'counties' });
-                        }
-                    }
-
-                    // Livewire-state checks for Select2 multi-selects (wire:ignore — not catchable via DOM)
-                    try {
-                        var _wireEl = document.querySelector('[wire\\:id]');
-                        if (_wireEl && typeof Livewire !== 'undefined') {
-                            var _comp = Livewire.find(_wireEl.getAttribute('wire:id'));
-                            if (_comp && _comp.get) {
-                                // property_items: required when property_type is selected
-                                var _ptValBgi = _comp.get('property_type');
-                                if (_ptValBgi && _ptValBgi !== '') {
-                                    var _piValBgi = _comp.get('property_items');
-                                    if (typeof _piValBgi === 'string') { try { _piValBgi = JSON.parse(_piValBgi); } catch(ex) {} }
-                                    var _piEmptyBgi = !_piValBgi || (Array.isArray(_piValBgi) && _piValBgi.length === 0) || _piValBgi === '[]';
-                                    if (_piEmptyBgi) {
-                                        var $piDom = $('#property_items');
-                                        if ($piDom.length) {
-                                            var _piDomVal = $piDom.val();
-                                            if (_piDomVal && Array.isArray(_piDomVal) && _piDomVal.length > 0) _piEmptyBgi = false;
-                                        }
-                                    }
-                                    if (_piEmptyBgi && !items.some(function(i) { return i.key === 'property_items'; })) {
-                                        var _piEl = document.getElementById('property_items');
-                                        var _piTab = _piEl ? _piEl.closest('.tab-pane') : null;
-                                        items.push({ field: _piEl || document.body, tab: _piTab, fieldName: BUYER_FIELD_LABELS['property_items'] || 'Acceptable Property Style', key: 'property_items' });
-                                    }
-                                }
-
-                                // offered_financing: always required
-                                var _ofValBgi = _comp.get('offered_financing');
-                                if (typeof _ofValBgi === 'string') { try { _ofValBgi = JSON.parse(_ofValBgi); } catch(ex2) {} }
-                                var _ofEmptyBgi = !_ofValBgi || (Array.isArray(_ofValBgi) && _ofValBgi.length === 0) || _ofValBgi === '' || _ofValBgi === '[]';
-                                if (_ofEmptyBgi) {
-                                    var $ofDom = $('#offered_financing');
-                                    if ($ofDom.length) {
-                                        var _ofDomVal = $ofDom.val();
-                                        if (_ofDomVal && Array.isArray(_ofDomVal) && _ofDomVal.length > 0) _ofEmptyBgi = false;
-                                    }
-                                }
-                                if (_ofEmptyBgi && !items.some(function(i) { return i.key === 'offered_financing'; })) {
-                                    var _ofEl = document.getElementById('offered_financing');
-                                    var _ofTab = _ofEl ? _ofEl.closest('.tab-pane') : null;
-                                    items.push({ field: _ofEl || document.body, tab: _ofTab, fieldName: BUYER_FIELD_LABELS['offered_financing'] || 'Offered Financing', key: 'offered_financing' });
-                                }
-                            }
-                        }
-                    } catch(ex3) {}
-
-                    // Deduplicate by key
-                    var seen2 = new Set();
-                    var deduped2 = [];
-                    items.forEach(function(item) {
-                        var dk = item.key || item.fieldName;
-                        if (!seen2.has(dk)) { seen2.add(dk); deduped2.push(item); }
-                    });
-                    return deduped2;
-                }
-
-                // Navigates the user to a missing-field item: switches Bootstrap tab
-                // client-side AND syncs the server-side $activeTab so morphdom does NOT
-                // snap the tab back on the next Livewire round-trip.
-                function buyerNavigateToItem(item) {
-                    if (item && item.tab) {
-                        var _tabId = item.tab.id;
-                        var _tabTrigger = document.querySelector('[data-bs-target="#' + _tabId + '"], [href="#' + _tabId + '"]');
-                        if (_tabTrigger) {
-                            new bootstrap.Tab(_tabTrigger).show();
-                            // Sync server $activeTab via wire:click="setActiveTab(N)"
-                            var _wc = _tabTrigger.getAttribute('wire:click') || '';
-                            var _m = _wc.match(/setActiveTab\((\d+)\)/);
-                            if (_m) {
-                                try { @this.call('setActiveTab', parseInt(_m[1])); } catch(ex4) {}
-                            }
-                        }
-                    }
-                    setTimeout(function() {
-                        if (item && item.field && item.field !== document.body) {
-                            item.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            if (typeof item.field.focus === 'function' && item.field.tagName !== 'DIV') {
-                                item.field.focus();
-                            }
-                            item.field.classList.add('is-invalid');
-                        }
-                        var _banner2 = document.getElementById('submit-error-banner');
-                        if (_banner2) {
-                            _banner2.classList.remove('d-none');
-                            _banner2.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }
-                    }, 350);
-                }
-
-                // Called after each Livewire update when in correction mode.
-                // If a previously-missing field is now filled, advance to the next one.
-                // When all required fields are complete, exit correction mode silently.
-                function buyerAdvanceCorrection() {
-                    if (!_buyerCorrectionMode) return;
-                    var freshMissing = buyerGetInvalidItems();
-
-                    // Refresh the banner list to reflect current state
-                    var _errorList2 = document.getElementById('submit-error-list');
-                    var _banner3   = document.getElementById('submit-error-banner');
-                    if (_errorList2) {
-                        _errorList2.innerHTML = '';
-                        freshMissing.forEach(function(item) {
-                            var li = document.createElement('li');
-                            li.textContent = item.fieldName;
-                            _errorList2.appendChild(li);
-                        });
-                    }
-
-                    if (freshMissing.length === 0) {
-                        // All required fields are now complete. Exit correction mode,
-                        // hide the banner, and navigate back to the submit tab.
-                        _buyerCorrectionMode = false;
-                        _buyerMissingItems = [];
-                        if (_banner3) _banner3.classList.add('d-none');
-                        var _submitTabTrigger = document.querySelector('[data-bs-target="#buyer-information"]');
-                        if (_submitTabTrigger) {
-                            new bootstrap.Tab(_submitTabTrigger).show();
-                            var _infoWc = _submitTabTrigger.getAttribute('wire:click') || '';
-                            var _infoM = _infoWc.match(/setActiveTab\((\d+)\)/);
-                            if (_infoM) {
-                                try { @this.call('setActiveTab', parseInt(_infoM[1])); } catch(ex5) {}
-                            }
-                        }
-                        return;
-                    }
-
-                    // Re-show banner (Livewire DOM-diff re-adds d-none on every setActiveTab round-trip)
-                    if (_banner3) _banner3.classList.remove('d-none');
-
-                    // Still have missing fields — navigate to the first remaining one
-                    _buyerMissingItems = freshMissing;
-                    buyerNavigateToItem(freshMissing[0]);
-                }
-                // ---- END BUYER CORRECTION MODE ----------------------------------------
-
-                // Register a Livewire message.processed hook inside createForm to advance correction mode.
-                if (typeof Livewire !== 'undefined') {
-                    Livewire.hook('message.processed', function() {
-                        setTimeout(function() {
-                            buyerAdvanceCorrection();
-                        }, 350);
-                    });
-                }
-
                 document.addEventListener('submit', function(e) {
                     if (!e.target || e.target.id !== 'create-auction-form') return;
-                    const banner = document.getElementById('submit-error-banner');
-                    const errorList = document.getElementById('submit-error-list');
-                    if (banner) banner.classList.add('d-none');
-                    if (errorList) errorList.innerHTML = '';
 
-                    let invalidItems = buyerGetInvalidItems();
+                    var banner    = document.getElementById('submit-error-banner');
+                    var errorList = document.getElementById('submit-error-list');
+
+                    var invalidItems = landlordGetInvalidItems();
 
                     if (invalidItems.length > 0) {
                         e.preventDefault();
                         e.stopImmediatePropagation();
 
-                        // Build deduplicated list and populate banner
-                        const seen = new Set();
-                        const deduplicatedItems = [];
-                        invalidItems.forEach(function(item) {
-                            const _dedupeKey = item.key || item.fieldName;
-                            if (!seen.has(_dedupeKey)) {
-                                seen.add(_dedupeKey);
-                                deduplicatedItems.push(item);
-                                const li = document.createElement('li');
+                        // Populate banner with every missing field
+                        if (banner && errorList) {
+                            errorList.innerHTML = '';
+                            invalidItems.forEach(function(item) {
+                                var li = document.createElement('li');
                                 li.textContent = item.fieldName;
                                 errorList.appendChild(li);
-                            }
-                        });
-                        if (banner) banner.classList.remove('d-none');
+                            });
+                            banner.classList.remove('d-none');
+                        }
 
-                        // Enter guided correction mode
-                        _buyerCorrectionMode = true;
-                        _buyerMissingItems = deduplicatedItems;
-                        buyerNavigateToItem(deduplicatedItems[0]);
+                        // Enter guided correction mode and navigate to first missing field
+                        _landlordCorrectionMode = true;
+                        _landlordMissingItems   = invalidItems;
+                        landlordNavigateToItem(invalidItems[0]);
+
+                        setTimeout(function() {
+                            if (banner) {
+                                // Re-assert visibility in case morphdom fired before this timeout
+                                banner.classList.remove('d-none');
+                                banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }
+                        }, 350);
+
                         return false;
                     }
 
-                    syncBuyerSelect2BeforeSave();
+                    // All required fields valid — clear correction state and sync Select2 before submit
+                    _landlordCorrectionMode = false;
+                    _landlordMissingItems   = [];
                     if (banner) banner.classList.add('d-none');
+                    syncLandlordSelect2BeforeSave();
                 }, true);
             }
         });
