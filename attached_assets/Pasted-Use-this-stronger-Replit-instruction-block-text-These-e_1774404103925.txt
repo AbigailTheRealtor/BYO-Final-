@@ -1,0 +1,242 @@
+Use this stronger Replit instruction block:
+
+```text
+These edits are NOT working in the UI. Do not tell me they are already fixed unless you verify them in the actual rendered pages. I need a surgical fix with safeguards and proof using the live pages/routes.
+
+GOAL:
+Fix these 3 exact issues only:
+
+1. Buyer Listing Cards
+   - For Business, Income, and Commercial listings, show SqFt on the listing card like it already does for Seller listings
+
+2. Tenant Listing Cards
+   - For Commercial listings, show SqFt on the listing card like it already does for Landlord listings
+
+3. Seller Create Listing
+   - Under Included Property or Business Assets, if user selects Other, the custom input should appear immediately
+   - Right now nothing pops up
+
+IMPORTANT:
+The previous response claiming these were already fixed was incorrect because the UI still does not show the changes. This means one of these is happening:
+- wrong file was edited
+- wrong card partial was edited
+- correct file was edited but not the one used by the live route
+- JS/select2 hook is not firing in the actual create form
+- cached/stale template or route mismatch
+- data source assumption was wrong
+
+Do NOT assume. Trace the actual live route -> actual blade/component -> actual rendered markup.
+
+-------------------------------------
+HARD SAFEGUARDS
+-------------------------------------
+
+- Do NOT rename DB columns
+- Do NOT run migrations
+- Do NOT refactor architecture broadly
+- Do NOT change search query logic
+- Do NOT change unrelated listing-card layout structure
+- Do NOT change unrelated create/edit validation logic
+- Do NOT touch unrelated roles/fields beyond these exact fixes
+- Make .bak copies before editing any file
+- Keep this focused only on:
+  - Buyer card SqFt display
+  - Tenant commercial card SqFt display
+  - Seller create Other input for Included Property or Business Assets
+
+-------------------------------------
+CRITICAL VERIFICATION RULE
+-------------------------------------
+
+Before coding, identify the ACTUAL live page/file path for each issue.
+
+You must verify the exact route and exact rendering file for:
+- Buyer search/browse card page being viewed
+- Tenant search/browse card page being viewed
+- Seller create page being viewed
+
+Do NOT rely on “I found similar code.”
+Do NOT rely on assumed shared partials.
+Do NOT claim fixed unless the actual page reflects the change.
+
+-------------------------------------
+TASK 1 — TRACE THE ACTUAL BUYER CARD ROUTE AND FILE
+-------------------------------------
+
+Find the exact route/page the user is looking at for Buyer listing cards.
+Then identify:
+- controller / Livewire component
+- blade/partial actually rendering the Buyer card
+- exact section where SqFt should be displayed
+
+Need to prove whether Buyer cards use:
+- a shared card partial
+- or a Buyer-specific card file
+
+Then fix:
+For Buyer Business, Income, and Commercial listing cards:
+- show SqFt when filled
+- use the same style/pattern Seller cards already use for these kinds of rows
+- do NOT show blank row if empty
+
+IMPORTANT:
+Do not just say the field exists in data.
+The live Buyer card must actually render it.
+
+-------------------------------------
+TASK 2 — TRACE THE ACTUAL TENANT CARD ROUTE AND FILE
+-------------------------------------
+
+Find the exact route/page the user is looking at for Tenant listing cards.
+Then identify:
+- controller / Livewire component
+- blade/partial actually rendering the Tenant card
+- exact section where SqFt should be displayed
+
+Then fix:
+For Tenant Commercial listing cards:
+- show SqFt when filled
+- use the same display pattern Landlord cards already use for commercial SqFt
+- do NOT show blank row if empty
+
+IMPORTANT:
+Do not just point to stored data.
+The live Tenant commercial card must actually render SqFt.
+
+-------------------------------------
+TASK 3 — TRACE THE ACTUAL SELLER CREATE FILE FOR “OTHER”
+-------------------------------------
+
+Find the exact Seller create route and exact file/component rendering:
+- Included Property or Business Assets
+
+Then identify why selecting Other does not show the custom input in the actual live form.
+
+Check whether the issue is caused by:
+- wrong selector
+- Select2 event not bound to the actual field
+- conditional blade block not present in live file
+- field hidden/removed by Livewire re-render
+- mismatched ID/name/wire:model
+- code added to a file not used by the live Seller create route
+
+Then fix:
+When user selects Other under Included Property or Business Assets:
+- custom input appears immediately
+- if Other is removed, input hides appropriately
+- works in the actual live Seller create form
+
+-------------------------------------
+TASK 4 — DO NOT TRUST ASSUMED DATA FIELD NAMES
+-------------------------------------
+
+Before coding, verify the ACTUAL field names used by the live pages.
+
+For Buyer cards:
+- confirm which SqFt field the live Buyer Business / Income / Commercial cards actually should use
+
+For Tenant commercial cards:
+- confirm which SqFt field the live Tenant commercial cards actually should use
+
+For Seller create:
+- confirm the exact field ID/name/class used for Included Property or Business Assets in the actual rendered form
+
+Do not rely on guessed field names from similar files.
+
+-------------------------------------
+TASK 5 — FIX ONLY THE LIVE RENDER PATH
+-------------------------------------
+
+If the previous fix was placed in the wrong file or unused partial:
+- move/fix the logic in the actual live render file instead
+
+Minimal-risk fix is preferred.
+Do not refactor everything into shared partials unless absolutely necessary.
+
+-------------------------------------
+TASK 6 — REQUIRE ACTUAL UI VERIFICATION
+-------------------------------------
+
+After fixing, verify in the browser/UI on the actual live pages, not just by reading code.
+
+Required proof standard:
+- Buyer card visibly shows SqFt on live card for Business / Income / Commercial
+- Tenant commercial card visibly shows SqFt on live card
+- Seller create form visibly shows custom Other input when Other is selected
+
+Do not respond “already fixed” unless the rendered UI actually changed.
+
+-------------------------------------
+DO NOT DO
+-------------------------------------
+
+- do not claim success based only on code inspection
+- do not assume shared partials are the live ones
+- do not hardcode SqFt values
+- do not show blank SqFt rows
+- do not change DB schema
+- do not touch unrelated card rows
+- do not touch unrelated Seller create fields
+
+-------------------------------------
+TESTING REQUIRED
+-------------------------------------
+
+A. BUYER LISTING CARDS
+Use actual live Buyer cards for:
+- Business listing with SqFt filled
+- Income listing with SqFt filled
+- Commercial listing with SqFt filled
+
+Expected:
+- SqFt visibly appears on the live card
+- formatting matches existing card style
+- if SqFt is empty, no blank row appears
+
+B. TENANT LISTING CARDS
+Use actual live Tenant Commercial card with SqFt filled
+
+Expected:
+- SqFt visibly appears on the live card
+- if SqFt is empty, no blank row appears
+
+C. SELLER CREATE FORM
+Use actual live Seller create page
+
+Steps:
+1. Open Included Property or Business Assets
+2. Select Other
+
+Expected:
+- custom input appears immediately in the live form
+
+Then:
+3. Deselect Other if applicable
+
+Expected:
+- custom input hides appropriately
+
+-------------------------------------
+RESPONSE REQUIREMENT
+-------------------------------------
+
+When done, report back with:
+1. The exact live file(s) changed
+2. Why the previous “fixed” result did not show in the UI
+3. Confirmation that the live rendered page now shows the change
+
+Do not just say “it was already fixed.”
+
+-------------------------------------
+SUCCESS CRITERIA
+-------------------------------------
+
+- Buyer Business / Income / Commercial live listing cards show SqFt when filled
+- Tenant Commercial live listing cards show SqFt when filled
+- Seller create live form shows Other input immediately when Other is selected
+- No blank rows
+- No DB changes
+- No unrelated regressions
+```
+
+The key problem is that they likely edited the wrong render path or only inspected code without verifying the live UI.
