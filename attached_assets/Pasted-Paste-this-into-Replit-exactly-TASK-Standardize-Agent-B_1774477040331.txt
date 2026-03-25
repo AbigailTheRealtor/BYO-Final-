@@ -1,0 +1,832 @@
+Paste this into Replit exactly:
+
+---
+
+# 🚨 TASK: Standardize Agent Bid Forms + Add Default Profile System + Per-Bid Autofill Toggle + Default Profile Dashboard
+
+## GOAL
+
+Use the **Hire a Tenant Agent bid form** as the **source-of-truth format** and apply the same:
+
+* tab structure
+* required-field behavior
+* validation styling
+* autofill behavior
+* general UI consistency
+
+to all agent bid forms for:
+
+* Hire a Tenant Agent
+* Hire a Landlord Agent
+* Hire a Seller Agent
+* Hire a Buyer Agent
+
+In addition, build a **Default Profile system** so that when an agent completes a bid, they can save reusable bid content as their default profile for that exact:
+
+* listing role type
+* property type
+
+Then, future bids of that same type should be able to auto-populate from that saved default profile.
+
+Also add:
+
+* a **Use Default / Skip Autofill** toggle per new bid
+* an **Edit Default Profile dashboard/page** so agents can manage their saved defaults without needing to start a new bid first
+
+---
+
+# SCOPE
+
+This task applies **ONLY** to the **agent bid form flows** and the **new default profile management feature** for those bid forms.
+
+It does **NOT** apply to:
+
+* listing creation flows
+* listing edit flows
+* public listing display pages
+* unrelated agent dashboard areas unless needed to link to the new default-profile dashboard
+
+Target bid routes include the real bid pages for:
+
+* `/tenant/agent/auction/bid/{id}`
+* `/landlord/agent/auction/bid/{id}`
+* `/seller/agent/auction/bid/{id}`
+* `/buyer/agent/auction/bid/{id}`
+
+---
+
+# 🛑 CRITICAL SAFEGUARDS
+
+1. **DO NOT touch listing creation flows**
+2. **DO NOT touch listing edit flows**
+3. **ONLY edit the agent bid form flow files actually used by the routes above**
+4. **YOU MUST trace the actual route → controller/livewire component → blade/view first**
+5. **DO NOT assume file names**
+6. **DO NOT assume Seller uses Tenant files**
+7. **DO NOT rename database columns**
+8. **DO NOT break existing bid save/update behavior**
+9. **DO NOT apply validation changes globally to unrelated forms**
+10. **Tenant bid is the visual and behavioral reference**
+11. **Reuse existing Tenant bid validation patterns where possible**
+12. **Do not overwrite existing saved bid data with autofill**
+13. **Do not run autofill repeatedly on every render**
+14. **Keep file changes as isolated and minimal as possible**
+15. **DO NOT create new components unless absolutely necessary**
+16. **If an existing Livewire component or controller is already used for multiple roles, modify that shared component instead of duplicating logic**
+17. **Avoid creating duplicate bid components, duplicate blade files, or parallel systems**
+18. **IMPLEMENT BACKEND LOGIC FIRST**
+19. **Do not start with Blade/UI changes**
+20. **Order must be: route verification → data loading/autofill logic → validation logic → UI updates**
+21. **DO NOT REFACTOR UNRELATED CODE**
+22. **Do not rename variables globally**
+23. **Do not reorganize folders**
+24. **Do not rewrite existing working logic outside this task**
+25. **Only modify what is required for this feature**
+26. **If file upload inputs cannot be safely prefilled due to browser limitations, do not force it; show saved references/links instead where supported**
+27. **Before any coding, verify whether the new dashboard/profile editor can be added inside an existing agent dashboard area instead of inventing a disconnected new architecture**
+28. **If route mapping shows some roles share one component, preserve that shared structure carefully instead of splitting them apart**
+
+---
+
+# STEP 1 — TRACE THE REAL FILES FIRST
+
+Before making any edits, trace the actual files used by each route.
+
+For each of these routes, identify:
+
+* route definition
+* controller or Livewire component
+* blade/view file
+* any shared trait/service/helper used to load or save bid data
+
+Routes to trace:
+
+* `/tenant/agent/auction/bid/{id}`
+* `/landlord/agent/auction/bid/{id}`
+* `/seller/agent/auction/bid/{id}`
+* `/buyer/agent/auction/bid/{id}`
+
+Also identify where the best place is to add the new **Default Profile dashboard/editor** inside the existing agent area.
+
+Return a short route/file map first, like:
+
+* Tenant bid → `[component/controller]` + `[blade]`
+* Landlord bid → `[component/controller]` + `[blade]`
+* Seller bid → `[component/controller]` + `[blade]`
+* Buyer bid → `[component/controller]` + `[blade]`
+* Default Profile dashboard/editor → `[recommended route/component/blade location]`
+
+## CRITICAL
+
+Do not start coding until this mapping is confirmed.
+
+---
+
+# STEP 2 — STANDARDIZE REQUIRED FIELDS ACROSS ALL AGENT BID FORMS
+
+Use the **Tenant Agent bid form** as the reference and make the same behavior apply to:
+
+* Landlord bids
+* Seller bids
+* Buyer bids
+
+## These fields must be required on all agent bid forms:
+
+Under **Agent Overview**:
+
+* About Agent
+* Why Should You Be Hired as Their Agent?
+* What Sets You Apart From Other Agents?
+* What Is Your Marketing Strategy?
+* Year Agent Got Licensed
+
+---
+
+# STEP 3 — REQUIRED FIELD UI RULES
+
+For all four agent bid types:
+
+1. Add a **red star** to each required field label
+2. Show the same required-field styling pattern used in the listing forms
+3. If a required field is blank:
+
+   * field should show red error styling
+   * required note/error should appear
+   * user should be blocked from moving forward
+
+## IMPORTANT
+
+Tenant currently has red stars but does not fully behave like the listing forms. Fix Tenant first, then apply the exact same behavior to Landlord, Seller, and Buyer.
+
+---
+
+# STEP 4 — VALIDATION BEHAVIOR MUST MATCH LISTINGS
+
+Validation must work on both:
+
+* **Next**
+* **Submit**
+
+## On Next
+
+If required fields on the current step/tab are blank:
+
+* do not allow moving forward
+* highlight missing required fields in red
+* show the required note/message
+* keep user on the current tab
+
+## On Submit
+
+If required fields anywhere are missing:
+
+* form must not submit
+* missing fields must show red validation state
+* user should be taken to the first invalid tab or kept on the invalid tab
+* user must clearly see what needs to be fixed
+
+## IMPORTANT
+
+* Do not rely only on native browser validation
+* Reuse the same inline validation style/pattern already used by listing forms
+* Keep tab order and existing layout intact
+
+---
+
+# STEP 5 — MAKE SELLER + BUYER COMPENSATION AUTO-FILL LIKE TENANT + LANDLORD
+
+Right now, Tenant and Landlord bids already auto-fill the **Broker Compensation & Agency Agreement Terms** from the original listing.
+
+Make Seller and Buyer bid forms work the same way.
+
+## Required behavior
+
+When an agent opens a Seller or Buyer bid form:
+
+* compensation/agreement terms should auto-populate from the original listing
+* the format/order/display should match Tenant/Landlord experience
+* the agent should still be able to review and edit fields as allowed by the current bid flow
+
+## Safeguards
+
+* Do not hardcode values
+* Pull values from the actual listing record
+* Reuse the same load pattern Tenant/Landlord already use if available
+* Do not change the meaning of compensation fields
+* Do not overwrite values if the agent already saved edits
+
+---
+
+# STEP 6 — FIRST-LOAD RULE FOR LISTING-DERIVED AUTO-FILL
+
+Listing-derived compensation auto-fill must happen **only on first load when appropriate**.
+
+## Only auto-fill when:
+
+* a bid is being created for the first time, or
+* the relevant bid fields are empty in the database
+
+## Do NOT:
+
+* re-inject listing values on every render
+* re-apply values after the agent edits them
+* rely on temporary frontend state to decide whether to autofill
+
+## Rule
+
+If the bid already has saved values, do not overwrite them.
+
+---
+
+# STEP 7 — BUILD DEFAULT PROFILE SYSTEM BY ROLE + PROPERTY TYPE
+
+Instead of requiring a separate setup flow first, agents should be able to create reusable defaults from real bid content and also manage them later from a dashboard/editor.
+
+## Goal
+
+Allow an agent to save reusable bid profile content for the exact combination of:
+
+* listing role type
+* property type
+
+Examples:
+
+* Seller + Residential
+* Seller + Commercial
+* Buyer + Residential
+* Buyer + Vacant Land
+* Landlord + Commercial
+* Tenant + Residential
+
+This is intentional so the agent’s reusable content can be tailored to the actual type of listing they are bidding on.
+
+---
+
+# STEP 8 — WHAT SHOULD BE STORED IN THE DEFAULT PROFILE
+
+The default profile should cover these sections:
+
+## 1. Agent Overview
+
+* About Agent
+* Why Should You Be Hired as Their Agent?
+* What Sets You Apart From Other Agents?
+* What Is Your Marketing Strategy?
+* Reviews Link
+* Website Link
+* Social media/platform links if those fields exist
+* Year Agent Got Licensed
+
+## 2. Additional Details
+
+* Additional details text/content
+
+## 3. Agent Presentation & Marketing Materials
+
+* presentation links
+* business card link
+* marketing material links
+* saved asset references only if already supported safely by current storage structure
+
+## 4. Agent Credentials and Contact Info
+
+* First Name
+* Last Name
+* Phone Number
+* Email
+* Brokerage
+* Real Estate License #
+* NAR Member ID / NRDS ID
+
+## IMPORTANT
+
+Do not store anything unrelated to these profile-style sections unless truly necessary.
+
+---
+
+# STEP 9 — DEFAULT PROFILE STORAGE RULES
+
+Store default profiles by:
+
+* `agent_user_id`
+* `listing_role_type`
+
+  * tenant
+  * landlord
+  * seller
+  * buyer
+* `property_type`
+
+  * residential
+  * income
+  * commercial
+  * business
+  * vacant_land
+
+## Example saved profile keys
+
+* seller + residential
+* seller + commercial
+* landlord + residential
+* buyer + vacant_land
+
+## IMPORTANT
+
+If the project already has an agent profile table or reusable profile structure, extend it carefully instead of creating conflicting systems.
+
+Only create a new storage table/model if there is not already a clean structure that can support this safely.
+
+---
+
+# STEP 10 — SAVE AS DEFAULT PROFILE FROM THE BID FORM
+
+Add a clear way for the agent to save or update their defaults from the bid form.
+
+Acceptable UI options include:
+
+* **Save as Default Profile**
+* **Save as Default for Seller Residential**
+* **Update Default Profile for Buyer Commercial**
+
+## Required behavior
+
+From a bid form, an agent should be able to:
+
+* save the current reusable profile sections as the default for that exact role + property type
+* update an existing default for that exact role + property type
+
+## IMPORTANT RULES
+
+* Do not automatically overwrite defaults without the agent choosing to save them
+* Saving a bid should not automatically replace the default profile unless the user explicitly chooses the save-default action
+* Make the save-default behavior deliberate and clear
+
+---
+
+# STEP 11 — ADD USE DEFAULT / SKIP AUTOFILL TOGGLE PER NEW BID
+
+For new bids, add a clear per-bid choice so the agent can control whether their saved default profile is applied.
+
+## Required behavior
+
+When opening a new bid for a role + property type where a matching default exists:
+
+* allow the agent to choose **Use Default** or **Skip Autofill**
+* if **Use Default** is chosen, populate the profile-related sections from the matching saved default
+* if **Skip Autofill** is chosen, leave those profile-related sections blank unless existing system logic already pre-fills something else
+
+## Important safeguards
+
+* this toggle applies to the default profile autofill, not to listing-derived compensation fields
+* listing-derived compensation fields should still follow their own load rules
+* the toggle should be available only when relevant, meaning when a matching default exists for that role + property type
+* once the bid already has saved values, do not keep re-asking or reapplying defaults
+
+## UX note
+
+This can be implemented as either:
+
+* an initial prompt/banner/section on first load, or
+* a clear toggle/button row near the top of the bid form
+
+But it must be easy to understand and must not clutter the form.
+
+---
+
+# STEP 12 — AUTO-POPULATE FUTURE BIDS FROM SAVED DEFAULT PROFILE
+
+When an agent opens a new bid form, the system should be able to auto-populate profile-related sections from their saved default profile for that exact:
+
+* listing role type
+* property type
+
+## Example
+
+If the agent opens a new Seller Residential bid:
+
+* look for a saved default profile for seller + residential
+* if found, the form should support using that default
+* if the agent chooses Use Default, populate the profile sections
+* if the agent chooses Skip Autofill, do not populate those profile sections from the default
+
+---
+
+# STEP 13 — ADD DEFAULT PROFILE DASHBOARD / EDITOR
+
+Create a clean way for the agent to manage saved default profiles outside of the bid form.
+
+## Goal
+
+The agent should be able to:
+
+* view all saved default profiles
+* open a specific default profile by role + property type
+* edit it
+* save updates
+* delete it if needed, or archive/deactivate it if that is safer for the current architecture
+
+## Required organization
+
+Show saved defaults grouped or filterable by:
+
+* role type
+* property type
+
+Examples:
+
+* Seller Residential
+* Seller Commercial
+* Buyer Residential
+* Landlord Commercial
+* Tenant Residential
+
+## Recommended behavior
+
+* keep this inside the existing agent dashboard architecture if possible
+* do not create a disconnected standalone system unless necessary
+* reuse existing UI patterns from the dashboard where possible
+
+---
+
+# STEP 14 — DEFAULT PROFILE DASHBOARD RULES
+
+The dashboard/editor should allow management of the same sections stored in the default profile:
+
+* Agent Overview
+* Additional Details
+* Agent Presentation & Marketing Materials
+* Agent Credentials and Contact Info
+
+## Important
+
+* profile editor saves should update the default profile only
+* they should not retroactively overwrite already saved bids
+* already submitted or saved bids must remain unchanged
+
+---
+
+# STEP 15 — AUTO-FILL PRIORITY ORDER
+
+When loading a bid form, populate data in this order:
+
+## Priority 1 — Existing saved bid record
+
+If the bid already exists and has saved values, use those first.
+
+## Priority 2 — Listing-derived values
+
+For compensation/agreement terms from the original listing, use listing values only if the bid fields are still empty.
+
+## Priority 3 — Saved default profile
+
+For profile-related sections, use the agent’s saved default profile for that exact role + property type only if:
+
+* the bid fields are still empty, and
+* the agent has chosen Use Default or default application is the selected first-load action for that new bid
+
+## Priority 4 — Blank
+
+If nothing exists, leave the field blank.
+
+---
+
+# STEP 16 — NEVER OVERWRITE EXISTING SAVED BID DATA
+
+This is critical.
+
+If the bid already contains saved data:
+
+* do not replace it with default profile values
+* do not replace it with listing-derived values
+* do not re-autofill after the user edits fields
+* do not let Livewire re-renders overwrite user-entered data
+
+## Rule
+
+Saved bid data always wins.
+
+---
+
+# STEP 17 — LIVEWIRE / RE-RENDER SAFEGUARD
+
+Autofill must not run on every render.
+
+## Only run autofill when:
+
+* component mounts for first load, and
+* the bid does not already have saved data for those fields, and
+* the logic determines the new-bid autofill decision for that one initial load
+
+## Do NOT:
+
+* run autofill inside `render()`
+* run autofill on every tab change
+* run autofill inside generic re-render hooks that can fire repeatedly
+* reapply defaults after user input
+
+## Required guard logic
+
+Use a clear check such as:
+
+* if existing bid data is present → do nothing
+* else if fields are empty and first-load conditions are met → apply listing/default autofill once
+
+The core requirement is:
+**autofill must be first-load only and never overwrite saved or edited bid data**
+
+---
+
+# STEP 18 — BUYER + SELLER SHOULD MATCH TENANT + LANDLORD CREDENTIAL AUTO-FILL TOO
+
+Right now, Agent Credentials and Contact Info appears to auto-populate for Tenant and Landlord.
+
+Extend this same behavior so Seller and Buyer also auto-populate correctly.
+
+Then expand the same concept to:
+
+* Agent Overview
+* Additional Details
+* Agent Presentation & Marketing Materials
+* Agent Credentials and Contact Info
+
+for all four bid types.
+
+---
+
+# STEP 19 — UI RULES FOR AUTO-POPULATED FIELDS
+
+When a bid form opens:
+
+* fields should appear already filled if data exists
+* agent must be able to edit those values
+* edited values must save to the bid normally
+* auto-populated fields must not be locked or read-only
+
+## Important note for file inputs
+
+If file upload fields cannot be browser-prefilled for security reasons:
+
+* do not try to force file input values
+* show existing saved asset references/links if already supported
+* allow replacement through the normal upload flow
+
+---
+
+# STEP 20 — VALIDATION STILL APPLIES TO AUTO-POPULATED FIELDS
+
+Even if fields auto-populate from defaults:
+
+* required validation still applies
+* if the agent clears a required field manually, Next/Submit must block
+* blank default profile values should not bypass validation
+
+---
+
+# STEP 21 — KEEP UI CONSISTENT ACROSS ALL FOUR BID TYPES
+
+Tenant bid is the source-of-truth.
+
+Match Tenant for:
+
+* tab order
+* button layout
+* spacing
+* required-field styling
+* validation messages
+* overall visual structure
+
+Do not create different UX patterns per role unless absolutely required by the existing route/component structure.
+
+---
+
+# STEP 22 — DEFAULT PROFILE DASHBOARD UX EXPECTATIONS
+
+The Default Profile dashboard/editor should be simple and practical.
+
+## Minimum required features
+
+* list saved defaults
+* clearly label each by role + property type
+* edit a saved default
+* save updates
+* delete or deactivate a saved default safely
+* create a default manually if needed, using the same fields as the profile sections
+
+## Recommended UI
+
+* use cards or rows labeled like:
+
+  * Seller Residential
+  * Seller Commercial
+  * Buyer Residential
+  * Landlord Commercial
+* provide an Edit action for each
+* provide a clear Add New Default action if the architecture supports it cleanly
+* if there is a safer option between delete vs deactivate, choose the safer one for data integrity
+
+---
+
+# STEP 23 — RECOMMENDED IMPLEMENTATION ORDER
+
+## Phase A — Route/File Verification
+
+1. Trace the real route/component/blade mapping for Tenant, Landlord, Seller, Buyer bid forms
+2. Confirm whether any are shared components
+3. Identify the safest location for the Default Profile dashboard/editor
+
+## Phase B — Required Fields + Validation
+
+4. Fix Tenant bid so required Agent Overview fields behave like listing forms
+5. Apply the same required-field behavior to Landlord, Seller, Buyer
+6. Add red stars everywhere required
+
+## Phase C — Compensation Auto-Fill
+
+7. Inspect how Tenant/Landlord compensation auto-fill works
+8. Reuse that same approach for Seller/Buyer
+9. Ensure it is first-load only
+
+## Phase D — Default Profile Storage + Save From Bid
+
+10. Inspect current user/agent profile storage
+11. Add or extend storage for default profiles keyed by:
+
+* agent_user_id
+* listing_role_type
+* property_type
+
+12. Add UI action to save/update defaults from the bid form
+
+## Phase E — Use Default / Skip Autofill
+
+13. Add logic so new matching bids can choose Use Default or Skip Autofill
+14. Ensure this applies only on first load for new bids
+15. Ensure saved bids are never overwritten
+
+## Phase F — Default Profile Dashboard
+
+16. Add the dashboard/editor for viewing and managing saved defaults
+17. Support edit/save and safe delete/deactivate behavior
+18. Ensure updates to defaults do not retroactively change existing bids
+
+## Phase G — Final QA
+
+19. Test all four roles end to end
+20. Confirm no overwrite bugs
+21. Confirm no cross-role or cross-property contamination
+22. Confirm Tenant still works
+
+---
+
+# STEP 24 — TESTING CHECKLIST
+
+Run full manual QA for all four roles:
+
+* Tenant
+* Landlord
+* Seller
+* Buyer
+
+## A. Required field validation
+
+1. Open a blank bid form
+
+2. Click Next on Agent Overview with required fields blank
+
+3. Confirm:
+
+   * red error styling appears
+   * required note/message appears
+   * cannot move forward
+
+4. Fill some but not all required fields
+
+5. Click Next again
+
+6. Confirm remaining missing fields still block progress
+
+7. Go to final tab and click Submit with required fields missing
+
+8. Confirm:
+
+   * form does not submit
+   * first invalid tab is shown
+   * missing required fields are highlighted red
+
+9. Fill all required fields
+
+10. Confirm Next and Submit work normally
+
+## B. Seller/Buyer compensation auto-fill
+
+1. Create/open a Seller listing with saved compensation terms
+2. Open Seller bid
+3. Confirm compensation/agreement fields are prefilled from listing
+4. Edit values
+5. Save bid
+6. Reload
+7. Confirm saved bid values remain and are not overwritten
+
+Repeat for Buyer.
+
+## C. Save as Default Profile from bid
+
+1. Complete a bid for a specific role + property type
+2. Click Save as Default Profile
+3. Confirm default profile is stored for that exact role + property type
+4. Start a new bid of the same type
+5. Confirm the form detects the matching default
+
+## D. Use Default / Skip Autofill
+
+1. Open a new bid where a matching default exists
+2. Choose Use Default
+3. Confirm profile sections populate
+4. Start another new bid of the same type
+5. Choose Skip Autofill
+6. Confirm profile sections remain blank unless other existing system logic applies
+7. Save the bid
+8. Reopen
+9. Confirm saved bid data persists and defaults are not reapplied over it
+
+## E. Default Profile dashboard
+
+1. Open the dashboard/editor
+2. Confirm saved defaults are listed by role + property type
+3. Edit one default
+4. Save it
+5. Start a new matching bid
+6. Confirm the updated default is available
+7. Confirm old saved bids did not change retroactively
+
+## F. No cross-type leakage
+
+1. Save a Seller Residential default profile
+2. Open a Seller Commercial bid
+3. Confirm Seller Residential content does not incorrectly populate Seller Commercial
+4. Open Buyer Residential
+5. Confirm Seller defaults do not populate Buyer defaults
+6. Confirm Landlord defaults do not populate Tenant bids, etc.
+
+## G. Existing saved bid priority
+
+1. Start a bid
+2. Edit some fields
+3. Save
+4. Reopen
+5. Confirm existing bid data appears
+6. Confirm defaults/listing autofill do not overwrite saved values
+
+## H. Regression
+
+Confirm no regressions to:
+
+* Tenant bid layout
+* Landlord bid existing behavior
+* file uploads/asset references
+* tab order
+* save/submit flow
+
+---
+
+# STEP 25 — REQUIRED OUTPUT AFTER CODING
+
+After changes are complete, provide:
+
+1. Exact route → file mapping for all four bid URLs
+2. Exact files changed
+3. Whether the implementation used shared components or separate components
+4. Any DB migration added
+5. The exact route/component/blade added or updated for the Default Profile dashboard/editor
+6. Proof that:
+
+   * required fields now block correctly on Next and Submit
+   * Seller and Buyer compensation auto-fill now works
+   * Save as Default Profile works
+   * Use Default / Skip Autofill works
+   * future matching bids can populate from the saved default
+   * saved bids are not overwritten on reload
+   * dashboard edits do not retroactively alter old bids
+   * no cross-role or cross-property-type autofill contamination occurs
+
+---
+
+# DEFINITION OF DONE
+
+This task is complete only when:
+
+* Tenant, Landlord, Seller, and Buyer bid forms all follow the same required-field behavior
+* the required Agent Overview fields have red stars and true validation feedback
+* Seller and Buyer compensation/agreement terms auto-fill like Tenant/Landlord
+* agents can save a completed bid as a default profile for that exact role + property type
+* new bids with a matching saved default support a clear Use Default / Skip Autofill choice
+* agents can manage saved defaults from a Default Profile dashboard/editor
+* future bids of that same role + property type can populate from the saved default
+* auto-populate is first-load only
+* saved bid data is never overwritten
+* dashboard changes do not rewrite old saved bids
+* Tenant remains intact and no unrelated listing flows are changed
+
+---
+
+This is the version to use.

@@ -17,6 +17,8 @@ A bidding period timer is implemented for seller, buyer, and landlord listing vi
 
 The system design emphasizes modularity, separation of concerns, and a database-first approach, optimized for production deployment. The existing database schema for fees is immutable, with display-only formatting updates.
 
+A **Default Profile system** allows agents to save and reuse bid profile data (bio/About Agent, why_hire_you, what_sets_you_apart, marketing_plan) across all four bid forms (Tenant, Buyer, Landlord, Seller). Profiles are stored in the `agent_default_profiles` table (jsonb `profile_data`, keyed by `user_id + role_type + property_type`). The `AgentDefaultProfile` model provides `findForAgent()` and `upsertForAgent()` helpers. The dashboard is at `/agent/default-profiles` (route `agent.default-profiles.index`). Livewire components auto-load the matching default profile on mount and expose `saveAsDefaultProfile()` / `loadDefaultProfile()` methods. The Seller bid form (non-Livewire) loads defaults in `SellerAgentAuctionController@add_bid()` and saves them in `saveSABid()` via a `save_as_default` checkbox. Required fields on the Agent Overview tab for all four bid forms: `bio`, `why_hire_you`, `what_sets_you_apart`, `marketing_plan`, `year_licensed`. Tab-0 validation is enforced before advancing to step 2 in all Livewire wizard components via `goToNextStep()`.
+
 ## External Dependencies
 - **PostgreSQL**: Primary relational database.
 - **TailwindCSS**: Utility-first CSS framework.

@@ -1,6 +1,28 @@
     <h4>Agent Overview & Qualifications</h4>
     <input type="hidden" wire:model="auctionId" value="{{ $auctionId }}">
 
+    {{-- Default Profile Banner --}}
+    @if($defaultProfileLoaded)
+        <div class="alert alert-success d-flex align-items-center justify-content-between mb-3">
+            <div>
+                <i class="fa-solid fa-circle-check me-2"></i>
+                <strong>Your default profile has been pre-filled.</strong>
+                You can edit any field before submitting.
+            </div>
+        </div>
+    @elseif($defaultProfileExists)
+        <div class="alert alert-warning d-flex align-items-center justify-content-between mb-3">
+            <div>
+                <i class="fa-solid fa-bookmark me-2"></i>
+                <strong>You have a saved default profile for this listing type.</strong>
+                Would you like to pre-fill your Agent Overview with your saved answers?
+            </div>
+            <button type="button" wire:click="loadDefaultProfile" class="btn btn-sm btn-warning ms-3 text-nowrap">
+                Load My Profile
+            </button>
+        </div>
+    @endif
+
     <!-- About Agent -->
     <div class="form-group">
          <div class="alert alert-info bg-light-info border-info mb-4">
@@ -10,91 +32,77 @@
             </div>
         </div>
     </div>
-        <label class="fw-bold">About Agent:</label>
+        <label class="fw-bold">About Agent:<span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Provide a brief summary of your background, experience, and the areas you serve. This helps clients get to know you before reviewing your full bid.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="bio" id="bio" class="form-control has-icon" rows="4" placeholder="Enter a brief summary of your background, experience, and areas you serve"
+            <textarea wire:model="bio" id="bio" class="form-control has-icon @error('bio') is-invalid @enderror" rows="4" placeholder="Enter a brief summary of your background, experience, and areas you serve"
                 required></textarea>
         </div>
+        @error('bio')<span class="text-danger small">{{ $message }}</span>@enderror
         <span class="error mt-2" id="bio_error"></span>
     </div>
 
     <!-- Why Hire You -->
     <div class="form-group">
-        <label class="fw-bold">Why Should You Be Hired as Their Agent?</label>
+        <label class="fw-bold">Why Should You Be Hired as Their Agent?<span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Explain why you're the right fit for this client. Highlight your experience, communication style, service approach, or results you've delivered for past clients.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="why_hire_you" id="why_hire_you" class="form-control has-icon" rows="4" placeholder="Explain why you’re a great fit for this opportunity"
+            <textarea wire:model="why_hire_you" id="why_hire_you" class="form-control has-icon @error('why_hire_you') is-invalid @enderror" rows="4" placeholder="Explain why you're a great fit for this opportunity"
                  required></textarea>
         </div>
+        @error('why_hire_you')<span class="text-danger small">{{ $message }}</span>@enderror
         <span class="error mt-2" id="why_hire_you_error"></span>
     </div>
 
     <!-- What Sets You Apart -->
     <div class="form-group">
-        <label class="fw-bold">What Sets You Apart From Other Agents?</label>
+        <label class="fw-bold">What Sets You Apart From Other Agents?<span class="text-danger">*</span></label>
          <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="What makes you different? Share your niche expertise, negotiation style, market knowledge, tech tools, or how you personalize your service.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="what_sets_you_apart" id="what_sets_you_apart" class="form-control has-icon" rows="4"  placeholder="Describe what makes your approach or service different"
+            <textarea wire:model="what_sets_you_apart" id="what_sets_you_apart" class="form-control has-icon @error('what_sets_you_apart') is-invalid @enderror" rows="4"  placeholder="Describe what makes your approach or service different"
                  required></textarea>
         </div>
+        @error('what_sets_you_apart')<span class="text-danger small">{{ $message }}</span>@enderror
         <span class="error mt-2" id="what_sets_you_apart_error"></span>
     </div>
 
     <!-- Marketing Strategy -->
     <div class="form-group required-field">
-        <label class="fw-bold">What Is Your Marketing Strategy?</label>
+        <label class="fw-bold">What Is Your Marketing Strategy?<span class="text-danger">*</span></label>
           <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Briefly describe how you promote listings or support your clients’ goals. For example, mention paid ads, social media, email campaigns, networking, or door-to-door outreach.">
+            title="Briefly describe how you promote listings or support your clients' goals. For example, mention paid ads, social media, email campaigns, networking, or door-to-door outreach.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="marketing_plan" id="marketing_plan" class="form-control has-icon" rows="4" placeholder="Outline how you market listings or support your clients’ goals"
+            <textarea wire:model="marketing_plan" id="marketing_plan" class="form-control has-icon @error('marketing_plan') is-invalid @enderror" rows="4" placeholder="Outline how you market listings or support your clients' goals"
                  required></textarea>
         </div>
+        @error('marketing_plan')<span class="text-danger small">{{ $message }}</span>@enderror
         <span class="error mt-2" id="marketing_plan_error"></span>
     </div>
-
-    <!-- Reviews Links -->
-    {{-- <div class="form-group">
-        <label class="fw-bold">Reviews Link</label>
-         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter a link to the Agent’s public reviews (e.g., Zillow, Google, Realtor.com, Facebook). This helps clients understand your service quality and client satisfaction.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <input type="url" wire:model="reviews_link" id="reviews_link"
-                class="form-control has-icon" placeholder="Enter reviews link (e.g., https://www.google.com/search?q=Agent+Name+Reviews)"
-                data-icon="fa-solid fa-link">
-        </div>
-        <span class="error mt-2" id="reviews_link1_error"></span>
-    </div> --}}
-
 
   <div class="form-group">
     <label class="fw-bold">Reviews Link:</label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Enter a link to the Agent’s public reviews (e.g., Zillow, Google, Realtor.com, Facebook). This helps clients understand your service quality and client satisfaction.">
+        title="Enter a link to the Agent's public reviews (e.g., Zillow, Google, Realtor.com, Facebook). This helps clients understand your service quality and client satisfaction.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
 
-    {{-- Loop through the reviews_links array and generate an input for each --}}
     @foreach($reviews_links as $index => $link)
         <div class="input-cover mb-2 d-flex align-items-center">
             <input type="text" wire:model="reviews_links.{{ $index }}.url" id="reviews_link_{{ $index }}"
                 class="form-control has-icon" placeholder="Enter reviews link (e.g., https://www.google.com/search?q=Agent+Name+Reviews)"
                 data-icon="fa-solid fa-link">
 
-            {{-- Remove button on the right side --}}
             @if($index > 0)
                 <button type="button" wire:click="removeReviewLink({{ $index }})" class="btn btn-outline-danger btn-sm ms-2">
                     Remove
@@ -103,7 +111,6 @@
         </div>
     @endforeach
 
-    {{-- Button to add a new review link input field --}}
     <button type="button" wire:click="addReviewLink" class="btn btn-outline-primary mt-2">
         + Add Another Review Link
     </button>
@@ -111,12 +118,10 @@
     <span class="error mt-2" id="reviews_link1_error"></span>
 </div>
 
-
-
     <div class="form-group">
         <label class="fw-bold">Website Link:</label>
          <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Provide a link to the Agent’s professional website or online profile. This may include a personal website, brokerage page, or third-party profile.">
+            title="Provide a link to the Agent's professional website or online profile. This may include a personal website, brokerage page, or third-party profile.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
@@ -131,7 +136,7 @@
     <div class="form-group">
     <label class="fw-bold">Social Media Platforms:</label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Add links to the Agent’s professional social media profiles (e.g., Instagram, LinkedIn, Facebook, TikTok, YouTube). These help showcase your personality, marketing style, and market activity.">
+        title="Add links to the Agent's professional social media profiles (e.g., Instagram, LinkedIn, Facebook, TikTok, YouTube). These help showcase your personality, marketing style, and market activity.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
     @foreach ($social_media as $index => $media)
@@ -176,16 +181,29 @@
 
     <!-- Year Licensed -->
     <div class="form-group required-field">
-        <label class="fw-bold">Year Agent Got Licensed:</label>
+        <label class="fw-bold">Year Agent Got Licensed:<span class="text-danger">*</span></label>
          <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the year the Agent was first licensed. This gives clients a general idea of your experience level in the industry.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
             <input type="number" wire:model="year_licensed" placeholder="Enter year licensed (e.g., 2015)" id="year_licensed"
-                class="form-control has-icon" min="1900" max="{{ date('Y') }}"
+                class="form-control has-icon @error('year_licensed') is-invalid @enderror" min="1900" max="{{ date('Y') }}"
                 required data-icon="fa-solid fa-calendar">
         </div>
+        @error('year_licensed')<span class="text-danger small">{{ $message }}</span>@enderror
         <span class="error mt-2" id="year_licensed_error"></span>
     </div>
 
+    {{-- Save as Default Profile --}}
+    <div class="mt-4 p-3 border rounded bg-light">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+                <strong><i class="fa-solid fa-bookmark me-1 text-primary"></i> Save as Default Profile</strong>
+                <p class="mb-0 small text-muted">Save your Agent Overview answers to pre-fill future bids for this listing type (Buyer — {{ ucfirst($property_type ?: 'residential') }}).</p>
+            </div>
+            <button type="button" wire:click="saveAsDefaultProfile" class="btn btn-outline-primary btn-sm">
+                <i class="fa-solid fa-floppy-disk me-1"></i> Save as Default
+            </button>
+        </div>
+    </div>

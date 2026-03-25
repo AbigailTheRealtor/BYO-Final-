@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Mail;
 use App\Models\SellerAgentAuctionBid;
 use App\Models\SellerAgentAuctionMeta;
+use App\Models\AgentDefaultProfile;
 use DateTime;
 
 class SellerAgentAuctionController extends Controller
@@ -451,9 +452,13 @@ class SellerAgentAuctionController extends Controller
 
     public function add_bid($id, Request $request)
     {
-
         $page_data['auction'] = $auction = SellerAgentAuction::find($id);
-        $page_data['title'] = "Add Bidd to Hiring Seller's Agent - " . $auction->address;
+        $page_data['title'] = "Add Bid to Hiring Seller's Agent - " . $auction->address;
+
+        $propertyType = $auction->get->property_type ?? 'residential';
+        $defaultProfile = AgentDefaultProfile::findForAgent(Auth::id(), 'seller', $propertyType);
+        $page_data['defaultProfileData'] = $defaultProfile ? ($defaultProfile->profile_data ?? []) : [];
+
         return view('hire_seller_agent.add-bid', $page_data);
     }
 
@@ -462,7 +467,30 @@ class SellerAgentAuctionController extends Controller
      * */
     public function saveSABid(Request $request)
     {
+        $request->validate([
+            'bio'                 => 'required|string',
+            'why_hire_you'        => 'required|string',
+            'what_sets_you_apart' => 'required|string',
+            'marketing_plan'      => 'required|string',
+        ], [
+            'bio.required'                 => 'Please fill in "About Agent".',
+            'why_hire_you.required'        => 'Please fill in "Why should you be hired as their agent?".',
+            'what_sets_you_apart.required' => 'Please fill in "What sets you apart from other agents?".',
+            'marketing_plan.required'      => 'Please fill in "What is your marketing strategy?".',
+        ]);
 
+        // Save default profile if requested
+        if ($request->boolean('save_as_default') && Auth::check()) {
+            $auctionId = $request->auction_id;
+            $auction = SellerAgentAuction::find($auctionId);
+            $propertyType = $auction ? ($auction->get->property_type ?? 'residential') : 'residential';
+            AgentDefaultProfile::upsertForAgent(Auth::id(), 'seller', $propertyType, [
+                'bio'                 => $request->bio,
+                'why_hire_you'        => $request->why_hire_you,
+                'what_sets_you_apart' => $request->what_sets_you_apart,
+                'marketing_plan'      => $request->marketing_plan,
+            ]);
+        }
 
         $allowedPhotos = ['jpg', 'png', 'jpeg', 'gif', 'svg'];
         $allowedFiles = ['jpg', 'png', 'jpeg', 'gif', 'svg', 'csv', 'txt', 'xlx', 'xls', 'pdf', 'doc', 'docs', 'docm', 'docx', 'dot', 'dotm', 'dotx', 'odt', 'rtf', 'wps', 'xml', 'xps']; //csv,txt,xlx,xls,pdf

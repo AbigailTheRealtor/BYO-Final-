@@ -414,24 +414,45 @@
             </div>
           </div>
           <div class="wizard-step">
+            {{-- Default Profile Banner --}}
+            @if(!empty($defaultProfileData))
+                <div class="alert alert-success d-flex align-items-center mb-3">
+                    <i class="fa-solid fa-circle-check me-2"></i>
+                    <strong>Your saved default profile has been pre-filled.</strong>&nbsp;You can edit any field before submitting.
+                </div>
+            @endif
             <div class="form-group">
-              <label class="fw-bold">About Agent: <span class="text-danger"></span></label>
-              <textarea class="form-control" name="bio" rows="5" required>{{ @$auth->get->bio }}</textarea>
+              <label class="fw-bold">About Agent: <span class="text-danger">*</span></label>
+              <textarea class="form-control" name="bio" rows="5" required>{{ old('bio', $defaultProfileData['bio'] ?? '') }}</textarea>
+              @if($errors->has('bio'))<span class="text-danger small">{{ $errors->first('bio') }}</span>@endif
             </div>
           </div>
           <div class="wizard-step">
+            <div class="form-group">
+              <label class="fw-bold">Why should you be hired as their agent? <span class="text-danger">*</span></label>
+              <textarea class="form-control" name="why_hire_you" rows="5" required>{{ old('why_hire_you', $defaultProfileData['why_hire_you'] ?? '') }}</textarea>
+              @if($errors->has('why_hire_you'))<span class="text-danger small">{{ $errors->first('why_hire_you') }}</span>@endif
+            </div>
+            <div class="form-group">
+              <label class="fw-bold">What sets you apart from other agents? <span class="text-danger">*</span></label>
+              <textarea class="form-control" name="what_sets_you_apart" rows="5" required>{{ old('what_sets_you_apart', $defaultProfileData['what_sets_you_apart'] ?? '') }}</textarea>
+              @if($errors->has('what_sets_you_apart'))<span class="text-danger small">{{ $errors->first('what_sets_you_apart') }}</span>@endif
+            </div>
+            <div class="form-group">
+              <label class="fw-bold">What is your marketing strategy? <span class="text-danger">*</span></label>
+              <textarea class="form-control" name="marketing_plan" rows="5" required>{{ old('marketing_plan', $defaultProfileData['marketing_plan'] ?? '') }}</textarea>
+              @if($errors->has('marketing_plan'))<span class="text-danger small">{{ $errors->first('marketing_plan') }}</span>@endif
+            </div>
 
-            <div class="form-group">
-              <label class="fw-bold"> Why should you be hired as their agent? <span class="text-danger"></span></label>
-              <textarea class="form-control" name="why_hire_you" rows="5" required>{{ @$auth->get->hired_agent }}</textarea>
-            </div>
-            <div class="form-group">
-              <label class="fw-bold">What sets you apart from other agents? <span class="text-danger"></span></label>
-              <textarea class="form-control" name="what_sets_you_apart" rows="5" required>{{ @$auth->get->apart_agent }}</textarea>
-            </div>
-            <div class="form-group">
-              <label class="fw-bold">What is your marketing strategy? <span class="text-danger"></span></label>
-              <textarea class="form-control" name="marketing_plan" rows="5" required>{{ @$auth->get->marketing_plan }}</textarea>
+            {{-- Save as Default Profile option --}}
+            <div class="mt-3 p-3 border rounded bg-light">
+                <div class="form-check d-flex align-items-start gap-2">
+                    <input class="form-check-input mt-1" type="checkbox" name="save_as_default" id="save_as_default" value="1">
+                    <label class="form-check-label" for="save_as_default">
+                        <strong><i class="fa-solid fa-bookmark me-1 text-primary"></i> Save as my default profile</strong>
+                        <p class="mb-0 small text-muted">Save these answers to pre-fill future bids (Seller — {{ ucfirst($auction->get->property_type ?? 'residential') }}).</p>
+                    </label>
+                </div>
             </div>
           </div>
 

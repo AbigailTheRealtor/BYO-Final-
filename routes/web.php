@@ -576,6 +576,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('buyer/agent/auction/bid/{auctionId}', BuyerAgentAuctionBid::class)->name('buyer.agent.auction.bid');
             Route::get('landlord/agent/auction/bid/{auctionId}', LandlordAgentAuctionBid::class)->name('landlord.agent.auction.bid');
             
+            // Default Bid Profiles
+            Route::get('/agent/default-profiles', [\App\Http\Controllers\AgentDefaultProfileController::class, 'index'])->name('default-profiles.index');
+            Route::post('/agent/default-profiles', [\App\Http\Controllers\AgentDefaultProfileController::class, 'store'])->name('default-profiles.store');
+            Route::delete('/agent/default-profiles/{id}', [\App\Http\Controllers\AgentDefaultProfileController::class, 'destroy'])->name('default-profiles.destroy');
+            Route::get('/agent/default-profiles/load', [\App\Http\Controllers\AgentDefaultProfileController::class, 'load'])->name('default-profiles.load');
+
             Route::get('tenant/agent/auction/{auctionId}/competing-bids', [\App\Http\Controllers\CompetingBidsController::class, 'viewCompetingBids'])->name('tenant.agent.auction.competing-bids');
             Route::get('tenant/agent/auction/{auctionId}/competing-bids/data', [\App\Http\Controllers\CompetingBidsController::class, 'getCompetingBidsData'])->name('tenant.agent.auction.competing-bids.data');
 

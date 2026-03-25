@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use App\Models\TenantAgentAuctionBid as TenantAgentAuctionBidData;
+use App\Models\AgentDefaultProfile;
 use App\Models\User;
 use App\Notifications\BidSubmittedNotification;
 use Illuminate\Support\Facades\DB;
@@ -26,6 +27,9 @@ class TenantAgentAuctionBid extends Component
     public $property_type;
 
     public $activeTab = 0;
+
+    public bool $defaultProfileExists = false;
+    public bool $defaultProfileLoaded = false;
 
     // Agent Information
     public $first_name;
@@ -254,6 +258,10 @@ class TenantAgentAuctionBid extends Component
     protected function rules(): array
     {
         return [
+            'bio'                 => 'required|string',
+            'why_hire_you'        => 'required|string',
+            'what_sets_you_apart' => 'required|string',
+            'marketing_plan'      => 'required|string',
             'commission_structure' => 'required|string',
             'lease_fee_type' => 'required|string',
             'promoMaterials.*.type'  => ['nullable', 'string'],
@@ -268,8 +276,13 @@ class TenantAgentAuctionBid extends Component
     }
 
     protected $messages = [
+        'bio.required'                 => 'Please fill in "About Agent".',
+        'why_hire_you.required'        => 'Please fill in "Why Should You Be Hired as Their Agent?".',
+        'what_sets_you_apart.required' => 'Please fill in "What Sets You Apart From Other Agents?".',
+        'marketing_plan.required'      => 'Please fill in "What Is Your Marketing Strategy?".',
         'commission_structure.required' => 'Please select a Tenant\'s Broker Commission Structure.',
         'lease_fee_type.required' => 'Please select a Tenant\'s Broker Lease Fee.',
+        'year_licensed.required'       => 'Please enter the year you were licensed.',
     ];
 
     public function updatePlaceholder($index, $platform)
@@ -586,6 +599,35 @@ class TenantAgentAuctionBid extends Component
             $this->brokerage = $user->brokerage ?? '';
             $this->license_no = $user->license_no ?? '';
             $this->nar_id = $user->nar_id ?? '';
+
+            // Auto-load Default Profile for new bids (Agent Overview fields)
+            $defaultProfile = AgentDefaultProfile::findForAgent(
+                $user->id,
+                'tenant',
+                $this->property_type ?: 'residential'
+            );
+            if ($defaultProfile) {
+                $this->defaultProfileExists = true;
+                $dp = $defaultProfile->profile_data ?? [];
+                $this->bio                 = $dp['bio'] ?? '';
+                $this->why_hire_you        = $dp['why_hire_you'] ?? '';
+                $this->what_sets_you_apart = $dp['what_sets_you_apart'] ?? '';
+                $this->marketing_plan      = $dp['marketing_plan'] ?? '';
+                $this->year_licensed       = $dp['year_licensed'] ?? '';
+                if (!empty($dp['reviews_links'])) {
+                    $this->reviews_links = $dp['reviews_links'];
+                }
+                if (!empty($dp['website_link'])) {
+                    $this->website_link = $dp['website_link'];
+                }
+                if (!empty($dp['social_media'])) {
+                    $this->social_media = $dp['social_media'];
+                }
+                if (!empty($dp['additional_details'])) {
+                    $this->additional_details = $dp['additional_details'];
+                }
+                $this->defaultProfileLoaded = true;
+            }
         }
         
         if ($this->isEditMode && $this->editBidId) {
@@ -764,13 +806,85 @@ class TenantAgentAuctionBid extends Component
     public function goToNextStep()
     {
         Log::info('NEXT STEP ADVANCE', ['from' => $this->activeTab]);
-        
-        // No validation on Next - just advance to allow navigation even if uploads fail
-        // Files are validated on Submit only
+
+        // Validate Agent Overview required fields when leaving Tab 0
+        if ($this->activeTab === 0) {
+            $this->validateOnly('bio', ['bio' => 'required|string'], $this->messages);
+            $this->validateOnly('why_hire_you', ['why_hire_you' => 'required|string'], $this->messages);
+            $this->validateOnly('what_sets_you_apart', ['what_sets_you_apart' => 'required|string'], $this->messages);
+            $this->validateOnly('marketing_plan', ['marketing_plan' => 'required|string'], $this->messages);
+            $this->validateOnly('year_licensed', ['year_licensed' => 'required|numeric|min:1900|max:' . date('Y')], $this->messages);
+
+            if ($this->getErrorBag()->hasAny(['bio', 'why_hire_you', 'what_sets_you_apart', 'marketing_plan', 'year_licensed'])) {
+                return;
+            }
+        }
+
         $maxTab = $this->service_type === 'full_service' ? 5 : 4;
         if ($this->activeTab < $maxTab) {
             $this->activeTab = $this->activeTab + 1;
         }
+    }
+
+    public function saveAsDefaultProfile(): void
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return;
+        }
+
+        AgentDefaultProfile::upsertForAgent(
+            $user->id,
+            'tenant',
+            $this->property_type ?: 'residential',
+            [
+                'bio'                 => $this->bio,
+                'why_hire_you'        => $this->why_hire_you,
+                'what_sets_you_apart' => $this->what_sets_you_apart,
+                'marketing_plan'      => $this->marketing_plan,
+                'reviews_links'       => $this->reviews_links,
+                'website_link'        => $this->website_link,
+                'social_media'        => $this->social_media,
+                'additional_details'  => $this->additional_details,
+                'first_name'          => $this->first_name,
+                'last_name'           => $this->last_name,
+                'phone'               => $this->phone,
+                'email'               => $this->email,
+                'brokerage'           => $this->brokerage,
+                'license_no'          => $this->license_no,
+                'nar_id'              => $this->nar_id,
+                'year_licensed'       => $this->year_licensed,
+            ]
+        );
+
+        $this->defaultProfileExists = true;
+        $this->defaultProfileLoaded = true;
+        session()->flash('success', 'Default profile saved! It will pre-fill your Agent Overview next time you bid.');
+    }
+
+    public function loadDefaultProfile(): void
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return;
+        }
+
+        $profile = AgentDefaultProfile::findForAgent($user->id, 'tenant', $this->property_type ?: 'residential');
+        if (!$profile) {
+            return;
+        }
+
+        $data = $profile->profile_data ?? [];
+        $this->bio                 = $data['bio'] ?? '';
+        $this->why_hire_you        = $data['why_hire_you'] ?? '';
+        $this->what_sets_you_apart = $data['what_sets_you_apart'] ?? '';
+        $this->marketing_plan      = $data['marketing_plan'] ?? '';
+        $this->reviews_links       = $data['reviews_links'] ?? [['text' => '']];
+        $this->website_link        = $data['website_link'] ?? [''];
+        $this->social_media        = $data['social_media'] ?? [['platform' => '', 'text' => '']];
+        $this->additional_details  = $data['additional_details'] ?? '';
+        $this->year_licensed       = $data['year_licensed'] ?? '';
+        $this->defaultProfileLoaded = true;
     }
     
     public function goToPreviousStep()
