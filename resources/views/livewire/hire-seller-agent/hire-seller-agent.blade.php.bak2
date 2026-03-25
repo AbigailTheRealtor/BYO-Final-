@@ -1595,19 +1595,7 @@
                 $('#included_assets').on('change', function() {
                     let selectedValues = $(this).val() || [];
                     @this.set('business_assets', selectedValues, false);
-                    if (selectedValues && selectedValues.includes('Other')) {
-                        $('.other_assets').show();
-                    } else {
-                        $('.other_assets').hide();
-                    }
                 });
-                // Apply initial state if "Other" was already selected (e.g., on load)
-                let _initAssets = $('#included_assets').val() || [];
-                if (_initAssets.includes('Other')) {
-                    $('.other_assets').show();
-                } else {
-                    $('.other_assets').hide();
-                }
             }
 
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {

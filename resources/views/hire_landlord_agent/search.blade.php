@@ -164,41 +164,47 @@
 
                         $propertyItems = @$auction->get->property_items;
                         $propertyStyleDisplay = '';
+                        $rawItemsList = [];
                         if (is_array($propertyItems) && count($propertyItems) > 0) {
-                            $firstItem = $propertyItems[0] ?? '';
-                            if (strtolower(trim($firstItem)) === 'other' && !empty(@$auction->get->other_property_items)) {
-                                $propertyStyleDisplay = $auction->get->other_property_items;
-                            } else {
-                                $propertyStyleDisplay = $firstItem;
-                            }
+                            $rawItemsList = $propertyItems;
                         } elseif (is_string($propertyItems) && !empty($propertyItems)) {
                             $decoded = json_decode($propertyItems, true);
-                            if (is_array($decoded) && count($decoded) > 0) {
-                                $firstItem = $decoded[0] ?? '';
-                                if (strtolower(trim($firstItem)) === 'other' && !empty(@$auction->get->other_property_items)) {
-                                    $propertyStyleDisplay = $auction->get->other_property_items;
-                                } else {
-                                    $propertyStyleDisplay = $firstItem;
-                                }
+                            $rawItemsList = is_array($decoded) ? $decoded : (strlen($propertyItems) > 0 ? [$propertyItems] : []);
+                        }
+                        $allStyleItems = [];
+                        foreach ($rawItemsList as $item) {
+                            if (strtolower(trim($item)) === 'other' && !empty(@$auction->get->other_property_items)) {
+                                $allStyleItems[] = $auction->get->other_property_items;
                             } else {
-                                $propertyStyleDisplay = $propertyItems;
+                                $allStyleItems[] = $item;
                             }
                         }
+                        $propertyStyleDisplay = implode(', ', $allStyleItems);
 
                         $bedsDisplay = $resolveOther(@$auction->get->bedrooms, @$auction->get->other_bedrooms);
                         $bathsDisplay = $resolveOther(@$auction->get->bathrooms, @$auction->get->other_bathrooms);
-                        $sqftDisplay = @$auction->get->minimum_heated_square ?? '';
+                        $sqftDisplay = '';
+                        if ($isResidential) {
+                            $sqftDisplay = @$auction->get->minimum_heated_square ?? '';
+                        } elseif ($isCommercial) {
+                            $sqftDisplay = @$auction->get->minimum_leaseable ?? '';
+                        }
 
-                        $rawCounties = @$auction->get->counties ?? [];
                         $countyDisplay = '';
-                        if (is_array($rawCounties) && count($rawCounties) > 0) {
-                            $countyDisplay = $rawCounties[0];
-                        } elseif (is_string($rawCounties) && !empty($rawCounties)) {
-                            $decoded2 = json_decode($rawCounties, true);
-                            if (is_array($decoded2) && count($decoded2) > 0) {
-                                $countyDisplay = $decoded2[0];
-                            } elseif (trim($rawCounties, '[]') !== '') {
-                                $countyDisplay = $rawCounties;
+                        $propCounty = trim((string)(@$auction->get->property_county ?? ''));
+                        if (!empty($propCounty)) {
+                            $countyDisplay = $propCounty;
+                        } else {
+                            $rawCounties = @$auction->get->counties ?? [];
+                            if (is_array($rawCounties) && count($rawCounties) > 0) {
+                                $countyDisplay = $rawCounties[0];
+                            } elseif (is_string($rawCounties) && !empty($rawCounties)) {
+                                $decoded2 = json_decode($rawCounties, true);
+                                if (is_array($decoded2) && count($decoded2) > 0) {
+                                    $countyDisplay = $decoded2[0];
+                                } elseif (trim($rawCounties, '[]"') !== '') {
+                                    $countyDisplay = $rawCounties;
+                                }
                             }
                         }
                         if (!empty($countyDisplay) && stripos($countyDisplay, 'County') === false) {

@@ -159,7 +159,7 @@
                         };
 
                         $propTypeRaw = strtolower(trim(@$auction->get->property_type ?? ''));
-                        $isResidential = (strpos($propTypeRaw, 'residential') !== false) || ($propTypeRaw === 'income');
+                        $isResidential = (strpos($propTypeRaw, 'residential') !== false);
                         $isLand = (strpos($propTypeRaw, 'vacant land') !== false) || (strpos($propTypeRaw, 'land/lots') !== false) || ($propTypeRaw === 'agricultural');
                         $isCommercial = !$isResidential && !$isLand && $propTypeRaw !== '';
                         $propertyTypeLabel = @$auction->get->property_type ?: '';
@@ -209,16 +209,21 @@
                             $sellerFeeCombined = @$auction->get->commission_structure ?? '';
                         }
 
-                        $rawCounties = @$auction->get->counties ?? [];
                         $countyDisplay = '';
-                        if (is_array($rawCounties) && count($rawCounties) > 0) {
-                            $countyDisplay = $rawCounties[0];
-                        } elseif (is_string($rawCounties) && !empty($rawCounties)) {
-                            $decoded2 = json_decode($rawCounties, true);
-                            if (is_array($decoded2) && count($decoded2) > 0) {
-                                $countyDisplay = $decoded2[0];
-                            } elseif (trim($rawCounties, '[]') !== '') {
-                                $countyDisplay = $rawCounties;
+                        $propCounty = trim((string)(@$auction->get->property_county ?? ''));
+                        if (!empty($propCounty)) {
+                            $countyDisplay = $propCounty;
+                        } else {
+                            $rawCounties = @$auction->get->counties ?? [];
+                            if (is_array($rawCounties) && count($rawCounties) > 0) {
+                                $countyDisplay = $rawCounties[0];
+                            } elseif (is_string($rawCounties) && !empty($rawCounties)) {
+                                $decoded2 = json_decode($rawCounties, true);
+                                if (is_array($decoded2) && count($decoded2) > 0) {
+                                    $countyDisplay = $decoded2[0];
+                                } elseif (trim($rawCounties, '[]"') !== '') {
+                                    $countyDisplay = $rawCounties;
+                                }
                             }
                         }
                         if (!empty($countyDisplay) && stripos($countyDisplay, 'County') === false) {
@@ -287,7 +292,7 @@
                                                 </span>
                                             @endif
                                         </p>
-                                    @elseif (!$isResidential && !empty($sqftDisplay))
+                                    @elseif ($isCommercial && !empty($sqftDisplay))
                                         <p class="mb-1">
                                             <span class="d-inline-flex align-items-center gap-1">
                                                 &#x1F4D0; <b>{{ $sqftDisplay }}</b> Sq Ft

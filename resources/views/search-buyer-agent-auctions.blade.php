@@ -160,7 +160,7 @@
 
                         $propTypeRaw = strtolower(trim(@$auction->get->property_type ?? ''));
                         $isResidential = (strpos($propTypeRaw, 'residential') !== false);
-                        $isCommercial = (strpos($propTypeRaw, 'commercial') !== false) || (strpos($propTypeRaw, 'income') !== false);
+                        $isCommercial = (strpos($propTypeRaw, 'commercial') !== false) || (strpos($propTypeRaw, 'income') !== false) || (strpos($propTypeRaw, 'business') !== false);
                         $propertyTypeLabel = @$auction->get->property_type ?: '';
 
                         $propertyItems = @$auction->get->property_items;
@@ -191,19 +191,17 @@
                         $buyerCommStructure = str_replace('"', '', @$auction->get->commission_structure ?? '');
                         $buyerFeeType = @$auction->get->purchase_fee_type ?? '';
                         $buyerFeeCombined = '';
-                        if ($buyerFeeType === 'flat' && !empty(@$auction->get->purchase_fee_flat)) {
+                        if ($buyerFeeType === 'Flat Fee' && !empty(@$auction->get->purchase_fee_flat)) {
                             $buyerFeeCombined = $fmtMoney($auction->get->purchase_fee_flat);
-                        } elseif ($buyerFeeType === 'percentage' && !empty(@$auction->get->purchase_fee_percentage)) {
+                        } elseif ($buyerFeeType === 'Percentage of the Total Purchase Price' && !empty(@$auction->get->purchase_fee_percentage)) {
                             $buyerFeeCombined = $fmtPct($auction->get->purchase_fee_percentage) . ' of Total Purchase Price';
-                        } elseif ($buyerFeeType === 'combo') {
+                        } elseif ($buyerFeeType === 'Percentage of the Total Purchase Price + Flat Fee') {
                             $pts = [];
-                            if (!empty(@$auction->get->purchase_fee_percentage_combo)) $pts[] = $fmtPct($auction->get->purchase_fee_percentage_combo) . ' of Total Purchase Price';
                             if (!empty(@$auction->get->purchase_fee_flat_combo)) $pts[] = $fmtMoney($auction->get->purchase_fee_flat_combo);
+                            if (!empty(@$auction->get->purchase_fee_percentage_combo)) $pts[] = $fmtPct($auction->get->purchase_fee_percentage_combo) . ' of Total Purchase Price';
                             $buyerFeeCombined = implode(' + ', $pts);
-                        } elseif ($buyerFeeType === 'other' && !empty(@$auction->get->purchase_fee_other)) {
+                        } elseif (strtolower($buyerFeeType) === 'other' && !empty(@$auction->get->purchase_fee_other)) {
                             $buyerFeeCombined = @$auction->get->purchase_fee_other;
-                        } elseif ($buyerFeeType) {
-                            $buyerFeeCombined = $buyerFeeType;
                         }
 
                         $rawCounties = @$auction->get->counties ?? [];

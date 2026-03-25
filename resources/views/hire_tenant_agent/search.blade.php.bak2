@@ -146,26 +146,30 @@
                         $propTypeRaw = strtolower(trim(@$auction->get->property_type ?? ''));
                         $isResidential = (strpos($propTypeRaw, 'residential') !== false);
                         $isCommercial = (strpos($propTypeRaw, 'commercial') !== false);
-                        $propertyTypeLabel = @$auction->get->property_type ?: '';
+                        $propertyTypeLabel = $isResidential ? 'Residential' : ($isCommercial ? 'Commercial' : (@$auction->get->property_type ?: 'Unknown'));
 
                         $propertyItems = @$auction->get->property_items;
                         $propertyStyleDisplay = '';
-                        $rawItemsList = [];
                         if (is_array($propertyItems) && count($propertyItems) > 0) {
-                            $rawItemsList = $propertyItems;
+                            $firstItem = $propertyItems[0] ?? '';
+                            if (strtolower(trim($firstItem)) === 'other' && !empty(@$auction->get->other_property_items)) {
+                                $propertyStyleDisplay = $auction->get->other_property_items;
+                            } else {
+                                $propertyStyleDisplay = $firstItem;
+                            }
                         } elseif (is_string($propertyItems) && !empty($propertyItems)) {
                             $decoded = json_decode($propertyItems, true);
-                            $rawItemsList = is_array($decoded) ? $decoded : (strlen($propertyItems) > 0 ? [$propertyItems] : []);
-                        }
-                        $allStyleItems = [];
-                        foreach ($rawItemsList as $item) {
-                            if (strtolower(trim($item)) === 'other' && !empty(@$auction->get->other_property_items)) {
-                                $allStyleItems[] = $auction->get->other_property_items;
+                            if (is_array($decoded) && count($decoded) > 0) {
+                                $firstItem = $decoded[0] ?? '';
+                                if (strtolower(trim($firstItem)) === 'other' && !empty(@$auction->get->other_property_items)) {
+                                    $propertyStyleDisplay = $auction->get->other_property_items;
+                                } else {
+                                    $propertyStyleDisplay = $firstItem;
+                                }
                             } else {
-                                $allStyleItems[] = $item;
+                                $propertyStyleDisplay = $propertyItems;
                             }
                         }
-                        $propertyStyleDisplay = implode(', ', $allStyleItems);
 
                         $bedsDisplay = $resolveOther(@$auction->get->bedrooms, @$auction->get->other_bedrooms);
                         $bathsDisplay = $resolveOther(@$auction->get->bathrooms, @$auction->get->other_bathrooms);
