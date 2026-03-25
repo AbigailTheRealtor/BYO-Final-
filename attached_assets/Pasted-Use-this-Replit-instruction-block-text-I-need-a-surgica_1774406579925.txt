@@ -1,0 +1,246 @@
+Use this Replit instruction block:
+
+```text
+I need a surgical fix with safeguards for 2 live issues only.
+
+GOAL:
+Fix these exact live problems:
+
+1. Hire a Buyer’s Agent search/cards
+   - Business, Income, and Commercial Buyer listings must show SqFt on the listing card like Seller listings do
+   - Business, Commercial, and Vacant Land Buyer property types are not showing up on the Buyer search page and must appear there if valid
+
+2. Seller create listing
+   - Under Included Property or Business Assets, if user selects Other, the custom input should appear immediately
+   - Right now nothing pops up on the live Seller create page
+
+LIVE ROUTES / EXAMPLES TO TRACE
+-------------------------------------
+
+Buyer search page:
+- /search/buyer-agent-needed
+
+Buyer listings that exist but are not showing up on that search page:
+- /buyer/agent/auction/view/148
+- /buyer/agent/auction/view/149
+- /buyer/agent/auction/view/150
+
+Seller example card/reference:
+- /seller/agent/auction/view/63
+
+Seller create page:
+- /hire/agent/auction/seller
+
+IMPORTANT:
+Do NOT tell me these are already fixed unless they are visibly fixed on these exact live routes/pages.
+
+-------------------------------------
+HARD SAFEGUARDS
+-------------------------------------
+
+- Do NOT rename DB columns
+- Do NOT run migrations
+- Do NOT refactor architecture broadly
+- Do NOT change unrelated listing creation/edit validation logic
+- Do NOT change unrelated listing card layout
+- Do NOT touch unrelated search pages beyond the exact Buyer search issue below
+- Do NOT touch unrelated roles/fields beyond these exact fixes
+- Make .bak copies before editing any file
+- Keep this focused only on:
+  - Buyer search property-type visibility
+  - Buyer card SqFt display
+  - Seller create Other input for Included Property or Business Assets
+
+-------------------------------------
+CRITICAL RULE — TRACE THE LIVE RENDER PATH
+-------------------------------------
+
+Before coding, trace each issue from the actual live route to the actual file.
+
+For each issue, identify:
+- route
+- controller / Livewire component
+- exact blade/partial actually rendering the UI
+
+Do NOT rely on:
+- similar blades
+- assumed shared partials
+- code that looks right but is not actually used by the live route
+
+Do NOT guess.
+
+-------------------------------------
+ISSUE 1 — BUYER SEARCH PAGE MISSING PROPERTY TYPES
+-------------------------------------
+
+Live page:
+- /search/buyer-agent-needed
+
+Problem:
+Business, Commercial, and Vacant Land Buyer property types are not showing up on the Hire a Buyer’s Agent search page.
+
+Examples of listings that exist but are not appearing:
+- /buyer/agent/auction/view/148
+- /buyer/agent/auction/view/149
+- /buyer/agent/auction/view/150
+
+TASKS:
+1. Trace the exact route/controller/component for /search/buyer-agent-needed
+2. Find the exact query/scope/filter logic used to fetch Buyer listings
+3. Inspect the records behind listings 148, 149, and 150
+4. Compare those against Buyer listings that DO appear on /search/buyer-agent-needed
+5. Identify the exact exclusion condition causing Business / Commercial / Vacant Land to be hidden
+6. Fix only that exclusion logic so valid Buyer listings of those property types appear
+
+IMPORTANT:
+- Do NOT broadly loosen search rules
+- Do NOT accidentally show drafts, deleted, inactive, or wrong-role listings
+- Keep all current visibility rules intact except the incorrect exclusion of valid Buyer property types
+
+-------------------------------------
+ISSUE 2 — BUYER CARD SQFT
+-------------------------------------
+
+On the same Buyer search/cards:
+- Business listings should show SqFt when filled
+- Income listings should show SqFt when filled
+- Commercial listings should show SqFt when filled
+
+Use Seller listings as the reference for how SqFt should appear on non-residential cards.
+
+Seller example reference:
+- /seller/agent/auction/view/63
+
+TASKS:
+1. Find the exact Buyer card template used on /search/buyer-agent-needed
+2. Confirm the actual SqFt field source used for Buyer:
+   - Business
+   - Income
+   - Commercial
+3. Fix the live Buyer card so SqFt renders when filled
+4. Do NOT show blank SqFt row when empty
+
+IMPORTANT:
+- This must affect the live Buyer search card UI
+- Do NOT just confirm the field exists in the DB
+- The visible card must actually show SqFt on the live search page
+
+-------------------------------------
+ISSUE 3 — SELLER CREATE “OTHER” INPUT NOT SHOWING
+-------------------------------------
+
+Live page:
+- /hire/agent/auction/seller
+
+Problem:
+When user is creating a Seller listing, under:
+- Included Property or Business Assets
+
+if the user selects:
+- Other
+
+the custom input should appear immediately, but currently nothing pops up.
+
+TASKS:
+1. Trace the exact Seller create route/component/blade for /hire/agent/auction/seller
+2. Find the exact markup and event handling for Included Property or Business Assets
+3. Identify why Other is not triggering the custom input on the live page
+
+Check whether the root cause is:
+- wrong selector
+- wrong field ID/name
+- Select2 event not bound to the live field
+- hidden conditional rendered in wrong place
+- Livewire re-render removes the field
+- code was previously added to wrong file
+- “Other” value mismatch between JS and actual option value
+
+4. Fix so selecting Other makes the custom input appear immediately on the live Seller create page
+5. If Other is deselected, input should hide appropriately
+
+IMPORTANT:
+- Do NOT break the existing multi-select
+- Do NOT change save structure unless necessary
+- Do NOT affect unrelated Seller create fields
+
+-------------------------------------
+TASK 4 — REQUIRE LIVE UI VERIFICATION
+-------------------------------------
+
+After making fixes, verify them in the actual rendered UI on the live routes above.
+
+Do NOT mark complete based only on code inspection.
+
+Required visible results:
+- Buyer search page shows Business property type listings
+- Buyer search page shows Commercial property type listings
+- Buyer search page shows Vacant Land property type listings
+- Buyer Business / Income / Commercial cards visibly show SqFt when filled
+- Seller create page visibly shows Other input immediately when Other is selected
+
+-------------------------------------
+DO NOT DO
+-------------------------------------
+
+- do NOT claim “already fixed” unless the live page actually shows it
+- do NOT edit random similar blades
+- do NOT hardcode SqFt values
+- do NOT show blank SqFt rows
+- do NOT weaken Buyer search filters broadly
+- do NOT change DB schema
+- do NOT touch unrelated search pages or roles
+
+-------------------------------------
+TESTING REQUIRED
+-------------------------------------
+
+A. BUYER SEARCH PAGE
+Route:
+- /search/buyer-agent-needed
+
+Verify:
+1. Listing 148 appears if valid
+2. Listing 149 appears if valid
+3. Listing 150 appears if valid
+4. Business property type listings appear
+5. Commercial property type listings appear
+6. Vacant Land property type listings appear
+7. Buyer Business cards show SqFt when filled
+8. Buyer Income cards show SqFt when filled
+9. Buyer Commercial cards show SqFt when filled
+10. Empty SqFt does not create blank row
+
+B. SELLER CREATE PAGE
+Route:
+- /hire/agent/auction/seller
+
+Verify:
+1. Open Included Property or Business Assets
+2. Select Other
+3. Custom input appears immediately
+4. Deselect Other if applicable
+5. Custom input hides appropriately
+
+-------------------------------------
+RESPONSE REQUIREMENT
+-------------------------------------
+
+When done, report back with:
+1. Exact live file(s) changed
+2. Exact root cause for each issue
+3. Why the previous attempted fix did not affect the live UI
+4. Confirmation that the live rendered pages now visibly show the change
+
+Do NOT respond with only code-level assumptions.
+
+-------------------------------------
+SUCCESS CRITERIA
+-------------------------------------
+
+- Buyer search page now includes valid Business / Commercial / Vacant Land Buyer listings
+- Buyer Business / Income / Commercial live cards show SqFt when filled
+- Seller create live form shows Other input immediately when Other is selected
+- No blank rows
+- No DB changes
+- No unrelated regressions
+```

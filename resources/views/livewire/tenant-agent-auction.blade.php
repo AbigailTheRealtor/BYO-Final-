@@ -2528,24 +2528,28 @@ $lease_types = [
             });
         }
 
-        if ($('#included_assets').length && !$('#included_assets').hasClass('select2-hidden-accessible')) {
-            $('#included_assets').select2({
-                placeholder: "Select included assets",
-                allowClear: true
-            });
+        function initIncludedAssetsSelect2() {
+            var $ia = $('#included_assets');
+            if (!$ia.length) return;
+            if (!$ia.hasClass('select2-hidden-accessible')) {
+                $ia.select2({
+                    placeholder: "Select included assets",
+                    allowClear: true
+                });
+                $ia.off('change.includedAssets').on('change.includedAssets', function() {
+                    let selectedValues = $(this).val() || [];
+                    @this.set('business_assets', selectedValues, false);
+                    $('.other_assets').css('display', selectedValues.includes('Other') ? 'block' : 'none');
+                });
+            }
             var savedBusinessAssets = @this.get('business_assets') || [];
             if (savedBusinessAssets.length > 0) {
-                $('#included_assets').val(savedBusinessAssets).trigger('change');
-                if (savedBusinessAssets.includes('Other')) {
-                    $('.other_assets').css('display', 'block');
-                }
+                $ia.val(savedBusinessAssets).trigger('change.select2');
+                $('.other_assets').css('display', savedBusinessAssets.includes('Other') ? 'block' : 'none');
             }
-            $('#included_assets').on('change', function() {
-                let selectedValues = $(this).val() || [];
-                @this.set('business_assets', selectedValues, false);
-                $('.other_assets').css('display', selectedValues.includes('Other') ? 'block' : 'none');
-            });
         }
+        initIncludedAssetsSelect2();
+        Livewire.hook('message.processed', () => { initIncludedAssetsSelect2(); });
 
         initExchangeItemSelect2();
 
