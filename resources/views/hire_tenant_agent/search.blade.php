@@ -174,7 +174,7 @@
                         if ($isResidential) {
                             $sqftDisplay = @$auction->get->minimum_heated_square ?? '';
                         } elseif ($isCommercial) {
-                            $sqftDisplay = @$auction->get->minimum_leaseable ?? '';
+                            $sqftDisplay = @$auction->get->minimum_leaseable ?: (@$auction->get->minimum_heated_square ?? '');
                         }
 
                         $counties = @$auction->get->counties ?? [];

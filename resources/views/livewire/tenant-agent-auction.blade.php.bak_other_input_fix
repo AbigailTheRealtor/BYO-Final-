@@ -2536,14 +2536,10 @@ $lease_types = [
             var savedBusinessAssets = @this.get('business_assets') || [];
             if (savedBusinessAssets.length > 0) {
                 $('#included_assets').val(savedBusinessAssets).trigger('change');
-                if (savedBusinessAssets.includes('Other')) {
-                    $('.other_assets').css('display', 'block');
-                }
             }
             $('#included_assets').on('change', function() {
                 let selectedValues = $(this).val() || [];
                 @this.set('business_assets', selectedValues, false);
-                $('.other_assets').css('display', selectedValues.includes('Other') ? 'block' : 'none');
             });
         }
 

@@ -78,11 +78,27 @@
                     <div class="col-sm-12 col-md-3 col-lg-3">
                         @php
                             $property_types = [
-                                ['target' => '', 'name' => 'Residential'],
-                                ['target' => '', 'name' => 'Income'],
-                                ['target' => '', 'name' => 'Commercial'],
+                                ['target' => '', 'name' => 'Single Family Home'],
+                                ['target' => '', 'name' => 'Townhome'],
+                                ['target' => '', 'name' => 'Condo'],
+                                ['target' => '', 'name' => 'Condo-Hotel'],
+                                ['target' => '', 'name' => 'Villa'],
+                                ['target' => '', 'name' => 'Multi-Family'],
+                                ['target' => '', 'name' => 'Land/Lots'],
+                                ['target' => '', 'name' => 'Manufactured Home'],
+                                ['target' => '', 'name' => 'Modular Home'],
+                                ['target' => '', 'name' => 'Agricultural'],
+                                ['target' => '', 'name' => 'Assembly Building'],
                                 ['target' => '', 'name' => 'Business'],
-                                ['target' => '', 'name' => 'Vacant Land'],
+                                ['target' => '', 'name' => 'Five or more'],
+                                ['target' => '', 'name' => 'Hotel/Motel'],
+                                ['target' => '', 'name' => 'Industrial'],
+                                ['target' => '', 'name' => 'Mixed Use'],
+                                ['target' => '', 'name' => 'Office'],
+                                ['target' => '', 'name' => 'Restaurant'],
+                                ['target' => '', 'name' => 'Retail'],
+                                ['target' => '', 'name' => 'Warehouse'],
+                                ['target' => '.custom_property_type', 'name' => 'Other'],
                             ];
                         @endphp
                         <div class="mb-3">
@@ -168,11 +184,7 @@
 
                         $bedsDisplay = $resolveOther(@$auction->get->bedrooms, @$auction->get->other_bedrooms);
                         $bathsDisplay = $resolveOther(@$auction->get->bathrooms, @$auction->get->other_bathrooms);
-                        if ($isResidential) {
-                            $sqftDisplay = @$auction->get->minimum_heated_square ?? '';
-                        } else {
-                            $sqftDisplay = @$auction->get->minimum_heated_square ?: (@$auction->get->minimum_leaseable ?? '');
-                        }
+                        $sqftDisplay = @$auction->get->minimum_heated_square ?? '';
 
                         $fmtMoney = function($v) { return '$' . number_format((float)$v, 2); };
                         $fmtPct   = function($v) { return $v . '%'; };
