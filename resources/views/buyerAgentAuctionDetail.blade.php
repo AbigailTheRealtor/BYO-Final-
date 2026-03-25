@@ -2218,11 +2218,13 @@
 
         @php
         $userHasBid = $auction->bids->where('user_id', $auth_id)->isNotEmpty();
+        // Safe is_sold check: raw DB column is varchar ('0','false','true','1') — never use raw value as bool
+        $isSold = in_array($auction->is_sold, [true, 'true', 1, '1'], true);
         @endphp
 
         {{-- 🔹 Bid Button --}}
         @if ($auth_id && in_array(auth()->user()->user_type, ['agent']))
-        @if (!$isExpired && !data_get($auction, 'is_sold') && $auction->status !== 'Pending' && $auction->status !== 'Hired Agent')
+        @if (!$isExpired && !$isSold && $auction->status !== 'Pending' && $auction->status !== 'Hired Agent')
         @if ($userHasBid)
         {{-- User already placed a bid --}}
         <div class="alert alert-info text-center mb-2">
@@ -2247,7 +2249,7 @@
         </button>
         @endif
 
-        @elseif($auction->status === 'Hired Agent' || data_get($auction, 'is_sold'))
+        @elseif($auction->status === 'Hired Agent' || $isSold)
         <div class="alert alert-success text-center mb-2">
             <i class="fa fa-trophy"></i> <strong>An agent has been hired</strong>
         </div>
@@ -3912,7 +3914,7 @@
 
                                                     {{-- Main Bid Actions (keep this section as is) --}}
                                                     <div class="d-flex justify-content-between flex-wrap gap-2 mt-3">
-                                                        @if ($state === '0' && $isOwnerRow && !data_get($auction, 'is_sold'))
+                                                        @if ($state === '0' && $isOwnerRow && !$isSold)
 
                                                             @if ($isExpired)
                                                             {{-- 🔹 Show expired message if auction expired --}}
