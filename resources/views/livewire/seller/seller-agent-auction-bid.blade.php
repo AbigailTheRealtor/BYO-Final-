@@ -110,22 +110,25 @@
                     <div class="d-flex justify-content-between form-group mt-4">
                         <div>
                             @if ($activeTab > 0)
-                        <button type="button" wire:click="goToPreviousStep"
-                                class="btn btn-secondary">
+                            <button type="button" wire:click="goToPreviousStep"
+                                    class="btn btn-secondary wizard-step-back">
                                 Previous
                             </button>
-                        @endif
+                            @endif
                         </div>
                         <div>
+                            @if ($activeTab < 5)
                             <button type="button" wire:click="goToNextStep"
-                                class="btn btn-primary {{ $activeTab === 5 ? 'd-none' : '' }}">
+                                    class="btn btn-primary wizard-step-next">
                                 Next
                             </button>
+                            @else
                             <button type="submit"
-                                class="btn btn-success {{ $activeTab !== 5 ? 'd-none' : '' }}"
-                                id="save-button">
+                                    class="btn btn-success wizard-step-finish"
+                                    id="save-button">
                                 Submit Bid
                             </button>
+                            @endif
                         </div>
                     </div>
                 </form>
@@ -181,6 +184,43 @@
             input.value = '(' + value;
         }
     }
+
+    // Photo enhancement toggle — immediate feedback matching listing creation behavior.
+    // Strategy: always keep panel display in sync with the checkbox's actual checked state.
+    // This is called on initial load, on every click, and after every Livewire re-render
+    // so the panel is always correct regardless of Livewire's DOM diffing timing.
+    function syncEnhancementPanels() {
+        document.querySelectorAll('[data-enhancement-trigger]').forEach(function(cb) {
+            var container = cb.closest('.form-check');
+            if (!container) return;
+            var next = container.nextElementSibling;
+            while (next) {
+                if (next.classList && next.classList.contains('enhancement-options')) {
+                    next.style.display = cb.checked ? 'block' : 'none';
+                    break;
+                }
+                next = next.nextElementSibling;
+            }
+        });
+    }
+
+    // Immediate feedback on click (before Livewire round-trip)
+    document.addEventListener('click', function(e) {
+        var trigger = e.target.closest('[data-enhancement-trigger]');
+        if (trigger) {
+            // Use requestAnimationFrame so checkbox.checked has settled
+            requestAnimationFrame(function() { syncEnhancementPanels(); });
+        }
+    });
+
+    // Re-sync after every Livewire re-render to override any stale server-rendered display value
+    document.addEventListener('livewire:update', function() {
+        syncEnhancementPanels();
+    });
+
+    document.addEventListener('livewire:load', function() {
+        syncEnhancementPanels();
+    });
 
     // Add icon rendering for input-cover elements
     document.addEventListener('livewire:load', function () {

@@ -51,13 +51,13 @@ class SellerAgentAuctionBid extends Component
     public $services = [];
     public bool $other_services_enabled = false;
     public array $other_services = [];
-    // Photo enhancement sub-fields (required by the shared services partial)
-    public bool $showEnhancements = false;
-    public array $photo_enhancements = [];
-    public bool $showCustomEnhancement = false;
-    public string $custom_enhancement = '';
-    public bool $showOpenHouseInput = false;
-    public int $openHouseCount = 0;
+    // Photo enhancement sub-fields (match listing creation component exactly)
+    public $showEnhancements = false;
+    public $photo_enhancements = [];
+    public $showCustomEnhancement = false;
+    public $custom_enhancement = '';
+    public $showOpenHouseInput = false;
+    public $openHouseCount = 0;
 
     // Seller Broker Compensation Fields
     public $purchase_fee_type = '';
