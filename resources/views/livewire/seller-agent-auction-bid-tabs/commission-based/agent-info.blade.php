@@ -125,10 +125,16 @@ function formatPhoneNumber(input) {
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
         <div>
             <strong><i class="fa-solid fa-bookmark me-1 text-primary"></i> Save as Default Profile</strong>
-            <p class="mb-0 small text-muted">Save your Agent Overview, contact info, and marketing details to pre-fill future bids (Buyer — {{ ucfirst($property_type ?: 'residential') }}).</p>
+            <p class="mb-0 small text-muted">Save your Agent Overview, contact info, and presentation details to pre-fill future Seller bids ({{ ucfirst($property_type ?: 'residential') }} property type).</p>
         </div>
-        <button type="button" wire:click="saveAsDefaultProfile" class="btn btn-outline-primary btn-sm">
-            <i class="fa-solid fa-floppy-disk me-1"></i> Save as Default
-        </button>
+        <div class="d-flex flex-wrap gap-2">
+            <button type="button" wire:click="saveAsDefaultProfile" class="btn btn-outline-primary btn-sm">
+                <i class="fa-solid fa-floppy-disk me-1"></i> Save for {{ ucfirst($property_type ?: 'Residential') }}
+            </button>
+            <button type="button" wire:click="saveAsRoleDefault" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-star me-1"></i> Save as Seller Default
+            </button>
+        </div>
     </div>
+    <p class="mb-0 mt-1 small text-muted"><i class="fa-solid fa-circle-info me-1"></i> "Save for {{ ucfirst($property_type ?: 'Residential') }}" overrides for this property type only. "Save as Seller Default" applies to all property types without a specific override.</p>
 </div>

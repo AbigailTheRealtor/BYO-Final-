@@ -1,0 +1,233 @@
+Yes — that is the right setup.
+
+Here is the clearest way to say it in the instructions:
+
+---
+
+# TASK: Complete Default Profile System for Agent Presentation & Marketing Materials + Agent Credentials & Contact Info With Property-Type Overrides
+
+## GOAL
+
+Extend the existing default profile system so it also saves and auto-fills all fields under:
+
+* Agent Presentation & Marketing Materials
+* Agent Credentials & Contact Info
+
+for all agent bid types:
+
+* Hire a Seller Agent
+* Hire a Buyer Agent
+* Hire a Tenant Agent
+* Hire a Landlord Agent
+
+The system should support:
+
+* one main default profile per role
+* optional property-type-specific default profile overrides
+
+This allows agents to reuse one main default profile across all property types, while also giving them the ability to save a different default profile for a specific property type when needed.
+
+---
+
+# HOW IT SHOULD WORK
+
+## Main role default profile
+
+Each role should have one main default profile:
+
+* Seller Default Profile
+* Buyer Default Profile
+* Tenant Default Profile
+* Landlord Default Profile
+
+This main role default profile should populate all property types under that role unless a property-type-specific override exists.
+
+---
+
+## Property-type-specific override
+
+Each property type under a role can also have its own override profile.
+
+Example for Seller:
+
+* Seller Residential Default
+* Seller Income Default
+* Seller Commercial Default
+* Seller Business Default
+* Seller Vacant Land Default
+
+If an agent saves a property-type-specific default profile, that version should be used for that property type moving forward.
+
+It should not overwrite the main role default profile or the default profiles for the other property types.
+
+---
+
+# EXAMPLE BEHAVIOR
+
+## Example 1
+
+An agent first saves a default profile while bidding on **Seller Residential**
+
+That becomes the main **Seller Default Profile**
+
+Now when the agent opens:
+
+* Seller Residential
+* Seller Income
+* Seller Commercial
+* Seller Business
+* Seller Vacant Land
+
+the system should use the main Seller default profile unless that property type has its own saved override.
+
+## Example 2
+
+Later, the agent opens **Seller Commercial**, edits the profile wording for commercial use, and saves that as the Commercial default profile
+
+From that point forward:
+
+* Seller Commercial uses the Seller Commercial default profile
+* Seller Residential still uses the main Seller default profile
+* Seller Income still uses the main Seller default profile
+* Seller Business still uses the main Seller default profile
+* Seller Vacant Land still uses the main Seller default profile
+
+This same override logic should apply to Buyer, Tenant, and Landlord.
+
+---
+
+# LOAD PRIORITY
+
+When loading a bid form, use this order:
+
+1. Existing saved bid values
+2. Property-type-specific default profile
+3. Main role default profile
+4. Empty
+
+---
+
+# FIELDS TO INCLUDE
+
+Extend this logic only to the fields under:
+
+## Agent Presentation & Marketing Materials
+
+Examples include:
+
+* About Agent
+* Why Should You Be Hired as Their Agent
+* What Sets You Apart From Other Agents
+* What Is Your Marketing Strategy
+* video link
+* website link
+* social links
+* presentation or promotional content
+
+## Agent Credentials & Contact Info
+
+Examples include:
+
+* license number
+* brokerage name
+* phone
+* email
+* website
+* office address
+* years of experience
+* certifications
+* specialties
+
+Use the existing field names already defined in the forms.
+
+---
+
+# SAVE LOGIC
+
+## Main role default
+
+When an agent saves their default profile for a role, save those fields into the main role default profile.
+
+## Property-type-specific override
+
+When an agent chooses to save a default profile for a specific property type, save those same fields as the override profile for that property type only.
+
+That property-type override should be used moving forward only for that property type.
+
+---
+
+# IMPLEMENTATION STEPS
+
+## STEP 1
+
+Locate the existing default profile logic currently used for Agent Overview
+
+## STEP 2
+
+Identify all fields under:
+
+* Agent Presentation & Marketing Materials
+* Agent Credentials & Contact Info
+
+## STEP 3
+
+Extend the save logic so these fields can be stored in:
+
+* the main role default profile
+* the property-type-specific override profile
+
+## STEP 4
+
+Extend the preload/autofill logic so these fields load using:
+
+1. existing bid values
+2. property-type-specific override
+3. main role default
+4. empty
+
+## STEP 5
+
+Apply this across:
+
+* Seller
+* Buyer
+* Tenant
+* Landlord
+
+---
+
+# TESTING
+
+## Test 1
+
+Save a main role default profile and confirm it auto-populates across all property types for that role
+
+## Test 2
+
+Save a property-type-specific default profile and confirm it only applies to that property type
+
+## Test 3
+
+Confirm other property types still use the main role default profile
+
+## Test 4
+
+Edit an existing bid and confirm saved bid values display first
+
+---
+
+# RESULT
+
+Agents will be able to:
+
+* save one main default profile per role
+* let that profile auto-populate all property types under that role
+* save a separate property-type-specific override when needed
+* use that override only for that property type moving forward
+
+So yes — in your example:
+
+* if the user first saves Residential
+* then later saves Commercial as its own default
+* Commercial will use the Commercial default moving forward
+* Residential, Income, Vacant Land, and the others will keep using their existing main default unless they also get their own override

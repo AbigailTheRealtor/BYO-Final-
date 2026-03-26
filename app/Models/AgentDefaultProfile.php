@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class AgentDefaultProfile extends Model
 {
+    const ROLE_DEFAULT = '__default__';
+
     protected $table = 'agent_default_profiles';
 
     protected $fillable = [
@@ -32,6 +34,20 @@ class AgentDefaultProfile extends Model
             ->first();
     }
 
+    public static function findRoleDefault(int $userId, string $roleType): ?self
+    {
+        return static::findForAgent($userId, $roleType, static::ROLE_DEFAULT);
+    }
+
+    public static function findForAgentWithFallback(int $userId, string $roleType, string $propertyType): ?self
+    {
+        $profile = static::findForAgent($userId, $roleType, $propertyType);
+        if ($profile) {
+            return $profile;
+        }
+        return static::findRoleDefault($userId, $roleType);
+    }
+
     public static function upsertForAgent(int $userId, string $roleType, string $propertyType, array $data): self
     {
         $profile = static::firstOrNew([
@@ -42,6 +58,11 @@ class AgentDefaultProfile extends Model
         $profile->profile_data = $data;
         $profile->save();
         return $profile;
+    }
+
+    public static function upsertRoleDefault(int $userId, string $roleType, array $data): self
+    {
+        return static::upsertForAgent($userId, $roleType, static::ROLE_DEFAULT, $data);
     }
 
     public function getData(string $key, $default = null)
@@ -61,6 +82,9 @@ class AgentDefaultProfile extends Model
 
     public static function propertyLabel(string $property): string
     {
+        if ($property === static::ROLE_DEFAULT) {
+            return 'All Property Types (Role Default)';
+        }
         return [
             'residential' => 'Residential',
             'income'      => 'Income',

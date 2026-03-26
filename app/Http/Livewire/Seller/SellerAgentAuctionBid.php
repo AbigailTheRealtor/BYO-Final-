@@ -255,7 +255,7 @@ class SellerAgentAuctionBid extends Component
             $this->license_no = $user->license_no ?? '';
             $this->nar_id     = $user->nar_id ?? '';
 
-            $defaultProfile = AgentDefaultProfile::findForAgent(
+            $defaultProfile = AgentDefaultProfile::findForAgentWithFallback(
                 $user->id,
                 'seller',
                 $this->property_type ?: 'residential'
@@ -280,6 +280,16 @@ class SellerAgentAuctionBid extends Component
                 if (!empty($dp['additional_details'])) {
                     $this->additional_details = $dp['additional_details'];
                 }
+                if (!empty($dp['first_name']))        $this->first_name        = $dp['first_name'];
+                if (!empty($dp['last_name']))         $this->last_name         = $dp['last_name'];
+                if (!empty($dp['phone']))             $this->phone             = $dp['phone'];
+                if (!empty($dp['email']))             $this->email             = $dp['email'];
+                if (!empty($dp['brokerage']))         $this->brokerage         = $dp['brokerage'];
+                if (!empty($dp['license_no']))        $this->license_no        = $dp['license_no'];
+                if (!empty($dp['nar_id']))            $this->nar_id            = $dp['nar_id'];
+                if (!empty($dp['presentation_link'])) $this->presentation_link = $dp['presentation_link'];
+                if (!empty($dp['business_card_link'])) $this->business_card_link = $dp['business_card_link'];
+                if (!empty($dp['promoMaterials']))    $this->promoMaterials    = $dp['promoMaterials'];
                 $this->defaultProfileLoaded = true;
             }
         }
@@ -472,38 +482,65 @@ class SellerAgentAuctionBid extends Component
         }
     }
 
+    private function buildProfileData(): array
+    {
+        return [
+            'bio'                 => $this->bio,
+            'why_hire_you'        => $this->why_hire_you,
+            'what_sets_you_apart' => $this->what_sets_you_apart,
+            'marketing_plan'      => $this->marketing_plan,
+            'reviews_links'       => $this->reviews_links,
+            'website_link'        => $this->website_link,
+            'social_media'        => $this->social_media,
+            'additional_details'  => $this->additional_details,
+            'year_licensed'       => $this->year_licensed,
+            'first_name'          => $this->first_name,
+            'last_name'           => $this->last_name,
+            'phone'               => $this->phone,
+            'email'               => $this->email,
+            'brokerage'           => $this->brokerage,
+            'license_no'          => $this->license_no,
+            'nar_id'              => $this->nar_id,
+            'presentation_link'   => $this->presentation_link,
+            'business_card_link'  => $this->business_card_link,
+            'promoMaterials'      => array_map(fn($m) => [
+                'type'  => $m['type']  ?? '',
+                'other' => $m['other'] ?? '',
+                'text'  => $m['text']  ?? ($m['link'] ?? ''),
+                'link'  => $m['link']  ?? ($m['text'] ?? ''),
+            ], $this->promoMaterials),
+        ];
+    }
+
     public function saveAsDefaultProfile(): void
     {
         $user = Auth::user();
         if (!$user) return;
 
-        AgentDefaultProfile::upsertForAgent(
-            $user->id,
-            'seller',
-            $this->property_type ?: 'residential',
-            [
-                'bio'                 => $this->bio,
-                'why_hire_you'        => $this->why_hire_you,
-                'what_sets_you_apart' => $this->what_sets_you_apart,
-                'marketing_plan'      => $this->marketing_plan,
-                'reviews_links'       => $this->reviews_links,
-                'website_link'        => $this->website_link,
-                'social_media'        => $this->social_media,
-                'additional_details'  => $this->additional_details,
-                'first_name'          => $this->first_name,
-                'last_name'           => $this->last_name,
-                'phone'               => $this->phone,
-                'email'               => $this->email,
-                'brokerage'           => $this->brokerage,
-                'license_no'          => $this->license_no,
-                'nar_id'              => $this->nar_id,
-                'year_licensed'       => $this->year_licensed,
-            ]
-        );
+        $propType = $this->property_type ?: 'residential';
+        $data = $this->buildProfileData();
+
+        AgentDefaultProfile::upsertForAgent($user->id, 'seller', $propType, $data);
+
+        if (!AgentDefaultProfile::findRoleDefault($user->id, 'seller')) {
+            AgentDefaultProfile::upsertRoleDefault($user->id, 'seller', $data);
+        }
 
         $this->defaultProfileExists = true;
         $this->defaultProfileLoaded = true;
-        session()->flash('success', 'Default profile saved! It will pre-fill your Agent Overview next time you bid.');
+        session()->flash('success', 'Default profile saved for ' . ucfirst($propType) . '. It will pre-fill your bid next time.');
+    }
+
+    public function saveAsRoleDefault(): void
+    {
+        $user = Auth::user();
+        if (!$user) return;
+
+        AgentDefaultProfile::upsertRoleDefault($user->id, 'seller', $this->buildProfileData());
+
+        $this->defaultProfileExists = true;
+        $this->defaultProfileLoaded = true;
+        session()->flash('success', 'Saved as your main Seller default profile — it will pre-fill all property types that don\'t have their own override.');
     }
 
     public function loadDefaultProfile(): void
@@ -511,7 +548,7 @@ class SellerAgentAuctionBid extends Component
         $user = Auth::user();
         if (!$user) return;
 
-        $profile = AgentDefaultProfile::findForAgent($user->id, 'seller', $this->property_type ?: 'residential');
+        $profile = AgentDefaultProfile::findForAgentWithFallback($user->id, 'seller', $this->property_type ?: 'residential');
         if (!$profile) return;
 
         $data = $profile->profile_data ?? [];
@@ -519,11 +556,21 @@ class SellerAgentAuctionBid extends Component
         $this->why_hire_you        = $data['why_hire_you'] ?? '';
         $this->what_sets_you_apart = $data['what_sets_you_apart'] ?? '';
         $this->marketing_plan      = $data['marketing_plan'] ?? '';
-        $this->reviews_links       = $data['reviews_links'] ?? [['text' => '']];
-        $this->website_link        = $data['website_link'] ?? [''];
-        $this->social_media        = $data['social_media'] ?? [['platform' => '', 'text' => '']];
+        $this->reviews_links       = $data['reviews_links'] ?? [['url' => '', 'text' => '']];
+        $this->website_link        = $data['website_link'] ?? '';
+        $this->social_media        = $data['social_media'] ?? [['platform' => '', 'url' => '']];
         $this->additional_details  = $data['additional_details'] ?? '';
         $this->year_licensed       = $data['year_licensed'] ?? '';
+        if (!empty($data['first_name']))        $this->first_name        = $data['first_name'];
+        if (!empty($data['last_name']))         $this->last_name         = $data['last_name'];
+        if (!empty($data['phone']))             $this->phone             = $data['phone'];
+        if (!empty($data['email']))             $this->email             = $data['email'];
+        if (!empty($data['brokerage']))         $this->brokerage         = $data['brokerage'];
+        if (!empty($data['license_no']))        $this->license_no        = $data['license_no'];
+        if (!empty($data['nar_id']))            $this->nar_id            = $data['nar_id'];
+        if (!empty($data['presentation_link'])) $this->presentation_link = $data['presentation_link'];
+        if (!empty($data['business_card_link'])) $this->business_card_link = $data['business_card_link'];
+        if (!empty($data['promoMaterials']))    $this->promoMaterials    = $data['promoMaterials'];
         $this->defaultProfileLoaded = true;
     }
 
