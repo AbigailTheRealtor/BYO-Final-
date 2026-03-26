@@ -1,0 +1,314 @@
+Use this exact Replit instruction:
+
+---
+
+# Hire a Seller’s Agent — Offered Services spacing must match Seller listing creation exactly
+
+## Problem
+
+In **Hire a Seller’s Agent → Agent Bid → Offered Services**, the spacing is still wrong.
+
+Compared to **Seller listing creation**, the Agent Bid version has:
+
+* larger vertical gaps
+* taller line spacing
+* looser checkbox row spacing
+* extra whitespace between service items
+* overall different density than the listing creation version
+
+The screenshots confirm the **Agent Bid Offered Services** section is not visually identical to the **Seller listing creation** version.
+
+## Goal
+
+Make **Seller Agent Bid → Offered Services** match **Seller listing creation → Services** **exactly** in:
+
+* spacing
+* row height
+* checkbox alignment
+* section density
+* margins
+* padding
+* font sizing
+* line-height
+* nested option spacing
+* note spacing
+* heading spacing
+
+This is a **visual parity fix** for the active Seller bid Offered Services render path.
+
+---
+
+# Hard Safeguards
+
+1. **Do not touch Tenant, Buyer, or Landlord flows**
+2. **Do not change database schema**
+3. **Do not rename fields, routes, models, or relationships**
+4. **Do not rewrite Seller services content**
+5. **Do not change Seller service options**
+6. **Do not change selected-state logic**
+7. **Do not change property-type logic**
+8. **Do not patch inactive legacy files**
+9. **Do not globally restyle all forms unless proven necessary**
+10. **First confirm the actual active Seller bid blade/partial used for Offered Services**
+11. **Use Seller listing creation Services view as the visual source of truth**
+12. **Keep this surgical and Seller-bid-only unless the exact active shared partial requires a safe scoped fix**
+13. **Do not alter service text, ordering, grouping, or dependent logic while fixing spacing**
+14. **Stop if the file being edited is not the actual Seller bid Offered Services render path**
+
+---
+
+# What must match exactly
+
+The **Seller Agent Bid Offered Services** section must visually match the **Seller listing creation Services** section exactly for the same property type.
+
+That includes:
+
+* outer wrapper spacing
+* intro/help box spacing
+* section header spacing
+* checkbox row spacing
+* left indentation
+* gap between checkbox and label
+* margin between service rows
+* spacing around grouped subsections
+* spacing for dependent sub-options
+* note box spacing
+* bottom padding before next section
+
+No larger gaps.
+No extra padding.
+No extra line height.
+No bid-only spacing variation.
+
+---
+
+# Required implementation steps
+
+## Step 1 — Confirm actual active files first
+
+Before editing anything, trace the actual active render path for:
+
+**Hire a Seller’s Agent → Agent Bid → Offered Services**
+
+Confirm:
+
+* route
+* controller or Livewire component
+* top-level blade
+* included Offered Services partial
+* any shared services partial being reused
+* any property-type partial loaded for Residential / Income / Commercial / Business / Vacant Land
+
+Then also identify the exact active file(s) for:
+
+**Seller listing creation → Services**
+
+This listing creation Services file is the **visual source of truth**.
+
+Do not edit until both render paths are confirmed.
+
+---
+
+## Step 2 — Compare computed spacing source
+
+Find the exact reason the Agent Bid version has larger gaps.
+
+Look for differences in:
+
+* wrapper classes
+* row classes
+* margin-bottom classes
+* padding classes
+* line-height classes
+* display type (`block`, `flex`, etc.)
+* extra `<br>` tags
+* extra `<div>` wrappers
+* duplicated wrapper nesting
+* different checkbox label wrapper
+* different CSS selectors applying to bid form only
+* different form-group class usage
+* different `li`, `p`, or `label` margin defaults
+* scoped CSS in Seller bid view
+* shared styles overridden only in bid flow
+
+Do not guess. Confirm the exact markup or CSS causing the extra vertical space.
+
+---
+
+## Step 3 — Make Seller Agent Bid Offered Services use the same spacing structure as listing creation
+
+Use the **Seller listing creation Services section** as the source of truth.
+
+The Agent Bid version should match the listing creation version’s:
+
+* wrapper structure
+* classes
+* row containers
+* label containers
+* checkbox containers
+* section spacing
+* nested sub-option spacing
+
+If Seller Agent Bid is using a separate custom partial with different spacing, either:
+
+* reuse the same listing creation partial safely, or
+* copy only the exact structural classes/markup needed so spacing becomes identical
+
+### Important
+
+This is not a redesign.
+This is not a cleanup.
+This is not an approximation.
+
+It must become a 1:1 visual match.
+
+---
+
+## Step 4 — Preserve all current working logic
+
+While fixing spacing, do **not** break:
+
+* selected checkboxes
+* property-type-specific service sets
+* conditional service behavior
+* “Provide Digital Photo Enhancements” dependent options
+* “Other” behavior
+* save/reload behavior
+* prefilled selections from listing
+* agent bid persistence
+
+Only fix spacing and density.
+
+---
+
+## Step 5 — Check section headers and notes too
+
+Make sure the following also match the listing creation version exactly:
+
+* turquoise section header bar height
+* header text alignment
+* spacing above and below section headers
+* yellow note box padding/margins
+* intro callout box padding/margins
+* spacing before the next section begins
+
+Sometimes the larger gap comes from the wrappers between headers and rows, not only the rows themselves.
+
+---
+
+# Specific visual checks to enforce
+
+For the active Seller Agent Bid Offered Services section, verify all of these now match listing creation:
+
+### Checkbox rows
+
+* same row height
+* same label line-height
+* same top/bottom margin
+* same checkbox vertical alignment
+
+### Group sections
+
+* same gap between turquoise section bar and first item
+* same gap between last item and next section bar
+
+### Nested dependent options
+
+* same indentation
+* same spacing between child options
+* same spacing under “Select enhancement types” or similar child label
+
+### Informational boxes
+
+* same padding
+* same font size
+* same margin below
+
+### Overall density
+
+* no oversized whitespace
+* no stretched vertical presentation
+* no bid-only spacing inflation
+
+---
+
+# QA checklist — must pass
+
+## A. Route/file verification
+
+Confirm exact active:
+
+* Seller bid route
+* Seller bid component/controller
+* Seller bid Offered Services partial
+* Seller listing creation Services partial
+
+## B. Visual parity
+
+For Seller Agent Bid Offered Services, compare directly against listing creation and confirm:
+
+* same spacing
+* same density
+* same row height
+* same padding
+* same margins
+* same header spacing
+* same nested option spacing
+
+## C. Property type coverage
+
+Verify on:
+
+* Residential
+* Income
+* Commercial
+* Business
+* Vacant Land
+
+The spacing must match listing creation for each property type.
+
+## D. No logic regressions
+
+Verify still working:
+
+* selected service prefill
+* digital photo enhancement sub-options
+* “Other” fields
+* save/reload
+* submit/edit flow
+
+## E. Regression
+
+Confirm unchanged:
+
+* Tenant bid
+* Buyer bid
+* Landlord bid
+* Seller listing creation
+* Seller listing edit
+* DB schema
+* routes
+
+---
+
+# Required report back
+
+When done, report back with:
+
+1. **Exact active Seller bid Offered Services file(s) changed**
+2. **Exact Seller listing creation Services file used as source of truth**
+3. **Exact root cause of the larger spacing**
+4. **What classes/markup/CSS were changed**
+5. **Confirmation spacing now matches listing creation exactly**
+6. **QA results for Residential, Income, Commercial, Business, and Vacant Land**
+7. **Confirmation no other role flows were modified**
+
+---
+
+# Final rule
+
+If Seller Agent Bid Offered Services still has visibly larger spacing than Seller listing creation, the fix is not complete.
+
+---
+
+If you want, I can also make a second companion instruction for **Broker Compensation & Agency Agreement Terms spacing + exact selected option parity** in the same strict format.

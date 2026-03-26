@@ -24,8 +24,6 @@
         .fee-option-card:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         .form-control:focus { border-color: #049399; box-shadow: 0 0 0 0.2rem rgba(4,147,153,0.25); }
         .service-section .section-header { border-radius: 4px; }
-        .service-options .form-check { padding: 8px 12px 8px 2rem; border-bottom: 1px solid #f0f0f0; }
-        .service-options .form-check:last-child { border-bottom: none; }
         #save-button.disable { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
     </style>
 @endpush

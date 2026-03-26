@@ -1,0 +1,380 @@
+Use this exact Replit instruction:
+
+---
+
+# Hire a Seller’s Agent — Broker Compensation & Agency Agreement Terms must match Seller listing creation exactly
+
+## Problem
+
+In **Hire a Seller’s Agent → Agent Bid → Broker Compensation & Agency Agreement Terms**, the section still does **not** match the **Seller listing creation** version exactly.
+
+From the screenshots, the Agent Bid version is still off in ways such as:
+
+* spacing
+* field density
+* row structure
+* control sizing
+* wrapper spacing
+* inner grouped section spacing
+* visual layout consistency
+
+Even if the fields are close, this section still does **not** look like an exact duplicate of the Seller listing creation version.
+
+## Goal
+
+Make **Seller Agent Bid → Broker Compensation & Agency Agreement Terms** match **Seller listing creation → Broker Compensation & Agency Agreement Terms** **exactly** in:
+
+* field order
+* field structure
+* selected values
+* wrapper layout
+* spacing
+* margins
+* padding
+* control heights
+* inner grouped box spacing
+* note box spacing
+* relationship disclosure block spacing
+* conditional section spacing
+* typography density
+
+This must be a **true 1:1 visual and structural duplicate**, not an approximation.
+
+---
+
+# Hard Safeguards
+
+1. **Do not touch Tenant, Buyer, or Landlord flows**
+2. **Do not change database schema**
+3. **Do not rename fields, routes, models, relationships, or property type keys**
+4. **Do not rewrite Broker Compensation content**
+5. **Do not rewrite labels**
+6. **Do not change compensation logic**
+7. **Do not change property-type logic**
+8. **Do not patch inactive legacy files**
+9. **Do not globally restyle all forms**
+10. **First confirm the actual active Seller bid Broker Compensation render path**
+11. **Use Seller listing creation Broker Compensation section as the source of truth**
+12. **Keep changes surgical and Seller-bid-only unless a shared active partial absolutely requires a safe scoped fix**
+13. **Do not alter selected-state logic while fixing visual parity**
+14. **Do not change validation rules unless a proven render-state issue requires it**
+15. **Stop if the file being edited is not the actual active Seller bid Broker Compensation render path**
+
+---
+
+# Source of truth rule
+
+The visual and structural source of truth is:
+
+**Seller listing creation → Broker Compensation & Agency Agreement Terms**
+
+The Seller Agent Bid version must match that exact render path.
+
+If Seller Agent Bid is using:
+
+* a custom partial
+* a copied version
+* a simplified version
+* a legacy version
+* a bid-only version with different wrappers/classes
+
+then that is the problem.
+
+Wherever possible, Seller Agent Bid should reuse the same active listing-creation partial/component/markup structure.
+
+---
+
+# Required implementation steps
+
+## Step 1 — Confirm actual active files first
+
+Before making any changes, trace the actual active render path for:
+
+**Hire a Seller’s Agent → Agent Bid → Broker Compensation & Agency Agreement Terms**
+
+Confirm:
+
+* route
+* controller or Livewire component
+* top-level blade
+* included Broker Compensation partial
+* any shared component used
+* any property-type-specific includes
+* any disclosure/relationship partials
+* any nested compensation sub-partials
+
+Then identify the exact active render path for:
+
+**Seller listing creation → Broker Compensation & Agency Agreement Terms**
+
+This listing creation section is the **source of truth**.
+
+Do not edit anything until both render paths are confirmed.
+
+---
+
+## Step 2 — Find the exact visual differences causing the mismatch
+
+Compare Seller Agent Bid against Seller listing creation and identify the exact cause of the mismatch.
+
+Check for differences in:
+
+* outer wrapper classes
+* form-group wrappers
+* margin-bottom classes
+* padding classes
+* line-height
+* nested bordered box wrappers
+* input group wrappers
+* select wrapper classes
+* percent / currency addon wrappers
+* spacing between labels and controls
+* spacing between one compensation field and the next
+* spacing inside conditional sections
+* spacing around yellow legal notice
+* spacing around the brokerage relationship disclosure text block
+* spacing before and after “Additional Terms”
+* control heights
+* font sizes
+* field container nesting
+* extra div wrappers in bid flow only
+* CSS selectors applying to bid flow only
+
+Do not guess. Identify the actual markup/CSS causing the visual mismatch.
+
+---
+
+## Step 3 — Make Seller Agent Bid use the same structure as listing creation
+
+The Seller Agent Bid **Broker Compensation & Agency Agreement Terms** section must use the same:
+
+* markup structure
+* wrapper hierarchy
+* classes
+* nested grouping
+* field containers
+* conditional section containers
+* info/disclosure containers
+* notice containers
+
+as Seller listing creation.
+
+### Important
+
+This is not a redesign.
+This is not a cleanup.
+This is not “close enough.”
+
+It must become a visual duplicate.
+
+If possible, directly reuse the same active Seller listing creation partial/component.
+
+If direct reuse is not possible, then copy only the exact active structure/classes necessary so the Agent Bid output matches listing creation exactly.
+
+---
+
+## Step 4 — Preserve exact selected values from the listing
+
+While fixing visual parity, make sure Seller Agent Bid still displays the exact selected options from the Seller listing for that listing’s property type.
+
+That includes, where applicable:
+
+* Seller’s Broker Purchase Fee structure and values
+* Nominal Consideration Fee
+* Buyer’s Broker Commission Structure
+* Buyer’s Broker Commission Fee
+* Lease Agreement options
+* Lease-Option options
+* Protection Period
+* Early Termination Fee
+* Retainer Fee
+* Retainer Fee Application
+* Seller’s Broker share of retained deposits
+* Seller Agency Agreement Timeframe
+* Acceptable Brokerage Relationship
+* Additional Terms
+* any property-type-specific compensation fields
+
+No selected value should disappear or restyle incorrectly.
+
+---
+
+## Step 5 — Match conditional sections exactly
+
+Conditional groups inside Broker Compensation must match listing creation exactly, including:
+
+* spacing above and below the group
+* bordered group containers
+* input row density
+* inline currency/percent controls
+* note box spacing
+* disclosure text block spacing
+* follow-up fields when Yes/Other/custom selections are chosen
+
+### Important
+
+If listing creation shows a conditional group in a bordered box, Seller Agent Bid must show that same boxed structure.
+If listing creation shows tighter spacing, Seller Agent Bid must match it exactly.
+
+---
+
+## Step 6 — Match brokerage relationship disclosure and legal notice block exactly
+
+The following must visually match Seller listing creation exactly:
+
+* brokerage relationship disclosure block
+* bullet spacing
+* padding inside the disclosure area
+* legal notice yellow box padding and margins
+* spacing above and below those blocks
+
+These often create visible mismatch even when the fields themselves are close.
+
+---
+
+## Step 7 — Do not break working logic
+
+While fixing parity, do **not** break:
+
+* listing-based prefill
+* property-type-specific field sets
+* selected dropdown values
+* currency/percent input logic
+* conditional visibility
+* custom timeframe fields like “Other”
+* relationship disclosures
+* save/reload
+* submit/edit
+* counter flow if applicable
+
+This is a visual/structural parity fix, not a logic rewrite.
+
+---
+
+# Visual parity checks that must match exactly
+
+For Seller Agent Bid Broker Compensation section, verify exact match to listing creation for:
+
+### Labels and controls
+
+* same spacing from label to input
+* same control height
+* same dropdown height
+* same input addon spacing
+* same inline percent/dollar structure
+
+### Field-to-field spacing
+
+* same margin between every compensation row
+* same spacing before conditional follow-up fields
+* same spacing after boxed subsections
+
+### Conditional group boxes
+
+* same border
+* same padding
+* same inner spacing
+* same top and bottom margins
+
+### Disclosure areas
+
+* same turquoise disclosure block spacing
+* same yellow legal notice spacing
+* same bullet list spacing
+
+### Additional Terms area
+
+* same spacing above label
+* same textarea height/spacing
+* same bottom spacing
+
+---
+
+# QA checklist — must pass
+
+## A. Route/file verification
+
+Confirm exact active:
+
+* Seller bid route
+* Seller bid component/controller
+* Seller bid Broker Compensation partial
+* Seller listing creation Broker Compensation partial
+
+## B. Visual parity
+
+Compare Seller Agent Bid directly against Seller listing creation and confirm exact parity for:
+
+* spacing
+* density
+* control sizing
+* grouped box spacing
+* disclosure block spacing
+* legal notice spacing
+* overall layout
+
+## C. Selected option parity
+
+Verify the Agent Bid section shows the exact selected values from the Seller listing for the correct property type.
+
+## D. Property type coverage
+
+Verify on:
+
+* Residential
+* Income
+* Commercial
+* Business
+* Vacant Land
+
+For each one:
+
+* correct compensation fields appear
+* correct selected values appear
+* visual structure matches listing creation
+
+## E. No logic regressions
+
+Verify still working:
+
+* prefill from listing
+* conditional sections
+* Other/custom fields
+* save/reload
+* submit/edit
+
+## F. Regression
+
+Confirm unchanged:
+
+* Tenant bid
+* Buyer bid
+* Landlord bid
+* Seller listing creation
+* Seller listing edit
+* DB schema
+* routes
+
+---
+
+# Required report back
+
+When done, report back with:
+
+1. **Exact active Seller bid Broker Compensation file(s) changed**
+2. **Exact Seller listing creation Broker Compensation file used as source of truth**
+3. **Exact root cause of the visual mismatch**
+4. **What classes/markup/CSS were changed**
+5. **Confirmation Broker Compensation now matches listing creation exactly**
+6. **QA results for Residential, Income, Commercial, Business, and Vacant Land**
+7. **Confirmation no other role flows were modified**
+
+---
+
+# Final rule
+
+If **Seller Agent Bid → Broker Compensation & Agency Agreement Terms** still looks even slightly different from **Seller listing creation** in spacing, wrapper structure, grouped section density, or notice/disclosure layout, the fix is not complete.
+
+---
+
+If you want, I can combine this with the Offered Services one into **one final master Seller-bid parity instruction** so you can paste a single message to Replit.
