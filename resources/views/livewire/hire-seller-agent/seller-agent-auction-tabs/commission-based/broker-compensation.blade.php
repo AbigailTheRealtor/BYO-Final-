@@ -123,8 +123,8 @@ $safeKey = function(...$parts) {
             <i class="fa-solid fa-circle-info"></i>
         </span>
 
-        <div class="input-cover">
-            <span class="input-group-text-seller"> $</span>
+        <div class="input-group">
+            <span class="input-group-text">$</span>
             <input type="text" wire:model="nominal" class="form-control has-icon"
                 placeholder="Enter nominal consideration fee amount (e.g., 1000)"
                 data-error-id="nominal_error"
