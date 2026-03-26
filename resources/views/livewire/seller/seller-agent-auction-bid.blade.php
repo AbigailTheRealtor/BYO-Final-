@@ -109,10 +109,12 @@
                     <!-- Navigation Buttons -->
                     <div class="d-flex justify-content-between form-group mt-4">
                         <div>
-                            <button type="button" wire:click="goToPreviousStep"
-                                class="btn btn-secondary {{ $activeTab === 0 ? 'invisible' : '' }}">
+                            @if ($activeTab > 0)
+                        <button type="button" wire:click="goToPreviousStep"
+                                class="btn btn-secondary">
                                 Previous
                             </button>
+                        @endif
                         </div>
                         <div>
                             <button type="button" wire:click="goToNextStep"

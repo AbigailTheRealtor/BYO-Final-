@@ -51,6 +51,13 @@ class SellerAgentAuctionBid extends Component
     public $services = [];
     public bool $other_services_enabled = false;
     public array $other_services = [];
+    // Photo enhancement sub-fields (required by the shared services partial)
+    public bool $showEnhancements = false;
+    public array $photo_enhancements = [];
+    public bool $showCustomEnhancement = false;
+    public string $custom_enhancement = '';
+    public bool $showOpenHouseInput = false;
+    public int $openHouseCount = 0;
 
     // Seller Broker Compensation Fields
     public $purchase_fee_type = '';
@@ -172,6 +179,13 @@ class SellerAgentAuctionBid extends Component
         $rawOtherServices = $auction->get->other_services ?? null;
         $this->other_services = is_string($rawOtherServices) ? (json_decode($rawOtherServices, true) ?? []) : (is_array($rawOtherServices) ? $rawOtherServices : []);
         $this->other_services_enabled = (bool)($auction->get->other_services_enabled ?? false);
+
+        // Photo enhancement sub-fields (prefilled from listing)
+        $rawPhotoEnhancements = $auction->get->photo_enhancements ?? null;
+        $this->photo_enhancements = is_string($rawPhotoEnhancements) ? (json_decode($rawPhotoEnhancements, true) ?? []) : (is_array($rawPhotoEnhancements) ? $rawPhotoEnhancements : []);
+        $this->custom_enhancement = $auction->get->custom_enhancement ?? '';
+        $this->showEnhancements = in_array('Provide digital photo enhancements', $this->services) || in_array('Provide digital enhancements to media assets', $this->services);
+        $this->showCustomEnhancement = in_array('Other', $this->photo_enhancements);
 
         // Prefill compensation from listing
         $l = $auction->get;
@@ -537,6 +551,8 @@ class SellerAgentAuctionBid extends Component
             $bid->saveMeta('services',             json_encode($this->services));
             $bid->saveMeta('other_services',       json_encode($this->other_services ?? []));
             $bid->saveMeta('other_services_enabled', $this->other_services_enabled);
+            $bid->saveMeta('photo_enhancements',   json_encode($this->photo_enhancements ?? []));
+            $bid->saveMeta('custom_enhancement',   $this->custom_enhancement ?? '');
 
             // Additional Details
             $bid->saveMeta('additional_details',   $this->additional_details);
