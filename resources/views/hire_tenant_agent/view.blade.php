@@ -790,7 +790,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 <div class="card-header section-header">
                     <h4 class="section-title">Pre-Screening: </h4>
                 </div>
-                @if ($auction->get->number_occupant)
+                @if (@$auction->get->number_occupant)
                 <div class="col-md-12 col-12 pt-2 fw-bold"> Number
                     of Occupants:
                     <span class="removeBold">
