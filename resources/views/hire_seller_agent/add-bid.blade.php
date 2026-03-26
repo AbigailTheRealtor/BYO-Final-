@@ -444,16 +444,6 @@
               @if($errors->has('marketing_plan'))<span class="text-danger small">{{ $errors->first('marketing_plan') }}</span>@endif
             </div>
 
-            {{-- Save as Default Profile option --}}
-            <div class="mt-3 p-3 border rounded bg-light">
-                <div class="form-check d-flex align-items-start gap-2">
-                    <input class="form-check-input mt-1" type="checkbox" name="save_as_default" id="save_as_default" value="1">
-                    <label class="form-check-label" for="save_as_default">
-                        <strong><i class="fa-solid fa-bookmark me-1 text-primary"></i> Save as my default profile</strong>
-                        <p class="mb-0 small text-muted">Save these answers to pre-fill future bids (Seller — {{ ucfirst($auction->get->property_type ?? 'residential') }}).</p>
-                    </label>
-                </div>
-            </div>
           </div>
 
           <div class="wizard-step" data-step="2">
@@ -785,6 +775,17 @@
                 <input type="text" name="mls_id" id="mls_id" class="form-control has-icon hide_arrow"
                   data-icon="fa-solid fa-id-badge" value="{{ Auth::user()->mls_id }}">
               </div>
+            </div>
+
+            {{-- Save as Default Profile option --}}
+            <div class="mt-4 p-3 border rounded bg-light">
+                <div class="form-check d-flex align-items-start gap-2">
+                    <input class="form-check-input mt-1" type="checkbox" name="save_as_default" id="save_as_default" value="1">
+                    <label class="form-check-label" for="save_as_default">
+                        <strong><i class="fa-solid fa-bookmark me-1 text-primary"></i> Save as my default profile</strong>
+                        <p class="mb-0 small text-muted">Save your overview and contact answers to pre-fill future bids (Seller — {{ ucfirst($auction->get->property_type ?? 'residential') }}).</p>
+                    </label>
+                </div>
             </div>
           </div>
           <div class="d-flex justify-content-between form-group mt-4">

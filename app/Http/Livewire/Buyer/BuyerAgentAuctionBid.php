@@ -101,6 +101,7 @@ public $additional_details_broker = '';
 
     // Presentation & Promotional Materials
     public $presentation_link;
+    public $embedUrl;
     public $video_upload;
     public $business_card_link;
     public $business_card;
@@ -334,6 +335,94 @@ public $additional_details_broker = '';
         $this->reviews_links = [['text' => '']];
         $this->social_media = [['platform' => '', 'text' => '']];
 
+        // ── Compensation prefill ──────────────────────────────────────────────
+        // Priority 1: existing saved bid draft by this agent for this listing
+        // Priority 2: the listing's own compensation values
+        // Priority 3: blank (defaults already set above as empty strings)
+        $existingBid = BuyerAgentAuctionBidData::where('buyer_agent_auction_id', $auctionId)
+            ->where('user_id', Auth::id())
+            ->latest()
+            ->first();
+
+        if ($existingBid && $existingBid->get) {
+            // Load every compensation field from the saved bid.
+            // Cast to array so PHP 8.2 never raises "Undefined property" on stdClass.
+            $b = (array) $existingBid->get;
+            $this->commission_structure                  = $b['commission_structure'] ?? '';
+            $this->purchase_fee_type                     = $b['purchase_fee_type'] ?? '';
+            $this->purchase_fee_flat                     = $b['purchase_fee_flat'] ?? '';
+            $this->purchase_fee_percentage               = $b['purchase_fee_percentage'] ?? '';
+            $this->purchase_fee_percentage_combo         = $b['purchase_fee_percentage_combo'] ?? '';
+            $this->purchase_fee_flat_combo               = $b['purchase_fee_flat_combo'] ?? '';
+            $this->purchase_fee_other                    = $b['purchase_fee_other'] ?? '';
+            $this->interested_lease_option               = $b['interested_lease_option'] ?? '';
+            $this->lease_fee_type                        = $b['lease_fee_type'] ?? '';
+            $this->lease_fee_flat                        = $b['lease_fee_flat'] ?? '';
+            $this->lease_fee_percentage                  = $b['lease_fee_percentage'] ?? '';
+            $this->lease_fee_percentage_monthly_rent     = $b['lease_fee_percentage_monthly_rent'] ?? '';
+            $this->lease_fee_percentage_monthly_number   = $b['lease_fee_percentage_monthly_number'] ?? '';
+            $this->lease_fee_flat_combo                  = $b['lease_fee_flat_combo'] ?? '';
+            $this->lease_fee_percentage_combo            = $b['lease_fee_percentage_combo'] ?? '';
+            $this->lease_fee_percentage_net              = $b['lease_fee_percentage_net'] ?? '';
+            $this->lease_fee_flat_combo_net              = $b['lease_fee_flat_combo_net'] ?? '';
+            $this->lease_fee_percentage_combo_net        = $b['lease_fee_percentage_combo_net'] ?? '';
+            $this->lease_fee_other                       = $b['lease_fee_other'] ?? '';
+            $this->interested_lease_option_agreement     = $b['interested_lease_option_agreement'] ?? '';
+            $this->lease_type                            = ($b['lease_type'] ?? '') ?: 'percent';
+            $this->lease_value                           = $b['lease_value'] ?? '';
+            $this->purchase_type                         = ($b['purchase_type'] ?? '') ?: 'percent';
+            $this->purchase_value                        = $b['purchase_value'] ?? '';
+            $this->protection_period                     = $b['protection_period'] ?? '';
+            $this->early_termination_fee_option          = $b['early_termination_fee_option'] ?? '';
+            $this->early_termination_fee_amount          = $b['early_termination_fee_amount'] ?? '';
+            $this->retainer_fee_option                   = $b['retainer_fee_option'] ?? '';
+            $this->retainer_fee_amount                   = $b['retainer_fee_amount'] ?? '';
+            $this->retainer_fee_application              = $b['retainer_fee_application'] ?? '';
+            $this->agency_agreement_timeframe            = $b['agency_agreement_timeframe'] ?? '';
+            $this->agency_agreement_custom               = $b['agency_agreement_custom'] ?? '';
+            $this->brokerage_relationship                = $b['brokerage_relationship'] ?? '';
+            $this->additional_details_broker             = $b['additional_details_broker'] ?? '';
+        } else {
+            // Load compensation defaults from the listing itself.
+            // Cast to array so PHP 8.2 never raises "Undefined property" on stdClass.
+            $l = (array) $auction->get;
+            $this->commission_structure                  = $l['commission_structure'] ?? '';
+            $this->purchase_fee_type                     = $l['purchase_fee_type'] ?? '';
+            $this->purchase_fee_flat                     = $l['purchase_fee_flat'] ?? '';
+            $this->purchase_fee_percentage               = $l['purchase_fee_percentage'] ?? '';
+            $this->purchase_fee_percentage_combo         = $l['purchase_fee_percentage_combo'] ?? '';
+            $this->purchase_fee_flat_combo               = $l['purchase_fee_flat_combo'] ?? '';
+            $this->purchase_fee_other                    = $l['purchase_fee_other'] ?? '';
+            $this->interested_lease_option               = $l['interested_lease_option'] ?? '';
+            $this->lease_fee_type                        = $l['lease_fee_type'] ?? '';
+            $this->lease_fee_flat                        = $l['lease_fee_flat'] ?? '';
+            $this->lease_fee_percentage                  = $l['lease_fee_percentage'] ?? '';
+            $this->lease_fee_percentage_monthly_rent     = $l['lease_fee_percentage_monthly_rent'] ?? '';
+            $this->lease_fee_percentage_monthly_number   = $l['lease_fee_percentage_monthly_number'] ?? '';
+            $this->lease_fee_flat_combo                  = $l['lease_fee_flat_combo'] ?? '';
+            $this->lease_fee_percentage_combo            = $l['lease_fee_percentage_combo'] ?? '';
+            $this->lease_fee_percentage_net              = $l['lease_fee_percentage_net'] ?? '';
+            $this->lease_fee_flat_combo_net              = $l['lease_fee_flat_combo_net'] ?? '';
+            $this->lease_fee_percentage_combo_net        = $l['lease_fee_percentage_combo_net'] ?? '';
+            $this->lease_fee_other                       = $l['lease_fee_other'] ?? '';
+            $this->interested_lease_option_agreement     = $l['interested_lease_option_agreement'] ?? '';
+            $this->lease_type                            = ($l['lease_type'] ?? '') ?: 'percent';
+            $this->lease_value                           = $l['lease_value'] ?? '';
+            $this->purchase_type                         = ($l['purchase_type'] ?? '') ?: 'percent';
+            $this->purchase_value                        = $l['purchase_value'] ?? '';
+            $this->protection_period                     = $l['protection_period'] ?? '';
+            $this->early_termination_fee_option          = $l['early_termination_fee_option'] ?? '';
+            $this->early_termination_fee_amount          = $l['early_termination_fee_amount'] ?? '';
+            $this->retainer_fee_option                   = $l['retainer_fee_option'] ?? '';
+            $this->retainer_fee_amount                   = $l['retainer_fee_amount'] ?? '';
+            $this->retainer_fee_application              = $l['retainer_fee_application'] ?? '';
+            $this->agency_agreement_timeframe            = $l['agency_agreement_timeframe'] ?? '';
+            $this->agency_agreement_custom               = $l['agency_agreement_custom'] ?? '';
+            $this->brokerage_relationship                = $l['brokerage_relationship'] ?? '';
+            $this->additional_details_broker             = $l['additional_details_broker'] ?? '';
+        }
+        // ─────────────────────────────────────────────────────────────────────
+
         // Auto-fill Agent Information from user profile
         $user = Auth::user();
         if ($user) {
@@ -468,6 +557,35 @@ public $additional_details_broker = '';
         $this->additional_details  = $data['additional_details'] ?? '';
         $this->year_licensed       = $data['year_licensed'] ?? '';
         $this->defaultProfileLoaded = true;
+    }
+
+    public function updatedPresentationLink($value): void
+    {
+        $this->embedUrl = $this->getEmbedUrl($value);
+    }
+
+    public function getEmbedUrl($url): ?string
+    {
+        if (empty($url)) return null;
+        if (str_contains($url, 'youtube.com') || str_contains($url, 'youtu.be')) {
+            preg_match('/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{6,})/i', $url, $m);
+            $videoId = $m[1] ?? null;
+            return $videoId
+                ? "https://www.youtube.com/embed/{$videoId}?autoplay=1&mute=1&playsinline=1"
+                : null;
+        }
+        if (str_contains($url, 'vimeo.com')) {
+            preg_match('/vimeo\.com\/(?:.*\/)?(\d+)(?:[\/?#]|$)/i', $url, $m);
+            $videoId = $m[1] ?? null;
+            if (!$videoId && str_contains($url, 'player.vimeo.com')) {
+                preg_match('/player\.vimeo\.com\/video\/(\d+)/i', $url, $m2);
+                $videoId = $m2[1] ?? null;
+            }
+            return $videoId
+                ? "https://player.vimeo.com/video/{$videoId}?autoplay=1&muted=1&playsinline=1"
+                : null;
+        }
+        return null;
     }
 
     public function addWebsiteLink()

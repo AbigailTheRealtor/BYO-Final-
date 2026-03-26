@@ -195,16 +195,3 @@
         @error('year_licensed')<span class="text-danger small">{{ $message }}</span>@enderror
         <span class="error mt-2" id="year_licensed_error"></span>
     </div>
-
-    {{-- Save as Default Profile --}}
-    <div class="mt-4 p-3 border rounded bg-light">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div>
-                <strong><i class="fa-solid fa-bookmark me-1 text-primary"></i> Save as Default Profile</strong>
-                <p class="mb-0 small text-muted">Save your Agent Overview answers to pre-fill future bids for this listing type (Tenant — {{ ucfirst($property_type ?: 'residential') }}).</p>
-            </div>
-            <button type="button" wire:click="saveAsDefaultProfile" class="btn btn-outline-primary btn-sm">
-                <i class="fa-solid fa-floppy-disk me-1"></i> Save as Default
-            </button>
-        </div>
-    </div>

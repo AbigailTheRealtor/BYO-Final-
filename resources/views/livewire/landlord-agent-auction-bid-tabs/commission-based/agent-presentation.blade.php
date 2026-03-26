@@ -24,9 +24,6 @@
                 <input type="url" wire:model="presentation_link" class="form-control has-icon"
                     placeholder="Enter virtual agent presentation link (e.g., https://youtube.com/example)"
                     data-icon="fa-solid fa-link">
-                     <button class="btn btn-primary input-group-text-seller" type="button" wire:click="previewVideo">
-            Enter
-        </button>
             </div>
             <small class="text-muted">Enter YouTube, Vimeo, or other video platform URL</small>
         </div>

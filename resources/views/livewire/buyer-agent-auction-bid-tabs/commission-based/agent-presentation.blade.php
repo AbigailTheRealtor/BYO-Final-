@@ -28,6 +28,16 @@
             <small class="text-muted">Enter YouTube, Vimeo, or other video platform URL</small>
         </div>
 
+        @if(!empty($embedUrl))
+        <div class="ratio ratio-16x9 mt-2" style="width:25%; height:40vh;">
+            <iframe
+                src="{{ $embedUrl }}"
+                frameborder="0"
+                allow="autoplay; accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen>
+            </iframe>
+        </div>
+        @endif
 
     </div>
 </div>
