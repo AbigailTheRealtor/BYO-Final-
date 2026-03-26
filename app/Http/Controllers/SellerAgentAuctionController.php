@@ -535,6 +535,43 @@ class SellerAgentAuctionController extends Controller
             $bid->saveMeta('services', json_encode($request->services));
             $bid->saveMeta('other_services', $request->other_services);
             $bid->saveMeta('virtual_buyer_presentation_link', $request->virtual_buyer_presentation_link);
+            // Seller broker compensation fields
+            $bid->saveMeta('purchase_fee_type', $request->purchase_fee_type);
+            $bid->saveMeta('purchase_fee_flat', $request->purchase_fee_flat);
+            $bid->saveMeta('purchase_fee_percentage', $request->purchase_fee_percentage);
+            $bid->saveMeta('purchase_fee_flat_combo', $request->purchase_fee_flat_combo);
+            $bid->saveMeta('purchase_fee_percentage_combo', $request->purchase_fee_percentage_combo);
+            $bid->saveMeta('purchase_fee_other', $request->purchase_fee_other);
+            $bid->saveMeta('nominal', $request->nominal);
+            $bid->saveMeta('commission_structure', $request->commission_structure);
+            $bid->saveMeta('commission_structure_type', $request->commission_structure_type);
+            $bid->saveMeta('commission_structure_type_fee_flat', $request->commission_structure_type_fee_flat);
+            $bid->saveMeta('commission_structure_type_fee_percentage', $request->commission_structure_type_fee_percentage);
+            $bid->saveMeta('commission_structure_type_fee_other', $request->commission_structure_type_fee_other);
+            $bid->saveMeta('interested_purchase_fee_type', $request->interested_purchase_fee_type);
+            $bid->saveMeta('seller_leasing_fee_type', $request->seller_leasing_fee_type);
+            $bid->saveMeta('seller_leasing_gross', $request->seller_leasing_gross);
+            $bid->saveMeta('seller_leasing_gross_rental', $request->seller_leasing_gross_rental);
+            $bid->saveMeta('seller_leasing_gross_month_rent', $request->seller_leasing_gross_month_rent);
+            $bid->saveMeta('seller_leasing_gross_other', $request->seller_leasing_gross_other);
+            $bid->saveMeta('seller_leasing_gross_purchase_fee_flat_amount', $request->seller_leasing_gross_purchase_fee_flat_amount);
+            $bid->saveMeta('seller_leasing_gross_purchase_fee_other', $request->seller_leasing_gross_purchase_fee_other);
+            $bid->saveMeta('interested_lease_option_agreement', $request->interested_lease_option_agreement);
+            $bid->saveMeta('lease_type', $request->lease_type);
+            $bid->saveMeta('lease_value', $request->lease_value);
+            $bid->saveMeta('purchase_type', $request->purchase_type);
+            $bid->saveMeta('purchase_value', $request->purchase_value);
+            $bid->saveMeta('protection_period', $request->protection_period);
+            $bid->saveMeta('early_termination_fee_option', $request->early_termination_fee_option);
+            $bid->saveMeta('early_termination_fee_amount', $request->early_termination_fee_amount);
+            $bid->saveMeta('retainer_fee_option', $request->retainer_fee_option);
+            $bid->saveMeta('retainer_fee_amount', $request->retainer_fee_amount);
+            $bid->saveMeta('retainer_fee_application', $request->retainer_fee_application);
+            $bid->saveMeta('retained_deposits', $request->retained_deposits);
+            $bid->saveMeta('agency_agreement_timeframe', $request->agency_agreement_timeframe);
+            $bid->saveMeta('agency_agreement_custom', $request->agency_agreement_custom);
+            $bid->saveMeta('brokerage_relationship', $request->brokerage_relationship);
+            $bid->saveMeta('additional_details_broker', $request->additional_details_broker);
 
             if ($request->hasFile('virtual_buyer_presentation')) {
                 $file = $request->virtual_buyer_presentation;

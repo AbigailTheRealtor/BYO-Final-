@@ -351,66 +351,491 @@
                 id="custom_terms" required />
             </div>
           </div>
-          <div class="wizard-step">
-            <div class="form-group">
-              <label class="fw-bold">What is the total commission the agent will charge the seller?</label>
-              <input type="number" class="form-control has-icon" placeholder="" name="total_comission"
-                data-icon="fa-solid fa-dollar-sign" id="custom_terms" required />
+          @php
+            $rawPropertyType = $auction->get->property_type ?? 'Residential Property';
+            $isIncomeCommercial = in_array($rawPropertyType, ['Income Property', 'Commercial Property', 'Business Opportunity']);
+            $isCommercialBusiness = in_array($rawPropertyType, ['Commercial Property', 'Business Opportunity']);
+            $isResidentialIncomeVacant = in_array($rawPropertyType, ['Residential Property', 'Vacant Land', 'Income Property']);
+            $get = $auction->get;
+            $alpineCompData = json_encode([
+              'purchase_fee_type'              => old('purchase_fee_type', $get->purchase_fee_type ?? ''),
+              'commission_structure'           => old('commission_structure', $get->commission_structure ?? ''),
+              'commission_structure_type'      => old('commission_structure_type', $get->commission_structure_type ?? ''),
+              'interested_purchase_fee_type'   => old('interested_purchase_fee_type', $get->interested_purchase_fee_type ?? ''),
+              'seller_leasing_fee_type'        => old('seller_leasing_fee_type', $get->seller_leasing_fee_type ?? ''),
+              'interested_lease_option_agreement' => old('interested_lease_option_agreement', $get->interested_lease_option_agreement ?? ''),
+              'early_termination_fee_option'   => old('early_termination_fee_option', $get->early_termination_fee_option ?? ''),
+              'retainer_fee_option'            => old('retainer_fee_option', $get->retainer_fee_option ?? ''),
+              'agency_agreement_timeframe'     => old('agency_agreement_timeframe', $get->agency_agreement_timeframe ?? ''),
+              'brokerage_relationship'         => old('brokerage_relationship', $get->brokerage_relationship ?? ''),
+            ]);
+          @endphp
+          <div class="wizard-step" x-data="{{ $alpineCompData }}">
+
+            <h5 class="fw-bold mb-3">Broker Compensation &amp; Agency Agreement Terms</h5>
+            <div class="alert alert-info bg-light-info border-info mb-4">
+              <strong>Complete the compensation terms that apply. Listing values are pre-filled as a starting point — adjust any field to reflect your proposed terms.</strong>
             </div>
-            {{-- <div class="form-group">
-              <label class="fw-bold">If a buyer is represented by an agent, how much of the commission will the agent
-                share
-                with the buyer’s agent? </label>
-              <input type="text" class="form-control has-icon" placeholder="" name="buyerCommission"
-                data-icon="fa-solid fa-ruler-combined" required />
-            </div>
-            <div class="form-group">
-              @php
-                $totalCommission = [['name' => 'Yes', 'target' => '.commYes', 'dataIcon' => '<i class="fa-regular fa-check-circle"></i>'], ['name' => 'No', 'target' => '.commNo', 'dataIcon' => '<i class="fa-regular fa-circle-xmark"></i>']];
-              @endphp
-              <label class="fw-bold">If the buyer is not represented by another agent, will the agent retain the total
-                commission? </label>
-              <select class="grid-picker" name="totalCommission" style="justify-content: flex-start;" required>
-                <option value="">Select</option>
-                @foreach ($totalCommission as $item)
-                  <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-row"
-                    style="width:calc(25% - 10px);" data-icon='{{ $item['dataIcon'] }}'>
-                    {{ $item['name'] }}
-                  </option>
-                @endforeach
-              </select>
-              <div class="form-group commNo d-none">
-                <label class="fw-bold">How much will the agent charge if the buyer is not represented by another agent?
-                </label>
-                <input type="text" class="form-control has-icon" name="otherCommission" data-icon="fa-solid fa-ruler-combined"
-                  id="custom_terms" required />
+
+            {{-- Seller's Broker Purchase Fee --}}
+            <div class="form-group mb-4">
+              <label class="fw-bold d-flex align-items-center">
+                Seller's Broker Purchase Fee: <span class="text-danger ms-1">*</span>
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                  title="Choose how the Seller's Broker will be compensated.">
+                  <i class="fa-solid fa-circle-info"></i>
+                </span>
+              </label>
+              <div class="input-cover mt-2">
+                <select x-model="purchase_fee_type" name="purchase_fee_type" class="form-control has-icon"
+                  data-icon="fa-solid fa-file-invoice-dollar">
+                  <option value="">Select</option>
+                  <option value="percentage">Percentage of the Total Purchase Price</option>
+                  <option value="flat">Flat Fee</option>
+                  <option value="combo">Percentage of the Total Purchase Price + Flat Fee</option>
+                  <option value="other">Other</option>
+                </select>
               </div>
-            </div> --}}
-          </div>
-          <div class="wizard-step">
-            <div class="form-group">
-              @php
-                $yes_or_nos = [['name' => 'Yes', 'target' => '.charge_fee', 'dataIcon' => '<i class="fa-regular fa-check-circle"></i>'], ['name' => 'No', 'target' => '', 'dataIcon' => '<i class="fa-regular fa-circle-xmark"></i>']];
-              @endphp
-              <label class="fw-bold">Does the agent charge any fees if the seller terminates the listing agreement before
-                the expiration date?</label>
-              <select class="grid-picker" name="charges" id="charge_fee" style="justify-content: flex-start;">
-                <option value="">Select</option>
-                @foreach ($yes_or_nos as $listing_term)
-                  <option value="{{ $listing_term['name'] }}" data-target="{{ $listing_term['target'] }}"
-                    class="card flex-row" style="width:calc(33% - 10px);"
-                    data-icon='<i class="fa-regular fa-check-circle"></i>'>
-                    {{ $listing_term['name'] }}
-                  </option>
-                @endforeach
-              </select>
+              <div class="mt-3">
+                <div x-show="purchase_fee_type === 'flat'">
+                  <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    <input type="text" name="purchase_fee_flat" class="form-control"
+                      placeholder="Enter flat fee amount (e.g., 5000)"
+                      value="{{ old('purchase_fee_flat', $get->purchase_fee_flat ?? '') }}">
+                  </div>
+                </div>
+                <div x-show="purchase_fee_type === 'percentage'">
+                  <div class="input-group">
+                    <input type="number" name="purchase_fee_percentage" class="form-control"
+                      placeholder="Enter percentage of total purchase price (e.g., 6)"
+                      value="{{ old('purchase_fee_percentage', $get->purchase_fee_percentage ?? '') }}">
+                    <span class="input-group-text">%</span>
+                  </div>
+                </div>
+                <div x-show="purchase_fee_type === 'combo'">
+                  <div class="row g-2">
+                    <div class="col-md-6">
+                      <div class="input-group">
+                        <input type="number" name="purchase_fee_percentage_combo" class="form-control"
+                          placeholder="Enter percentage (e.g., 2)"
+                          value="{{ old('purchase_fee_percentage_combo', $get->purchase_fee_percentage_combo ?? '') }}">
+                        <span class="input-group-text">%</span>
+                      </div>
+                    </div>
+                    <div class="col-md-1 text-center pt-2">+</div>
+                    <div class="col-md-5">
+                      <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="text" name="purchase_fee_flat_combo" class="form-control"
+                          placeholder="Enter flat fee (e.g., 2000)"
+                          value="{{ old('purchase_fee_flat_combo', $get->purchase_fee_flat_combo ?? '') }}">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div x-show="purchase_fee_type === 'other'">
+                  <input type="text" name="purchase_fee_other" class="form-control mt-2"
+                    placeholder="Enter commission structure (e.g., Tiered fee: 5% on the first $500,000)"
+                    value="{{ old('purchase_fee_other', $get->purchase_fee_other ?? '') }}">
+                </div>
+              </div>
+              {{-- Hidden total_comission used for bid->price --}}
+              <input type="hidden" name="total_comission" value="{{ old('total_comission', $get->purchase_fee_percentage ?? $get->purchase_fee_flat ?? $get->purchase_fee_other ?? 0) }}">
             </div>
-            <div class="form-group charge_fee d-none">
-              <label class="fw-bold">What is the cancellation fee if the seller terminates the agent's listing agreement
-                before the
-                expiration date?</label>
-              <input type="number" class="form-control has-icon" placeholder="" name="charge_fee"
-                data-icon="fa-solid fa-dollar-sign" id="charge_fee" required />
+
+            @if($isIncomeCommercial)
+            <div class="form-group mb-4">
+              <label class="fw-bold">Nominal Consideration Fee:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                  title="If the property is transferred for nominal value, enter the flat fee the Seller's Broker will be paid.">
+                  <i class="fa-solid fa-circle-info"></i>
+                </span>
+              </label>
+              <div class="input-group mt-2">
+                <span class="input-group-text">$</span>
+                <input type="text" name="nominal" class="form-control"
+                  placeholder="Enter nominal consideration fee amount (e.g., 1000)"
+                  value="{{ old('nominal', $get->nominal ?? '') }}">
+              </div>
+            </div>
+            @endif
+
+            {{-- Buyer's Broker Commission Structure --}}
+            <div class="form-group mb-4">
+              <label class="fw-bold d-flex align-items-center">
+                Buyer's Broker Commission Structure:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                  title="Select how the Buyer's Broker will be compensated.">
+                  <i class="fa-solid fa-circle-info"></i>
+                </span>
+              </label>
+              <div class="input-cover mt-2">
+                <select x-model="commission_structure" name="commission_structure" class="form-control has-icon"
+                  data-icon="fa-solid fa-file-invoice-dollar">
+                  <option value="">Select</option>
+                  <option value="Seller's Broker to Compensate Buyer's Broker from Seller's Broker Commission">Seller's Broker to Compensate Buyer's Broker from Seller's Broker Commission</option>
+                  <option value="Seller to Pay Buyer's Broker Separately">Seller to Pay Buyer's Broker Separately</option>
+                  <option value="No Compensation Offered to the Buyer's Broker">No Compensation Offered to the Buyer's Broker</option>
+                </select>
+              </div>
+            </div>
+
+            {{-- Buyer's Broker Commission Fee (conditional) --}}
+            <template x-if="commission_structure === 'Seller\'s Broker to Compensate Buyer\'s Broker from Seller\'s Broker Commission' || commission_structure === 'Seller to Pay Buyer\'s Broker Separately'">
+              <div class="form-group mb-4">
+                <label class="fw-bold">Buyer's Broker Commission Fee:</label>
+                <div class="input-cover mt-2">
+                  <select x-model="commission_structure_type" name="commission_structure_type" class="form-control has-icon"
+                    data-icon="fa-solid fa-file-invoice-dollar">
+                    <option value="">Select</option>
+                    <option value="Percentage of the Total Purchase Price">Percentage of the Total Purchase Price</option>
+                    <option value="Flat Fee">Flat Fee</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div class="mt-3">
+                  <div x-show="commission_structure_type === 'Flat Fee'">
+                    <div class="input-group">
+                      <span class="input-group-text">$</span>
+                      <input type="text" name="commission_structure_type_fee_flat" class="form-control"
+                        placeholder="Enter flat fee amount (e.g., 4000)"
+                        value="{{ old('commission_structure_type_fee_flat', $get->commission_structure_type_fee_flat ?? '') }}">
+                    </div>
+                  </div>
+                  <div x-show="commission_structure_type === 'Percentage of the Total Purchase Price'">
+                    <div class="input-group">
+                      <input type="number" name="commission_structure_type_fee_percentage" class="form-control"
+                        placeholder="Enter percentage (e.g., 6)"
+                        value="{{ old('commission_structure_type_fee_percentage', $get->commission_structure_type_fee_percentage ?? '') }}">
+                      <span class="input-group-text">%</span>
+                    </div>
+                  </div>
+                  <div x-show="commission_structure_type === 'other'">
+                    <input type="text" name="commission_structure_type_fee_other" class="form-control mt-2"
+                      placeholder="Enter compensation for the Buyer's Broker"
+                      value="{{ old('commission_structure_type_fee_other', $get->commission_structure_type_fee_other ?? '') }}">
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            {{-- Interested in Offering a Lease Agreement --}}
+            <div class="form-group mb-4">
+              <label class="fw-bold">Interested in Offering a Lease Agreement:</label>
+              <div class="input-cover mt-2">
+                <select x-model="interested_purchase_fee_type" name="interested_purchase_fee_type" class="form-control has-icon"
+                  data-icon="fa-solid fa-file-invoice-dollar">
+                  <option value="">Select</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+            </div>
+            <div x-show="interested_purchase_fee_type === 'Yes'">
+              <div class="form-group mb-4">
+                <label class="fw-bold">Seller's Broker Leasing Fee:</label>
+                <div class="input-cover mt-2">
+                  <select x-model="seller_leasing_fee_type" name="seller_leasing_fee_type" class="form-control has-icon"
+                    data-icon="fa-solid fa-file-invoice-dollar">
+                    <option value="">Select</option>
+                    @if($isResidentialIncomeVacant)
+                      <option value="Percentage of the Rent Due Each Rental Period">Percentage of the Rent Due Each Rental Period</option>
+                      <option value="Percentage of the Gross Lease Value">Percentage of the Gross Lease Value</option>
+                      <option value="Percentage of the First Month's Rent">Percentage of the First Month's Rent</option>
+                      <option value="Flat Fee">Flat Fee</option>
+                      <option value="other">Other</option>
+                    @endif
+                    @if($isCommercialBusiness)
+                      <option value="Percentage of Net Aggregate Rent">Percentage of Net Aggregate Rent</option>
+                      <option value="Percentage of Gross Rent">Percentage of Gross Rent</option>
+                      <option value="Percentage of Month's Rent">Percentage of Month's Rent</option>
+                      <option value="Flat Fee">Flat Fee</option>
+                    @endif
+                  </select>
+                </div>
+                <div class="mt-3">
+                  <div x-show="seller_leasing_fee_type === 'Percentage of the Gross Lease Value' || seller_leasing_fee_type === 'Percentage of Gross Rent'">
+                    <div class="input-group">
+                      <input type="number" name="seller_leasing_gross" class="form-control"
+                        placeholder="Enter percentage (e.g., 10)"
+                        value="{{ old('seller_leasing_gross', $get->seller_leasing_gross ?? '') }}">
+                      <span class="input-group-text">%</span>
+                    </div>
+                  </div>
+                  <div x-show="seller_leasing_fee_type === 'Percentage of the Rent Due Each Rental Period'">
+                    <div class="input-group">
+                      <input type="number" name="seller_leasing_gross_rental" class="form-control"
+                        placeholder="Enter percentage (e.g., 10)"
+                        value="{{ old('seller_leasing_gross_rental', $get->seller_leasing_gross_rental ?? '') }}">
+                      <span class="input-group-text">%</span>
+                    </div>
+                  </div>
+                  <div x-show="seller_leasing_fee_type === 'Percentage of the First Month\'s Rent' || seller_leasing_fee_type === 'Percentage of Month\'s Rent'">
+                    <div class="input-group">
+                      <input type="number" name="seller_leasing_gross_month_rent" class="form-control"
+                        placeholder="Enter percentage (e.g., 100)"
+                        value="{{ old('seller_leasing_gross_month_rent', $get->seller_leasing_gross_month_rent ?? '') }}">
+                      <span class="input-group-text">%</span>
+                    </div>
+                  </div>
+                  <div x-show="seller_leasing_fee_type === 'Percentage of Net Aggregate Rent'">
+                    <div class="input-group">
+                      <input type="text" name="seller_leasing_gross_other" class="form-control"
+                        placeholder="Enter percentage (e.g., 6)"
+                        value="{{ old('seller_leasing_gross_other', $get->seller_leasing_gross_other ?? '') }}">
+                      <span class="input-group-text">%</span>
+                    </div>
+                  </div>
+                  <div x-show="seller_leasing_fee_type === 'Flat Fee'">
+                    <div class="input-group">
+                      <span class="input-group-text">$</span>
+                      <input type="text" name="seller_leasing_gross_purchase_fee_flat_amount" class="form-control"
+                        placeholder="Enter flat fee amount (e.g., 5000)"
+                        value="{{ old('seller_leasing_gross_purchase_fee_flat_amount', $get->seller_leasing_gross_purchase_fee_flat_amount ?? '') }}">
+                    </div>
+                  </div>
+                  <div x-show="seller_leasing_fee_type === 'other'">
+                    <input type="text" name="seller_leasing_gross_purchase_fee_other" class="form-control mt-2"
+                      placeholder="Enter lease fee structure"
+                      value="{{ old('seller_leasing_gross_purchase_fee_other', $get->seller_leasing_gross_purchase_fee_other ?? '') }}">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {{-- Lease-Option Agreement --}}
+            <div class="form-group mb-2">
+              <label class="fw-bold">Interested in Offering a Lease-Option Agreement:</label>
+              <div class="input-cover mt-2">
+                <select x-model="interested_lease_option_agreement" name="interested_lease_option_agreement" class="form-control has-icon"
+                  data-icon="fa-solid fa-file-invoice-dollar">
+                  <option value="">Select</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+            </div>
+            <div x-show="interested_lease_option_agreement === 'Yes'" class="mt-3">
+              <div class="form-group mb-3">
+                <label class="fw-bold">Compensation for Creating the Lease-Option Agreement:</label>
+                <div class="row g-2 mt-1">
+                  <div class="col-md-3">
+                    <select name="lease_type" class="form-select">
+                      <option value="percent">%</option>
+                      <option value="flat">$</option>
+                    </select>
+                  </div>
+                  <div class="col-md-9">
+                    <input type="text" name="lease_value" class="form-control"
+                      placeholder="Enter amount"
+                      value="{{ old('lease_value', $get->lease_value ?? '') }}">
+                  </div>
+                </div>
+              </div>
+              <div class="form-group mb-3">
+                <label class="fw-bold">Compensation if Purchase Option is Exercised:</label>
+                <div class="row g-2 mt-1">
+                  <div class="col-md-3">
+                    <select name="purchase_type" class="form-select">
+                      <option value="percent">%</option>
+                      <option value="flat">$</option>
+                    </select>
+                  </div>
+                  <div class="col-md-9">
+                    <input type="text" name="purchase_value" class="form-control"
+                      placeholder="Enter amount"
+                      value="{{ old('purchase_value', $get->purchase_value ?? '') }}">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {{-- Protection Period --}}
+            <div class="form-group mb-4 mt-3">
+              <label class="fw-bold d-flex align-items-center">
+                Protection Period Timeframe (Days):
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                  title="Number of days after the Termination Date during which the Broker may still earn compensation.">
+                  <i class="fa-solid fa-circle-info"></i>
+                </span>
+              </label>
+              <div class="input-cover mt-2">
+                <input type="number" name="protection_period" class="form-control has-icon"
+                  data-icon="fa-solid fa-shield-alt"
+                  placeholder="Enter protection period in days (e.g., 90)"
+                  value="{{ old('protection_period', $get->protection_period ?? '') }}">
+              </div>
+            </div>
+
+            {{-- Early Termination Fee --}}
+            <div class="form-group mb-4">
+              <label class="fw-bold d-flex align-items-center">
+                Early Termination Fee:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                  title="Select whether a cancellation fee applies if the agreement is terminated early.">
+                  <i class="fa-solid fa-circle-info"></i>
+                </span>
+              </label>
+              <div class="input-cover mt-2">
+                <select x-model="early_termination_fee_option" name="early_termination_fee_option" class="form-control has-icon"
+                  data-icon="fa-solid fa-exclamation-triangle">
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                </select>
+              </div>
+              <div x-show="early_termination_fee_option === 'yes'" class="mt-3">
+                <div class="input-group">
+                  <span class="input-group-text">$</span>
+                  <input type="text" name="early_termination_fee_amount" class="form-control"
+                    placeholder="Enter early termination fee amount (e.g., 1000)"
+                    value="{{ old('early_termination_fee_amount', $get->early_termination_fee_amount ?? '') }}">
+                </div>
+              </div>
+            </div>
+
+            {{-- Retainer Fee --}}
+            <div class="form-group mb-4">
+              <label class="fw-bold d-flex align-items-center">
+                Retainer Fee:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                  title="Select whether a non-refundable retainer fee applies to initiate Broker services.">
+                  <i class="fa-solid fa-circle-info"></i>
+                </span>
+              </label>
+              <div class="input-cover mt-2">
+                <select x-model="retainer_fee_option" name="retainer_fee_option" class="form-control has-icon"
+                  data-icon="fa-solid fa-file-invoice-dollar">
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                </select>
+              </div>
+              <div x-show="retainer_fee_option === 'yes'" class="mt-3">
+                <div class="input-group">
+                  <span class="input-group-text">$</span>
+                  <input type="text" name="retainer_fee_amount" class="form-control"
+                    placeholder="Enter retainer fee amount (e.g., 500)"
+                    value="{{ old('retainer_fee_amount', $get->retainer_fee_amount ?? '') }}">
+                </div>
+                <div class="mt-3">
+                  <label class="fw-bold">Retainer Fee Application:</label>
+                  <select name="retainer_fee_application" class="form-control mt-2">
+                    <option value="">Select application method</option>
+                    <option value="Applied Toward Final Compensation"
+                      {{ old('retainer_fee_application', $get->retainer_fee_application ?? '') === 'Applied Toward Final Compensation' ? 'selected' : '' }}>Applied Toward Final Compensation</option>
+                    <option value="Charged in Addition to Final Compensation"
+                      {{ old('retainer_fee_application', $get->retainer_fee_application ?? '') === 'Charged in Addition to Final Compensation' ? 'selected' : '' }}>Charged in Addition to Final Compensation</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {{-- Seller's Broker's Share of Retained Deposits --}}
+            <div class="form-group mb-4">
+              <label class="fw-bold d-flex align-items-center">
+                Seller's Broker's Share of Retained Deposits:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                  title="Enter the percentage of any retained deposit the Seller's Broker is entitled to if the Buyer defaults.">
+                  <i class="fa-solid fa-circle-info"></i>
+                </span>
+              </label>
+              <div class="input-group">
+                <input type="number" name="retained_deposits" class="form-control"
+                  placeholder="Enter percentage (e.g., 50)"
+                  value="{{ old('retained_deposits', $get->retained_deposits ?? '') }}">
+                <span class="input-group-text">%</span>
+              </div>
+            </div>
+
+            {{-- Agency Agreement Timeframe --}}
+            <div class="form-group mb-4">
+              <label class="fw-bold d-flex align-items-center">
+                Seller Agency Agreement Timeframe:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                  title="Select how long the Seller's agreement with the Broker will last.">
+                  <i class="fa-solid fa-circle-info"></i>
+                </span>
+              </label>
+              <div class="input-cover mt-2">
+                <select x-model="agency_agreement_timeframe" name="agency_agreement_timeframe" class="form-control has-icon"
+                  data-icon="fa-solid fa-calendar-alt">
+                  <option value="">Select</option>
+                  <option value="3 Months">3 Months</option>
+                  <option value="6 Months">6 Months</option>
+                  <option value="9 Months">9 Months</option>
+                  <option value="12 Months">12 Months</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div x-show="agency_agreement_timeframe === 'Other'" class="mt-3">
+                <input type="text" name="agency_agreement_custom" class="form-control"
+                  placeholder="Enter Seller agency agreement timeframe (e.g., 8 Months)"
+                  value="{{ old('agency_agreement_custom', $get->agency_agreement_custom ?? '') }}">
+              </div>
+            </div>
+
+            {{-- Brokerage Relationship --}}
+            <div class="form-group mb-4">
+              <label class="fw-bold d-flex align-items-center">
+                Acceptable Brokerage Relationship:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                  title="Select the type of legal relationship the Seller wishes to establish with the Broker.">
+                  <i class="fa-solid fa-circle-info"></i>
+                </span>
+              </label>
+              <div class="input-cover mt-2">
+                <select x-model="brokerage_relationship" name="brokerage_relationship" class="form-control has-icon"
+                  data-icon="fa-solid fa-handshake">
+                  <option value="">Select</option>
+                  <option value="Transaction Broker Representation">Transaction Broker Representation</option>
+                  <option value="Single Agent Representation">Single Agent Representation</option>
+                  <option value="Dual Agency Representation">Dual Agency Representation</option>
+                  <option value="No Brokerage Relationship">No Brokerage Relationship</option>
+                </select>
+              </div>
+              <div x-show="brokerage_relationship" class="mt-3 p-3 bg-light rounded">
+                <div x-show="brokerage_relationship === 'Transaction Broker Representation'">
+                  <h6 class="fw-bold">• Transaction Broker Representation:</h6>
+                  <ul class="mb-2 ps-3" style="list-style-type: disc;">
+                    <li>Default brokerage relationship in Florida unless otherwise specified by law.</li>
+                    <li>The Broker provides limited representation to both parties without full fiduciary duties.</li>
+                    <li>This brokerage relationship may not be permitted in certain states, including Texas, Alaska, Vermont, Kansas, or Colorado.</li>
+                  </ul>
+                </div>
+                <div x-show="brokerage_relationship === 'Single Agent Representation'">
+                  <h6 class="fw-bold">• Single Agent Representation:</h6>
+                  <ul class="mb-2 ps-3" style="list-style-type: disc;">
+                    <li>The Broker acts as a fiduciary, providing the highest level of loyalty, confidentiality, and full disclosure.</li>
+                    <li>The Broker must always act in the Seller's best interest.</li>
+                  </ul>
+                </div>
+                <div x-show="brokerage_relationship === 'Dual Agency Representation'">
+                  <h6 class="fw-bold">• Dual Agency Representation:</h6>
+                  <ul class="mb-2 ps-3" style="list-style-type: disc;">
+                    <li>The Broker represents both the Seller and the Buyer in the same transaction.</li>
+                    <li>Requires written consent from both parties.</li>
+                  </ul>
+                </div>
+                <div x-show="brokerage_relationship === 'No Brokerage Relationship'">
+                  <h6 class="fw-bold">• No Brokerage Relationship:</h6>
+                  <ul class="mb-2 ps-3" style="list-style-type: disc;">
+                    <li>The Broker does not represent the Seller and has no fiduciary duties.</li>
+                    <li>The Broker must still act honestly and disclose all known material facts.</li>
+                  </ul>
+                </div>
+                <div class="alert alert-warning mt-3 p-2 small">
+                  <strong>Warning:</strong> Certain brokerage relationships are not permitted in all states. Both the Broker and Seller are responsible for complying with all current local, state, and federal laws.
+                </div>
+              </div>
+            </div>
+
+            {{-- Additional Terms --}}
+            <div class="form-group mb-4">
+              <label class="fw-bold">Additional Terms:</label>
+              <textarea name="additional_details_broker" class="form-control mt-2" rows="3"
+                placeholder="Enter any additional terms">{{ old('additional_details_broker', $get->additional_details_broker ?? '') }}</textarea>
             </div>
           </div>
           <div class="wizard-step">
@@ -613,7 +1038,33 @@
                     ['target' => '.other_services', 'name' => 'Other – Add additional services as offered. '],
                 ];
 
-                }
+              } else {
+                  // Default for Residential and any other property type
+                  $services_data = [
+                    ['name' => 'Conduct a thorough comparative market analysis (CMA) to determine the property\'s value and pricing strategy.', 'target' => ''],
+                    ['name' => 'List the property on the MLS.', 'target' => ''],
+                    ['name' => 'List the property on major real estate websites, such as Zillow, Trulia, Realtor.com, Homes.com, Homesnap, Hotpads, and many more, to increase the property\'s visibility and exposure.', 'target' => ''],
+                    ['name' => 'List the property on the Bid Your Offer platform.', 'target' => ''],
+                    ['name' => 'Implement an online marketing campaign with a QR code or listing link that leads to the property\'s listing.', 'target' => ''],
+                    ['name' => 'Market the property to various groups, pages, and affiliates to generate interest and leads with a QR code or listing link leading to the property\'s listing.', 'target' => ''],
+                    ['name' => 'Promote the property on social media platforms with a QR code or listing link leading to the property\'s listing.', 'target' => ''],
+                    ['name' => 'Distribute postcards featuring the seller\'s listing within their neighborhood with a QR code or listing link leading to the property\'s listing.', 'target' => ''],
+                    ['name' => 'Distribute postcards featuring the seller\'s listing to the most opportune buyers with a QR code or listing link leading to the property\'s listing.', 'target' => ''],
+                    ['name' => 'Conduct real estate email marketing campaigns that lead to the seller\'s listing.', 'target' => ''],
+                    ['name' => 'Provide professional photos to showcase the property\'s features.', 'target' => ''],
+                    ['name' => 'Provide aerial photography to capture the property\'s surroundings and neighborhood.', 'target' => ''],
+                    ['name' => 'Provide a professional video to showcase the property.', 'target' => ''],
+                    ['name' => 'Provide guidance and assistance in preparing the property for sale, including recommendations for repairs or improvements.', 'target' => ''],
+                    ['name' => 'Offer expert negotiation skills to secure the best possible terms and price during the selling process.', 'target' => ''],
+                    ['name' => 'Coordinate and schedule showings for potential buyers, ensuring a smooth and efficient viewing experience.', 'target' => ''],
+                    ['name' => 'Send email alerts to buyers searching for properties that match the property\'s criteria the moment the property is listed directly through the MLS.', 'target' => ''],
+                    ['name' => 'Provide guidance and support throughout the entire transaction, from listing to closing, to ensure a seamless and successful sale.', 'target' => ''],
+                    ['name' => 'Assist with the completion and submission of all necessary paperwork and documentation related to the sale.', 'target' => ''],
+                    ['name' => 'Collaborate with other real estate professionals and agents to expand the network of potential buyers for the property.', 'target' => ''],
+                    ['name' => 'Provide regular updates on market activity, showings, and feedback from potential buyers.', 'target' => ''],
+                    ['target' => '.other_services', 'name' => 'Other – Add additional services as offered. '],
+                  ];
+              }
 
             @endphp
             <div class="form-group">
@@ -628,22 +1079,27 @@
                 @endforeach
               </select>
             </div>
-            <div class="form-group other_services @if (@$auction->get->other_services == '' || @$auction->get->other_services == 'null') d-none @endif ">
+            @php
+              $otherServicesVal = @$auction->get->other_services;
+              if (is_array($otherServicesVal)) { $otherServicesVal = implode(', ', $otherServicesVal); }
+              $otherServicesVal = (string)($otherServicesVal ?? '');
+            @endphp
+            <div class="form-group other_services @if ($otherServicesVal == '' || $otherServicesVal == 'null') d-none @endif ">
               <label class="fw-bold"> What additional services will the agent provide to the seller?</label>
               <input type="text" name="other_services" id="other_services"
-                value="{{ @$auction->get->other_services }}" data-icon="fa-solid fa-hand-point-right"
+                value="{{ $otherServicesVal }}" data-icon="fa-solid fa-hand-point-right"
                 class="form-control has-icon">
             </div>
           </div>
 
 <div class="wizard-step">
     <div class="form-group">
-        <label for="" class="fw-bold">Virtual Tenant Presentation (Link): </label>
+        <label for="" class="fw-bold">Virtual Agent Presentation (Link): </label>
         <input type="url" class="form-control has-icon" name="virtual_buyer_presentation_link" data-icon="fa-solid fa-link">
       </div>
       <div class="row">
         <div class="col-6 form-group">
-            <label class="fw-bold mt-1">Virtual Tenant Presentation (Upload):</label>
+            <label class="fw-bold mt-1">Virtual Agent Presentation (Upload):</label>
             <div class="videoBox ">
                 <div class="video bgImg"></div>
                 <div class="videoDiv">

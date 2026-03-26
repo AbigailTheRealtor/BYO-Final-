@@ -2530,15 +2530,10 @@
             <span class="badge bg-light float-end text-dark">${{ @$auction->get->budget }}</span>
         </button>
 
-        {{-- Optional: Allow editing their bid --}}
-        <!-- <button class="btn w-100 btn-outline-primary mt-2"
-                onclick="window.location='{{ route('agent.tenant.agent.auction.bid', @$auction->id) }}';">
-                <i class="fa fa-edit"></i> Edit Your Bid
-            </button> -->
         @else
         {{-- User can place a bid --}}
         <button class="btn w-100 bid-btn"
-            onclick="window.location='{{ route('agent.tenant.agent.auction.bid', @$auction->id) }}';">
+            onclick="window.location='{{ route('add_seller_agent_bid', @$auction->id) }}';">
             <span class="bid">Bid Now</span>
             <span class="badge bg-light float-end text-dark">${{ @$auction->get->budget }}</span>
         </button>
