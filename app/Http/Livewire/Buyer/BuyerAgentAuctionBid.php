@@ -384,42 +384,43 @@ public $additional_details_broker = '';
             $this->additional_details_broker             = $b['additional_details_broker'] ?? '';
         } else {
             // Load compensation defaults from the listing itself.
-            // Cast to array so PHP 8.2 never raises "Undefined property" on stdClass.
-            $l = (array) $auction->get;
-            $this->commission_structure                  = $l['commission_structure'] ?? '';
-            $this->purchase_fee_type                     = $l['purchase_fee_type'] ?? '';
-            $this->purchase_fee_flat                     = $l['purchase_fee_flat'] ?? '';
-            $this->purchase_fee_percentage               = $l['purchase_fee_percentage'] ?? '';
-            $this->purchase_fee_percentage_combo         = $l['purchase_fee_percentage_combo'] ?? '';
-            $this->purchase_fee_flat_combo               = $l['purchase_fee_flat_combo'] ?? '';
-            $this->purchase_fee_other                    = $l['purchase_fee_other'] ?? '';
-            $this->interested_lease_option               = $l['interested_lease_option'] ?? '';
-            $this->lease_fee_type                        = $l['lease_fee_type'] ?? '';
-            $this->lease_fee_flat                        = $l['lease_fee_flat'] ?? '';
-            $this->lease_fee_percentage                  = $l['lease_fee_percentage'] ?? '';
-            $this->lease_fee_percentage_monthly_rent     = $l['lease_fee_percentage_monthly_rent'] ?? '';
-            $this->lease_fee_percentage_monthly_number   = $l['lease_fee_percentage_monthly_number'] ?? '';
-            $this->lease_fee_flat_combo                  = $l['lease_fee_flat_combo'] ?? '';
-            $this->lease_fee_percentage_combo            = $l['lease_fee_percentage_combo'] ?? '';
-            $this->lease_fee_percentage_net              = $l['lease_fee_percentage_net'] ?? '';
-            $this->lease_fee_flat_combo_net              = $l['lease_fee_flat_combo_net'] ?? '';
-            $this->lease_fee_percentage_combo_net        = $l['lease_fee_percentage_combo_net'] ?? '';
-            $this->lease_fee_other                       = $l['lease_fee_other'] ?? '';
-            $this->interested_lease_option_agreement     = $l['interested_lease_option_agreement'] ?? '';
-            $this->lease_type                            = ($l['lease_type'] ?? '') ?: 'percent';
-            $this->lease_value                           = $l['lease_value'] ?? '';
-            $this->purchase_type                         = ($l['purchase_type'] ?? '') ?: 'percent';
-            $this->purchase_value                        = $l['purchase_value'] ?? '';
-            $this->protection_period                     = $l['protection_period'] ?? '';
-            $this->early_termination_fee_option          = $l['early_termination_fee_option'] ?? '';
-            $this->early_termination_fee_amount          = $l['early_termination_fee_amount'] ?? '';
-            $this->retainer_fee_option                   = $l['retainer_fee_option'] ?? '';
-            $this->retainer_fee_amount                   = $l['retainer_fee_amount'] ?? '';
-            $this->retainer_fee_application              = $l['retainer_fee_application'] ?? '';
-            $this->agency_agreement_timeframe            = $l['agency_agreement_timeframe'] ?? '';
-            $this->agency_agreement_custom               = $l['agency_agreement_custom'] ?? '';
-            $this->brokerage_relationship                = $l['brokerage_relationship'] ?? '';
-            $this->additional_details_broker             = $l['additional_details_broker'] ?? '';
+            // BuyerAgentAuction->get returns an anonymous class with __get(), NOT stdClass.
+            // (array) cast mangles private property names — use direct -> access instead.
+            $l = $auction->get;
+            $this->commission_structure                  = $l->commission_structure ?? '';
+            $this->purchase_fee_type                     = $l->purchase_fee_type ?? '';
+            $this->purchase_fee_flat                     = $l->purchase_fee_flat ?? '';
+            $this->purchase_fee_percentage               = $l->purchase_fee_percentage ?? '';
+            $this->purchase_fee_percentage_combo         = $l->purchase_fee_percentage_combo ?? '';
+            $this->purchase_fee_flat_combo               = $l->purchase_fee_flat_combo ?? '';
+            $this->purchase_fee_other                    = $l->purchase_fee_other ?? '';
+            $this->interested_lease_option               = $l->interested_lease_option ?? '';
+            $this->lease_fee_type                        = $l->lease_fee_type ?? '';
+            $this->lease_fee_flat                        = $l->lease_fee_flat ?? '';
+            $this->lease_fee_percentage                  = $l->lease_fee_percentage ?? '';
+            $this->lease_fee_percentage_monthly_rent     = $l->lease_fee_percentage_monthly_rent ?? '';
+            $this->lease_fee_percentage_monthly_number   = $l->lease_fee_percentage_monthly_number ?? '';
+            $this->lease_fee_flat_combo                  = $l->lease_fee_flat_combo ?? '';
+            $this->lease_fee_percentage_combo            = $l->lease_fee_percentage_combo ?? '';
+            $this->lease_fee_percentage_net              = $l->lease_fee_percentage_net ?? '';
+            $this->lease_fee_flat_combo_net              = $l->lease_fee_flat_combo_net ?? '';
+            $this->lease_fee_percentage_combo_net        = $l->lease_fee_percentage_combo_net ?? '';
+            $this->lease_fee_other                       = $l->lease_fee_other ?? '';
+            $this->interested_lease_option_agreement     = $l->interested_lease_option_agreement ?? '';
+            $this->lease_type                            = ($l->lease_type ?? '') ?: 'percent';
+            $this->lease_value                           = $l->lease_value ?? '';
+            $this->purchase_type                         = ($l->purchase_type ?? '') ?: 'percent';
+            $this->purchase_value                        = $l->purchase_value ?? '';
+            $this->protection_period                     = $l->protection_period ?? '';
+            $this->early_termination_fee_option          = $l->early_termination_fee_option ?? '';
+            $this->early_termination_fee_amount          = $l->early_termination_fee_amount ?? '';
+            $this->retainer_fee_option                   = $l->retainer_fee_option ?? '';
+            $this->retainer_fee_amount                   = $l->retainer_fee_amount ?? '';
+            $this->retainer_fee_application              = $l->retainer_fee_application ?? '';
+            $this->agency_agreement_timeframe            = $l->agency_agreement_timeframe ?? '';
+            $this->agency_agreement_custom               = $l->agency_agreement_custom ?? '';
+            $this->brokerage_relationship                = $l->brokerage_relationship ?? '';
+            $this->additional_details_broker             = $l->additional_details_broker ?? '';
         }
         // ─────────────────────────────────────────────────────────────────────
 
