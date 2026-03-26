@@ -294,6 +294,31 @@
                 font-size: 15px;
             }
         }
+
+        /* Bid card accordion chevron rotation (custom JS toggle) */
+        .bid-accordion-header .bid-chevron {
+            transition: transform 0.3s ease;
+        }
+        .bid-accordion-header:hover {
+            background-color: #f8f9fa !important;
+        }
+
+        /* Bid action buttons - matched sizing for Edit bid */
+        .bid-action-btn {
+            min-width: 140px;
+            height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            border: none !important;
+            box-shadow: none;
+        }
+        .bid-action-btn:hover {
+            opacity: 0.9;
+        }
     </style>
 @endpush
 
@@ -2285,46 +2310,72 @@
         </div>
         @endif
 
-
-
+        @php
+            $isListingOwner = ($auth_id == data_get($auction, 'user_id'));
+            $bidsByOrder    = $auction->bids->sortBy('created_at');
+            $agentNumberMap = [];
+            $bidIdx         = 0;
+            foreach ($bidsByOrder as $orderedBid) {
+                $bidIdx++;
+                $agentNumberMap[$orderedBid->id] = $bidIdx;
+            }
+        @endphp
                 <div class="card higestBider">
                     <div class="card-body card-body-padding">
                         @if ($lowest_bidder)
-                            <p><b>{{ $lowest_bidder->user->first_name ?? '' }}</b> is the last bidder.</p>
-                            {{-- <p><b>{{ $lowest_bidder->user->name ?? '' }}</b> is the lowest bidder.</p> --}}
+                            <p class="mb-3"><b>Agent {{ $agentNumberMap[$lowest_bidder->id] ?? '?' }}</b> was the last bidder.</p>
                         @else
                             <p>No one has bid on this auction.</p>
                         @endif
-                        <div class="accordion" id="accordionExample">
-                            <div class="accordion-item border-0">
+                        <div id="buyerBidsList">
 
                                 @foreach (@$auction->bids as $bid)
-                                    <!-- Item loop -->
-                                    <div class="accordion" type="button" data-bs-toggle="collapse"
-                                        data-bs-target="#item{{ data_get($bid, 'id') }}" aria-expanded="true"
-                                        aria-controls="item{{ data_get($bid, 'id') }}">
-                                        <div class="d-flex small accordion mr-0 text-center">
-                                            <div class="col-1">
-                                                <span class="badge">{{ $loop->iteration }}</span>
-                                            </div>
-                                            <div class="col-4">
-                                                {{ data_get($bid, 'user.first_name', '') }}
-                                            </div>
-                                            <div class="col-4 text-right">
-                                                {{ data_get($bid, 'get.agent_fee', data_get($bid, 'agent_fee', '')) }}
-                                            </div>
-                                            <div class="col-2 d-flex">
-                                                Terms↓
-                                            </div>
+                                    @php
+                                        $bidId = data_get($bid, 'id');
+                                        $bidUser = data_get($bid, 'user_id');
+                                        $isBidOwner = ($bidUser == $auth_id);
+                                        $canViewBid = $isListingOwner || $isBidOwner;
+                                        if (!$canViewBid && !$isBiddingPeriodListing) { continue; }
+                                        $agentNumber = $agentNumberMap[$bidId] ?? $loop->iteration;
+                                        $bidAccepted = data_get($bid, 'accepted', '0');
+                                        $isExpiredBid = $isExpired ?? false;
+                                        $canEditWithdraw = $isBidOwner && $bidAccepted === '0' && !$isExpiredBid && !data_get($auction, 'is_sold');
+                                        $servicesList  = (array) data_get($bid, 'get.services', []);
+                                        $servicesCount = count($servicesList);
+                                        $commissionSummary = data_get($bid, 'commission_structure', data_get($bid, 'get.commission_structure', ''));
+                                        $headerBg = $bidAccepted === 'accepted' ? '#d4edda' : ($bidAccepted === 'rejected' ? '#f8d7da' : '#f8f9fa');
+                                    @endphp
+                                    <!-- Item -->
+                                    <div class="bid-accordion-header" data-target="item{{ $bidId }}"
+                                        style="cursor:pointer; background:{{ $headerBg }}; border-radius:6px; padding:8px 12px; margin-bottom:4px; display:flex; align-items:center; justify-content:space-between;"
+                                        aria-expanded="false">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge bg-primary me-1">Agent {{ $agentNumber }}</span>
+                                            @if ($bidAccepted === 'accepted')
+                                                <span class="badge bg-success ms-1">Accepted</span>
+                                            @elseif ($bidAccepted === 'rejected')
+                                                <span class="badge bg-danger ms-1">Rejected</span>
+                                            @endif
                                         </div>
+                                        <i class="fa fa-chevron-down bid-chevron" style="transition:transform .3s;"></i>
                                     </div>
 
-                                    <div id="item{{ data_get($bid, 'id') }}" class="accordion-collapse collapse"
-                                        aria-labelledby="headingOne" data-bs-parent="#accordionExample">
-                                        <div class="accordion-body-padding" style="padding: 20px;">
-                                            <div id="bidding_history_data">
-                                                <div>
-                                                    <!-- Agent Information -->
+                                    <div id="item{{ $bidId }}" class="bid-collapse-content" style="display:none; padding:12px 4px;">
+                                        <!-- Compact summary bar -->
+                                        <div class="d-flex gap-3 flex-wrap align-items-center mb-2 p-2" style="background:#f0f4ff; border-radius:5px;">
+                                            @if ($servicesCount > 0)
+                                                <span class="small text-muted"><i class="fa fa-list me-1"></i>{{ $servicesCount }} service(s)</span>
+                                            @endif
+                                            @if ($commissionSummary)
+                                                <span class="small text-muted"><i class="fa fa-dollar-sign me-1"></i>{{ $commissionSummary }}</span>
+                                            @endif
+                                            @if ($canEditWithdraw)
+                                                <a href="{{ route('buyer.agent.auction.bid', $auction->id) }}?edit={{ $bidId }}" class="btn btn-primary bid-action-btn ms-auto">
+                                                    <i class="fa fa-edit me-1"></i> Edit Bid
+                                                </a>
+                                            @endif
+                                        </div>
+                                        <!-- Agent Information -->
                                                     {{-- <p class="d-flex justify-content-between  align-items-center small"
                                                         style="color: #333;">
                                                         <span>
@@ -3815,7 +3866,7 @@
                                                                 {{-- 🔹 Active Counter Actions --}}
                                                                 <div class="d-flex gap-3 flex-wrap justify-content-between">
                                                                     <form class="d-inline"
-                                                                        action="{{ route('buyer.hire.agent.auction.counter.bid.accept') }}"
+                                                                        action="{{ route('hire.agent.auction.counter.bid.accept') }}"
                                                                         method="post">
                                                                         @csrf
                                                                         <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
@@ -3825,7 +3876,7 @@
                                                                     </form>
 
                                                                     <form class="d-inline"
-                                                                        action="{{ route('buyer.hire.agent.auction.counter.bid.reject') }}"
+                                                                        action="{{ route('hire.agent.auction.counter.bid.reject') }}"
                                                                         method="post">
                                                                         @csrf
                                                                         <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
@@ -3835,7 +3886,7 @@
                                                                     </form>
 
                                                                     <form class="d-inline"
-                                                                        action="{{ route('buyer.hire.agent.auction.bid.counter') }}"
+                                                                        action="{{ route('hire.agent.auction.bid.counter') }}"
                                                                         method="post">
                                                                         @csrf
                                                                         <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
@@ -3924,7 +3975,7 @@
                                                             @else
                                                             <div class="biding-btn">
                                                                 <form
-                                                                    action="{{ route('buyer.hire.agent.auction.bid.accept') }}"
+                                                                    action="{{ route('hire.agent.auction.bid.accept') }}"
                                                                     method="post">
                                                                     @csrf
                                                                     <input type="hidden" name="auction_id"
@@ -3937,7 +3988,7 @@
                                                             </div>
                                                             <div class="biding-btn">
                                                                 <form
-                                                                    action="{{ route('buyer.hire.agent.auction.bid.reject') }}"
+                                                                    action="{{ route('hire.agent.auction.bid.reject') }}"
                                                                     method="post">
                                                                     @csrf
                                                                     <input type="hidden" name="auction_id"
@@ -3950,7 +4001,7 @@
                                                             </div>
                                                             <div class="biding-btn">
                                                                 <form
-                                                                    action="{{ route('buyer.hire.agent.auction.bid.counter') }}"
+                                                                    action="{{ route('hire.agent.auction.bid.counter') }}"
                                                                     method="post">
                                                                     @csrf
                                                                     <input type="hidden" name="auction_id"
@@ -4004,9 +4055,6 @@
                                                         @endif
                                                     </div>
 
-                                                </div>
-                                            </div>
-                                        </div>
                                     </div>
                                 @endforeach
 
@@ -4018,8 +4066,6 @@
                                         antitrust/commission advertising issues.
                                     </div>
                                 @endif
-
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -4251,5 +4297,24 @@
     });
 </script>
 @endif
+<script>
+document.querySelectorAll('.bid-accordion-header').forEach(function(header) {
+    header.addEventListener('click', function() {
+        var targetId = this.getAttribute('data-target');
+        var target = document.getElementById(targetId);
+        var chevron = this.querySelector('.bid-chevron');
+        if (!target) return;
+        if (target.style.display === 'none' || target.style.display === '') {
+            target.style.display = 'block';
+            if (chevron) chevron.style.transform = 'rotate(-180deg)';
+            this.setAttribute('aria-expanded', 'true');
+        } else {
+            target.style.display = 'none';
+            if (chevron) chevron.style.transform = 'rotate(0deg)';
+            this.setAttribute('aria-expanded', 'false');
+        }
+    });
+});
+</script>
 @endpush
 
