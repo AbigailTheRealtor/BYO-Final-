@@ -150,6 +150,7 @@ class LandlordAgentAuctionBid extends Component
     public $video_upload;
     public $business_card_link;
     public $business_card;
+    public $business_card_stored_path = null;
     public $promo_material_type;
     public $promo_materials = [];
     public $promo_materials_link;
@@ -734,9 +735,10 @@ class LandlordAgentAuctionBid extends Component
                 if (!empty($dp['brokerage']))         $this->brokerage         = $dp['brokerage'];
                 if (!empty($dp['license_no']))        $this->license_no        = $dp['license_no'];
                 if (!empty($dp['nar_id']))            $this->nar_id            = $dp['nar_id'];
-                if (!empty($dp['presentation_link'])) $this->presentation_link = $dp['presentation_link'];
-                if (!empty($dp['business_card_link'])) $this->business_card_link = $dp['business_card_link'];
-                if (!empty($dp['promoMaterials']))    $this->promoMaterials    = $dp['promoMaterials'];
+                if (!empty($dp['presentation_link']))         $this->presentation_link         = $dp['presentation_link'];
+                if (!empty($dp['business_card_link']))         $this->business_card_link         = $dp['business_card_link'];
+                if (!empty($dp['business_card_stored_path'])) $this->business_card_stored_path  = $dp['business_card_stored_path'];
+                if (!empty($dp['promoMaterials']))             $this->promoMaterials             = $dp['promoMaterials'];
                 $this->defaultProfileLoaded = true;
             }
         }
@@ -775,32 +777,58 @@ class LandlordAgentAuctionBid extends Component
         }
     }
 
+    private function storeProfileFiles(): void
+    {
+        foreach ($this->promoMaterials as $i => $m) {
+            $files = $m['files'] ?? [];
+            if (!is_array($files)) $files = (is_object($files) ? [$files] : []);
+            $storedPaths = [];
+            foreach ($files as $file) {
+                if (is_string($file) && !empty($file)) {
+                    $storedPaths[] = $file;
+                } elseif (is_object($file) && method_exists($file, 'store')) {
+                    $path = $file->store('auction/promo-materials', 'public');
+                    if ($path) $storedPaths[] = $path;
+                }
+            }
+            $this->promoMaterials[$i]['files'] = $storedPaths;
+        }
+        if ($this->business_card && is_object($this->business_card) && method_exists($this->business_card, 'store')) {
+            $path = $this->business_card->store('auction/documents', 'public');
+            if ($path) $this->business_card_stored_path = $path;
+        }
+    }
+
     private function buildProfileData(): array
     {
         return [
-            'bio'                 => $this->bio,
-            'why_hire_you'        => $this->why_hire_you,
-            'what_sets_you_apart' => $this->what_sets_you_apart,
-            'marketing_plan'      => $this->marketing_plan,
-            'reviews_links'       => $this->reviews_links,
-            'website_link'        => $this->website_link,
-            'social_media'        => $this->social_media,
-            'additional_details'  => $this->additional_details,
-            'year_licensed'       => $this->year_licensed,
-            'first_name'          => $this->first_name,
-            'last_name'           => $this->last_name,
-            'phone'               => $this->phone,
-            'email'               => $this->email,
-            'brokerage'           => $this->brokerage,
-            'license_no'          => $this->license_no,
-            'nar_id'              => $this->nar_id,
-            'presentation_link'   => $this->presentation_link,
-            'business_card_link'  => $this->business_card_link,
-            'promoMaterials'      => array_map(fn($m) => [
+            'bio'                       => $this->bio,
+            'why_hire_you'              => $this->why_hire_you,
+            'what_sets_you_apart'       => $this->what_sets_you_apart,
+            'marketing_plan'            => $this->marketing_plan,
+            'reviews_links'             => $this->reviews_links,
+            'website_link'              => $this->website_link,
+            'social_media'              => $this->social_media,
+            'additional_details'        => $this->additional_details,
+            'year_licensed'             => $this->year_licensed,
+            'first_name'                => $this->first_name,
+            'last_name'                 => $this->last_name,
+            'phone'                     => $this->phone,
+            'email'                     => $this->email,
+            'brokerage'                 => $this->brokerage,
+            'license_no'                => $this->license_no,
+            'nar_id'                    => $this->nar_id,
+            'presentation_link'         => $this->presentation_link,
+            'business_card_link'        => $this->business_card_link,
+            'business_card_stored_path' => $this->business_card_stored_path,
+            'promoMaterials'            => array_map(fn($m) => [
                 'type'  => $m['type']  ?? '',
                 'other' => $m['other'] ?? '',
                 'text'  => $m['text']  ?? ($m['link'] ?? ''),
                 'link'  => $m['link']  ?? ($m['text'] ?? ''),
+                'files' => array_values(array_filter(
+                    array_map(fn($f) => is_string($f) ? $f : null, is_array($m['files'] ?? null) ? $m['files'] : [])
+                )),
             ], $this->promoMaterials),
         ];
     }
@@ -810,6 +838,7 @@ class LandlordAgentAuctionBid extends Component
         $user = Auth::user();
         if (!$user) return;
 
+        $this->storeProfileFiles();
         $propType = $this->property_type ?: 'residential';
         $data = $this->buildProfileData();
 
@@ -829,6 +858,7 @@ class LandlordAgentAuctionBid extends Component
         $user = Auth::user();
         if (!$user) return;
 
+        $this->storeProfileFiles();
         AgentDefaultProfile::upsertRoleDefault($user->id, 'landlord', $this->buildProfileData());
 
         $this->defaultProfileExists = true;
@@ -861,9 +891,10 @@ class LandlordAgentAuctionBid extends Component
         if (!empty($data['brokerage']))         $this->brokerage         = $data['brokerage'];
         if (!empty($data['license_no']))        $this->license_no        = $data['license_no'];
         if (!empty($data['nar_id']))            $this->nar_id            = $data['nar_id'];
-        if (!empty($data['presentation_link'])) $this->presentation_link = $data['presentation_link'];
-        if (!empty($data['business_card_link'])) $this->business_card_link = $data['business_card_link'];
-        if (!empty($data['promoMaterials']))    $this->promoMaterials    = $data['promoMaterials'];
+        if (!empty($data['presentation_link']))         $this->presentation_link         = $data['presentation_link'];
+        if (!empty($data['business_card_link']))         $this->business_card_link         = $data['business_card_link'];
+        if (!empty($data['business_card_stored_path'])) $this->business_card_stored_path  = $data['business_card_stored_path'];
+        if (!empty($data['promoMaterials']))             $this->promoMaterials             = $data['promoMaterials'];
         $this->defaultProfileLoaded = true;
     }
 

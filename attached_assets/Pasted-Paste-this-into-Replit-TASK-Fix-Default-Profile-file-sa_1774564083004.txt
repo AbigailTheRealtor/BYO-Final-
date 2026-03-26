@@ -1,0 +1,210 @@
+Paste this into Replit:
+
+---
+
+**TASK: Fix Default Profile file saving for Agent Presentation & Marketing Materials**
+
+## Issue
+
+Under **Agent Presentation & Marketing Materials**, uploaded files are **not saving into the Saved Default Profile**.
+
+We need to make sure uploaded files are saved correctly as part of the Default Profile system for **all roles and all property types**:
+
+* Seller
+* Buyer
+* Landlord
+* Tenant
+
+and:
+
+* Residential
+* Income
+* Commercial
+* Business
+* Vacant Land
+
+---
+
+## Scope
+
+This fix is **only** for the **Saved Default Profile** logic tied to **Agent Presentation & Marketing Materials**.
+
+Do **not** change unrelated bid logic, listing creation, listing edit pages, or validation unless required for this file-saving fix.
+
+---
+
+## Critical safeguards
+
+1. **Trace the exact save/load files first**
+
+   * Find the real route/component/model/service used for:
+
+     * saving a bid as default profile
+     * loading/editing a saved default profile
+     * applying a saved default profile back into a new bid
+
+2. **Do not assume file storage structure**
+
+   * First confirm how uploaded files are already being stored in the bid flow:
+
+     * file path
+     * media table
+     * attachment model
+     * JSON array
+     * any other storage reference
+
+3. **Reuse the existing upload storage pattern**
+
+   * Do not invent a different file storage system for default profiles if the bid form already has a working one
+
+4. **Do not break existing bid uploads**
+
+   * This fix should only make uploaded files save into the default profile correctly
+
+5. **Do not try to prefill native file inputs**
+
+   * Instead, preserve and display saved file references, file names, or links when loading saved defaults
+
+6. **Do not duplicate files unnecessarily**
+
+   * Reuse the saved storage reference/path/media record pattern unless the current architecture absolutely requires a copy
+
+7. **Keep changes minimal and scoped**
+
+   * No unrelated refactors
+   * No global renaming
+   * No new parallel systems unless absolutely necessary
+
+---
+
+## Required fix
+
+When an agent clicks **Save as Default Profile**, the following must also save from **Agent Presentation & Marketing Materials**:
+
+* uploaded files
+* uploaded file references
+* file paths / media references / attachment references
+* any related saved asset entries already supported by the current bid architecture
+
+This must work for:
+
+* Seller
+* Buyer
+* Landlord
+* Tenant
+
+and all property types.
+
+---
+
+## Required behavior
+
+### 1. Save to Default Profile
+
+If the agent has uploaded files under **Agent Presentation & Marketing Materials** and clicks **Save as Default Profile**:
+
+* those uploaded files must be included in the saved default profile
+* the default profile must retain the correct file reference(s)
+* this must work on both:
+
+  * create new default profile
+  * update existing default profile
+
+### 2. Load in Default Profile Editor/Dashboard
+
+When opening the saved default profile later:
+
+* the saved uploaded files must still appear as existing saved assets/references
+* the user should be able to keep them as-is
+* the user should be able to replace them if the UI already supports replacement
+* the user should be able to remove them if the UI already supports removal
+
+### 3. Apply to New Bid
+
+When a saved default profile is applied to a new bid:
+
+* the uploaded file references from **Agent Presentation & Marketing Materials** must also carry over correctly
+* do not attempt to visually prefill the raw file input itself
+* instead show the saved file name/link/reference in the same way existing saved uploads are shown elsewhere in the app
+
+---
+
+## Important implementation rule
+
+Use the **same storage pattern already used by the current bid upload system**.
+
+Examples:
+
+* if bids use a media table, use that
+* if bids use JSON file paths, use that
+* if bids use an attachment model, use that
+
+Do **not** create a conflicting file storage method just for default profiles.
+
+---
+
+## Test cases required
+
+After coding, verify all of the following:
+
+### A. Save default with uploaded file
+
+1. Open a bid
+2. Upload file(s) under Agent Presentation & Marketing Materials
+3. Click **Save as Default Profile**
+4. Confirm the default profile now contains the uploaded file reference(s)
+
+### B. Reload default profile
+
+1. Open the saved default profile editor/dashboard
+2. Confirm uploaded file references still exist
+3. Confirm file names/links/references display correctly
+
+### C. Apply default to new bid
+
+1. Start a new bid of the same matching role + property type
+2. Apply the saved default
+3. Confirm the uploaded file references carry over correctly
+
+### D. Update existing default
+
+1. Open an existing saved default profile with uploaded files
+2. Save it again without changing the file
+3. Confirm the original file reference is not lost
+
+### E. Replace file
+
+1. Open an existing saved default profile
+2. Replace an uploaded file
+3. Save
+4. Confirm the new file reference is stored correctly
+
+### F. Cross-role/property check
+
+Verify this works for:
+
+* Seller
+* Buyer
+* Landlord
+* Tenant
+
+and does not leak files across the wrong role/property type combinations
+
+---
+
+## Output required after coding
+
+Provide:
+
+1. Exact files changed
+2. Exact storage structure used for saving uploaded files in default profiles
+3. Confirmation that:
+
+   * uploaded files now save into Saved Default Profile
+   * uploaded files persist on reload
+   * uploaded files apply correctly to new bids
+   * existing bid upload behavior was not broken
+
+---
+
+Use the smallest safe fix possible.

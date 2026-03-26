@@ -162,18 +162,29 @@
 
     <span id="business-card-error" class="text-danger" style="display: none;"></span>
     @if (
-        $business_card &&
-            is_object($business_card) &&
+        $business_card && is_object($business_card) &&
             method_exists($business_card, 'getMimeType') &&
             $business_card->getMimeType() &&
             strpos($business_card->getMimeType(), 'image/') === 0 &&
             $business_card->getSize() <= 10 * 1024 * 1024)
         <!-- Preview of newly uploaded file -->
         <div class="col-md-6 col-6 pt-2 fw-bold" id="photo-preview" style="display: block; margin-left: 11px;">
-            New Upload Preview:
+            Uploaded Photo:
             <span class="removeBold">
                 <img src="{{ $business_card->temporaryUrl() }}" style="width:80%;height:29vh;" />
             </span>
+        </div>
+    @elseif (!empty($business_card_stored_path))
+        {{-- Saved from default profile --}}
+        <div class="col-md-6 col-6 pt-2 fw-bold" style="margin-left: 11px;">
+            Saved Business Card/Photo:
+            <span class="removeBold">
+                <img src="{{ asset('storage/' . $business_card_stored_path) }}" style="width:80%;height:29vh;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+                <a href="{{ asset('storage/' . $business_card_stored_path) }}" target="_blank" class="btn btn-sm btn-outline-secondary mt-1" style="display:none;">
+                    <i class="fa-solid fa-file me-1"></i> View Saved File
+                </a>
+            </span>
+            <small class="text-muted d-block mt-1">From your saved default profile — upload a new file above to replace it.</small>
         </div>
     @endif
 
