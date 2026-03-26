@@ -92,6 +92,7 @@ use App\Http\Livewire\HireBuyerAgent\BuyerAgentAuctionEdit;
 use App\Http\Livewire\HireLandLordAgent\LandLordAgentAuctionEdit;
 use App\Http\Livewire\HireSellerAgent\SellerAgentAuction as liverSellerAuction;
 use App\Http\Livewire\Buyer\BuyerAgentAuctionBid;
+use App\Http\Livewire\Seller\SellerAgentAuctionBid;
 
 use App\Http\Controllers\NotificationController;
 
@@ -640,8 +641,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/property/listing/step/3', [PropertyAuctionController::class, 'step3'])->name('save-pl-step3');
         Route::post('/property/listing/step/4', [PropertyAuctionController::class, 'step4'])->name('save-pl-step4');
         Route::post('/property/listing/step/5', [PropertyAuctionController::class, 'step5'])->name('save-pl-step5');
-        Route::get('/agent/seller/bid/add/{id}', [SellerAgentAuctionController::class, 'add_bid'])->name('add_seller_agent_bid');
-        Route::post('/agent/seller/bid/save', [SellerAgentAuctionController::class, 'saveSABid'])->name('saveSABid');
+        Route::get('/agent/seller/bid/add/{auctionId}', SellerAgentAuctionBid::class)->name('add_seller_agent_bid');
 
         // Landlord's Agent routes
         Route::get('/agent/landlord/bid/add/{id}', [LandlordAgentAuctionBidController::class, 'add_bid'])->name('landlord.agent.auction.bid.add');

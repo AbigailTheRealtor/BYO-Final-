@@ -1,0 +1,374 @@
+Yes — this looks like they likely edited the **wrong Seller bid file or wrong shared partial** and replaced the current standardized tabbed bid form with an older card/question-style step layout.
+
+Use this exact Replit instruction:
+
+---
+
+**Hire a Seller’s Agent — Agent Bid Form was edited wrong, likely wrong file/partial replaced**
+
+### Problem
+
+The **Seller agent bid form** was recently changed incorrectly.
+
+Instead of matching the current standardized bid format used by **Tenant, Buyer, and Landlord**, the Seller bid page is now showing an **older step/card-style layout** with large option cards like:
+
+* “What is the proposed timeframe outlined in the Seller Agency Agreement?”
+* large selectable boxes
+* old single-question flow
+* missing the standard tabs like:
+
+  * Agent Overview
+  * Broker Compensation and Agency Agreement
+  * Additional Details
+  * Offered Services
+  * Agent Presentation & Marketing Materials
+  * Agent Credentials & Contact Info
+
+The screenshot confirms the Seller bid page no longer matches the current working standardized bid format and it appears the **wrong active file, wrong include, or wrong shared partial was edited/replaced**.
+
+### Goal
+
+Restore **Hire a Seller’s Agent → Agent Bid** so it matches the same standardized bid form structure used by:
+
+* Tenant
+* Buyer
+* Landlord
+
+The Seller bid form should **not** use the old card/question stepper format.
+
+---
+
+# Hard Safeguards
+
+1. **Do not touch Tenant, Buyer, or Landlord bid flows** except to inspect them as the source of truth.
+2. **Do not change DB schema, migrations, table names, column names, model names, or route names.**
+3. **Do not change Seller listing creation form logic.**
+4. **Do not change Seller listing edit form logic.**
+5. **Do not change live data mapping unless required to restore correct Seller bid prefill.**
+6. **Do not delete any files.**
+7. **Do not mass-refactor shared bid code.**
+8. **Do not guess the active file.**
+9. **First trace the actual Seller bid route and exact rendered files before editing anything.**
+10. **If a shared component was incorrectly pointed to an old Seller stepper view, only fix the routing/include/partial usage surgically.**
+11. **Do not replace working standardized bid markup with legacy markup.**
+12. **Stop immediately if the file being edited is not the one actually rendered by the Seller bid route.**
+
+---
+
+# What needs to happen
+
+## 1) Confirm the real active Seller bid route and rendered files
+
+Before making any changes, trace the full active path for:
+
+**Hire a Seller’s Agent → Agent Bid page**
+
+Confirm:
+
+* route
+* controller or Livewire component
+* top-level blade
+* included partials/components
+* any role-based conditional includes
+* any property-type conditional includes
+
+### Required output before edit
+
+Print/log/report the actual active files for:
+
+* Seller bid route
+* Seller bid component/controller
+* Seller bid blade
+* all included partials actually rendered
+
+Do **not** edit based on assumptions.
+
+---
+
+## 2) Compare Seller against the working Tenant standardized bid form
+
+Use the **current Tenant bid form** as the visual and structural source of truth for:
+
+* tab layout
+* section order
+* field grouping
+* standardized spacing/wrappers
+* tab navigation
+* save/submit button placement
+* Offered Services rendering
+* Broker Compensation & Agency Agreement rendering
+* Additional Details rendering
+* Agent Overview rendering
+* Marketing Materials rendering
+* Credentials & Contact rendering
+
+Seller should match the **same standardized structure** but with **Seller-specific content and fields**.
+
+### Important
+
+Copy the **working layout pattern only**.
+Do **not** copy Tenant wording into Seller.
+
+---
+
+## 3) Find where the wrong legacy Seller format is coming from
+
+Based on the screenshot, Seller is currently rendering an **old question-card step format**.
+
+That likely means one of these happened:
+
+* wrong Seller blade was edited
+* wrong shared bid component was swapped in
+* Seller now points to an old legacy partial
+* a role conditional is routing Seller to an old template
+* a property-type include is loading outdated Seller markup
+* the standardized Seller bid tab layout got replaced
+
+Explicitly find the root cause.
+
+### Look for:
+
+* old Seller bid blade
+* old legacy “question card”/stepper markup
+* old component with big option boxes
+* includes or `@include` pointing Seller to old view
+* role checks like Seller using old fallback partial
+* route pointing to wrong component
+* conditionals that differ from Tenant/Buyer/Landlord
+
+---
+
+## 4) Restore the Seller bid page to the standardized tabbed format
+
+The Seller bid page should match the working standardized bid layout used by Tenant/Buyer/Landlord.
+
+It should restore the proper tabbed interface, including the current sections such as:
+
+* Agent Overview
+* Broker Compensation and Agency Agreement
+* Additional Details
+* Offered Services
+* Agent Presentation & Marketing Materials
+* Agent Credentials & Contact Info
+
+If the standardized working flow uses slightly different names internally, keep the active naming convention already used by the working roles.
+
+### Seller must NOT render:
+
+* full-page old stepper flow
+* single-question giant option card screens
+* legacy boxed timeframe selector layout
+* old Seller-only wizard structure
+
+---
+
+## 5) Restore correct Seller Broker Compensation & Agency Agreement section format
+
+The Seller bid form’s **Broker Compensation & Agency Agreement** section must use the same current format style as the working standardized bid forms.
+
+That means:
+
+* same section wrapper style
+* same field block style
+* same answer layout style
+* same grouping logic
+* same conditional rendering approach
+* same save/edit/reopen behavior
+
+But still use **Seller-specific compensation fields and Seller-specific terms**.
+
+Do not leave any old mixed format in place.
+
+---
+
+## 6) Restore correct Seller Offered Services section format
+
+The Seller bid form’s **Offered Services** section must also use the same current standardized rendering pattern as the working roles.
+
+Requirements:
+
+* preserve Seller-specific service categories/options
+* preserve checked values
+* preserve “Other” custom text
+* no duplicate service sections
+* no legacy flat rendering if the standardized version is grouped
+* must survive validation, save draft, reopen, submit, and counter flows
+
+---
+
+## 7) Verify Seller prefill still works
+
+After restoring the correct format, make sure Seller bid fields still prefill from the Seller listing the same way other roles do.
+
+Test for all Seller property types:
+
+* Residential
+* Income
+* Commercial
+* Business
+* Vacant Land
+
+Prefill must correctly load:
+
+* selected services
+* compensation defaults
+* agreement timeframe values
+* relationship values
+* custom “Other” text
+* property-type-specific Seller fields
+
+Do not let the format restoration break prefill.
+
+---
+
+## 8) Check if the wrong file replaced the right file
+
+I strongly suspect the correct active Seller standardized bid view was replaced with an old legacy view.
+
+Please verify whether one of these happened:
+
+* correct Seller bid blade got overwritten
+* correct shared partial got replaced
+* Seller include now points to an old blade
+* standardized Seller tabs were removed from active render path
+* role conditional started loading legacy Seller question flow
+
+If so, restore the correct active view and remove the wrong include/reference.
+
+Do **not** just patch the legacy page.
+The goal is to put Seller back onto the same standardized bid structure as Tenant/Buyer/Landlord.
+
+---
+
+## 9) Allowed changes
+
+Only change files that are confirmed active for the Seller bid route.
+
+Allowed:
+
+* active Seller bid route target
+* active Seller bid Livewire/controller file
+* active Seller bid blade
+* active Seller bid partials
+* active shared bid partial only if Seller is using it and the change is safely role-scoped
+
+Not allowed:
+
+* random legacy files not in render path
+* Tenant active views
+* Buyer active views
+* Landlord active views
+* listing create/edit pages
+* schema/migrations/models unless absolutely necessary and proven
+
+---
+
+# QA checklist — must pass
+
+## A. Route/file verification
+
+Confirm exact active:
+
+* Seller bid route
+* Seller bid controller/component
+* Seller bid blade
+* included partials
+
+## B. Layout verification
+
+Seller bid page must:
+
+* no longer show old question-card wizard
+* restore tabbed standardized bid layout
+* visually match Tenant/Buyer/Landlord structure
+* show proper tab navigation
+* use correct Seller labels/content
+
+## C. Section verification
+
+Confirm these render correctly:
+
+* Agent Overview
+* Broker Compensation and Agency Agreement
+* Additional Details
+* Offered Services
+* Agent Presentation & Marketing Materials
+* Agent Credentials & Contact Info
+
+## D. Prefill verification
+
+Test all 5 Seller property types:
+
+* Residential
+* Income
+* Commercial
+* Business
+* Vacant Land
+
+Verify:
+
+* saved listing values load into bid form
+* services are selected correctly
+* compensation terms show correctly
+* custom text shows correctly
+* no tenant content appears
+
+## E. Persistence verification
+
+Test:
+
+1. open Seller bid
+2. verify prefill
+3. change values
+4. save draft if supported
+5. reopen
+6. submit
+7. edit submitted bid if supported
+8. counter flow if supported
+9. summary output if supported
+
+## F. Regression verification
+
+Confirm unchanged:
+
+* Tenant bid flow
+* Buyer bid flow
+* Landlord bid flow
+* Seller create listing flow
+* Seller edit listing flow
+* routes
+* DB schema
+
+---
+
+# Required report back
+
+When done, report back with:
+
+1. **Exact active Seller bid route**
+2. **Exact files changed**
+3. **Exact root cause**
+
+   * wrong file edited
+   * wrong partial included
+   * wrong route/component
+   * legacy view replacing active standardized view
+4. **What was restored**
+5. **Proof Seller now matches Tenant/Buyer/Landlord structure**
+6. **QA results for all 5 Seller property types**
+7. **Confirmation that Tenant/Buyer/Landlord were not changed**
+
+---
+
+# Extra stop condition
+
+If you discover Seller is currently sharing a common bid component and the old layout was introduced there, do **not** do a global rewrite.
+Instead:
+
+* isolate the exact regression
+* restore only the Seller render path or the minimal shared logic needed
+* confirm Tenant/Buyer/Landlord remain unchanged
+
+---
+
+I can also make you a **shorter “strict surgical patch” version** next, with sections like **Files allowed to edit / Files forbidden to edit / Exact acceptance criteria / Stop conditions**.
