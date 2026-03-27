@@ -2408,7 +2408,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                 <!-- Edit Bid button for bid owner -->
                                 @if ($canEditWithdraw)
                                 <div class="d-flex gap-2 mt-3 justify-content-end align-items-center">
-                                    <a href="{{ route('landlord.agent.auction.bid', $auction->id) }}?edit={{ data_get($bid, 'id') }}"
+                                    <a href="{{ route('agent.landlord.agent.auction.bid', $auction->id) }}?edit={{ data_get($bid, 'id') }}"
                                        class="btn btn-primary bid-action-btn">
                                         <i class="fa fa-edit me-1"></i> Edit Bid
                                     </a>
