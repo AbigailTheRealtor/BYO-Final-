@@ -21,6 +21,10 @@ A **Default Profile system** allows agents to save and reuse bid profile data (b
 
 The **Seller Agent Bid form** (`app/Http/Livewire/Seller/SellerAgentAuctionBid.php`) is a 6-tab Livewire wizard at route `GET /agent/seller/bid/add/{auctionId}` (name: `add_seller_agent_bid`). Tab partials live in `resources/views/livewire/seller-agent-auction-bid-tabs/commission-based/`. Property type from DB is normalized to short form (Residential/Income/Commercial/Business/Vacant Land) in `normalizePropType()`. After submit, redirects to `seller.agent.auction.detail`. Uses `->extends('layouts.main')->section('content')` for Livewire 2.x layout rendering.
 
+The **Seller Agent bid view page** (`resources/views/hire_seller_agent/view.blade.php`) implements the same bid display system as the live Tenant bid view, including: sortable bid accordion cards (class `bid-accordion-header`, body `id="bidCollapse-{id}"`), Traditional vs Bidding Period visibility rules, `isListingOwner`/`isAgentViewer`/`canSeeBidSummary` variables, a Private Data Modal per bid (with Agent Overview, Services, and Broker Compensation sections), Accept/Reject action buttons for the listing owner, and `AcceptedBidSummary` links. The `SellerAgentAuctionController::viewDetail()` eager-loads `bids.user`, `bids.meta`, `user`, and `meta`, and passes `$auth_id` and `$lowest_bidder`. Routes: `acceptSABid` (POST) and `rejectSABid` (POST).
+
+**AcceptedBidSummary links** are present in all four role bid detail views (Tenant, Seller, Landlord, Buyer). When a bid is accepted, the listing owner and agent both see links to view, e-sign, and download the signed PDF summary via the `accepted-bid-summary.*` routes (`AcceptedBidSummaryController`).
+
 ## External Dependencies
 - **PostgreSQL**: Primary relational database.
 - **TailwindCSS**: Utility-first CSS framework.

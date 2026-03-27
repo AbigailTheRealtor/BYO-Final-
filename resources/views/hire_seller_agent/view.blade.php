@@ -2600,645 +2600,645 @@
         </div>
         @endif
         @php
-            $isListingOwner = ($auth_id == data_get($auction, 'user_id'));
-            $bidsByOrder    = $auction->bids->sortBy('created_at');
+            // === SELLER BID SECTION: VARIABLE SETUP (matches Tenant pattern) ===
+            $bidsByOrder = $auction->bids->sortBy('created_at')->values();
             $agentNumberMap = [];
-            $bidIdx         = 0;
-            foreach ($bidsByOrder as $orderedBid) {
-                $bidIdx++;
-                $agentNumberMap[$orderedBid->id] = $bidIdx;
+            foreach ($bidsByOrder as $index => $orderedBid) {
+                $agentNumberMap[$orderedBid->id] = $index + 1;
             }
+            $lastBidderNumber = null;
+            if ($lowest_bidder) {
+                $lastBidderNumber = $agentNumberMap[$lowest_bidder->id] ?? null;
+            }
+            $isListingOwner = ($auth_id == data_get($auction, 'user_id'));
+            $isAgentViewer  = $auth_id && in_array(auth()->user()->user_type ?? '', ['agent']);
+            // Traditional: agents cannot see other agents' bid info
+            $canSeeBidSummary = $isListingOwner || !$isAgentViewer || $isBiddingPeriodListing;
+            $otherBidsExist   = $auction->bids->where('user_id', '!=', $auth_id)->count() > 0;
         @endphp
-                <div class="card higestBider">
-                    <div class="card-body card-body-padding">
-                        @if ($lowest_bidder)
-                            <p class="mb-3"><b>Agent {{ $agentNumberMap[$lowest_bidder->id] ?? '?' }}</b> was the last bidder.</p>
-                        @else
-                            <p>No one has bid on this auction.</p>
-                        @endif
-                        <div id="sellerBidsList">
 
-                                @foreach (@$auction->bids as $bid)
+        {{-- Last Bidder Info (hidden for Bidding Period to avoid timing hints to agents) --}}
+        @if ($canSeeBidSummary && !($isBiddingPeriodListing && $isAgentViewer && !$isListingOwner))
+            @if ($lowest_bidder && $lastBidderNumber)
+            <p class="mb-3"><b>Agent {{ $lastBidderNumber }}</b> was the last bidder.</p>
+            @else
+            <p class="mb-3">No one has bid on this auction.</p>
+            @endif
+        @elseif (!$canSeeBidSummary)
+            <p class="text-muted mb-3"><i class="fa fa-lock me-1"></i> Bid information is private for traditional listings.</p>
+        @endif
+
+        {{-- Agent Visibility Info Messages --}}
+        @if ($isAgentViewer && !$isListingOwner)
+            @if ($isTraditionalListing && $otherBidsExist)
+            <div class="alert alert-info small mb-3 py-2">
+                <i class="fa fa-lock me-1"></i> <strong>Traditional Listing:</strong> You can only view your own bid. Other agents' bids remain private.
+            </div>
+            @elseif ($isBiddingPeriodListing && !$isExpired && !$userHasBid)
+            <div class="alert alert-warning small mb-3 py-2">
+                <i class="fa fa-info-circle me-1"></i> <strong>Bidding Period:</strong> Submit your bid to view anonymized competing bids (Broker Terms, Services, and Match Scores only).
+            </div>
+            @elseif ($isBiddingPeriodListing && !$isExpired && $userHasBid && $otherBidsExist)
+            <div class="alert alert-info small mb-3 py-2">
+                <i class="fa fa-eye me-1"></i> <strong>Bidding Period:</strong> Anonymized competing bids are visible below (Broker Terms, Services, Match Scores only).
+            </div>
+            {{-- Competing Bids Display for Bidding Period --}}
+            @php
+                $competingBidsService = app(\App\Services\CompetingBidsService::class);
+                $competingBids = $competingBidsService->getCompetingBids($auction->id, $auth_id);
+            @endphp
+            @if(count($competingBids) > 0)
+            <div class="mb-4">
+                <h6 class="fw-bold mb-3" style="color: #049399;"><i class="fa fa-users me-2"></i>Competing Bids ({{ count($competingBids) }})</h6>
+                @foreach($competingBids as $compBid)
+                <div class="card mb-3" style="border-radius: 10px; border: 1px solid #e0e0e0;">
+                    <div class="card-header d-flex justify-content-between align-items-center" style="background: #f8f9fa; border-bottom: 1px solid #e0e0e0; border-radius: 10px 10px 0 0; padding: 12px 16px;">
+                        <span class="fw-bold" style="font-family: 'Lufga', sans-serif;">{{ $compBid['anonymous_label'] }}</span>
+                        @php
+                            $cOverallScore = $compBid['match_score']['overall_percent'];
+                            $cScoreColor   = $cOverallScore >= 80 ? '#28a745' : ($cOverallScore >= 50 ? '#ffc107' : '#dc3545');
+                        @endphp
+                        <span class="badge" style="background: {{ $cScoreColor }}; color: white; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem;">
+                            {{ $cOverallScore }}% Match
+                        </span>
+                    </div>
+                    <div class="card-body" style="padding: 16px;">
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <div class="d-flex flex-wrap gap-3">
                                     @php
-                                        $bidId = data_get($bid, 'id');
-                                        $bidUser = data_get($bid, 'user_id');
-                                        $isBidOwner = ($bidUser == $auth_id);
-                                        $canViewBid = $isListingOwner || $isBidOwner;
-                                        if (!$canViewBid && !$isBiddingPeriodListing) { continue; }
-                                        $agentNumber = $agentNumberMap[$bidId] ?? $loop->iteration;
-                                        $bidAccepted = data_get($bid, 'accepted', '0');
-                                        $isExpiredBid = $isExpired ?? false;
-                                        $canEditWithdraw = $isBidOwner && $bidAccepted === '0' && !$isExpiredBid && !data_get($auction, 'is_sold');
-                                        $servicesList  = (array) data_get($bid, 'get.services', []);
-                                        $servicesCount = count($servicesList);
-                                        $commissionSummary = data_get($bid, 'commission_structure', data_get($bid, 'get.commission_structure', ''));
-                                        $headerBg = $bidAccepted === 'accepted' ? '#d4edda' : ($bidAccepted === 'rejected' ? '#f8d7da' : '#f8f9fa');
+                                        $cBrokerScore    = $compBid['match_score']['broker_comp_percent'];
+                                        $cBrokerColor    = $cBrokerScore >= 80 ? '#28a745' : ($cBrokerScore >= 50 ? '#ffc107' : '#dc3545');
+                                        $cServicesScore  = $compBid['match_score']['services_percent'];
+                                        $cServicesColor  = $cServicesScore >= 80 ? '#28a745' : ($cServicesScore >= 50 ? '#ffc107' : '#dc3545');
                                     @endphp
-                                    <!-- Item -->
-                                    <div class="bid-accordion-header" data-target="item{{ $bidId }}"
-                                        style="cursor:pointer; background:{{ $headerBg }}; border-radius:6px; padding:8px 12px; margin-bottom:4px; display:flex; align-items:center; justify-content:space-between;"
-                                        aria-expanded="false">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <span class="badge bg-primary me-1">Agent {{ $agentNumber }}</span>
-                                            @if ($bidAccepted === 'accepted')
-                                                <span class="badge bg-success ms-1">Accepted</span>
-                                            @elseif ($bidAccepted === 'rejected')
-                                                <span class="badge bg-danger ms-1">Rejected</span>
-                                            @endif
-                                        </div>
-                                        <i class="fa fa-chevron-down bid-chevron" style="transition:transform .3s;"></i>
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge me-2" style="background: {{ $cBrokerColor }}; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">{{ $cBrokerScore }}%</span>
+                                        <span class="small text-muted">Broker Compensation ({{ $compBid['match_score']['broker_comp_matched'] }}/{{ $compBid['match_score']['broker_comp_total'] }} fields)</span>
                                     </div>
-
-                                    <div id="item{{ $bidId }}" class="bid-collapse-content" style="display:none; padding:12px 4px;">
-                                        <!-- Compact summary bar -->
-                                        <div class="d-flex gap-3 flex-wrap align-items-center mb-2 p-2" style="background:#f0f4ff; border-radius:5px;">
-                                            @if ($servicesCount > 0)
-                                                <span class="small text-muted"><i class="fa fa-list me-1"></i>{{ $servicesCount }} service(s)</span>
-                                            @endif
-                                            @if ($commissionSummary)
-                                                <span class="small text-muted"><i class="fa fa-dollar-sign me-1"></i>{{ $commissionSummary }}</span>
-                                            @endif
-                                            @if ($canEditWithdraw)
-                                                <a href="{{ route('add_seller_agent_bid', $auction->id) }}?edit={{ $bidId }}" class="btn btn-primary bid-action-btn ms-auto">
-                                                    <i class="fa fa-edit me-1"></i> Edit Bid
-                                                </a>
-                                            @endif
-                                        </div>
-                                        <!-- Agent Information -->
-                                                    <p class="d-flex justify-content-between  align-items-center small"
-                                                        style="color: #333;">
-                                                        <span>
-                                                            Agent First Name:
-                                                        </span>
-                                                        <span class="fw-normal" style="font-size: 16px; color: #555;">
-                                                            {{ data_get($bid, 'get.first_name', '') }}
-                                                        </span>
-                                                    </p>
-                                                    <p class="d-flex justify-content-between small"
-                                                        style="font-size:large; color: #333;">
-                                                        Year Agent Got Licensed:
-                                                        <span class="fw-normal" style="font-size: 16px; color: #555;">
-                                                            {{ data_get($bid, 'get.year_licensed', '') }}
-                                                        </span>
-                                                    </p>
-
-                                                    <!-- Why Hire You -->
-                                                    <p class="d-flex justify-content-between small"
-                                                        style="font-size:large; color: #333;">
-                                                        Why Should You Be Hired as Their Agent?
-                                                    </p>
-                                                    <p class="d-flex justify-content-between small"
-                                                        style="font-size:large; color: #333;">
-                                                        <span class="fw-normal" style="font-size: 16px; color: #555;">
-                                                            {{ data_get($bid, 'get.why_hire_you', '') }}
-                                                        </span>
-                                                    </p>
-
-                                                    <!-- What Sets You Apart -->
-                                                    <p class="d-flex justify-content-between small"
-                                                        style="font-size:large; color: #333;">
-                                                        What Sets You Apart From Other Agents?
-                                                    </p>
-                                                    <p class="d-flex justify-content-between small"
-                                                        style="font-size:large; color: #333;">
-                                                        <span class="fw-normal" style="font-size: 16px; color: #555;">
-                                                            {{ data_get($bid, 'get.what_sets_you_apart', '') }}
-                                                        </span>
-                                                    </p>
-
-                                                    <!-- Marketing Strategy -->
-                                                    <p class="d-flex justify-content-between small"
-                                                        style="font-size:large; color: #333;">
-                                                        What Is Your Marketing Strategy?
-                                                    </p>
-                                                    <p class="d-flex justify-content-between small"
-                                                        style="font-size:large; color: #333;">
-                                                        <span class="fw-normal" style="font-size: 16px; color: #555;">
-                                                            {{ data_get($bid, 'get.marketing_plan', '') }}
-                                                        </span>
-                                                    </p>
-
-                                                    <!-- Services Offered -->
-                                                    @php $servicesList = (array) data_get($bid,'get.services',[]); @endphp
-                                                    @if (!empty($servicesList))
-                                                        <div>
-                                                            <label style="font-size: large;">Services Offered by the
-                                                                Agent:</label>
-                                                            <ul class="services services-offered">
-                                                                @foreach ($servicesList as $service)
-                                                                    @if ($service == 'Other')
-                                                                        @continue
-                                                                    @endif
-                                                                    <li class="alert-font"
-                                                                        style="font-size: 16px; margin-top:15px;">
-                                                                        {{ $service }}</li>
-                                                                @endforeach
-                                                            </ul>
-                                                        </div>
-                                                    @endif
-
-                                                    @php $otherServicesList = (array) data_get($bid,'get.other_services',[]); @endphp
-                                                    @if (!empty($otherServicesList))
-                                                        <div>
-                                                            <label style="font-size: large;">Other Services Offered by the
-                                                                Agent:</label>
-                                                            <ul class="services services-offered">
-                                                                @foreach ($otherServicesList as $service)
-                                                                    <li style="font-size: 16px; margin-top:15px;">
-                                                                        {{ $service }}</li>
-                                                                @endforeach
-                                                            </ul>
-                                                        </div>
-                                                    @endif
-
-                                                    <!-- Counter Bids (no SellerCounterBidding model - feature pending) -->
-                                                    @php
-                                                        $counterBids = collect([]);
-                                                    @endphp
-
-                                                    @if ($counterBids->count() > 0)
-                                                        <div class="counter-bids-section mt-4">
-                                                            <!-- Counter Bids Accordion Header -->
-                                                            <div class="accordion" type="button"
-                                                                data-bs-toggle="collapse"
-                                                                data-bs-target="#counterBids{{ data_get($bid, 'id') }}"
-                                                                aria-expanded="false"
-                                                                aria-controls="counterBids{{ data_get($bid, 'id') }}">
-                                                                <div
-                                                                    class="d-flex justify-content-between align-items-center flex-wrap p-2 border rounded">
-                                                                    <h5 class="mb-0" style="color: #2c3e50;">Counter
-                                                                        Bidding History</h5>
-                                                                    <div class="d-flex align-items-center">
-                                                                        <span
-                                                                            class="badge bg-secondary me-2">{{ $counterBids->count() }}
-                                                                            counter offers</span>
-                                                                        <span class="accordion-arrow">↓</span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-
-                                                            <!-- Counter Bids Accordion Content -->
-                                                            <div id="counterBids{{ data_get($bid, 'id') }}"
-                                                                class="accordion-collapse collapse"
-                                                                aria-labelledby="counterBidsHeading{{ data_get($bid, 'id') }}">
-                                                                <div
-                                                                    class="accordion-body p-3 border border-top-0 rounded-bottom counter-font">
-                                                                    @foreach ($counterBids as $counterBid)
-                                                                        @php
-                                                                            // Roles
-                                                                            $isOwner =
-                                                                                data_get($auction, 'user_id') ==
-                                                                                $auth_id;
-                                                                            $isAgent =
-                                                                                data_get($bid, 'user_id') == $auth_id;
-                                                                            $isCounterFromOwner =
-                                                                                $counterBid->user_id ==
-                                                                                data_get($auction, 'user_id');
-                                                                            $isCounterFromAgent =
-                                                                                $counterBid->user_id ==
-                                                                                data_get($bid, 'user_id');
-
-                                                                            // States
-                                                                            $rawBidState = data_get(
-                                                                                $bid,
-                                                                                'accepted',
-                                                                                '0',
-                                                                            );
-                                                                            $bidState = in_array(
-                                                                                $rawBidState,
-                                                                                [null, 0, '0'],
-                                                                                true,
-                                                                            )
-                                                                                ? '0'
-                                                                                : (string) $rawBidState;
-
-                                                                            $rawCounterState = data_get(
-                                                                                $counterBid,
-                                                                                'accepted',
-                                                                                '0',
-                                                                            );
-                                                                            $counterState = in_array(
-                                                                                $rawCounterState,
-                                                                                [null, 0, '0', 'pending'],
-                                                                                true,
-                                                                            )
-                                                                                ? '0'
-                                                                                : (string) $rawCounterState;
-
-                                                                            // Actions visibility (other party, both pending)
-                                                                            $showCounterActions = false;
-                                                                            if (
-                                                                                $bidState === '0' &&
-                                                                                $counterState === '0'
-                                                                            ) {
-                                                                                if ($isOwner && $isCounterFromAgent) {
-                                                                                    $showCounterActions = true;
-                                                                                }
-                                                                                if ($isAgent && $isCounterFromOwner) {
-                                                                                    $showCounterActions = true;
-                                                                                }
-                                                                            }
-
-                                                                            // Names
-                                                                            $ownerFirst = data_get(
-                                                                                $auction,
-                                                                                'user.first_name',
-                                                                                '',
-                                                                            );
-                                                                            $ownerLast = data_get(
-                                                                                $auction,
-                                                                                'user.last_name',
-                                                                                '',
-                                                                            );
-                                                                            $agentFirst = data_get(
-                                                                                $bid,
-                                                                                'user.first_name',
-                                                                                '',
-                                                                            );
-                                                                            $agentLast = data_get(
-                                                                                $bid,
-                                                                                'user.last_name',
-                                                                                '',
-                                                                            );
-
-                                                                            // For counter accepted/rejected: actor is ALWAYS the other party (not the creator)
-                                                                            $actorUserId = $isCounterFromOwner
-                                                                                ? data_get($bid, 'user_id')
-                                                                                : data_get($auction, 'user_id');
-                                                                            $actorFirst = $isCounterFromOwner
-                                                                                ? $agentFirst
-                                                                                : $ownerFirst;
-                                                                            $actorLast = $isCounterFromOwner
-                                                                                ? $agentLast
-                                                                                : $ownerLast;
-
-                                                                            // Creator names (for "pending" other-party view)
-                                                                            $creatorFirst = data_get(
-                                                                                $counterBid,
-                                                                                'user.first_name',
-                                                                                '',
-                                                                            );
-                                                                            $creatorLast = data_get(
-                                                                                $counterBid,
-                                                                                'user.last_name',
-                                                                                '',
-                                                                            );
-                                                                        @endphp
-
-                                                                        <div
-                                                                            class="counter-bid-card mb-3 p-3 border rounded mt-2">
-                                                                            <div
-                                                                                class="d-flex justify-content-between align-items-center flex-wrap mb-2">
-                                                                                <h6 class="mb-0">
-                                                                                    @if ($counterBid->user_id == Auth::id())
-                                                                                        Your Counter Offer
-                                                                                    @else
-                                                                                        Counter Offer from
-                                                                                        {{ data_get($counterBid, 'user.first_name') }}
-                                                                                        {{ data_get($counterBid, 'user.last_name') }}
-                                                                                    @endif
-                                                                                </h6>
-                                                                                <small
-                                                                                    class="text-muted">{{ optional($counterBid->created_at)->format('M j, Y g:i A') }}</small>
-                                                                            </div>
-
-                                                                            @php $allMeta = $counterBid->getAllMeta(); @endphp
-                                                                            @if (!empty($allMeta['commission_structure']))
-                                                                                <div class="mb-2"><strong>Commission
-                                                                                        Structure:</strong>
-                                                                                    {{ $allMeta['commission_structure'] }}
-                                                                                </div>
-                                                                            @endif
-                                                                            @if (!empty($allMeta['lease_fee_type']))
-                                                                                <div class="mb-2"><strong>Lease Fee
-                                                                                        Type:</strong>
-                                                                                    {{ $allMeta['lease_fee_type'] }}</div>
-                                                                            @endif
-                                                                            @if (!empty($allMeta['lease_fee_flat']))
-                                                                                <div class="mb-2"><strong>Lease Flat
-                                                                                        Fee:</strong>
-                                                                                    ${{ number_format((float)str_replace(',', '', $allMeta['lease_fee_flat']), 2) }}
-                                                                                </div>
-                                                                            @endif
-                                                                            @if (!empty($allMeta['lease_fee_percentage']))
-                                                                                <div class="mb-2"><strong>Lease
-                                                                                        Percentage:</strong>
-                                                                                    {{ $allMeta['lease_fee_percentage'] }}%
-                                                                                </div>
-                                                                            @endif
-
-                                                                            <!-- Services Offered -->
-                                                                            @php
-                                                                                $services = is_string(
-                                                                                    $allMeta['services'],
-                                                                                )
-                                                                                    ? json_decode(
-                                                                                        $allMeta['services'],
-                                                                                        true,
-                                                                                    )
-                                                                                    : $allMeta['services'];
-                                                                            @endphp
-
-                                                                            @if (!empty($services))
-                                                                                <div style="margin-top: 20px;">
-                                                                                    <label
-                                                                                        style="font-size: 18px; font-weight: bold; display: block; margin-bottom: 10px;">
-                                                                                        Services:
-                                                                                    </label>
-                                                                                    <div
-                                                                                        style="display: flex; flex-wrap: wrap; gap: 10px;">
-                                                                                        @foreach ($services as $service)
-                                                                                            @if ($service == 'Other')
-                                                                                                @continue
-                                                                                            @endif
-                                                                                            <span
-                                                                                                style="background: #f1f5f9; color: #111; padding: 6px 12px;
-                                                                                                    border-radius: 8px; font-size: 12px; border: 1px solid #ddd;">
-                                                                                                {{ $service }}
-                                                                                            </span>
-                                                                                        @endforeach
-                                                                                    </div>
-                                                                                </div>
-                                                                            @endif
-                                                                            @php
-                                                                                $other_services = is_string(
-                                                                                    $allMeta['other_services'],
-                                                                                )
-                                                                                    ? json_decode(
-                                                                                        $allMeta['other_services'],
-                                                                                        true,
-                                                                                    )
-                                                                                    : $allMeta['other_services'];
-                                                                            @endphp
-                                                                            @if (!empty($other_services))
-                                                                                <div style="margin-top: 20px;">
-                                                                                    <label
-                                                                                        style="font-size: 18px; font-weight: bold; display: block; margin-bottom: 10px;">
-                                                                                        Other Services:
-                                                                                    </label>
-                                                                                    <div
-                                                                                        style="display: flex; flex-wrap: wrap; gap: 10px;">
-                                                                                        @foreach ($other_services as $other_service)
-                                                                                            <span
-                                                                                                style="background: #f1f5f9; color: #111; padding: 6px 12px;
-                                                                                                    border-radius: 8px; font-size: 12px; border: 1px solid #ddd;">
-                                                                                                {{ $other_service }}
-                                                                                            </span>
-                                                                                        @endforeach
-                                                                                    </div>
-                                                                                </div>
-                                                                            @endif
-
-
-
-                                                                            <!-- Counter actions (only when both pending & viewer is the other party) -->
-
-
-                                                                              @php
-                                                                            // Step 1: Get auction_time and check if it's not empty
-                                                                            $auctionTime = data_get($auction->get, 'auction_time');
-
-                                                                            // Step 2: Base date is $auction->created_at (not from get)
-                                                                            $baseDate = $carbon::parse($auction->created_at);
-
-                                                                            // Step 3: Calculate expiration based on conditions
-                                                                            if (!empty($auctionTime) && $auctionTime !== "" && $auctionTime !== null) {
-                                                                            // Extract number from auction_time (e.g., "10 Days" -> 10)
-                                                                            preg_match('/\d+/', $auctionTime, $matches);
-                                                                            $days = isset($matches[0]) ? (int)$matches[0] : 0;
-
-                                                                            $expiration = $days > 0
-                                                                            ? $baseDate->copy()->addDays($days)
-                                                                            : null;
-                                                                            } else {
-                                                                            // Use expiration_date from get if auction_time is empty
-                                                                            $expirationDate = data_get($auction->get, 'expiration_date');
-                                                                            $expiration = !empty($expirationDate)
-                                                                            ? $carbon::parse($expirationDate)
-                                                                            : null;
-                                                                            }
-
-                                                                            // Step 4: Check if expired
-                                                                            $isExpired = $expiration ? $carbon::now()->gte($expiration) : false;
-                                                                            @endphp
-
-                                                                            @if ($showCounterActions)
-                                                                                <div
-                                                                                    class="counter-response-buttons mt-3 pt-3 border-top">
-                                                                                    <h6>Respond to this Counter Offer:</h6>
-                                                                                    <div
-                                                                                        class="d-flex gap-3 flex-wrap justify-content-between">
-                                                                                        <form class="d-inline"
-                                                                                            action="{{ route('tenant.hire.agent.auction.counter.bid.accept') }}"
-                                                                                            method="post">
-                                                                                            @csrf
-                                                                                            <input type="hidden"
-                                                                                                name="auction_id"
-                                                                                                value="{{ data_get($auction, 'id') }}">
-                                                                                            <input type="hidden"
-                                                                                                name="bid_id"
-                                                                                                value="{{ data_get($bid, 'id') }}">
-                                                                                            <input type="hidden"
-                                                                                                name="counter_bid_id"
-                                                                                                value="{{ data_get($counterBid, 'id') }}">
-                                                                                            <button type="submit"
-                                                                                                class="btn-custom btn-accept"
-                                                                                                style="font-size:16px">Accept</button>
-                                                                                        </form>
-
-                                                                                        <form class="d-inline"
-                                                                                            action="{{ route('tenant.hire.agent.auction.counter.bid.reject') }}"
-                                                                                            method="post">
-                                                                                            @csrf
-                                                                                            <input type="hidden"
-                                                                                                name="auction_id"
-                                                                                                value="{{ data_get($auction, 'id') }}">
-                                                                                            <input type="hidden"
-                                                                                                name="bid_id"
-                                                                                                value="{{ data_get($bid, 'id') }}">
-                                                                                            <input type="hidden"
-                                                                                                name="counter_bid_id"
-                                                                                                value="{{ data_get($counterBid, 'id') }}">
-                                                                                            <button type="submit"
-                                                                                                class="btn-custom btn-reject"
-                                                                                                style="font-size:16px">Reject</button>
-                                                                                        </form>
-
-                                                                                        <form class="d-inline"
-                                                                                            action="{{ route('tenant.hire.agent.auction.bid.counter') }}"
-                                                                                            method="post">
-                                                                                            @csrf
-                                                                                            <input type="hidden"
-                                                                                                name="auction_id"
-                                                                                                value="{{ data_get($auction, 'id') }}">
-                                                                                            <input type="hidden"
-                                                                                                name="bid_id"
-                                                                                                value="{{ data_get($bid, 'id') }}">
-                                                                                            <input type="hidden"
-                                                                                                name="counter_bid_id"
-                                                                                                value="{{ data_get($counterBid, 'id') }}">
-                                                                                            <button type="submit"
-                                                                                                class="btn-custom btn-counter"
-                                                                                                style="font-size:16px">Counter</button>
-                                                                                        </form>
-                                                                                    </div>
-                                                                                </div>
-                                                                            @endif
-
-                                                                            <!-- ===== Counter footer status (names for OTHER PARTY only) ===== -->
-                                                                            <div class="mt-3 pt-3 border-top">
-                                                                                @if ($counterState === 'accepted')
-                                                                                    @if (Auth::id() == $actorUserId)
-                                                                                        {{-- Actor sees simple message --}}
-                                                                                        <div
-                                                                                            class="alert alert-success  mb-0 py-1 small">
-                                                                                            ✅
-                                                                                            This counter bid has been
-                                                                                            accepted.
-                                                                                        </div>
-                                                                                    @else
-                                                                                        {{-- Other party (creator) sees actor name --}}
-                                                                                        <div
-                                                                                            class="alert alert-success mb-0 py-1 small">
-                                                                                            ✅
-                                                                                            {{ trim($actorFirst . ' ' . $actorLast) }}
-                                                                                            accepted the counter bid.</div>
-                                                                                    @endif
-                                                                                @elseif ($counterState === 'rejected')
-                                                                                    @if (Auth::id() == $actorUserId)
-                                                                                        <div
-                                                                                            class="alert alert-danger mb-0 py-1 small">
-                                                                                            ❌ This
-                                                                                            counter bid has been rejected.
-                                                                                        </div>
-                                                                                    @else
-                                                                                        <div
-                                                                                            class="alert alert-danger mb-0 py-1 alert-font">
-                                                                                            ❌
-                                                                                            {{ trim($actorFirst . ' ' . $actorLast) }}
-                                                                                            rejected the counter bid.</div>
-                                                                                    @endif
-                                                                                @elseif ($counterState === '0')
-                                                                                    @if ($counterBid->user_id == Auth::id())
-                                                                                        <div
-                                                                                            class="alert alert-secondary mb-0 py-1 small">
-                                                                                            ⏳ Waiting for response from
-                                                                                            {{ $isCounterFromOwner ? trim($agentFirst . ' ' . $agentLast) : trim($ownerFirst . ' ' . $ownerLast) }}...
-                                                                                        </div>
-                                                                                    @else
-                                                                                        <div class="alert alert-light mb-0 py-1 small"
-                                                                                            style="font-size:13px;">
-                                                                                            ⏳ Counter bid from
-                                                                                            {{ trim($creatorFirst . ' ' . $creatorLast) }}
-                                                                                            is pending.
-                                                                                        </div>
-                                                                                    @endif
-                                                                                @endif
-                                                                            </div>
-                                                                            <!-- ===== /Counter footer status ===== -->
-                                                                        </div>
-                                                                    @endforeach
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    @endif
-
-                                                    {{-- Main Bid Actions --}}
-                                                    @php
-                                                        $rawState = data_get($bid, 'accepted', '0');
-                                                        $state = in_array($rawState, [null, 0, '0'], true)
-                                                            ? '0'
-                                                            : (string) $rawState;
-                                                        $isOwnerRow = data_get($auction, 'user_id') == $auth_id;
-
-                                                        // Names for messages
-                                                        $ownerFirst = data_get($auction, 'user.first_name', '');
-                                                        $ownerLast = data_get($auction, 'user.last_name', '');
-                                                        $agentFirst = data_get($bid, 'user.first_name', '');
-                                                        $agentLast = data_get($bid, 'user.last_name', '');
-
-                                                        // For main bid accepted/rejected: actor is ALWAYS owner
-                                                        $ownerId = data_get($auction, 'user_id');
-                                                    @endphp
-
-                                                    <div class="d-flex justify-content-between flex-wrap gap-2 mt-3">
-                                                        {{-- When main bid pending, OWNER can Accept --}}
-                                                        @if ($state === '0' && $isOwnerRow && !data_get($auction, 'is_sold'))
-                                                            <div class="biding-btn">
-                                                                <form
-                                                                    action="{{ route('acceptSABid') }}"
-                                                                    method="post">
-                                                                    @csrf
-                                                                    <input type="hidden" name="auction_id"
-                                                                        value="{{ data_get($auction, 'id') }}">
-                                                                    <input type="hidden" name="bid_id"
-                                                                        value="{{ data_get($bid, 'id') }}">
-                                                                    <button type="submit"
-                                                                        class="btn-custom btn-accept">Accept</button>
-                                                                </form>
-                                                            </div>
-                                                        @endif
-
-                                                        <!-- ===== Main bid footer status (names for OTHER PARTY only) ===== -->
-                                                        @if ($state === 'accepted')
-                                                            @if (Auth::id() == $ownerId)
-                                                                {{-- Owner (actor) sees simple message --}}
-                                                                <div
-                                                                    class="alert alert-success mt-2 w-100 mb-0 py-1 small">
-                                                                    ✅ This bid
-                                                                    has been accepted.</div>
-                                                            @else
-                                                                {{-- Agent (other party) sees owner's name --}}
-                                                                <div
-                                                                    class="alert alert-success mt-2 w-100 mb-0 py-1 small">
-                                                                    ✅
-                                                                    {{ trim($ownerFirst . ' ' . $ownerLast) }} accepted
-                                                                    the
-                                                                    bid.</div>
-                                                            @endif
-                                                        @elseif ($state === 'rejected')
-                                                            @if (Auth::id() == $ownerId)
-                                                                <div class="alert alert-danger mt-2 w-100 mb-0 py-1 small">
-                                                                    ❌ This bid
-                                                                    has been rejected.</div>
-                                                            @else
-                                                                <div class="alert alert-danger mt-2 w-100 mb-0 py-1 small">
-                                                                    ❌
-                                                                    {{ trim($ownerFirst . ' ' . $ownerLast) }} rejected
-                                                                    the
-                                                                    bid.</div>
-                                                            @endif
-                                                        @elseif ($state === '0')
-                                                            @if (data_get($bid, 'user_id') == Auth::id())
-                                                                <div
-                                                                    class="alert alert-secondary mt-2 w-100 mb-0 py-1 small">
-                                                                    ⏳
-                                                                    Waiting for response from
-                                                                    {{ trim($ownerFirst . ' ' . $ownerLast) }}...</div>
-                                                            @else
-                                                                <div class="alert alert-light mt-2 w-100 mb-0 py-1 small">⏳
-                                                                    Bid from
-                                                                    {{ trim($agentFirst . ' ' . $agentLast) }} is pending.
-                                                                </div>
-                                                            @endif
-                                                        @endif
-                                                        <!-- ===== /Main bid footer status ===== -->
-                                                    </div>
-
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge me-2" style="background: {{ $cServicesColor }}; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">{{ $cServicesScore }}%</span>
+                                        <span class="small text-muted">Offered Services ({{ $compBid['match_score']['services_matched'] }}/{{ $compBid['match_score']['services_total'] }} services)</span>
                                     </div>
-                                @endforeach
-
-                                @if ($auction->bids->count() > 0)
-                                    <div class="alert alert-warning mt-3 p-2 small">
-                                        <strong> 🛡️ Compliance Note: </strong> No Broker Compensation, Agency Agreement
-                                        Terms,
-                                        or Counter Offers are ever displayed publicly. These must remain private to avoid
-                                        antitrust/commission advertising issues.
-                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <div class="fw-semibold small" style="color: #049399;">Offered Services:</div>
+                                <div class="small">{{ count($compBid['offered_services']['standard']) + count($compBid['offered_services']['other']) }} Services</div>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <div class="fw-semibold small" style="color: #049399;">Broker Compensation Summary:</div>
+                                @if(count($compBid['broker_compensation']) > 0)
+                                    @php
+                                        $cCommStructure   = $compBid['broker_compensation']['commission_structure'] ?? null;
+                                        $cPurchaseFeeType = $compBid['broker_compensation']['purchase_fee_type'] ?? null;
+                                    @endphp
+                                    @if($cCommStructure)
+                                    <div class="small">Structure: {{ $cCommStructure }}</div>
+                                    @endif
+                                    @if($cPurchaseFeeType)
+                                    <div class="small">Fee Type: {{ $cPurchaseFeeType }}</div>
+                                    @endif
+                                @else
+                                    <div class="small text-muted">Not specified</div>
                                 @endif
+                            </div>
+                        </div>
+                        <div class="text-end mt-2">
+                            <small class="text-muted fst-italic">Compared to Your Bid</small>
                         </div>
                     </div>
                 </div>
+                @endforeach
+            </div>
+            @endif
+            @endif
+        @endif
+
+        <div class="card higestBider" id="bids-section">
+            <div class="card-body card-body-padding">
+                <div class="accordion" id="accordionExample">
+                    <div class="accordion-item border-0">
+
+                        @foreach (@$auction->bids as $bid)
+                        @php
+                            $agentNumber   = $agentNumberMap[$bid->id] ?? $loop->iteration;
+                            $bidState      = data_get($bid, 'accepted', 'active');
+                            $bidStatusLabel = match((string)$bidState) {
+                                'accepted'  => 'Accepted',
+                                'rejected'  => 'Rejected',
+                                'countered' => 'Countered',
+                                default     => 'Active',
+                            };
+                            $bidStatusColor = match((string)$bidState) {
+                                'accepted'  => '#28a745',
+                                'rejected'  => '#dc3545',
+                                'countered' => '#ffc107',
+                                default     => '#1a4a6e',
+                            };
+                            $servicesList        = (array) data_get($bid, 'get.services', []);
+                            $additionalServices  = (array) data_get($bid, 'get.other_services', []);
+                            $totalServicesCount  = count(array_filter($servicesList, fn($s) => $s !== 'Other')) + count($additionalServices);
+                            $isBidOwner          = (data_get($bid, 'user_id') == $auth_id);
+                            $bidAccepted         = data_get($bid, 'accepted');
+                            $canEditWithdraw     = $isBidOwner && !$isExpired && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected';
+
+                            // Seller Bid Visibility Logic (matches Tenant pattern):
+                            // - Traditional: Agents can ONLY see their own bids (not other agents' bids)
+                            // - Bidding Period: Agents can see anonymized bids ONLY if they submitted a bid first
+                            // - Listing Owner: Always sees all bids
+                            $isAgent    = $auth_id && in_array(auth()->user()->user_type ?? '', ['agent']);
+                            $canViewBid = $isListingOwner || $isBidOwner || ($isBiddingPeriodListing && $isAgent && $userHasBid);
+                            if (!$canViewBid && $isAgent) { continue; }
+
+                            // Build Seller purchase fee display for card body summary
+                            $sellerCommStructure        = data_get($bid, 'get.commission_structure', 'Not specified');
+                            $sellerPurchaseFeeType      = data_get($bid, 'get.purchase_fee_type', '');
+                            $sellerPurchaseFeeFlat      = data_get($bid, 'get.purchase_fee_flat', '');
+                            $sellerPurchaseFeePerc      = data_get($bid, 'get.purchase_fee_percentage', '');
+                            $sellerPurchaseFeeFlatCombo = data_get($bid, 'get.purchase_fee_flat_combo', '');
+                            $sellerPurchaseFeePercCombo = data_get($bid, 'get.purchase_fee_percentage_combo', '');
+                            $sellerPurchaseFeeOther     = data_get($bid, 'get.purchase_fee_other', '');
+
+                            $sellerPurchaseFeeDisplay = '-';
+                            if ($sellerPurchaseFeeType === 'Flat Fee' && $sellerPurchaseFeeFlat) {
+                                $sellerPurchaseFeeDisplay = '$' . number_format((float) str_replace(',', '', $sellerPurchaseFeeFlat), 2);
+                            } elseif ($sellerPurchaseFeeType === 'Percentage of Sale Price' && $sellerPurchaseFeePerc) {
+                                $sellerPurchaseFeeDisplay = number_format((float) $sellerPurchaseFeePerc, 2) . '% of Sale Price';
+                            } elseif ($sellerPurchaseFeeType === 'Flat Fee + Percentage of Sale Price') {
+                                $parts = array_filter([
+                                    $sellerPurchaseFeeFlatCombo ? '$' . number_format((float) str_replace(',', '', $sellerPurchaseFeeFlatCombo), 2) : null,
+                                    $sellerPurchaseFeePercCombo ? number_format((float) $sellerPurchaseFeePercCombo, 2) . '% of Sale Price' : null,
+                                ]);
+                                $sellerPurchaseFeeDisplay = implode(' + ', $parts) ?: '-';
+                            } elseif ($sellerPurchaseFeeType === 'Other' && $sellerPurchaseFeeOther) {
+                                $sellerPurchaseFeeDisplay = $sellerPurchaseFeeOther;
+                            }
+                        @endphp
+
+                        <!-- Bid Card - Collapsible Accordion Design (matches Tenant) -->
+                        <div class="card mb-3" style="border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+
+                            <!-- A) Card Header - Clickable to expand/collapse -->
+                            <div class="card-header d-flex justify-content-between align-items-center bid-accordion-header"
+                                 style="cursor: pointer; background: #fff; border-bottom: 1px solid #e0e0e0; padding: 15px 20px;"
+                                 data-target="bidCollapse-{{ data_get($bid, 'id') }}"
+                                 aria-expanded="false">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="fa fa-chevron-down bid-chevron" style="transition: transform 0.3s; color: #1a3a5c;"></i>
+                                    <h5 class="mb-0" style="font-weight: 700; color: #1a3a5c; font-size: 1.4rem;">Agent {{ $agentNumber }}</h5>
+                                </div>
+                                <span style="font-weight: 600; color: {{ $bidStatusColor }}; font-size: 1.1rem;">{{ $bidStatusLabel }}</span>
+                            </div>
+
+                            <!-- Collapsible Content -->
+                            <div class="bid-collapse-content" id="bidCollapse-{{ data_get($bid, 'id') }}" style="display: none;">
+                            <div class="card-body" style="padding: 20px;">
+
+                                <hr style="margin: 0 0 15px 0; border-color: #e0e0e0;">
+
+                                <!-- B) Offered Services Count -->
+                                <p class="mb-0" style="font-size: 1.1rem; color: #1a3a5c;">
+                                    <span style="font-weight: 600;">Offered Services:</span> {{ $totalServicesCount }} Services
+                                </p>
+                                <hr style="margin: 15px 0; border-color: #e0e0e0;">
+
+                                <!-- C) Broker Compensation Summary -->
+                                <h6 style="font-weight: 600; color: #1a3a5c; font-size: 1.15rem; margin-bottom: 12px;">Broker Compensation Summary:</h6>
+                                <div class="mb-2">
+                                    <p class="mb-1" style="font-size: 1rem; color: #333;">
+                                        <span style="font-weight: 600;">Seller's Broker Commission Structure:</span>
+                                    </p>
+                                    <p class="mb-0" style="font-size: 1rem; color: #555;">{{ $sellerCommStructure }}</p>
+                                </div>
+                                <div class="mb-3">
+                                    <p class="mb-1" style="font-size: 1rem; color: #333;">
+                                        <span style="font-weight: 600;">Seller's Broker Commission Fee:</span>
+                                    </p>
+                                    <p class="mb-0" style="font-size: 1rem; color: #555;">{{ $sellerPurchaseFeeDisplay }}</p>
+                                </div>
+
+                                <!-- D) View Full Bid link / Lock / BP lockout -->
+                                @if ($isListingOwner || $isBidOwner)
+                                    @if ($isBiddingPeriodListing && $isBiddingTimerActive && $isListingOwner && !$isBidOwner)
+                                    <span style="color: #999; font-size: 1rem; font-weight: 500; cursor: not-allowed;"
+                                          title="Bids can be viewed when the bidding period ends.">
+                                        <i class="fa fa-lock me-1"></i> View Full Bid
+                                    </span>
+                                    <div class="text-muted small mt-1">
+                                        <i class="fa fa-clock me-1"></i> Bids can be viewed when the bidding period ends.
+                                    </div>
+                                    @else
+                                    <a href="#" data-bs-toggle="modal" data-bs-target="#privateDataModal{{ data_get($bid, 'id') }}"
+                                       style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
+                                        View Full Bid
+                                    </a>
+                                    @endif
+                                @elseif ($isBiddingPeriodListing && $isAgentViewer && !$isBidOwner)
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#limitedBidModal{{ data_get($bid, 'id') }}"
+                                   style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
+                                    View Full Services &amp; Broker Compensation Terms
+                                </a>
+                                @else
+                                <span style="color: #888; font-style: italic; font-size: 0.95rem;">
+                                    <i class="fa fa-lock me-1"></i> Private - visible only to listing creator
+                                </span>
+                                @endif
+
+                                <!-- E) Edit Actions for Bid Owner -->
+                                @if ($canEditWithdraw)
+                                <div class="d-flex gap-2 mt-3 justify-content-end align-items-center">
+                                    <a href="{{ route('add_seller_agent_bid', $auction->id) }}?edit={{ data_get($bid, 'id') }}"
+                                       class="btn btn-primary bid-action-btn">
+                                        <i class="fa fa-edit me-1"></i> Edit Bid
+                                    </a>
+                                </div>
+                                @elseif ($isBidOwner && $isExpired)
+                                <div class="mt-3">
+                                    <span class="text-muted small">
+                                        <i class="fa fa-clock me-1"></i> Bidding has ended - edit unavailable
+                                    </span>
+                                </div>
+                                @elseif ($isBidOwner && ($bidAccepted === 'accepted' || $bidAccepted === 'rejected'))
+                                <div class="mt-3">
+                                    <span class="text-muted small">
+                                        <i class="fa fa-lock me-1"></i> Bid {{ $bidAccepted }} - edit unavailable
+                                    </span>
+                                    @if($bidAccepted === 'accepted')
+                                    @php $bidOwnerSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->first(); @endphp
+                                    @if($bidOwnerSummary)
+                                    <div class="d-flex gap-2 flex-wrap mt-2">
+                                        <a href="{{ route('accepted-bid-summary.view', $bidOwnerSummary->id) }}" class="btn btn-outline-primary btn-sm">
+                                            <i class="fa fa-file-alt me-1"></i> View Accepted Bid Summary
+                                        </a>
+                                        @if(!$bidOwnerSummary->isAgentSigned())
+                                        <a href="{{ route('accepted-bid-summary.sign-form', $bidOwnerSummary->id) }}" class="btn btn-primary btn-sm">
+                                            <i class="fa fa-signature me-1"></i> Agent: E-Sign Acknowledgement
+                                        </a>
+                                        @endif
+                                        @if($bidOwnerSummary->isFullySigned())
+                                        <a href="{{ route('accepted-bid-summary.download-pdf', $bidOwnerSummary->id) }}" class="btn btn-success btn-sm">
+                                            <i class="fa fa-download me-1"></i> Download Signed PDF
+                                        </a>
+                                        @endif
+                                    </div>
+                                    @endif
+                                    @endif
+                                </div>
+                                @endif
+
+                            </div>
+                            </div> {{-- End collapse div --}}
+                        </div> {{-- End bid card --}}
+
+                        @if ($isListingOwner || $isBidOwner)
+                        {{-- Private Data Modal - visible to listing owner OR bid owner (agent) --}}
+                        @php
+                            $rawState   = data_get($bid, 'accepted', '0');
+                            $state      = in_array($rawState, [null, 0, '0'], true) ? '0' : (string) $rawState;
+                            $isOwnerRow = ($auth_id == data_get($auction, 'user_id'));
+                            $ownerFirst = data_get($auction, 'user.first_name', '');
+                            $ownerLast  = data_get($auction, 'user.last_name', '');
+                            $agentFirst = data_get($bid, 'user.first_name', '');
+                            $agentLast  = data_get($bid, 'user.last_name', '');
+                            $ownerId    = data_get($auction, 'user_id');
+                        @endphp
+                        <div class="modal fade"
+                             id="privateDataModal{{ data_get($bid, 'id') }}"
+                             tabindex="-1"
+                             aria-labelledby="privateDataModalLabel{{ data_get($bid, 'id') }}"
+                             aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content" style="border-radius: 10px; border: none;">
+                                    <div class="modal-header text-white"
+                                         style="background: #049399; border-bottom: none; padding: 20px;">
+                                        <h5 class="modal-title"
+                                            id="privateDataModalLabel{{ data_get($bid, 'id') }}"
+                                            style="font-weight: 600;">
+                                            <i class="fa fa-lock me-2"></i> Private Compensation &amp; Agreement Terms
+                                        </h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body" style="background: #fafafa; padding: 25px; max-height: 80vh; overflow-y: auto;">
+
+                                        <!-- 1. Agent Overview & Qualifications -->
+                                        @if ($isListingOwner || $isBidOwner)
+                                        <div class="mb-5">
+                                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                <i class="fa fa-user-tie me-2"></i>Agent Overview &amp; Qualifications
+                                            </h6>
+
+                                            @if (data_get($bid, 'get.bio'))
+                                            <div class="mb-3">
+                                                <div class="fw-semibold" style="color: #049399;">About Agent:</div>
+                                                <div class="text-muted">{{ data_get($bid, 'get.bio') }}</div>
+                                            </div>
+                                            @endif
+
+                                            @if (data_get($bid, 'get.why_hire_you'))
+                                            <div class="mb-3">
+                                                <div class="fw-semibold" style="color: #049399;">Why Hire This Agent:</div>
+                                                <div class="text-muted">{{ data_get($bid, 'get.why_hire_you') }}</div>
+                                            </div>
+                                            @endif
+
+                                            @if (data_get($bid, 'get.what_sets_you_apart'))
+                                            <div class="mb-3">
+                                                <div class="fw-semibold" style="color: #049399;">What Sets This Agent Apart:</div>
+                                                <div class="text-muted">{{ data_get($bid, 'get.what_sets_you_apart') }}</div>
+                                            </div>
+                                            @endif
+
+                                            @if (data_get($bid, 'get.marketing_plan'))
+                                            <div class="mb-3">
+                                                <div class="fw-semibold" style="color: #049399;">Marketing Strategy:</div>
+                                                <div class="text-muted">{{ data_get($bid, 'get.marketing_plan') }}</div>
+                                            </div>
+                                            @endif
+
+                                            @if (data_get($bid, 'get.year_licensed'))
+                                            <div class="mb-3">
+                                                <div class="fw-semibold" style="color: #049399;">Licensed Year:</div>
+                                                <div class="text-muted">{{ data_get($bid, 'get.year_licensed') }}</div>
+                                            </div>
+                                            @endif
+
+                                            @if (data_get($bid, 'get.brokerage'))
+                                            <div class="mb-3">
+                                                <div class="fw-semibold" style="color: #049399;">Brokerage:</div>
+                                                <div class="text-muted">{{ data_get($bid, 'get.brokerage') }}</div>
+                                            </div>
+                                            @endif
+
+                                            @if (data_get($bid, 'get.license_no'))
+                                            <div class="mb-3">
+                                                <div class="fw-semibold" style="color: #049399;">License Number:</div>
+                                                <div class="text-muted">{{ data_get($bid, 'get.license_no') }}</div>
+                                            </div>
+                                            @endif
+
+                                            @if (data_get($bid, 'get.agent_license'))
+                                            <div class="mb-3">
+                                                <div class="fw-semibold" style="color: #049399;">Agent License:</div>
+                                                <div class="text-muted">{{ data_get($bid, 'get.agent_license') }}</div>
+                                            </div>
+                                            @endif
+
+                                            @if (data_get($bid, 'get.mls_id'))
+                                            <div class="mb-3">
+                                                <div class="fw-semibold" style="color: #049399;">MLS ID:</div>
+                                                <div class="text-muted">{{ data_get($bid, 'get.mls_id') }}</div>
+                                            </div>
+                                            @endif
+
+                                            @if (data_get($bid, 'get.website_link'))
+                                            <div class="mb-3">
+                                                <div class="fw-semibold" style="color: #049399;">Website Link:</div>
+                                                <div>
+                                                    @php
+                                                        $wLink = data_get($bid, 'get.website_link');
+                                                        if (!empty($wLink) && !str_starts_with($wLink, 'http://') && !str_starts_with($wLink, 'https://')) {
+                                                            $wLink = 'https://' . $wLink;
+                                                        }
+                                                    @endphp
+                                                    <a href="{{ $wLink }}" target="_blank" rel="noopener noreferrer" class="text-primary text-decoration-none">
+                                                        <i class="fa fa-globe me-1"></i> Visit Website
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            @endif
+
+                                        </div>
+                                        @endif
+
+                                        <!-- 2. Offered Services -->
+                                        @php
+                                            $bidServicesList   = (array) data_get($bid, 'get.services', []);
+                                            $bidOtherServices  = (array) data_get($bid, 'get.other_services', []);
+                                        @endphp
+                                        @if (!empty($bidServicesList) || !empty($bidOtherServices))
+                                        <div class="mb-5">
+                                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                <i class="fa fa-list-ul me-2"></i>Offered Services
+                                            </h6>
+                                            @if (!empty($bidServicesList))
+                                            <div class="mb-3">
+                                                <div class="fw-semibold mb-2" style="color: #049399;">Services:</div>
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    @foreach ($bidServicesList as $svc)
+                                                        @if ($svc === 'Other') @continue @endif
+                                                        <span style="background: #f1f5f9; color: #111; padding: 6px 12px; border-radius: 8px; font-size: 12px; border: 1px solid #ddd;">{{ $svc }}</span>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                            @endif
+                                            @if (!empty($bidOtherServices))
+                                            <div class="mb-3">
+                                                <div class="fw-semibold mb-2" style="color: #049399;">Other / Additional Services:</div>
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    @foreach ($bidOtherServices as $svc)
+                                                        <span style="background: #f1f5f9; color: #111; padding: 6px 12px; border-radius: 8px; font-size: 12px; border: 1px solid #ddd;">{{ $svc }}</span>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                            @endif
+                                        </div>
+                                        @endif
+
+                                        <!-- 3. Broker Compensation & Agency Agreement Terms -->
+                                        @if (data_get($bid, 'get.commission_structure') ||
+                                             data_get($bid, 'get.purchase_fee_type') ||
+                                             data_get($bid, 'get.protection_period') ||
+                                             data_get($bid, 'get.retainer_fee_option') ||
+                                             data_get($bid, 'get.agency_agreement_timeframe') ||
+                                             data_get($bid, 'get.brokerage_relationship'))
+                                        <div class="mb-5">
+                                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                <i class="fa fa-handshake me-2"></i>Broker Compensation &amp; Agency Agreement Terms
+                                            </h6>
+
+                                            <!-- A) Seller's Broker Compensation -->
+                                            @if (data_get($bid, 'get.commission_structure') || data_get($bid, 'get.purchase_fee_type'))
+                                            <div class="mb-4">
+                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Seller's Broker Compensation</h6>
+                                                <ul class="list-unstyled ps-3 mb-0">
+                                                    @if (data_get($bid, 'get.commission_structure'))
+                                                    <li class="mb-1"><span class="fw-semibold">Commission Structure:</span> {{ data_get($bid, 'get.commission_structure') }}</li>
+                                                    @endif
+                                                    @if (data_get($bid, 'get.purchase_fee_type'))
+                                                    <li class="mb-1"><span class="fw-semibold">Commission Fee:</span> {{ $sellerPurchaseFeeDisplay }}</li>
+                                                    @endif
+                                                    @if (data_get($bid, 'get.commission_structure_type'))
+                                                    <li class="mb-1"><span class="fw-semibold">Commission Structure Type:</span> {{ data_get($bid, 'get.commission_structure_type') }}</li>
+                                                    @endif
+                                                    @if (data_get($bid, 'get.interested_purchase_fee_type'))
+                                                    <li class="mb-1"><span class="fw-semibold">Buyer's Agent Fee:</span> {{ data_get($bid, 'get.interested_purchase_fee_type') }}</li>
+                                                    @endif
+                                                </ul>
+                                            </div>
+                                            @endif
+
+                                            <!-- B) Legal Terms -->
+                                            @if (data_get($bid, 'get.protection_period') || data_get($bid, 'get.retainer_fee_option') || data_get($bid, 'get.agency_agreement_timeframe'))
+                                            <div class="mb-4">
+                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">B) Legal Terms</h6>
+                                                <ul class="list-unstyled ps-3 mb-0">
+                                                    @if (data_get($bid, 'get.protection_period'))
+                                                    <li class="mb-1"><span class="fw-semibold">Protection Period Timeframe:</span> {{ data_get($bid, 'get.protection_period') }} days</li>
+                                                    @endif
+                                                    @if (data_get($bid, 'get.retainer_fee_option'))
+                                                    <li class="mb-1"><span class="fw-semibold">Retainer Fee:</span> {{ data_get($bid, 'get.retainer_fee_option') }}</li>
+                                                        @if (data_get($bid, 'get.retainer_fee_option') === 'Yes')
+                                                            @if (data_get($bid, 'get.retainer_fee_amount'))
+                                                            <li class="mb-1"><span class="fw-semibold">Retainer Fee Amount:</span> ${{ number_format((float) data_get($bid, 'get.retainer_fee_amount'), 2) }}</li>
+                                                            @endif
+                                                            @if (data_get($bid, 'get.retainer_fee_application'))
+                                                            <li class="mb-1"><span class="fw-semibold">Retainer Fee Application:</span>
+                                                                {{ data_get($bid, 'get.retainer_fee_application') === 'applied' ? 'Applied toward final compensation' : 'Charged in addition to final compensation' }}
+                                                            </li>
+                                                            @endif
+                                                        @endif
+                                                    @endif
+                                                    @if (data_get($bid, 'get.agency_agreement_timeframe'))
+                                                    @php
+                                                        $agencyTf  = data_get($bid, 'get.agency_agreement_timeframe');
+                                                        $agencyCus = data_get($bid, 'get.agency_agreement_custom');
+                                                        $agencyDsp = strtolower(trim($agencyTf ?? '')) === 'other' ? ($agencyCus ?: 'Other') : ($agencyTf ?: '');
+                                                    @endphp
+                                                    <li class="mb-1"><span class="fw-semibold">Seller Agency Agreement Timeframe:</span> {{ $agencyDsp }}</li>
+                                                    @endif
+                                                </ul>
+                                            </div>
+                                            @endif
+
+                                            <!-- C) Brokerage Relationship -->
+                                            @if (data_get($bid, 'get.brokerage_relationship'))
+                                            <div class="mb-4">
+                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">C) Brokerage Relationship</h6>
+                                                <ul class="list-unstyled ps-3 mb-0">
+                                                    <li class="mb-1"><span class="fw-semibold">Acceptable Brokerage Relationship:</span> {{ data_get($bid, 'get.brokerage_relationship') }}</li>
+                                                </ul>
+                                            </div>
+                                            @endif
+                                        </div>
+                                        @endif
+
+                                        <!-- 4. Additional Details -->
+                                        @if (data_get($bid, 'get.additional_details'))
+                                        <div class="mb-4">
+                                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                <i class="fa fa-info-circle me-2"></i>Additional Details
+                                            </h6>
+                                            <p class="text-muted">{{ data_get($bid, 'get.additional_details') }}</p>
+                                        </div>
+                                        @endif
+
+                                        <!-- 5. Main Bid Actions (listing owner: Accept / Reject) -->
+                                        <div class="d-flex justify-content-between flex-wrap gap-2 mt-4">
+                                            @if ($state === '0' && $isOwnerRow && !data_get($auction, 'is_sold'))
+
+                                            @if ($isBiddingPeriodListing && $isBiddingTimerActive)
+                                            {{-- Bidding Period: Timer still active - actions locked --}}
+                                            <div class="alert alert-info text-center mt-2 mb-0 p-2 w-100">
+                                                <i class="fa fa-clock me-1"></i> <strong>Actions unlock when the bidding period ends.</strong>
+                                            </div>
+                                            @elseif ($isTraditionalListing && $isExpired)
+                                            {{-- Traditional: Listing expired --}}
+                                            <div class="alert alert-warning text-center mt-2 mb-0 p-2 w-100">
+                                                <strong>Listing Expired</strong>
+                                            </div>
+                                            @else
+                                            {{-- Actions available --}}
+                                            <div class="biding-btn">
+                                                <form action="{{ route('acceptSABid') }}" method="post">
+                                                    @csrf
+                                                    <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
+                                                    <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
+                                                    <button type="submit" class="btn-custom btn-accept">Accept</button>
+                                                </form>
+                                            </div>
+                                            <div class="biding-btn">
+                                                <form action="{{ route('rejectSABid') }}" method="post">
+                                                    @csrf
+                                                    <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
+                                                    <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
+                                                    <button type="submit" class="btn-custom btn-reject">Reject</button>
+                                                </form>
+                                            </div>
+                                            @endif
+                                            @endif
+
+                                            @if ($state === 'accepted')
+                                            @if (Auth::id() == $ownerId)
+                                            <div class="alert alert-success mt-2 w-100 mb-0 py-1 small">
+                                                ✅ This bid has been accepted.
+                                            </div>
+                                            @else
+                                            <div class="alert alert-success mt-2 w-100 mb-0 py-1 small">
+                                                ✅ {{ trim($ownerFirst . ' ' . $ownerLast) }} accepted the bid.
+                                            </div>
+                                            @endif
+                                            @php
+                                                $agentAcceptedBidSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->first();
+                                            @endphp
+                                            @if($agentAcceptedBidSummary && (Auth::id() == $ownerId || data_get($bid, 'user_id') == Auth::id()))
+                                            <div class="d-flex gap-1 flex-wrap mt-2">
+                                                <a href="{{ route('accepted-bid-summary.view', $agentAcceptedBidSummary->id) }}" class="btn btn-outline-primary btn-sm py-1 px-2">
+                                                    <i class="fa fa-file-alt me-1"></i> View Summary
+                                                </a>
+                                                @if(data_get($bid, 'user_id') == Auth::id() && !$agentAcceptedBidSummary->isAgentSigned())
+                                                <a href="{{ route('accepted-bid-summary.sign-form', $agentAcceptedBidSummary->id) }}" class="btn btn-primary btn-sm py-1 px-2">
+                                                    <i class="fa fa-signature me-1"></i> E-Sign
+                                                </a>
+                                                @endif
+                                                @if($agentAcceptedBidSummary->isFullySigned())
+                                                <a href="{{ route('accepted-bid-summary.download-pdf', $agentAcceptedBidSummary->id) }}" class="btn btn-success btn-sm py-1 px-2">
+                                                    <i class="fa fa-download me-1"></i> PDF
+                                                </a>
+                                                @endif
+                                            </div>
+                                            @endif
+                                            @elseif ($state === 'rejected')
+                                            @if (Auth::id() == $ownerId)
+                                            <div class="alert alert-danger mt-2 w-100 mb-0 py-1 small">
+                                                ❌ This bid has been rejected.
+                                            </div>
+                                            @else
+                                            <div class="alert alert-danger mt-2 w-100 mb-0 py-1 small">
+                                                ❌ {{ trim($ownerFirst . ' ' . $ownerLast) }} rejected the bid.
+                                            </div>
+                                            @endif
+                                            @elseif ($state === '0')
+                                            @if (data_get($bid, 'user_id') == Auth::id())
+                                            <div class="alert alert-secondary mt-2 w-100 mb-0 py-1 small">
+                                                ⏳ Waiting for response from {{ trim($ownerFirst . ' ' . $ownerLast) }}...
+                                            </div>
+                                            @else
+                                            <div class="alert alert-light mt-2 w-100 mb-0 py-1 small">
+                                                ⏳ Bid from {{ trim($agentFirst . ' ' . $agentLast) }} is pending.
+                                            </div>
+                                            @endif
+                                            @endif
+                                        </div>
+
+                                    </div>{{-- End modal-body --}}
+                                </div>{{-- End modal-content --}}
+                            </div>{{-- End modal-dialog --}}
+                        </div>{{-- End modal --}}
+                        @endif
+
+                        @endforeach
+                    </div>{{-- End accordion-item --}}
+
+                </div>
+            </div>
+        </div>
+
+        @if ($auction->bids->count() > 0)
+        <div class="alert alert-warning mt-3 p-2 small">
+            <strong>🛡️ Compliance Note:</strong> No Broker Compensation, Agency Agreement Terms, or Counter Offers are ever displayed publicly. These must remain private to avoid antitrust/commission advertising issues.
+        </div>
+        @endif
                 <button class="btn w-100 mt-0">
                     <span class="bid m-0"><i class="fa fa-user"></i> </span>
                 </button>

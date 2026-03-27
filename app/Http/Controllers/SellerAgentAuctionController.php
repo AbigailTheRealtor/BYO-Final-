@@ -23,6 +23,11 @@ use Illuminate\Support\Facades\Mail;
 use App\Models\SellerAgentAuctionBid;
 use App\Models\SellerAgentAuctionMeta;
 use App\Models\AgentDefaultProfile;
+use App\Models\AcceptedBidSummary;
+use App\Services\AcceptedBidSummaryService;
+use App\Notifications\BidAcceptedNotification;
+use App\Notifications\BidRejectedNotification;
+use Illuminate\Support\Facades\Log;
 use DateTime;
 
 class SellerAgentAuctionController extends Controller
@@ -430,23 +435,24 @@ class SellerAgentAuctionController extends Controller
      **/
     public function viewDetail($id, Request $request)
     {
-        $data = SellerAgentAuction::with('meta')->find($id);
-        
-        $auction = SellerAgentAuction::find($id);
+        $auction = SellerAgentAuction::with(['bids.user', 'bids.meta', 'user', 'meta'])->find($id);
+
+        if (!$auction) {
+            abort(404, 'Listing not found');
+        }
+
+        $data = $auction;
+
         // Auto-transition Bidding Period listing to Pending when timer ends
         $this->autoTransitionBpToPending($auction);
 
-        \Log::info('[SELLER_LISTING_VERBIAGE_FIX]', [
-            'listing_id' => $id,
-            'template' => 'hire_seller_agent.view',
-            'label_map' => 'seller_labels',
-            'listing_type' => 'seller'
-        ]);
+        $page_data['title']         = $auction->address ?? 'Listing Details';
+        $page_data['counties']      = County::all();
+        $page_data['id']            = $id;
+        $page_data['auth_id']       = auth()->id();
+        $page_data['lowest_bidder'] = $auction->bids->sortByDesc('created_at')->first();
 
-        $page_data['title'] = $auction->address;
-        $counties = County::all();
-        $page_data['id'] = $id;
-        return view('hire_seller_agent.view', compact('auction', 'data', 'counties'));
+        return view('hire_seller_agent.view', compact('auction', 'data') + $page_data);
     }
 
 
@@ -690,34 +696,130 @@ class SellerAgentAuctionController extends Controller
      **/
     public function acceptSABid(Request $request)
     {
-        $pa = SellerAgentAuction::whereId($request->auction_id)->first();
         $pab = SellerAgentAuctionBid::whereId($request->bid_id)->first();
-        $dataa = SellerAgentAuction::with('meta')->find($request->auction_id);
-        $reQbidPrice = (@$dataa->get->expectation != 'Other') ? str_replace('k', '000', @$dataa->get->expectation) : '';
-        $getlowPrice = explode('-', $reQbidPrice);
-        $lowPrice = $getlowPrice[0];
-        $bidPrice = $lowPrice ?: (@$dataa->get->custom_seller_specific_price ?: @$dataa->get->otherSellerPrice);
-        if ($request->counterPrice >= $bidPrice) {
-            $pa->update(['auction_price' => $request->counterPrice]);
-            $pab->accepted = true;
+        if (!$pab) {
+            return redirect()->back()->with('error', 'Bid not found.');
+        }
+
+        $pa = SellerAgentAuction::find($pab->seller_agent_auction_id);
+        if (!$pa) {
+            return redirect()->back()->with('error', 'Auction not found.');
+        }
+
+        if ($request->has('auction_id') && (int)$request->auction_id !== (int)$pa->id) {
+            abort(403, 'Bid does not belong to this auction.');
+        }
+
+        if ($pa->user_id !== Auth::id()) {
+            abort(403, 'Only the listing owner can accept bids.');
+        }
+
+        if ($pab->accepted === 'accepted' || $pab->accepted === 'rejected') {
+            return redirect()->back()->with('error', 'This bid has already been ' . $pab->accepted . '.');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $pab->accepted = 'accepted';
             $pab->accepted_date = date('Y-m-d H:i:s');
-            $pa->is_sold = 'true';
-            $pab->is_sold = 'true';
+            $pab->save();
+
+            $pa->is_sold = true;
             $pa->sold_date = date('Y-m-d H:i:s');
+            $pa->save();
+            $pa->saveMeta('listing_status', 'Hired Agent');
+
+            SellerAgentAuctionBid::where('seller_agent_auction_id', $pa->id)
+                ->where('id', '!=', $pab->id)
+                ->where('accepted', '!=', 'accepted')
+                ->update(['accepted' => 'rejected', 'accepted_date' => date('Y-m-d H:i:s')]);
+
             $ua = new UserAgent();
-            $ua->user_id = Auth::user()->id;
+            $ua->user_id = Auth::id();
             $ua->agent_id = $pab->user_id;
             $ua->type = 'seller';
             $ua->save();
-            if ($pab->save() && $pa->save()) {
-                $pa->saveMeta('listing_status', 'Hired Agent');
-                return redirect()->back()->with('success', 'Bid Accepted successfully!');
-            } else {
-                return redirect()->back()->with('error', 'Some problem in bid acceptance!');
+
+            DB::commit();
+
+            $summaryId = null;
+            try {
+                $summaryService = new AcceptedBidSummaryService();
+                $summary = $summaryService->generateSummary($pab, null);
+                if ($summary) {
+                    $summaryId = $summary->id;
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to generate accepted bid summary after seller bid acceptance', [
+                    'bid_id' => $pab->id,
+                    'error'  => $e->getMessage(),
+                ]);
             }
-        } else {
-            return redirect()->back()->with('error', 'Your Offered Price Should matched with Demonded price!');
+
+            try {
+                $agent = User::find($pab->user_id);
+                if ($agent) {
+                    $agent->notify(new BidAcceptedNotification($pab, $pa, $summaryId, 'seller_agent'));
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send seller bid accepted notification', [
+                    'bid_id'   => $pab->id,
+                    'agent_id' => $pab->user_id,
+                    'error'    => $e->getMessage(),
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Bid accepted successfully!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Error accepting bid: ' . $e->getMessage());
         }
+    }
+
+    public function rejectSABid(Request $request)
+    {
+        $pab = SellerAgentAuctionBid::whereId($request->bid_id)->first();
+        if (!$pab) {
+            return redirect()->back()->with('error', 'Bid not found.');
+        }
+
+        $pa = SellerAgentAuction::find($pab->seller_agent_auction_id);
+        if (!$pa) {
+            return redirect()->back()->with('error', 'Auction not found.');
+        }
+
+        if ($request->has('auction_id') && (int)$request->auction_id !== (int)$pa->id) {
+            abort(403, 'Bid does not belong to this auction.');
+        }
+
+        if ($pa->user_id !== Auth::id()) {
+            abort(403, 'Only the listing owner can reject bids.');
+        }
+
+        if ($pab->accepted === 'accepted' || $pab->accepted === 'rejected') {
+            return redirect()->back()->with('error', 'This bid has already been ' . $pab->accepted . '.');
+        }
+
+        $pab->accepted = 'rejected';
+        $pab->accepted_date = date('Y-m-d H:i:s');
+
+        if ($pab->save()) {
+            try {
+                $agent = User::find($pab->user_id);
+                if ($agent) {
+                    $agent->notify(new BidRejectedNotification($pab, $pa));
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send seller bid rejected notification', [
+                    'bid_id'   => $pab->id,
+                    'agent_id' => $pab->user_id,
+                    'error'    => $e->getMessage(),
+                ]);
+            }
+            return redirect()->back()->with('success', 'Bid rejected successfully!');
+        }
+        return redirect()->back()->with('error', 'Error rejecting bid.');
     }
 
     public function myAgents()

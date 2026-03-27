@@ -4037,6 +4037,24 @@
                                                                     the bid.
                                                                 </div>
                                                             @endif
+                                                            @php $agentAcceptedBidSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->first(); @endphp
+                                                            @if($agentAcceptedBidSummary && (Auth::id() == $ownerId || data_get($bid, 'user_id') == Auth::id()))
+                                                            <div class="d-flex gap-1 flex-wrap mt-2">
+                                                                <a href="{{ route('accepted-bid-summary.view', $agentAcceptedBidSummary->id) }}" class="btn btn-outline-primary btn-sm py-1 px-2">
+                                                                    <i class="fa fa-file-alt me-1"></i> View Summary
+                                                                </a>
+                                                                @if(data_get($bid, 'user_id') == Auth::id() && !$agentAcceptedBidSummary->isAgentSigned())
+                                                                <a href="{{ route('accepted-bid-summary.sign-form', $agentAcceptedBidSummary->id) }}" class="btn btn-primary btn-sm py-1 px-2">
+                                                                    <i class="fa fa-signature me-1"></i> Agent: E-Sign
+                                                                </a>
+                                                                @endif
+                                                                @if($agentAcceptedBidSummary->isFullySigned())
+                                                                <a href="{{ route('accepted-bid-summary.download-pdf', $agentAcceptedBidSummary->id) }}" class="btn btn-success btn-sm py-1 px-2">
+                                                                    <i class="fa fa-download me-1"></i> Download Signed PDF
+                                                                </a>
+                                                                @endif
+                                                            </div>
+                                                            @endif
                                                         @elseif ($state === 'rejected')
                                                             @if (Auth::id() == $ownerId)
                                                                 <div class="alert alert-danger mt-2 w-100 mb-0 py-1 small">

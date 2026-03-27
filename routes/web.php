@@ -610,6 +610,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
         // Counter Bid Routes
         Route::post('hire/agent/seller/bid/accept', [SellerAgentAuctionController::class, 'acceptSABid'])->name('acceptSABid');
+        Route::post('hire/agent/seller/bid/reject', [SellerAgentAuctionController::class, 'rejectSABid'])->name('rejectSABid');
         Route::post('hire/agent/seller/destroy/counter/{id}', [SellerCounterBidController::class, 'destroyCounter'])->name('destroySellerCounter');
 
         // Route::get('landlord/agent/auction/counter/bid/{bid_id}', [LandlordAgentAuctionBidController::class, 'addCounterBid'])->name('landlord.agent.add.counter-bid');
