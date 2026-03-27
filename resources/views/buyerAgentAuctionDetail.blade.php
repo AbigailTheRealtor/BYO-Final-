@@ -3071,6 +3071,7 @@
                                                                                             Marketing Materials</div>
 
                                                                                         @foreach (data_get($bid, 'get.promoMaterials') as $index => $material)
+                                                                                            @php $material = is_object($material) ? (array) $material : $material; @endphp
                                                                                             @if (!empty($material['type']) || !empty($material['link']) || !empty($material['files']))
                                                                                                 <div
                                                                                                     class="mb-3 p-3 border rounded">
