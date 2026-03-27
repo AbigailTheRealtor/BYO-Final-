@@ -670,7 +670,7 @@ public $additional_details_broker = '';
 
     public function submit()
     {
-
+        DB::beginTransaction();
         try {
             $this->validate();
 
@@ -841,10 +841,12 @@ public $additional_details_broker = '';
             $bid->saveMeta('year_licensed', $this->year_licensed);
             $bid->saveMeta('nar_id', $this->nar_id);
 
+            DB::commit();
             session()->flash('success', 'Your bid has been submitted successfully!');
 
             return redirect()->route('buyer.view-auction', $this->auctionId);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
             $this->activeTab = 0;
             throw $e;
         } catch (\Exception $e) {

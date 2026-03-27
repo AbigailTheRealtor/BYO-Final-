@@ -1,0 +1,288 @@
+Paste this into Replit exactly:
+
+---
+
+# 🚨 TASK: Buyer bid is not truly submitting — it returns to Agent Bid tab 1 instead
+
+## Issue
+
+For this Buyer bid URL:
+
+`/buyer/agent/auction/bid/150`
+
+when I click **Submit**, it does **not** complete the bid submission correctly.
+Instead, it goes back to the **first Agent Bid tab** instead of fully submitting.
+
+This means the submit flow is still wrong, or the wrong files/components were edited.
+
+Tenant is the working reference. Buyer must follow the same final submit behavior as Tenant.
+
+---
+
+# Scope
+
+This task is **only** for the **Buyer agent bid submit flow** for:
+
+* `/buyer/agent/auction/bid/{id}`
+
+Do **not** change Seller, Landlord, or Tenant in this task unless Buyer is confirmed to share the exact same component and the shared fix is required.
+
+Do **not** change listing creation or listing edit flows.
+
+Do **not** do broad refactors.
+
+Use the **Tenant bid submit behavior** as the exact working reference.
+
+---
+
+# 🛑 Critical safeguards
+
+1. **Trace the actual Buyer route and files first**
+
+   * Do not assume the correct files were already edited
+   * Confirm the exact:
+
+     * route
+     * controller or Livewire component
+     * blade/view
+     * submit button markup
+     * submit method
+     * tab-navigation method
+     * validation method
+     * save/finalize method
+     * redirect/success method
+
+2. **Also trace the Tenant submit flow**
+
+   * Confirm the exact Tenant files/methods for:
+
+     * submit button
+     * final submission method
+     * validation
+     * save/finalize
+     * redirect or success state
+   * Buyer must be compared directly against Tenant
+
+3. **Do not assume this is only a button issue**
+   The problem may be:
+
+   * wrong submit method
+   * tab navigation method firing instead of final submit
+   * validation redirecting to tab 1
+   * final save method not being reached
+   * role-based logic sending Buyer back to first tab
+   * success redirect missing
+   * submit button incorrectly calling next-step logic instead of finalize logic
+
+4. **Do not start with UI or CSS**
+   This is a submit/finalization logic issue.
+
+5. **Keep the fix minimal and scoped**
+   Fix only the Buyer submit path unless the root cause is in a shared component used by Buyer and Tenant.
+
+6. **Do not break Tenant**
+   Tenant’s working final submit behavior must remain untouched unless Buyer shares the same code and the shared fix is proven safe.
+
+7. **No broad rewrites**
+
+   * no new architecture
+   * no duplicate components unless absolutely necessary
+   * no unrelated cleanup
+   * no unrelated refactor
+
+8. **Find the root cause, not just a patch**
+   Confirm exactly why Buyer is returning to tab 1 instead of finalizing submission.
+
+---
+
+# Step 1 — Map the real Buyer submit flow first
+
+For `/buyer/agent/auction/bid/150`, identify the exact:
+
+* route definition
+* controller or Livewire component
+* blade/view file
+* submit button markup
+* method triggered by Submit
+* method triggered by Next
+* method that changes tabs
+* validation method
+* save/finalize submit method
+* redirect/success handling
+
+Then do the same for the working Tenant bid submit flow.
+
+Return the mapping first like:
+
+* Buyer route → `[route]`
+
+* Buyer component → `[component]`
+
+* Buyer blade → `[blade]`
+
+* Buyer Submit button calls → `[method]`
+
+* Buyer Next button calls → `[method]`
+
+* Buyer finalize/save method → `[method]`
+
+* Tenant route → `[route]`
+
+* Tenant component → `[component]`
+
+* Tenant blade → `[blade]`
+
+* Tenant Submit button calls → `[method]`
+
+* Tenant Next button calls → `[method]`
+
+* Tenant finalize/save method → `[method]`
+
+## CRITICAL
+
+Do not change code until this mapping is confirmed.
+
+---
+
+# Step 2 — Compare Buyer final submit vs Tenant final submit
+
+Compare Buyer against Tenant for all of the following:
+
+* submit button markup
+* button type
+* whether submit button is inside the correct form block
+* Livewire action or form submit binding
+* final step detection
+* tab state handling
+* validation behavior
+* whether Buyer submit is accidentally calling tab-navigation logic
+* whether Buyer submit is routing back to tab 1 on validation or on success
+* whether the finalize/save method is being reached at all
+* whether redirect/success handling differs from Tenant
+* whether Buyer role-specific conditions are causing an early return
+
+Look specifically for why Buyer goes back to tab 1 instead of finishing.
+
+---
+
+# Step 3 — Fix the actual root cause only
+
+Make the smallest safe fix needed so Buyer Submit behaves exactly like Tenant Submit.
+
+Examples of possible causes:
+
+* Submit button wired to next-tab method instead of final-submit method
+* final submit branch not reached for Buyer
+* Buyer validation always fails and resets tab to 1
+* Buyer submit method saves partially but does not finalize
+* Buyer save succeeds but redirect/success state is missing
+* wrong role/property condition resets tab state
+* final submit method exits early for Buyer
+
+## Important
+
+Do not rewrite the whole form.
+Do not touch unrelated roles unless Buyer is using a shared component and the shared fix is necessary.
+
+---
+
+# Step 4 — Validation must not silently send Buyer back to tab 1
+
+If Buyer submit is being blocked by validation:
+
+* show the validation errors clearly
+* keep the user on the correct tab that contains the invalid field, or use the same behavior Tenant uses
+* do not silently dump the user back to tab 1 with no explanation
+
+Buyer submit must either:
+
+* fully submit successfully, or
+* clearly show what field is blocking final submission
+
+It must not look like a dead submit or a fake submit.
+
+---
+
+# Step 5 — Confirm final submit behavior matches Tenant
+
+After the fix, Buyer bid must match Tenant for:
+
+* clicking Submit triggers final save/finalize
+* form does not jump back to tab 1 incorrectly
+* bid saves successfully
+* success state / redirect / refreshed bid state matches Tenant behavior
+* if validation fails, errors are visible and understandable
+
+---
+
+# Step 6 — Testing checklist
+
+After coding, test all of these:
+
+## A. Tenant regression
+
+1. Open a working Tenant bid
+2. Submit it
+3. Confirm Tenant still behaves exactly as before
+
+## B. Buyer final submit
+
+1. Open `/buyer/agent/auction/bid/150` or another valid Buyer bid
+2. Complete all required fields
+3. Click Submit
+4. Confirm:
+
+   * it does not jump back to tab 1
+   * it actually finalizes the bid
+   * it saves successfully
+   * it shows the expected success/redirect/result state
+
+## C. Buyer validation failure
+
+1. Leave at least one required field blank
+2. Click Submit
+3. Confirm:
+
+   * Buyer does not silently jump back to tab 1 with no explanation
+   * validation errors are visible
+   * the correct tab/field is shown to the user
+
+## D. Buyer saved state
+
+1. Submit a Buyer bid successfully
+2. Reload or reopen the bid
+3. Confirm it was actually saved/finalized
+
+---
+
+# Step 7 — Required output after coding
+
+Provide:
+
+1. exact Buyer route/component/blade mapping
+2. exact Tenant route/component/blade mapping used for comparison
+3. exact root cause of why Buyer Submit returned to tab 1 instead of finalizing
+4. exact files changed
+5. exact fix applied
+6. proof that:
+
+   * Buyer now submits correctly
+   * Buyer no longer jumps back to tab 1 incorrectly
+   * validation does not fail silently
+   * Tenant still works
+
+---
+
+# Definition of done
+
+This task is complete only when:
+
+* Buyer Submit truly finalizes the bid
+* Buyer no longer returns to tab 1 incorrectly on final submit
+* if validation fails, the user sees clear errors
+* Tenant still works
+* the fix is minimal and scoped
+
+---
+
+Use Tenant as the exact working reference and verify the real Buyer submit files before changing anything.
