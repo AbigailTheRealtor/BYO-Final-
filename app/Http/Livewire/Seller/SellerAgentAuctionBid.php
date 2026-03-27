@@ -732,6 +732,8 @@ class SellerAgentAuctionBid extends Component
             session()->flash('success', 'Your bid has been submitted successfully!');
             return redirect()->route('seller.agent.auction.detail', $this->auctionId);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving bid: ' . $e->getMessage());
         }

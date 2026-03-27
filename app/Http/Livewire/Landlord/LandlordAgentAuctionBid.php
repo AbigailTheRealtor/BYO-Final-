@@ -1136,6 +1136,8 @@ class LandlordAgentAuctionBid extends Component
             session()->flash('success', 'Your bid has been submitted successfully!');
 
             return redirect()->route('landlord.agent.auction.view', $this->auctionId);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             DB::rollBack();
             session()->flash('error', 'Error saving auction: ' . $e->getMessage());
