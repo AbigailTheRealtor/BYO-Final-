@@ -3120,6 +3120,46 @@
                                     </div>
                                     <div class="modal-body" style="background: #fafafa; padding: 25px; max-height: 80vh; overflow-y: auto;">
 
+                                        {{-- ========== MATCH SCORE PANEL ========== --}}
+                                        <div class="match-score-panel mb-4 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; border: 1px solid #dee2e6;">
+                                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                                <h6 class="mb-0" style="color: #1a3a5c; font-weight: 600;">
+                                                    <i class="fa fa-chart-pie me-2"></i>Match Score
+                                                </h6>
+                                                <span class="badge" style="background: {{ $getScoreColor($totalScore) }}; font-size: 1.1rem; padding: 8px 16px;">
+                                                    {{ $totalScore }}% Match
+                                                </span>
+                                            </div>
+                                            <p class="small text-muted mb-3">
+                                                Comparing to: <strong>{{ $baselineLabel }}</strong>
+                                            </p>
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <div class="p-2 bg-white rounded" style="border-left: 4px solid {{ $getScoreColor($brokerScore) }};">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <span class="small fw-semibold">Broker Compensation</span>
+                                                            <span class="badge" style="background: {{ $getScoreColor($brokerScore) }};">{{ $brokerScore }}%</span>
+                                                        </div>
+                                                        <div class="small text-muted mt-1">
+                                                            {{ $brokerMatched }}/{{ $brokerTotal }} fields match
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="p-2 bg-white rounded" style="border-left: 4px solid {{ $getScoreColor($servicesScore) }};">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <span class="small fw-semibold">Offered Services</span>
+                                                            <span class="badge" style="background: {{ $getScoreColor($servicesScore) }};">{{ $servicesScore }}%</span>
+                                                        </div>
+                                                        <div class="small text-muted mt-1">
+                                                            {{ $servicesMatched }}/{{ $servicesTotal }} services match
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {{-- ========== END MATCH SCORE PANEL ========== --}}
+
                                         <!-- 1. Agent Overview & Qualifications -->
                                         @if ($isListingOwner || $isBidOwner)
                                         <div class="mb-5">
@@ -3155,31 +3195,33 @@
                                             </div>
                                             @endif
 
-                                            @if (data_get($bid, 'get.year_licensed'))
+                                            @php
+                                                $sellerReviewLinks = data_get($bid, 'get.reviews_links', []);
+                                                $hasAnySellerReviewUrl = !empty(array_filter((array) $sellerReviewLinks, fn($rl) => !empty(is_object($rl) ? $rl->url : ($rl['url'] ?? ''))));
+                                            @endphp
+                                            @if ($hasAnySellerReviewUrl)
                                             <div class="mb-3">
-                                                <div class="fw-semibold" style="color: #049399;">Licensed Year:</div>
-                                                <div class="text-muted">{{ data_get($bid, 'get.year_licensed') }}</div>
-                                            </div>
-                                            @endif
-
-                                            @if (data_get($bid, 'get.brokerage'))
-                                            <div class="mb-3">
-                                                <div class="fw-semibold" style="color: #049399;">Brokerage:</div>
-                                                <div class="text-muted">{{ data_get($bid, 'get.brokerage') }}</div>
-                                            </div>
-                                            @endif
-
-                                            @if (data_get($bid, 'get.license_no'))
-                                            <div class="mb-3">
-                                                <div class="fw-semibold" style="color: #049399;">License Number:</div>
-                                                <div class="text-muted">{{ data_get($bid, 'get.license_no') }}</div>
-                                            </div>
-                                            @endif
-
-                                            @if (data_get($bid, 'get.nar_id'))
-                                            <div class="mb-3">
-                                                <div class="fw-semibold" style="color: #049399;">NAR Member ID:</div>
-                                                <div class="text-muted">{{ data_get($bid, 'get.nar_id') }}</div>
+                                                <div class="fw-semibold" style="color: #049399;">Review Links:</div>
+                                                <div>
+                                                    @foreach ($sellerReviewLinks as $reviewLink)
+                                                    @php $rlUrlVal = is_object($reviewLink) ? $reviewLink->url : ($reviewLink['url'] ?? ''); @endphp
+                                                    @if (!empty($rlUrlVal))
+                                                    <div class="mb-1">
+                                                        @php
+                                                            $rlFinal = $rlUrlVal;
+                                                            if (!str_starts_with($rlFinal, 'http://') && !str_starts_with($rlFinal, 'https://')) {
+                                                                $rlFinal = 'https://' . $rlFinal;
+                                                            }
+                                                            $rlText = is_object($reviewLink) ? ($reviewLink->text ?? '') : ($reviewLink['text'] ?? '');
+                                                        @endphp
+                                                        <a href="{{ $rlFinal }}" target="_blank" class="text-primary text-decoration-none">
+                                                            <i class="fa fa-external-link-alt me-1"></i>
+                                                            {{ !empty($rlText) ? $rlText : $rlUrlVal }}
+                                                        </a>
+                                                    </div>
+                                                    @endif
+                                                    @endforeach
+                                                </div>
                                             </div>
                                             @endif
 
@@ -3196,30 +3238,6 @@
                                                     <a href="{{ $wLink }}" target="_blank" rel="noopener noreferrer" class="text-primary text-decoration-none">
                                                         <i class="fa fa-globe me-1"></i> Visit Website
                                                     </a>
-                                                </div>
-                                            </div>
-                                            @endif
-
-                                            @if (data_get($bid, 'get.reviews_links'))
-                                            <div class="mb-3">
-                                                <div class="fw-semibold" style="color: #049399;">Review Links:</div>
-                                                <div>
-                                                    @foreach (data_get($bid, 'get.reviews_links') as $reviewLink)
-                                                    @if (!empty($reviewLink->url))
-                                                    <div class="mb-1">
-                                                        @php
-                                                            $rlUrl = $reviewLink->url;
-                                                            if (!str_starts_with($rlUrl, 'http://') && !str_starts_with($rlUrl, 'https://')) {
-                                                                $rlUrl = 'https://' . $rlUrl;
-                                                            }
-                                                        @endphp
-                                                        <a href="{{ $rlUrl }}" target="_blank" class="text-primary text-decoration-none">
-                                                            <i class="fa fa-external-link-alt me-1"></i>
-                                                            {{ !empty($reviewLink->text) ? $reviewLink->text : $reviewLink->url }}
-                                                        </a>
-                                                    </div>
-                                                    @endif
-                                                    @endforeach
                                                 </div>
                                             </div>
                                             @endif
@@ -3246,6 +3264,13 @@
                                                     @endif
                                                     @endforeach
                                                 </div>
+                                            </div>
+                                            @endif
+
+                                            @if (data_get($bid, 'get.year_licensed'))
+                                            <div class="mb-3">
+                                                <div class="fw-semibold" style="color: #049399;">Licensed Year:</div>
+                                                <div class="text-muted">{{ data_get($bid, 'get.year_licensed') }}</div>
                                             </div>
                                             @endif
 
@@ -3888,78 +3913,208 @@
                                         @endif
 
                                         <!-- 4. Broker Compensation & Agency Agreement Terms -->
-                                        @if (data_get($bid, 'get.commission_structure') ||
-                                             data_get($bid, 'get.purchase_fee_type') ||
-                                             data_get($bid, 'get.protection_period') ||
-                                             data_get($bid, 'get.retainer_fee_option') ||
-                                             data_get($bid, 'get.agency_agreement_timeframe') ||
-                                             data_get($bid, 'get.brokerage_relationship'))
+                                        @php
+                                            $bidBrokerHasAny = data_get($bid, 'get.commission_structure') ||
+                                                data_get($bid, 'get.purchase_fee_type') ||
+                                                data_get($bid, 'get.nominal') ||
+                                                data_get($bid, 'get.commission_structure_type') ||
+                                                data_get($bid, 'get.interested_purchase_fee_type') ||
+                                                data_get($bid, 'get.interested_lease_option_agreement') ||
+                                                data_get($bid, 'get.protection_period') ||
+                                                data_get($bid, 'get.early_termination_fee_option') ||
+                                                data_get($bid, 'get.retainer_fee_option') ||
+                                                data_get($bid, 'get.retained_deposits') ||
+                                                data_get($bid, 'get.agency_agreement_timeframe') ||
+                                                data_get($bid, 'get.brokerage_relationship') ||
+                                                data_get($bid, 'get.additional_details_broker');
+                                        @endphp
+                                        @if ($bidBrokerHasAny)
                                         <div class="mb-5">
                                             <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
                                                 <i class="fa fa-handshake me-2"></i>Broker Compensation &amp; Agency Agreement Terms
                                             </h6>
 
                                             <!-- A) Seller's Broker Compensation -->
-                                            @if (data_get($bid, 'get.commission_structure') || data_get($bid, 'get.purchase_fee_type'))
+                                            @php
+                                                $bidCommStruct = data_get($bid, 'get.commission_structure');
+                                                $bidPurchaseFeeType = data_get($bid, 'get.purchase_fee_type');
+                                                $bidNominal = data_get($bid, 'get.nominal');
+                                                $bidCommStructType = data_get($bid, 'get.commission_structure_type');
+                                                // Build Buyer's Broker Commission Fee display
+                                                $bidBuyerBrokerFee = null;
+                                                if ($bidCommStructType === 'Flat Fee' && data_get($bid, 'get.commission_structure_type_fee_flat')) {
+                                                    $bidBuyerBrokerFee = '$' . number_format((float) str_replace(',', '', data_get($bid, 'get.commission_structure_type_fee_flat')), 2);
+                                                } elseif ($bidCommStructType === 'Percentage of the Total Purchase Price' && data_get($bid, 'get.commission_structure_type_fee_percentage')) {
+                                                    $bidBuyerBrokerFee = number_format((float) data_get($bid, 'get.commission_structure_type_fee_percentage'), 2) . '% of Total Purchase Price';
+                                                } elseif (strtolower($bidCommStructType ?? '') === 'other' && data_get($bid, 'get.commission_structure_type_fee_other')) {
+                                                    $bidBuyerBrokerFee = data_get($bid, 'get.commission_structure_type_fee_other');
+                                                }
+                                                $showSellerBrokerComp = $bidCommStruct || $bidPurchaseFeeType || $bidNominal || $bidCommStructType;
+                                            @endphp
+                                            @if ($showSellerBrokerComp)
                                             <div class="mb-4">
                                                 <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Seller's Broker Compensation</h6>
                                                 <ul class="list-unstyled ps-3 mb-0">
-                                                    @if (data_get($bid, 'get.commission_structure'))
-                                                    <li class="mb-1"><span class="fw-semibold">Commission Structure:</span> {{ data_get($bid, 'get.commission_structure') }}</li>
-                                                    @endif
-                                                    @if (data_get($bid, 'get.purchase_fee_type'))
+                                                    @if ($bidPurchaseFeeType)
                                                     <li class="mb-1"><span class="fw-semibold">Seller's Broker Purchase Fee:</span> {{ $sellerPurchaseFeeDisplay }}</li>
                                                     @endif
-                                                    @if (data_get($bid, 'get.commission_structure_type'))
-                                                    <li class="mb-1"><span class="fw-semibold">Commission Structure Type:</span> {{ data_get($bid, 'get.commission_structure_type') }}</li>
+                                                    @if ($bidNominal)
+                                                    <li class="mb-1"><span class="fw-semibold">Nominal Consideration Fee:</span> ${{ number_format((float) str_replace(',', '', $bidNominal), 2) }}</li>
                                                     @endif
-                                                    @if (data_get($bid, 'get.interested_purchase_fee_type'))
-                                                    <li class="mb-1"><span class="fw-semibold">Buyer's Agent Fee:</span> {{ data_get($bid, 'get.interested_purchase_fee_type') }}</li>
+                                                    @if ($bidCommStruct)
+                                                    <li class="mb-1"><span class="fw-semibold">Buyer's Broker Commission Structure:</span> {{ $bidCommStruct }}</li>
+                                                    @endif
+                                                    @if ($bidCommStructType)
+                                                    <li class="mb-1"><span class="fw-semibold">Buyer's Broker Commission Fee:</span> {{ $bidCommStructType }}</li>
+                                                    @endif
+                                                    @if ($bidBuyerBrokerFee)
+                                                    <li class="mb-1 ps-3"><span class="fw-semibold">Amount:</span> {{ $bidBuyerBrokerFee }}</li>
                                                     @endif
                                                 </ul>
                                             </div>
                                             @endif
 
-                                            <!-- B) Legal Terms -->
-                                            @if (data_get($bid, 'get.protection_period') || data_get($bid, 'get.retainer_fee_option') || data_get($bid, 'get.agency_agreement_timeframe'))
+                                            <!-- B) Lease Terms -->
+                                            @php
+                                                $bidInterestedLease = data_get($bid, 'get.interested_purchase_fee_type');
+                                                $showLeaseTerms = strtolower(trim($bidInterestedLease ?? '')) === 'yes';
+                                                $bidLeasingFeeType = data_get($bid, 'get.seller_leasing_fee_type');
+                                                // Build leasing fee amount display
+                                                $bidLeasingFeeAmt = null;
+                                                if ($bidLeasingFeeType === 'Percentage of the Gross Lease Value' && data_get($bid, 'get.seller_leasing_gross')) {
+                                                    $bidLeasingFeeAmt = number_format((float) data_get($bid, 'get.seller_leasing_gross'), 2) . '% of Gross Lease Value';
+                                                } elseif ($bidLeasingFeeType === 'Percentage of the Rent Due Each Rental Period' && data_get($bid, 'get.seller_leasing_gross_rental')) {
+                                                    $bidLeasingFeeAmt = number_format((float) data_get($bid, 'get.seller_leasing_gross_rental'), 2) . '% of Rent Per Rental Period';
+                                                } elseif (in_array($bidLeasingFeeType, ["Percentage of the First Month's Rent", "Percentage of Month's Rent"]) && data_get($bid, 'get.seller_leasing_gross_month_rent')) {
+                                                    $bidLeasingFeeAmt = number_format((float) data_get($bid, 'get.seller_leasing_gross_month_rent'), 2) . '% of Month\'s Rent';
+                                                } elseif ($bidLeasingFeeType === 'Percentage of Net Aggregate Rent' && data_get($bid, 'get.seller_leasing_gross_percentage_net_combo')) {
+                                                    $bidLeasingFeeAmt = number_format((float) data_get($bid, 'get.seller_leasing_gross_percentage_net_combo'), 2) . '% of Net Aggregate Rent';
+                                                } elseif ($bidLeasingFeeType === 'Flat Fee' && data_get($bid, 'get.seller_leasing_gross_purchase_fee_flat_amount')) {
+                                                    $bidLeasingFeeAmt = '$' . number_format((float) str_replace(',', '', data_get($bid, 'get.seller_leasing_gross_purchase_fee_flat_amount')), 2);
+                                                } elseif (data_get($bid, 'get.seller_leasing_gross_other')) {
+                                                    $bidLeasingFeeAmt = data_get($bid, 'get.seller_leasing_gross_other');
+                                                }
+                                            @endphp
+                                            @if ($bidInterestedLease)
                                             <div class="mb-4">
-                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">B) Legal Terms</h6>
+                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">B) Lease Terms</h6>
                                                 <ul class="list-unstyled ps-3 mb-0">
-                                                    @if (data_get($bid, 'get.protection_period'))
-                                                    <li class="mb-1"><span class="fw-semibold">Protection Period Timeframe:</span> {{ data_get($bid, 'get.protection_period') }} days</li>
+                                                    <li class="mb-1"><span class="fw-semibold">Interested in Offering a Lease Agreement:</span> {{ $bidInterestedLease }}</li>
+                                                    @if ($showLeaseTerms && $bidLeasingFeeType)
+                                                    <li class="mb-1"><span class="fw-semibold">Seller's Broker Leasing Fee:</span> {{ $bidLeasingFeeType }}</li>
                                                     @endif
-                                                    @if (data_get($bid, 'get.retainer_fee_option'))
-                                                    <li class="mb-1"><span class="fw-semibold">Retainer Fee:</span> {{ data_get($bid, 'get.retainer_fee_option') }}</li>
-                                                        @if (data_get($bid, 'get.retainer_fee_option') === 'Yes')
-                                                            @if (data_get($bid, 'get.retainer_fee_amount'))
-                                                            <li class="mb-1"><span class="fw-semibold">Retainer Fee Amount:</span> ${{ number_format((float) data_get($bid, 'get.retainer_fee_amount'), 2) }}</li>
+                                                    @if ($showLeaseTerms && $bidLeasingFeeAmt)
+                                                    <li class="mb-1 ps-3"><span class="fw-semibold">Amount:</span> {{ $bidLeasingFeeAmt }}</li>
+                                                    @endif
+                                                </ul>
+                                            </div>
+                                            @endif
+
+                                            <!-- C) Lease-Option Terms -->
+                                            @php
+                                                $bidLeaseOption = data_get($bid, 'get.interested_lease_option_agreement');
+                                                $showLeaseOption = strtolower(trim($bidLeaseOption ?? '')) === 'yes';
+                                                $bidLeaseType = data_get($bid, 'get.lease_type');
+                                                $bidLeaseValue = data_get($bid, 'get.lease_value');
+                                                $bidPurchaseType = data_get($bid, 'get.purchase_type');
+                                                $bidPurchaseValue = data_get($bid, 'get.purchase_value');
+                                                // Format lease-option creation fee
+                                                $bidLeaseOptionFee = null;
+                                                if ($bidLeaseValue) {
+                                                    if ($bidLeaseType === 'flat') {
+                                                        $bidLeaseOptionFee = '$' . number_format((float) str_replace(',', '', $bidLeaseValue), 2);
+                                                    } else {
+                                                        $bidLeaseOptionFee = number_format((float) str_replace(',', '', $bidLeaseValue), 2) . '% of Option Consideration';
+                                                    }
+                                                }
+                                                // Format purchase option exercise fee
+                                                $bidPurchaseOptFee = null;
+                                                if ($bidPurchaseValue) {
+                                                    if ($bidPurchaseType === 'flat') {
+                                                        $bidPurchaseOptFee = '$' . number_format((float) str_replace(',', '', $bidPurchaseValue), 2);
+                                                    } else {
+                                                        $bidPurchaseOptFee = number_format((float) str_replace(',', '', $bidPurchaseValue), 2) . '% of Total Purchase Price';
+                                                    }
+                                                }
+                                            @endphp
+                                            @if ($bidLeaseOption)
+                                            <div class="mb-4">
+                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">C) Lease-Option Terms</h6>
+                                                <ul class="list-unstyled ps-3 mb-0">
+                                                    <li class="mb-1"><span class="fw-semibold">Interested in Lease-Option Agreement:</span> {{ $bidLeaseOption }}</li>
+                                                    @if ($showLeaseOption && $bidLeaseOptionFee)
+                                                    <li class="mb-1"><span class="fw-semibold">Compensation for Creating Lease-Option Agreement:</span> {{ $bidLeaseOptionFee }}</li>
+                                                    @endif
+                                                    @if ($showLeaseOption && $bidPurchaseOptFee)
+                                                    <li class="mb-1"><span class="fw-semibold">Compensation if Purchase Option is Exercised:</span> {{ $bidPurchaseOptFee }}</li>
+                                                    @endif
+                                                </ul>
+                                            </div>
+                                            @endif
+
+                                            <!-- D) Legal Terms -->
+                                            @php
+                                                $bidEarlyTermOpt = data_get($bid, 'get.early_termination_fee_option');
+                                                $bidEarlyTermAmt = data_get($bid, 'get.early_termination_fee_amount');
+                                                $bidRetainedDep  = data_get($bid, 'get.retained_deposits');
+                                                $bidRetainerOpt  = data_get($bid, 'get.retainer_fee_option');
+                                                $bidRetainerAmt  = data_get($bid, 'get.retainer_fee_amount');
+                                                $bidRetainerApp  = data_get($bid, 'get.retainer_fee_application');
+                                                $bidProtPeriod   = data_get($bid, 'get.protection_period');
+                                                $bidAgencyTf     = data_get($bid, 'get.agency_agreement_timeframe');
+                                                $bidAgencyCus    = data_get($bid, 'get.agency_agreement_custom');
+                                                $bidAgencyDsp    = strtolower(trim($bidAgencyTf ?? '')) === 'other' ? ($bidAgencyCus ?: 'Other') : ($bidAgencyTf ?: '');
+                                                $showLegalTerms  = $bidEarlyTermOpt || $bidRetainedDep || $bidRetainerOpt || $bidProtPeriod || $bidAgencyTf;
+                                            @endphp
+                                            @if ($showLegalTerms)
+                                            <div class="mb-4">
+                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">D) Legal Terms</h6>
+                                                <ul class="list-unstyled ps-3 mb-0">
+                                                    @if ($bidEarlyTermOpt)
+                                                    <li class="mb-1"><span class="fw-semibold">Early Termination Fee:</span> {{ ucfirst($bidEarlyTermOpt) }}</li>
+                                                        @if (strtolower($bidEarlyTermOpt) === 'yes' && $bidEarlyTermAmt)
+                                                        <li class="mb-1 ps-3"><span class="fw-semibold">Amount:</span> ${{ number_format((float) str_replace(',', '', $bidEarlyTermAmt), 2) }}</li>
+                                                        @endif
+                                                    @endif
+                                                    @if ($bidRetainerOpt)
+                                                    <li class="mb-1"><span class="fw-semibold">Retainer Fee:</span> {{ ucfirst($bidRetainerOpt) }}</li>
+                                                        @if (strtolower($bidRetainerOpt) === 'yes')
+                                                            @if ($bidRetainerAmt)
+                                                            <li class="mb-1 ps-3"><span class="fw-semibold">Amount:</span> ${{ number_format((float) str_replace(',', '', $bidRetainerAmt), 2) }}</li>
                                                             @endif
-                                                            @if (data_get($bid, 'get.retainer_fee_application'))
-                                                            <li class="mb-1"><span class="fw-semibold">Retainer Fee Application:</span>
-                                                                {{ data_get($bid, 'get.retainer_fee_application') === 'applied' ? 'Applied toward final compensation' : 'Charged in addition to final compensation' }}
-                                                            </li>
+                                                            @if ($bidRetainerApp)
+                                                            <li class="mb-1 ps-3"><span class="fw-semibold">Application:</span> {{ $bidRetainerApp }}</li>
                                                             @endif
                                                         @endif
                                                     @endif
-                                                    @if (data_get($bid, 'get.agency_agreement_timeframe'))
-                                                    @php
-                                                        $agencyTf  = data_get($bid, 'get.agency_agreement_timeframe');
-                                                        $agencyCus = data_get($bid, 'get.agency_agreement_custom');
-                                                        $agencyDsp = strtolower(trim($agencyTf ?? '')) === 'other' ? ($agencyCus ?: 'Other') : ($agencyTf ?: '');
-                                                    @endphp
-                                                    <li class="mb-1"><span class="fw-semibold">Seller Agency Agreement Timeframe:</span> {{ $agencyDsp }}</li>
+                                                    @if ($bidRetainedDep)
+                                                    <li class="mb-1"><span class="fw-semibold">Seller's Broker's Share of Retained Deposits:</span> {{ number_format((float) $bidRetainedDep, 2) }}%</li>
+                                                    @endif
+                                                    @if ($bidProtPeriod)
+                                                    <li class="mb-1"><span class="fw-semibold">Protection Period Timeframe:</span> {{ $bidProtPeriod }} days</li>
+                                                    @endif
+                                                    @if ($bidAgencyTf)
+                                                    <li class="mb-1"><span class="fw-semibold">Seller Agency Agreement Timeframe:</span> {{ $bidAgencyDsp }}</li>
                                                     @endif
                                                 </ul>
                                             </div>
                                             @endif
 
-                                            <!-- C) Brokerage Relationship -->
+                                            <!-- E) Brokerage Relationship -->
                                             @if (data_get($bid, 'get.brokerage_relationship'))
                                             <div class="mb-4">
-                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">C) Brokerage Relationship</h6>
+                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">E) Brokerage Relationship</h6>
                                                 <ul class="list-unstyled ps-3 mb-0">
                                                     <li class="mb-1"><span class="fw-semibold">Acceptable Brokerage Relationship:</span> {{ data_get($bid, 'get.brokerage_relationship') }}</li>
                                                 </ul>
+                                            </div>
+                                            @endif
+
+                                            <!-- F) Additional Terms -->
+                                            @if (data_get($bid, 'get.additional_details_broker'))
+                                            <div class="mb-4">
+                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">F) Additional Terms</h6>
+                                                <div class="ps-3 text-muted">{{ data_get($bid, 'get.additional_details_broker') }}</div>
                                             </div>
                                             @endif
                                         </div>

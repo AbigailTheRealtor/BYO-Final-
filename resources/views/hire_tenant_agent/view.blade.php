@@ -2305,20 +2305,32 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         @endif
 
                                                         <!-- Review Links -->
-                                                        @if (data_get($bid, 'get.reviews_links'))
+                                                        @php
+                                                            $tenantReviewLinks = data_get($bid, 'get.reviews_links', []);
+                                                            $hasAnyReviewUrl = !empty(array_filter((array) $tenantReviewLinks, fn($rl) => !empty(is_object($rl) ? $rl->url : ($rl['url'] ?? ''))));
+                                                        @endphp
+                                                        @if ($hasAnyReviewUrl)
                                                         <div class="mb-3">
                                                             <div class="fw-semibold"
                                                                 style="color: #049399;">Review Links:</div>
                                                             <div>
-                                                                @foreach (data_get($bid, 'get.reviews_links') as $reviewLink)
-                                                                @if (!empty($reviewLink->url))
+                                                                @foreach ($tenantReviewLinks as $reviewLink)
+                                                                @php $rlUrlVal = is_object($reviewLink) ? $reviewLink->url : ($reviewLink['url'] ?? ''); @endphp
+                                                                @if (!empty($rlUrlVal))
                                                                 <div class="mb-1">
-                                                                    <a href="https://{{ $reviewLink->url }}"
+                                                                    @php
+                                                                        $rlFinal = $rlUrlVal;
+                                                                        if (!str_starts_with($rlFinal, 'http://') && !str_starts_with($rlFinal, 'https://')) {
+                                                                            $rlFinal = 'https://' . $rlFinal;
+                                                                        }
+                                                                        $rlText = is_object($reviewLink) ? ($reviewLink->text ?? '') : ($reviewLink['text'] ?? '');
+                                                                    @endphp
+                                                                    <a href="{{ $rlFinal }}"
                                                                         target="_blank"
                                                                         class="text-primary text-decoration-none">
                                                                         <i
                                                                             class="fa fa-external-link-alt me-1"></i>
-                                                                        {{ !empty($reviewLink->text) ? $reviewLink->text : $reviewLink->url }}
+                                                                        {{ !empty($rlText) ? $rlText : $rlUrlVal }}
                                                                     </a>
                                                                 </div>
                                                                 @endif
