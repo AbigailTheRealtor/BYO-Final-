@@ -1137,6 +1137,7 @@ class LandlordAgentAuctionBid extends Component
 
             return redirect()->route('landlord.agent.auction.view', $this->auctionId);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->activeTab = 0;
             throw $e;
         } catch (\Exception $e) {
             DB::rollBack();

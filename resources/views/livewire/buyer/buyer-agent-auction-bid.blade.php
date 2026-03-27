@@ -332,16 +332,16 @@
                     <!-- Navigation Buttons -->
                     <div class="d-flex justify-content-between form-group mt-4">
                         <div>
-                            <button type="button" class="btn btn-secondary wizard-step-back">
+                            <button type="button" class="btn btn-secondary wizard-step-back" wire:click="goToPreviousStep">
                                 Previous
                             </button>
                         </div>
                         <div>
-                            <button type="button" class="btn btn-primary wizard-step-next">
+                            <button type="button" class="btn btn-primary wizard-step-next" wire:click="goToNextStep">
                                 Next
                             </button>
 
-                            <button type="submit" class="btn btn-success wizard-step-finish disable" id="save-button">
+                            <button type="submit" class="btn btn-success wizard-step-finish" id="save-button" wire:loading.attr="disabled">
                                 Submit
                             </button>
                         </div>
@@ -786,68 +786,7 @@
                 return allValid;
             }
 
-            // Update save button state
-            function updateSaveButton() {
-                const saveButton = document.getElementById('save-button');
-                if (checkAllTabsValidity()) {
-                    saveButton.classList.remove('disabled');
-                    saveButton.disabled = false;
-                } else {
-                    saveButton.classList.add('disabled');
-                    saveButton.disabled = true;
-                }
-            }
-            // Add this function to validate services tab
-
-
-            // Next button click handler - FIXED TAB NAVIGATION
-            document.querySelector('.wizard-step-next')?.addEventListener('click', function(e) {
-                e.preventDefault();
-                // Validate current tab with error messages
-                if (validateCurrentTabWithErrors()) {
-                    const currentTabIndex = Array.from(document.querySelectorAll('.nav-link')).indexOf(
-                        document.querySelector('.nav-link.active')
-                    );
-
-
-                    if (currentTabIndex < 5) { // Assuming 6 tabs (0-5)
-                        // Find the next tab button and click it
-
-                        console.log("Assuming 6 tabs (0-5)");
-                        const nextTabButton = document.querySelectorAll('.nav-link')[currentTabIndex + 1];
-                        if (nextTabButton) {
-                            nextTabButton.click();
-                        }
-                        // Scroll to top of next tab
-                        document.querySelector('.tab-content').scrollIntoView({
-                            behavior: 'smooth'
-                        });
-                    }
-                }
-
-
-            });
-
-            // Back button click handler - FIXED TAB NAVIGATION
-            document.querySelector('.wizard-step-back')?.addEventListener('click', function(e) {
-                e.preventDefault();
-
-                const currentTabIndex = Array.from(document.querySelectorAll('.nav-link')).indexOf(
-                    document.querySelector('.nav-link.active')
-                );
-
-                if (currentTabIndex > 0) {
-                    // Find the previous tab button and click it
-                    const prevTabButton = document.querySelectorAll('.nav-link')[currentTabIndex - 1];
-                    if (prevTabButton) {
-                        prevTabButton.click();
-                    }
-                    // Scroll to top of previous tab
-                    document.querySelector('.tab-content').scrollIntoView({
-                        behavior: 'smooth'
-                    });
-                }
-            });
+            // Navigation is handled by Livewire wire:click="goToNextStep" / goToPreviousStep
 
             // // Toggle "Other" service input visibility
             // function toggleOtherService() {
@@ -874,37 +813,13 @@
             //     updateSaveButton();
             // });
 
-            // Validate fields on input/blur (without showing errors)
-            document.querySelectorAll('input, textarea, select').forEach(field => {
-                field.addEventListener('blur', () => {
-                    // Only validate without showing errors during regular interaction
-                    checkFieldValidity(field);
-                    updateSaveButton();
-                });
-
-                field.addEventListener('input', () => {
-                    // Only validate without showing errors during regular interaction
-                    checkFieldValidity(field);
-                    updateSaveButton();
-                });
-            });
-
-            // Initialize icons and validate on load
+            // Initialize icons on load
             addIconsToInputs();
-            updateSaveButton();
 
-            // Livewire hook to reinitialize after updates
+            // Livewire hook to reinitialize icons after updates
             Livewire.hook('message.processed', () => {
                 setTimeout(() => {
                     addIconsToInputs();
-                    // toggleOtherService();
-                    updateSaveButton();
-
-                    // Reinitialize Select2 after Livewire update
-                    //     $('#services-dropdown').select2({
-                    //         placeholder: "Select services",
-                    //         allowClear: true,
-                    //     });
                 }, 100);
             });
         });

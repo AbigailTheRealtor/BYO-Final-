@@ -123,7 +123,8 @@
                             @else
                             <button type="submit"
                                     class="btn btn-success wizard-step-finish"
-                                    id="save-button">
+                                    id="save-button"
+                                    wire:loading.attr="disabled">
                                 Submit Bid
                             </button>
                             @endif

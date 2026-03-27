@@ -1,0 +1,312 @@
+Paste this into Replit exactly:
+
+---
+
+# 🚨 TASK: Fix Buyer, Landlord, and Seller bid form Submit button not doing anything
+
+## Issue
+
+On **Buyer, Landlord, and Seller agent bid forms**, when clicking **Submit**, nothing happens.
+
+Tenant is the working reference. Buyer, Landlord, and Seller must submit the same way Tenant does.
+
+This needs to be fixed with a **minimal, scoped fix**.
+
+---
+
+# Scope
+
+This task applies **only** to the agent bid form submit flow for:
+
+* Buyer
+* Landlord
+* Seller
+
+Do **not** change listing creation flows.
+Do **not** change listing edit flows.
+Do **not** change unrelated bid display/card logic unless required for this submit fix.
+
+Use **Tenant bid submit flow** as the source of truth.
+
+---
+
+# 🛑 Critical safeguards
+
+1. **Trace the real submit flow first**
+   Before editing, confirm the actual:
+
+   * route
+   * controller or Livewire component
+   * blade/view
+   * submit method
+   * validation method
+   * save method
+     used by:
+   * Tenant bid
+   * Buyer bid
+   * Landlord bid
+   * Seller bid
+
+2. **Do not assume all roles use the same submit handler**
+   Verify whether Buyer, Landlord, and Seller are actually wired to the same working method as Tenant.
+
+3. **Compare Tenant vs Buyer/Landlord/Seller submit wiring**
+   Specifically verify:
+
+   * `wire:click`
+   * `wire:submit`
+   * form tag
+   * button type
+   * method name
+   * validation trigger
+   * whether the submit method is exiting early
+   * whether there are hidden JS errors or Livewire errors
+   * whether required validation is silently blocking without showing UI
+
+4. **Do not start with styling**
+   This is a submit-flow logic fix, not a CSS fix.
+
+5. **Keep changes minimal**
+   Only fix what is causing Submit to do nothing.
+
+6. **Do not refactor unrelated code**
+   No folder cleanup, no broad rewrites, no renaming across unrelated files.
+
+7. **Do not break Tenant**
+   Tenant submit flow must remain unchanged and working.
+
+8. **If shared component is used, fix shared logic carefully**
+   Do not duplicate files unless absolutely necessary.
+
+9. **Check for frontend and backend causes**
+   This could be caused by:
+
+   * wrong submit method binding
+   * button not inside correct form
+   * conditional rendering issue
+   * validation blocking with no visible errors
+   * JS/Livewire event issue
+   * role-based branch skipping save logic
+   * early return in submit method
+   * wrong role detection
+   * missing required data mapping
+   * failed redirect/notification after save
+
+10. **Show the root cause, not just a patch**
+    Confirm exactly why Submit was doing nothing for Buyer, Landlord, and Seller.
+
+---
+
+# Step 1 — Trace the real files first
+
+Before coding, identify the real files for:
+
+## Tenant bid submit flow
+
+* route
+* component/controller
+* blade/view
+* submit button markup
+* submit method
+* validation method
+* save method
+
+## Buyer bid submit flow
+
+* route
+* component/controller
+* blade/view
+* submit button markup
+* submit method
+* validation method
+* save method
+
+## Landlord bid submit flow
+
+* route
+* component/controller
+* blade/view
+* submit button markup
+* submit method
+* validation method
+* save method
+
+## Seller bid submit flow
+
+* route
+* component/controller
+* blade/view
+* submit button markup
+* submit method
+* validation method
+* save method
+
+Return a short mapping first like:
+
+* Tenant submit → `[component/method/view]`
+* Buyer submit → `[component/method/view]`
+* Landlord submit → `[component/method/view]`
+* Seller submit → `[component/method/view]`
+
+## CRITICAL
+
+Do not start coding until this mapping is confirmed.
+
+---
+
+# Step 2 — Compare Buyer, Landlord, and Seller against Tenant
+
+Use Tenant as the working baseline.
+
+For Buyer, Landlord, and Seller compare against Tenant:
+
+* submit button markup
+* button type
+* form wrapper
+* Livewire submit binding
+* method name
+* validation call
+* save call
+* redirect / success handling
+* role branching inside submit method
+* guards/conditions that may prevent save
+
+Look specifically for why clicking Submit appears to do nothing.
+
+---
+
+# Step 3 — Fix the root cause only
+
+Once the actual cause is identified, make the smallest safe fix needed so Buyer, Landlord, and Seller submit the same way Tenant does.
+
+Examples of valid root-cause fixes:
+
+* wrong method binding
+* wrong button type
+* submit button outside form
+* missing `wire:submit.prevent`
+* role branch not calling save
+* validation method returning silently
+* wrong property/role name causing submit logic to skip
+* redirect not firing due to condition mismatch
+* role-specific required-field handling blocking without showing errors
+
+Do **not** rewrite the whole bid form.
+
+---
+
+# Step 4 — Validation must still behave correctly
+
+If Submit is currently being blocked by validation, then:
+
+* show the errors clearly
+* keep behavior consistent with Tenant
+* do not allow silent failure
+
+If Buyer, Landlord, and Seller are missing required fields, the user must see that clearly the same way Tenant should.
+
+Submit should either:
+
+* save successfully, or
+* clearly show what is blocking submission
+
+It must not appear to do nothing.
+
+---
+
+# Step 5 — Confirm submit success behavior matches Tenant
+
+After fix, Buyer, Landlord, and Seller should match Tenant for:
+
+* save behavior
+* success state
+* redirect or refresh behavior
+* saved bid visibility afterward
+* no dead-click submit button
+
+---
+
+# Step 6 — Testing checklist
+
+Test all of these after coding:
+
+## A. Tenant
+
+* confirm Tenant submit still works exactly as before
+
+## B. Buyer
+
+1. Open Buyer bid form
+2. Fill required fields
+3. Click Submit
+4. Confirm bid saves successfully
+5. Confirm expected redirect/refresh/success behavior happens
+
+## C. Landlord
+
+1. Open Landlord bid form
+2. Fill required fields
+3. Click Submit
+4. Confirm bid saves successfully
+5. Confirm expected redirect/refresh/success behavior happens
+
+## D. Seller
+
+1. Open Seller bid form
+2. Fill required fields
+3. Click Submit
+4. Confirm bid saves successfully
+5. Confirm expected redirect/refresh/success behavior happens
+
+## E. Validation failure case
+
+For Buyer, Landlord, and Seller:
+
+1. Leave required field blank
+2. Click Submit
+3. Confirm:
+
+   * submit does not silently fail
+   * required errors show clearly
+   * user can tell what needs to be fixed
+
+## F. Regression
+
+* confirm no unrelated bid card/view logic was broken
+* confirm Tenant still works
+
+---
+
+# Step 7 — Required output after coding
+
+Provide:
+
+1. exact route/component/view mapping for Tenant, Buyer, Landlord, and Seller submit flow
+2. exact files changed
+3. exact root cause for why Buyer, Landlord, and Seller submit was doing nothing
+4. exact fix applied
+5. proof that:
+
+   * Buyer submit now works
+   * Landlord submit now works
+   * Seller submit now works
+   * Tenant still works
+   * validation no longer fails silently
+
+---
+
+# Definition of done
+
+This task is complete only when:
+
+* Buyer Submit works
+* Landlord Submit works
+* Seller Submit works
+* Tenant still works
+* submit no longer appears dead
+* if blocked by validation, the user sees clear errors
+* changes are minimal and scoped
+
+---
+
+Use Tenant as the exact working reference and fix only the submit-flow problem.

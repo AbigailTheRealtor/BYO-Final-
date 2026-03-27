@@ -845,6 +845,7 @@ public $additional_details_broker = '';
 
             return redirect()->route('buyer.view-auction', $this->auctionId);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->activeTab = 0;
             throw $e;
         } catch (\Exception $e) {
             DB::rollBack();

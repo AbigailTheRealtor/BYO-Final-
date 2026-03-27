@@ -302,16 +302,16 @@
                     <!-- Navigation Buttons -->
                     <div class="d-flex justify-content-between form-group mt-4">
                         <div>
-                            <button type="button" class="btn btn-secondary wizard-step-back">
+                            <button type="button" class="btn btn-secondary wizard-step-back" wire:click="goToPreviousStep">
                                 Previous
                             </button>
                         </div>
                         <div>
-                            <button type="button" class="btn btn-primary wizard-step-next">
+                            <button type="button" class="btn btn-primary wizard-step-next" wire:click="goToNextStep">
                                 Next
                             </button>
 
-                            <button type="submit" class="btn btn-success wizard-step-finish disable" id="save-button">
+                            <button type="submit" class="btn btn-success wizard-step-finish" id="save-button" wire:loading.attr="disabled">
                                 Submit
                             </button>
                         </div>
@@ -564,41 +564,13 @@ document.addEventListener('DOMContentLoaded', function() {
         return valid;
     }
 
-    function updateSaveButton(){
-        const saveBtn=document.getElementById('save-button');
-        const allValid=Array.from(document.querySelectorAll('[required]')).every(f=>checkFieldValidity(f));
-        saveBtn.disabled=!allValid;
-        saveBtn.classList.toggle('disabled', !allValid);
-    }
-
-    document.querySelector('.wizard-step-next')?.addEventListener('click', e=>{
-        e.preventDefault();
-        if(!validateCurrentTabWithErrors()) return;
-        const tabs=Array.from(document.querySelectorAll('.nav-link'));
-        const idx=tabs.findIndex(t=>t.classList.contains('active'));
-        if(idx<tabs.length-1) { tabs[idx+1].click(); document.querySelector('.tab-content').scrollIntoView({behavior:'smooth'}); }
-    });
-
-    document.querySelector('.wizard-step-back')?.addEventListener('click', e=>{
-        e.preventDefault();
-        const tabs=Array.from(document.querySelectorAll('.nav-link'));
-        const idx=tabs.findIndex(t=>t.classList.contains('active'));
-        if(idx>0) { tabs[idx-1].click(); document.querySelector('.tab-content').scrollIntoView({behavior:'smooth'}); }
-    });
-
-    document.querySelectorAll('input,textarea,select').forEach(f=>{
-        f.addEventListener('input', updateSaveButton);
-        f.addEventListener('blur', updateSaveButton);
-    });
+    // Navigation is handled by Livewire wire:click="goToNextStep" / goToPreviousStep
 
     Livewire.hook('message.processed', ()=>{
-        setTimeout(()=>{
-            addIconsToInputs();
-            updateSaveButton();
-        },100);
+        setTimeout(()=>{ addIconsToInputs(); },100);
     });
 
-    updateSaveButton();
+    addIconsToInputs();
 });
 </script>
 @endpush
