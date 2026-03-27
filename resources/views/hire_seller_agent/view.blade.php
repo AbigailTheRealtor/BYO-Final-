@@ -298,6 +298,62 @@
         .bid-action-btn:hover {
             opacity: 0.9;
         }
+
+        /* Service category title styling */
+        .service-category-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Base button style (matches Tenant) */
+        .btn-custom {
+            width: 100% !important;
+            color: white !important;
+            border: none;
+            padding: 10px 20px;
+            min-width: 120px;
+            font-weight: 500;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            display: inline-block;
+        }
+
+        .biding-btn {
+            width: 31.5%;
+        }
+
+        /* Accept (green) */
+        .btn-accept {
+            background-color: #28a745 !important;
+            color: #ffffff !important;
+        }
+
+        .btn-accept:hover {
+            background-color: #218838 !important;
+        }
+
+        /* Reject (red) */
+        .btn-reject {
+            background-color: #dc3545 !important;
+            color: #ffffff !important;
+        }
+
+        .btn-reject:hover {
+            background-color: #c82333 !important;
+        }
+
+        /* Counter (blue) */
+        .btn-counter {
+            background-color: #0d6efd !important;
+            color: #ffffff !important;
+        }
+
+        .btn-counter:hover {
+            background-color: #0b5ed7 !important;
+        }
     </style>
 @endpush
 @section('content')
@@ -2762,18 +2818,131 @@
 
                             $sellerPurchaseFeeDisplay = '-';
                             if ($sellerPurchaseFeeType === 'flat' && $sellerPurchaseFeeFlat) {
-                                $sellerPurchaseFeeDisplay = '$' . number_format((float) str_replace(',', '', $sellerPurchaseFeeFlat), 2);
+                                $sellerPurchaseFeeDisplay = $fmtMoney($sellerPurchaseFeeFlat) ?? '-';
                             } elseif ($sellerPurchaseFeeType === 'percentage' && $sellerPurchaseFeePerc) {
-                                $sellerPurchaseFeeDisplay = number_format((float) $sellerPurchaseFeePerc, 2) . '% of Total Purchase Price';
+                                $sellerPurchaseFeeDisplay = ($fmtPercent($sellerPurchaseFeePerc) ?? '-') . ' of Total Purchase Price';
                             } elseif ($sellerPurchaseFeeType === 'combo') {
-                                $parts = array_filter([
-                                    $sellerPurchaseFeePercCombo ? number_format((float) $sellerPurchaseFeePercCombo, 2) . '% of Total Purchase Price' : null,
-                                    $sellerPurchaseFeeFlatCombo ? '$' . number_format((float) str_replace(',', '', $sellerPurchaseFeeFlatCombo), 2) : null,
-                                ]);
-                                $sellerPurchaseFeeDisplay = implode(' + ', $parts) ?: '-';
+                                $sellerPurchaseFeeDisplay = $joinParts([
+                                    $sellerPurchaseFeePercCombo ? ($fmtPercent($sellerPurchaseFeePercCombo) . ' of Total Purchase Price') : null,
+                                    $fmtMoney($sellerPurchaseFeeFlatCombo),
+                                ]) ?? '-';
                             } elseif ($sellerPurchaseFeeType === 'other' && $sellerPurchaseFeeOther) {
                                 $sellerPurchaseFeeDisplay = $sellerPurchaseFeeOther;
                             }
+
+                            // === MATCH SCORE CALCULATION (for bid card and modal) ===
+                            $currentBidData = (array) data_get($bid, 'get', []);
+
+                            // Build Seller baseline from original auction listing meta
+                            $baselineData = [
+                                'commission_structure'        => data_get($auction, 'get.commission_structure'),
+                                'purchase_fee_type'           => data_get($auction, 'get.purchase_fee_type'),
+                                'commission_structure_type'   => data_get($auction, 'get.commission_structure_type'),
+                                'interested_purchase_fee_type'=> data_get($auction, 'get.interested_purchase_fee_type'),
+                                'protection_period'           => data_get($auction, 'get.protection_period'),
+                                'retainer_fee_option'         => data_get($auction, 'get.retainer_fee_option'),
+                                'retainer_fee_amount'         => data_get($auction, 'get.retainer_fee_amount'),
+                                'retainer_fee_application'    => data_get($auction, 'get.retainer_fee_application'),
+                                'agency_agreement_timeframe'  => data_get($auction, 'get.agency_agreement_timeframe'),
+                                'brokerage_relationship'      => data_get($auction, 'get.brokerage_relationship'),
+                                'purchase_fee_flat'           => data_get($auction, 'get.purchase_fee_flat'),
+                                'purchase_fee_percentage'     => data_get($auction, 'get.purchase_fee_percentage'),
+                                'purchase_fee_flat_combo'     => data_get($auction, 'get.purchase_fee_flat_combo'),
+                                'purchase_fee_percentage_combo'=> data_get($auction, 'get.purchase_fee_percentage_combo'),
+                                'purchase_fee_other'          => data_get($auction, 'get.purchase_fee_other'),
+                                'services'                    => data_get($auction, 'get.services'),
+                                'other_services'              => data_get($auction, 'get.other_services'),
+                            ];
+                            $baselineLabel = $isListingOwner ? 'Your Original Terms' : "Seller's Original Terms";
+
+                            // Broker Compensation fields to compare
+                            $brokerFields = [
+                                'commission_structure', 'purchase_fee_type', 'commission_structure_type',
+                                'interested_purchase_fee_type', 'protection_period', 'retainer_fee_option',
+                                'retainer_fee_amount', 'retainer_fee_application', 'agency_agreement_timeframe',
+                                'brokerage_relationship', 'purchase_fee_flat', 'purchase_fee_percentage',
+                                'purchase_fee_flat_combo', 'purchase_fee_percentage_combo', 'purchase_fee_other',
+                            ];
+
+                            // Normalize function for comparison
+                            $normalizeForMatch = function($v) {
+                                if (is_null($v) || $v === '') return '';
+                                if (is_array($v) || is_object($v)) return json_encode($v);
+                                $v = trim((string) $v);
+                                return preg_replace('/[\s$,%]/', '', strtolower($v));
+                            };
+
+                            // Calculate Broker Compensation Match
+                            $brokerMatched = 0;
+                            $brokerTotal   = 0;
+                            $brokerMismatches = [];
+                            foreach ($brokerFields as $field) {
+                                $currentVal  = $currentBidData[$field] ?? null;
+                                $baselineVal = $baselineData[$field] ?? null;
+                                if (!empty($currentVal) || !empty($baselineVal)) {
+                                    $brokerTotal++;
+                                    if ($normalizeForMatch($currentVal) === $normalizeForMatch($baselineVal)) {
+                                        $brokerMatched++;
+                                    } else {
+                                        $brokerMismatches[$field] = true;
+                                    }
+                                }
+                            }
+                            $brokerScore = $brokerTotal > 0 ? round(($brokerMatched / $brokerTotal) * 100) : 100;
+
+                            // === OFFERED SERVICES COMPARISON ===
+                            $curSvcs = $currentBidData['services'] ?? [];
+                            if (is_string($curSvcs)) { $curSvcs = json_decode($curSvcs, true) ?? []; }
+                            $curSvcs = is_array($curSvcs) ? array_values(array_filter($curSvcs)) : [];
+                            $curOther = $currentBidData['other_services'] ?? [];
+                            if (is_string($curOther)) { $curOther = json_decode($curOther, true) ?? []; }
+                            $curOther = is_array($curOther) ? array_values(array_filter($curOther, fn($s) => is_string($s) && !empty(trim($s)))) : [];
+                            $curSvcs = array_merge($curSvcs, $curOther);
+
+                            $baseSvcs = $baselineData['services'] ?? [];
+                            if (is_string($baseSvcs)) { $baseSvcs = json_decode($baseSvcs, true) ?? []; }
+                            $baseSvcs = is_array($baseSvcs) ? array_values(array_filter($baseSvcs)) : [];
+                            $baseOther = $baselineData['other_services'] ?? [];
+                            if (is_string($baseOther)) { $baseOther = json_decode($baseOther, true) ?? []; }
+                            $baseOther = is_array($baseOther) ? array_values(array_filter($baseOther, fn($s) => is_string($s) && !empty(trim($s)))) : [];
+                            $baseSvcs = array_merge($baseSvcs, $baseOther);
+
+                            $normSvc = function($s) {
+                                $s = preg_replace('/[\x{2018}\x{2019}]/u', "'", $s);
+                                $s = preg_replace('/[\x{201C}\x{201D}]/u', '"', $s);
+                                return strtolower(trim($s));
+                            };
+                            $curNorm  = array_map($normSvc, $curSvcs);
+                            $baseNorm = array_map($normSvc, $baseSvcs);
+                            $allSvcs  = array_unique(array_merge($curNorm, $baseNorm));
+                            $servicesTotal   = count($allSvcs);
+                            $servicesMatched = 0;
+                            foreach ($allSvcs as $svc) {
+                                if (in_array($svc, $curNorm) === in_array($svc, $baseNorm)) {
+                                    $servicesMatched++;
+                                }
+                            }
+                            $servicesScore = $servicesTotal > 0 ? round(($servicesMatched / $servicesTotal) * 100) : 100;
+
+                            // === TOTAL MATCH SCORE ===
+                            $hasBroker   = $brokerTotal > 0;
+                            $hasServices = $servicesTotal > 0;
+                            if ($hasBroker && $hasServices) {
+                                $totalScore = round(($brokerScore + $servicesScore) / 2);
+                            } elseif ($hasBroker) {
+                                $totalScore = $brokerScore;
+                            } elseif ($hasServices) {
+                                $totalScore = $servicesScore;
+                            } else {
+                                $totalScore = 100;
+                            }
+
+                            $getScoreColor = function($score) {
+                                if ($score >= 80) return '#28a745';
+                                if ($score >= 50) return '#ffc107';
+                                return '#dc3545';
+                            };
+                            $totalScoreColor = $getScoreColor($totalScore);
                         @endphp
 
                         <!-- Bid Card - Collapsible Accordion Design (matches Tenant) -->
@@ -2802,6 +2971,42 @@
                                     <span style="font-weight: 600;">Offered Services:</span> {{ $totalServicesCount }} Services
                                 </p>
                                 <hr style="margin: 15px 0; border-color: #e0e0e0;">
+
+                                <!-- B2) Match Score Summary (Compact Display on Bid Card) -->
+                                @php
+                                    $showMatchScoreOnCard = $isListingOwner || ($isBiddingPeriodListing && $isAgentViewer && $userHasBid);
+                                @endphp
+                                @if ($showMatchScoreOnCard)
+                                <div class="match-score-summary mb-3 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6;">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span style="font-weight: 600; color: #1a3a5c; font-size: 1rem;">
+                                            <i class="fa fa-chart-pie me-2"></i>Match Score
+                                        </span>
+                                        <span class="badge" style="background: {{ $totalScoreColor }}; font-size: 1rem; padding: 6px 12px;">
+                                            {{ $totalScore }}%
+                                        </span>
+                                    </div>
+                                    <div class="row g-2 small">
+                                        <div class="col-6">
+                                            <div class="d-flex justify-content-between">
+                                                <span class="text-muted">Broker Compensation:</span>
+                                                <span style="color: {{ $getScoreColor($brokerScore) }}; font-weight: 600;">{{ $brokerScore }}%</span>
+                                            </div>
+                                            <div class="text-muted" style="font-size: 0.8rem;">{{ $brokerMatched }}/{{ $brokerTotal }} fields</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="d-flex justify-content-between">
+                                                <span class="text-muted">Offered Services:</span>
+                                                <span style="color: {{ $getScoreColor($servicesScore) }}; font-weight: 600;">{{ $servicesScore }}%</span>
+                                            </div>
+                                            <div class="text-muted" style="font-size: 0.8rem;">{{ $servicesMatched }}/{{ $servicesTotal }} services</div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 small text-muted">
+                                        <i class="fa fa-info-circle me-1"></i>Compared to: {{ $baselineLabel }}
+                                    </div>
+                                </div>
+                                @endif
 
                                 <!-- C) Broker Compensation Summary -->
                                 <h6 style="font-weight: 600; color: #1a3a5c; font-size: 1.15rem; margin-bottom: 12px;">Broker Compensation Summary:</h6>
@@ -3047,35 +3252,461 @@
                                         </div>
                                         @endif
 
-                                        <!-- 2. Offered Services -->
+                                        <!-- 2. Offered Services (grouped bullet points, matches Tenant) -->
                                         @php
-                                            $bidServicesList   = (array) data_get($bid, 'get.services', []);
-                                            $bidOtherServices  = (array) data_get($bid, 'get.other_services', []);
+                                            $allBidMeta = (array) data_get($bid, 'get', []);
+                                            $services   = $allBidMeta['services'] ?? [];
+                                            if (is_string($services)) { $services = json_decode($services, true) ?? []; }
+                                            $services = array_filter((array)$services, fn($s) => !empty(trim((string)$s)) && $s !== 'Other');
+
+                                            $normalizeStr = fn($s) => strtolower(trim(preg_replace('/[\x{2018}\x{2019}]/u', "'", preg_replace('/[\x{201C}\x{201D}]/u', '"', $s))));
+
+                                            // Build selected services normalized map
+                                            $selectedNormalized = [];
+                                            foreach ($services as $svc) {
+                                                $displaySvc = function_exists('normalize_service_text') ? normalize_service_text($svc) : $svc;
+                                                $selectedNormalized[$normalizeStr($svc)] = $displaySvc;
+                                            }
+
+                                            // Determine property type from bid meta, falling back to auction
+                                            $bidPropertyType = $allBidMeta['property_type']
+                                                ?? data_get($auction, 'get.property_type', 'Residential');
+                                            // Normalize to short form
+                                            $bidPropNorm = strtolower(trim($bidPropertyType));
+                                            if (str_contains($bidPropNorm, 'income')) {
+                                                $bidPropKey = 'Income';
+                                            } elseif (str_contains($bidPropNorm, 'commercial')) {
+                                                $bidPropKey = 'Commercial';
+                                            } elseif (str_contains($bidPropNorm, 'business')) {
+                                                $bidPropKey = 'Business';
+                                            } elseif (str_contains($bidPropNorm, 'vacant') || str_contains($bidPropNorm, 'land')) {
+                                                $bidPropKey = 'Vacant Land';
+                                            } else {
+                                                $bidPropKey = 'Residential';
+                                            }
+
+                                            $sellerServicesConfig = [
+                                                'Residential' => [
+                                                    '📢 Property Marketing & Listing Promotion' => [
+                                                        "List the property on the local Multiple Listing Service (MLS)",
+                                                        "Syndicate the listing to third-party platforms (e.g., Zillow.com, Realtor.com, Trulia.com, Homes.com)",
+                                                        "Create a branded flyer featuring the property\u2019s key highlights",
+                                                        "Post the property on Facebook Marketplace",
+                                                        "Post the property on Craigslist under the \"Homes for Sale\" category",
+                                                        "Share the listing on Nextdoor in Neighborhood or Community Groups",
+                                                        "Promote the listing on Facebook in Real Estate or Community Groups",
+                                                        "Share the listing on Instagram using posts, stories, or reels",
+                                                        "Promote the listing on LinkedIn in Professional or Real Estate Groups",
+                                                        "Upload a TikTok video walkthrough of the property",
+                                                        "Upload a YouTube video walkthrough of the property",
+                                                        "Launch a mass email campaign promoting the listing",
+                                                        "Distribute printed flyers or postcards in target geographic areas",
+                                                        "Launch hyperlocal or interest-based digital ad campaigns promoting the listing",
+                                                    ],
+                                                    '🛠️ Listing Preparation & Presentation' => [
+                                                        "Conduct a property walkthrough and provide recommendations for listing readiness",
+                                                        "Provide a custom listing preparation checklist",
+                                                        "Collect property details and prepare MLS remarks and a public listing description",
+                                                        "Provide a visual consultation for interior layout, cleanliness, and presentation",
+                                                        "Provide a curb appeal consultation focused on exterior presentation",
+                                                        "Provide referrals to third-party vendors (e.g., cleaners, handypeople, electricians, landscapers). Vendor fees billed separately. Referrals only \u2014 no endorsement or warranty is made",
+                                                    ],
+                                                    '📸 Photography, Video & Virtual Media' => [
+                                                        "Provide professional property photography",
+                                                        "Provide aerial (drone) photography (subject to FAA Part 107 compliance)",
+                                                        "Provide a video walkthrough tour",
+                                                        "Provide a 3D virtual tour",
+                                                        "Provide virtual staging (digital enhancements only; no physical staging)",
+                                                        "Provide digital photo enhancements",
+                                                        "Create a basic schematic floor plan (non-certified; for marketing purposes only)",
+                                                    ],
+                                                    '🏡 Showings & Access Coordination' => [
+                                                        "Ensure proper notice is provided if the property is occupied",
+                                                        "Install a real estate sign on the property",
+                                                        "Install a lockbox for Agent access",
+                                                        "Schedule and attend showings with prospective Buyers",
+                                                        "Coordinate showings with Buyer\u2019s Agents",
+                                                        "Collect and relay showing feedback to the Seller",
+                                                    ],
+                                                    '📑 Offer & Contract Management' => [
+                                                        "Present all offers to the Seller and summarize key terms, pricing, and contingencies",
+                                                        "Provide the Seller with the necessary disclosure forms required by state or local law",
+                                                        "Negotiate price, terms, and contingencies with the Buyer\u2019s Agent or Buyer",
+                                                        "Manage communications with the Buyer\u2019s Agent or Buyer",
+                                                        "Draft and deliver counteroffers and manage revisions to the purchase agreement",
+                                                        "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
+                                                        "Assist with inspection-related negotiations and Buyer requests for repairs",
+                                                        "Monitor contract milestones, contingency periods, and financing deadlines",
+                                                        "Provide referrals to Attorneys, Title Companies, and Escrow Professionals (referrals only \u2014 no endorsement or warranty is made)",
+                                                    ],
+                                                    '🧾 Closing Coordination & Transaction Management' => [
+                                                        "Coordinate scheduling for inspections, appraisals, and other requested evaluations",
+                                                        "Coordinate with the Buyer\u2019s Agent, Lender, Title, Escrow, and/or Attorney to prepare for Closing",
+                                                        "Review the Settlement Statement and coordinate with all parties if corrections are needed",
+                                                        "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
+                                                        "Schedule and confirm the Final Walkthrough",
+                                                        "Schedule and confirm the Closing Appointment",
+                                                    ],
+                                                    '💡 Selling Strategy & Guidance' => [
+                                                        "Provide a Comparative Market Analysis (CMA) with pricing recommendations based on comparable sales, neighborhood trends, and current market conditions",
+                                                        "Provide general insight on local market trends, seasonal timing, and pricing thresholds",
+                                                        "Recommend adjustments to pricing or marketing strategy if the property is not receiving sufficient interest",
+                                                        "Provide general guidance on Seller obligations, required disclosures, and listing preparation",
+                                                    ],
+                                                ],
+                                                'Income' => [
+                                                    '📢 Property Marketing & Listing Promotion' => [
+                                                        "List the property on the local Multiple Listing Service (MLS)",
+                                                        "Syndicate the listing to third-party platforms (e.g., Zillow.com, Realtor.com, Trulia.com, Homes.com)",
+                                                        "List the property on Crexi.com",
+                                                        "List the property on LoopNet.com",
+                                                        "Create a branded flyer with key rental data (e.g., unit mix, gross income, occupancy)",
+                                                        "Post the property on Craigslist under the \"Multi-Family for Sale\" category",
+                                                        "Share the listing on Nextdoor in Neighborhood or Community Groups",
+                                                        "Promote the listing on Facebook in Real Estate Investor or Multi-Family Buyer Groups",
+                                                        "Share the listing on Instagram using posts, stories, or reels",
+                                                        "Promote the listing on LinkedIn in Investment or Real Estate Groups",
+                                                        "Upload a TikTok video walkthrough of the property",
+                                                        "Upload a YouTube video walkthrough of the property",
+                                                        "Launch a mass email campaign promoting the listing",
+                                                        "Distribute printed flyers or postcards in target geographic areas",
+                                                        "Launch hyperlocal or interest-based digital ad campaigns promoting the listing",
+                                                    ],
+                                                    '🛠️ Listing Preparation & Investment Packaging' => [
+                                                        "Conduct a property walkthrough and provide recommendations for listing readiness",
+                                                        "Provide a custom listing preparation checklist",
+                                                        "Assist with assembling an income property packet, including rent roll, lease copies, and an income/expense summary (as available)",
+                                                        "Provide a visual consultation focused on interior layout, cleanliness, and unit presentation",
+                                                        "Provide a curb appeal consultation focused on exterior maintenance and first impressions",
+                                                        "Provide referrals to third-party vendors (e.g., cleaners, handypeople, electricians, landscapers). Vendor fees billed separately. Referrals only \u2014 no endorsement or warranty is made",
+                                                    ],
+                                                    '📸 Photography, Video & Virtual Media' => [
+                                                        "Provide professional property photography",
+                                                        "Provide aerial (drone) photography (subject to FAA Part 107 compliance)",
+                                                        "Provide a video walkthrough tour",
+                                                        "Provide a 3D virtual tour",
+                                                        "Provide virtual staging (digital enhancements only; no physical staging)",
+                                                        "Provide digital photo enhancements",
+                                                        "Create a basic schematic floor plan (non-certified; for marketing purposes only)",
+                                                    ],
+                                                    '🏘️ Showings & Access Coordination' => [
+                                                        "Respond to Buyer inquiries and screen for general qualifications",
+                                                        "Provide Non-Disclosure Agreement (NDA) templates for confidential showings or document access",
+                                                        "Ensure proper notice is provided if the property is occupied",
+                                                        "Install a real estate sign on the property",
+                                                        "Install a lockbox for Agent access",
+                                                        "Schedule and attend showings with prospective Buyers",
+                                                        "Coordinate showings with Buyer\u2019s Agents",
+                                                        "Collect and relay showing feedback to the Seller",
+                                                    ],
+                                                    '📉 Offer & Contract Management' => [
+                                                        "Present all offers to the Seller and summarize key terms, pricing, and contingencies",
+                                                        "Provide the Seller with the necessary disclosure forms required by state or local law",
+                                                        "Negotiate deal structure, deposits, due diligence timelines, and Buyer contingencies",
+                                                        "Draft and deliver counteroffers and manage revisions to the purchase agreement",
+                                                        "Manage communication with the Buyer\u2019s Agent or Buyers",
+                                                        "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
+                                                        "Assist with inspection-related negotiations and Buyer requests for repairs",
+                                                        "Monitor contract contingencies, including financing, lease audits, estoppel review, insurance, inspections, and environmental reports",
+                                                        "Provide referrals to Attorneys, Title Companies, Escrow Officers, or 1031 Exchange Professionals. Referrals only \u2014 no endorsement or warranty is made",
+                                                    ],
+                                                    '🧾 Closing Coordination & Transaction Management' => [
+                                                        "Review and organize due diligence documentation such as lease agreements, estoppel certificates, rent rolls, utility summaries, and operating expense breakdowns (as available)",
+                                                        "Coordinate with the Buyer\u2019s Agent, Buyer\u2019s Lender, Title, Escrow, and/or Attorney to prepare for Closing",
+                                                        "Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed",
+                                                        "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
+                                                        "Schedule and confirm the Final Walkthrough",
+                                                        "Schedule and confirm the Closing Appointment",
+                                                    ],
+                                                    '💡 Selling Strategy & Guidance' => [
+                                                        "Provide a Comparative Market Analysis (CMA) with pricing insights based on recent income property sales, rental income trends, unit mix, and local investor activity",
+                                                        "Assist in estimating Gross Rent Multiplier (GRM), Capitalization Rate (Cap Rate), or Price per Unit based on listing details and income property comparables",
+                                                        "Provide general insight on likely Investor Buyer behavior, common value drivers, and investment strategies",
+                                                        "Recommend adjustments to pricing or marketing strategy if the property is not receiving sufficient interest",
+                                                        "Provide general guidance on lease transfers, rent proration, security deposits, and possession timelines",
+                                                    ],
+                                                ],
+                                                'Commercial' => [
+                                                    '📢 Property Marketing & Listing Promotion' => [
+                                                        "List the property on the local Multiple Listing Service (MLS)",
+                                                        "List the property on Crexi.com",
+                                                        "List the property on LoopNet.com",
+                                                        "Create a branded flyer summarizing the property\u2019s investment highlights and key selling points",
+                                                        "Post the property on Craigslist under the \"Commercial for Sale\" category",
+                                                        "Promote the listing on Facebook in Commercial or Investor Real Estate Groups",
+                                                        "Share the listing on Instagram using posts, stories, or reels",
+                                                        "Promote the listing on LinkedIn in Professional, Real Estate, or Commercial Investment Groups",
+                                                        "Upload a TikTok video walkthrough of the property",
+                                                        "Upload a YouTube video walkthrough of the property",
+                                                        "Launch a mass email campaign promoting the listing",
+                                                        "Distribute printed flyers or postcards in target geographic areas",
+                                                        "Launch hyperlocal or interest-based digital ad campaigns promoting the listing",
+                                                    ],
+                                                    '🛠️ Listing Preparation & Asset Presentation' => [
+                                                        "Conduct a property walkthrough and provide recommendations for listing readiness",
+                                                        "Provide a visual consultation on interior layout, cleanliness, and overall presentation",
+                                                        "Provide a curb appeal consultation focused on exterior appearance and first impressions",
+                                                        "Provide referrals to third-party vendors such as cleaners, handypeople, electricians, and landscapers (vendor fees billed separately; referrals only \u2014 no endorsement or warranty is made)",
+                                                        "Compile essential marketing materials such as rent rolls, lease summaries, financial statements, and operating data (as available)",
+                                                        "Organize zoning documentation, surveys, and public record reports (as available)",
+                                                    ],
+                                                    '📸 Photography, Video & Virtual Media' => [
+                                                        "Provide professional property photography",
+                                                        "Provide aerial (drone) photography (subject to FAA Part 107 compliance)",
+                                                        "Provide a video walkthrough tour",
+                                                        "Provide a 3D virtual tour",
+                                                        "Provide virtual staging (digital enhancements only; no physical staging)",
+                                                        "Provide digital photo enhancements",
+                                                        "Create a basic schematic floor plan (non-certified; for marketing purposes only)",
+                                                    ],
+                                                    '🏢 Showings & Access Coordination' => [
+                                                        "Respond to Buyer inquiries and screen for general qualifications",
+                                                        "Provide Non-Disclosure Agreement (NDA) templates for access to confidential documents or showings",
+                                                        "Ensure proper notice is provided if the property is occupied",
+                                                        "Install a real estate sign on the property",
+                                                        "Install a lockbox for Agent access",
+                                                        "Schedule and attend showings with prospective Buyers",
+                                                        "Coordinate showings with Buyer\u2019s Agents",
+                                                        "Collect and relay showing feedback to the Seller",
+                                                    ],
+                                                    '📉 Offer & Contract Management' => [
+                                                        "Present all offers to the Seller and summarize key terms, pricing, and contingencies",
+                                                        "Provide the Seller with the necessary disclosure forms required by state or local law",
+                                                        "Coordinate Letter of Intent (LOI) submissions, counteroffers, and contract revisions",
+                                                        "Negotiate deal terms such as pricing, deposit structure, closing timelines, and due diligence periods",
+                                                        "Manage communication with the Buyer\u2019s Agent or Buyer",
+                                                        "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
+                                                        "Assist with inspection-related negotiations and Buyer requests for repairs or credits",
+                                                        "Monitor contract contingencies, including financing, estoppel review, lease audits, and environmental reports",
+                                                        "Provide referrals to Attorneys, Title Companies, Escrow Officers, or 1031 Exchange Professionals (referrals only \u2014 no endorsement or warranty is made)",
+                                                    ],
+                                                    '🧾 Closing Coordination & Transaction Management' => [
+                                                        "Coordinate inspections, appraisals, and estoppel certificate delivery with the Buyer\u2019s Agent or Buyer, as applicable",
+                                                        "Provide due diligence documentation such as lease agreements, estoppel certificates, rent rolls, utility summaries, and operating expense breakdowns (as available)",
+                                                        "Coordinate with the Buyer\u2019s Agent, Lender, Title, Escrow, and/or Attorney to prepare for Closing",
+                                                        "Review the Settlement Statement and coordinate with all parties if corrections are needed",
+                                                        "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
+                                                        "Schedule and confirm the Final Walkthrough",
+                                                        "Schedule and confirm the Closing Appointment",
+                                                    ],
+                                                    '💡 Selling Strategy & Guidance' => [
+                                                        "Provide a Comparative Market Analysis (CMA) with pricing insights based on recent commercial property sales, rental income trends, market cap rates, and investor activity",
+                                                        "Assist in estimating Capitalization Rate (Cap Rate), Price per Square Foot, or Gross Rent Multiplier (GRM) based on listing details and commercial comparables",
+                                                        "Provide general insight on likely Buyer types (e.g., Owner-User, Investor, 1031 Exchange Buyer), common value drivers, and investment strategies",
+                                                        "Recommend adjustments to pricing or marketing strategy if the property is not receiving sufficient interest",
+                                                        "Provide general guidance on lease structures, expense ratios, and Tenant impacts",
+                                                    ],
+                                                ],
+                                                'Business' => [
+                                                    '📢 Business Marketing & Listing Promotion' => [
+                                                        "List the Business Opportunity on the local Multiple Listing Service (MLS)",
+                                                        "List the Business Opportunity on Crexi.com",
+                                                        "List the Business Opportunity on LoopNet.com",
+                                                        "List the Business Opportunity on BizBuySell.com",
+                                                        "List the Business Opportunity on BizQuest.com",
+                                                        "List the Business Opportunity on BusinessesForSale.com",
+                                                        "Create a branded flyer summarizing the Business\u2019s key features (e.g., industry, cash flow, assets)",
+                                                        "Post the Business Opportunity on Craigslist under the \"Business for Sale\" category",
+                                                        "Promote the listing on Facebook in Business Buyer, Franchise, or Investor Groups",
+                                                        "Share the listing on Instagram using posts, stories, or reels",
+                                                        "Promote the listing on LinkedIn in Business Acquisition, Startup, or Investor Groups",
+                                                        "Upload a TikTok video summarizing the Business Opportunity",
+                                                        "Upload a YouTube video summarizing the Business Opportunity",
+                                                        "Launch a mass email campaign promoting the listing",
+                                                        "Distribute printed flyers or postcards in target geographic areas",
+                                                        "Launch hyperlocal or interest-based digital ad campaigns promoting the listing",
+                                                    ],
+                                                    '🛠️ Listing Preparation & Confidential Marketing' => [
+                                                        "Conduct a preliminary Seller consultation to gather details about the Business\u2019s operations, assets, and goals",
+                                                        "Provide a business sale checklist to collect financials, licenses, lease terms, and key operational details",
+                                                        "Assist with preparing a non-confidential teaser or executive summary for marketing purposes",
+                                                        "Organize internal documentation such as profit and loss statements, balance sheets, FF&E summaries, inventory lists, and staffing overviews (as available)",
+                                                        "Refer third-party professionals such as valuation experts, accountants, or financial consultants, if requested (referrals only \u2014 no endorsement or warranty is made)",
+                                                        "Compile essential marketing materials including business overviews, location descriptions, asset lists, and financial summaries",
+                                                    ],
+                                                    '📸 Photography, Video & Virtual Media' => [
+                                                        "Provide professional property photography",
+                                                        "Provide aerial (drone) photography (subject to FAA Part 107 compliance)",
+                                                        "Provide a video walkthrough tour",
+                                                        "Provide a 3D virtual tour",
+                                                        "Provide virtual staging (digital enhancements only; no physical staging)",
+                                                        "Provide digital photo enhancements",
+                                                        "Create a basic schematic floor plan (non-certified; for marketing purposes only)",
+                                                    ],
+                                                    '🏢 Showings & Access Coordination' => [
+                                                        "Respond to Buyer inquiries and screen for general qualifications",
+                                                        "Provide Non-Disclosure Agreement (NDA) templates for confidential showings or document access",
+                                                        "Ensure proper notice is provided if the property or business premises is occupied",
+                                                        "Install a real estate sign on the property",
+                                                        "Install a lockbox for Agent access",
+                                                        "Schedule and attend showings with prospective Buyers",
+                                                        "Coordinate showings with Buyer\u2019s Agents",
+                                                        "Coordinate directly with Tenant(s) or business staff to arrange access for showings",
+                                                        "Collect and relay showing feedback to the Seller",
+                                                    ],
+                                                    '📉 Offer & Contract Management' => [
+                                                        "Present all Letters of Intent (LOIs) or formal offers to the Seller and summarize key deal terms",
+                                                        "Provide the Seller with the necessary disclosure forms required by state or local law",
+                                                        "Negotiate deal terms such as purchase price, deposit structure, contingencies, transition period, and asset allocation",
+                                                        "Coordinate revisions, counteroffers, and ongoing communication with the Buyer or their representatives",
+                                                        "Manage communication with the Buyer\u2019s Broker or Buyer",
+                                                        "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
+                                                        "Monitor contract contingencies and organize delivery of due diligence materials such as leases, vendor contracts, tax filings, and financial statements",
+                                                        "Refer the Seller to legal counsel for formal contract drafting and execution (referrals only \u2014 no legal advice provided)",
+                                                        "Provide referrals to Business Attorneys, Escrow Officers, or Business Transfer Specialists (referrals only \u2014 no endorsement or warranty is made)",
+                                                    ],
+                                                    '📃 Closing Coordination & Transaction Management' => [
+                                                        "Coordinate Buyer inspections, management interviews, and site visits as applicable",
+                                                        "Provide a transaction checklist and track key deadlines throughout the escrow period",
+                                                        "Coordinate with the Buyer\u2019s Attorney, Escrow Officer, or designated Closing Facilitator",
+                                                        "Review the Settlement Statement and coordinate corrections with relevant parties",
+                                                        "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
+                                                        "Schedule and confirm the Final Walkthrough",
+                                                        "Schedule and confirm the Closing Appointment",
+                                                    ],
+                                                    '💡 Selling Strategy & Guidance' => [
+                                                        "Provide a business market overview with insights from recent comparable listings",
+                                                        "Identify likely Buyer types (e.g., Owner-Operator, Investor, Franchisee) and discuss common deal structures (e.g., asset sale, stock sale)",
+                                                        "Provide general insight on common value drivers such as cash flow, recurring revenue, transferable licenses, and key staff retention",
+                                                        "Provide general guidance on operational transition timelines, staff notifications, lease assignments, and post-sale training periods",
+                                                        "Provide referrals to business valuation, accounting, or legal professionals (referrals only \u2014 no endorsement or warranty is made)",
+                                                    ],
+                                                ],
+                                                'Vacant Land' => [
+                                                    '📢 Property Marketing & Listing Promotion' => [
+                                                        "List the property in the local Multiple Listing Service (MLS)",
+                                                        "Syndicate the listing to third-party platforms (e.g., Zillow.com, Realtor.com, Trulia.com, Homes.com)",
+                                                        "List the property on LandWatch.com",
+                                                        "List the property on Land.com",
+                                                        "List the property on LandAndFarm.com",
+                                                        "Create a branded flyer highlighting lot features, zoning, and potential use",
+                                                        "Post the listing on Facebook Marketplace",
+                                                        "Post the listing on Craigslist under the \"Land for Sale\" category",
+                                                        "Share the listing on Nextdoor in Neighborhood or Rural Groups",
+                                                        "Promote the listing on Facebook in Land Buyers, Developers, or Homesteader Groups",
+                                                        "Share the listing on Instagram using posts, stories, or reels",
+                                                        "Promote the listing on LinkedIn in Land Acquisition or Investment Groups",
+                                                        "Upload a TikTok video summarizing the land opportunity",
+                                                        "Upload a YouTube video summarizing the land opportunity (e.g., drone tour, narrated overview)",
+                                                        "Launch a mass email campaign promoting the listing Distribute printed flyers or postcards in target geographic areas",
+                                                        "Launch hyperlocal or interest-based digital ad campaigns promoting the listing",
+                                                    ],
+                                                    '🛠️ Listing Preparation & Research' => [
+                                                        "Provide a checklist to gather parcel data (e.g., APN, lot size, zoning, utilities, and access)",
+                                                        "Assist with collecting public records, flood zone data, and land use information (as available)",
+                                                        "Provide referrals to surveyors, soil testers, or land service professionals (referrals only \u2014 no endorsement or warranty is made)",
+                                                    ],
+                                                    '📸 Photography, Video & Virtual Media' => [
+                                                        "Provide professional property photography",
+                                                        "Provide aerial (drone) photography (subject to FAA Part 107 compliance)",
+                                                        "Provide a video overview or narrated walkthrough",
+                                                        "Provide a 3D virtual tour (if applicable)",
+                                                        "Provide digital enhancements to media assets",
+                                                        "Provide a parcel map, topographical image, or plot plan (non-certified; for marketing purposes only)",
+                                                    ],
+                                                    '🏡 Showings & Access Coordination' => [
+                                                        "Install a real estate sign on the property",
+                                                        "Schedule and attend showings with prospective Buyers",
+                                                        "Coordinate showings with Buyer\u2019s Agents",
+                                                        "Collect and relay showing feedback to the Seller",
+                                                    ],
+                                                    '📉 Offer & Contract Management' => [
+                                                        "Present all offers to the Seller and summarize key terms, pricing, and contingencies",
+                                                        "Provide the Seller with the necessary disclosure forms required by state or local law",
+                                                        "Negotiate price, due diligence timelines, and closing terms",
+                                                        "Draft and deliver counteroffers and manage revisions to the purchase agreement",
+                                                        "Manage communication with the Buyer\u2019s Agent or Buyer",
+                                                        "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
+                                                        "Monitor contract contingencies, including survey, zoning verification, financing, and environmental reviews",
+                                                        "Provide referrals to Attorneys, Title Companies, Escrow Officers, or Land Use Professionals (referrals only \u2014 no endorsement or warranty is made)",
+                                                    ],
+                                                    '📃 Closing Coordination & Transaction Management' => [
+                                                        "Coordinate surveys, site visits, or environmental access with the Buyer or Buyer\u2019s Agent, as applicable",
+                                                        "Coordinate with Title, Escrow, and/or Attorney to prepare for Closing",
+                                                        "Review the Settlement Statement and coordinate with all parties if corrections are needed",
+                                                        "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
+                                                        "Schedule and confirm the Final Walkthrough",
+                                                        "Schedule and confirm the Closing Appointment",
+                                                    ],
+                                                    '💡 Selling Strategy & Guidance' => [
+                                                        "Provide a Comparative Market Analysis (CMA) with pricing recommendations based on recent land sales, zoning categories, and location-based trends",
+                                                        "Provide general insight on permitted uses, utility access, parcel features, and Buyer demand in the area",
+                                                        "Recommend adjustments to pricing or marketing strategy if the land is not receiving sufficient interest",
+                                                        "Provide general guidance on Seller obligations, disclosure requirements, and listing preparation",
+                                                    ],
+                                                ],
+                                            ];
+
+                                            $propConfig = $sellerServicesConfig[$bidPropKey] ?? $sellerServicesConfig['Residential'];
+
+                                            // Build flat normalized config map for unmapped detection
+                                            $configFlatNorm = [];
+                                            foreach ($propConfig as $catSvcs) {
+                                                foreach ($catSvcs as $s) {
+                                                    $configFlatNorm[$normalizeStr($s)] = true;
+                                                }
+                                            }
+
+                                            // Find unmapped services
+                                            $unmappedSvcs = [];
+                                            foreach ($services as $svc) {
+                                                $displaySvc = function_exists('normalize_service_text') ? normalize_service_text($svc) : $svc;
+                                                if (!isset($configFlatNorm[$normalizeStr($svc)]) && !isset($configFlatNorm[$normalizeStr($displaySvc)])) {
+                                                    $unmappedSvcs[] = $displaySvc;
+                                                }
+                                            }
+
+                                            $otherSvcsModal = is_string($allBidMeta['other_services'] ?? '')
+                                                ? json_decode($allBidMeta['other_services'], true) ?? []
+                                                : ($allBidMeta['other_services'] ?? []);
+                                            $otherSvcsModal = array_filter((array)$otherSvcsModal, fn($s) => is_string($s) && !empty(trim($s)));
+
+                                            $hasAnyServices = !empty($services) || !empty($otherSvcsModal) || !empty($unmappedSvcs);
                                         @endphp
-                                        @if (!empty($bidServicesList) || !empty($bidOtherServices))
+
+                                        @if ($hasAnyServices)
                                         <div class="mb-5">
                                             <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                <i class="fa fa-list-ul me-2"></i>Offered Services
+                                                <i class="fa fa-clipboard-list me-2"></i>Offered Services
                                             </h6>
-                                            @if (!empty($bidServicesList))
-                                            <div class="mb-3">
-                                                <div class="fw-semibold mb-2" style="color: #049399;">Services:</div>
-                                                <div class="d-flex flex-wrap gap-2">
-                                                    @foreach ($bidServicesList as $svc)
-                                                        @if ($svc === 'Other') @continue @endif
-                                                        <span style="background: #f1f5f9; color: #111; padding: 6px 12px; border-radius: 8px; font-size: 12px; border: 1px solid #ddd;">{{ $svc }}</span>
-                                                    @endforeach
+
+                                            @foreach ($propConfig as $category => $catSvcs)
+                                                @php
+                                                    $selectedInCat = array_filter($catSvcs, fn($s) => isset($selectedNormalized[$normalizeStr($s)]));
+                                                @endphp
+                                                @if (count($selectedInCat) > 0)
+                                                <div class="mb-3">
+                                                    <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">{{ $category }}</div>
+                                                    <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
+                                                        @foreach ($catSvcs as $service)
+                                                            @if (isset($selectedNormalized[$normalizeStr($service)]))
+                                                            <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $selectedNormalized[$normalizeStr($service)] }}</li>
+                                                            @endif
+                                                        @endforeach
+                                                    </ul>
                                                 </div>
+                                                @endif
+                                            @endforeach
+
+                                            @if (!empty($unmappedSvcs))
+                                            <div class="mb-3">
+                                                <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Unlisted Services</div>
+                                                <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
+                                                    @foreach ($unmappedSvcs as $service)
+                                                    <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $service }}</li>
+                                                    @endforeach
+                                                </ul>
                                             </div>
                                             @endif
-                                            @if (!empty($bidOtherServices))
+
+                                            @if (!empty($otherSvcsModal))
                                             <div class="mb-3">
-                                                <div class="fw-semibold mb-2" style="color: #049399;">Other / Additional Services:</div>
-                                                <div class="d-flex flex-wrap gap-2">
-                                                    @foreach ($bidOtherServices as $svc)
-                                                        <span style="background: #f1f5f9; color: #111; padding: 6px 12px; border-radius: 8px; font-size: 12px; border: 1px solid #ddd;">{{ $svc }}</span>
+                                                <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Additional Services</div>
+                                                <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
+                                                    @foreach ($otherSvcsModal as $otherService)
+                                                    <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $otherService }}</li>
                                                     @endforeach
-                                                </div>
+                                                </ul>
                                             </div>
                                             @endif
                                         </div>
@@ -3397,95 +4028,119 @@
                                         </div>
                                         @endif
 
-                                        <!-- 6. Main Bid Actions (listing owner: Accept / Reject) -->
-                                        <div class="d-flex justify-content-between flex-wrap gap-2 mt-4">
-                                            @if ($state === '0' && $isOwnerRow && !in_array(data_get($auction, 'is_sold'), [true,'true',1,'1'], true))
 
+                                    </div>{{-- End modal-body --}}
+
+                                    {{-- ===== TENANT-STYLE MODAL FOOTER ===== --}}
+                                    <div class="modal-footer" style="background: #fafafa; border-top: 1px solid #e0e0e0; padding: 20px; flex-wrap: wrap; gap: 12px;">
+
+                                        {{-- Confidential notice --}}
+                                        <div class="w-100 p-3 text-center" style="background: #e8f4f5; border-radius: 6px; color: #049399;">
+                                            <i class="fa fa-shield-alt me-2"></i>
+                                            <strong>Confidential:</strong> This information is private and only visible to you.
+                                        </div>
+
+                                        {{-- ── Listing owner: action buttons when bid is undecided ── --}}
+                                        @if ($state === '0' && $isOwnerRow && !in_array(data_get($auction, 'is_sold'), [true,'true',1,'1'], true))
                                             @if ($isBiddingPeriodListing && $isBiddingTimerActive)
-                                            {{-- Bidding Period: Timer still active - actions locked --}}
-                                            <div class="alert alert-info text-center mt-2 mb-0 p-2 w-100">
+                                            <div class="w-100 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
                                                 <i class="fa fa-clock me-1"></i> <strong>Actions unlock when the bidding period ends.</strong>
                                             </div>
                                             @elseif ($isTraditionalListing && $isExpired)
-                                            {{-- Traditional: Listing expired --}}
-                                            <div class="alert alert-warning text-center mt-2 mb-0 p-2 w-100">
-                                                <strong>Listing Expired</strong>
+                                            <div class="w-100 p-2 text-center" style="background: #ffc107; border-radius: 6px; color: #856404;">
+                                                <i class="fa fa-clock me-1"></i> Listing has expired — no further actions available. You can extend the expiration date by editing the listing.
                                             </div>
                                             @else
-                                            {{-- Actions available --}}
-                                            <div class="biding-btn">
-                                                <form action="{{ route('acceptSABid') }}" method="post">
+                                            <div class="d-flex gap-3 justify-content-center align-items-center w-100" style="flex-wrap: nowrap;">
+                                                <form action="{{ route('acceptSABid') }}" method="post" style="margin: 0;"
+                                                      onsubmit="return confirm('Are you sure you want to accept this bid? This will reject all other bids.');">
                                                     @csrf
                                                     <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
                                                     <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
-                                                    <button type="submit" class="btn-custom btn-accept">Accept</button>
+                                                    <button type="submit" class="btn btn-success btn-accept" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center;">
+                                                        <i class="fa fa-check me-1"></i> Accept Bid
+                                                    </button>
                                                 </form>
-                                            </div>
-                                            <div class="biding-btn">
-                                                <form action="{{ route('rejectSABid') }}" method="post">
+                                                <a href="{{ route('seller.counter-terms', ['id' => data_get($bid, 'id')]) }}"
+                                                   class="btn btn-primary btn-counter" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
+                                                    <i class="fa fa-exchange-alt me-1"></i> Counter Bid
+                                                </a>
+                                                <form action="{{ route('rejectSABid') }}" method="post" style="margin: 0;"
+                                                      onsubmit="return confirm('Are you sure you want to reject this bid?');">
                                                     @csrf
                                                     <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
                                                     <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
-                                                    <button type="submit" class="btn-custom btn-reject">Reject</button>
+                                                    <button type="submit" class="btn btn-danger btn-reject" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center;">
+                                                        <i class="fa fa-times me-1"></i> Reject Bid
+                                                    </button>
                                                 </form>
                                             </div>
                                             @endif
-                                            @endif
+                                        @endif
 
-                                            @if ($state === 'accepted')
+                                        {{-- ── Accepted state ── --}}
+                                        @if ($state === 'accepted')
+                                        <div class="w-100 p-2 text-center" style="background: #d4edda; border-radius: 6px; color: #155724;">
+                                            <i class="fa fa-check-circle me-1"></i>
                                             @if (Auth::id() == $ownerId)
-                                            <div class="alert alert-success mt-2 w-100 mb-0 py-1 small">
-                                                ✅ This bid has been accepted.
-                                            </div>
+                                                This bid has been accepted.
                                             @else
-                                            <div class="alert alert-success mt-2 w-100 mb-0 py-1 small">
-                                                ✅ {{ trim($ownerFirst . ' ' . $ownerLast) }} accepted the bid.
-                                            </div>
+                                                {{ trim($ownerFirst . ' ' . $ownerLast) }} accepted this bid.
                                             @endif
-                                            @php
-                                                $agentAcceptedBidSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->first();
-                                            @endphp
-                                            @if($agentAcceptedBidSummary && (Auth::id() == $ownerId || data_get($bid, 'user_id') == Auth::id()))
-                                            <div class="d-flex gap-1 flex-wrap mt-2">
-                                                <a href="{{ route('accepted-bid-summary.view', $agentAcceptedBidSummary->id) }}" class="btn btn-outline-primary btn-sm py-1 px-2">
-                                                    <i class="fa fa-file-alt me-1"></i> View Summary
-                                                </a>
-                                                @if(data_get($bid, 'user_id') == Auth::id() && !$agentAcceptedBidSummary->isAgentSigned())
-                                                <a href="{{ route('accepted-bid-summary.sign-form', $agentAcceptedBidSummary->id) }}" class="btn btn-primary btn-sm py-1 px-2">
-                                                    <i class="fa fa-signature me-1"></i> E-Sign
-                                                </a>
-                                                @endif
-                                                @if($agentAcceptedBidSummary->isFullySigned())
-                                                <a href="{{ route('accepted-bid-summary.download-pdf', $agentAcceptedBidSummary->id) }}" class="btn btn-success btn-sm py-1 px-2">
-                                                    <i class="fa fa-download me-1"></i> PDF
-                                                </a>
-                                                @endif
-                                            </div>
+                                        </div>
+                                        @php
+                                            $absFooterBidSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->first();
+                                        @endphp
+                                        @if ($absFooterBidSummary && (Auth::id() == $ownerId || data_get($bid, 'user_id') == Auth::id()))
+                                        <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2">
+                                            <a href="{{ route('accepted-bid-summary.view', $absFooterBidSummary->id) }}" class="btn btn-outline-primary btn-sm">
+                                                <i class="fa fa-file-alt me-1"></i> View Accepted Bid Summary
+                                            </a>
+                                            @if (data_get($bid, 'user_id') == Auth::id() && !$absFooterBidSummary->isAgentSigned())
+                                            <a href="{{ route('accepted-bid-summary.sign-form', $absFooterBidSummary->id) }}" class="btn btn-primary btn-sm">
+                                                <i class="fa fa-signature me-1"></i> E-Sign Acknowledgement
+                                            </a>
                                             @endif
-                                            @elseif ($state === 'rejected')
+                                            @if (Auth::id() == $ownerId && !$absFooterBidSummary->isOwnerSigned())
+                                            <a href="{{ route('accepted-bid-summary.sign-form', $absFooterBidSummary->id) }}" class="btn btn-primary btn-sm">
+                                                <i class="fa fa-signature me-1"></i> Seller: E-Sign Acknowledgement
+                                            </a>
+                                            @endif
+                                            @if ($absFooterBidSummary->isFullySigned())
+                                            <a href="{{ route('accepted-bid-summary.download-pdf', $absFooterBidSummary->id) }}" class="btn btn-success btn-sm">
+                                                <i class="fa fa-download me-1"></i> Download Signed PDF
+                                            </a>
+                                            @endif
+                                        </div>
+                                        @endif
+
+                                        {{-- ── Rejected state ── --}}
+                                        @elseif ($state === 'rejected')
+                                        <div class="w-100 p-2 text-center" style="background: #f8d7da; border-radius: 6px; color: #721c24;">
+                                            <i class="fa fa-times-circle me-1"></i>
                                             @if (Auth::id() == $ownerId)
-                                            <div class="alert alert-danger mt-2 w-100 mb-0 py-1 small">
-                                                ❌ This bid has been rejected.
-                                            </div>
+                                                This bid has been rejected.
                                             @else
-                                            <div class="alert alert-danger mt-2 w-100 mb-0 py-1 small">
-                                                ❌ {{ trim($ownerFirst . ' ' . $ownerLast) }} rejected the bid.
-                                            </div>
-                                            @endif
-                                            @elseif ($state === '0')
-                                            @if (data_get($bid, 'user_id') == Auth::id())
-                                            <div class="alert alert-secondary mt-2 w-100 mb-0 py-1 small">
-                                                ⏳ Waiting for response from {{ trim($ownerFirst . ' ' . $ownerLast) }}...
-                                            </div>
-                                            @else
-                                            <div class="alert alert-light mt-2 w-100 mb-0 py-1 small">
-                                                ⏳ Bid from {{ trim($agentFirst . ' ' . $agentLast) }} is pending.
-                                            </div>
-                                            @endif
+                                                {{ trim($ownerFirst . ' ' . $ownerLast) }} rejected this bid.
                                             @endif
                                         </div>
 
-                                    </div>{{-- End modal-body --}}
+                                        {{-- ── Pending state: agent viewing their own bid ── --}}
+                                        @elseif ($state === '0' && !$isOwnerRow && data_get($bid, 'user_id') == Auth::id())
+                                        <div class="alert alert-secondary w-100 mb-0 py-1 small text-center">
+                                            <i class="fa fa-eye me-2"></i> <strong>Your Private Terms:</strong> Waiting for a response from {{ trim($ownerFirst . ' ' . $ownerLast) }}.
+                                        </div>
+                                        @endif
+
+                                        {{-- ── Close button ── --}}
+                                        <div class="w-100 d-flex justify-content-end mt-2">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                                                    style="background: #6c757d; border: none; border-radius: 6px; padding: 8px 20px;">
+                                                Close
+                                            </button>
+                                        </div>
+                                    </div>{{-- End modal-footer --}}
+
                                 </div>{{-- End modal-content --}}
                             </div>{{-- End modal-dialog --}}
                         </div>{{-- End modal --}}
