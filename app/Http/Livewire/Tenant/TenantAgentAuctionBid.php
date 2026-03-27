@@ -976,9 +976,11 @@ class TenantAgentAuctionBid extends Component
 
     public function submit()
     {
+        Log::info('[TenantBid] submit() called', ['auctionId' => $this->auctionId, 'userId' => Auth::id()]);
         DB::beginTransaction();
         try {
             $this->validate();
+            Log::info('[TenantBid] validation passed');
             
             $auction = \App\Models\TenantAgentAuction::find($this->auctionId);
             if (!$auction) {
@@ -1279,9 +1281,14 @@ class TenantAgentAuctionBid extends Component
             session()->flash('success', $message);
 
             return redirect()->route('tenant.agent.auction.view', $this->auctionId);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            Log::warning('[TenantBid] ValidationException caught', ['errors' => $e->errors()]);
+            $this->activeTab = 0;
+            throw $e;
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Bid submission error: ' . $e->getMessage(), ['exception' => $e]);
+            Log::error('[TenantBid] Exception caught', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             session()->flash('error', 'Error saving bid: ' . $e->getMessage());
         }
     }

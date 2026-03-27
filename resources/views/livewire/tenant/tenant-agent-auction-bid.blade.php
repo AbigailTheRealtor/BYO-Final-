@@ -211,7 +211,7 @@
                         </ul>
                     </div>
                 @endif
-                <form wire:submit.prevent="submit">
+                <form wire:submit.prevent="submit" novalidate>
                     <!-- Tab Navigation -->
                     @if ($service_type === 'full_service')
 
