@@ -2761,17 +2761,17 @@
                             $sellerPurchaseFeeOther     = data_get($bid, 'get.purchase_fee_other', '');
 
                             $sellerPurchaseFeeDisplay = '-';
-                            if ($sellerPurchaseFeeType === 'Flat Fee' && $sellerPurchaseFeeFlat) {
+                            if ($sellerPurchaseFeeType === 'flat' && $sellerPurchaseFeeFlat) {
                                 $sellerPurchaseFeeDisplay = '$' . number_format((float) str_replace(',', '', $sellerPurchaseFeeFlat), 2);
-                            } elseif ($sellerPurchaseFeeType === 'Percentage of Sale Price' && $sellerPurchaseFeePerc) {
-                                $sellerPurchaseFeeDisplay = number_format((float) $sellerPurchaseFeePerc, 2) . '% of Sale Price';
-                            } elseif ($sellerPurchaseFeeType === 'Flat Fee + Percentage of Sale Price') {
+                            } elseif ($sellerPurchaseFeeType === 'percentage' && $sellerPurchaseFeePerc) {
+                                $sellerPurchaseFeeDisplay = number_format((float) $sellerPurchaseFeePerc, 2) . '% of Total Purchase Price';
+                            } elseif ($sellerPurchaseFeeType === 'combo') {
                                 $parts = array_filter([
+                                    $sellerPurchaseFeePercCombo ? number_format((float) $sellerPurchaseFeePercCombo, 2) . '% of Total Purchase Price' : null,
                                     $sellerPurchaseFeeFlatCombo ? '$' . number_format((float) str_replace(',', '', $sellerPurchaseFeeFlatCombo), 2) : null,
-                                    $sellerPurchaseFeePercCombo ? number_format((float) $sellerPurchaseFeePercCombo, 2) . '% of Sale Price' : null,
                                 ]);
                                 $sellerPurchaseFeeDisplay = implode(' + ', $parts) ?: '-';
-                            } elseif ($sellerPurchaseFeeType === 'Other' && $sellerPurchaseFeeOther) {
+                            } elseif ($sellerPurchaseFeeType === 'other' && $sellerPurchaseFeeOther) {
                                 $sellerPurchaseFeeDisplay = $sellerPurchaseFeeOther;
                             }
                         @endphp
@@ -2805,15 +2805,9 @@
 
                                 <!-- C) Broker Compensation Summary -->
                                 <h6 style="font-weight: 600; color: #1a3a5c; font-size: 1.15rem; margin-bottom: 12px;">Broker Compensation Summary:</h6>
-                                <div class="mb-2">
-                                    <p class="mb-1" style="font-size: 1rem; color: #333;">
-                                        <span style="font-weight: 600;">Seller's Broker Commission Structure:</span>
-                                    </p>
-                                    <p class="mb-0" style="font-size: 1rem; color: #555;">{{ $sellerCommStructure }}</p>
-                                </div>
                                 <div class="mb-3">
                                     <p class="mb-1" style="font-size: 1rem; color: #333;">
-                                        <span style="font-weight: 600;">Seller's Broker Commission Fee:</span>
+                                        <span style="font-weight: 600;">Seller's Broker Purchase Fee:</span>
                                     </p>
                                     <p class="mb-0" style="font-size: 1rem; color: #555;">{{ $sellerPurchaseFeeDisplay }}</p>
                                 </div>
@@ -2894,8 +2888,8 @@
                         @if ($isListingOwner || $isBidOwner)
                         {{-- Private Data Modal - visible to listing owner OR bid owner (agent) --}}
                         @php
-                            $rawState   = data_get($bid, 'accepted', '0');
-                            $state      = in_array($rawState, [null, 0, '0'], true) ? '0' : (string) $rawState;
+                            $rawState   = data_get($bid, 'accepted');
+                            $state      = (!$rawState || $rawState === '0') ? '0' : (string) $rawState;
                             $isOwnerRow = ($auth_id == data_get($auction, 'user_id'));
                             $ownerFirst = data_get($auction, 'user.first_name', '');
                             $ownerLast  = data_get($auction, 'user.last_name', '');
@@ -2977,17 +2971,10 @@
                                             </div>
                                             @endif
 
-                                            @if (data_get($bid, 'get.agent_license'))
+                                            @if (data_get($bid, 'get.nar_id'))
                                             <div class="mb-3">
-                                                <div class="fw-semibold" style="color: #049399;">Agent License:</div>
-                                                <div class="text-muted">{{ data_get($bid, 'get.agent_license') }}</div>
-                                            </div>
-                                            @endif
-
-                                            @if (data_get($bid, 'get.mls_id'))
-                                            <div class="mb-3">
-                                                <div class="fw-semibold" style="color: #049399;">MLS ID:</div>
-                                                <div class="text-muted">{{ data_get($bid, 'get.mls_id') }}</div>
+                                                <div class="fw-semibold" style="color: #049399;">NAR Member ID:</div>
+                                                <div class="text-muted">{{ data_get($bid, 'get.nar_id') }}</div>
                                             </div>
                                             @endif
 
@@ -3004,6 +2991,55 @@
                                                     <a href="{{ $wLink }}" target="_blank" rel="noopener noreferrer" class="text-primary text-decoration-none">
                                                         <i class="fa fa-globe me-1"></i> Visit Website
                                                     </a>
+                                                </div>
+                                            </div>
+                                            @endif
+
+                                            @if (data_get($bid, 'get.reviews_links'))
+                                            <div class="mb-3">
+                                                <div class="fw-semibold" style="color: #049399;">Review Links:</div>
+                                                <div>
+                                                    @foreach (data_get($bid, 'get.reviews_links') as $reviewLink)
+                                                    @if (!empty($reviewLink->url))
+                                                    <div class="mb-1">
+                                                        @php
+                                                            $rlUrl = $reviewLink->url;
+                                                            if (!str_starts_with($rlUrl, 'http://') && !str_starts_with($rlUrl, 'https://')) {
+                                                                $rlUrl = 'https://' . $rlUrl;
+                                                            }
+                                                        @endphp
+                                                        <a href="{{ $rlUrl }}" target="_blank" class="text-primary text-decoration-none">
+                                                            <i class="fa fa-external-link-alt me-1"></i>
+                                                            {{ !empty($reviewLink->text) ? $reviewLink->text : $reviewLink->url }}
+                                                        </a>
+                                                    </div>
+                                                    @endif
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                            @endif
+
+                                            @if (data_get($bid, 'get.social_media'))
+                                            <div class="mb-3">
+                                                <div class="fw-semibold" style="color: #049399;">Social Media Platforms:</div>
+                                                <div>
+                                                    @foreach (data_get($bid, 'get.social_media') as $social)
+                                                    @php $socialArray = (array) $social; @endphp
+                                                    @if (!empty($socialArray['platform']) && !empty($socialArray['url']))
+                                                    <div class="mb-1">
+                                                        @php
+                                                            $socialUrl = $socialArray['url'];
+                                                            if (!str_starts_with($socialUrl, 'http://') && !str_starts_with($socialUrl, 'https://')) {
+                                                                $socialUrl = 'https://' . $socialUrl;
+                                                            }
+                                                        @endphp
+                                                        <a href="{{ $socialUrl }}" target="_blank" class="text-primary text-decoration-none">
+                                                            <i class="fab fa-{{ strtolower($socialArray['platform']) }} me-1"></i>
+                                                            {{ !empty($socialArray['text']) ? $socialArray['text'] : $socialArray['platform'] }}
+                                                        </a>
+                                                    </div>
+                                                    @endif
+                                                    @endforeach
                                                 </div>
                                             </div>
                                             @endif
@@ -3045,7 +3081,182 @@
                                         </div>
                                         @endif
 
-                                        <!-- 3. Broker Compensation & Agency Agreement Terms -->
+                                        <!-- 3. Agent Presentation & Promotional Materials -->
+                                        @if (data_get($bid, 'get.presentation_link') ||
+                                             data_get($bid, 'get.video_upload') ||
+                                             data_get($bid, 'get.business_card_link') ||
+                                             data_get($bid, 'get.business_card') ||
+                                             data_get($bid, 'get.promoMaterials'))
+                                        <div class="mb-5">
+                                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                <i class="fa fa-chart-line me-2"></i>Agent Presentation &amp; Promotional Materials
+                                            </h6>
+
+                                            <!-- Virtual Presentation -->
+                                            @if (data_get($bid, 'get.presentation_link') || data_get($bid, 'get.video_upload'))
+                                            <div class="mb-4">
+                                                <div class="fw-semibold mb-2" style="color: #049399;">Virtual Agent Presentation</div>
+                                                @if (data_get($bid, 'get.presentation_link'))
+                                                <div class="mb-2">
+                                                    @php
+                                                        $presentationLink = data_get($bid, 'get.presentation_link');
+                                                        if (!empty($presentationLink) && !str_starts_with($presentationLink, 'http://') && !str_starts_with($presentationLink, 'https://')) {
+                                                            $presentationLink = 'https://' . $presentationLink;
+                                                        }
+                                                    @endphp
+                                                    <a href="{{ $presentationLink }}" target="_blank" class="text-primary text-decoration-none">
+                                                        <i class="fa fa-external-link-alt me-1"></i> Watch Presentation
+                                                    </a>
+                                                </div>
+                                                @endif
+                                                @if (data_get($bid, 'get.video_upload'))
+                                                <div class="mb-2">
+                                                    <div class="fw-medium mb-1" style="color: #049399;">Uploaded Video:</div>
+                                                    @if (is_string(data_get($bid, 'get.video_upload')))
+                                                    <video controls style="width: 100%; max-width: 400px; border-radius: 6px; background: #000;">
+                                                        <source src="{{ asset('storage/' . data_get($bid, 'get.video_upload')) }}" type="video/mp4">
+                                                        Your browser does not support the video tag.
+                                                    </video>
+                                                    @else
+                                                    <div class="text-muted"><i class="fa fa-video me-1"></i> Video file uploaded</div>
+                                                    @endif
+                                                </div>
+                                                @endif
+                                            </div>
+                                            @endif
+
+                                            <!-- Business Card -->
+                                            @if (data_get($bid, 'get.business_card_link') || data_get($bid, 'get.business_card'))
+                                            <div class="mb-4">
+                                                <div class="fw-semibold mb-2" style="color: #049399;">Business Card:</div>
+                                                @if (data_get($bid, 'get.business_card_link'))
+                                                <div class="mb-3">
+                                                    @php
+                                                        $businessCardLink = data_get($bid, 'get.business_card_link');
+                                                        if (!empty($businessCardLink) && !str_starts_with($businessCardLink, 'http://') && !str_starts_with($businessCardLink, 'https://')) {
+                                                            $businessCardLink = 'https://' . $businessCardLink;
+                                                        }
+                                                    @endphp
+                                                    <a href="{{ $businessCardLink }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">
+                                                        <i class="fa fa-external-link-alt me-1"></i> View Business Card (Link)
+                                                    </a>
+                                                </div>
+                                                @endif
+                                                @if (data_get($bid, 'get.business_card'))
+                                                <div class="mb-2">
+                                                    @if (is_string(data_get($bid, 'get.business_card')))
+                                                    @php
+                                                        $businessCardPath = data_get($bid, 'get.business_card');
+                                                        $businessCardExt  = strtolower(pathinfo($businessCardPath, PATHINFO_EXTENSION));
+                                                        $businessCardUrl  = asset('storage/' . $businessCardPath);
+                                                    @endphp
+                                                    @if (in_array($businessCardExt, ['jpg', 'jpeg', 'png', 'gif', 'webp']))
+                                                    <div class="business-card-preview mb-2">
+                                                        <a href="{{ $businessCardUrl }}" target="_blank" rel="noopener noreferrer">
+                                                            <img src="{{ $businessCardUrl }}" style="max-width: 450px; width: 100%; height: auto; border-radius: 8px; border: 2px solid #e0e0e0;" alt="Business Card" class="img-fluid">
+                                                        </a>
+                                                    </div>
+                                                    <div class="d-flex gap-2 mt-2">
+                                                        <a href="{{ $businessCardUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm"><i class="fa fa-expand me-1"></i> View Full Size</a>
+                                                        <a href="{{ $businessCardUrl }}" download class="btn btn-outline-success btn-sm"><i class="fa fa-download me-1"></i> Download</a>
+                                                    </div>
+                                                    @else
+                                                    <div class="d-flex align-items-center p-3 border rounded bg-light">
+                                                        <i class="fa fa-file-alt fa-2x text-muted me-3"></i>
+                                                        <div class="flex-grow-1">
+                                                            <div class="fw-medium">Business Card File</div>
+                                                            <small class="text-muted">{{ strtoupper($businessCardExt) }} file</small>
+                                                        </div>
+                                                        <a href="{{ $businessCardUrl }}" download class="btn btn-outline-primary btn-sm"><i class="fa fa-download me-1"></i> Download</a>
+                                                    </div>
+                                                    @endif
+                                                    @else
+                                                    <div class="text-muted"><i class="fa fa-id-card me-1"></i> Business card uploaded</div>
+                                                    @endif
+                                                </div>
+                                                @endif
+                                            </div>
+                                            @endif
+
+                                            <!-- Marketing Materials -->
+                                            @if (data_get($bid, 'get.promoMaterials'))
+                                            @php
+                                                $hasAnyMaterials = false;
+                                                $promoMaterialsRaw = data_get($bid, 'get.promoMaterials', []);
+                                                $promoMaterialsNormalized = [];
+                                                if (is_array($promoMaterialsRaw) || is_object($promoMaterialsRaw)) {
+                                                    foreach ($promoMaterialsRaw as $m) {
+                                                        $mArr = is_object($m) ? (array) $m : (is_array($m) ? $m : []);
+                                                        $promoMaterialsNormalized[] = $mArr;
+                                                        if (!empty($mArr['type']) || !empty($mArr['link']) || !empty($mArr['files'])) {
+                                                            $hasAnyMaterials = true;
+                                                        }
+                                                    }
+                                                }
+                                            @endphp
+                                            <div>
+                                                <div class="fw-semibold mb-2" style="color: #049399;">Marketing Materials:</div>
+                                                @if ($hasAnyMaterials)
+                                                @foreach ($promoMaterialsNormalized as $index => $material)
+                                                @php
+                                                    $matType  = data_get($material, 'type', '');
+                                                    $matOther = data_get($material, 'other', '');
+                                                    $matLink  = data_get($material, 'link', '');
+                                                    $matFiles = data_get($material, 'files', []);
+                                                    if (is_object($matFiles)) { $matFiles = (array) $matFiles; }
+                                                @endphp
+                                                @if (!empty($matType) || !empty($matLink) || !empty($matFiles))
+                                                <div class="mb-3 p-3 border rounded bg-light">
+                                                    @if (!empty($matType))
+                                                    <div class="fw-medium mb-2" style="color: #049399; font-size: 1rem;">
+                                                        <i class="fa fa-folder-open me-1"></i>
+                                                        {{ $matType }}@if ($matType === 'Other' && !empty($matOther)) - {{ $matOther }}@endif
+                                                    </div>
+                                                    @endif
+                                                    @if (!empty($matLink))
+                                                    <div class="mb-2">
+                                                        @php
+                                                            $matLinkFull = (!str_starts_with($matLink, 'http://') && !str_starts_with($matLink, 'https://')) ? 'https://' . $matLink : $matLink;
+                                                        @endphp
+                                                        <a href="{{ $matLinkFull }}" target="_blank" class="text-primary text-decoration-none">
+                                                            <i class="fa fa-external-link-alt me-1"></i> View Material
+                                                        </a>
+                                                    </div>
+                                                    @endif
+                                                    @if (!empty($matFiles) && is_array($matFiles))
+                                                    <div class="d-flex flex-wrap gap-2">
+                                                        @foreach ($matFiles as $matFile)
+                                                        @php
+                                                            $mfPath = is_object($matFile) ? ($matFile->path ?? '') : (is_array($matFile) ? ($matFile['path'] ?? '') : (string) $matFile);
+                                                            $mfExt  = strtolower(pathinfo($mfPath, PATHINFO_EXTENSION));
+                                                            $mfUrl  = $mfPath ? asset('storage/' . $mfPath) : '';
+                                                        @endphp
+                                                        @if ($mfUrl)
+                                                        @if (in_array($mfExt, ['jpg', 'jpeg', 'png', 'gif', 'webp']))
+                                                        <a href="{{ $mfUrl }}" target="_blank" rel="noopener noreferrer">
+                                                            <img src="{{ $mfUrl }}" style="max-width: 120px; height: 80px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd;" alt="Material">
+                                                        </a>
+                                                        @else
+                                                        <a href="{{ $mfUrl }}" download class="btn btn-outline-secondary btn-sm">
+                                                            <i class="fa fa-download me-1"></i> {{ strtoupper($mfExt) ?: 'File' }}
+                                                        </a>
+                                                        @endif
+                                                        @endif
+                                                        @endforeach
+                                                    </div>
+                                                    @endif
+                                                </div>
+                                                @endif
+                                                @endforeach
+                                                @else
+                                                <div class="text-muted small">No marketing materials uploaded.</div>
+                                                @endif
+                                            </div>
+                                            @endif
+                                        </div>
+                                        @endif
+
+                                        <!-- 4. Broker Compensation & Agency Agreement Terms -->
                                         @if (data_get($bid, 'get.commission_structure') ||
                                              data_get($bid, 'get.purchase_fee_type') ||
                                              data_get($bid, 'get.protection_period') ||
@@ -3066,7 +3277,7 @@
                                                     <li class="mb-1"><span class="fw-semibold">Commission Structure:</span> {{ data_get($bid, 'get.commission_structure') }}</li>
                                                     @endif
                                                     @if (data_get($bid, 'get.purchase_fee_type'))
-                                                    <li class="mb-1"><span class="fw-semibold">Commission Fee:</span> {{ $sellerPurchaseFeeDisplay }}</li>
+                                                    <li class="mb-1"><span class="fw-semibold">Seller's Broker Purchase Fee:</span> {{ $sellerPurchaseFeeDisplay }}</li>
                                                     @endif
                                                     @if (data_get($bid, 'get.commission_structure_type'))
                                                     <li class="mb-1"><span class="fw-semibold">Commission Structure Type:</span> {{ data_get($bid, 'get.commission_structure_type') }}</li>
@@ -3123,7 +3334,60 @@
                                         </div>
                                         @endif
 
-                                        <!-- 4. Additional Details -->
+                                        <!-- 4. Agent Credentials and Contact Information -->
+                                        @if ($isListingOwner || $isBidOwner)
+                                        <div class="mb-5">
+                                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                <i class="fa fa-address-card me-2"></i>Agent Credentials and Contact Information
+                                            </h6>
+                                            <div class="row">
+                                                @if (data_get($bid, 'get.first_name'))
+                                                <div class="col-md-6 mb-2">
+                                                    <div class="fw-semibold" style="color: #049399;">First Name</div>
+                                                    <div class="text-muted">{{ data_get($bid, 'get.first_name') }}</div>
+                                                </div>
+                                                @endif
+                                                @if (data_get($bid, 'get.last_name'))
+                                                <div class="col-md-6 mb-2">
+                                                    <div class="fw-semibold" style="color: #049399;">Last Name</div>
+                                                    <div class="text-muted">{{ data_get($bid, 'get.last_name') }}</div>
+                                                </div>
+                                                @endif
+                                                @if (data_get($bid, 'get.phone'))
+                                                <div class="col-md-6 mb-2">
+                                                    <div class="fw-semibold" style="color: #049399;">Phone Number</div>
+                                                    <div class="text-muted">{{ data_get($bid, 'get.phone') }}</div>
+                                                </div>
+                                                @endif
+                                                @if (data_get($bid, 'get.email'))
+                                                <div class="col-md-6 mb-2">
+                                                    <div class="fw-semibold" style="color: #049399;">Email</div>
+                                                    <div class="text-muted">{{ data_get($bid, 'get.email') }}</div>
+                                                </div>
+                                                @endif
+                                                @if (data_get($bid, 'get.brokerage'))
+                                                <div class="col-12 mb-2">
+                                                    <div class="fw-semibold" style="color: #049399;">Brokerage</div>
+                                                    <div class="text-muted">{{ data_get($bid, 'get.brokerage') }}</div>
+                                                </div>
+                                                @endif
+                                                @if (data_get($bid, 'get.license_no'))
+                                                <div class="col-md-6 mb-2">
+                                                    <div class="fw-semibold" style="color: #049399;">Real Estate License #</div>
+                                                    <div class="text-muted">{{ data_get($bid, 'get.license_no') }}</div>
+                                                </div>
+                                                @endif
+                                                @if (data_get($bid, 'get.nar_id'))
+                                                <div class="col-md-6 mb-2">
+                                                    <div class="fw-semibold" style="color: #049399;">NAR Member ID</div>
+                                                    <div class="text-muted">{{ data_get($bid, 'get.nar_id') }}</div>
+                                                </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                        @endif
+
+                                        <!-- 5. Additional Details -->
                                         @if (data_get($bid, 'get.additional_details'))
                                         <div class="mb-4">
                                             <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
@@ -3133,9 +3397,9 @@
                                         </div>
                                         @endif
 
-                                        <!-- 5. Main Bid Actions (listing owner: Accept / Reject) -->
+                                        <!-- 6. Main Bid Actions (listing owner: Accept / Reject) -->
                                         <div class="d-flex justify-content-between flex-wrap gap-2 mt-4">
-                                            @if ($state === '0' && $isOwnerRow && !data_get($auction, 'is_sold'))
+                                            @if ($state === '0' && $isOwnerRow && !in_array(data_get($auction, 'is_sold'), [true,'true',1,'1'], true))
 
                                             @if ($isBiddingPeriodListing && $isBiddingTimerActive)
                                             {{-- Bidding Period: Timer still active - actions locked --}}
