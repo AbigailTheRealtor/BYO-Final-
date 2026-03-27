@@ -165,11 +165,6 @@ public $additional_details_broker = '';
             'promoMaterials.*.other' => ['nullable', 'string'],
             'promoMaterials.*.text'  => ['nullable', 'string'],
             'promoMaterials.*.files' => ['nullable', 'array'],
-            'promoMaterials.*.files.*' => [
-                'file',
-                'max:20480', // 20MB each
-                'mimes:pdf,jpg,jpeg,png,doc,docx,ppt,pptx'
-            ],
             'year_licensed' => 'required|numeric|min:1900|max:' . date('Y'),
 
         ];
@@ -670,9 +665,22 @@ public $additional_details_broker = '';
 
     public function submit()
     {
+        \Log::info('[BuyerBid] submit() started', [
+            'user_id'    => Auth::id(),
+            'auction_id' => $this->auctionId,
+            'active_tab' => $this->activeTab,
+            'has_bio'    => !empty($this->bio),
+            'has_why'    => !empty($this->why_hire_you),
+            'has_what'   => !empty($this->what_sets_you_apart),
+            'has_mktg'   => !empty($this->marketing_plan),
+            'year_lic'   => $this->year_licensed,
+            'promo_count'=> count($this->promoMaterials),
+        ]);
+
         DB::beginTransaction();
         try {
             $this->validate();
+            \Log::info('[BuyerBid] validation passed');
 
             $allowedVideos = ['mp4', 'mov', 'avi'];
             $allowedPhotos = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx', 'ppt', 'pptx'];
@@ -847,10 +855,12 @@ public $additional_details_broker = '';
             return redirect()->route('buyer.view-auction', $this->auctionId);
         } catch (\Illuminate\Validation\ValidationException $e) {
             DB::rollBack();
+            \Log::warning('[BuyerBid] ValidationException caught', ['errors' => $e->errors()]);
             $this->activeTab = 0;
             throw $e;
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error('[BuyerBid] Exception caught', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             session()->flash('error', 'Error saving auction: ' . $e->getMessage());
         }
     }

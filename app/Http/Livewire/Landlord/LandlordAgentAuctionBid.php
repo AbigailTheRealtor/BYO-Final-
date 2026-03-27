@@ -180,11 +180,6 @@ class LandlordAgentAuctionBid extends Component
             'promoMaterials.*.other' => ['nullable', 'string'],
             'promoMaterials.*.link'  => ['nullable', 'url'],
             'promoMaterials.*.files' => ['nullable', 'array'],
-            'promoMaterials.*.files.*' => [
-                'file',
-                'max:20480', // 20MB each
-                'mimes:pdf,jpg,jpeg,png,doc,docx,ppt,pptx'
-            ],
             'year_licensed' => 'required|numeric|min:1900|max:' . date('Y'),
 
         ];
@@ -915,9 +910,22 @@ class LandlordAgentAuctionBid extends Component
 
     public function submit()
     {
+        \Log::info('[LandlordBid] submit() started', [
+            'user_id'    => Auth::id(),
+            'auction_id' => $this->auctionId,
+            'active_tab' => $this->activeTab,
+            'has_bio'    => !empty($this->bio),
+            'has_why'    => !empty($this->why_hire_you),
+            'has_what'   => !empty($this->what_sets_you_apart),
+            'has_mktg'   => !empty($this->marketing_plan),
+            'year_lic'   => $this->year_licensed,
+            'promo_count'=> count($this->promoMaterials),
+        ]);
+
         DB::beginTransaction();
         try {
             $this->validate();
+            \Log::info('[LandlordBid] validation passed');
 
             $allowedVideos = ['mp4', 'mov', 'avi'];
             $allowedPhotos = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx', 'ppt', 'pptx'];
@@ -1140,15 +1148,16 @@ class LandlordAgentAuctionBid extends Component
             return redirect()->route('landlord.agent.auction.view', $this->auctionId);
         } catch (\Illuminate\Validation\ValidationException $e) {
             DB::rollBack();
+            \Log::warning('[LandlordBid] ValidationException caught', ['errors' => $e->errors()]);
             $this->activeTab = 0;
             throw $e;
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('LandlordAgentAuctionBid submit() failed', [
+            \Log::error('[LandlordBid] Exception caught', [
                 'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+                'trace'   => $e->getTraceAsString(),
             ]);
             session()->flash('error', 'Error saving bid: ' . $e->getMessage());
         }
