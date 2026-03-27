@@ -4909,11 +4909,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                         @endif
                                     </div>
 
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                     @endforeach
+                    </div>{{-- End accordion-item --}}
 
 
                 </div>

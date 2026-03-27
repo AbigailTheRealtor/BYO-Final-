@@ -607,6 +607,7 @@ class SellerAgentAuctionBid extends Component
 
     public function submit()
     {
+        DB::beginTransaction();
         try {
             $this->validate();
 
@@ -729,13 +730,17 @@ class SellerAgentAuctionBid extends Component
             }
             $bid->saveMeta('promo_materials', json_encode($savedMaterials));
 
+            DB::commit();
             session()->flash('success', 'Your bid has been submitted successfully!');
             return redirect()->route('seller.agent.auction.detail', $this->auctionId);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
             $this->activeTab = 0;
             throw $e;
         } catch (\Exception $e) {
+            DB::rollBack();
+            \Illuminate\Support\Facades\Log::error('[SellerBid] submit exception: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             session()->flash('error', 'Error saving bid: ' . $e->getMessage());
         }
     }

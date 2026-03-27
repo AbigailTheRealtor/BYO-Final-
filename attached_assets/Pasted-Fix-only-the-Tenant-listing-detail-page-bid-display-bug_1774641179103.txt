@@ -1,0 +1,35 @@
+Fix only the Tenant listing detail page bid display bug where the Tenant can currently see Agent 1 and Agent 2, but Agent 3 is missing even though Agent 3 has a valid submitted bid on that same listing.
+
+Scope:
+- Audit the exact active route, Livewire/controller, and blade view used by the Tenant-facing listing detail page for this listing.
+- Edit only the files actually used by that Tenant detail page.
+- Do not touch Buyer, Seller, or Landlord flows.
+- Do not touch agent self-view pages.
+- Do not change DB schema, migrations, model field names, or routes unless absolutely required.
+
+What to find:
+- Inspect the query/relation/collection used to load bids for the Tenant-facing listing detail page.
+- Check for take(2), limit(2), paginate(2), slice(), wrong filtering, grouping, deduping, or current-user filtering that would cause only 2 bids to render.
+- Confirm bids are loaded by listing_id for the current listing, not by current agent/user.
+- Check whether Agent 3 is being removed by a status/is_active/is_submitted/is_hidden/etc filter.
+- Check the blade loop for any logic only rendering first 2 bids or using non-unique accordion ids/keys.
+
+Required result:
+- The Tenant owner must see all eligible bids on their listing, including Agent 3, in the same existing card/accordion format already used for Agent 1 and Agent 2.
+- Agents must still only see their own bid on their own side.
+- No styling rewrites. Preserve current format.
+
+Testing:
+- Test the exact Tenant traditional commercial listing that currently has 3 bids.
+- Confirm Tenant owner view now shows Agent 1, Agent 2, and Agent 3.
+- Confirm Agent 3 still only sees their own bid on their own side.
+- Quick smoke test that Buyer/Seller/Landlord flows are unchanged.
+
+Reply back with:
+1. exact route used
+2. exact file(s) edited
+3. root cause
+4. precise fix made
+5. confirmation no DB schema changes were made
+6. confirmation only Tenant listing detail bid rendering was changed
+7. test proof that all 3 bids now show for the Tenant owner

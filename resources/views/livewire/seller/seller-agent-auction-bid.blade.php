@@ -41,7 +41,7 @@
 
                 <h2 class="mb-4">Hire a Seller's Agent — Submit Your Bid</h2>
 
-                <form wire:submit.prevent="submit">
+                <form wire:submit.prevent="submit" novalidate>
                     <!-- Tab Navigation -->
                     @php
                         $tabs = [
