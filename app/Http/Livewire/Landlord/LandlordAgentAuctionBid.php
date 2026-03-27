@@ -915,6 +915,7 @@ class LandlordAgentAuctionBid extends Component
 
     public function submit()
     {
+        DB::beginTransaction();
         try {
             $this->validate();
 
@@ -1133,15 +1134,23 @@ class LandlordAgentAuctionBid extends Component
             // Notify the auction owner
             $auctionOwner = $auction->user;
             $auctionOwner->notify(new BidSubmittedNotification($bid, $auction));
+            DB::commit();
             session()->flash('success', 'Your bid has been submitted successfully!');
 
             return redirect()->route('landlord.agent.auction.view', $this->auctionId);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
             $this->activeTab = 0;
             throw $e;
         } catch (\Exception $e) {
             DB::rollBack();
-            session()->flash('error', 'Error saving auction: ' . $e->getMessage());
+            \Log::error('LandlordAgentAuctionBid submit() failed', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            session()->flash('error', 'Error saving bid: ' . $e->getMessage());
         }
     }
 

@@ -927,7 +927,15 @@
                             @php
                                 // Prepare financing items array for conditional checks
                                 $financingForChecks = @$auction->get->offered_financing;
-                                $financingArray = is_array($financingForChecks) ? $financingForChecks : (is_string($financingForChecks) ? json_decode($financingForChecks, true) ?? [$financingForChecks] : []);
+                                $_fDecoded = is_string($financingForChecks) ? json_decode($financingForChecks, true) : $financingForChecks;
+                                // Ensure always an array regardless of JSON encoding (string vs array)
+                                if (is_array($_fDecoded)) {
+                                    $financingArray = $_fDecoded;
+                                } elseif (is_null($_fDecoded) || $_fDecoded === false) {
+                                    $financingArray = is_string($financingForChecks) && !empty($financingForChecks) ? [$financingForChecks] : [];
+                                } else {
+                                    $financingArray = [$_fDecoded]; // scalar (string decoded from JSON string)
+                                }
                                 
                                 // Check if each financing type has data for grouped display
                                 $hasSellerFinancingData = !empty(@$auction->get->purchase_price) || !empty(@$auction->get->down_payment_amount) || !empty(@$auction->get->seller_financing_amount) || !empty(@$auction->get->interest_rate) || !empty(@$auction->get->loan_duration) || !empty(@$auction->get->seller_amortization_type) || !empty(@$auction->get->seller_payment_frequency) || !empty(@$auction->get->seller_late_fee_amount) || !empty(@$auction->get->balloon_payment) || !empty(@$auction->get->balloon_payment_amount) || !empty(@$auction->get->balloon_payment_date) || !empty(@$auction->get->prepayment_penalty) || !empty(@$auction->get->prepayment_penalty_amount);

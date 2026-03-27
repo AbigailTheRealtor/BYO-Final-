@@ -1,0 +1,355 @@
+Paste this into Replit exactly:
+
+---
+
+# 🚨 TASK: Fix Buyer and Landlord bid Submit sending user back to Agent Overview tab instead of fully submitting
+
+## Issue
+
+These two bid pages are still not submitting correctly:
+
+* `/landlord/agent/auction/bid/45`
+* `/buyer/agent/auction/bid/150`
+
+When I click **Submit**, the form goes back to the **Agent Overview** tab instead of truly submitting/finalizing the bid.
+
+This means the real submit/finalize flow is still wrong, or the wrong files were edited.
+
+**Tenant is the working reference.**
+Buyer and Landlord must follow the exact same final submit behavior Tenant uses.
+
+---
+
+# Scope
+
+This task applies **only** to the **Buyer and Landlord agent bid submit flow** for:
+
+* `/buyer/agent/auction/bid/{id}`
+* `/landlord/agent/auction/bid/{id}`
+
+Do **not** change Seller or Tenant in this task unless Buyer/Landlord are confirmed to share the exact same component and the shared fix is required.
+
+Do **not** change listing creation flows.
+Do **not** change listing edit flows.
+Do **not** do broad refactors.
+
+---
+
+# 🛑 Critical safeguards
+
+1. **Trace the real route and files first**
+
+   * Do not assume the correct files were already edited
+   * Confirm the exact:
+
+     * route
+     * controller or Livewire component
+     * blade/view
+     * submit button markup
+     * next button markup
+     * submit method
+     * tab-navigation method
+     * validation method
+     * save/finalize method
+     * redirect/success method
+
+2. **Also trace the working Tenant submit flow**
+
+   * Confirm the exact Tenant files and methods for:
+
+     * Submit button
+     * final submit method
+     * validation
+     * save/finalize
+     * redirect or success state
+
+3. **Compare Buyer and Landlord directly against Tenant**
+
+   * Buyer and Landlord must match Tenant’s final submit behavior exactly
+
+4. **Do not assume this is only a button issue**
+   The problem may be:
+
+   * Submit button wired to wrong method
+   * Submit button calling next-step logic instead of final finalize logic
+   * tab-navigation method firing on submit
+   * validation failing and forcing tab back to Agent Overview
+   * finalize/save method not being reached
+   * role-based logic sending Buyer/Landlord back to Agent Overview
+   * success redirect missing
+   * final submit branch exiting early
+
+5. **Do not start with UI/CSS**
+   This is a submit/finalization logic issue.
+
+6. **Keep the fix minimal and scoped**
+   Fix only the Buyer and Landlord submit path unless the root cause is in a shared component used by Tenant and the shared fix is proven safe.
+
+7. **Do not break Tenant**
+   Tenant’s working final submit behavior must remain correct.
+
+8. **No broad rewrites**
+
+   * no new architecture
+   * no duplicate components unless absolutely necessary
+   * no unrelated cleanup
+   * no unrelated refactor
+
+9. **Find the root cause, not just a patch**
+   Confirm exactly why Buyer and Landlord return to Agent Overview instead of finalizing submission.
+
+10. **Show which real files were edited**
+    I need proof the real Buyer and Landlord bid files were updated, not unrelated files.
+
+---
+
+# Step 1 — Map the real Buyer and Landlord submit flow first
+
+For these exact URLs:
+
+* `/buyer/agent/auction/bid/150`
+* `/landlord/agent/auction/bid/45`
+
+identify the exact:
+
+* route definition
+* controller or Livewire component
+* blade/view file
+* submit button markup
+* next button markup
+* method triggered by Submit
+* method triggered by Next
+* method that changes tabs
+* validation method
+* save/finalize submit method
+* redirect/success handling
+
+Then do the same for the working **Tenant** bid submit flow.
+
+Return the mapping first like:
+
+* Buyer route → `[route]`
+
+* Buyer component → `[component]`
+
+* Buyer blade → `[blade]`
+
+* Buyer Submit button calls → `[method]`
+
+* Buyer Next button calls → `[method]`
+
+* Buyer tab-change method → `[method]`
+
+* Buyer finalize/save method → `[method]`
+
+* Landlord route → `[route]`
+
+* Landlord component → `[component]`
+
+* Landlord blade → `[blade]`
+
+* Landlord Submit button calls → `[method]`
+
+* Landlord Next button calls → `[method]`
+
+* Landlord tab-change method → `[method]`
+
+* Landlord finalize/save method → `[method]`
+
+* Tenant route → `[route]`
+
+* Tenant component → `[component]`
+
+* Tenant blade → `[blade]`
+
+* Tenant Submit button calls → `[method]`
+
+* Tenant Next button calls → `[method]`
+
+* Tenant tab-change method → `[method]`
+
+* Tenant finalize/save method → `[method]`
+
+## CRITICAL
+
+Do not change code until this mapping is confirmed.
+
+---
+
+# Step 2 — Compare Buyer and Landlord final submit vs Tenant final submit
+
+Compare Buyer and Landlord against Tenant for all of the following:
+
+* submit button markup
+* button type
+* whether submit button is inside the correct form block
+* Livewire action or form submit binding
+* final step detection
+* tab state handling
+* validation behavior
+* whether Buyer/Landlord submit is accidentally calling tab-navigation logic
+* whether Buyer/Landlord are routing back to Agent Overview on validation or on success
+* whether the finalize/save method is being reached at all
+* whether redirect/success handling differs from Tenant
+* whether role-specific conditions are causing an early return
+
+Look specifically for why Buyer and Landlord go back to Agent Overview instead of finishing.
+
+---
+
+# Step 3 — Fix the actual root cause only
+
+Make the smallest safe fix needed so Buyer and Landlord Submit behave exactly like Tenant Submit.
+
+Examples of possible causes:
+
+* Submit button wired to next-tab method instead of final-submit method
+* final submit branch not reached for Buyer/Landlord
+* validation always fails and resets tab to Agent Overview
+* submit method saves partially but does not finalize
+* save succeeds but redirect/success state is missing
+* wrong role/property condition resets tab state
+* final submit method exits early for Buyer/Landlord
+
+## Important
+
+Do not rewrite the whole form.
+Do not touch unrelated roles unless Buyer/Landlord are using a shared component and the shared fix is necessary.
+
+---
+
+# Step 4 — Validation must not silently send Buyer/Landlord back to Agent Overview
+
+If submit is being blocked by validation:
+
+* show the validation errors clearly
+* keep the user on the correct tab that contains the invalid field, or use the same behavior Tenant uses
+* do not silently dump the user back to Agent Overview with no explanation
+
+Buyer and Landlord submit must either:
+
+* fully submit successfully, or
+* clearly show what field is blocking final submission
+
+It must not look like a dead submit or fake submit.
+
+---
+
+# Step 5 — Confirm final submit behavior matches Tenant
+
+After the fix, Buyer and Landlord bid must match Tenant for:
+
+* clicking Submit triggers final save/finalize
+* form does not jump back to Agent Overview incorrectly
+* bid saves successfully
+* success state / redirect / refreshed bid state matches Tenant behavior
+* if validation fails, errors are visible and understandable
+
+---
+
+# Step 6 — Testing checklist
+
+After coding, test all of these:
+
+## A. Tenant regression
+
+1. Open a working Tenant bid
+2. Submit it
+3. Confirm Tenant still behaves exactly as before
+
+## B. Buyer final submit
+
+1. Open `/buyer/agent/auction/bid/150`
+2. Complete all required fields
+3. Click Submit
+4. Confirm:
+
+   * it does not jump back to Agent Overview
+   * it actually finalizes the bid
+   * it saves successfully
+   * it shows the expected success/redirect/result state
+
+## C. Landlord final submit
+
+1. Open `/landlord/agent/auction/bid/45`
+2. Complete all required fields
+3. Click Submit
+4. Confirm:
+
+   * it does not jump back to Agent Overview
+   * it actually finalizes the bid
+   * it saves successfully
+   * it shows the expected success/redirect/result state
+
+## D. Buyer validation failure
+
+1. Leave at least one required field blank
+2. Click Submit
+3. Confirm:
+
+   * Buyer does not silently jump back to Agent Overview with no explanation
+   * validation errors are visible
+   * the correct tab/field is shown
+
+## E. Landlord validation failure
+
+1. Leave at least one required field blank
+2. Click Submit
+3. Confirm:
+
+   * Landlord does not silently jump back to Agent Overview with no explanation
+   * validation errors are visible
+   * the correct tab/field is shown
+
+## F. Saved state
+
+1. Submit Buyer successfully
+
+2. Reopen/reload
+
+3. Confirm it was actually saved/finalized
+
+4. Submit Landlord successfully
+
+5. Reopen/reload
+
+6. Confirm it was actually saved/finalized
+
+---
+
+# Step 7 — Required output after coding
+
+Provide:
+
+1. exact Buyer route/component/blade mapping
+2. exact Landlord route/component/blade mapping
+3. exact Tenant route/component/blade mapping used for comparison
+4. exact root cause of why Buyer and Landlord Submit returned to Agent Overview instead of finalizing
+5. exact files changed
+6. exact fix applied
+7. proof that:
+
+   * Buyer now submits correctly
+   * Landlord now submits correctly
+   * Buyer no longer jumps back to Agent Overview incorrectly
+   * Landlord no longer jumps back to Agent Overview incorrectly
+   * validation does not fail silently
+   * Tenant still works
+
+---
+
+# Definition of done
+
+This task is complete only when:
+
+* Buyer Submit truly finalizes the bid
+* Landlord Submit truly finalizes the bid
+* Buyer no longer returns to Agent Overview incorrectly on final submit
+* Landlord no longer returns to Agent Overview incorrectly on final submit
+* if validation fails, the user sees clear errors
+* Tenant still works
+* the fix is minimal and scoped
+
+---
+
+Use Tenant as the exact working reference and verify the real Buyer and Landlord submit files before changing anything.

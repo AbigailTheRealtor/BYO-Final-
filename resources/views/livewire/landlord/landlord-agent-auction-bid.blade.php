@@ -214,7 +214,7 @@
                         {{ session('error') }}
                     </div>
                 @endif
-                <form wire:submit.prevent="submit">
+                <form wire:submit.prevent="submit" novalidate>
                     <!-- Tab Navigation -->
 
                         @php
