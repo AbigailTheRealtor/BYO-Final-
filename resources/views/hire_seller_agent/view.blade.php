@@ -3713,16 +3713,8 @@
                                                 @endif
                                             @endforeach
 
-                                            @if (!empty($unmappedSvcs))
-                                            <div class="mb-3">
-                                                <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Unlisted Services</div>
-                                                <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
-                                                    @foreach ($unmappedSvcs as $service)
-                                                    <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $service }}</li>
-                                                    @endforeach
-                                                </ul>
-                                            </div>
-                                            @endif
+                                            {{-- Unmapped services (not in property-type config) are silently skipped,
+                                                 matching listing view behavior (listing view only shows category-matched services). --}}
 
                                             @if (!empty($otherSvcsModal))
                                             <div class="mb-3">
@@ -3943,11 +3935,18 @@
                                                 // Build Buyer's Broker Commission Fee display
                                                 $bidBuyerBrokerFee = null;
                                                 if ($bidCommStructType === 'Flat Fee' && data_get($bid, 'get.commission_structure_type_fee_flat')) {
-                                                    $bidBuyerBrokerFee = '$' . number_format((float) str_replace(',', '', data_get($bid, 'get.commission_structure_type_fee_flat')), 2);
+                                                    $bidBuyerBrokerFee = $fmtMoney(data_get($bid, 'get.commission_structure_type_fee_flat'));
                                                 } elseif ($bidCommStructType === 'Percentage of the Total Purchase Price' && data_get($bid, 'get.commission_structure_type_fee_percentage')) {
-                                                    $bidBuyerBrokerFee = number_format((float) data_get($bid, 'get.commission_structure_type_fee_percentage'), 2) . '% of Total Purchase Price';
+                                                    $bidBuyerBrokerFee = ($fmtPercent(data_get($bid, 'get.commission_structure_type_fee_percentage')) ?? '-') . ' of Total Purchase Price';
+                                                } elseif ($bidCommStructType === 'Flat Fee + Percentage' && (data_get($bid, 'get.commission_structure_type_fee_flat_combo') || data_get($bid, 'get.commission_structure_type_fee_percentage_combo'))) {
+                                                    $bbfParts = [];
+                                                    if (data_get($bid, 'get.commission_structure_type_fee_percentage_combo')) $bbfParts[] = ($fmtPercent(data_get($bid, 'get.commission_structure_type_fee_percentage_combo')) ?? '') . ' of Total Purchase Price';
+                                                    if (data_get($bid, 'get.commission_structure_type_fee_flat_combo')) $bbfParts[] = $fmtMoney(data_get($bid, 'get.commission_structure_type_fee_flat_combo'));
+                                                    $bidBuyerBrokerFee = implode(' + ', array_filter($bbfParts));
                                                 } elseif (strtolower($bidCommStructType ?? '') === 'other' && data_get($bid, 'get.commission_structure_type_fee_other')) {
                                                     $bidBuyerBrokerFee = data_get($bid, 'get.commission_structure_type_fee_other');
+                                                } elseif ($bidCommStructType) {
+                                                    $bidBuyerBrokerFee = $bidCommStructType;
                                                 }
                                                 $showSellerBrokerComp = $bidCommStruct || $bidPurchaseFeeType || $bidNominal || $bidCommStructType;
                                             @endphp
@@ -3959,16 +3958,13 @@
                                                     <li class="mb-1"><span class="fw-semibold">Seller's Broker Purchase Fee:</span> {{ $sellerPurchaseFeeDisplay }}</li>
                                                     @endif
                                                     @if ($bidNominal)
-                                                    <li class="mb-1"><span class="fw-semibold">Nominal Consideration Fee:</span> ${{ number_format((float) str_replace(',', '', $bidNominal), 2) }}</li>
+                                                    <li class="mb-1"><span class="fw-semibold">Nominal Consideration Fee:</span> {{ $fmtMoney($bidNominal) ?? '-' }}</li>
                                                     @endif
                                                     @if ($bidCommStruct)
                                                     <li class="mb-1"><span class="fw-semibold">Buyer's Broker Commission Structure:</span> {{ $bidCommStruct }}</li>
                                                     @endif
-                                                    @if ($bidCommStructType)
-                                                    <li class="mb-1"><span class="fw-semibold">Buyer's Broker Commission Fee:</span> {{ $bidCommStructType }}</li>
-                                                    @endif
                                                     @if ($bidBuyerBrokerFee)
-                                                    <li class="mb-1 ps-3"><span class="fw-semibold">Amount:</span> {{ $bidBuyerBrokerFee }}</li>
+                                                    <li class="mb-1"><span class="fw-semibold">Buyer's Broker Commission Fee:</span> {{ $bidBuyerBrokerFee }}</li>
                                                     @endif
                                                 </ul>
                                             </div>
@@ -3979,20 +3975,42 @@
                                                 $bidInterestedLease = data_get($bid, 'get.interested_purchase_fee_type');
                                                 $showLeaseTerms = strtolower(trim($bidInterestedLease ?? '')) === 'yes';
                                                 $bidLeasingFeeType = data_get($bid, 'get.seller_leasing_fee_type');
-                                                // Build leasing fee amount display
+                                                // Build leasing fee amount display (mirrors listing view logic)
                                                 $bidLeasingFeeAmt = null;
-                                                if ($bidLeasingFeeType === 'Percentage of the Gross Lease Value' && data_get($bid, 'get.seller_leasing_gross')) {
-                                                    $bidLeasingFeeAmt = number_format((float) data_get($bid, 'get.seller_leasing_gross'), 2) . '% of Gross Lease Value';
+                                                if ($bidLeasingFeeType === 'Flat Fee' && data_get($bid, 'get.seller_leasing_gross_purchase_fee_flat_amount')) {
+                                                    $bidLeasingFeeAmt = $fmtMoney(data_get($bid, 'get.seller_leasing_gross_purchase_fee_flat_amount'));
+                                                } elseif ($bidLeasingFeeType === 'Percentage of the Gross Lease Value' && data_get($bid, 'get.seller_leasing_gross')) {
+                                                    $bidLeasingFeeAmt = ($fmtPercent(data_get($bid, 'get.seller_leasing_gross')) ?? '-') . ' of the Gross Lease Value';
                                                 } elseif ($bidLeasingFeeType === 'Percentage of the Rent Due Each Rental Period' && data_get($bid, 'get.seller_leasing_gross_rental')) {
-                                                    $bidLeasingFeeAmt = number_format((float) data_get($bid, 'get.seller_leasing_gross_rental'), 2) . '% of Rent Per Rental Period';
-                                                } elseif (in_array($bidLeasingFeeType, ["Percentage of the First Month's Rent", "Percentage of Month's Rent"]) && data_get($bid, 'get.seller_leasing_gross_month_rent')) {
-                                                    $bidLeasingFeeAmt = number_format((float) data_get($bid, 'get.seller_leasing_gross_month_rent'), 2) . '% of Month\'s Rent';
-                                                } elseif ($bidLeasingFeeType === 'Percentage of Net Aggregate Rent' && data_get($bid, 'get.seller_leasing_gross_percentage_net_combo')) {
-                                                    $bidLeasingFeeAmt = number_format((float) data_get($bid, 'get.seller_leasing_gross_percentage_net_combo'), 2) . '% of Net Aggregate Rent';
-                                                } elseif ($bidLeasingFeeType === 'Flat Fee' && data_get($bid, 'get.seller_leasing_gross_purchase_fee_flat_amount')) {
-                                                    $bidLeasingFeeAmt = '$' . number_format((float) str_replace(',', '', data_get($bid, 'get.seller_leasing_gross_purchase_fee_flat_amount')), 2);
-                                                } elseif (data_get($bid, 'get.seller_leasing_gross_other')) {
-                                                    $bidLeasingFeeAmt = data_get($bid, 'get.seller_leasing_gross_other');
+                                                    $bidLeasingFeeAmt = ($fmtPercent(data_get($bid, 'get.seller_leasing_gross_rental')) ?? '-') . ' of the Rent Due Each Rental Period';
+                                                } elseif ($bidLeasingFeeType === "Percentage of the First Month's Rent" && data_get($bid, 'get.seller_leasing_gross_month_rent')) {
+                                                    $bidLeasingFeeAmt = ($fmtPercent(data_get($bid, 'get.seller_leasing_gross_month_rent')) ?? '-') . " of the First Month's Rent";
+                                                } elseif ($bidLeasingFeeType === "Percentage of Month's Rent" && data_get($bid, 'get.seller_leasing_gross_month_rent')) {
+                                                    $bidLeasingFeeAmt = ($fmtPercent(data_get($bid, 'get.seller_leasing_gross_month_rent')) ?? '-') . " of Month's Rent";
+                                                    $bidLeasingMonths = data_get($bid, 'get.seller_leasing_gross_no_of_months');
+                                                    if (!empty($bidLeasingMonths) && $bidLeasingMonths != 'null') {
+                                                        $bidLeasingFeeAmt .= ' x ' . intval($bidLeasingMonths) . ' Months';
+                                                    }
+                                                } elseif ($bidLeasingFeeType === 'Percentage of Net Aggregate Rent' && (data_get($bid, 'get.seller_leasing_gross_other') ?: data_get($bid, 'get.seller_leasing_gross'))) {
+                                                    $netAggVal = data_get($bid, 'get.seller_leasing_gross_other') ?: data_get($bid, 'get.seller_leasing_gross');
+                                                    $bidLeasingFeeAmt = ($fmtPercent($netAggVal) ?? '-') . ' of Net Aggregate Rent';
+                                                } elseif ($bidLeasingFeeType === 'Percentage of Gross Rent' && (data_get($bid, 'get.seller_leasing_gross_percentage') || data_get($bid, 'get.seller_leasing_gross_ross_percentage_rent'))) {
+                                                    $grossRentVal = data_get($bid, 'get.seller_leasing_gross_percentage') ?? data_get($bid, 'get.seller_leasing_gross_ross_percentage_rent');
+                                                    $bidLeasingFeeAmt = ($fmtPercent($grossRentVal) ?? '-') . ' of Gross Rent';
+                                                } elseif ($bidLeasingFeeType === 'Flat Fee + Percentage of the Gross Lease Value' && (data_get($bid, 'get.seller_leasing_gross_flat_combo') || data_get($bid, 'get.seller_leasing_gross_percentage_combo'))) {
+                                                    $lfParts = [];
+                                                    if (data_get($bid, 'get.seller_leasing_gross_flat_combo')) $lfParts[] = $fmtMoney(data_get($bid, 'get.seller_leasing_gross_flat_combo'));
+                                                    if (data_get($bid, 'get.seller_leasing_gross_percentage_combo')) $lfParts[] = ($fmtPercent(data_get($bid, 'get.seller_leasing_gross_percentage_combo')) ?? '') . ' of Gross Lease Value';
+                                                    $bidLeasingFeeAmt = implode(' + ', array_filter($lfParts));
+                                                } elseif ($bidLeasingFeeType === 'Flat Fee + Percentage of the Net Aggregate Rent' && (data_get($bid, 'get.seller_leasing_gross_flat_net_combo') || data_get($bid, 'get.seller_leasing_gross_percentage_net_combo'))) {
+                                                    $lfParts = [];
+                                                    if (data_get($bid, 'get.seller_leasing_gross_flat_net_combo')) $lfParts[] = $fmtMoney(data_get($bid, 'get.seller_leasing_gross_flat_net_combo'));
+                                                    if (data_get($bid, 'get.seller_leasing_gross_percentage_net_combo')) $lfParts[] = ($fmtPercent(data_get($bid, 'get.seller_leasing_gross_percentage_net_combo')) ?? '') . ' of Net Aggregate Rent';
+                                                    $bidLeasingFeeAmt = implode(' + ', array_filter($lfParts));
+                                                } elseif (strtolower($bidLeasingFeeType ?? '') === 'other' && data_get($bid, 'get.seller_leasing_gross_purchase_fee_other')) {
+                                                    $bidLeasingFeeAmt = data_get($bid, 'get.seller_leasing_gross_purchase_fee_other');
+                                                } elseif ($bidLeasingFeeType) {
+                                                    $bidLeasingFeeAmt = $bidLeasingFeeType;
                                                 }
                                             @endphp
                                             @if ($bidInterestedLease)
@@ -4000,11 +4018,8 @@
                                                 <h6 class="mb-2" style="color: #049399; font-weight: 600;">B) Lease Terms</h6>
                                                 <ul class="list-unstyled ps-3 mb-0">
                                                     <li class="mb-1"><span class="fw-semibold">Interested in Offering a Lease Agreement:</span> {{ $bidInterestedLease }}</li>
-                                                    @if ($showLeaseTerms && $bidLeasingFeeType)
-                                                    <li class="mb-1"><span class="fw-semibold">Seller's Broker Leasing Fee:</span> {{ $bidLeasingFeeType }}</li>
-                                                    @endif
                                                     @if ($showLeaseTerms && $bidLeasingFeeAmt)
-                                                    <li class="mb-1 ps-3"><span class="fw-semibold">Amount:</span> {{ $bidLeasingFeeAmt }}</li>
+                                                    <li class="mb-1"><span class="fw-semibold">Seller's Broker Leasing Fee:</span> {{ $bidLeasingFeeAmt }}</li>
                                                     @endif
                                                 </ul>
                                             </div>
@@ -4018,22 +4033,22 @@
                                                 $bidLeaseValue = data_get($bid, 'get.lease_value');
                                                 $bidPurchaseType = data_get($bid, 'get.purchase_type');
                                                 $bidPurchaseValue = data_get($bid, 'get.purchase_value');
-                                                // Format lease-option creation fee
+                                                // Format lease-option creation fee (mirrors listing view: % of Total Purchase Price)
                                                 $bidLeaseOptionFee = null;
                                                 if ($bidLeaseValue) {
-                                                    if ($bidLeaseType === 'flat') {
-                                                        $bidLeaseOptionFee = '$' . number_format((float) str_replace(',', '', $bidLeaseValue), 2);
+                                                    if (in_array($bidLeaseType, ['%', 'percent']) || str_contains((string)($bidLeaseValue ?? ''), '%')) {
+                                                        $bidLeaseOptionFee = str_replace('%', '', $bidLeaseValue) . '% of Total Purchase Price';
                                                     } else {
-                                                        $bidLeaseOptionFee = number_format((float) str_replace(',', '', $bidLeaseValue), 2) . '% of Option Consideration';
+                                                        $bidLeaseOptionFee = $fmtMoney($bidLeaseValue);
                                                     }
                                                 }
                                                 // Format purchase option exercise fee
                                                 $bidPurchaseOptFee = null;
                                                 if ($bidPurchaseValue) {
-                                                    if ($bidPurchaseType === 'flat') {
-                                                        $bidPurchaseOptFee = '$' . number_format((float) str_replace(',', '', $bidPurchaseValue), 2);
+                                                    if (in_array($bidPurchaseType, ['%', 'percent']) || str_contains((string)($bidPurchaseValue ?? ''), '%')) {
+                                                        $bidPurchaseOptFee = str_replace('%', '', $bidPurchaseValue) . '% of Total Purchase Price';
                                                     } else {
-                                                        $bidPurchaseOptFee = number_format((float) str_replace(',', '', $bidPurchaseValue), 2) . '% of Total Purchase Price';
+                                                        $bidPurchaseOptFee = $fmtMoney($bidPurchaseValue);
                                                     }
                                                 }
                                             @endphp
@@ -4071,24 +4086,16 @@
                                                 <h6 class="mb-2" style="color: #049399; font-weight: 600;">D) Legal Terms</h6>
                                                 <ul class="list-unstyled ps-3 mb-0">
                                                     @if ($bidEarlyTermOpt)
-                                                    <li class="mb-1"><span class="fw-semibold">Early Termination Fee:</span> {{ ucfirst($bidEarlyTermOpt) }}</li>
-                                                        @if (strtolower($bidEarlyTermOpt) === 'yes' && $bidEarlyTermAmt)
-                                                        <li class="mb-1 ps-3"><span class="fw-semibold">Amount:</span> ${{ number_format((float) str_replace(',', '', $bidEarlyTermAmt), 2) }}</li>
-                                                        @endif
+                                                    <li class="mb-1"><span class="fw-semibold">Early Termination Fee:</span> {!! \App\Helpers\ListingDisplayHelper::formatYesParenthetical($bidEarlyTermOpt, $fmtMoney($bidEarlyTermAmt)) !!}</li>
                                                     @endif
                                                     @if ($bidRetainerOpt)
-                                                    <li class="mb-1"><span class="fw-semibold">Retainer Fee:</span> {{ ucfirst($bidRetainerOpt) }}</li>
-                                                        @if (strtolower($bidRetainerOpt) === 'yes')
-                                                            @if ($bidRetainerAmt)
-                                                            <li class="mb-1 ps-3"><span class="fw-semibold">Amount:</span> ${{ number_format((float) str_replace(',', '', $bidRetainerAmt), 2) }}</li>
-                                                            @endif
-                                                            @if ($bidRetainerApp)
-                                                            <li class="mb-1 ps-3"><span class="fw-semibold">Application:</span> {{ $bidRetainerApp }}</li>
-                                                            @endif
+                                                    <li class="mb-1"><span class="fw-semibold">Retainer Fee:</span> {!! \App\Helpers\ListingDisplayHelper::formatYesParenthetical($bidRetainerOpt, $fmtMoney($bidRetainerAmt)) !!}</li>
+                                                        @if (strtolower($bidRetainerOpt) === 'yes' && $bidRetainerApp)
+                                                        <li class="mb-1 ps-3"><span class="fw-semibold">Retainer Fee Application:</span> {{ $bidRetainerApp }}</li>
                                                         @endif
                                                     @endif
                                                     @if ($bidRetainedDep)
-                                                    <li class="mb-1"><span class="fw-semibold">Seller's Broker's Share of Retained Deposits:</span> {{ number_format((float) $bidRetainedDep, 2) }}%</li>
+                                                    <li class="mb-1"><span class="fw-semibold">Seller's Broker's Share of Retained Deposits:</span> {{ $fmtPercent($bidRetainedDep) }}</li>
                                                     @endif
                                                     @if ($bidProtPeriod)
                                                     <li class="mb-1"><span class="fw-semibold">Protection Period Timeframe:</span> {{ $bidProtPeriod }} days</li>
