@@ -1,0 +1,198 @@
+Use this exact Replit instruction block:
+
+Fix the **Hire a Tenant Agent counter bid Offered Services** so the service list is an exact match to the current **Tenant listing creation flow** for both **Residential** and **Commercial** listings. Right now the counter bid screen is showing the wrong service catalog, including services that do not belong and services that do not match what a user sees when creating a Tenant listing. The counter bid must use the exact same service definitions, grouping, order, and labels as the current Tenant listing creation form, and then pre-check only the services that were actually selected on that listing or original bid.
+
+## Scope and safeguards
+
+Edit only the **Hire a Tenant Agent counter bid flow** and the exact files/helpers/config used to build the Offered Services section for that flow.
+
+Do not modify Seller, Buyer, or Landlord flows.
+
+Do not change database schema.
+
+Do not rename columns, JSON keys, models, relationships, routes, labels, or section titles.
+
+Do not change the Tenant listing creation form itself unless you confirm the creation form is already correct and the counter bid is using a stale or wrong source.
+
+Do not hardcode listing 127 or any one listing.
+
+Do not introduce Buyer services, generic shared services, fallback “all services,” or “unmapped services” into the Tenant counter bid.
+
+If a shared helper is causing the issue, make the smallest safe **Tenant-counter-bid-only** fix rather than broad refactors that risk other roles.
+
+## Problem
+
+The Tenant counter bid Offered Services no longer matches the services shown when a user creates a Tenant listing. The counter bid is using the wrong service source and is showing extra and incorrect services. It must be restored so it mirrors the current Tenant listing creation form exactly for:
+
+* Residential Tenant listings
+* Commercial Tenant listings
+
+## Goal
+
+When opening a **Tenant counter bid**, the Offered Services tab must:
+
+* use the exact same service catalog as the current Tenant listing creation flow
+* use the correct version by property type
+* Residential Tenant listing → Residential Tenant service list
+* Commercial Tenant listing → Commercial Tenant service list
+* preserve the same section titles, service labels, and order as listing creation
+* pre-check only the services actually selected on that listing or original bid
+* never show Buyer services
+* never show unmapped services
+* never show services from the wrong property type
+* never show the full service library if only a subset was selected
+
+## What to inspect first
+
+Find the exact files used for:
+
+1. **Tenant listing creation Offered Services**
+
+   * the Blade partial, Livewire component, config array, helper, or service-definition source used when a user creates a Tenant listing
+   * identify where Residential vs Commercial Tenant services are defined today
+
+2. **Tenant counter bid Offered Services**
+
+   * the Blade file
+   * the Livewire component or controller
+   * any helper that loads the available services catalog
+   * any helper that maps saved selected services into the UI
+
+Compare the two sources directly.
+
+## Required fix
+
+The **Tenant counter bid** must use the **same service-definition source of truth** as the **Tenant listing creation form**.
+
+That means:
+
+* if listing creation uses a Tenant-specific config or helper, counter bid must reuse that same one
+* if listing creation uses separate Residential and Commercial arrays, counter bid must use those exact same arrays
+* remove any stale, legacy, generic, buyer-mixed, or cross-role service source currently being used by counter bids
+
+## Source-of-truth rule
+
+For available checkbox options on Tenant counter bid:
+use the exact same source as Tenant listing creation.
+
+For pre-selected checked items:
+use the saved selected services from the specific listing, original bid, or counter record already stored in the app.
+
+So the counter bid needs **two correct sources**:
+
+### A. Correct catalog source
+
+Use the exact current Tenant creation service catalog for the correct property type.
+
+### B. Correct selected values source
+
+Use the already-saved selected services for that specific record.
+
+## Property-type logic
+
+Add or correct the property-type branching so the counter bid loads the proper Tenant service list:
+
+* if Tenant property type is Residential, load Residential Tenant services
+* if Tenant property type is Commercial, load Commercial Tenant services
+
+Use the exact same property-type check already used by Tenant listing creation if one exists.
+
+Do not guess property type from labels.
+Do not fall back to Buyer services.
+Do not merge Residential and Commercial together.
+
+## Rendering rule
+
+On the counter bid page:
+
+* show the full correct Tenant service catalog for that property type
+* pre-check only the services that were actually selected
+* use the same section order, labels, and formatting as listing creation
+* show Additional Services fields only as the Tenant listing creation flow currently does
+* do not inject any services that do not exist in the current Tenant creation form
+
+## Remove wrong logic
+
+Remove or bypass any Tenant counter bid logic that:
+
+* loads a generic shared service list
+* loads Buyer services
+* merges multiple role catalogs
+* creates an unmapped services section
+* falls back to all services if a mapping fails
+* uses stale legacy service arrays not used by current Tenant listing creation
+* mixes Residential and Commercial service groups together
+
+## Blade/view requirement
+
+The Tenant counter bid Blade must render using:
+
+1. the correct current Tenant creation catalog for that property type
+2. the saved selected values for that specific listing or bid
+
+It must not render from:
+
+* a cross-role all-services variable
+* a Buyer helper
+* an unmapped services bucket
+* a generic fallback array
+
+## Data mapping requirement
+
+When mapping saved selected services onto the correct current catalog:
+
+* preserve exact labels from the current Tenant creation form
+* check matches safely against the saved selected values
+* if a saved service no longer exists in the current Tenant creation catalog, do not dump it into a huge unrelated section
+* handle it minimally and safely, preferably by skipping display or showing it only in a controlled Tenant-specific fallback, but do not show Buyer or unrelated services
+
+## Hard stop rule
+
+If the counter bid currently relies on a shared helper used across multiple roles, do not broadly rewrite that helper unless absolutely necessary.
+Instead, add a Tenant-counter-bid-specific override so the Tenant flow uses the same service source as Tenant listing creation without risking Seller, Buyer, or Landlord flows.
+
+## Validation after fix
+
+Test both property types in Tenant counter bids:
+
+### Residential Tenant test
+
+Create or use a Residential Tenant listing with a limited set of selected services.
+Open counter bid.
+Confirm:
+
+* service categories match current Residential Tenant listing creation exactly
+* labels match exactly
+* order matches exactly
+* only the previously selected items are pre-checked
+* no Buyer services appear
+* no unmapped services appear
+
+### Commercial Tenant test
+
+Create or use a Commercial Tenant listing with a limited set of selected services.
+Open counter bid.
+Confirm:
+
+* service categories match current Commercial Tenant listing creation exactly
+* labels match exactly
+* order matches exactly
+* only the previously selected items are pre-checked
+* no Residential-only wrong services appear
+* no Buyer services appear
+* no unmapped services appear
+
+## Regression check
+
+After the fix, confirm:
+
+* Tenant listing creation screen remains unchanged
+* Seller, Buyer, and Landlord flows remain unchanged
+* Tenant actual listing view is not made worse by this change
+* Counter bid still saves correctly after user modifies checked services
+
+## Expected result
+
+The Tenant counter bid Offered Services tab should look like an exact duplicate of the current Tenant listing creation Offered Services section for the correct property type, with the saved selected services pre-checked. No extra services, no Buyer services, no unmapped block, and no stale legacy service list.
+
+If you want, I can also turn this into a **shorter surgical version** for Replit with likely file targets and a “check these files first” section in your usual style.

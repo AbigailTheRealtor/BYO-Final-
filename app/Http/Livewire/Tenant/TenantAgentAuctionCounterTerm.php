@@ -94,6 +94,175 @@ class TenantAgentAuctionCounterTerm extends Component
     // Additional
     public $additional_details_broker = '';
 
+    public function getServicesConfigProperty(): array
+    {
+        $q = "\u{2019}";
+
+        $residential = [
+            [
+                'title'    => '📢 Tenant Criteria Marketing & Promotion',
+                'prefix'   => 'ctr-mktg',
+                'services' => [
+                    "Create a branded flyer summarizing the Tenant{$q}s rental criteria",
+                    "Post the Tenant{$q}s rental criteria on Craigslist under the \u{201C}Real Estate Wanted\u{201D} section",
+                    "Share the Tenant{$q}s rental criteria on Nextdoor in Neighborhood or Community Groups",
+                    "Promote the Tenant{$q}s rental criteria on Facebook in Rental or Housing Groups",
+                    "Share the Tenant{$q}s rental criteria on Instagram using posts, stories, or reels",
+                    "Promote the Tenant{$q}s rental criteria on LinkedIn in Real Estate or Housing Groups",
+                    "Upload a TikTok video summarizing the Tenant{$q}s rental criteria",
+                    "Upload a YouTube video summarizing the Tenant{$q}s rental criteria",
+                    "Launch a mass email campaign promoting the Tenant{$q}s rental criteria",
+                    "Distribute branded postcards or flyers in the Tenant{$q}s preferred neighborhoods",
+                    "Launch hyperlocal digital ads targeting the Tenant{$q}s preferred rental areas",
+                ],
+            ],
+            [
+                'title'    => '🔍 Property Search, Alerts & Matching',
+                'prefix'   => 'ctr-srch',
+                'services' => [
+                    "Send email alerts with new listings from the MLS that match the Tenant{$q}s rental criteria",
+                    "Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant{$q}s rental criteria",
+                    "Communicate with the Landlord{$q}s Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions",
+                    "Evaluate properties with the Tenant and provide insights on pricing, lease terms, and overall fit",
+                ],
+            ],
+            [
+                'title'    => '🏡 Property Showings & Virtual Tours',
+                'prefix'   => 'ctr-show',
+                'services' => [
+                    "Schedule and attend property showings with the Tenant",
+                    "Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs",
+                    "Preview properties on behalf of the Tenant upon request",
+                    "Provide factual observations on property layout and condition",
+                ],
+            ],
+            [
+                'title'    => '📝 Tenant Application Support',
+                'prefix'   => 'ctr-app',
+                'services' => [
+                    "Provide the Tenant with application instructions or links to an online rental application platform",
+                    "Gather and organize required supporting documents (e.g., identification, income verification, reference letters)",
+                    "Submit complete and organized application packages to the Landlord{$q}s Agent, Landlord, or Property Manager for review",
+                    "Answer questions about the application process, screening timelines, and required documentation",
+                ],
+            ],
+            [
+                'title'    => '📃 Lease Preparation & Execution',
+                'prefix'   => 'ctr-lease',
+                'services' => [
+                    "Review lease offers and assist the Tenant in preparing questions or requested changes",
+                    "Coordinate lease negotiation with the Landlord{$q}s Agent, Landlord, or Property Manager",
+                    "Assist with completing required lease disclosures and reviewing key lease terms",
+                    "Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties",
+                ],
+            ],
+            [
+                'title'    => '🚚 Move-In Support & Coordination',
+                'prefix'   => 'ctr-move',
+                'services' => [
+                    "Coordinate move-in date and key handoff logistics with the Landlord{$q}s Agent, Landlord or Property Manager",
+                    "Confirm completion of any agreed-upon pre-move-in cleaning or repairs",
+                    "Provide a utility setup checklist and local provider resources",
+                    "Share a move-in checklist for documentation and property condition review",
+                    "Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods",
+                ],
+            ],
+            [
+                'title'    => '💡 Leasing Strategy & Guidance',
+                'prefix'   => 'ctr-strat',
+                'services' => [
+                    "Provide a Rental Market Analysis (RMA) with pricing insights based on comparable rentals, neighborhood trends, and current market conditions",
+                    "Advise on lease types and structures (e.g., month-to-month, annual, furnished, lease-option)",
+                    "Provide general guidance on Tenant rights and Landlord responsibilities under state law",
+                    "Provide general guidance on lease clauses, payment terms, and renewal options",
+                ],
+            ],
+        ];
+
+        $commercial = [
+            [
+                'title'    => '📢 Tenant Criteria Marketing & Promotion',
+                'prefix'   => 'ctr-mktg',
+                'services' => [
+                    "Create a branded flyer summarizing the Tenant{$q}s leasing criteria",
+                    "Post the Tenant{$q}s leasing criteria on Craigslist under the \u{201C}Office/Commercial\u{201D} or \u{201C}Retail\u{201D} section",
+                    "Promote the Tenant{$q}s leasing criteria on Facebook in Commercial Leasing or Business Groups",
+                    "Share the Tenant{$q}s leasing criteria on Instagram using posts, stories, or reels",
+                    "Promote the Tenant{$q}s leasing criteria on LinkedIn in Professional, Real Estate, or Commercial Investment Groups",
+                    "Upload a TikTok video summarizing the Tenant{$q}s leasing criteria",
+                    "Upload a YouTube video summarizing the Tenant{$q}s leasing criteria",
+                    "Launch a mass email campaign promoting the Tenant{$q}s leasing criteria",
+                    "Distribute branded postcards or flyers in the Tenant{$q}s preferred neighborhoods",
+                    "Launch hyperlocal digital ads targeting the Tenant{$q}s preferred leasing areas",
+                ],
+            ],
+            [
+                'title'    => '🔍 Property Search, Alerts & Matching',
+                'prefix'   => 'ctr-srch',
+                'services' => [
+                    "Send listing alerts from real estate platforms that match the Tenant{$q}s leasing criteria",
+                    "Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant{$q}s rental criteria",
+                    "Communicate with the Landlord{$q}s Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions",
+                    "Evaluate properties for layout efficiency, building specs, logistics, zoning fit, and operational alignment",
+                ],
+            ],
+            [
+                'title'    => '🏢 Property Showings & Virtual Tours',
+                'prefix'   => 'ctr-show',
+                'services' => [
+                    "Schedule and attend property tours with the Tenant",
+                    "Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs",
+                    "Preview properties on behalf of the Tenant upon request",
+                    "Provide factual notes on layout, access, parking, visibility, and other operational considerations",
+                ],
+            ],
+            [
+                'title'    => '📝 Tenant Application Support',
+                'prefix'   => 'ctr-app',
+                'services' => [
+                    "Provide the Tenant with application instructions or links to online platforms",
+                    "Gather and organize required supporting documents (e.g., business licenses, financials, references)",
+                    "Submit complete and organized application packages to the Landlord{$q}s Agent, Landlord, or Property Manager",
+                ],
+            ],
+            [
+                'title'    => '📃 Lease Preparation, LOI & Execution',
+                'prefix'   => 'ctr-lease',
+                'services' => [
+                    "Draft or assist with preparing a Letter of Intent (LOI) summarizing the Tenant{$q}s business needs and proposed terms",
+                    "Assist with negotiating rent, CAM, lease term, TI allowance, exclusivity clauses, renewal options, and other provisions (as permitted under the agency agreement)",
+                    "Coordinate with the Landlord{$q}s Agent, Landlord or Property Manager to finalize lease terms",
+                    "Review lease drafts and coordinate revisions through appropriate channels",
+                    "Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties",
+                    "Track required deposits, rent commencement, and key lease dates to ensure move-in readiness",
+                ],
+            ],
+            [
+                'title'    => '🚚 Move-In Support & Coordination',
+                'prefix'   => 'ctr-move',
+                'services' => [
+                    "Coordinate move-in date and key handoff logistics with the Landlord, Landlord{$q}s Agent, or Property Manager",
+                    "Confirm completion of any agreed-upon pre-move-in repairs, cleaning, or buildout",
+                    "Provide a utility setup checklist and local provider resources",
+                    "Share a move-in checklist for documentation and property condition review",
+                    "Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods",
+                ],
+            ],
+            [
+                'title'    => '💡 Leasing Strategy & Guidance',
+                'prefix'   => 'ctr-strat',
+                'services' => [
+                    "Provide a Comparative Lease Market Analysis (CLMA) with pricing insights, comps, and vacancy trends",
+                    "Advise on lease types and structures (e.g., NNN, Modified Gross, Full Service) with general explanations of differences",
+                    "Provide general guidance on Tenant rights and Landlord responsibilities under commercial leasing law",
+                    "Provide general guidance on lease clauses, escalation terms, and space usage considerations",
+                ],
+            ],
+        ];
+
+        return $this->property_type === 'Commercial Property' ? $commercial : $residential;
+    }
+
     public function setType(string $which, string $type): void
     {
         if ($which === 'lease') {
@@ -299,10 +468,11 @@ class TenantAgentAuctionCounterTerm extends Component
     public function render()
     {
         return view('livewire.tenant.tenant-agent-auction-counter-term', [
-            'pab' => $this->pab, // explicitly pass if you like
-            'bidId' => $this->bidId, // explicitly pass if you like
-            'property_type' => $this->property_type, // explicitly pass if you like
-            'parent_counter_id' => $this->parent_counter_id, // explicitly pass if you like
+            'pab'              => $this->pab,
+            'bidId'            => $this->bidId,
+            'property_type'    => $this->property_type,
+            'parent_counter_id'=> $this->parent_counter_id,
+            'servicesConfig'   => $this->servicesConfig,
         ])->extends('layouts.main')
             ->section('content');
     }
