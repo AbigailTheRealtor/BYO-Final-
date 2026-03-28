@@ -4528,25 +4528,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                                                     $servicesConfig = ($bidPropertyType === 'Commercial Property') ? $commercialServicesConfig : $residentialServicesConfig;
                                                     
-                                                    // Build normalized config flat map for unmapped detection
-                                                    $configFlatNormalized = [];
-                                                    foreach ($servicesConfig as $catServices) {
-                                                        foreach ($catServices as $svc) {
-                                                            $configFlatNormalized[$normalizeStr($svc)] = true;
-                                                        }
-                                                    }
-                                                    
-                                                    // Find unmapped services (services in listing not in config)
-                                                    // Check both original and normalized display text to handle legacy data
-                                                    $unmappedServices = [];
-                                                    foreach ($services as $svc) {
-                                                        $displaySvc = function_exists('normalize_service_text') ? normalize_service_text($svc) : $svc;
-                                                        // Check if either original or normalized text matches config
-                                                        $matchesConfig = isset($configFlatNormalized[$normalizeStr($svc)]) || isset($configFlatNormalized[$normalizeStr($displaySvc)]);
-                                                        if (!$matchesConfig && $svc !== 'Other') {
-                                                            $unmappedServices[] = $displaySvc;
-                                                        }
-                                                    }
                                                     @endphp
 
                                                     @php
@@ -4567,7 +4548,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         : ($allMeta['other_services'] ?? []);
                                                     $other_services = array_filter($other_services ?? [], fn($s) => is_string($s) && !empty(trim($s)));
                                                     
-                                                    $hasAnyCounterServices = !empty($services) || !empty($other_services) || !empty($unmappedServices);
+                                                    $hasAnyCounterServices = !empty($services) || !empty($other_services);
                                                     @endphp
 
                                                     @if ($hasAnyCounterServices)
@@ -4595,17 +4576,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             </div>
                                                             @endif
                                                         @endforeach
-
-                                                        @if (!empty($unmappedServices))
-                                                        <div class="mb-3">
-                                                            <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Unmapped Services</div>
-                                                            <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
-                                                                @foreach ($unmappedServices as $service)
-                                                                <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $service }}</li>
-                                                                @endforeach
-                                                            </ul>
-                                                        </div>
-                                                        @endif
 
                                                         @if (!empty($other_services))
                                                         <div class="mb-3">

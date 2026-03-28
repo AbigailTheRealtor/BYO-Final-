@@ -1,0 +1,104 @@
+Fix the Hire a Tenant Agent actual listing view so it no longer shows extra services or the “Unmapped Services” section. On the Tenant auction detail page for routes like /tenant/hire/agent/auction/view/{id}, the Offered Services area must display only the exact services saved for that specific Tenant listing, in the correct categories and order. It must not append Buyer services, merged defaults, fallback services, or any unmapped service dump.
+
+Scope and safeguards:
+Edit only the Hire a Tenant Agent actual listing detail/view flow for the auction view page and the exact files that prepare/render Offered Services on that page.
+Do not modify Seller, Buyer, or Landlord listing views.
+Do not modify counter bid flow in this task unless the same exact helper is directly causing this listing-view bug.
+Do not change database schema.
+Do not rename columns, JSON keys, models, routes, labels, section titles, or relationships.
+Do not change listing creation logic.
+Do not change saved listing data.
+Do not introduce any fallback that loads all services when selected services are missing.
+If no saved services exist for the listing, show a simple empty state instead of loading defaults.
+
+Problem to fix:
+The actual Tenant listing view is still rendering an “Unmapped Services” section containing extra Buyer-related and unrelated services. That means the page is not rendering strictly from the saved Tenant listing’s offered_services data. It is likely still using a shared formatter, fallback mapper, or merge routine that appends unmatched items into an unmapped bucket.
+
+Goal:
+On /tenant/hire/agent/auction/view/{id}, Offered Services must:
+show only the exact saved services for that Tenant listing
+show only categories that actually contain saved selected services
+preserve the original order and formatting
+never show “Unmapped Services”
+never show Buyer services
+never show merged/fallback/all-services output
+
+What to inspect first:
+Find the exact controller, Livewire component, helper, presenter, and Blade file used by the Tenant auction detail route /tenant/hire/agent/auction/view/{id}.
+Trace how Offered Services is built before rendering.
+Look for any logic that:
+maps saved services against a full master config
+merges selected services with default services
+creates an “unmapped” bucket
+reclassifies unknown items
+loads cross-role service definitions
+falls back to Buyer or generic service arrays
+
+Required fix:
+Use only the saved offered services attached to that Tenant listing as the source of truth for the listing detail page.
+
+Target pattern:
+$offeredServices = $listing->offered_services ?? [];
+
+Use the actual field names already in the app. Do not rename anything.
+
+If the current detail page formatter/helper does something like:
+load full service config
+loop through all possible categories
+match selected values into categories
+push unmatched values into “Unmapped Services”
+append fallback role services
+merge arrays from Buyer/Tenant/shared config
+
+remove that behavior for the Tenant actual listing view.
+
+For the Tenant actual listing view, render directly from the saved selected structure only.
+
+Important rule:
+If a saved category has selected services, render that category.
+If a saved category is empty, do not render it.
+If a saved service does not map cleanly through a shared helper, do not place it into “Unmapped Services” on this page.
+Instead, either:
+render it within its saved category from the raw saved structure, or
+safely skip helper remapping for this Tenant detail page and display the raw saved selected structure directly.
+
+Do not rebuild the listing view from a master service library.
+
+Blade/view requirement:
+Make sure the Tenant auction detail Blade loops through the already-saved selected services variable only.
+It should not loop through a master category config.
+It should not output any fallback “Unmapped Services” section.
+It should not render categories with no selected services.
+It should not render Buyer-oriented service text anywhere on a Tenant listing view.
+
+Display requirement:
+Preserve the same Tenant category titles, order, spacing, and checked-service presentation used by the original listing data.
+The actual listing view should feel like a clean read-only display of what the Tenant selected when creating the listing, not a reconstructed or merged service catalog.
+
+Empty-state rule:
+If the listing has no saved offered services, show:
+“No offered services were selected for this listing.”
+Do not show default services.
+Do not show unmapped services.
+Do not show full service menus.
+
+Hard stop rule:
+If this listing view uses a shared cross-role helper that also powers other roles, do not broadly refactor the helper first.
+Add the smallest Tenant-view-only override so /tenant/hire/agent/auction/view/{id} renders directly from the saved Tenant listing services and does not risk breaking Seller, Buyer, or Landlord pages.
+
+Validation after fix:
+Test the exact listing:
+/tenant/hire/agent/auction/view/127
+
+Confirm:
+the “Unmapped Services” section is gone
+no Buyer services appear
+only the Tenant-selected services remain
+empty categories are hidden
+category order still looks correct
+Seller, Buyer, and Landlord views are unchanged
+
+Also test one additional Tenant listing with a different service combination to confirm the fix is data-driven and not hardcoded to listing 127.
+
+Most likely cause:
+There is still a shared mapping/rendering layer on the Tenant actual listing view page that tries to classify selected services against a larger multi-role service library, and anything it cannot classify cleanly gets dumped into “Unmapped Services.” That logic needs to be bypassed for the Tenant listing detail page so the view renders directly from the saved listing services only.
