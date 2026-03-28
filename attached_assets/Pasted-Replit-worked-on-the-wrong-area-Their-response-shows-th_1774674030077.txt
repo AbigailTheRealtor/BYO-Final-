@@ -1,0 +1,208 @@
+Replit worked on the wrong area.
+
+Their response shows they spent most of the effort in **Landlord draft/edit persistence** and then investigated **Tenant counter bid history display** in `view.blade.php` / `view_counter_terms.blade.php`, including quote-normalization logic. That is a different problem from what you asked for. 
+
+Your issue is:
+**Tenant counter bid form is loading the wrong Offered Services catalog and/or wrong selected values.**
+
+Replit’s work focused on:
+
+* `LandLordAgentAuctionEdit.php`
+* draft restore guards
+* counter bid history display in listing view
+* apostrophe matching in read-only history rendering 
+
+That explains why your issue is still there.
+
+Use this exact corrected Replit instruction block:
+
+Fix the **Hire a Tenant Agent counter bid form Offered Services source**. The prior work addressed landlord draft persistence and Tenant counter bid history display, but it did not fix the actual Tenant counter bid form that users edit. The problem is still that the Tenant counter bid form is not using the exact same Offered Services catalog as the current Tenant listing creation flow for the correct property type, and/or it is hydrating from stale or mixed saved data.
+
+## Scope and safeguards
+
+Edit only the actual **Tenant counter bid form flow** used when opening and editing a counter bid.
+Do not work on Landlord draft/edit files.
+Do not work on read-only counter history display files such as listing view history or accordion history unless they are directly reused by the editable form, which is unlikely.
+Do not modify Seller, Buyer, or Landlord flows.
+Do not change database schema.
+Do not rename columns, JSON keys, models, routes, labels, relationships, or section titles.
+Do not change the Tenant listing creation form, except to confirm its current service catalog is the source of truth.
+Do not hardcode any listing ID.
+Make the smallest safe Tenant-counter-form-only fix.
+
+## Problem
+
+The editable **Tenant counter bid Offered Services tab** still does not match the current Tenant listing creation services. It is showing the wrong services and mixed services. Previous work investigated display/history rendering, but the actual editable counter form still loads the wrong catalog or wrong data.
+
+## Goal
+
+When opening a Tenant counter bid form:
+
+* Residential Tenant listing must load the exact current Residential Tenant service catalog from listing creation
+* Commercial Tenant listing must load the exact current Commercial Tenant service catalog from listing creation
+* Only services from that correct catalog should appear
+* Previously selected services for that record should be pre-checked
+* No Buyer services
+* No unmapped services
+* No mixed Residential and Commercial services
+* No stale legacy catalog
+
+## Critical instruction
+
+Do not debug `view.blade.php`, `view_counter_terms.blade.php`, or read-only history display first.
+Instead, trace the **actual editable Tenant counter bid route, component, and blade** that renders the form with tabs:
+
+* Broker Compensation and Agency Agreement
+* Additional Details
+* Offered Services
+
+That is the flow that must be fixed.
+
+## Find the exact editable counter bid files first
+
+Identify the exact route and files used when a user clicks **Counter Bid** on a Tenant agent bid and lands on the editable counter form.
+
+Check:
+
+* route definition for Tenant counter bid edit/create screen
+* Livewire component or controller for that editable counter form
+* blade view for the editable counter form
+* any helper/config used there to load Offered Services catalog
+* any helper used there to map saved selected services onto the form
+
+Do not assume the read-only history files are the same thing.
+
+## Source of truth rule
+
+For the editable Tenant counter form, there are two separate data sources that must both be correct:
+
+### 1. Available service catalog
+
+This must come from the **same current Tenant listing creation source** for the correct property type.
+If Tenant listing creation uses a Tenant-specific helper/config/array for Residential and Commercial, reuse that exact same source here.
+
+### 2. Selected checked values
+
+These must come from the actual saved selected services for the specific counter/original bid/listing being edited.
+Use the actual existing saved field names already in the app.
+
+## Required fix
+
+In the editable Tenant counter form:
+
+* remove any legacy service source
+* remove any Buyer/shared/generic service catalog source
+* remove any fallback that merges all services
+* remove any unmapped bucket logic
+* load the correct current Tenant catalog by property type from the same source used by Tenant listing creation
+* then pre-check only the services actually saved on the relevant record
+
+## Property-type branching
+
+Use the same property-type logic already used by Tenant listing creation.
+
+Required behavior:
+
+* Residential Tenant listing → current Residential Tenant service catalog
+* Commercial Tenant listing → current Commercial Tenant service catalog
+
+Do not merge them.
+Do not guess based on labels.
+Do not fall back to generic or Buyer services.
+
+## What to compare directly
+
+Compare the editable Tenant counter form against the current Tenant listing creation Offered Services implementation.
+
+Specifically compare:
+
+* section titles
+* service labels
+* ordering
+* Residential service catalog
+* Commercial service catalog
+* Additional Services behavior
+
+The editable counter form must be brought into parity with listing creation.
+
+## Likely root cause to inspect
+
+Look for any of the following in the editable Tenant counter form flow:
+
+* old hardcoded services array
+* shared cross-role services config
+* Buyer service config reused by mistake
+* merged catalog logic
+* stale helper no longer used by Tenant listing creation
+* saved selected services being rendered directly as a malformed catalog
+* property type not being passed correctly into the counter form
+
+## Implementation rule
+
+If Tenant listing creation already has a correct helper or config for Offered Services, the counter form should call that same helper instead of maintaining a second copy.
+
+Prefer:
+
+* one source for current Tenant service definitions
+* one separate source for saved checked values
+
+Do not maintain a separate stale counter-bid-only catalog.
+
+## Validation after fix
+
+Test the actual editable Tenant counter form, not just history display.
+
+### Residential test
+
+Use a Residential Tenant listing.
+Open counter bid form.
+Confirm:
+
+* exact Residential Tenant creation services appear
+* section order matches creation
+* labels match creation exactly
+* only saved selected items are pre-checked
+* no Buyer services
+* no unmapped services
+* no Commercial-only services
+
+### Commercial test
+
+Use a Commercial Tenant listing.
+Open counter bid form.
+Confirm:
+
+* exact Commercial Tenant creation services appear
+* section order matches creation
+* labels match creation exactly
+* only saved selected items are pre-checked
+* no Buyer services
+* no unmapped services
+* no Residential-only services
+
+## Regression check
+
+Confirm:
+
+* Tenant listing creation remains unchanged
+* Tenant read-only history display is not broken
+* Seller, Buyer, and Landlord flows remain unchanged
+* Counter bid save still works after edits
+
+## Hard stop rule
+
+If the issue is caused by a shared helper, do not broadly refactor all roles first.
+Make the smallest safe Tenant-counter-form-only override or point the Tenant counter form to the same service-definition source already used by Tenant listing creation.
+
+## Deliverable
+
+Report back with:
+
+1. exact editable Tenant counter bid route
+2. exact component/controller file changed
+3. exact blade file changed
+4. where the old wrong service catalog was coming from
+5. where the new correct service catalog now comes from
+6. confirmation that Residential and Commercial Tenant counter forms now match Tenant listing creation exactly
+
+The short version is: they fixed the wrong layer. The next fix needs to target the **editable Tenant counter bid form**, not landlord draft loading and not read-only counter history display.

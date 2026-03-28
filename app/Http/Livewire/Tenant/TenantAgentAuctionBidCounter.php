@@ -646,11 +646,47 @@ class TenantAgentAuctionBidCounter extends Component
             
             $services = $sourceData->services ?? '';
             $this->services = is_string($services) ? json_decode($services, true) ?? [] : (array) $services;
+            // Filter to only services that belong to the current catalog for this property type.
+            // This discards stale Buyer, mixed, or legacy catalog entries from old submissions.
+            $this->services = $this->filterServicesToCurrentCatalog($this->services);
             
             $otherServices = $sourceData->other_services ?? '';
             $this->other_services = is_string($otherServices) ? json_decode($otherServices, true) ?? [] : (array) $otherServices;
             $this->other_services_enabled = !empty($this->other_services);
         }
+    }
+
+    /**
+     * Filter a raw services array to only include strings that exist in the
+     * current catalog (determined by $this->property_type via getServicesConfigProperty).
+     * Discards Buyer, legacy, or cross-property-type services and maps each
+     * kept service to the catalog's canonical string (correct apostrophe encoding).
+     */
+    private function filterServicesToCurrentCatalog(array $services): array
+    {
+        $normalize = function (string $s): string {
+            return mb_strtolower(trim(str_replace(
+                ["\u{2018}", "\u{2019}", "\u{201C}", "\u{201D}", "'"],
+                ["'",        "'",        '"',        '"',        "'"],
+                $s
+            )));
+        };
+
+        $catalogLookup = [];
+        foreach ($this->servicesConfig as $category) {
+            foreach ($category['services'] as $catSvc) {
+                $catalogLookup[$normalize($catSvc)] = $catSvc;
+            }
+        }
+
+        $filtered = [];
+        foreach ($services as $svc) {
+            $norm = $normalize((string) $svc);
+            if (isset($catalogLookup[$norm])) {
+                $filtered[] = $catalogLookup[$norm];
+            }
+        }
+        return $filtered;
     }
 
 
