@@ -174,19 +174,8 @@ class SellerAgentAuctionBid extends Component
         $rawPropType = $auction->get->property_type ?? '';
         $this->property_type = $this->normalizePropType($rawPropType);
 
-        // Prefill services from listing
-        $rawServices = $auction->get->services ?? null;
-        $this->services = is_string($rawServices) ? (json_decode($rawServices, true) ?? []) : (is_array($rawServices) ? $rawServices : []);
-        $rawOtherServices = $auction->get->other_services ?? null;
-        $this->other_services = is_string($rawOtherServices) ? (json_decode($rawOtherServices, true) ?? []) : (is_array($rawOtherServices) ? $rawOtherServices : []);
-        $this->other_services_enabled = (bool)($auction->get->other_services_enabled ?? false);
-
-        // Photo enhancement sub-fields (prefilled from listing)
-        $rawPhotoEnhancements = $auction->get->photo_enhancements ?? null;
-        $this->photo_enhancements = is_string($rawPhotoEnhancements) ? (json_decode($rawPhotoEnhancements, true) ?? []) : (is_array($rawPhotoEnhancements) ? $rawPhotoEnhancements : []);
-        $this->custom_enhancement = $auction->get->custom_enhancement ?? '';
-        $this->showEnhancements = in_array('Provide digital photo enhancements', $this->services) || in_array('Provide digital enhancements to media assets', $this->services);
-        $this->showCustomEnhancement = in_array('Other', $this->photo_enhancements);
+        // Services start empty — agent selects only what they will offer
+        // (do not pre-fill from listing to avoid inflating the services count)
 
         // Prefill compensation from listing
         $l = $auction->get;

@@ -9,6 +9,54 @@ use Illuminate\Database\Eloquent\Model;
 class SellerCounterTerm extends Model
 {
     use HasFactory;
+
     protected $table = 'seller_counter_terms';
-    protected $guarded  = [];
+    protected $guarded = [];
+    protected $appends = ['get'];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function bid()
+    {
+        return $this->belongsTo(SellerAgentAuctionBid::class, 'seller_agent_auction_bid_id');
+    }
+
+    public function meta()
+    {
+        return $this->hasMany(SellerCounterTermMeta::class, 'counter_term_id', 'id');
+    }
+
+    public function saveMeta($key, $value)
+    {
+        return $this->meta()->updateOrCreate(
+            ['counter_term_id' => $this->id, 'meta_key' => $key],
+            ['meta_value' => $value]
+        );
+    }
+
+    public function getMeta($key, $default = null)
+    {
+        $meta = $this->meta()->where('meta_key', $key)->first();
+        return $meta ? $meta->meta_value : $default;
+    }
+
+    public function getGetAttribute()
+    {
+        $data = [];
+        $metas = SellerCounterTermMeta::where('counter_term_id', $this->id)->get();
+        foreach ($metas as $row) {
+            if (gettype(json_decode($row->meta_value)) == 'array') {
+                $value = json_decode($row->meta_value);
+            } else {
+                $value = $row->meta_value;
+            }
+            $data[$row->meta_key] = $value;
+        }
+        $collection = new Collection();
+        $collection->push((object) $data);
+        return $collection->first();
+    }
 }

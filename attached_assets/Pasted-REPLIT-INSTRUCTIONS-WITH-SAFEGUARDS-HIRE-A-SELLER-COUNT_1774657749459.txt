@@ -1,0 +1,263 @@
+REPLIT INSTRUCTIONS WITH SAFEGUARDS — HIRE A SELLER COUNTER BID MUST DUPLICATE AGENT BID EXACTLY
+
+SCOPE
+
+Fix only the Seller Counter Bid flow for Hire a Seller listings.
+
+When a Seller clicks Counter Bid, the counter form must preload and display the exact same Broker Compensation & Agency Agreement Terms and Offered Services selections that the Agent originally submitted in their bid.
+
+Right now the Seller counter flow is not a true duplicate of the Agent bid.
+It looks different, is missing fields, and is not preloading the full Agent bid structure.
+
+This fix is only for:
+Hire a Seller listings
+Seller Counter Bid flow
+Broker Compensation & Agency Agreement Terms
+Offered Services
+Additional Details if that section is part of the Agent bid/counter flow
+
+Do not touch Buyer, Landlord, or Tenant.
+Do not change submit logic unless required to save the corrected preloaded fields.
+Do not change database schema.
+
+GOAL
+
+When Seller clicks Counter Bid on an Agent bid for a Seller listing:
+
+1. The counter form must open the correct Seller counter-bid flow
+2. Broker Compensation & Agency Agreement Terms must be an exact duplicate of the Agent’s submitted Seller bid structure
+3. All applicable Seller fields must preload with the Agent’s actual selected values
+4. Offered Services must show the exact services the Agent selected
+5. Additional Services must preload exactly
+6. The UI structure must match the Agent bid structure for Seller, not a simplified or old version
+
+HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. Only work on Hire a Seller counter-bid flow.
+2. Do not modify Buyer, Landlord, or Tenant files.
+3. Do not rename routes, models, DB columns, relationships, Livewire properties, or saved keys.
+4. Do not change database schema.
+5. Do not hardcode values.
+6. Do not preload from listing defaults.
+7. Do not preload from master service templates.
+8. Preload only from the actual Agent bid record being countered.
+9. Do not refactor unrelated files.
+10. Make the smallest surgical fix possible.
+11. Stop if the active Seller counter-bid files cannot be confirmed first.
+
+SOURCE OF TRUTH
+
+The source of truth for Seller Counter Bid preload must be:
+the exact Agent bid record being countered
+
+Not:
+listing defaults
+old Seller form defaults
+master compensation templates
+master service catalogs
+simplified fallback arrays
+
+If the Agent bid selected it, the Seller must see it preloaded in the counter form.
+
+REQUIRED FIRST STEP — TRACE THE EXACT ACTIVE FILES
+
+Before changing anything, confirm the exact active files used for:
+
+1. Seller bid card Counter Bid button
+2. Seller counter-bid route/action
+3. Seller counter-bid Livewire component or controller
+4. Seller counter-bid Blade/partials for:
+   Broker Compensation & Agency Agreement Terms
+   Additional Details
+   Offered Services
+5. The loader/hydration method that preloads data into the Seller counter form
+6. The Agent bid record/query being used for preload
+
+Also confirm the exact files used for the Agent bid form for Seller, since that is the structure that must be duplicated.
+
+Do not guess.
+Do not edit old unused Seller files.
+Do not assume the counter flow uses the same files as create/edit unless confirmed.
+
+CURRENT BUG
+
+The Seller counter form is not a true duplicate of the Agent’s Seller bid.
+
+Based on the screenshots:
+
+1. It is missing multiple Seller compensation fields
+2. The field order/structure differs from the Agent bid
+3. Lease fields are missing
+4. Lease-option fields are missing
+5. Nominal Consideration Fee is missing
+6. Buyer’s Broker Commission Fee / amount fields do not fully match
+7. Seller’s Broker’s Share of Retained Deposits is missing
+8. Offered Services tab is not guaranteed to preload the exact checked services
+9. The counter flow appears to be using a reduced or outdated Seller schema instead of the Agent bid schema
+
+REQUIRED FIX — BROKER COMPENSATION & AGENCY AGREEMENT TERMS
+
+When Seller clicks Counter Bid, preload the Seller counter form from the exact Agent bid and show the full current Seller bid structure.
+
+The counter form must include all non-empty/current supported Seller fields that exist on the Agent bid, including where applicable:
+
+A) Seller’s Broker Compensation
+
+* Seller’s Broker Purchase Fee
+* Nominal Consideration Fee
+* Buyer’s Broker Commission Structure
+* Buyer’s Broker Commission Fee
+* Buyer’s Broker Commission Fee Amount
+* Commission Structure Type if applicable
+
+B) Lease Terms
+
+* Interested in Offering a Lease Agreement
+* Seller’s Broker Leasing Fee
+* leasing fee amount/value formatting fields as applicable
+
+C) Lease-Option Terms
+
+* Interested in Offering a Lease-Option Agreement
+* Compensation for Creating the Lease-Option Agreement
+* Compensation if Purchase Option is Exercised
+
+D) Legal Terms
+
+* Protection Period Timeframe
+* Early Termination Fee
+* Early Termination Fee Amount
+* Retainer Fee
+* Retainer Fee Amount
+* Retainer Fee Application
+* Seller’s Broker’s Share of Retained Deposits
+* Seller Agency Agreement Timeframe
+
+E) Brokerage Relationship
+
+* Acceptable Brokerage Relationship
+
+F) Additional Terms
+
+* Additional Compensation Notes / Additional Terms / Additional Details if part of the saved Agent bid structure
+
+IMPORTANT
+
+The field labels, options, conditional fields, and follow-up inputs must match the actual Agent Seller bid structure.
+Do not preload a reduced version.
+Do not omit conditional fields that the Agent selected.
+
+REQUIRED FIX — OFFERED SERVICES
+
+The Seller Counter Bid Offered Services tab must preload the exact services checked by the Agent in their bid.
+
+Rules:
+
+1. Show only the exact checked services from the Agent bid
+2. Show selected nested services/sub-options exactly
+3. Show Additional Services exactly
+4. Do not inject default/master services
+5. Do not show unchecked services as selected
+6. Preserve category groupings
+7. Preserve Seller-specific service wording exactly as saved
+
+REQUIRED FIX — ADDITIONAL DETAILS
+
+If the Agent bid includes Additional Details / Additional Terms, preload them exactly in the Seller counter flow.
+
+Do not leave this blank if the Agent filled it in.
+Do not map it to the wrong field.
+
+IMPLEMENTATION REQUIREMENTS
+
+1. Compare the active Seller Agent bid form fields against the active Seller Counter Bid form fields line by line.
+2. Identify every Seller Agent bid field that is missing from counter-bid preload/render.
+3. Make Seller Counter Bid use the same field structure/schema as the Seller Agent bid.
+4. Hydrate the counter form from the actual Agent bid record.
+5. Ensure all conditional fields appear when the Agent bid selections require them.
+6. Ensure the Offered Services tab uses the actual saved selected values from the Agent bid.
+
+LIKELY ROOT CAUSE
+
+Check for these likely issues:
+
+1. Seller counter-bid flow is using an older/reduced Seller terms schema
+2. Seller counter form is preloading from defaults instead of the Agent bid record
+3. Conditional Seller fields are not being rehydrated during counter-bid load
+4. Offered Services tab is using a template list rather than Agent-selected values
+5. The counter component has a separate simplified mapping instead of reusing the Agent bid field map
+
+TESTING REQUIREMENTS — MUST DO BEFORE REPORTING FIXED
+
+Use a real Hire a Seller listing with a real Agent bid that contains:
+
+1. Seller’s Broker Purchase Fee
+2. Nominal Consideration Fee
+3. Buyer’s Broker Commission Structure
+4. Buyer’s Broker Commission Fee
+5. Lease Agreement fields
+6. Lease-Option fields
+7. Protection Period
+8. Early Termination Fee
+9. Retainer Fee
+10. Retainer Fee Application
+11. Seller’s Broker’s Share of Retained Deposits
+12. Brokerage Relationship
+13. Additional Terms
+14. Multiple selected Offered Services
+15. Additional Services
+
+Then verify all of the following:
+
+SELLER COUNTER BID — TERMS TAB
+
+1. Clicking Counter Bid opens the correct Seller counter flow
+2. All Seller Broker Compensation & Agency Agreement fields from the Agent bid are present
+3. All fields preload with the Agent’s actual selections/values
+4. Conditional fields appear correctly
+5. Field order matches the Agent bid structure
+6. No required Seller field from the Agent bid is missing
+
+SELLER COUNTER BID — OFFERED SERVICES TAB
+
+1. Exact checked services are preloaded
+2. Nested selected services are preloaded
+3. Additional Services are preloaded
+4. No extra services are added
+5. No checked services are missing
+
+SELLER COUNTER BID — ADDITIONAL DETAILS TAB
+
+1. Additional Details/Terms preload correctly
+2. No wrong-field mapping
+3. Saved text remains intact
+
+REGRESSION CHECK
+
+1. Seller Agent bid form remains unchanged
+2. Seller View Bid remains unchanged unless directly required for preload mapping
+3. Buyer, Landlord, and Tenant remain unchanged
+4. No route errors
+5. No undefined property errors
+6. No null preload errors when loading a real Agent bid
+
+DO NOT REPORT FIXED UNLESS YOU PROVIDE
+
+1. Exact root cause
+2. Exact files changed
+3. Exact Seller counter-bid route/component/partial changed
+4. Exact preload method corrected
+5. Confirmation preload now comes from the actual Agent bid record
+6. List of missing Seller fields restored to the counter flow
+7. Proof that Offered Services now preload exactly
+8. Before vs after behavior summary
+
+SUCCESS CRITERIA
+
+This task is successful only if:
+
+1. Seller Counter Bid is an exact duplicate of the Agent’s Seller bid structure
+2. Seller Counter Bid preloads the Agent’s actual selected values
+3. Offered Services preload exactly as checked
+4. No Seller fields are missing from the counter flow
+5. No extra services are injected

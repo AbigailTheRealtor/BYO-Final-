@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use App\Models\BuyerAgentAuction;
 use App\Models\BuyerAgentAuctionBid;
 use App\Models\SellerCounterTerm;
+use App\Models\SellerAgentAuctionBid;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
@@ -22,8 +23,9 @@ class SellerCounteredTermsController extends Controller
 {
     public function add(Request $request, $id)
     {
-        $sellerId = $id;
-        return view('seller_counter_terms.add', compact('sellerId'));
+        $pab = SellerAgentAuctionBid::with('meta', 'auction')->findOrFail($id);
+        $bid_id = $id;
+        return view('seller_counter_terms.add', compact('pab', 'bid_id'));
     }
     public function store(Request $request)
     {

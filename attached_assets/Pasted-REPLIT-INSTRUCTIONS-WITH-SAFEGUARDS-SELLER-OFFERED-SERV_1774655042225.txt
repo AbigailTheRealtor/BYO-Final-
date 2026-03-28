@@ -1,0 +1,245 @@
+REPLIT INSTRUCTIONS WITH SAFEGUARDS — SELLER OFFERED SERVICES COUNT + SELLER COUNTER BID FLOW FIX ONLY
+
+SCOPE
+
+Fix only these Seller-side issues:
+
+1. Seller bid cards / Seller View Bid must show the exact Seller Offered Services that were actually checked off
+2. Seller Offered Services count is wrong and must be recalculated correctly
+3. Seller Counter Bid is routing to the wrong flow and must match the Tenant counter flow structure, but with Seller-specific fields
+
+Do not touch:
+Buyer
+Landlord
+Tenant logic except using Tenant as the source of truth for counter-flow structure
+submit flow
+database schema
+unrelated bid view styling
+
+This is a targeted Seller fix only.
+
+GOAL
+
+Seller must:
+
+1. show only the exact checked Seller services
+2. count services correctly
+3. use the correct Seller counter-bid tabs/flow:
+   Broker Compensation and Agency Agreement
+   Additional Details
+   Offered Services
+
+The Seller services source of truth is the actual selected Seller services list, not a default/master list. Your uploaded reference includes the fuller commercial Seller service list with items like branded flyer, vendor referrals, digital photo enhancement sub-options, showing coordination with Buyer’s Agents, attorney/title/escrow referrals, and closing coordination items. 
+
+HARD SAFEGUARDS — NON-NEGOTIABLE
+
+1. Only work on Seller bid display/count/counter flow.
+2. Do not modify Buyer or Landlord files.
+3. Do not change database columns, tables, relationships, or schema.
+4. Do not rename routes, models, Livewire properties, or saved field keys.
+5. Do not hardcode counts.
+6. Do not use a fallback master services array for Seller bid display.
+7. Do not refactor shared architecture unless absolutely necessary for a tiny safe reuse.
+8. Make the smallest surgical fix possible.
+9. Stop if the exact active Seller files cannot be confirmed first.
+
+REQUIRED FIRST STEP — TRACE THE EXACT ACTIVE SELLER FILES
+
+Before editing anything, confirm the exact active files used for:
+
+1. Seller bid card summary / accordion
+2. Seller View Bid Offered Services render
+3. Seller Offered Services count logic
+4. Seller Counter Bid button click handler
+5. Seller Counter Bid Livewire/component/controller route
+6. Seller counter-bid tabs/partials
+7. Tenant counter-bid files being used as the correct source of truth
+
+Do not guess.
+Do not edit old unused Seller files.
+Do not assume Buyer/Landlord share the same active path without confirming.
+
+ISSUE 1 — SELLER MUST SHOW THE EXACT CHECKED SERVICES ONLY
+
+Problem:
+Seller is showing extra services not actually selected.
+
+Required fix:
+Seller bid display must pull only from the actual saved selected Seller services for that listing/bid.
+
+Do NOT:
+
+* merge in all services from a default category list
+* merge in all services from the master commercial Seller template
+* auto-include sub-options that were not selected
+* show unchecked services
+
+Seller must display only:
+
+1. checked predefined services
+2. selected sub-options tied to checked items
+3. non-empty Additional Services entries
+
+Seller categories should still render in grouped form, but only for categories that contain selected items.
+
+ISSUE 2 — SELLER OFFERED SERVICES COUNT IS WRONG
+
+Problem:
+Seller currently shows counts like 125 when that is not the actual number of selected services.
+
+Required counting rules:
+Each checked service counts as 1.
+Each non-empty Additional Service counts as 1.
+
+Examples:
+
+* one checked predefined service = 1
+* one checked predefined service plus Example 1 = 2
+* Example 1 and Example 2 only = 2
+
+Do NOT count:
+
+* category headers
+* unchecked options
+* hidden template rows
+* empty additional-service inputs
+* parent services twice when counting child enhancement sub-options unless each saved checked sub-option is intended to count as its own checked service according to the saved data structure
+* entire default/master arrays
+
+COUNTING REQUIREMENT
+
+Build the count from the actual saved selected values only.
+
+If digital photo enhancements or similar nested options are saved as individual selected items, count each checked saved item as 1.
+If they are saved as one parent checked item plus selected children, count based on the actual stored checked entries only and do not duplicate the parent and child unless both are intentionally stored as selected services.
+
+The final displayed Seller Offered Services count must equal the true number of selected items plus non-empty additional services.
+
+ISSUE 3 — SELLER COUNTER BID GOES TO THE WRONG FLOW
+
+Problem:
+Seller Counter Bid currently routes to the wrong screen/flow. It is going to an unrelated single-question flow instead of the correct tabbed counter-bid interface.
+
+Required fix:
+Seller Counter Bid must match the Tenant counter flow structure exactly in layout/function, but with Seller-specific content.
+
+Seller Counter Bid must show these tabs:
+
+1. Broker Compensation and Agency Agreement
+2. Additional Details
+3. Offered Services
+
+The content must be Seller-specific, not Tenant-specific.
+
+SELLER COUNTER FLOW REQUIREMENTS
+
+A. Broker Compensation and Agency Agreement tab
+Must load Seller Broker Compensation & Agency Agreement counterable fields, not Tenant fields.
+
+This should use Seller-specific compensation/terms questions such as current saved Seller broker compensation and related terms.
+
+B. Additional Details tab
+Must load Seller additional terms/details fields.
+
+C. Offered Services tab
+Must load Seller offered services selections and allow the correct Seller-side counter behavior.
+
+Do not send Seller users into a question like:
+“What is the timeframe offered to the agent in the Seller Agency Agreement?”
+as a standalone wrong-flow page unless that is part of the real tabbed Seller counter flow.
+
+SOURCE OF TRUTH
+
+Tenant is the source of truth for:
+
+* counter-bid tab structure
+* tab layout
+* navigation behavior
+* overall counter-flow UX
+
+Seller is the source of truth for:
+
+* Seller-specific compensation fields
+* Seller-specific additional details
+* Seller-specific offered services
+
+IMPLEMENTATION GUIDANCE
+
+1. Compare the working Tenant counter-bid flow against the active Seller counter-bid flow line by line.
+2. Find where Seller is routing to the wrong component/view.
+3. Point Seller Counter Bid to the correct Seller tabbed counter-flow component, or wire the correct Seller tabs into the current route if that is the intended architecture.
+4. For Seller Offered Services display and count, reuse the same saved-data-driven approach as the correct listing/bid source, not the default service definition list.
+5. Keep changes surgical and scoped to Seller only.
+
+LIKELY ROOT CAUSE AREAS
+
+Check for these exact issues:
+
+1. Seller Offered Services render is using the master commercial Seller service catalog instead of the saved selected values. Your uploaded reference shows the full catalog, which should not be blindly rendered unless those items were actually selected. 
+2. Seller Offered Services count is counting all available services instead of selected services
+3. Seller count may be counting category arrays instead of checked values
+4. Seller Counter Bid button is routed to the wrong component/action
+5. Seller Counter Bid may still be using an old/non-tabbed Seller counter flow instead of the Tenant-style tabbed flow
+6. Seller Counter Bid may be loading the wrong partial for Seller agency-agreement questions
+
+TESTING REQUIREMENTS — MUST DO BEFORE REPORTING FIXED
+
+Use a real Seller listing/bid with:
+
+1. known checked services
+2. known Additional Services entries
+3. a Counter Bid action available
+
+SELLER SERVICES TEST
+
+1. Seller bid view shows only checked services
+2. No extra services appear
+3. Only categories with selected items appear
+4. Selected Additional Services appear correctly
+
+SELLER COUNT TEST
+
+1. Count matches checked predefined services exactly
+2. Each non-empty Additional Service counts as 1
+3. No inflation from default service catalog
+4. No duplicate counts from nested/group arrays
+
+SELLER COUNTER FLOW TEST
+
+1. Clicking Counter Bid opens the correct Seller counter flow
+2. Seller counter flow uses tabs like Tenant:
+   Broker Compensation and Agency Agreement
+   Additional Details
+   Offered Services
+3. Seller tab content is Seller-specific, not Tenant-specific
+4. Navigation works correctly between tabs
+5. No wrong standalone question flow appears
+6. No route errors / undefined property errors
+
+TENANT REGRESSION CHECK
+
+1. Tenant counter flow remains unchanged
+2. Tenant tabs still work
+3. No regression to Tenant bid display or count logic
+
+DO NOT REPORT FIXED UNLESS YOU PROVIDE
+
+1. Exact root cause of extra Seller services appearing
+2. Exact root cause of the inflated Seller services count
+3. Exact root cause of wrong Seller Counter Bid flow
+4. Exact files changed
+5. Exact active Seller route/component/partial corrected
+6. Exact counting logic corrected
+7. Before vs after behavior
+8. Proof Seller now shows only actual checked services
+9. Proof Seller count is correct
+10. Proof Seller Counter Bid now opens the Tenant-style tabbed Seller flow
+
+SUCCESS CRITERIA
+
+This task is successful only if:
+
+1. Seller shows only actual checked services
+2. Seller service count is accurate
+3. Seller Counter Bid opens the correct tabbed Seller flow
+4. Tenant remains unchanged
