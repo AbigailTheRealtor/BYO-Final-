@@ -1,3 +1,27 @@
+@push('scripts')
+<script>
+    function addIconsToInputs() {
+        document.querySelectorAll('.has-icon').forEach(input => {
+            const iconClass = input.getAttribute('data-icon');
+            const parent = input.parentNode;
+            if (!iconClass || !parent || !parent.classList || !parent.classList.contains('input-cover')) return;
+            if (parent.querySelector(':scope > .input-icon')) return;
+            const icon = document.createElement('i');
+            icon.className = `input-icon ${iconClass}`;
+            parent.insertBefore(icon, input);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        addIconsToInputs();
+    });
+
+    Livewire.hook('message.processed', () => {
+        addIconsToInputs();
+    });
+</script>
+@endpush
+
 @push('styles')
 <style>
     .wizard-steps-progress{height:5px;width:100%;background:#CCC;position:absolute;top:0;left:0}
