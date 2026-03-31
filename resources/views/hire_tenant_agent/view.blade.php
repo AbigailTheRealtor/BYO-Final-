@@ -2011,6 +2011,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     <span class="ms-2" style="color: #dc3545;">&bull; {{ $servicesMissingCount }} missing</span>
                                     @endif
                                 </p>
+                                @if ($servicesExtraCount > 0)
+                                <div class="mt-2 d-flex align-items-center" style="gap: 6px;">
+                                    <span style="font-size: 1rem;">&#11088;</span>
+                                    <span style="font-weight: 600; color: #856404;">+{{ $servicesExtraCount }} Extra Services Offered</span>
+                                    <span class="text-muted" style="font-size: 0.8rem; font-style: italic;" title="Extra services were included by the Agent beyond the Tenant's original request. These do not increase the match score but may provide additional value.">(beyond your request &mdash; does not affect match score)</span>
+                                </div>
+                                @endif
                                 <hr style="margin: 15px 0; border-color: #e0e0e0;">
                                 
                                 <!-- B2) Match Score Summary (Compact Display on Bid Card) -->
@@ -2329,7 +2336,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                         Matched Original: {{ $servicesMatched }}/{{ $servicesTotal }}
                                                                     </div>
                                                                     @if ($servicesExtraCount > 0)
-                                                                    <div class="small mt-1" style="color: #6c757d;">Extra (Added by Agent): {{ $servicesExtraCount }}</div>
+                                                                    <div class="small mt-1 d-flex align-items-center" style="gap: 4px;">
+                                                                        <span>&#11088;</span>
+                                                                        <span style="font-weight: 600; color: #856404;">+{{ $servicesExtraCount }} Extra Services Offered</span>
+                                                                    </div>
                                                                     @endif
                                                                     @if ($servicesMissingCount > 0)
                                                                     <div class="small mt-1" style="color: #dc3545;">Missing from Original: {{ $servicesMissingCount }}</div>
@@ -3495,9 +3505,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                     </div>
                                                                     <div class="small text-muted mt-1">
                                                                         Matched: {{ $servicesMatched }}/{{ $servicesTotal }}
-                                                                        @if ($servicesExtraCount > 0) &bull; Extra: {{ $servicesExtraCount }}@endif
                                                                         @if ($servicesMissingCount > 0) &bull; Missing: {{ $servicesMissingCount }}@endif
                                                                     </div>
+                                                                    @if ($servicesExtraCount > 0)
+                                                                    <div class="small mt-1 d-flex align-items-center" style="gap: 4px;">
+                                                                        <span>&#11088;</span>
+                                                                        <span style="font-weight: 600; color: #856404;">+{{ $servicesExtraCount }} Extra Services Offered</span>
+                                                                    </div>
+                                                                    @endif
                                                                 </div>
                                                             </div>
                                                             <div class="col-md-6">
