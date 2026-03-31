@@ -11,7 +11,12 @@ class TenantAgentAuction extends Model
 {
     use HasFactory, HasListingId;
     protected $appends = ["get", "status"];
-    
+
+    protected $casts = [
+        'is_approved' => 'boolean',
+        'is_draft'    => 'boolean',
+    ];
+
     protected $attributes = [
         'is_approved' => true,
         'is_draft' => false,

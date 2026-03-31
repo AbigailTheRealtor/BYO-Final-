@@ -1,0 +1,87 @@
+Paste this to Replit:
+
+## Replit Instructions With Safeguards
+
+Proceed with the `is_approved` standardization plan in **controlled phases**.
+
+### Scope
+
+This step is **audit-plan execution only for the safe foundation phase**.
+
+### Do now
+
+Implement **Phase 1 and Phase 2 only** from your plan.
+
+#### Phase 1
+
+Add the `is_approved` boolean cast to the models that do not already have it:
+
+* Tenant
+* Seller
+* Landlord
+
+Do not change Buyer here since it already has the cast.
+
+#### Phase 2
+
+Fix Seller model defaults only:
+
+* change `is_approved` default from string `'true'` to PHP boolean `true`
+* change `is_sold` default from string `'false'` to PHP boolean `false`
+
+---
+
+### Do NOT do yet
+
+Do **not** implement any of the following yet:
+
+* Buyer code cleanup
+* Buyer data patch
+* Seller controller/query changes
+* Seller data patch
+* any query simplification
+* any search logic changes
+* any DB data normalization updates
+
+---
+
+### Hard safeguards
+
+* No destructive DB changes
+* No schema changes
+* No dropping/renaming columns
+* No broad refactors
+* Do not touch working Tenant search behavior
+* Do not touch Buyer search logic yet
+* Do not touch Seller search/controller query logic yet
+* Do not touch Landlord search logic
+* Do not implement Phase 3 or Phase 4 until I approve them separately
+
+---
+
+### Required verification after Phase 1 and Phase 2
+
+After making only those safe foundation changes, verify and report:
+
+1. Tenant listings still appear correctly in Tenant search
+2. Landlord listings still appear correctly in Landlord search
+3. Seller listings still appear correctly in Seller search
+4. Buyer behavior remains unchanged
+5. No regression in listing creation or direct view pages caused by the new model casts/defaults
+
+---
+
+### Required deliverable
+
+When done, give me:
+
+* exact files changed
+* exact code changes made
+* confirmation that only Phase 1 and Phase 2 were implemented
+* verification results for Tenant, Seller, Landlord, and Buyer behavior after the change
+
+### Critical rule
+
+For Seller, do **not** implement Phase 3 and Phase 4 separately later. Those must be deployed together in the same execution when I approve them.
+
+The plan in your audit looks correct overall. For now, only apply the safe foundation layer first. 

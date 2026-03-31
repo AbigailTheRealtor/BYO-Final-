@@ -12,7 +12,12 @@ class LandlordAgentAuction extends Model
     use HasFactory, HasListingId;
     protected $appends = ["get", "status"];
     protected $guarded = [];
-    
+
+    protected $casts = [
+        'is_approved' => 'boolean',
+        'is_draft'    => 'boolean',
+    ];
+
     protected $attributes = [
         'is_approved' => true,
         'is_draft' => false,

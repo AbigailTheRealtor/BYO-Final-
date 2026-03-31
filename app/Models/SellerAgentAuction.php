@@ -14,13 +14,14 @@ class SellerAgentAuction extends Model
     protected $appends = ["get", "status"];
     
     protected $casts = [
-        'is_draft' => 'boolean',
+        'is_draft'    => 'boolean',
+        'is_approved' => 'boolean',
     ];
-    
+
     protected $attributes = [
-        'is_approved' => 'true',
-        'is_draft' => false,
-        'is_sold' => 'false',
+        'is_approved' => true,
+        'is_draft'    => false,
+        'is_sold'     => false,
     ];
 
     public function user()
