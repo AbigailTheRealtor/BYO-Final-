@@ -2566,7 +2566,7 @@ class TenantAgentAuction extends Component
 
             if ($this->user_type === 'buyer' || $this->user_type === 'seller') {
                 $auction->address = $this->address ?? 'N/A';
-                $auction->is_approved = 'false';
+                $auction->is_approved = false;
                 $auction->is_sold = 'false';
                 $auction->is_paid = 'false';
             }
@@ -4269,7 +4269,7 @@ class TenantAgentAuction extends Component
             $auction->user_id = Auth::id();
             $auction->title = $this->listing_title;
             $auction->is_draft = 0;
-            $auction->is_approved = 'true';
+            $auction->is_approved = true;
 
             // Set required fields for buyer/seller types that have NOT NULL constraints
             if ($this->user_type === 'buyer' || $this->user_type === 'seller') {
