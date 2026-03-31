@@ -204,6 +204,14 @@ class TenantBidMatchScoreHelper
             'key'    => 'brokerage_relationship',
             'fields' => ['brokerage_relationship'],
         ],
+
+        // 17. Additional Terms (free-text) — any meaningful text change counts as a mismatch.
+        //     Blank vs non-blank, added, removed, or edited text all count.
+        //     Whitespace-only differences are ignored (normalizeForMatch collapses all whitespace).
+        [
+            'key'    => 'additional_details_broker',
+            'fields' => ['additional_details_broker'],
+        ],
     ];
 
     /**
@@ -377,6 +385,9 @@ class TenantBidMatchScoreHelper
         if (is_null($v) || $v === '') return '';
         if (is_array($v) || is_object($v)) return json_encode($v);
         $v = trim((string) $v);
+        // Normalize curly/smart quotes to straight equivalents before comparison
+        $v = preg_replace('/[\x{2018}\x{2019}]/u', "'", $v);
+        $v = preg_replace('/[\x{201C}\x{201D}]/u', '"', $v);
         return preg_replace('/[\s$,%]/', '', strtolower($v));
     }
 

@@ -1878,6 +1878,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 'percent_gross_lease' => data_get($auction, 'get.percent_gross_lease'),
                                 'purchase_flat_fee_amount' => data_get($auction, 'get.purchase_flat_fee_amount'),
                                 'purchase_percent_value' => data_get($auction, 'get.purchase_percent_value'),
+                                // Additional Terms (free-text) — group 17
+                                'additional_details_broker' => data_get($auction, 'get.additional_details_broker'),
                             ];
 
                             if ($latestTenantCounter) {
