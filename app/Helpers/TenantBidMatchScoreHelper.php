@@ -39,20 +39,39 @@ namespace App\Helpers;
  */
 class TenantBidMatchScoreHelper
 {
+    /**
+     * All candidate broker/terms fields.
+     * NOTE: getActiveFields() filters this list per-calculation based on which parent
+     * conditions are active in the baseline data.  Sub-fields whose parent is inactive
+     * are excluded so they never inflate or deflate the denominator spuriously.
+     *
+     * REMOVED from previous version:
+     *   - broker_fee_timing     (duplicate alias of payment_timing)
+     *   - broker_fee_days_from_rent (duplicate alias of days_to_pay)
+     *   - flat_fee_amount, percent_gross_lease, purchase_flat_fee_amount,
+     *     purchase_percent_value  (legacy field names not used in current forms)
+     */
     const BROKER_FIELDS = [
+        // Top-level compensation terms
         'commission_structure',
         'lease_fee_type',
         'payment_timing',
         'days_to_pay',
-        'broker_fee_timing',
-        'broker_fee_days_from_rent',
+        // Purchase fee (parent + conditional sub-fields)
         'interested_purchase_fee_type',
         'purchase_fee_type',
+        'purchase_fee_flat',
+        'purchase_fee_percentage',
+        'purchase_fee_flat_combo',
+        'purchase_fee_percentage_combo',
+        'purchase_fee_other',
+        // Lease-option (parent + conditional sub-fields)
         'interested_lease_option_agreement',
         'lease_type',
         'lease_value',
         'purchase_type',
         'purchase_value',
+        // Legal terms
         'protection_period',
         'early_termination_fee_option',
         'early_termination_fee_amount',
@@ -61,6 +80,7 @@ class TenantBidMatchScoreHelper
         'retainer_fee_application',
         'agency_agreement_timeframe',
         'brokerage_relationship',
+        // Lease fee sub-fields (conditional on lease_fee_type)
         'lease_fee_flat',
         'lease_fee_percentage',
         'lease_fee_percentage_monthly_rent',
@@ -71,15 +91,6 @@ class TenantBidMatchScoreHelper
         'lease_fee_flat_combo_net',
         'lease_fee_percentage_combo_net',
         'lease_fee_other',
-        'purchase_fee_flat',
-        'purchase_fee_percentage',
-        'purchase_fee_flat_combo',
-        'purchase_fee_percentage_combo',
-        'purchase_fee_other',
-        'flat_fee_amount',
-        'percent_gross_lease',
-        'purchase_flat_fee_amount',
-        'purchase_percent_value',
     ];
 
     /**
@@ -259,6 +270,103 @@ class TenantBidMatchScoreHelper
     }
 
     /**
+     * Filter the broker fields list to only those that are "active" given the baseline data.
+     * Sub-fields whose parent condition is not met in the baseline are excluded so they cannot
+     * inflate the denominator with stale or irrelevant values.
+     *
+     * Rules applied:
+     *  - Lease fee sub-fields: only the sub-field matching the selected lease_fee_type counts.
+     *  - Purchase fee sub-fields: only when interested_purchase_fee_type === 'Yes' AND the
+     *    matching purchase_fee_type variant is selected.
+     *  - Lease-option sub-fields: only when interested_lease_option_agreement === 'Yes'.
+     *  - Early termination amount: only when early_termination_fee_option === 'Yes'.
+     *  - Retainer sub-fields: only when retainer_fee_option === 'Yes'.
+     *  - days_to_pay: only when payment_timing contains a day-count variant.
+     *
+     * @param array $baselineData  The baseline data array (used to check parent conditions).
+     * @param array $fields        Full field list to filter.
+     * @return array               Filtered field list safe to use as the scoring denominator.
+     */
+    public static function getActiveFields(array $baselineData, array $fields): array
+    {
+        $b = $baselineData;
+
+        // Resolve helpers
+        $leaseFeeType    = $b['lease_fee_type'] ?? '';
+        $purchaseParent  = $b['interested_purchase_fee_type'] ?? '';
+        $purchaseFeeType = $b['purchase_fee_type'] ?? '';
+        $leaseOption     = $b['interested_lease_option_agreement'] ?? '';
+        $earlyTerm       = $b['early_termination_fee_option'] ?? '';
+        $retainer        = $b['retainer_fee_option'] ?? '';
+        $payTiming       = strtolower($b['payment_timing'] ?? '');
+
+        $isPurchaseYes   = $purchaseParent === 'Yes';
+        $isLeaseOptionYes = $leaseOption === 'Yes';
+        $isEarlyTermYes  = $earlyTerm === 'Yes';
+        $isRetainerYes   = $retainer === 'Yes';
+        $payTimingHasDays = str_contains($payTiming, 'day');
+
+        // Lease fee type mapping: type string → which sub-fields are active
+        $leaseFlatTypes     = ['Flat Fee'];
+        $leasePctTypes      = ['Percentage of the Gross Lease Value'];
+        $leaseMonthlyTypes  = ['Percentage of Monthly Rent'];
+        $leaseComboTypes    = ['Flat Fee + Percentage of the Gross Lease Value'];
+        $leaseNetTypes      = ['Percentage of Net Aggregate Rent'];
+        $leaseComboNetTypes = ['Flat Fee + Percentage of Net Aggregate Rent'];
+        $leaseOtherTypes    = ['Other'];
+
+        // Purchase fee type mapping
+        $purchaseFlatType   = 'Flat Fee';
+        $purchasePctType    = 'Percentage of the Total Purchase Price';
+        $purchaseComboTypes = [
+            'Percentage of the Total Purchase Price + Flat Fee',
+            'Flat Fee + Percentage of the Total Purchase Price',
+        ];
+        $purchaseOtherType  = 'other';
+
+        $conditionalRules = [
+            // Lease fee sub-fields
+            'lease_fee_flat'                  => in_array($leaseFeeType, $leaseFlatTypes, true),
+            'lease_fee_percentage'            => in_array($leaseFeeType, $leasePctTypes, true),
+            'lease_fee_percentage_monthly_rent'   => in_array($leaseFeeType, $leaseMonthlyTypes, true),
+            'lease_fee_percentage_monthly_number' => in_array($leaseFeeType, $leaseMonthlyTypes, true),
+            'lease_fee_flat_combo'            => in_array($leaseFeeType, array_merge($leaseComboTypes, $leaseComboNetTypes), true),
+            'lease_fee_percentage_combo'      => in_array($leaseFeeType, $leaseComboTypes, true),
+            'lease_fee_percentage_net'        => in_array($leaseFeeType, array_merge($leaseNetTypes, $leaseComboNetTypes), true),
+            'lease_fee_flat_combo_net'        => in_array($leaseFeeType, $leaseComboNetTypes, true),
+            'lease_fee_percentage_combo_net'  => in_array($leaseFeeType, $leaseComboNetTypes, true),
+            'lease_fee_other'                 => in_array($leaseFeeType, $leaseOtherTypes, true),
+            // Purchase fee sub-fields
+            'purchase_fee_type'               => $isPurchaseYes,
+            'purchase_fee_flat'               => $isPurchaseYes && $purchaseFeeType === $purchaseFlatType,
+            'purchase_fee_percentage'         => $isPurchaseYes && $purchaseFeeType === $purchasePctType,
+            'purchase_fee_flat_combo'         => $isPurchaseYes && in_array($purchaseFeeType, $purchaseComboTypes, true),
+            'purchase_fee_percentage_combo'   => $isPurchaseYes && in_array($purchaseFeeType, $purchaseComboTypes, true),
+            'purchase_fee_other'              => $isPurchaseYes && $purchaseFeeType === $purchaseOtherType,
+            // Lease-option sub-fields
+            'lease_type'                      => $isLeaseOptionYes,
+            'lease_value'                     => $isLeaseOptionYes,
+            'purchase_type'                   => $isLeaseOptionYes,
+            'purchase_value'                  => $isLeaseOptionYes,
+            // Legal term sub-fields
+            'early_termination_fee_amount'    => $isEarlyTermYes,
+            'retainer_fee_amount'             => $isRetainerYes,
+            'retainer_fee_application'        => $isRetainerYes,
+            // Payment timing sub-fields
+            'days_to_pay'                     => $payTimingHasDays,
+        ];
+
+        return array_values(array_filter($fields, function (string $field) use ($conditionalRules) {
+            // If a conditional rule exists for this field, it must be true to include it
+            if (array_key_exists($field, $conditionalRules)) {
+                return $conditionalRules[$field];
+            }
+            // No rule → always include (top-level parent fields)
+            return true;
+        }));
+    }
+
+    /**
      * Whether a value is considered "filled" (not blank).
      */
     private static function isFilled($v): bool
@@ -292,6 +400,11 @@ class TenantBidMatchScoreHelper
         // Tenant-only catalog so wrong-role services are excluded from both baseline and compared.
         $catalog = ($propertyType !== null) ? self::getCatalog($propertyType) : null;
 
+        // Apply conditional field filtering so sub-fields whose parent condition is not active
+        // in the baseline are excluded from the denominator.  This prevents stale values from
+        // old form states from inflating or shifting the terms count unpredictably.
+        $activeFields = self::getActiveFields($baselineData, $brokerFields);
+
         // ----------------------------------------------------------------
         // TERMS (Broker Compensation & Agency Agreement)
         // ----------------------------------------------------------------
@@ -299,7 +412,7 @@ class TenantBidMatchScoreHelper
         $changedTerms      = [];   // baseline filled, compared different/blank
         $addedByAgentTerms = [];   // baseline blank, compared filled
 
-        foreach ($brokerFields as $field) {
+        foreach ($activeFields as $field) {
             $bv = $baselineData[$field] ?? null;
             $cv = $comparedData[$field] ?? null;
 

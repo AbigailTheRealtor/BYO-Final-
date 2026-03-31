@@ -2840,16 +2840,25 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     $svcMissingStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545; text-decoration: line-through; color: #721c24;';
                                                     $svcMissingBadge = '<span class="badge bg-danger ms-2" style="font-size: 0.65rem; vertical-align: middle;">Not Offered by Agent</span>';
                                                     
-                                                    // Check if a service exists in baseline (normalized comparison)
-                                                    $checkServiceInBaseline = function($service) use ($baselineNorm, $normalizeService) {
-                                                        $normService = $normalizeService($service);
-                                                        return in_array($normService, $baselineNorm);
+                                                    // Build FULL normalized sets for display badge checks.
+                                                    // These include custom/other services (not in Tenant catalog) so that
+                                                    // a custom service present in BOTH baseline and bid is never simultaneously
+                                                    // marked as "Extra Service Offered" AND "Not Offered by Agent".
+                                                    // ($baselineNorm/$currentNorm from the score are catalog-only and exclude customs.)
+                                                    $baselineNormFull = array_unique(array_map($normalizeService, $baselineServices));
+                                                    $bidNormFull = array_unique(array_map(
+                                                        $normalizeService,
+                                                        array_merge(array_values($bidAllServices), $bidOtherServices)
+                                                    ));
+
+                                                    // Check if a service exists in baseline (full list, includes custom services)
+                                                    $checkServiceInBaseline = function($service) use ($baselineNormFull, $normalizeService) {
+                                                        return in_array($normalizeService($service), $baselineNormFull, true);
                                                     };
                                                     
-                                                    // Check if a service exists in current bid (normalized comparison)
-                                                    $checkServiceInBid = function($service) use ($currentNorm, $normalizeService) {
-                                                        $normService = $normalizeService($service);
-                                                        return in_array($normService, $currentNorm);
+                                                    // Check if a service exists in current bid (full list, includes custom services)
+                                                    $checkServiceInBid = function($service) use ($bidNormFull, $normalizeService) {
+                                                        return in_array($normalizeService($service), $bidNormFull, true);
                                                     };
                                                     
                                                     // Get services in baseline but NOT in current bid (missing services)
