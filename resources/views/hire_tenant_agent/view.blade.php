@@ -1800,8 +1800,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             // Get the listing owner\'s user ID for filtering
                             $listingOwnerUserId = $auction->user_id;
                             
-                            // Get the latest counter from tenant (listing owner) ONLY
-                            $latestTenantCounter = $bid->counterTerms()
+                            // Get the latest counter from tenant (listing owner) — uses TenantCounterTerm directly.
+                            // TenantCounterTerm.tenant_agent_auction_id stores the BID ID (not the auction ID).
+                            // TenantCounterTerm.user_id is the listing owner (tenant) who submitted the counter.
+                            $latestTenantCounter = \App\Models\TenantCounterTerm::with('meta')
+                                ->where('tenant_agent_auction_id', $bid->id)
                                 ->where('user_id', $listingOwnerUserId)
                                 ->orderBy('created_at', 'desc')
                                 ->first();
@@ -1812,58 +1815,61 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             $tenantBaselineLabelForTenant = ''; // Label when tenant views
                             $tenantBaselineLabelForAgent = ''; // Label when agent views
                             
+                            // Original listing baseline — ALWAYS built from auction (never overwritten by counter)
+                            $originalListingBaselineData = [
+                                'commission_structure' => data_get($auction, 'get.commission_structure'),
+                                'lease_fee_type' => data_get($auction, 'get.lease_fee_type'),
+                                'payment_timing' => data_get($auction, 'get.broker_fee_timing'),
+                                'broker_fee_timing' => data_get($auction, 'get.broker_fee_timing'),
+                                'days_to_pay' => data_get($auction, 'get.broker_fee_days_from_rent') ?? data_get($auction, 'get.broker_fee_days_after_lease'),
+                                'broker_fee_days_from_rent' => data_get($auction, 'get.broker_fee_days_from_rent'),
+                                'interested_purchase_fee_type' => data_get($auction, 'get.interested_purchase_fee_type'),
+                                'purchase_fee_type' => data_get($auction, 'get.purchase_fee_type'),
+                                'interested_lease_option_agreement' => data_get($auction, 'get.interested_lease_option_agreement'),
+                                'lease_type' => data_get($auction, 'get.lease_type'),
+                                'lease_value' => data_get($auction, 'get.lease_value'),
+                                'purchase_type' => data_get($auction, 'get.purchase_type'),
+                                'purchase_value' => data_get($auction, 'get.purchase_value'),
+                                'protection_period' => data_get($auction, 'get.protection_period'),
+                                'early_termination_fee_option' => data_get($auction, 'get.early_termination_fee_option'),
+                                'early_termination_fee_amount' => data_get($auction, 'get.early_termination_fee_amount'),
+                                'retainer_fee_option' => data_get($auction, 'get.retainer_fee_option'),
+                                'retainer_fee_amount' => data_get($auction, 'get.retainer_fee_amount'),
+                                'retainer_fee_application' => data_get($auction, 'get.retainer_fee_application'),
+                                'agency_agreement_timeframe' => data_get($auction, 'get.agency_agreement_timeframe'),
+                                'brokerage_relationship' => data_get($auction, 'get.brokerage_relationship'),
+                                'services' => data_get($auction, 'get.services'),
+                                'other_services' => data_get($auction, 'get.other_services'),
+                                // Fee amount fields - CRITICAL for numeric value comparison
+                                'lease_fee_flat' => data_get($auction, 'get.lease_fee_flat'),
+                                'lease_fee_percentage' => data_get($auction, 'get.lease_fee_percentage'),
+                                'lease_fee_percentage_monthly_rent' => data_get($auction, 'get.lease_fee_percentage_monthly_rent'),
+                                'lease_fee_percentage_monthly_number' => data_get($auction, 'get.lease_fee_percentage_monthly_number'),
+                                'lease_fee_flat_combo' => data_get($auction, 'get.lease_fee_flat_combo'),
+                                'lease_fee_percentage_combo' => data_get($auction, 'get.lease_fee_percentage_combo'),
+                                'lease_fee_percentage_net' => data_get($auction, 'get.lease_fee_percentage_net'),
+                                'lease_fee_flat_combo_net' => data_get($auction, 'get.lease_fee_flat_combo_net'),
+                                'lease_fee_percentage_combo_net' => data_get($auction, 'get.lease_fee_percentage_combo_net'),
+                                'lease_fee_other' => data_get($auction, 'get.lease_fee_other'),
+                                'purchase_fee_flat' => data_get($auction, 'get.purchase_fee_flat'),
+                                'purchase_fee_percentage' => data_get($auction, 'get.purchase_fee_percentage'),
+                                'purchase_fee_flat_combo' => data_get($auction, 'get.purchase_fee_flat_combo'),
+                                'purchase_fee_percentage_combo' => data_get($auction, 'get.purchase_fee_percentage_combo'),
+                                'purchase_fee_other' => data_get($auction, 'get.purchase_fee_other'),
+                                'flat_fee_amount' => data_get($auction, 'get.flat_fee_amount'),
+                                'percent_gross_lease' => data_get($auction, 'get.percent_gross_lease'),
+                                'purchase_flat_fee_amount' => data_get($auction, 'get.purchase_flat_fee_amount'),
+                                'purchase_percent_value' => data_get($auction, 'get.purchase_percent_value'),
+                            ];
+
                             if ($latestTenantCounter) {
-                                // Tenant has countered - use their latest counter terms
+                                // Tenant has countered — counter terms become the "active" baseline
                                 $tenantBaselineData = $latestTenantCounter->getAllMeta();
                                 $tenantBaselineLabelForTenant = 'Your Latest Counter';
                                 $tenantBaselineLabelForAgent = "Tenant's Counter Terms";
                             } else {
-                                // Use original listing Broker Compensation fields (includes all fee amount fields)
-                                $tenantBaselineData = [
-                                    'commission_structure' => data_get($auction, 'get.commission_structure'),
-                                    'lease_fee_type' => data_get($auction, 'get.lease_fee_type'),
-                                    'payment_timing' => data_get($auction, 'get.broker_fee_timing'),
-                                    'broker_fee_timing' => data_get($auction, 'get.broker_fee_timing'),
-                                    'days_to_pay' => data_get($auction, 'get.broker_fee_days_from_rent') ?? data_get($auction, 'get.broker_fee_days_after_lease'),
-                                    'broker_fee_days_from_rent' => data_get($auction, 'get.broker_fee_days_from_rent'),
-                                    'interested_purchase_fee_type' => data_get($auction, 'get.interested_purchase_fee_type'),
-                                    'purchase_fee_type' => data_get($auction, 'get.purchase_fee_type'),
-                                    'interested_lease_option_agreement' => data_get($auction, 'get.interested_lease_option_agreement'),
-                                    'lease_type' => data_get($auction, 'get.lease_type'),
-                                    'lease_value' => data_get($auction, 'get.lease_value'),
-                                    'purchase_type' => data_get($auction, 'get.purchase_type'),
-                                    'purchase_value' => data_get($auction, 'get.purchase_value'),
-                                    'protection_period' => data_get($auction, 'get.protection_period'),
-                                    'early_termination_fee_option' => data_get($auction, 'get.early_termination_fee_option'),
-                                    'early_termination_fee_amount' => data_get($auction, 'get.early_termination_fee_amount'),
-                                    'retainer_fee_option' => data_get($auction, 'get.retainer_fee_option'),
-                                    'retainer_fee_amount' => data_get($auction, 'get.retainer_fee_amount'),
-                                    'retainer_fee_application' => data_get($auction, 'get.retainer_fee_application'),
-                                    'agency_agreement_timeframe' => data_get($auction, 'get.agency_agreement_timeframe'),
-                                    'brokerage_relationship' => data_get($auction, 'get.brokerage_relationship'),
-                                    'services' => data_get($auction, 'get.services'),
-                                    'other_services' => data_get($auction, 'get.other_services'),
-                                    // Fee amount fields - CRITICAL for numeric value comparison
-                                    'lease_fee_flat' => data_get($auction, 'get.lease_fee_flat'),
-                                    'lease_fee_percentage' => data_get($auction, 'get.lease_fee_percentage'),
-                                    'lease_fee_percentage_monthly_rent' => data_get($auction, 'get.lease_fee_percentage_monthly_rent'),
-                                    'lease_fee_percentage_monthly_number' => data_get($auction, 'get.lease_fee_percentage_monthly_number'),
-                                    'lease_fee_flat_combo' => data_get($auction, 'get.lease_fee_flat_combo'),
-                                    'lease_fee_percentage_combo' => data_get($auction, 'get.lease_fee_percentage_combo'),
-                                    'lease_fee_percentage_net' => data_get($auction, 'get.lease_fee_percentage_net'),
-                                    'lease_fee_flat_combo_net' => data_get($auction, 'get.lease_fee_flat_combo_net'),
-                                    'lease_fee_percentage_combo_net' => data_get($auction, 'get.lease_fee_percentage_combo_net'),
-                                    'lease_fee_other' => data_get($auction, 'get.lease_fee_other'),
-                                    'purchase_fee_flat' => data_get($auction, 'get.purchase_fee_flat'),
-                                    'purchase_fee_percentage' => data_get($auction, 'get.purchase_fee_percentage'),
-                                    'purchase_fee_flat_combo' => data_get($auction, 'get.purchase_fee_flat_combo'),
-                                    'purchase_fee_percentage_combo' => data_get($auction, 'get.purchase_fee_percentage_combo'),
-                                    'purchase_fee_other' => data_get($auction, 'get.purchase_fee_other'),
-                                    'flat_fee_amount' => data_get($auction, 'get.flat_fee_amount'),
-                                    'percent_gross_lease' => data_get($auction, 'get.percent_gross_lease'),
-                                    'purchase_flat_fee_amount' => data_get($auction, 'get.purchase_flat_fee_amount'),
-                                    'purchase_percent_value' => data_get($auction, 'get.purchase_percent_value'),
-                                ];
+                                // No counter — tenant baseline is the original listing
+                                $tenantBaselineData = $originalListingBaselineData;
                                 $tenantBaselineLabelForTenant = 'Your Original Terms';
                                 $tenantBaselineLabelForAgent = "Tenant's Original Terms";
                             }
@@ -1911,6 +1917,24 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             $totalScore      = $score['overall_percent'];
                             $getScoreColor   = fn($s) => \App\Helpers\TenantBidMatchScoreHelper::scoreColor((int)$s);
                             $totalScoreColor = $getScoreColor($totalScore);
+
+                            // === DUAL SCORE: Original Match + Latest Counter Match ===
+                            // Original Match: bid vs. Tenant's original listing request (never changes)
+                            // Latest Counter Match: bid vs. Tenant's most recent counter (when counter exists)
+                            $showDualScore      = false;
+                            $originalScore      = null;
+                            $latestCounterScore = null;
+
+                            if ($isListingOwner || $isBidOwner) {
+                                $originalScore = \App\Helpers\TenantBidMatchScoreHelper::calculate(
+                                    $originalListingBaselineData, $currentBidData
+                                );
+                                if ($latestTenantCounter) {
+                                    // $score = Latest Counter Match (counter was used as $baselineData above)
+                                    $latestCounterScore = $score;
+                                    $showDualScore = true;
+                                }
+                            }
 
                             // Variables re-exported for per-service badge rendering in the Private Data Modal
                             $baselineNorm    = array_merge($score['matched_services'], $score['missing_services']);
@@ -1967,6 +1991,56 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 @endphp
                                 @if ($showMatchScoreOnCard)
                                 <div class="match-score-summary mb-3 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6;">
+
+                                    @if ($showDualScore && $originalScore && $latestCounterScore)
+                                    {{-- DUAL SCORE: Original Match + Latest Counter Match side-by-side --}}
+                                    <div class="mb-2">
+                                        <span style="font-weight: 600; color: #1a3a5c; font-size: 1rem;">
+                                            <i class="fa fa-chart-pie me-2"></i>Match Summary
+                                        </span>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        {{-- Original Match --}}
+                                        @php
+                                            $osColor = $getScoreColor($originalScore['overall_percent']);
+                                        @endphp
+                                        <div class="col-6">
+                                            <div class="p-2 rounded" style="background: #fff; border: 1px solid #dee2e6; border-top: 3px solid #6c757d;">
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <span class="small fw-semibold" style="color: #6c757d;">Original Match</span>
+                                                    <span class="badge" style="background: {{ $osColor }}; font-size: 0.8rem; padding: 3px 8px; color: white;">{{ $originalScore['overall_percent'] }}%</span>
+                                                </div>
+                                                <div style="font-size: 0.75rem; color: #6c757d;">vs. Tenant's Original Request</div>
+                                                <div class="row g-0 mt-1" style="font-size: 0.75rem;">
+                                                    <div class="col-6" style="color: {{ $getScoreColor($originalScore['services_match_percent']) }};">Svcs {{ $originalScore['services_match_percent'] }}%</div>
+                                                    <div class="col-6" style="color: {{ $getScoreColor($originalScore['terms_match_percent']) }};">Terms {{ $originalScore['terms_match_percent'] }}%</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {{-- Latest Counter Match --}}
+                                        @php
+                                            $lcColor2 = $getScoreColor($latestCounterScore['overall_percent']);
+                                        @endphp
+                                        <div class="col-6">
+                                            <div class="p-2 rounded" style="background: #f0f9ff; border: 1px solid #bde0fe; border-top: 3px solid {{ $lcColor2 }};">
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <span class="small fw-semibold" style="color: #1a3a5c;">Counter Match</span>
+                                                    <span class="badge" style="background: {{ $lcColor2 }}; font-size: 0.8rem; padding: 3px 8px; color: white;">{{ $latestCounterScore['overall_percent'] }}%</span>
+                                                </div>
+                                                <div style="font-size: 0.75rem; color: #6c757d;">vs. Your Latest Counter</div>
+                                                <div class="row g-0 mt-1" style="font-size: 0.75rem;">
+                                                    <div class="col-6" style="color: {{ $getScoreColor($latestCounterScore['services_match_percent']) }};">Svcs {{ $latestCounterScore['services_match_percent'] }}%</div>
+                                                    <div class="col-6" style="color: {{ $getScoreColor($latestCounterScore['terms_match_percent']) }};">Terms {{ $latestCounterScore['terms_match_percent'] }}%</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="small" style="color: #6c757d; font-style: italic; font-size: 0.76rem;">
+                                        <i class="fa fa-info-circle me-1"></i>Added services or terms do not increase either score.
+                                    </div>
+
+                                    @else
+                                    {{-- SINGLE SCORE (no counter in this bid's context) --}}
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <span style="font-weight: 600; color: #1a3a5c; font-size: 1rem;">
                                             <i class="fa fa-chart-pie me-2"></i>Match Score
@@ -2005,6 +2079,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     <div class="mt-1 small" style="color: #6c757d; font-style: italic; font-size: 0.78rem;">
                                         Match Score compares this bid only to the Tenant's original request. Added services or added terms are shown for transparency but do not increase the score.
                                     </div>
+                                    @endif
+
                                 </div>
                                 @endif
                                 
@@ -2138,6 +2214,69 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                                                     {{-- ========== MATCH SCORE PANEL (uses pre-calculated values) ========== --}}
                                                     <div class="match-score-panel mb-4 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; border: 1px solid #dee2e6;">
+
+                                                        @if ($showDualScore && $originalScore && $latestCounterScore)
+                                                        {{-- DUAL SCORE: Original Match + Latest Counter Match --}}
+                                                        <h6 class="mb-2" style="color: #1a3a5c; font-weight: 600;">
+                                                            <i class="fa fa-chart-pie me-2"></i>Match Summary
+                                                        </h6>
+                                                        <p class="small text-muted mb-3">
+                                                            <i class="fa fa-info-circle me-1"></i>
+                                                            <strong>Original Match</strong> compares this bid to the Tenant's original listing request.<br>
+                                                            <strong>Counter Match</strong> compares this bid to the Tenant's most recent counteroffer.<br>
+                                                            Added services or terms do not increase either score.
+                                                        </p>
+                                                        <div class="row g-3">
+                                                            {{-- Original Match column --}}
+                                                            @php $omColor = $getScoreColor($originalScore['overall_percent']); @endphp
+                                                            <div class="col-md-6">
+                                                                <div class="p-3 bg-white rounded" style="border: 1px solid #dee2e6; border-top: 3px solid #6c757d;">
+                                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                                        <span class="small fw-semibold" style="color: #6c757d;">Original Match</span>
+                                                                        <span class="badge" style="background: {{ $omColor }}; font-size: 1rem; padding: 5px 12px; color: white;">{{ $originalScore['overall_percent'] }}%</span>
+                                                                    </div>
+                                                                    <div class="small text-muted mb-2">vs. Tenant's Original Request</div>
+                                                                    <div class="d-flex justify-content-between small">
+                                                                        <div>
+                                                                            <div class="fw-semibold" style="color: {{ $getScoreColor($originalScore['services_match_percent']) }};">Services {{ $originalScore['services_match_percent'] }}%</div>
+                                                                            <div class="text-muted">{{ $originalScore['services_matched_count'] }}/{{ $originalScore['services_baseline_total'] }}</div>
+                                                                        </div>
+                                                                        <div>
+                                                                            <div class="fw-semibold" style="color: {{ $getScoreColor($originalScore['terms_match_percent']) }};">Terms {{ $originalScore['terms_match_percent'] }}%</div>
+                                                                            <div class="text-muted">{{ $originalScore['terms_matched_count'] }}/{{ $originalScore['terms_baseline_total'] }}</div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            {{-- Counter Match column --}}
+                                                            @php $cmColor = $getScoreColor($latestCounterScore['overall_percent']); @endphp
+                                                            <div class="col-md-6">
+                                                                <div class="p-3 rounded" style="background: #f0f9ff; border: 1px solid #bde0fe; border-top: 3px solid {{ $cmColor }};">
+                                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                                        <span class="small fw-semibold" style="color: #1a3a5c;">Counter Match</span>
+                                                                        <span class="badge" style="background: {{ $cmColor }}; font-size: 1rem; padding: 5px 12px; color: white;">{{ $latestCounterScore['overall_percent'] }}%</span>
+                                                                    </div>
+                                                                    <div class="small text-muted mb-2">vs. Tenant's Latest Counter</div>
+                                                                    <div class="d-flex justify-content-between small">
+                                                                        <div>
+                                                                            <div class="fw-semibold" style="color: {{ $getScoreColor($latestCounterScore['services_match_percent']) }};">Services {{ $latestCounterScore['services_match_percent'] }}%</div>
+                                                                            <div class="text-muted">{{ $latestCounterScore['services_matched_count'] }}/{{ $latestCounterScore['services_baseline_total'] }}</div>
+                                                                            @if($latestCounterScore['services_extra_count'] > 0)<div style="color: #6c757d;">+{{ $latestCounterScore['services_extra_count'] }} added</div>@endif
+                                                                            @if($latestCounterScore['services_missing_count'] > 0)<div style="color: #dc3545;">{{ $latestCounterScore['services_missing_count'] }} missing</div>@endif
+                                                                        </div>
+                                                                        <div>
+                                                                            <div class="fw-semibold" style="color: {{ $getScoreColor($latestCounterScore['terms_match_percent']) }};">Terms {{ $latestCounterScore['terms_match_percent'] }}%</div>
+                                                                            <div class="text-muted">{{ $latestCounterScore['terms_matched_count'] }}/{{ $latestCounterScore['terms_baseline_total'] }}</div>
+                                                                            @if($latestCounterScore['terms_changed_count'] > 0)<div style="color: #dc3545;">{{ $latestCounterScore['terms_changed_count'] }} changed</div>@endif
+                                                                            @if($latestCounterScore['terms_added_count'] > 0)<div style="color: #6c757d;">+{{ $latestCounterScore['terms_added_count'] }} added</div>@endif
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        @else
+                                                        {{-- SINGLE SCORE --}}
                                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                                             <h6 class="mb-0" style="color: #1a3a5c; font-weight: 600;">
                                                                 <i class="fa fa-chart-pie me-2"></i>Match Score
@@ -2186,6 +2325,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 </div>
                                                             </div>
                                                         </div>
+                                                        @endif
+
                                                     </div>
                                                     {{-- ========== END MATCH SCORE PANEL ========== --}}
 

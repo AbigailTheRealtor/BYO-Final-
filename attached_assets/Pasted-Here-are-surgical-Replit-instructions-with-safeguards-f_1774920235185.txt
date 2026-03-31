@@ -1,0 +1,567 @@
+Here are **surgical Replit instructions with safeguards** for fixing the **Match Score / Counter Offer Match Score counts** on **Hire a Tenant Agent** so services and broker compensation terms are counted correctly.
+
+---
+
+# Replit Instructions With Safeguards
+
+## Issue to fix
+
+On **Hire a Tenant Agent** bid comparison and counter-offer match scoring:
+
+### Problem 1: Offered Services count is wrong
+
+The screen is showing:
+
+* **Offered Services: 102/102 matched**
+
+But the actual checked services are only about **38 checkmarks** total.
+
+That means the match engine is likely counting:
+
+* every nested input
+* extra hidden fields
+* repeated array values
+* section metadata
+* “other” helper inputs
+* stale or duplicate service entries
+
+instead of counting only the actual selected service checkboxes.
+
+---
+
+### Problem 2: Broker Compensation & Agency Agreement Terms count is wrong
+
+The Terms Match is also wrong because it appears to be counting **each input box as its own term**, instead of counting the correct parent agreement terms / logical fields.
+
+Example of what should **not** happen:
+
+* flat fee amount = 1
+* percentage amount = 1
+* another side of same combo field = 1
+
+That inflates the score.
+
+For combo structures, the scoring should count the **logical agreement term**, not every child input box.
+
+---
+
+## Goal
+
+Fix the **Match Score** and **Counter Offer Match Score** logic for **Tenant Agent bids** so that:
+
+### Offered Services
+
+Counts only:
+
+* actual checked services selected from the Tenant’s requested services list
+
+Not:
+
+* section headings
+* empty “other” rows
+* helper inputs
+* metadata
+* duplicated values
+* hidden dynamic fields
+* stale service strings not in the current catalog
+
+### Broker Compensation & Agency Agreement Terms
+
+Counts only:
+
+* each logical agreement term once
+
+Not:
+
+* every child input
+* every numeric subfield independently
+* every hidden conditional field independently
+
+---
+
+# Safeguards
+
+## 1. Scope only to Tenant Match Score / Counter Match Score first
+
+Fix only the active logic used for:
+
+* Tenant Agent bid match score
+* Tenant Agent counter-offer match score
+* Tenant bid comparison display if it shares the same scorer
+
+Do **not** touch Buyer, Seller, or Landlord scoring unless the scoring helper is truly shared and can be safely updated without side effects.
+
+---
+
+## 2. No destructive DB changes
+
+* Do not rename/drop/delete columns or tables
+* Do not migrate existing bid data destructively
+* If a schema change is absolutely required, it must be **add-only**
+* Prefer fixing the scoring engine only
+
+---
+
+## 3. Do not rewrite the actual form fields
+
+Do not change:
+
+* labels
+* tooltips
+* field order
+* UI wording
+* saved form structure
+
+This is a **scoring / normalization / comparison logic fix**, not a form redesign.
+
+---
+
+## 4. Use Tenant listing creation as source of truth
+
+For both:
+
+* offered services catalog
+* broker compensation & agency agreement logical terms
+
+Use the **Tenant listing creation flow** as the source of truth, not stale bid-side assumptions.
+
+---
+
+## 5. Preserve display of added services / added terms
+
+If the UI currently shows added services or changed terms for transparency, keep that behavior.
+
+But added items must **not inflate the match denominator** against the Tenant’s original request.
+
+---
+
+# Desired scoring behavior
+
+## A. Offered Services scoring should count only checked service items
+
+### Correct rule
+
+The denominator should equal:
+
+**the number of actual service checkboxes selected by the Tenant on the original listing**
+
+The numerator should equal:
+
+**how many of those original selected service checkboxes are still included in the Agent bid / counter**
+
+### Example
+
+If Tenant selected 38 services:
+
+* denominator = 38
+* if Agent kept all 38 = 38/38
+* if Agent removed 2 = 36/38
+* if Agent added 5 extra services = still compare against the original 38 only
+
+Added services can be shown separately, but they should not increase matched count.
+
+---
+
+## B. Terms scoring should count logical agreement terms, not raw inputs
+
+The denominator should equal:
+
+**the number of logical agreement terms the Tenant originally filled out**
+
+The numerator should equal:
+
+**how many of those logical terms still match in the Agent bid / counter**
+
+### Important
+
+Count **one logical term**, not multiple child boxes.
+
+---
+
+# Required implementation logic
+
+## Part 1: Fix Offered Services scoring
+
+### Source of truth
+
+Use the same current Tenant services catalog used in listing creation for the correct property type:
+
+* Residential Tenant
+* Commercial Tenant
+
+### Count only valid selected services
+
+Before scoring:
+
+1. Load original Tenant selected services
+2. Normalize them
+3. Filter to valid current catalog entries only
+4. Remove duplicates
+5. Ignore empty values
+6. Ignore “Other” free-text helper fields unless the actual “Other” checkbox was selected
+
+### Score using only actual service checkbox values
+
+Do not count:
+
+* category headings
+* arrays of descriptions
+* “Specify additional services requested” text boxes by themselves
+* hidden entries
+* unselected dynamic helper inputs
+* stale values not in current catalog
+
+---
+
+## Part 2: Fix Broker Compensation & Agency Agreement Terms scoring
+
+### Build a logical term map
+
+Instead of comparing raw every-input keys, define a **Tenant logical scoring map**.
+
+Each logical term should count as **one term**.
+
+Example structure:
+
+* Tenant’s Broker Commission Structure
+* Tenant’s Broker Lease Fee
+* Payment Timing for Broker Fees
+* Interested in Purchasing a Property
+* Tenant’s Broker Purchase Fee
+* Interested in a Lease-Option Agreement
+* Compensation for Creating the Lease-Option Agreement
+* Compensation if Purchase Option is Exercised
+* Protection Period Timeframe
+* Early Termination Fee
+* Retainer Fee
+* Retainer Fee Amount
+* Retainer Fee Application
+* Tenant Agency Agreement Timeframe
+* Acceptable Brokerage Relationship
+* Additional Terms
+
+That means if a field is a combo field like:
+
+* flat fee + percentage
+  or
+* percent + flat fee
+
+it still counts as **one logical term**, not 2 or 3.
+
+---
+
+## Part 3: Treat combo fields as one scored unit
+
+For any combo fee structure:
+
+Examples:
+
+* Flat Fee + Percentage of Net Aggregate Rent
+* Percentage of Total Purchase Price + Flat Fee
+
+The score should evaluate the **entire logical term** as one term.
+
+### Example
+
+`Tenant's Broker Lease Fee` counts as one term:
+
+* compare fee structure type
+* compare any required sub-values for that term
+* then determine whether that one term matches / changed / differs
+
+Do not separately count:
+
+* structure dropdown = 1
+* flat fee input = 1
+* percentage input = 1
+
+That would be wrong.
+
+---
+
+## Part 4: Conditional term scoring rules
+
+Only score child terms if the parent condition is active.
+
+### Example
+
+If `Interested in Purchasing a Property = No`
+then do not include:
+
+* Tenant’s Broker Purchase Fee
+
+### Example
+
+If `Interested in a Lease-Option Agreement = No`
+then do not include:
+
+* Compensation for Creating the Lease-Option Agreement
+* Compensation if Purchase Option is Exercised
+
+### Example
+
+If `Retainer Fee = No`
+then do not include:
+
+* Retainer Fee Amount
+* Retainer Fee Application
+
+### Example
+
+If `Tenant Agency Agreement Timeframe = Other`
+then the custom text belongs to that same logical term, not a separate extra scored term.
+
+---
+
+## Part 5: Match score must compare to Tenant original request only
+
+Keep this rule:
+
+> Match Score compares the bid only to the Tenant’s original request. Added services or added terms are shown for transparency but do not increase the score.
+
+That rule is correct.
+
+Now enforce it correctly in code by making sure denominators are based only on:
+
+* original selected services
+* original logical terms actually requested/filled
+
+---
+
+# What Replit should inspect first
+
+Find the exact code used for:
+
+1. Tenant bid match score
+2. Tenant counter-offer match score
+3. service comparison normalizer
+4. terms comparison normalizer
+5. any shared scorer that builds:
+
+   * matched count
+   * changed count
+   * denominator
+   * services match percent
+   * terms match percent
+   * overall score
+
+Look for code that is currently:
+
+* flattening full arrays recursively
+* counting every leaf value
+* counting raw meta-map entries
+* counting every populated child input as its own term
+* including hidden conditional fields even when parent is inactive
+
+---
+
+# Required code changes
+
+## A. Add a dedicated Tenant scoring normalizer
+
+Create Tenant-only scoring normalization helpers if not already present, something like:
+
+* `normalizeTenantServicesForScoring()`
+* `normalizeTenantTermsForScoring()`
+* `buildTenantLogicalTermMap()`
+
+These should be used for both:
+
+* bid match score
+* counter offer match score
+
+---
+
+## B. Services scoring helper
+
+Build a helper that returns only the selected service checkbox values:
+
+### Must do:
+
+* use current Tenant services catalog for property type
+* flatten only actual service option labels
+* intersect selected values with valid catalog
+* unique them
+* ignore blanks
+* ignore headings and metadata
+* ignore “other” text rows unless “Other – Specify additional services as needed” is actually selected
+
+### Output should be:
+
+a clean set/list of selected service labels only
+
+---
+
+## C. Terms scoring helper
+
+Build a helper that returns a clean logical map of scorable terms:
+
+Example output shape:
+
+* `commission_structure => {...}`
+* `lease_fee => {...}`
+* `payment_timing => {...}`
+* `interested_in_purchase => {...}`
+* `purchase_fee => {...}` only if applicable
+* `interested_in_lease_option => {...}`
+* `lease_option_creation_comp => {...}` only if applicable
+* `lease_option_purchase_comp => {...}` only if applicable
+* `protection_period => {...}`
+* `early_termination_fee => {...}`
+* `retainer_fee => {...}`
+* `retainer_fee_amount => {...}` only if applicable
+* `retainer_fee_application => {...}` only if applicable
+* `agency_timeframe => {...}`
+* `brokerage_relationship => {...}`
+* `additional_terms => {...}` if actually filled
+
+But each of those counts as only one logical term.
+
+---
+
+## D. Counter-offer match score must reuse same scoring rules
+
+Do not build a second separate counting system for counters.
+
+Counter scoring must call the same normalized logic:
+
+* original Tenant request
+* current counter/bid state
+* compare logical services + logical terms only
+
+---
+
+## E. Remove raw recursive leaf counting
+
+If the current scorer uses something like:
+
+* recursive array flattening
+* count of all non-empty leaves
+* raw form payload count
+* every populated child field = one count
+
+replace that for Tenant scoring.
+
+That is the reason the count is blowing up to 102.
+
+---
+
+# Copy-paste prompt for Replit
+
+Use this exactly:
+
+> Fix the Hire a Tenant Agent Match Score and Counter Offer Match Score counting logic. Right now Offered Services is being massively overcounted, showing values like 102/102 when the actual Tenant-selected checkboxes are around 38. Broker Compensation & Agency Agreement Terms are also being overcounted because raw child inputs are being counted individually instead of logical terms.
+>
+> Scope this fix only to the active Tenant scoring/comparison flow first. Do not modify Buyer, Seller, or Landlord scoring unless a shared helper can be updated safely without side effects. No destructive DB changes. Do not change form labels, tooltips, order, or saved data structure.
+>
+> Use Tenant listing creation as the source of truth for both the Offered Services catalog and the logical Broker Compensation & Agency Agreement Terms structure.
+>
+> Update services scoring so it counts only actual checked Tenant service options selected on the original listing, filtered to the current valid Tenant catalog for that property type, deduplicated, with headings/helper inputs/empty other rows/metadata excluded. Added services may still display for transparency but must not increase the original match denominator.
+>
+> Update terms scoring so each logical agreement term counts once. Do not count every child input box separately. Combo fields like flat fee + percentage must score as one logical term. Conditional child terms should only be scored when their parent condition is active. For example, purchase fee only counts if Interested in Purchasing = Yes; lease-option compensation fields only count if Interested in Lease-Option = Yes; retainer amount/application only count if Retainer Fee = Yes; custom “Other” text should belong to the same parent term, not count as an extra separate term.
+>
+> Refactor the Tenant scorer to use dedicated normalization helpers for services and logical terms, and make both the regular Match Score and Counter Offer Match Score reuse the same normalization/comparison rules. Remove any raw recursive leaf counting or full payload counting that is inflating counts.
+>
+> After the fix, test a Tenant bid where about 38 service checkboxes are selected and confirm the denominator reflects only those selected service checkboxes, not 102. Also confirm the terms denominator reflects logical Tenant agreement terms only, and that added services/added terms do not inflate the original match denominator.
+
+---
+
+# What Replit should test
+
+## Test 1: Services denominator
+
+Use a Tenant listing with about 38 checked services
+Expected:
+
+* denominator reflects only those checked service options
+* not 102
+* not headings
+* not dynamic helper inputs
+
+## Test 2: Added services
+
+Agent adds extra services not selected by Tenant
+Expected:
+
+* extras may display as added
+* services denominator remains based only on Tenant original selected services
+
+## Test 3: Lease fee combo term
+
+Tenant selects a combo broker lease fee structure
+Expected:
+
+* counts as one logical term
+* not one count per dropdown/input
+
+## Test 4: Purchase conditional
+
+If `Interested in Purchasing = No`
+Expected:
+
+* purchase fee not counted in denominator
+
+If `Yes`
+Expected:
+
+* purchase fee counts as one logical term
+
+## Test 5: Lease-option conditional
+
+If `Interested in Lease-Option = No`
+Expected:
+
+* lease-option compensation fields excluded
+
+If `Yes`
+Expected:
+
+* relevant lease-option terms included logically
+
+## Test 6: Retainer conditional
+
+If `Retainer Fee = No`
+Expected:
+
+* amount/application excluded
+
+If `Yes`
+Expected:
+
+* scored correctly as logical dependent terms
+
+## Test 7: Counter-offer scoring
+
+Open counter flow and change services/terms
+Expected:
+
+* same denominator logic
+* same normalized scoring rules
+* no inflated counts
+
+---
+
+# Best likely root cause
+
+The most likely issue is that the current scorer is doing some version of:
+
+* flattening the full payload
+* counting all non-empty nested values
+* counting every child input as its own term
+* counting service metadata instead of only checked service labels
+
+That is why you are seeing **102/102** instead of around **38/38**.
+
+---
+
+# My recommendation
+
+After this Tenant fix is working, use the same logical-term scoring architecture for:
+
+* Seller
+* Buyer
+* Landlord
+
+but fix Tenant first so you do not risk cross-role breakage.
+
+I can also turn this into a **shorter hard-safeguard version in your exact Replit style** if you want.

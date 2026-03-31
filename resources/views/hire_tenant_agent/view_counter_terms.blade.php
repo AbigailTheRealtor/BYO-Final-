@@ -126,6 +126,18 @@
                         // === MATCH SCORE — baseline-driven (TenantBidMatchScoreHelper) ===
                         $score = \App\Helpers\TenantBidMatchScoreHelper::calculate($baselineData, $counterData);
 
+                        // === DUAL SCORE: Latest Counter Match (tenant viewing agent's counter response) ===
+                        // $score above = "Original Match" (agent counter vs. original listing / agent's original bid)
+                        // $latestCounterScore = "Latest Counter Match" (agent counter vs. tenant's most recent counter)
+                        $showDualScore      = false;
+                        $latestCounterScore = null;
+                        if ($viewerRole === 'tenant' && $tenantCounter) {
+                            $latestCounterScore = \App\Helpers\TenantBidMatchScoreHelper::calculate(
+                                $tenantCounter->getAllMeta(), $counterData
+                            );
+                            $showDualScore = true;
+                        }
+
                         $brokerScore          = $score['terms_match_percent'];
                         $brokerMatched        = $score['terms_matched_count'];
                         $brokerTotal          = $score['terms_baseline_total'];
@@ -240,6 +252,83 @@
                         </div>
                         
                         <div class="match-score-panel mb-4 p-3" style="background: white; border-radius: 10px; border: 1px solid #dee2e6;">
+
+                            @if ($showDualScore && $latestCounterScore)
+                            {{-- DUAL SCORE: Original Match + Latest Counter Match --}}
+                            <div class="mb-3">
+                                <span style="font-weight: 600; color: #1a3a5c; font-size: 1.1rem;">
+                                    <i class="fas fa-chart-pie me-2"></i>Match Summary
+                                </span>
+                            </div>
+                            <p class="small text-muted mb-3">
+                                <i class="fas fa-info-circle me-1"></i>
+                                <strong>Original Match</strong> compares this response to the Tenant's original listing request.<br>
+                                <strong>Latest Counter Match</strong> compares this response to the Tenant's most recent counteroffer.<br>
+                                Added services or terms are shown for transparency but do not increase either score.
+                            </p>
+                            <div class="row g-3 mb-3">
+                                {{-- Original Match --}}
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded" style="background: #f8f9fa; border: 1px solid #dee2e6; border-top: 3px solid #6c757d;">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="small fw-semibold" style="color: #6c757d;">Original Match</span>
+                                            <span class="badge" style="background: {{ $totalScoreColor }}; font-size: 0.95rem; padding: 4px 10px; color: white;">{{ $totalScore }}%</span>
+                                        </div>
+                                        <div class="small text-muted">vs. {{ $baselineLabel }}</div>
+                                        <div class="row g-1 mt-2">
+                                            <div class="col-6">
+                                                <div class="small fw-semibold" style="color: {{ $getScoreColor($servicesScore) }};">Services {{ $servicesScore }}%</div>
+                                                <div class="small text-muted">{{ $servicesMatched }}/{{ $servicesTotal }}</div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="small fw-semibold" style="color: {{ $getScoreColor($brokerScore) }};">Terms {{ $brokerScore }}%</div>
+                                                <div class="small text-muted">{{ $brokerMatched }}/{{ $brokerTotal }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {{-- Latest Counter Match --}}
+                                @php
+                                    $lcSvcScore  = $latestCounterScore['services_match_percent'];
+                                    $lcTrmScore  = $latestCounterScore['terms_match_percent'];
+                                    $lcOverall   = $latestCounterScore['overall_percent'];
+                                    $lcSvcMatch  = $latestCounterScore['services_matched_count'];
+                                    $lcSvcTotal  = $latestCounterScore['services_baseline_total'];
+                                    $lcTrmMatch  = $latestCounterScore['terms_matched_count'];
+                                    $lcTrmTotal  = $latestCounterScore['terms_baseline_total'];
+                                    $lcSvcExtra  = $latestCounterScore['services_extra_count'];
+                                    $lcSvcMiss   = $latestCounterScore['services_missing_count'];
+                                    $lcTrmChg    = $latestCounterScore['terms_changed_count'];
+                                    $lcTrmAdded  = $latestCounterScore['terms_added_count'];
+                                    $lcColor     = $getScoreColor($lcOverall);
+                                @endphp
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded" style="background: #f0f9ff; border: 1px solid #bde0fe; border-top: 3px solid {{ $lcColor }};">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="small fw-semibold" style="color: #1a3a5c;">Latest Counter Match</span>
+                                            <span class="badge" style="background: {{ $lcColor }}; font-size: 0.95rem; padding: 4px 10px; color: white;">{{ $lcOverall }}%</span>
+                                        </div>
+                                        <div class="small text-muted">vs. Tenant's Most Recent Counter</div>
+                                        <div class="row g-1 mt-2">
+                                            <div class="col-6">
+                                                <div class="small fw-semibold" style="color: {{ $getScoreColor($lcSvcScore) }};">Services {{ $lcSvcScore }}%</div>
+                                                <div class="small text-muted">{{ $lcSvcMatch }}/{{ $lcSvcTotal }}</div>
+                                                @if($lcSvcExtra > 0)<div class="small" style="color: #6c757d;">+{{ $lcSvcExtra }} added</div>@endif
+                                                @if($lcSvcMiss > 0)<div class="small" style="color: #dc3545;">{{ $lcSvcMiss }} missing</div>@endif
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="small fw-semibold" style="color: {{ $getScoreColor($lcTrmScore) }};">Terms {{ $lcTrmScore }}%</div>
+                                                <div class="small text-muted">{{ $lcTrmMatch }}/{{ $lcTrmTotal }}</div>
+                                                @if($lcTrmChg > 0)<div class="small" style="color: #dc3545;">{{ $lcTrmChg }} changed</div>@endif
+                                                @if($lcTrmAdded > 0)<div class="small" style="color: #6c757d;">+{{ $lcTrmAdded }} added</div>@endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @else
+                            {{-- SINGLE SCORE (no counter, or agent viewing) --}}
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span style="font-weight: 600; color: #1a3a5c; font-size: 1.1rem;">
                                     <i class="fas fa-chart-pie me-2"></i>Match Score
@@ -284,6 +373,7 @@
                                     </div>
                                 </div>
                             </div>
+                            @endif
                         </div>
                         
                         <div class="mb-4">
