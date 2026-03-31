@@ -1,0 +1,143 @@
+Goal:
+Add a second match score for Hire a Tenant’s Agent counter negotiations called Latest Counter Match, while keeping the existing Original Match Score anchored to the Tenant’s original listing request.
+
+Core rule:
+Do NOT replace the original score.
+Show both scores during counter rounds.
+
+Definitions:
+
+1. Original Match Score
+
+* Baseline = Tenant’s original listing selections and original filled broker compensation / agency agreement terms
+* This score must remain unchanged in purpose
+* It answers: “How close is this bid to what the Tenant originally requested?”
+
+2. Latest Counter Match
+
+* Baseline = Tenant’s most recent counter submission immediately before the current Agent response
+* This score applies only in counter negotiation context
+* It answers: “How closely did the Agent respond to the Tenant’s latest counter?”
+
+Rules for Latest Counter Match:
+
+* Use the same deterministic matching rules already approved for Services and Terms
+* Count only the Tenant’s latest counter selections / filled terms as the baseline
+* Agent-added services do not increase the score
+* Agent-added terms do not increase the score
+* Missing baseline services count as not matched
+* Changed baseline terms count as not matched
+* Added-by-Agent terms are displayed separately only
+
+Services formula:
+latest_counter_services_match_percent = matched_counter_services / total_counter_services_baseline * 100
+
+Terms formula:
+latest_counter_terms_match_percent = matched_counter_terms / total_counter_terms_baseline * 100
+
+Overall Latest Counter Match:
+Use the same weighting currently used for the main score, or 50/50 if no intentional weighting exists.
+
+UI requirements:
+
+1. In counter bid views, show a Match Summary section with:
+
+* Original Match: __%
+* Latest Counter Match: __%
+* Added by Agent: X Services, Y Terms
+
+2. Add helper text:
+
+* Original Match compares this bid to the Tenant’s original request.
+* Latest Counter Match compares this response to the Tenant’s most recent counteroffer.
+
+3. Keep the category breakdown transparent for the latest counter too:
+   Services:
+
+* Matched from Latest Counter: X / Y
+* Extra Services Added by Agent: A
+* Missing from Latest Counter: M
+
+Terms:
+
+* Matched from Latest Counter: X / Y
+* Changed from Latest Counter: C
+* Added by Agent: T Terms
+
+Implementation requirements:
+
+1. Do not duplicate scoring logic.
+
+* Reuse the shared helper / service already created for baseline matching.
+* Extend it so it can accept a configurable baseline source:
+
+  * original_tenant_request
+  * latest_tenant_counter
+
+2. Add a baseline mode parameter to the helper/service.
+   Example concept:
+
+* calculateMatchScore($baselineData, $agentData, $baselineMode = 'original')
+* or equivalent clean implementation
+
+3. For counter history:
+
+* each Agent counter response should calculate Latest Counter Match only against the immediately preceding Tenant counter
+* not against the first Tenant request
+* not against some merged negotiation state
+
+4. Preserve auditability:
+
+* Do not overwrite original score data
+* Keep original score and latest counter score independently available for rendering
+
+Safeguards:
+
+* Scope this task only to Hire a Tenant’s Agent
+* Do not change Buyer, Seller, or Landlord flows
+* Do not change DB schema unless absolutely necessary
+* Do not rename fields or routes
+* Do not remove the existing Original Match Score
+* Do not use fuzzy AI logic; keep all calculations deterministic and rules-based
+
+Testing requirements:
+
+Test 1
+
+* Original request = 10 services
+* Tenant counter later narrows request to 8 services
+* Agent responds matching all 8
+  Expected:
+* Original Match is based on original 10 baseline
+* Latest Counter Match is based on latest 8 baseline
+
+Test 2
+
+* Tenant latest counter includes 12 filled terms
+* Agent matches 10, changes 2, adds 1 new fee
+  Expected:
+* Latest Counter Terms Match = 10/12
+* Added fee shown separately
+* Added fee does not improve Latest Counter Match
+
+Test 3
+
+* Verify both scores render correctly in:
+
+  * counter terms view
+  * private data modal
+  * full counter response view
+  * any bid summary card that shows counter negotiation details
+
+Deliverable:
+Return:
+
+1. exact files touched
+2. helper/service method updated
+3. confirmation that both scores are preserved independently
+4. one real example showing:
+
+   * Original Match %
+   * Latest Counter Match %
+   * Added by Agent counts
+   * why the two percentages differ

@@ -2002,6 +2002,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     <div class="mt-2 small text-muted">
                                         <i class="fa fa-info-circle me-1"></i>Compared to: {{ $baselineLabel }}
                                     </div>
+                                    <div class="mt-1 small" style="color: #6c757d; font-style: italic; font-size: 0.78rem;">
+                                        Match Score compares this bid only to the Tenant's original request. Added services or added terms are shown for transparency but do not increase the score.
+                                    </div>
                                 </div>
                                 @endif
                                 
@@ -3740,42 +3743,26 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     @endphp
                                                     
                                                     @php
-                                                        // Service status indicators - compare bid services to baseline services
-                                                        // Defensive guard: ensure $baselineData is defined
-                                                        $baselineData = $baselineData ?? [];
-                                                        $baselineServicesList = is_array($baselineData['services'] ?? null) ? $baselineData['services'] : [];
-                                                        $baselineOtherList = is_array($baselineData['other_services'] ?? null) ? $baselineData['other_services'] : [];
-                                                        
-                                                        // Flatten baseline services
-                                                        $flatBaselineServices = [];
-                                                        array_walk_recursive($baselineServicesList, function($svc) use (&$flatBaselineServices) {
-                                                            if (is_string($svc) && !empty(trim($svc)) && $svc !== 'Other') {
-                                                                $flatBaselineServices[] = trim($svc);
-                                                            }
-                                                        });
-                                                        $flatBaselineServices = array_merge($flatBaselineServices, array_filter($baselineOtherList, fn($s) => is_string($s) && !empty(trim($s))));
-                                                        $flatBaselineServices = array_unique($flatBaselineServices);
-                                                        
-                                                        // Bid services (already computed as $ltdAllServices + $ltdOtherServices)
-                                                        $allBidServices = array_merge($ltdAllServices, $ltdOtherServices);
-                                                        
-                                                        // Service status checks
-                                                        $isServiceMatched = function($svc) use ($flatBaselineServices) {
-                                                            return in_array($svc, $flatBaselineServices);
-                                                        };
-                                                        $isServiceExtra = function($svc) use ($flatBaselineServices) {
-                                                            return !in_array($svc, $flatBaselineServices);
-                                                        };
-                                                        
-                                                        // Find missing services (in baseline but not in bid)
-                                                        $missingServices = array_diff($flatBaselineServices, $allBidServices);
+                                                        // Service status indicators — use helper-computed normalized arrays already in scope
+                                                        // $baselineNorm, $normalizeService, and $score are set earlier in this bid loop iteration
+                                                        $ltdMissingCount = $score['services_missing_count'];
+
+                                                        // Normalized check helpers for per-service display coloring
+                                                        $isServiceMatched = fn($svc) => in_array(
+                                                            \App\Helpers\TenantBidMatchScoreHelper::normalizeService((string)$svc),
+                                                            $baselineNorm
+                                                        );
+                                                        $isServiceExtra = fn($svc) => !in_array(
+                                                            \App\Helpers\TenantBidMatchScoreHelper::normalizeService((string)$svc),
+                                                            $baselineNorm
+                                                        );
                                                     @endphp
 
                                                     <div class="mb-4">
                                                         <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
                                                             <i class="fa fa-clipboard-list me-2"></i>Offered Services
-                                                            @if(count($missingServices) > 0)
-                                                            <span class="badge bg-danger ms-2" style="font-size: 0.7rem;">{{ count($missingServices) }} Missing</span>
+                                                            @if($ltdMissingCount > 0)
+                                                            <span class="badge bg-danger ms-2" style="font-size: 0.7rem;">{{ $ltdMissingCount }} Missing</span>
                                                             @endif
                                                         </h6>
                                                         
