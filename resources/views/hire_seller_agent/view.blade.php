@@ -3681,9 +3681,10 @@
                                                 }
                                             }
 
-                                            $otherSvcsModal = is_string($allBidMeta['other_services'] ?? '')
-                                                ? json_decode($allBidMeta['other_services'], true) ?? []
-                                                : ($allBidMeta['other_services'] ?? []);
+                                            $rawOtherSvcsModal = $allBidMeta['other_services'] ?? null;
+                                            $otherSvcsModal = is_string($rawOtherSvcsModal)
+                                                ? json_decode($rawOtherSvcsModal, true) ?? []
+                                                : ($rawOtherSvcsModal ?? []);
                                             $otherSvcsModal = array_filter((array)$otherSvcsModal, fn($s) => is_string($s) && !empty(trim($s)));
 
                                             $hasAnyServices = !empty($services) || !empty($otherSvcsModal) || !empty($unmappedSvcs);
