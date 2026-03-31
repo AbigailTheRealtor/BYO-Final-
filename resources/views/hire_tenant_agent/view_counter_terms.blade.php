@@ -77,12 +77,17 @@
                         $counterData = $activeCounter->getAllMeta();
                         
                         $fmtMoney = function($v) {
-                            if (empty($v) || !is_numeric($v)) return null;
-                            return '$' . number_format((float)$v, 2);
+                            if ($v === null || $v === '') return null;
+                            $raw = preg_replace('/[^0-9.]/', '', (string)$v);
+                            if ($raw === '' || !is_numeric($raw)) return null;
+                            return '$' . number_format((float)$raw, 2);
                         };
                         $fmtPercent = function($v) {
-                            if (empty($v) || !is_numeric($v)) return null;
-                            return rtrim(rtrim(number_format((float)$v, 2), '0'), '.') . '%';
+                            if ($v === null || $v === '') return null;
+                            $raw = preg_replace('/[^0-9.]/', '', (string)$v);
+                            if ($raw === '' || !is_numeric($raw)) return null;
+                            $num = (float)$raw;
+                            return rtrim(rtrim(number_format($num, 2), '0'), '.') . '%';
                         };
                         $joinParts = function(array $parts) {
                             return implode(' + ', array_filter($parts)) ?: null;
@@ -458,8 +463,32 @@
                                         {!! isset($brokerMismatches['interested_purchase_fee_type']) ? $mismatchBadge : '' !!}
                                     </li>
                                     @if ($counterData['interested_purchase_fee_type'] === 'Yes' && !empty($counterData['purchase_fee_type']))
+                                    @php
+                                        $purchaseFeeType = $counterData['purchase_fee_type'] ?? '';
+                                        $purchaseFeeDisplay = '—';
+                                        if ($purchaseFeeType === 'Flat Fee') {
+                                            $purchaseFeeDisplay = $fmtMoney($counterData['purchase_fee_flat'] ?? null) ?? '—';
+                                        } elseif ($purchaseFeeType === 'Percentage of the Total Purchase Price') {
+                                            $pct = $counterData['purchase_fee_percentage'] ?? null;
+                                            $purchaseFeeDisplay = $pct ? ($fmtPercent($pct) . ' of Total Purchase Price') : '—';
+                                        } elseif ($purchaseFeeType === 'Percentage of the Total Purchase Price + Flat Fee') {
+                                            $purchaseFeeDisplay = $joinParts([
+                                                $fmtMoney($counterData['purchase_fee_flat_combo'] ?? null),
+                                                !empty($counterData['purchase_fee_percentage_combo']) ? ($fmtPercent($counterData['purchase_fee_percentage_combo']) . ' of Total Purchase Price') : null,
+                                            ]) ?? '—';
+                                        } elseif ($purchaseFeeType === 'Flat Fee + Percentage of the Total Purchase Price') {
+                                            $purchaseFeeDisplay = $joinParts([
+                                                $fmtMoney($counterData['purchase_fee_flat_combo'] ?? null),
+                                                !empty($counterData['purchase_fee_percentage_combo']) ? ($fmtPercent($counterData['purchase_fee_percentage_combo']) . ' of Total Purchase Price') : null,
+                                            ]) ?? '—';
+                                        } elseif ($purchaseFeeType === 'other') {
+                                            $purchaseFeeDisplay = $counterData['purchase_fee_other'] ?? '—';
+                                        } else {
+                                            $purchaseFeeDisplay = $purchaseFeeType;
+                                        }
+                                    @endphp
                                     <li class="mb-2" style="{{ isset($brokerMismatches['purchase_fee_type']) ? $mismatchStyle : '' }}">
-                                        <span class="fw-semibold">Purchase Fee:</span> {{ $counterData['purchase_fee_type'] }}
+                                        <span class="fw-semibold">Purchase Fee:</span> {{ $purchaseFeeDisplay }}
                                         {!! isset($brokerMismatches['purchase_fee_type']) ? $mismatchBadge : '' !!}
                                     </li>
                                     @endif
