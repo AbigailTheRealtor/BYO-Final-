@@ -124,7 +124,8 @@
                         }
                         
                         // === MATCH SCORE — baseline-driven (TenantBidMatchScoreHelper) ===
-                        $score = \App\Helpers\TenantBidMatchScoreHelper::calculate($baselineData, $counterData);
+                        $counterPropType = $auction->get->property_type ?? 'Residential Property';
+                        $score = \App\Helpers\TenantBidMatchScoreHelper::calculate($baselineData, $counterData, null, $counterPropType);
 
                         // === DUAL SCORE: Latest Counter Match (tenant viewing agent's counter response) ===
                         // $score above = "Original Match" (agent counter vs. original listing / agent's original bid)
@@ -133,7 +134,7 @@
                         $latestCounterScore = null;
                         if ($viewerRole === 'tenant' && $tenantCounter) {
                             $latestCounterScore = \App\Helpers\TenantBidMatchScoreHelper::calculate(
-                                $tenantCounter->getAllMeta(), $counterData
+                                $tenantCounter->getAllMeta(), $counterData, null, $counterPropType
                             );
                             $showDualScore = true;
                         }
@@ -160,21 +161,32 @@
                         // Variables re-exported for per-service rendering in the Services section
                         $normalizeService = fn($s) => \App\Helpers\TenantBidMatchScoreHelper::normalizeService((string)$s);
                         $baselineNorm     = array_merge($score['matched_services'], $score['missing_services']);
+                        // Catalog for display-level filtering — prevents Buyer/Seller services from appearing
+                        // in "Services Not Included in Counter" and similar comparison lists
+                        $displayCatalog2 = \App\Helpers\TenantBidMatchScoreHelper::getCatalog($counterPropType);
 
-                        // Raw counter services for display
+                        // Raw counter services for display (catalog-filtered to Tenant-only)
                         $csRaw = $counterData['services'] ?? [];
                         if (is_string($csRaw)) $csRaw = json_decode($csRaw, true) ?? [];
                         $csRaw = is_array($csRaw) ? array_values(array_filter($csRaw)) : [];
+                        $csRaw = array_values(array_filter(
+                            $csRaw,
+                            fn($s) => in_array($normalizeService((string)$s), $displayCatalog2, true)
+                        ));
                         $counterOtherRaw = $counterData['other_services'] ?? [];
                         if (is_string($counterOtherRaw)) $counterOtherRaw = json_decode($counterOtherRaw, true) ?? [];
                         $counterOtherRaw = is_array($counterOtherRaw) ? array_values(array_filter($counterOtherRaw, fn($s) => is_string($s) && !empty(trim($s)))) : [];
                         $allCounterServices  = array_merge($csRaw, $counterOtherRaw);
                         $counterOtherServices = $counterOtherRaw;
 
-                        // Raw baseline services for "Missing" display
+                        // Raw baseline services for "Not in Counter" display (catalog-filtered to Tenant-only)
                         $bsRaw2 = $baselineData['services'] ?? [];
                         if (is_string($bsRaw2)) $bsRaw2 = json_decode($bsRaw2, true) ?? [];
                         $bsRaw2 = is_array($bsRaw2) ? array_values(array_filter($bsRaw2)) : [];
+                        $bsRaw2 = array_values(array_filter(
+                            $bsRaw2,
+                            fn($s) => in_array($normalizeService((string)$s), $displayCatalog2, true)
+                        ));
                         $bsOtherRaw2 = $baselineData['other_services'] ?? [];
                         if (is_string($bsOtherRaw2)) $bsOtherRaw2 = json_decode($bsOtherRaw2, true) ?? [];
                         $bsOtherRaw2 = is_array($bsOtherRaw2) ? array_values(array_filter($bsOtherRaw2, fn($s) => is_string($s) && !empty(trim($s)))) : [];

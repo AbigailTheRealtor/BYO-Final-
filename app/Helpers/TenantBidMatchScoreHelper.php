@@ -14,10 +14,10 @@ namespace App\Helpers;
  * SCORING RULES
  * =============
  * Services:
- *   baseline_total = count(baseline services)          // only Tenant's selections
- *   matched        = baseline items also in compared   // Agent kept them
- *   missing        = baseline items not in compared    // Agent removed them
- *   extra          = compared items not in baseline    // Agent added — NOT in denominator
+ *   baseline_total = count(baseline services filtered to valid Tenant catalog)
+ *   matched        = baseline items also in compared    // Agent kept them
+ *   missing        = baseline items not in compared     // Agent removed them
+ *   extra          = compared items not in baseline     // Agent added — NOT in denominator
  *   services_match_percent = matched / baseline_total * 100
  *
  * Terms:
@@ -28,6 +28,14 @@ namespace App\Helpers;
  *   terms_match_percent = matched / baseline_total * 100
  *
  * Overall = 50 % Services + 50 % Terms (only non-zero components averaged)
+ *
+ * CATALOG FILTERING
+ * =================
+ * All services are filtered against the valid Tenant-only catalog before scoring.
+ * This prevents Buyer, Seller, or Landlord services that may have been stored in
+ * the database from contaminating the Tenant match score or comparison output.
+ * Pass $propertyType ('Residential Property' or 'Commercial Property') to activate.
+ * If $propertyType is null, no catalog filter is applied (backward-compatible).
  */
 class TenantBidMatchScoreHelper
 {
@@ -75,6 +83,123 @@ class TenantBidMatchScoreHelper
     ];
 
     /**
+     * Complete Residential Tenant services catalog.
+     * Source of truth: resources/views/livewire/tenant-agent-auction-bid-tabs/commission-based/services.blade.php
+     * Stored with straight apostrophes; normalizeService() makes both sides match before comparison.
+     */
+    const RESIDENTIAL_SERVICES_CATALOG = [
+        // Tenant Criteria Marketing & Promotion
+        "create a branded flyer summarizing the tenant's rental criteria",
+        "post the tenant's rental criteria on craigslist under the \"real estate wanted\" section",
+        "share the tenant's rental criteria on nextdoor in neighborhood or community groups",
+        "promote the tenant's rental criteria on facebook in rental or housing groups",
+        "share the tenant's rental criteria on instagram using posts, stories, or reels",
+        "promote the tenant's rental criteria on linkedin in real estate or housing groups",
+        "upload a tiktok video summarizing the tenant's rental criteria",
+        "upload a youtube video summarizing the tenant's rental criteria",
+        "launch a mass email campaign promoting the tenant's rental criteria",
+        "distribute branded postcards or flyers in the tenant's preferred neighborhoods",
+        "launch hyperlocal digital ads targeting the tenant's preferred rental areas",
+        // Property Search, Alerts & Matching
+        "send email alerts with new listings from the mls that match the tenant's rental criteria",
+        "search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the tenant's rental criteria",
+        "communicate with the landlord's agent, landlord, or property manager to confirm availability, lease terms, and showing instructions",
+        "evaluate properties with the tenant and provide insights on pricing, lease terms, and overall fit",
+        // Property Showings & Virtual Tours
+        "schedule and attend property showings with the tenant",
+        "coordinate or conduct virtual showings via live video or pre-recorded walkthroughs",
+        "preview properties on behalf of the tenant upon request",
+        "provide factual observations on property layout and condition",
+        // Tenant Application Support
+        "provide the tenant with application instructions or links to an online rental application platform",
+        "gather and organize required supporting documents (e.g., identification, income verification, reference letters)",
+        "submit complete and organized application packages to the landlord's agent, landlord, or property manager for review",
+        "answer questions about the application process, screening timelines, and required documentation",
+        // Lease Preparation & Execution
+        "review lease offers and assist the tenant in preparing questions or requested changes",
+        "coordinate lease negotiation with the landlord's agent, landlord, or property manager",
+        "assist with completing required lease disclosures and reviewing key lease terms",
+        "assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties",
+        // Move-In Support & Coordination
+        "coordinate move-in date and key handoff logistics with the landlord's agent, landlord or property manager",
+        "confirm completion of any agreed-upon pre-move-in cleaning or repairs",
+        "provide a utility setup checklist and local provider resources",
+        "share a move-in checklist for documentation and property condition review",
+        "confirm required move-in payments and assist the tenant with tracking amounts due, deadlines, and accepted payment methods",
+        // Leasing Strategy & Guidance
+        "provide a rental market analysis (rma) with pricing insights based on comparable rentals, neighborhood trends, and current market conditions",
+        "advise on lease types and structures (e.g., month-to-month, annual, furnished, lease-option)",
+        "provide general guidance on tenant rights and landlord responsibilities under state law",
+        "provide general guidance on lease clauses, payment terms, and renewal options",
+    ];
+
+    /**
+     * Complete Commercial Tenant services catalog.
+     * Source of truth: resources/views/livewire/tenant-agent-auction-bid-tabs/commission-based/services.blade.php
+     */
+    const COMMERCIAL_SERVICES_CATALOG = [
+        // Tenant Criteria Marketing & Promotion
+        "create a branded flyer summarizing the tenant's leasing criteria",
+        "post the tenant's leasing criteria on craigslist under the \"office/commercial\" or \"retail\" section",
+        "promote the tenant's leasing criteria on facebook in commercial leasing or business groups",
+        "share the tenant's leasing criteria on instagram using posts, stories, or reels",
+        "promote the tenant's leasing criteria on linkedin in professional, real estate, or commercial investment groups",
+        "upload a tiktok video summarizing the tenant's leasing criteria",
+        "upload a youtube video summarizing the tenant's leasing criteria",
+        "launch a mass email campaign promoting the tenant's leasing criteria",
+        "distribute branded postcards or flyers in the tenant's preferred neighborhoods",
+        "launch hyperlocal digital ads targeting the tenant's preferred leasing areas",
+        // Property Search, Alerts & Matching
+        "send listing alerts from real estate platforms that match the tenant's leasing criteria",
+        "search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the tenant's rental criteria",
+        "communicate with the landlord's agent, landlord, or property manager to confirm availability, lease terms, and showing instructions",
+        "evaluate properties for layout efficiency, building specs, logistics, zoning fit, and operational alignment",
+        // Property Showings & Virtual Tours
+        "schedule and attend property tours with the tenant",
+        "coordinate or conduct virtual showings via live video or pre-recorded walkthroughs",
+        "preview properties on behalf of the tenant upon request",
+        "provide factual notes on layout, access, parking, visibility, and other operational considerations",
+        // Tenant Application Support
+        "provide the tenant with application instructions or links to online platforms",
+        "gather and organize required supporting documents (e.g., business licenses, financials, references)",
+        "submit complete and organized application packages to the landlord's agent, landlord, or property manager",
+        // Lease Preparation, LOI & Execution
+        "draft or assist with preparing a letter of intent (loi) summarizing the tenant's business needs and proposed terms",
+        "assist with negotiating rent, cam, lease term, ti allowance, exclusivity clauses, renewal options, and other provisions (as permitted under the agency agreement)",
+        "coordinate with the landlord's agent, landlord or property manager to finalize lease terms",
+        "review lease drafts and coordinate revisions through appropriate channels",
+        "assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties",
+        "track required deposits, rent commencement, and key lease dates to ensure move-in readiness",
+        // Move-In Support & Coordination
+        "coordinate move-in date and key handoff logistics with the landlord, landlord's agent, or property manager",
+        "confirm completion of any agreed-upon pre-move-in repairs, cleaning, or buildout",
+        "provide a utility setup checklist and local provider resources",
+        "share a move-in checklist for documentation and property condition review",
+        "confirm required move-in payments and assist the tenant with tracking amounts due, deadlines, and accepted payment methods",
+        // Leasing Strategy & Guidance
+        "provide a comparative lease market analysis (clma) with pricing insights, comps, and vacancy trends",
+        "advise on lease types and structures (e.g., nnn, modified gross, full service) with general explanations of differences",
+        "provide general guidance on tenant rights and landlord responsibilities under commercial leasing law",
+        "provide general guidance on lease clauses, escalation terms, and space usage considerations",
+    ];
+
+    /**
+     * Return the normalized Tenant-only services catalog for a given property type.
+     * All returned strings are already normalized (lowercase, straight apostrophes, trimmed).
+     * Defaults to Residential when the property type is unknown.
+     */
+    public static function getCatalog(string $propertyType): array
+    {
+        $rawCatalog = str_contains(strtolower($propertyType), 'commercial')
+            ? self::COMMERCIAL_SERVICES_CATALOG
+            : self::RESIDENTIAL_SERVICES_CATALOG;
+
+        // Catalog entries are already lowercase + straight-apostrophe; normalizeService is applied
+        // here for safety in case the constant is ever edited with curly quotes.
+        return array_map([self::class, 'normalizeService'], $rawCatalog);
+    }
+
+    /**
      * Normalize a scalar value for comparison (strips whitespace, $, %, commas).
      */
     public static function normalizeForMatch($v): string
@@ -97,8 +222,15 @@ class TenantBidMatchScoreHelper
 
     /**
      * Parse services + other_services from a data array into a flat, normalized list.
+     * If $catalog is provided, only services whose normalized form appears in the catalog
+     * are kept. This prevents wrong-role services (e.g., Buyer purchase services) from
+     * contaminating Tenant scoring when both were accidentally stored together.
+     *
+     * @param array      $data    Data array containing 'services' and 'other_services' keys
+     * @param array|null $catalog Normalized valid-service strings (from getCatalog()). When
+     *                            provided, only catalog-matching services are returned.
      */
-    public static function parseServices(array $data): array
+    public static function parseServices(array $data, ?array $catalog = null): array
     {
         $services = $data['services'] ?? [];
         if (is_string($services)) $services = json_decode($services, true) ?? [];
@@ -111,7 +243,19 @@ class TenantBidMatchScoreHelper
             : [];
 
         $all = array_merge($services, $other);
-        return array_unique(array_map([self::class, 'normalizeService'], $all));
+        $normalized = array_unique(array_map([self::class, 'normalizeService'], $all));
+
+        // Catalog filter: discard any service that does not belong to the valid Tenant catalog.
+        // This removes Buyer, Seller, or Landlord services that were accidentally stored together
+        // with Tenant services in the same JSON array.
+        if ($catalog !== null) {
+            $normalized = array_values(array_filter(
+                $normalized,
+                fn($s) => in_array($s, $catalog, true)
+            ));
+        }
+
+        return $normalized;
     }
 
     /**
@@ -128,17 +272,25 @@ class TenantBidMatchScoreHelper
     /**
      * Calculate baseline-driven match score.
      *
-     * @param array $baselineData   The source-of-truth (Tenant's listing / counter / viewer's bid)
-     * @param array $comparedData   The data being evaluated (Agent's bid / counter / competing bid)
-     * @param array|null $brokerFields  Override the default broker fields list
-     * @return array                Rich result object (see keys below)
+     * @param array       $baselineData   The source-of-truth (Tenant's listing / counter / viewer's bid)
+     * @param array       $comparedData   The data being evaluated (Agent's bid / counter / competing bid)
+     * @param array|null  $brokerFields   Override the default broker fields list
+     * @param string|null $propertyType   When provided, services are filtered to the Tenant-only catalog
+     *                                    for this property type before scoring. Pass the listing's
+     *                                    property_type meta value (e.g. 'Residential Property').
+     * @return array  Rich result object (see keys below)
      */
     public static function calculate(
         array $baselineData,
         array $comparedData,
-        ?array $brokerFields = null
+        ?array $brokerFields = null,
+        ?string $propertyType = null
     ): array {
         $brokerFields = $brokerFields ?? self::BROKER_FIELDS;
+
+        // Build catalog filter: when $propertyType is given, restrict services to the valid
+        // Tenant-only catalog so wrong-role services are excluded from both baseline and compared.
+        $catalog = ($propertyType !== null) ? self::getCatalog($propertyType) : null;
 
         // ----------------------------------------------------------------
         // TERMS (Broker Compensation & Agency Agreement)
@@ -175,10 +327,10 @@ class TenantBidMatchScoreHelper
             : 100;
 
         // ----------------------------------------------------------------
-        // SERVICES
+        // SERVICES (catalog-filtered when $propertyType is provided)
         // ----------------------------------------------------------------
-        $baselineNorm  = self::parseServices($baselineData);
-        $comparedNorm  = self::parseServices($comparedData);
+        $baselineNorm  = self::parseServices($baselineData, $catalog);
+        $comparedNorm  = self::parseServices($comparedData, $catalog);
 
         $matchedServices = [];
         $missingServices = [];

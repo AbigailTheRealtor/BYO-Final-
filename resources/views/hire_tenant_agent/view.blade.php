@@ -1899,7 +1899,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             }
                             
                             // === MATCH SCORE — baseline-driven (TenantBidMatchScoreHelper) ===
-                            $score = \App\Helpers\TenantBidMatchScoreHelper::calculate($baselineData, $currentBidData);
+                            $auctionPropType = $auction->get->property_type ?? 'Residential Property';
+                            $score = \App\Helpers\TenantBidMatchScoreHelper::calculate($baselineData, $currentBidData, null, $auctionPropType);
 
                             $brokerScore          = $score['terms_match_percent'];
                             $brokerMatched        = $score['terms_matched_count'];
@@ -1927,7 +1928,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                             if ($isListingOwner || $isBidOwner) {
                                 $originalScore = \App\Helpers\TenantBidMatchScoreHelper::calculate(
-                                    $originalListingBaselineData, $currentBidData
+                                    $originalListingBaselineData, $currentBidData, null, $auctionPropType
                                 );
                                 if ($latestTenantCounter) {
                                     // $score = Latest Counter Match (counter was used as $baselineData above)
@@ -1940,10 +1941,18 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             $baselineNorm    = array_merge($score['matched_services'], $score['missing_services']);
                             $currentNorm     = array_merge($score['matched_services'], $score['extra_services']);
                             $normalizeService = fn($s) => \App\Helpers\TenantBidMatchScoreHelper::normalizeService((string)$s);
+                            // Catalog for display-level filtering — ensures Buyer/Seller services never appear
+                            // in the "Services Not Included in Agent's Bid" display inside the Private Data Modal
+                            $displayCatalog = \App\Helpers\TenantBidMatchScoreHelper::getCatalog($auctionPropType);
                             // Raw (display-ready) baseline service list for "Missing Services" section
+                            // Filtered against the Tenant-only catalog to remove wrong-role services
                             $bsRaw = $baselineData['services'] ?? [];
                             if (is_string($bsRaw)) $bsRaw = json_decode($bsRaw, true) ?? [];
                             $bsRaw = is_array($bsRaw) ? array_values(array_filter($bsRaw)) : [];
+                            $bsRaw = array_values(array_filter(
+                                $bsRaw,
+                                fn($s) => in_array($normalizeService((string)$s), $displayCatalog, true)
+                            ));
                             $bsOtherRaw = $baselineData['other_services'] ?? [];
                             if (is_string($bsOtherRaw)) $bsOtherRaw = json_decode($bsOtherRaw, true) ?? [];
                             $bsOtherRaw = is_array($bsOtherRaw) ? array_values(array_filter($bsOtherRaw, fn($s) => is_string($s) && !empty(trim($s)))) : [];

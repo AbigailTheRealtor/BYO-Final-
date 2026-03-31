@@ -63,7 +63,7 @@ class CompetingBidsService
         foreach ($competingBids as $bid) {
             $anonymousLabel = BiddingPeriodAgentMapping::getAnonymousLabel($auctionId, 'tenant_agent', $bid->user_id);
             
-            $matchScore = $this->calculateMatchScore($bid, $viewerBid);
+            $matchScore = $this->calculateMatchScore($bid, $viewerBid, $auction->get->property_type ?? 'Residential Property');
             
             $result[] = [
                 'anonymous_label' => $anonymousLabel,
@@ -125,14 +125,15 @@ class CompetingBidsService
         ];
     }
 
-    public function calculateMatchScore($competingBid, $viewerBid): array
+    public function calculateMatchScore($competingBid, $viewerBid, ?string $propertyType = null): array
     {
         // Baseline = viewer's own bid; compared = the competing bid being evaluated.
         // Uses the shared baseline-driven helper so Extra/Added items don't inflate scores.
+        // $propertyType activates the Tenant-only catalog filter to exclude Buyer/Seller services.
         $viewerData    = (array) $viewerBid->get;
         $competingData = (array) $competingBid->get;
 
-        $result = TenantBidMatchScoreHelper::calculate($viewerData, $competingData);
+        $result = TenantBidMatchScoreHelper::calculate($viewerData, $competingData, null, $propertyType);
 
         return array_merge($result, [
             'compared_to_label' => 'Compared to Your Bid',
