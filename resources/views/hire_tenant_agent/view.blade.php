@@ -1798,6 +1798,18 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             // === MATCH SCORE CALCULATION (for bid card and modal) ===
                             // Get current bid data
                             $currentBidData = (array) data_get($bid, 'get', []);
+
+                            // Remap old key aliases: bid form stores payment timing under
+                            // broker_fee_timing / broker_fee_days_* while BROKER_FIELDS
+                            // uses the canonical keys payment_timing / days_to_pay.
+                            if (($currentBidData['payment_timing'] ?? '') === '') {
+                                $currentBidData['payment_timing'] = $currentBidData['broker_fee_timing'] ?? null;
+                            }
+                            if (($currentBidData['days_to_pay'] ?? '') === '') {
+                                $currentBidData['days_to_pay'] = $currentBidData['broker_fee_days_from_rent']
+                                    ?? $currentBidData['broker_fee_days_after_lease']
+                                    ?? null;
+                            }
                             
                             // Determine baseline based on viewer
                             $baselineData = [];
@@ -2817,8 +2829,19 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     } else {
                                                         $parsedBidServices = [];
                                                     }
-                                                    // Flatten nested arrays to get simple list of service strings
-                                                    $bidAllServices = array_unique($flattenBidServices($parsedBidServices));
+                                                    // Flatten nested arrays to get simple list of service strings.
+                                                    // Normalize curly apostrophes/quotes → straight so that in_array
+                                                    // matching against $bidResidentialCategories (which uses straight
+                                                    // apostrophes in PHP source) works correctly.
+                                                    $normalizeApostrophes = fn($s) => str_replace(
+                                                        ["\u{2018}", "\u{2019}", "\u{201C}", "\u{201D}"],
+                                                        ["'",        "'",        '"',        '"'],
+                                                        $s
+                                                    );
+                                                    $bidAllServices = array_unique(array_map(
+                                                        $normalizeApostrophes,
+                                                        $flattenBidServices($parsedBidServices)
+                                                    ));
                                                     
                                                     // Parse other_services - handle both array and JSON string formats
                                                     $rawBidOtherServices = data_get($bid, 'get.other_services', []);

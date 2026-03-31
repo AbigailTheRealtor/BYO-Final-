@@ -1101,6 +1101,12 @@ class TenantAgentAuctionBid extends Component
             $bid->saveMeta('lease_fee_percentage_combo_net', $this->lease_fee_percentage_combo_net);
             $bid->saveMeta('lease_fee_other', $this->lease_fee_other);
 
+            $bid->saveMeta('broker_fee_timing', $this->broker_fee_timing);
+            $bid->saveMeta('broker_fee_timing_other', $this->broker_fee_timing_other);
+            $bid->saveMeta('broker_fee_days_from_rent', $this->broker_fee_days_from_rent);
+            $bid->saveMeta('broker_fee_days_after_lease', $this->broker_fee_days_after_lease);
+            $bid->saveMeta('broker_fee_days_after_rent', $this->broker_fee_days_after_rent);
+
             $bid->saveMeta('interested_purchase_fee_type', $this->interested_purchase_fee_type);
             $bid->saveMeta('purchase_fee_type', $this->purchase_fee_type);
             $bid->saveMeta('purchase_fee_flat_type', $this->purchase_fee_flat_type);
