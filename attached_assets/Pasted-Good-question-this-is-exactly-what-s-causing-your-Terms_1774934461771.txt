@@ -1,0 +1,184 @@
+Good question — this is exactly what’s causing your Terms Match confusion.
+
+You need to separate **UI inputs vs logical “base fields”** (what should actually be counted).
+
+---
+
+# ✅ Correct Answer: Base Fields (Logical Terms)
+
+From your screenshot, these are the **true base fields that should be counted in Terms Match**:
+
+## A) Tenant Broker Compensation
+
+1. **Tenant’s Broker Commission Structure**
+2. **Tenant’s Broker Lease Fee (type + value combined as ONE logical field)**
+3. **Payment Timing for Broker Fees**
+
+---
+
+## B) Purchase Section
+
+4. **Interested in Purchasing a Property**
+
+👉 Only if = YES:
+5. **Tenant’s Broker Purchase Fee (type + values combined)**
+
+---
+
+## C) Lease-Option Section
+
+6. **Interested in a Lease-Option Agreement**
+
+👉 Only if = YES:
+7. **Compensation for Creating Lease-Option Agreement**
+8. **Compensation if Purchase Option is Exercised**
+
+---
+
+## D) Legal Terms
+
+9. **Protection Period Timeframe**
+10. **Early Termination Fee (Yes/No)**
+
+👉 Only if = YES:
+11. **Termination Fee Amount**
+
+12. **Retainer Fee (Yes/No)**
+
+👉 Only if = YES:
+13. **Retainer Fee Amount**
+14. **Retainer Fee Application**
+
+15. **Tenant Agency Agreement Timeframe**
+
+---
+
+## E) Brokerage Relationship
+
+16. **Acceptable Brokerage Relationship**
+
+---
+
+## F) Additional Terms
+
+17. **Additional Terms (free text)**
+
+---
+
+# 📊 TOTAL BASE FIELDS
+
+👉 **17 logical fields**
+
+---
+
+# ⚠️ What should NOT be counted separately
+
+These are **inputs but NOT separate fields**:
+
+* % and $ parts of the same fee → ONE field
+* dropdown + number combo → ONE field
+* hidden fields when parent = NO → ZERO fields
+* formatting differences → NOT a field
+* null vs blank → NOT a field
+
+---
+
+# 🚨 Why your system is wrong right now
+
+Your Terms Match is showing:
+
+> 21 fields
+
+That means it is incorrectly counting:
+
+### Likely mistakes:
+
+* counting child inputs separately
+
+  * % and $ counted as 2 instead of 1
+* counting hidden fields even when not active
+* counting BOTH:
+
+  * `payment_timing`
+  * `broker_fee_timing`
+* counting lease-option fields even when logic not applied correctly
+* counting stale or duplicate keys
+
+---
+
+# 🧠 What your system SHOULD do
+
+### Correct behavior:
+
+* Only count **active logical fields**
+* Only count **1 per concept**
+* Only count **conditional fields when active**
+
+---
+
+# 🔥 What to tell Replit next
+
+You now have clarity — this is the instruction:
+
+---
+
+## Replit Instruction (copy this)
+
+Fix the Tenant Terms Match logic to use the correct logical base field count.
+
+From the Tenant Broker Compensation & Agency Agreement Terms section, the correct number of logical base fields is 17 (not 21).
+
+A logical field is defined as one complete decision/value, not individual UI inputs.
+
+Implement the following rules:
+
+1. Combine related inputs into ONE logical field:
+
+   * fee type + percentage + flat amount = 1 field
+   * dropdown + numeric input = 1 field
+
+2. Apply conditional logic:
+
+   * if "Interested in Purchasing a Property" = NO → do not count Purchase Fee
+   * if "Interested in a Lease-Option Agreement" = NO → do not count lease-option fields
+   * if "Early Termination Fee" = NO → do not count Termination Fee Amount
+   * if "Retainer Fee" = NO → do not count Retainer Fee Amount or Application
+
+3. Do not count:
+
+   * duplicate alias keys (e.g., payment_timing vs broker_fee_timing)
+   * hidden fields
+   * formatting differences
+   * null vs blank differences
+   * child inputs as separate fields
+
+4. Use one canonical logical map for Terms Match:
+
+   * Each logical field must map to one normalized value for comparison
+
+5. Recalculate Terms Match so:
+
+   * denominator = correct number of active logical fields
+   * "Changed from Baseline" reflects only true logical differences
+
+6. Verify on `/tenant/hire/agent/auction/view/140`:
+
+   * correct total logical fields
+   * only actual changed fields counted
+   * no false mismatches
+
+Do not modify Buyer, Seller, or Landlord.
+Do not change UI labels or form structure.
+Do not change saved data — only fix normalization and comparison logic.
+
+---
+
+# 🧠 Bottom line
+
+👉 Your system is currently counting **UI inputs**, not **logical terms**
+👉 It should count **17 logical fields max (less if conditional fields are inactive)**
+👉 That’s why you're seeing fake “5 changes” instead of real “2”
+
+---
+
+If you want next, I can map your exact bid (140) and tell you **which 5 fields it's incorrectly counting right now** 👍

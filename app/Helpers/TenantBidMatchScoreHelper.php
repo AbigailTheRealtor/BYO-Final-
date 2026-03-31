@@ -20,12 +20,24 @@ namespace App\Helpers;
  *   extra          = compared items not in baseline     // Agent added — NOT in denominator
  *   services_match_percent = matched / baseline_total * 100
  *
- * Terms:
- *   baseline_total = count(fields where baseline value is filled)
- *   matched        = baseline-filled fields with same normalized value in compared
- *   changed        = baseline-filled fields with different value in compared (includes blank compared)
- *   added_by_agent = compared-filled fields where baseline was blank — NOT in denominator
+ * Terms (Logical Field Scoring):
+ *   Each logical field group (see LOGICAL_FIELD_GROUPS) represents ONE complete
+ *   decision/value.  Sub-inputs that belong to the same decision are combined into
+ *   a single composite value and scored as ONE field, preventing UI input inflation.
+ *
+ *   baseline_total = count(logical groups with a filled baseline composite value)
+ *   matched        = groups whose baseline composite equals compared composite
+ *   changed        = groups whose baseline composite differs from compared composite
+ *                    (includes groups that are cascade-deactivated in the bid — they
+ *                    are excluded from the denominator entirely so only the parent
+ *                    field change counts)
+ *   added_by_agent = groups where baseline composite is blank but compared is filled
  *   terms_match_percent = matched / baseline_total * 100
+ *
+ *   Cascade deactivation: when a parent field in the BID (not baseline) deactivates
+ *   its children (e.g., interested_purchase_fee_type = 'No'), those child groups are
+ *   completely excluded from the denominator.  The parent field's own change (Yes→No)
+ *   is already captured separately.
  *
  * Overall = 50 % Services + 50 % Terms (only non-zero components averaged)
  *
@@ -40,10 +52,164 @@ namespace App\Helpers;
 class TenantBidMatchScoreHelper
 {
     /**
-     * All candidate broker/terms fields.
-     * NOTE: getActiveFields() filters this list per-calculation based on which parent
-     * conditions are active in the baseline data.  Sub-fields whose parent is inactive
-     * are excluded so they never inflate or deflate the denominator spuriously.
+     * Logical field groups — the canonical list of scorable terms.
+     *
+     * Each entry defines ONE logical decision/value in the Tenant Broker Compensation
+     * & Agency Agreement Terms section.  Groups with multiple 'fields' have their
+     * individual DB values concatenated into a single composite string for comparison,
+     * so sub-inputs for the same concept are never counted as separate changes.
+     *
+     * 'key'                  — canonical identifier; used as the primary key in
+     *                          matched_terms / changed_terms / added_terms output.
+     * 'fields'               — ordered list of DB field names that feed this concept.
+     * 'baseline_active_when' — optional array: field → required value in BASELINE data.
+     *                          When the condition is not met, the group is excluded from
+     *                          the denominator (field not active in the listing).
+     * 'bid_active_when'      — optional array: field → required value in BID data.
+     *                          When the condition is not met, the group is cascade-excluded
+     *                          (not counted in denominator, not counted as changed).
+     *                          Prevents child fields from showing as separate changes when
+     *                          the agent changed a parent to 'No'.
+     *
+     * Maximum 16 active logical groups (when all parent conditions are 'Yes').
+     * Additional_terms is omitted as it is not currently persisted in the DB.
+     */
+    const LOGICAL_FIELD_GROUPS = [
+        // 1. Commission Structure
+        [
+            'key'    => 'commission_structure',
+            'fields' => ['commission_structure'],
+        ],
+
+        // 2. Tenant's Broker Lease Fee — type + sub-value = ONE logical decision
+        [
+            'key'    => 'lease_fee_type',
+            'fields' => [
+                'lease_fee_type',
+                'lease_fee_flat',
+                'lease_fee_percentage',
+                'lease_fee_percentage_monthly_rent',
+                'lease_fee_percentage_monthly_number',
+                'lease_fee_flat_combo',
+                'lease_fee_percentage_combo',
+                'lease_fee_percentage_net',
+                'lease_fee_flat_combo_net',
+                'lease_fee_percentage_combo_net',
+                'lease_fee_other',
+            ],
+        ],
+
+        // 3. Payment Timing for Broker Fees — timing + calendar days = ONE logical decision
+        [
+            'key'    => 'payment_timing',
+            'fields' => ['payment_timing', 'days_to_pay'],
+        ],
+
+        // 4. Interested in Purchasing a Property (parent, always scored)
+        [
+            'key'    => 'interested_purchase_fee_type',
+            'fields' => ['interested_purchase_fee_type'],
+        ],
+
+        // 5. Purchase Fee — type + values = ONE logical decision
+        //    Only when BASELINE indicates interest AND BID also indicates interest.
+        //    Cascade deactivation: if agent bid 'No', parent (#4) captures the change;
+        //    these sub-fields are excluded from denominator (not separate changes).
+        [
+            'key'    => 'purchase_fee_type',
+            'fields' => [
+                'purchase_fee_type',
+                'purchase_fee_flat',
+                'purchase_fee_percentage',
+                'purchase_fee_flat_combo',
+                'purchase_fee_percentage_combo',
+                'purchase_fee_other',
+            ],
+            'baseline_active_when' => ['interested_purchase_fee_type' => 'Yes'],
+            'bid_active_when'      => ['interested_purchase_fee_type' => 'Yes'],
+        ],
+
+        // 6. Interested in a Lease-Option Agreement (parent, always scored)
+        [
+            'key'    => 'interested_lease_option_agreement',
+            'fields' => ['interested_lease_option_agreement'],
+        ],
+
+        // 7. Compensation for Creating the Lease-Option Agreement — type + value = ONE
+        [
+            'key'    => 'lease_type',
+            'fields' => ['lease_type', 'lease_value'],
+            'baseline_active_when' => ['interested_lease_option_agreement' => 'Yes'],
+            'bid_active_when'      => ['interested_lease_option_agreement' => 'Yes'],
+        ],
+
+        // 8. Compensation if Purchase Option is Exercised — type + value = ONE
+        [
+            'key'    => 'purchase_type',
+            'fields' => ['purchase_type', 'purchase_value'],
+            'baseline_active_when' => ['interested_lease_option_agreement' => 'Yes'],
+            'bid_active_when'      => ['interested_lease_option_agreement' => 'Yes'],
+        ],
+
+        // 9. Protection Period Timeframe
+        [
+            'key'    => 'protection_period',
+            'fields' => ['protection_period'],
+        ],
+
+        // 10. Early Termination Fee (Yes/No parent)
+        [
+            'key'    => 'early_termination_fee_option',
+            'fields' => ['early_termination_fee_option'],
+        ],
+
+        // 11. Termination Fee Amount — only when parent = Yes in BOTH baseline and bid
+        [
+            'key'    => 'early_termination_fee_amount',
+            'fields' => ['early_termination_fee_amount'],
+            'baseline_active_when' => ['early_termination_fee_option' => 'Yes'],
+            'bid_active_when'      => ['early_termination_fee_option' => 'Yes'],
+        ],
+
+        // 12. Retainer Fee (Yes/No parent)
+        [
+            'key'    => 'retainer_fee_option',
+            'fields' => ['retainer_fee_option'],
+        ],
+
+        // 13. Retainer Fee Amount — only when parent = Yes in BOTH baseline and bid
+        [
+            'key'    => 'retainer_fee_amount',
+            'fields' => ['retainer_fee_amount'],
+            'baseline_active_when' => ['retainer_fee_option' => 'Yes'],
+            'bid_active_when'      => ['retainer_fee_option' => 'Yes'],
+        ],
+
+        // 14. Retainer Fee Application — only when parent = Yes in BOTH baseline and bid
+        [
+            'key'    => 'retainer_fee_application',
+            'fields' => ['retainer_fee_application'],
+            'baseline_active_when' => ['retainer_fee_option' => 'Yes'],
+            'bid_active_when'      => ['retainer_fee_option' => 'Yes'],
+        ],
+
+        // 15. Tenant Agency Agreement Timeframe
+        [
+            'key'    => 'agency_agreement_timeframe',
+            'fields' => ['agency_agreement_timeframe'],
+        ],
+
+        // 16. Acceptable Brokerage Relationship
+        [
+            'key'    => 'brokerage_relationship',
+            'fields' => ['brokerage_relationship'],
+        ],
+    ];
+
+    /**
+     * Legacy flat field list — kept for backward compatibility with any external code
+     * that passes a custom $brokerFields array to calculate().  The main calculate()
+     * method now uses LOGICAL_FIELD_GROUPS and ignores this constant internally.
      *
      * REMOVED from previous version:
      *   - broker_fee_timing     (duplicate alias of payment_timing)
@@ -52,12 +218,10 @@ class TenantBidMatchScoreHelper
      *     purchase_percent_value  (legacy field names not used in current forms)
      */
     const BROKER_FIELDS = [
-        // Top-level compensation terms
         'commission_structure',
         'lease_fee_type',
         'payment_timing',
         'days_to_pay',
-        // Purchase fee (parent + conditional sub-fields)
         'interested_purchase_fee_type',
         'purchase_fee_type',
         'purchase_fee_flat',
@@ -65,13 +229,11 @@ class TenantBidMatchScoreHelper
         'purchase_fee_flat_combo',
         'purchase_fee_percentage_combo',
         'purchase_fee_other',
-        // Lease-option (parent + conditional sub-fields)
         'interested_lease_option_agreement',
         'lease_type',
         'lease_value',
         'purchase_type',
         'purchase_value',
-        // Legal terms
         'protection_period',
         'early_termination_fee_option',
         'early_termination_fee_amount',
@@ -80,7 +242,6 @@ class TenantBidMatchScoreHelper
         'retainer_fee_application',
         'agency_agreement_timeframe',
         'brokerage_relationship',
-        // Lease fee sub-fields (conditional on lease_fee_type)
         'lease_fee_flat',
         'lease_fee_percentage',
         'lease_fee_percentage_monthly_rent',
@@ -205,8 +366,6 @@ class TenantBidMatchScoreHelper
             ? self::COMMERCIAL_SERVICES_CATALOG
             : self::RESIDENTIAL_SERVICES_CATALOG;
 
-        // Catalog entries are already lowercase + straight-apostrophe; normalizeService is applied
-        // here for safety in case the constant is ever edited with curly quotes.
         return array_map([self::class, 'normalizeService'], $rawCatalog);
     }
 
@@ -259,9 +418,6 @@ class TenantBidMatchScoreHelper
             ? array_values(array_filter($other, fn($s) => is_string($s) && !empty(trim($s))))
             : [];
 
-        // Normalize standard services and apply catalog filter if provided.
-        // The catalog filter removes Buyer, Seller, or Landlord services that may have been
-        // accidentally stored alongside Tenant services, but it NEVER touches other_services.
         $servicesNorm = array_map([self::class, 'normalizeService'], $services);
         if ($catalog !== null) {
             $servicesNorm = array_values(array_filter(
@@ -271,7 +427,6 @@ class TenantBidMatchScoreHelper
         }
         $servicesNorm = array_unique($servicesNorm);
 
-        // Custom other_services always pass through — no catalog filter applied.
         $otherNorm = array_values(array_filter(
             array_map([self::class, 'normalizeService'], $other),
             fn($s) => $s !== ''
@@ -281,9 +436,46 @@ class TenantBidMatchScoreHelper
     }
 
     /**
-     * Filter the broker fields list to only those that are "active" given the baseline data.
-     * Sub-fields whose parent condition is not met in the baseline are excluded so they cannot
-     * inflate the denominator with stale or irrelevant values.
+     * Build a normalized composite value from a list of DB field names.
+     * Non-empty values are joined with '|' in the given field order.
+     * This collapses sub-inputs for one logical concept into a single comparable string.
+     *
+     * @param array $data   The data array (baseline or compared).
+     * @param array $fields Ordered list of DB field names that feed this concept.
+     * @return string       Normalized composite (may be empty string if all fields blank).
+     */
+    public static function buildCompositeValue(array $data, array $fields): string
+    {
+        $parts = [];
+        foreach ($fields as $f) {
+            $v = $data[$f] ?? null;
+            if (self::isFilled($v)) {
+                $parts[] = self::normalizeForMatch($v);
+            }
+        }
+        return implode('|', $parts);
+    }
+
+    /**
+     * Check whether a logical group's condition is satisfied for a given data array.
+     *
+     * @param array      $conditionMap  ['field' => 'required_value'] from LOGICAL_FIELD_GROUPS.
+     * @param array      $data          The data array to check against (baseline or bid).
+     * @return bool
+     */
+    private static function checkGroupCondition(array $conditionMap, array $data): bool
+    {
+        foreach ($conditionMap as $condField => $condValue) {
+            if (($data[$condField] ?? '') !== $condValue) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Legacy getActiveFields — kept for backward compatibility with external callers.
+     * The main calculate() method now uses LOGICAL_FIELD_GROUPS directly.
      *
      * Rules applied:
      *  - Lease fee sub-fields: only the sub-field matching the selected lease_fee_type counts.
@@ -294,15 +486,14 @@ class TenantBidMatchScoreHelper
      *  - Retainer sub-fields: only when retainer_fee_option === 'Yes'.
      *  - days_to_pay: only when payment_timing contains a day-count variant.
      *
-     * @param array $baselineData  The baseline data array (used to check parent conditions).
+     * @param array $baselineData  The baseline data array.
      * @param array $fields        Full field list to filter.
-     * @return array               Filtered field list safe to use as the scoring denominator.
+     * @return array               Filtered field list.
      */
     public static function getActiveFields(array $baselineData, array $fields): array
     {
         $b = $baselineData;
 
-        // Resolve helpers
         $leaseFeeType    = $b['lease_fee_type'] ?? '';
         $purchaseParent  = $b['interested_purchase_fee_type'] ?? '';
         $purchaseFeeType = $b['purchase_fee_type'] ?? '';
@@ -311,13 +502,12 @@ class TenantBidMatchScoreHelper
         $retainer        = $b['retainer_fee_option'] ?? '';
         $payTiming       = strtolower($b['payment_timing'] ?? '');
 
-        $isPurchaseYes   = $purchaseParent === 'Yes';
+        $isPurchaseYes    = $purchaseParent === 'Yes';
         $isLeaseOptionYes = $leaseOption === 'Yes';
-        $isEarlyTermYes  = $earlyTerm === 'Yes';
-        $isRetainerYes   = $retainer === 'Yes';
+        $isEarlyTermYes   = $earlyTerm === 'Yes';
+        $isRetainerYes    = $retainer === 'Yes';
         $payTimingHasDays = str_contains($payTiming, 'day');
 
-        // Lease fee type mapping: type string → which sub-fields are active
         $leaseFlatTypes     = ['Flat Fee'];
         $leasePctTypes      = ['Percentage of the Gross Lease Value'];
         $leaseMonthlyTypes  = ['Percentage of Monthly Rent'];
@@ -326,7 +516,6 @@ class TenantBidMatchScoreHelper
         $leaseComboNetTypes = ['Flat Fee + Percentage of Net Aggregate Rent'];
         $leaseOtherTypes    = ['Other'];
 
-        // Purchase fee type mapping
         $purchaseFlatType   = 'Flat Fee';
         $purchasePctType    = 'Percentage of the Total Purchase Price';
         $purchaseComboTypes = [
@@ -336,43 +525,36 @@ class TenantBidMatchScoreHelper
         $purchaseOtherType  = 'other';
 
         $conditionalRules = [
-            // Lease fee sub-fields
-            'lease_fee_flat'                  => in_array($leaseFeeType, $leaseFlatTypes, true),
-            'lease_fee_percentage'            => in_array($leaseFeeType, $leasePctTypes, true),
+            'lease_fee_flat'                      => in_array($leaseFeeType, $leaseFlatTypes, true),
+            'lease_fee_percentage'                => in_array($leaseFeeType, $leasePctTypes, true),
             'lease_fee_percentage_monthly_rent'   => in_array($leaseFeeType, $leaseMonthlyTypes, true),
             'lease_fee_percentage_monthly_number' => in_array($leaseFeeType, $leaseMonthlyTypes, true),
-            'lease_fee_flat_combo'            => in_array($leaseFeeType, array_merge($leaseComboTypes, $leaseComboNetTypes), true),
-            'lease_fee_percentage_combo'      => in_array($leaseFeeType, $leaseComboTypes, true),
-            'lease_fee_percentage_net'        => in_array($leaseFeeType, array_merge($leaseNetTypes, $leaseComboNetTypes), true),
-            'lease_fee_flat_combo_net'        => in_array($leaseFeeType, $leaseComboNetTypes, true),
-            'lease_fee_percentage_combo_net'  => in_array($leaseFeeType, $leaseComboNetTypes, true),
-            'lease_fee_other'                 => in_array($leaseFeeType, $leaseOtherTypes, true),
-            // Purchase fee sub-fields
-            'purchase_fee_type'               => $isPurchaseYes,
-            'purchase_fee_flat'               => $isPurchaseYes && $purchaseFeeType === $purchaseFlatType,
-            'purchase_fee_percentage'         => $isPurchaseYes && $purchaseFeeType === $purchasePctType,
-            'purchase_fee_flat_combo'         => $isPurchaseYes && in_array($purchaseFeeType, $purchaseComboTypes, true),
-            'purchase_fee_percentage_combo'   => $isPurchaseYes && in_array($purchaseFeeType, $purchaseComboTypes, true),
-            'purchase_fee_other'              => $isPurchaseYes && $purchaseFeeType === $purchaseOtherType,
-            // Lease-option sub-fields
-            'lease_type'                      => $isLeaseOptionYes,
-            'lease_value'                     => $isLeaseOptionYes,
-            'purchase_type'                   => $isLeaseOptionYes,
-            'purchase_value'                  => $isLeaseOptionYes,
-            // Legal term sub-fields
-            'early_termination_fee_amount'    => $isEarlyTermYes,
-            'retainer_fee_amount'             => $isRetainerYes,
-            'retainer_fee_application'        => $isRetainerYes,
-            // Payment timing sub-fields
-            'days_to_pay'                     => $payTimingHasDays,
+            'lease_fee_flat_combo'                => in_array($leaseFeeType, array_merge($leaseComboTypes, $leaseComboNetTypes), true),
+            'lease_fee_percentage_combo'          => in_array($leaseFeeType, $leaseComboTypes, true),
+            'lease_fee_percentage_net'            => in_array($leaseFeeType, array_merge($leaseNetTypes, $leaseComboNetTypes), true),
+            'lease_fee_flat_combo_net'            => in_array($leaseFeeType, $leaseComboNetTypes, true),
+            'lease_fee_percentage_combo_net'      => in_array($leaseFeeType, $leaseComboNetTypes, true),
+            'lease_fee_other'                     => in_array($leaseFeeType, $leaseOtherTypes, true),
+            'purchase_fee_type'                   => $isPurchaseYes,
+            'purchase_fee_flat'                   => $isPurchaseYes && $purchaseFeeType === $purchaseFlatType,
+            'purchase_fee_percentage'             => $isPurchaseYes && $purchaseFeeType === $purchasePctType,
+            'purchase_fee_flat_combo'             => $isPurchaseYes && in_array($purchaseFeeType, $purchaseComboTypes, true),
+            'purchase_fee_percentage_combo'       => $isPurchaseYes && in_array($purchaseFeeType, $purchaseComboTypes, true),
+            'purchase_fee_other'                  => $isPurchaseYes && $purchaseFeeType === $purchaseOtherType,
+            'lease_type'                          => $isLeaseOptionYes,
+            'lease_value'                         => $isLeaseOptionYes,
+            'purchase_type'                       => $isLeaseOptionYes,
+            'purchase_value'                      => $isLeaseOptionYes,
+            'early_termination_fee_amount'        => $isEarlyTermYes,
+            'retainer_fee_amount'                 => $isRetainerYes,
+            'retainer_fee_application'            => $isRetainerYes,
+            'days_to_pay'                         => $payTimingHasDays,
         ];
 
         return array_values(array_filter($fields, function (string $field) use ($conditionalRules) {
-            // If a conditional rule exists for this field, it must be true to include it
             if (array_key_exists($field, $conditionalRules)) {
                 return $conditionalRules[$field];
             }
-            // No rule → always include (top-level parent fields)
             return true;
         }));
     }
@@ -391,12 +573,18 @@ class TenantBidMatchScoreHelper
     /**
      * Calculate baseline-driven match score.
      *
+     * Terms are scored using LOGICAL_FIELD_GROUPS — each group represents ONE logical
+     * decision (e.g., "Tenant's Broker Lease Fee" = fee type + sub-value combined).
+     * This prevents individual UI inputs from inflating the changed count or denominator.
+     * Cascade deactivation excludes child groups when the agent's bid deactivates
+     * their parent (e.g., agent says "No" to purchasing → purchase fee children excluded).
+     *
      * @param array       $baselineData   The source-of-truth (Tenant's listing / counter / viewer's bid)
      * @param array       $comparedData   The data being evaluated (Agent's bid / counter / competing bid)
-     * @param array|null  $brokerFields   Override the default broker fields list
+     * @param array|null  $brokerFields   Ignored — kept for signature backward compatibility only.
+     *                                    Terms scoring now uses LOGICAL_FIELD_GROUPS exclusively.
      * @param string|null $propertyType   When provided, services are filtered to the Tenant-only catalog
-     *                                    for this property type before scoring. Pass the listing's
-     *                                    property_type meta value (e.g. 'Residential Property').
+     *                                    for this property type before scoring.
      * @return array  Rich result object (see keys below)
      */
     public static function calculate(
@@ -405,48 +593,111 @@ class TenantBidMatchScoreHelper
         ?array $brokerFields = null,
         ?string $propertyType = null
     ): array {
-        $brokerFields = $brokerFields ?? self::BROKER_FIELDS;
-
-        // Build catalog filter: when $propertyType is given, restrict services to the valid
-        // Tenant-only catalog so wrong-role services are excluded from both baseline and compared.
+        // Build catalog filter for services
         $catalog = ($propertyType !== null) ? self::getCatalog($propertyType) : null;
 
-        // Apply conditional field filtering so sub-fields whose parent condition is not active
-        // in the baseline are excluded from the denominator.  This prevents stale values from
-        // old form states from inflating or shifting the terms count unpredictably.
-        $activeFields = self::getActiveFields($baselineData, $brokerFields);
-
         // ----------------------------------------------------------------
-        // TERMS (Broker Compensation & Agency Agreement)
+        // TERMS — Logical Group Scoring
         // ----------------------------------------------------------------
-        $matchedTerms      = [];   // baseline filled, compared same value
-        $changedTerms      = [];   // baseline filled, compared different/blank
-        $addedByAgentTerms = [];   // baseline blank, compared filled
+        // For counting purposes, each logical group = 1 field regardless of
+        // how many sub-inputs it contains.
+        //
+        // changed_terms and matched_terms output includes the group primary key
+        // PLUS any active individual sub-field keys (for view mismatch badges).
+        // ----------------------------------------------------------------
+        $matchedTerms      = [];   // key → ['baseline' => …, 'compared' => …]
+        $changedTerms      = [];   // key → ['baseline' => …, 'compared' => …]
+        $addedByAgentTerms = [];   // key → ['baseline' => …, 'compared' => …]
 
-        foreach ($activeFields as $field) {
-            $bv = $baselineData[$field] ?? null;
-            $cv = $comparedData[$field] ?? null;
+        $groupMatchCount   = 0;
+        $groupChangedCount = 0;
+        $groupAddedCount   = 0;
+        $groupTotalCount   = 0;    // denominator
 
-            $bFilled = self::isFilled($bv);
-            $cFilled = self::isFilled($cv);
+        foreach (self::LOGICAL_FIELD_GROUPS as $group) {
+            $key    = $group['key'];
+            $fields = $group['fields'];
 
-            if ($bFilled) {
-                if ($cFilled && self::normalizeForMatch($cv) === self::normalizeForMatch($bv)) {
-                    $matchedTerms[$field] = ['baseline' => $bv, 'compared' => $cv];
-                } else {
-                    $changedTerms[$field] = ['baseline' => $bv, 'compared' => $cv];
+            // ── 1. Baseline condition — is this group active at all? ──────
+            if (isset($group['baseline_active_when'])) {
+                if (!self::checkGroupCondition($group['baseline_active_when'], $baselineData)) {
+                    continue; // Group not applicable for this listing
                 }
-            } elseif ($cFilled) {
-                $addedByAgentTerms[$field] = ['baseline' => $bv, 'compared' => $cv];
             }
-            // both blank → skip
+
+            // ── 2. Build composite values ────────────────────────────────
+            $bComposite = self::buildCompositeValue($baselineData, $fields);
+            $cComposite = self::buildCompositeValue($comparedData, $fields);
+
+            // ── 3. Determine denominator membership ──────────────────────
+            if (!self::isFilled($bComposite)) {
+                // Baseline blank → added by agent (not in denominator)
+                if (self::isFilled($cComposite)) {
+                    $groupAddedCount++;
+                    $addedByAgentTerms[$key] = ['baseline' => null, 'compared' => $cComposite];
+                    // Individual sub-field keys for display
+                    foreach ($fields as $f) {
+                        if ($f !== $key) {
+                            $cv = $comparedData[$f] ?? null;
+                            if (self::isFilled($cv)) {
+                                $addedByAgentTerms[$f] = ['baseline' => $baselineData[$f] ?? null, 'compared' => $cv];
+                            }
+                        }
+                    }
+                }
+                continue;
+            }
+
+            // ── 4. Bid cascade deactivation ──────────────────────────────
+            // When the bid's parent is 'No' (or missing), child groups are excluded
+            // from the denominator entirely.  The parent field's own change is counted
+            // separately (it appears as its own group further up or down the list).
+            if (isset($group['bid_active_when'])) {
+                if (!self::checkGroupCondition($group['bid_active_when'], $comparedData)) {
+                    // Skip — do not add to denominator, do not count as change.
+                    // The parent group (e.g., interested_purchase_fee_type) already
+                    // captures the Yes→No shift as a separate logical change.
+                    continue;
+                }
+            }
+
+            // ── 5. Compare and classify ───────────────────────────────────
+            $groupTotalCount++;
+
+            if (self::normalizeForMatch($cComposite) === self::normalizeForMatch($bComposite)) {
+                // MATCHED
+                $groupMatchCount++;
+                $matchedTerms[$key] = ['baseline' => $bComposite, 'compared' => $cComposite];
+                // Individual sub-field keys for view display
+                foreach ($fields as $f) {
+                    if ($f !== $key) {
+                        $matchedTerms[$f] = [
+                            'baseline' => $baselineData[$f] ?? null,
+                            'compared' => $comparedData[$f] ?? null,
+                        ];
+                    }
+                }
+            } else {
+                // CHANGED
+                $groupChangedCount++;
+                $changedTerms[$key] = ['baseline' => $bComposite, 'compared' => $cComposite];
+                // Individual sub-field keys for view mismatch badges (backward compat)
+                foreach ($fields as $f) {
+                    if ($f !== $key) {
+                        $changedTerms[$f] = [
+                            'baseline' => $baselineData[$f] ?? null,
+                            'compared' => $comparedData[$f] ?? null,
+                        ];
+                    }
+                }
+            }
         }
 
-        $termsBaselineTotal  = count($matchedTerms) + count($changedTerms);
-        $termsMatchedCount   = count($matchedTerms);
-        $termsChangedCount   = count($changedTerms);
-        $termsAddedCount     = count($addedByAgentTerms);
-        $termsMatchPercent   = $termsBaselineTotal > 0
+        $termsBaselineTotal = $groupTotalCount;
+        $termsMatchedCount  = $groupMatchCount;
+        $termsChangedCount  = $groupChangedCount;
+        $termsAddedCount    = $groupAddedCount;
+        $termsMatchPercent  = $termsBaselineTotal > 0
             ? (int) round(($termsMatchedCount / $termsBaselineTotal) * 100)
             : 100;
 

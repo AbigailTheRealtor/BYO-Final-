@@ -1,0 +1,11 @@
+Fix the active Tenant bid/detail/match-score flow for the current reproduction case where Services Match shows 35/38, Extra 1, Missing 3, and Terms Match shows 16/21 with Changed from Baseline: 5. I only changed 2 things from the original request, so Terms Match is overcounting changes.
+
+First, do a full Terms Match audit for this exact Tenant bid. Output the exact logical term list currently being scored, including logical term key, label, baseline normalized value, current normalized value, match/mismatch result, why it was counted, and whether it was conditionally active. Do not just dump raw payload arrays. I need the actual logical scoring list used by Terms Match so we can identify why it is counting 5 changed instead of 2.
+
+Then fix the Terms Match logic so only true logical Broker Compensation & Agency Agreement Terms changes are counted. Do not count stale hidden fields, duplicate aliases, formatting-only differences, inactive dependent fields, or null/blank/missing-key differences as separate changes. If only 2 logical terms were changed, then Changed from Baseline must equal 2.
+
+Also update the same Tenant bid detail/card view so that, just like it currently shows Extra Service Offered, it also explicitly shows Services Requested But Agent Did Not Include. This missing-services list must use the same canonical service comparison set already used by Services Match, and it must show the exact missing services corresponding to the current Missing from Original count.
+
+Scope this fix to the active Tenant bid/detail/match-score flow only. Do not modify Buyer, Seller, or Landlord unless a clearly shared helper is the direct root cause and can be updated safely without side effects. No destructive DB changes, no schema changes, no renaming fields, and no changes to service wording or field labels. Preserve the existing Tenant fixes for contamination filtering, additional-services counting, commission-structure wording, and apostrophe normalization.
+
+After the fix, verify on this same Tenant bid that the logical terms audit matches the final score, that only the true changed terms are counted, and that the bid card/detail now shows both Extra Services and Missing Services using the exact same canonical comparison output.

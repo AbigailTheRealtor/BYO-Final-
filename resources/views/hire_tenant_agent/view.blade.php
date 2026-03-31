@@ -2937,10 +2937,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             @endif
                                                             
                                                             {{-- Show services that were in baseline but agent didn't include --}}
-                                                            @if ($isListingOwner && !empty($missingServices))
+                                                            @if (!empty($missingServices))
                                                             <div class="mt-4 p-3" style="background-color: #ffe6e6; border-radius: 8px; border: 1px solid #dc3545;">
                                                                 <div class="fw-bold mb-2" style="color: #721c24; font-size: 0.95rem;">
-                                                                    <i class="fa fa-times-circle me-2"></i>Services You Requested But Agent Didn't Include ({{ count($missingServices) }})
+                                                                    <i class="fa fa-times-circle me-2"></i>Services Requested But Agent Did Not Include ({{ count($missingServices) }})
                                                                 </div>
                                                                 <ul class="mb-0" style="padding-left: 1.2rem;">
                                                                     @foreach ($missingServices as $missingSvc)
