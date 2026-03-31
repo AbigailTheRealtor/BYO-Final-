@@ -4284,6 +4284,29 @@ class TenantAgentAuction extends Component
             
             $auction->save();
 
+            // ── Regression guard ──────────────────────────────────────────────
+            // The search query binds PHP `true` as integer 1, which matches the
+            // varchar value '1'. If is_approved was ever written as the literal
+            // string 'true' (or any other non-'1' truthy form) it would silently
+            // disappear from search results. Re-read the stored value immediately
+            // after save and emit a warning log if it is not the expected '1'.
+            $storedIsApproved = \Illuminate\Support\Facades\DB::table($auction->getTable())
+                ->where('id', $auction->id)
+                ->value('is_approved');
+            if ($storedIsApproved !== '1' && $storedIsApproved !== 1) {
+                \Illuminate\Support\Facades\Log::warning(
+                    '[TENANT LISTING SEARCH-VISIBILITY REGRESSION] is_approved stored as unexpected value; listing may be invisible on /search/hire/tenant/agent/auctions',
+                    [
+                        'auction_id'     => $auction->id,
+                        'stored_value'   => $storedIsApproved,
+                        'expected_value' => '1',
+                        'table'          => $auction->getTable(),
+                        'user_id'        => $auction->user_id,
+                    ]
+                );
+            }
+            // ── End regression guard ──────────────────────────────────────────
+
             $this->listingId = $auction->id;
 
             $this->saveAllMetadata($auction);
