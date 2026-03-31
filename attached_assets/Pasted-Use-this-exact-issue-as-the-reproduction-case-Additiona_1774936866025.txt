@@ -1,0 +1,79 @@
+Use this exact issue as the reproduction case:
+
+Additional Terms was edited from the original value, but the bid detail page did **not** show it as a mismatch.
+
+I need you to fix the active **Tenant bid/detail Terms mismatch display** so **Additional Terms** behaves consistently in both:
+
+1. the **Terms Match score**
+2. the **row-level mismatch badge/highlight** on the bid detail page
+
+### Scope
+
+Tenant bid/detail/match-score flow only.
+
+### Hard safeguards
+
+* No destructive DB changes
+* No schema changes
+* No renaming fields
+* No changing labels or wording
+* Do not modify Buyer, Seller, or Landlord unless a clearly shared helper is the direct root cause and can be updated safely without side effects
+* Preserve the recent Additional Terms scoring fix
+* Preserve the existing Tenant terms/services fixes unless a directly proven Tenant bug requires a safe adjustment
+
+### Required diagnosis
+
+For the exact bid where Additional Terms was edited, trace all of these side by side:
+
+1. **Listing baseline value** used for Additional Terms
+2. **Bid current value** used for Additional Terms
+3. **Logical term comparison result** for `additional_details_broker`
+4. **`changed_terms` contents** after Terms Match is calculated
+5. The exact value/key used by the **row-level mismatch badge/highlight** on the bid detail page for Additional Terms
+6. The exact value/key used by the **visible displayed Additional Terms text**
+
+I need to know whether the score and the display are using:
+
+* the same key
+* the same normalized values
+* the same current/baseline source
+
+Do not just dump raw payload arrays. Show the exact comparison chain for Additional Terms.
+
+### Required fix
+
+Make Additional Terms use one consistent source and one consistent comparison path for:
+
+* Terms Match denominator
+* Changed from Baseline count
+* row-level mismatch badge/highlight
+* displayed current value on the bid detail page
+
+### Required rule
+
+If Additional Terms text is meaningfully changed, then:
+
+* it must count as a mismatch in Terms Match
+* it must increment `Changed from Baseline`
+* it must visibly show as a mismatch on the Additional Terms row
+
+Whitespace-only differences and smart-quote differences should still be ignored, but real content changes must be flagged.
+
+### Verification
+
+After the fix, verify on the exact edited Tenant bid that:
+
+* Terms Match includes Additional Terms correctly
+* changing Additional Terms produces a mismatch
+* deleting Additional Terms produces a mismatch
+* blank vs non-blank produces a mismatch
+* the row-level Additional Terms display shows the mismatch consistently with the Terms Match score
+
+### Deliverable
+
+Give me:
+
+* exact files changed
+* exact root cause
+* exact key/value chain used for Additional Terms baseline vs current
+* before/after verification showing that editing Additional Terms now visibly shows as a mismatch

@@ -2675,7 +2675,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">F) Additional Terms / Additional Details</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 @if (data_get($bid, 'get.additional_details_broker'))
-                                                                <li class="mb-1"><span class="fw-semibold">Additional Terms:</span> {{ data_get($bid, 'get.additional_details_broker') }}</li>
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['additional_details_broker']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Additional Terms:</span> {{ data_get($bid, 'get.additional_details_broker') }}{!! isset($brokerMismatches['additional_details_broker']) ? $mismatchBadge : '' !!}</li>
                                                                 @endif
                                                                 @if (data_get($bid, 'get.additional_details'))
                                                                 <li class="mb-1"><span class="fw-semibold">Additional Details:</span> {{ data_get($bid, 'get.additional_details') }}</li>
