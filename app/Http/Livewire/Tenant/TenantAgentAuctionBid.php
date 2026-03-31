@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use App\Models\TenantAgentAuctionBid as TenantAgentAuctionBidData;
+use App\Helpers\TenantBidMatchScoreHelper;
 use App\Models\AgentDefaultProfile;
 use App\Models\User;
 use App\Notifications\BidSubmittedNotification;
@@ -468,6 +469,37 @@ class TenantAgentAuctionBid extends Component
         return array_map(function ($s) {
             return str_replace("\x27", "\u{2019}", str_replace("\x5c\x27", "\u{2019}", $s));
         }, $services);
+    }
+
+    /**
+     * Remove any services that do not belong to the current property-type's
+     * Tenant agent catalog. This guards against cross-role contamination (e.g.
+     * Buyer or Seller services that were carried in from a default profile).
+     * The original string form (encoding) of each valid service is preserved.
+     */
+    private function filterServicesToCurrentCatalog(array $services): array
+    {
+        $propType = $this->property_type ?: '';
+        if ($propType === '') {
+            return $services;
+        }
+
+        $catalog = TenantBidMatchScoreHelper::getCatalog($propType);
+        if (empty($catalog)) {
+            return $services;
+        }
+
+        $normalize = static function (string $s): string {
+            return mb_strtolower(trim(str_replace(
+                ["\u{2018}", "\u{2019}", "\u{201C}", "\u{201D}", "'"],
+                ["'",        "'",        '"',        '"',        "'"],
+                $s
+            )));
+        };
+
+        return array_values(array_filter($services, static function ($svc) use ($catalog, $normalize): bool {
+            return in_array($normalize((string) $svc), $catalog, true);
+        }));
     }
 
     public function addServiceField(): void
@@ -1096,7 +1128,9 @@ class TenantAgentAuctionBid extends Component
             $bid->saveMeta('additional_details_broker', $this->additional_details_broker);
             $bid->saveMeta('additional_details', $this->additional_details ?? null);
 
-            // Save Services
+            // Save Services — filter to Tenant catalog first to prevent cross-role
+            // contamination (e.g. Buyer services from a shared default profile).
+            $this->services = $this->filterServicesToCurrentCatalog($this->services);
             $bid->saveMeta('services', json_encode($this->services));
             $bid->saveMeta('other_services', json_encode($this->other_services ?? null));
             $bid->saveMeta('other_services_enabled', $this->other_services_enabled);

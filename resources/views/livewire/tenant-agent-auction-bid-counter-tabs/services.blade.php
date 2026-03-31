@@ -13,7 +13,8 @@
     <h5 class="section-header bg-info text-white p-2 mb-3">{{ $category['title'] }}</h5>
     <div class="service-options">
         @foreach ($category['services'] as $svcIndex => $service)
-            <div class="form-check service-item">
+            <div class="form-check service-item"
+                 wire:key="{{ $category['prefix'] }}-svc-{{ $loop->parent->index }}-{{ $svcIndex }}">
                 <input class="form-check-input" type="checkbox" wire:model="services"
                     value="{{ $service }}"
                     id="{{ $category['prefix'] }}-{{ $loop->parent->index }}-{{ $svcIndex }}">

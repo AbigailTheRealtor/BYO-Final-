@@ -1,0 +1,388 @@
+Perfect — here is your **final, clean, copy-paste Replit instruction**.
+
+This combines:
+
+* full Tenant QA
+* counter integrity
+* services + terms canonical comparison
+* match score stability
+* AND accepted bid summary
+
+This is your **Tenant Gold Standard Lockdown Pass**
+
+---
+
+# 🚀 REPLIT INSTRUCTION — TENANT END-TO-END WORKFLOW AUDIT & LOCKDOWN
+
+I want you to perform a **full end-to-end QA audit and stabilization pass** for the **Hire a Tenant Agent flow** and fix only issues you can directly reproduce.
+
+This is the **final Tenant system verification pass**.
+The goal is to make Tenant the **gold-standard reference implementation** before applying the same architecture to Seller, Landlord, and Buyer.
+
+---
+
+# 🔒 SCOPE (STRICT)
+
+Tenant flow only:
+
+* Tenant listing creation
+* Agent bid
+* Bid display
+* Counter bid
+* Counter display
+* Services comparison
+* Terms comparison
+* Match Score
+* Counter Match Score
+* Accept / Counter / Reject flow
+* Accepted Bid Summary
+* Traditional listings
+* Bidding Period listings
+* Residential + Commercial Tenant
+
+---
+
+# 🛑 HARD SAFEGUARDS
+
+* No destructive DB changes
+* No renaming/dropping tables or columns
+* No changing field names, labels, tooltips, or order
+* No rewriting working logic outside Tenant flow
+* No Buyer/Seller/Landlord edits
+* No speculative refactors
+* No UI wording changes
+* Preserve all working fixes already implemented
+
+If a change risks breaking working Tenant behavior → **STOP and report**
+
+---
+
+# 🎯 CORE OBJECTIVE
+
+Ensure the system is:
+
+## ✅ Deterministic
+
+## ✅ Accurate
+
+## ✅ Consistent across all screens
+
+## ✅ Using canonical data everywhere
+
+---
+
+# 🧠 REQUIRED ARCHITECTURE VALIDATION
+
+Confirm and enforce:
+
+## ONE canonical system for:
+
+* services comparison
+* terms comparison
+* match score
+* counter comparison
+
+## NOT:
+
+* raw payload comparison ❌
+* multiple inconsistent pipelines ❌
+* display-based logic ❌
+* array merge side-effects ❌
+
+---
+
+# 🧪 REQUIRED QA TESTING
+
+You must test ALL of the following and report results.
+
+---
+
+## 🟢 1. LISTING CREATION
+
+### Test:
+
+1. Residential Tenant – Traditional
+2. Residential Tenant – Bidding Period
+3. Commercial Tenant – Traditional
+4. Commercial Tenant – Bidding Period
+
+### Verify:
+
+* correct services catalog loads
+* correct terms load
+* values save correctly
+* additional/custom services save
+* no missing or extra fields
+
+---
+
+## 🔵 2. AGENT BID
+
+### Test:
+
+5. Submit bid with NO changes
+6. Remove 1 service
+7. Add 1 service
+8. Add custom services
+9. Change 1 logical term
+
+### Verify:
+
+* correct preload from listing
+* no missing services
+* no extra services
+* one bid thread per agent
+* match score is correct
+* terms match is correct
+* combo fields display correctly
+
+---
+
+## 🟣 3. COUNTER FLOW (CRITICAL)
+
+### Test:
+
+10. Counter with NO changes
+11. Remove exactly 1 service
+12. Remove multiple services
+13. Add custom service
+14. Change 1 logical term
+
+### Verify:
+
+* counter preloads correct baseline
+* only intended changes are saved
+* no extra services are removed
+* no services disappear unexpectedly
+* custom services persist
+* saved counter matches actual user selections
+
+---
+
+## 🔴 4. SERVICES COMPARISON
+
+### Verify:
+
+* matched = correct
+* missing = correct
+* extra = correct
+
+### Critical rule:
+
+A service must NEVER appear in:
+
+* both “extra”
+* and “missing”
+
+### Custom services:
+
+* Example 1 / Example 2 must:
+
+  * match if unchanged
+  * only appear in correct bucket if changed
+
+---
+
+## 🟠 5. TERMS COMPARISON
+
+### Verify:
+
+* logical terms only (NOT raw fields)
+* combo fields counted once
+* conditional fields only counted when active
+* no duplicate/legacy fields
+* no stale hidden values
+
+### Expected:
+
+* unchanged = 100% match
+* single change = exactly 1 logical change
+
+---
+
+## 🟡 6. MATCH SCORE STABILITY
+
+### Test:
+
+Reload SAME page 3–5 times
+
+### Expected:
+
+* SAME denominator every time
+* SAME matched count every time
+* SAME changed count every time
+
+### ❌ Failure indicators:
+
+* numbers change on refresh
+* denominator changes randomly
+
+---
+
+## 🟤 7. CONDITIONAL TERMS
+
+Toggle:
+
+* Purchasing Yes/No
+* Lease Option Yes/No
+* Retainer Yes/No
+* Early Termination Yes/No
+
+### Verify:
+
+* dependent fields appear/disappear correctly
+* denominator adjusts correctly
+* no stale values affect score
+
+---
+
+## ⚫ 8. TRADITIONAL vs BIDDING PERIOD
+
+### Verify:
+
+* SAME scoring logic
+* SAME services comparison
+* SAME terms comparison
+
+Only differences allowed:
+
+* timer
+* status behavior
+
+---
+
+## 🟢 9. ACCEPT / COUNTER / REJECT FLOW
+
+### Verify:
+
+* correct bid thread used
+* no duplicate bids created
+* correct status updates
+* correct transitions
+
+---
+
+## 🔵 10. ACCEPTED BID SUMMARY (CRITICAL)
+
+### Test:
+
+23. Accept unchanged bid
+24. Accept modified bid
+25. Accept counter
+26. Accept after services change
+27. Accept after terms change
+
+### Verify:
+
+* summary appears AFTER acceptance only
+* uses exact final accepted bid thread
+* reflects latest accepted version
+* NOT using:
+
+  * original listing values
+  * stale bid values
+  * partial counter values
+
+### Must display correctly:
+
+* all services (including custom)
+* broker compensation terms
+* combo fee structures with real values
+* payment timing
+* purchase fee
+* lease-option terms
+* retainer terms
+* termination terms
+* timeframe
+* brokerage relationship
+* additional terms
+
+### Critical rule:
+
+Accepted summary must EXACTLY match what was accepted on screen.
+
+---
+
+# 🔍 DEBUG REQUIREMENT (MANDATORY)
+
+If any test fails:
+
+You must provide:
+
+* exact scenario
+* exact steps
+* expected vs actual result
+* root cause
+* exact file(s) changed
+* fix summary
+* retest result
+
+---
+
+# 🧱 DATA INTEGRITY RULES
+
+* Same input = same output ALWAYS
+* No random variation
+* No role contamination
+* No partial form saves
+* No missing services unless explicitly removed
+* No duplicate comparison buckets
+* No raw leaf counting
+
+---
+
+# 🧪 FINAL VALIDATION
+
+Before completing:
+
+Confirm:
+
+✔ services comparison is correct
+✔ terms comparison is correct
+✔ match score is stable
+✔ counter saves correctly
+✔ accepted summary is correct
+✔ no refresh drift
+✔ no duplicate/missing inconsistencies
+
+---
+
+# 📋 FINAL DELIVERABLE
+
+Provide:
+
+1. Full QA report (all scenarios tested)
+2. List of all bugs found
+3. Fixes applied
+4. Retest results
+5. Final confirmation:
+
+## “Tenant flow is stable and ready to serve as the gold-standard reference for Seller, Landlord, and Buyer”
+
+---
+
+# 🚀 AFTER THIS
+
+Once this passes:
+
+👉 THEN we replicate the same architecture to:
+
+* Seller
+* Landlord
+* Buyer
+
+---
+
+# 💡 FINAL NOTE
+
+Do NOT rush fixes.
+
+Stability > speed.
+
+This Tenant flow becomes the **foundation of your entire platform**.
+
+---
+
+If you want next, I can give you:
+👉 the **Seller version of this rollout plan**
+👉 or the **shared engine architecture spec** (this is where it becomes scalable + patent-level clean)

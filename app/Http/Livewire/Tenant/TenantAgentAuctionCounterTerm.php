@@ -602,7 +602,34 @@ class TenantAgentAuctionCounterTerm extends Component
         try {
             DB::beginTransaction();
 
+            // Canonicalize services before save.
+            // Re-run the catalog filter so that only services belonging to the current
+            // property-type catalog are saved. This removes any cross-role or
+            // cross-property-type contamination that may have accumulated in
+            // $this->services during the Livewire session (e.g. Buyer services that
+            // were stored in the agent's bid and then surfaced through hydrateFromMetaMap).
+            $this->services = $this->filterServicesToCurrentCatalog($this->services);
 
+            // Integrity guard: log a warning if the canonical set is unexpectedly small
+            // compared to what the bid offered so that silent drops can be investigated.
+            $bid = \App\Models\TenantAgentAuctionBid::find($this->bidId);
+            if ($bid) {
+                $bidRaw = $bid->get->services ?? [];
+                if (is_string($bidRaw)) $bidRaw = json_decode($bidRaw, true) ?? [];
+                $bidBaseline = $this->filterServicesToCurrentCatalog(is_array($bidRaw) ? $bidRaw : []);
+                $baselineCount = count($bidBaseline);
+                $savedCount    = count($this->services);
+                $dropped       = $baselineCount - $savedCount;
+                if ($baselineCount > 0 && $dropped > (int) ceil($baselineCount * 0.5)) {
+                    \Illuminate\Support\Facades\Log::warning('TenantCounterTerm: unusually large services drop on submit', [
+                        'bid_id'          => $this->bidId,
+                        'baseline_count'  => $baselineCount,
+                        'saved_count'     => $savedCount,
+                        'dropped_count'   => $dropped,
+                        'user_id'         => \Illuminate\Support\Facades\Auth::id(),
+                    ]);
+                }
+            }
 
             if ($this->counterTermId) {
                 // UPDATE same record
