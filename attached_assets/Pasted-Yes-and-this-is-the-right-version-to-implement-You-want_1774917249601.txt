@@ -1,0 +1,350 @@
+Yes — and this is the right version to implement.
+
+You want the score to be **transparent, baseline-driven, and verifiable by the user**, with clear buckets for what matched, what changed, and what the Agent added. That is the kind of transparency and explainability that helps users understand “what happened” and “how” the result was produced. ([NIST AI Resource Center][1])
+
+Below is a full Replit instruction block you can paste in.
+
+Goal:
+Implement a fully accurate, deterministic Match Score system for Hire a Tenant’s Agent that compares the Agent’s bid only against the Tenant’s original baseline selections and original filled broker compensation / agency agreement terms.
+
+Main objective:
+The score must never be inflated by Agent-added services or Agent-added terms.
+The UI must clearly show:
+
+* Matched
+* Missing
+* Extra / Added by Agent
+
+Core scoring rules:
+
+A. BASELINE RULE
+Use only the Tenant’s original listing values as the source of truth.
+
+Baseline includes:
+
+1. Tenant’s originally selected services
+2. Tenant’s original Additional Services entries
+3. Tenant’s originally filled Broker Compensation & Agency Agreement Terms fields
+
+Do not use Agent-added values to increase the score.
+
+B. SERVICES MATCH LOGIC
+
+1. Each Tenant original selected service = 1 baseline service point
+2. Each Tenant original Additional Service entry = 1 baseline service point
+3. If the Agent still offers that same baseline item, classify as Matched
+4. If the Agent does not offer that original baseline item, classify as Missing
+5. If the Agent adds a service that was not part of the Tenant baseline, classify as Extra (not in baseline)
+6. Extra services must not increase the numerator or denominator
+
+Services formula:
+services_baseline_total = matched_services + missing_services
+services_match_percent = matched_services / services_baseline_total * 100
+
+Important:
+Do NOT use extras in services_baseline_total.
+Do NOT display totals like “70/75 services” if that 75 includes extras.
+Instead use the baseline-only total.
+
+C. BROKER COMPENSATION & AGENCY AGREEMENT TERMS MATCH LOGIC
+
+1. Count only Tenant fields that originally contain a meaningful value
+2. Each original filled Tenant term field = 1 baseline term point
+3. If the Agent submitted the exact same value, classify as Matched
+4. If the Agent changed the original value, classify as Changed
+5. If the Agent added a value to a field the Tenant originally left blank, classify as Added by Agent
+6. Added by Agent terms must not improve the score
+7. Changed fields remain in the denominator because they were part of the Tenant baseline
+
+Terms formula:
+terms_baseline_total = matched_terms + changed_terms
+terms_match_percent = matched_terms / terms_baseline_total * 100
+
+Important:
+Do NOT include Added by Agent terms in terms_baseline_total.
+
+D. SPECIAL RULE FOR CANCELLATION FEE / EARLY TERMINATION FEE / RETAINER / ANY NEW FEE
+If the Tenant did not originally include a cancellation fee or early termination fee or any other term, and the Agent adds one:
+
+* classify it as Added by Agent
+* do not count it as Matched
+* do not let it increase the Terms Match score
+* display it separately for transparency
+
+If the Tenant originally had a value and the Agent changed it:
+
+* classify it as Changed
+* count it in the denominator
+* do not count it as Matched
+
+E. OVERALL MATCH SCORE
+Calculate the overall score only from:
+
+* Services Match %
+* Terms Match %
+
+Recommended overall formula:
+overall_match_percent = weighted average of services_match_percent and terms_match_percent
+
+Use current weighting only if it is already intentional and documented.
+If no intentional weighting exists, use:
+
+* 50% Services
+* 50% Terms
+
+Do not let Extra services or Added by Agent terms increase the overall score.
+
+F. REQUIRED DISPLAY OUTPUT
+On bid preview card and full bid view, show all of these clearly:
+
+Services
+
+* Matched Original Services: X / Y
+* Extra Services Added by Agent: A
+* Missing Original Services: M
+
+Terms
+
+* Matched Original Terms: X / Y
+* Changed from Tenant Baseline: C
+* Added by Agent: T Terms
+
+Overall
+
+* Services Match: __%
+* Terms Match: __%
+* Overall Match: __%
+
+G. LEGEND / TOOLTIP LANGUAGE
+Add clear language so users understand the categories.
+
+Use this text or very close to it:
+
+Matched:
+Items the Agent kept the same as the Tenant’s original request.
+
+Extra / Added by Agent:
+Items the Agent included that were not part of the Tenant’s original request. These are shown for transparency only and do not increase the match score.
+
+Missing:
+Original Tenant-requested items the Agent did not include in the bid.
+
+Changed:
+Original Tenant terms that the Agent changed from the Tenant’s original value.
+
+H. EXACT UI TEXT CHANGES
+Replace vague labels like:
+
+* Offered Services: 70 Services
+* Offered Services: 70/75 services
+
+With:
+
+* Matched Original Services: X / Y
+* Extra Services Added by Agent: A
+* Missing Original Services: M
+
+For terms add:
+
+* Matched Original Terms: X / Y
+* Changed from Tenant Baseline: C
+* Added by Agent: T Terms
+
+I. NORMALIZATION RULES FOR TERMS COMPARISON
+Before comparing values, normalize them consistently:
+
+* trim whitespace
+* normalize null / empty string
+* normalize checkbox booleans
+* normalize arrays order if multi-select fields are stored as arrays
+* normalize percentages / currency formatting if the logical value is the same
+* normalize numeric strings like “90” and 90
+* normalize line ending / spacing for text inputs
+
+Do not mark a field as changed if only formatting differs and the actual value is logically identical.
+
+J. ADDITIONAL SERVICES COMPARISON
+For custom “Additional Services” text entries:
+
+* use Tenant original additional service entries as baseline
+* compare normalized text values
+* if Agent keeps the same entry, count as Matched
+* if Agent removes one, count as Missing
+* if Agent adds a new custom entry not in Tenant baseline, count as Extra Service Added by Agent
+
+K. FILE / LOGIC REQUIREMENTS
+Implement this logic in one reusable helper / service / calculation layer so the same math is used everywhere.
+
+The same shared calculation must be used in:
+
+* bid preview card
+* full bid view
+* counter bid history
+* edit bid screen summaries
+* any future dashboard card showing match score
+
+Do not duplicate slightly different formulas across multiple files.
+
+L. SAFEGUARDS
+
+* Do not change database schema unless absolutely necessary
+* Do not rename database columns, field names, labels, routes, or existing stored keys unless absolutely necessary
+* Do not rewrite the Tenant service catalog
+* Do not alter the original listing service definitions
+* Do not touch Buyer, Seller, or Landlord logic in this task
+* Scope this task only to Hire a Tenant’s Agent
+* Stop if current code mixes Agent-added items into the baseline denominator
+* Return exact files touched before finishing
+
+M. IMPLEMENTATION APPROACH
+
+1. Find the current shared logic that calculates:
+
+   * services total
+   * services matched count
+   * terms total
+   * terms matched count
+   * overall match score
+
+2. Refactor the calculation so it:
+
+   * builds Tenant baseline services collection
+   * builds Agent offered services collection
+   * classifies each service into matched / missing / extra
+   * builds Tenant baseline terms collection
+   * builds Agent submitted terms collection
+   * classifies each term into matched / changed / added
+
+3. Return a structured result object similar to:
+
+   * matched_services_count
+   * missing_services_count
+   * extra_services_count
+   * matched_terms_count
+   * changed_terms_count
+   * added_terms_count
+   * services_baseline_total
+   * terms_baseline_total
+   * services_match_percent
+   * terms_match_percent
+   * overall_match_percent
+   * matched_services_by_section
+   * missing_services_by_section
+   * extra_services_by_section
+   * matched_terms_list
+   * changed_terms_list
+   * added_terms_list
+
+4. Use that same result object in every Tenant bid display location.
+
+N. REQUIRED TEST CASES
+Test all of the following before marking complete:
+
+Test 1: Perfect services match
+
+* Tenant baseline services = 10
+* Agent includes same 10
+* Agent adds 0
+  Expected:
+* Matched = 10 / 10
+* Missing = 0
+* Extra = 0
+* Services Match = 100%
+
+Test 2: Added services only
+
+* Tenant baseline services = 10
+* Agent includes same 10
+* Agent adds 5 extras
+  Expected:
+* Matched = 10 / 10
+* Missing = 0
+* Extra = 5
+* Services Match = 100%
+* Extras shown separately only
+
+Test 3: Removed services
+
+* Tenant baseline services = 10
+* Agent includes 8 of original 10
+* Agent adds 4 extras
+  Expected:
+* Matched = 8 / 10
+* Missing = 2
+* Extra = 4
+* Services Match = 80%
+
+Test 4: Perfect terms match
+
+* Tenant baseline filled terms = 12
+* Agent leaves all 12 unchanged
+  Expected:
+* Matched Terms = 12 / 12
+* Changed = 0
+* Added by Agent = 0
+* Terms Match = 100%
+
+Test 5: Changed terms
+
+* Tenant baseline filled terms = 12
+* Agent changes 3 baseline values
+  Expected:
+* Matched Terms = 9 / 12
+* Changed = 3
+* Added by Agent = 0
+* Terms Match = 75%
+
+Test 6: Added cancellation fee
+
+* Tenant did not include cancellation / early termination fee
+* Agent adds one
+  Expected:
+* classify as Added by Agent
+* do not increase matched terms
+* do not increase denominator
+* display separately
+
+Test 7: Mixed real case
+Use one real Tenant bid from the site and confirm:
+
+* card preview totals
+* full bid totals
+* counter history totals
+  all match exactly
+
+O. DELIVERABLE FORMAT
+When done, return:
+
+1. exact files touched
+2. exact helper / method name used for the final calculation
+3. exact formulas used
+4. one real tested example proving:
+
+   * extras do not inflate services score
+   * added terms do not inflate terms score
+5. confirmation that the same logic now powers:
+
+   * bid card
+   * full bid
+   * counter history
+   * edit summary
+
+P. FINAL UX GOAL
+The user should be able to look at the score and understand immediately:
+
+* what matched
+* what the Agent removed
+* what the Agent added
+* why the score is what it is
+
+This feature must be deterministic, consistent, and transparent every time.
+
+I also think you should add one short explanation directly on the UI near the score:
+
+“Match Score compares this bid only to the Tenant’s original request. Added services or added terms are shown for transparency but do not increase the score.”
+
+That keeps the feature honest and easier to trust, which is important for transparency and explainability. ([NIST AI Resource Center][1])
+
+If you want, I can also turn this into a shorter “surgical Replit version” for minimal-file edits only.
+
+[1]: https://airc.nist.gov/airmf-resources/airmf/3-sec-characteristics/?utm_source=chatgpt.com "AI Risks and Trustworthiness - AIRC - NIST AI Resource Center"

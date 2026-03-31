@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Helpers\TenantBidMatchScoreHelper;
 use App\Models\TenantAgentAuction;
 use App\Models\TenantAgentAuctionBid;
 use App\Models\BiddingPeriodAgentMapping;
@@ -126,96 +127,16 @@ class CompetingBidsService
 
     public function calculateMatchScore($competingBid, $viewerBid): array
     {
-        $normalizeForMatch = function($v) {
-            if (is_null($v) || $v === '') return '';
-            if (is_array($v) || is_object($v)) return json_encode($v);
-            $v = trim((string) $v);
-            return preg_replace('/[\s$,%]/', '', strtolower($v));
-        };
-
+        // Baseline = viewer's own bid; compared = the competing bid being evaluated.
+        // Uses the shared baseline-driven helper so Extra/Added items don't inflate scores.
+        $viewerData    = (array) $viewerBid->get;
         $competingData = (array) $competingBid->get;
-        $viewerData = (array) $viewerBid->get;
 
-        $brokerFields = [
-            'commission_structure', 'lease_fee_type', 'broker_fee_timing', 'broker_fee_days_from_rent',
-            'interested_purchase_fee_type', 'purchase_fee_type', 'interested_lease_option_agreement',
-            'lease_type', 'lease_value', 'purchase_type', 'purchase_value', 'protection_period',
-            'early_termination_fee_option', 'early_termination_fee_amount', 'retainer_fee_option',
-            'retainer_fee_amount', 'retainer_fee_application', 'agency_agreement_timeframe', 'brokerage_relationship',
-            'lease_fee_flat', 'lease_fee_percentage', 'lease_fee_percentage_monthly_rent', 'lease_fee_percentage_monthly_number',
-            'lease_fee_flat_combo', 'lease_fee_percentage_combo', 'lease_fee_percentage_net',
-            'lease_fee_flat_combo_net', 'lease_fee_percentage_combo_net', 'lease_fee_other',
-            'purchase_fee_flat', 'purchase_fee_percentage', 'purchase_fee_flat_combo', 'purchase_fee_percentage_combo', 'purchase_fee_other',
-            'flat_fee_amount', 'percent_gross_lease', 'purchase_flat_fee_amount', 'purchase_percent_value',
-        ];
+        $result = TenantBidMatchScoreHelper::calculate($viewerData, $competingData);
 
-        $brokerMatched = 0;
-        $brokerTotal = 0;
-        foreach ($brokerFields as $field) {
-            $competingVal = $competingData[$field] ?? null;
-            $viewerVal = $viewerData[$field] ?? null;
-            if (!empty($competingVal) || !empty($viewerVal)) {
-                $brokerTotal++;
-                if ($normalizeForMatch($competingVal) === $normalizeForMatch($viewerVal)) {
-                    $brokerMatched++;
-                }
-            }
-        }
-        $brokerPercent = $brokerTotal > 0 ? round(($brokerMatched / $brokerTotal) * 100) : 100;
-
-        $normalizeService = function($s) {
-            $s = preg_replace('/[\x{2018}\x{2019}]/u', "'", $s);
-            $s = preg_replace('/[\x{201C}\x{201D}]/u', '"', $s);
-            return strtolower(trim($s));
-        };
-
-        $getServices = function($data) use ($normalizeService) {
-            $services = $data['services'] ?? [];
-            if (is_string($services)) $services = json_decode($services, true) ?? [];
-            $services = is_array($services) ? array_values(array_filter($services)) : [];
-            
-            $otherServices = $data['other_services'] ?? [];
-            if (is_string($otherServices)) $otherServices = json_decode($otherServices, true) ?? [];
-            $otherServices = is_array($otherServices) ? array_values(array_filter($otherServices, fn($s) => is_string($s) && !empty(trim($s)))) : [];
-            
-            return array_map($normalizeService, array_merge($services, $otherServices));
-        };
-
-        $competingServices = $getServices($competingData);
-        $viewerServices = $getServices($viewerData);
-
-        $allServicesUnion = array_unique(array_merge($competingServices, $viewerServices));
-        $servicesTotal = count($allServicesUnion);
-        $servicesMatched = 0;
-        foreach ($allServicesUnion as $svc) {
-            if (in_array($svc, $competingServices) && in_array($svc, $viewerServices)) {
-                $servicesMatched++;
-            }
-        }
-        $servicesPercent = $servicesTotal > 0 ? round(($servicesMatched / $servicesTotal) * 100) : 100;
-
-        $hasBroker = $brokerTotal > 0;
-        $hasServices = $servicesTotal > 0;
-        if ($hasBroker && $hasServices) {
-            $overallPercent = round(($brokerPercent + $servicesPercent) / 2);
-        } elseif ($hasBroker) {
-            $overallPercent = $brokerPercent;
-        } elseif ($hasServices) {
-            $overallPercent = $servicesPercent;
-        } else {
-            $overallPercent = 100;
-        }
-
-        return [
-            'overall_percent' => $overallPercent,
-            'broker_comp_percent' => $brokerPercent,
-            'broker_comp_matched' => $brokerMatched,
-            'broker_comp_total' => $brokerTotal,
-            'services_percent' => $servicesPercent,
-            'services_matched' => $servicesMatched,
-            'services_total' => $servicesTotal,
+        return array_merge($result, [
             'compared_to_label' => 'Compared to Your Bid',
-        ];
+        ]);
     }
 
     private function checkIfUpdated($bid): bool

@@ -123,115 +123,50 @@
                             $baselineLabel = 'Your Original Listing Terms';
                         }
                         
-                        $normalizeForMatch = function($v) {
-                            if (is_null($v) || $v === '') return '';
-                            if (is_array($v) || is_object($v)) return json_encode($v);
-                            $v = trim((string) $v);
-                            return preg_replace('/[\s$,%]/', '', strtolower($v));
-                        };
-                        
-                        $brokerFields = [
-                            'commission_structure', 'lease_fee_type', 'payment_timing', 'days_to_pay',
-                            'interested_purchase_fee_type', 'purchase_fee_type', 'interested_lease_option_agreement',
-                            'lease_type', 'lease_value', 'purchase_type', 'purchase_value', 'protection_period',
-                            'early_termination_fee_option', 'early_termination_fee_amount', 'retainer_fee_option',
-                            'retainer_fee_amount', 'retainer_fee_application', 'agency_agreement_timeframe', 'brokerage_relationship',
-                        ];
-                        
-                        $brokerMatched = 0;
-                        $brokerTotal = 0;
-                        $brokerMismatches = [];
-                        
-                        foreach ($brokerFields as $field) {
-                            $counterVal = $counterData[$field] ?? null;
-                            $baselineVal = $baselineData[$field] ?? null;
-                            if (!empty($counterVal) || !empty($baselineVal)) {
-                                $brokerTotal++;
-                                if ($normalizeForMatch($counterVal) === $normalizeForMatch($baselineVal)) {
-                                    $brokerMatched++;
-                                } else {
-                                    $brokerMismatches[$field] = ['counter' => $counterVal, 'baseline' => $baselineVal];
-                                }
-                            }
-                        }
-                        
-                        $brokerScore = $brokerTotal > 0 ? round(($brokerMatched / $brokerTotal) * 100) : 100;
-                        
-                        $counterServices = $counterData['services'] ?? [];
-                        if (is_string($counterServices)) {
-                            $counterServices = json_decode($counterServices, true) ?? [];
-                        }
-                        $counterServices = is_array($counterServices) ? array_values(array_filter($counterServices)) : [];
-                        
-                        $counterOtherServices = $counterData['other_services'] ?? [];
-                        if (is_string($counterOtherServices)) {
-                            $counterOtherServices = json_decode($counterOtherServices, true) ?? [];
-                        }
-                        $counterOtherServices = is_array($counterOtherServices) ? array_values(array_filter($counterOtherServices, fn($s) => is_string($s) && !empty(trim($s)))) : [];
-                        $allCounterServices = array_merge($counterServices, $counterOtherServices);
-                        
-                        $baselineServices = $baselineData['services'] ?? [];
-                        if (is_string($baselineServices)) {
-                            $baselineServices = json_decode($baselineServices, true) ?? [];
-                        }
-                        $baselineServices = is_array($baselineServices) ? array_values(array_filter($baselineServices)) : [];
-                        
-                        $baselineOtherServices = $baselineData['other_services'] ?? [];
-                        if (is_string($baselineOtherServices)) {
-                            $baselineOtherServices = json_decode($baselineOtherServices, true) ?? [];
-                        }
-                        $baselineOtherServices = is_array($baselineOtherServices) ? array_values(array_filter($baselineOtherServices, fn($s) => is_string($s) && !empty(trim($s)))) : [];
-                        $allBaselineServices = array_merge($baselineServices, $baselineOtherServices);
-                        
-                        $normalizeService = function($s) {
-                            $s = preg_replace('/[\x{2018}\x{2019}]/u', "'", $s);
-                            $s = preg_replace('/[\x{201C}\x{201D}]/u', '"', $s);
-                            return strtolower(trim($s));
-                        };
-                        
-                        $counterNorm = array_map($normalizeService, $allCounterServices);
-                        $baselineNorm = array_map($normalizeService, $allBaselineServices);
-                        
-                        $allServicesUnion = array_unique(array_merge($counterNorm, $baselineNorm));
-                        $servicesTotal = count($allServicesUnion);
-                        $servicesMatched = 0;
-                        $servicesMissing = [];
-                        $servicesAdded = [];
-                        
-                        foreach ($allServicesUnion as $svc) {
-                            $inCounter = in_array($svc, $counterNorm);
-                            $inBaseline = in_array($svc, $baselineNorm);
-                            if ($inCounter && $inBaseline) {
-                                $servicesMatched++;
-                            } elseif ($inCounter && !$inBaseline) {
-                                $servicesAdded[] = $svc;
-                            } elseif (!$inCounter && $inBaseline) {
-                                $servicesMissing[] = $svc;
-                            }
-                        }
-                        
-                        $servicesScore = $servicesTotal > 0 ? round(($servicesMatched / $servicesTotal) * 100) : 100;
-                        
-                        $hasBroker = $brokerTotal > 0;
-                        $hasServices = $servicesTotal > 0;
-                        
-                        if ($hasBroker && $hasServices) {
-                            $totalScore = round(($brokerScore + $servicesScore) / 2);
-                        } elseif ($hasBroker) {
-                            $totalScore = $brokerScore;
-                        } elseif ($hasServices) {
-                            $totalScore = $servicesScore;
-                        } else {
-                            $totalScore = 100;
-                        }
-                        
-                        $getScoreColor = function($score) {
-                            if ($score >= 80) return '#28a745';
-                            if ($score >= 50) return '#ffc107';
-                            return '#dc3545';
-                        };
-                        
+                        // === MATCH SCORE — baseline-driven (TenantBidMatchScoreHelper) ===
+                        $score = \App\Helpers\TenantBidMatchScoreHelper::calculate($baselineData, $counterData);
+
+                        $brokerScore          = $score['terms_match_percent'];
+                        $brokerMatched        = $score['terms_matched_count'];
+                        $brokerTotal          = $score['terms_baseline_total'];
+                        $brokerMismatches     = $score['changed_terms']; // field => ['baseline'=>…,'compared'=>…]
+                        $termsChangedCount    = $score['terms_changed_count'];
+                        $termsAddedCount      = $score['terms_added_count'];
+
+                        $servicesScore        = $score['services_match_percent'];
+                        $servicesMatched      = $score['services_matched_count'];
+                        $servicesTotal        = $score['services_baseline_total'];
+                        $servicesMissingCount = $score['services_missing_count'];
+                        $servicesExtraCount   = $score['services_extra_count'];
+                        $servicesMissing      = $score['missing_services'];
+                        $servicesAdded        = $score['extra_services'];
+
+                        $totalScore      = $score['overall_percent'];
+                        $getScoreColor   = fn($s) => \App\Helpers\TenantBidMatchScoreHelper::scoreColor((int)$s);
                         $totalScoreColor = $getScoreColor($totalScore);
+
+                        // Variables re-exported for per-service rendering in the Services section
+                        $normalizeService = fn($s) => \App\Helpers\TenantBidMatchScoreHelper::normalizeService((string)$s);
+                        $baselineNorm     = array_merge($score['matched_services'], $score['missing_services']);
+
+                        // Raw counter services for display
+                        $csRaw = $counterData['services'] ?? [];
+                        if (is_string($csRaw)) $csRaw = json_decode($csRaw, true) ?? [];
+                        $csRaw = is_array($csRaw) ? array_values(array_filter($csRaw)) : [];
+                        $counterOtherRaw = $counterData['other_services'] ?? [];
+                        if (is_string($counterOtherRaw)) $counterOtherRaw = json_decode($counterOtherRaw, true) ?? [];
+                        $counterOtherRaw = is_array($counterOtherRaw) ? array_values(array_filter($counterOtherRaw, fn($s) => is_string($s) && !empty(trim($s)))) : [];
+                        $allCounterServices  = array_merge($csRaw, $counterOtherRaw);
+                        $counterOtherServices = $counterOtherRaw;
+
+                        // Raw baseline services for "Missing" display
+                        $bsRaw2 = $baselineData['services'] ?? [];
+                        if (is_string($bsRaw2)) $bsRaw2 = json_decode($bsRaw2, true) ?? [];
+                        $bsRaw2 = is_array($bsRaw2) ? array_values(array_filter($bsRaw2)) : [];
+                        $bsOtherRaw2 = $baselineData['other_services'] ?? [];
+                        if (is_string($bsOtherRaw2)) $bsOtherRaw2 = json_decode($bsOtherRaw2, true) ?? [];
+                        $bsOtherRaw2 = is_array($bsOtherRaw2) ? array_values(array_filter($bsOtherRaw2, fn($s) => is_string($s) && !empty(trim($s)))) : [];
+                        $allBaselineServices = array_merge($bsRaw2, $bsOtherRaw2);
                         
                         $mismatchStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545;';
                         $mismatchBadge = '<span class="badge" style="background-color: #dc3545; color: white; font-size: 0.7rem; vertical-align: middle; margin-left: 8px;">Mismatch</span>';
@@ -313,24 +248,41 @@
                                     {{ $totalScore }}%
                                 </span>
                             </div>
+                            <p class="small text-muted mb-3">
+                                <i class="fas fa-info-circle me-1"></i>Match Score compares this counter only to the baseline. Added services or added terms are shown for transparency but do not increase the score.<br>
+                                Compared to: <strong>{{ $baselineLabel }}</strong>
+                            </p>
                             <div class="row g-2">
                                 <div class="col-md-6">
-                                    <div class="d-flex justify-content-between align-items-center p-2" style="background: #f8f9fa; border-radius: 6px;">
-                                        <span class="text-muted">Broker Compensation:</span>
-                                        <span style="color: {{ $getScoreColor($brokerScore) }}; font-weight: 600;">{{ $brokerScore }}%</span>
+                                    <div class="p-2 rounded" style="background: #f8f9fa; border-left: 4px solid {{ $getScoreColor($servicesScore) }};">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="text-muted small fw-semibold">Services Match</span>
+                                            <span style="color: {{ $getScoreColor($servicesScore) }}; font-weight: 600;">{{ $servicesScore }}%</span>
+                                        </div>
+                                        <div class="text-muted small mt-1">Matched Original: {{ $servicesMatched }}/{{ $servicesTotal }}</div>
+                                        @if ($servicesExtraCount > 0)
+                                        <div class="small mt-1" style="color: #6c757d;">Extra (Added): {{ $servicesExtraCount }}</div>
+                                        @endif
+                                        @if ($servicesMissingCount > 0)
+                                        <div class="small mt-1" style="color: #dc3545;">Missing: {{ $servicesMissingCount }}</div>
+                                        @endif
                                     </div>
-                                    <div class="text-muted small mt-1 ps-2">{{ $brokerMatched }}/{{ $brokerTotal }} fields matched</div>
                                 </div>
                                 <div class="col-md-6">
-                                    <div class="d-flex justify-content-between align-items-center p-2" style="background: #f8f9fa; border-radius: 6px;">
-                                        <span class="text-muted">Services:</span>
-                                        <span style="color: {{ $getScoreColor($servicesScore) }}; font-weight: 600;">{{ $servicesScore }}%</span>
+                                    <div class="p-2 rounded" style="background: #f8f9fa; border-left: 4px solid {{ $getScoreColor($brokerScore) }};">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="text-muted small fw-semibold">Terms Match</span>
+                                            <span style="color: {{ $getScoreColor($brokerScore) }}; font-weight: 600;">{{ $brokerScore }}%</span>
+                                        </div>
+                                        <div class="text-muted small mt-1">Matched Original: {{ $brokerMatched }}/{{ $brokerTotal }}</div>
+                                        @if ($termsChangedCount > 0)
+                                        <div class="small mt-1" style="color: #dc3545;">Changed: {{ $termsChangedCount }}</div>
+                                        @endif
+                                        @if ($termsAddedCount > 0)
+                                        <div class="small mt-1" style="color: #6c757d;">Added: {{ $termsAddedCount }}</div>
+                                        @endif
                                     </div>
-                                    <div class="text-muted small mt-1 ps-2">{{ $servicesMatched }}/{{ $servicesTotal }} services matched</div>
                                 </div>
-                            </div>
-                            <div class="mt-2 small text-muted">
-                                <i class="fas fa-info-circle me-1"></i>Compared to: {{ $baselineLabel }}
                             </div>
                         </div>
                         
