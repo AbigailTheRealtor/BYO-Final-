@@ -281,9 +281,9 @@ class SellerAgentAuctionController extends Controller
     {
         $page_data['title'] = 'Hire Seller\'s Agent Auctions';
         $page_data['type'] = $type = $request->type ?? "2";
-        $pendingApprovalAuctions = SellerAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => 'false', 'is_sold' => 'false', 'is_draft' => false]);
-        $liveAuctions = SellerAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => 'true', 'is_sold' => 'false', 'is_draft' => false]);
-        $soldAuctions = SellerAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => 'true', 'is_sold' => 'true', 'is_draft' => false]);
+        $pendingApprovalAuctions = SellerAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => false, 'is_sold' => 'false', 'is_draft' => false]);
+        $liveAuctions = SellerAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => true, 'is_sold' => 'false', 'is_draft' => false]);
+        $soldAuctions = SellerAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => true, 'is_sold' => 'true', 'is_draft' => false]);
 
         if ($type == "1") {
             $auctions = $pendingApprovalAuctions->get();
@@ -671,11 +671,11 @@ class SellerAgentAuctionController extends Controller
         $page_data['type'] = $type = $request->type ?? 0;
 
         if ($type == 1) {
-            $page_data['auctions'] = SellerAgentAuction::where('is_approved', 'true')->get();
+            $page_data['auctions'] = SellerAgentAuction::where('is_approved', true)->get();
         } elseif ($type == 2) {
             $page_data['auctions'] = SellerAgentAuction::where('is_sold', 'true')->get();
         } else {
-            $page_data['auctions'] = SellerAgentAuction::where('is_approved', 'false')->get();
+            $page_data['auctions'] = SellerAgentAuction::where('is_approved', false)->get();
         }
         return view('admin.sellerAgentAuctions', $page_data);
     }
@@ -686,7 +686,7 @@ class SellerAgentAuctionController extends Controller
     public function approveSellerAgentAuction($id)
     {
         $auction = SellerAgentAuction::find($id);
-        $auction->is_approved = 'true';
+        $auction->is_approved = true;
         $auction->update();
         return redirect()->back()->with('success', 'Auction Approved Successfully!');
     }
@@ -835,7 +835,7 @@ class SellerAgentAuctionController extends Controller
         $auctions = SellerAgentAuction::query();
 
         $auctions->selectRaw("*, (SELECT meta_value FROM seller_agent_auction_metas WHERE seller_agent_auction_metas.seller_agent_auction_id = seller_agent_auctions.id AND meta_key = 'ideal_price') as price")
-            ->where('is_approved', 'true')
+            ->where('is_approved', true)
             ->where('is_draft', false);
 
         if ($request->title != "") {

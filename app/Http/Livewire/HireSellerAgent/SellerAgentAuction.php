@@ -2535,7 +2535,7 @@ class SellerAgentAuction extends Component
             if (empty($auction->address)) {
                 $auction->address = $this->listing_title ?? 'Seller Agent Listing';
             }
-            $auction->is_approved = 1;
+            $auction->is_approved = true;
             $auction->is_sold = 0;
             $auction->is_paid = 0;
             
