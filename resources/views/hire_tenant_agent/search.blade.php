@@ -283,6 +283,9 @@
                                     <h5 class="card-title w-75"><a
                                             href="{{ route('tenant.agent.auction.view', @$auction->id) }}">{{ @$auction->title }}</a>
                                     </h5>
+                                    @if (!empty($auction->listing_id))
+                                        <p class="mb-0 text-muted" style="font-size: 0.72rem; font-family: monospace; letter-spacing: 0.03em;">{{ $auction->listing_id }}</p>
+                                    @endif
                                 </div>
 
                                 <div class="houseDetails mb-1">
