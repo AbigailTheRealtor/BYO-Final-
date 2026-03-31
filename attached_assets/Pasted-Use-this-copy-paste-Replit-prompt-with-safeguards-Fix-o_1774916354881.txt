@@ -1,0 +1,240 @@
+Use this **copy-paste Replit prompt with safeguards**:
+
+---
+
+**Fix only this specific Tenant Agent bid preload issue with safeguards**
+
+We need a **surgical fix** for the Tenant Agent bid form.
+
+## Issue
+
+On **Hire a Tenant’s Agent** bid forms, the selected Tenant service:
+
+**Send listing alerts from real estate platforms that match the Tenant's leasing criteria**
+
+is **not populating / not showing checked** on the Agent bid form, even though the Tenant selected it on the original listing.
+
+### Example route
+
+`/tenant/agent/auction/bid/133?edit=32`
+
+---
+
+## Goal
+
+Make the Tenant Agent bid form preload this service correctly when it was selected by the Tenant on the listing.
+
+The Tenant Agent bid form must use the **exact same service catalog / labels / keys** as the Tenant listing creation flow for the applicable property type.
+
+This must work for:
+
+1. initial agent bid form load
+2. edit existing bid
+3. counter / edit states if they use separate preload logic
+
+---
+
+## Critical safeguards
+
+1. **Do not change DB schema**
+
+   * No migrations
+   * No column renames
+   * No table renames
+   * No deletes
+
+2. **Scope only to Tenant Agent bid flow**
+
+   * Only edit the files actually used by `/tenant/agent/auction/bid/*`
+   * Do not modify Buyer, Seller, or Landlord flows
+
+3. **Do not rewrite the Tenant listing creation flow**
+
+   * Tenant listing creation is the source of truth
+   * Only make the Tenant Agent bid flow match it
+
+4. **Do not change wording**
+   Keep this exact label:
+   **Send listing alerts from real estate platforms that match the Tenant's leasing criteria**
+
+5. **Do not change service order**
+   Preserve the exact order used in Tenant listing creation unless absolutely necessary for parity
+
+6. **Do not wipe other saved selections**
+   Preserve all existing correctly saved/loaded services
+   Only fix missing preload/mapping behavior
+
+7. **Do not touch unrelated styling, routes, or other bid sections**
+   This is a service preload/catalog parity fix only
+
+---
+
+## What to inspect first
+
+Identify the **actual active files** for this route:
+`/tenant/agent/auction/bid/133?edit=32`
+
+Find:
+
+1. the Livewire component / controller used by Tenant Agent bid form
+2. the method that defines Tenant offered services for the bid form
+3. the preload / mount / hydration logic that loads listing-selected services into the bid form
+4. the blade partial that renders the services checklist
+
+Before editing anything, confirm you are in the active Tenant Agent bid flow files only.
+
+---
+
+## Likely root cause
+
+Check for any of these:
+
+### A. Exact label mismatch
+
+The listing creation flow stores:
+**Send listing alerts from real estate platforms that match the Tenant's leasing criteria**
+
+but the bid form may be expecting a stale or slightly different label.
+
+### B. Stale bid catalog
+
+The Tenant Agent bid flow may be using an older service catalog that does not include this exact service label.
+
+### C. Preload filtering issue
+
+The selected service may be loaded from listing/bid data, but then filtered out because it does not exactly match the current bid catalog key.
+
+### D. Normalization mismatch
+
+Whitespace, punctuation, apostrophe, or wording differences may prevent the checkbox from pre-checking.
+
+---
+
+## Required fix
+
+### 1. Use the Tenant listing creation services as source of truth
+
+Find the service catalog used when creating a Tenant listing and make sure the Tenant Agent bid form uses the **exact same labels/keys/order** for the applicable property type.
+
+This exact service must exist in the Tenant Agent bid services config exactly as written:
+
+**Send listing alerts from real estate platforms that match the Tenant's leasing criteria**
+
+---
+
+### 2. Add a small Tenant-only normalization layer during preload
+
+In the Tenant Agent bid component, add a small helper for service-label normalization used only during preload/hydration.
+
+Example purpose:
+
+* trim whitespace
+* normalize repeated spaces
+* map any stale/legacy version of this service label to the exact current label above
+
+Do not broaden this across all roles unless the shared helper is clearly safe.
+
+---
+
+### 3. Apply normalization before catalog filtering
+
+Where services are loaded from the listing or existing bid:
+
+* load saved selected services
+* normalize them
+* map stale aliases to the current exact label
+* then filter against the current Tenant bid catalog
+* then assign to the selected services state used by the blade
+
+This fix must apply to:
+
+* initial bid load
+* existing bid edit load
+* counter/edit hydration if separate
+
+---
+
+### 4. Ensure checkbox values match exact stored selected values
+
+In the services blade, confirm the checkbox value for this service exactly matches the final normalized label stored in the selected services array.
+
+If the checkbox uses one string and preload uses another, fix that mismatch.
+
+---
+
+## Preferred implementation approach
+
+1. Find the Tenant listing creation services config
+2. Compare it against the Tenant Agent bid services config
+3. Correct any stale/missing label mismatch
+4. Add a tiny normalization helper in Tenant Agent bid preload logic
+5. Run filtering only after normalization
+6. Leave unrelated logic untouched
+
+---
+
+## Testing requirements
+
+After the fix, test these exact cases:
+
+### Test 1
+
+Use a Tenant listing where this service is selected:
+**Send listing alerts from real estate platforms that match the Tenant's leasing criteria**
+
+Open Agent bid form:
+
+* service must appear
+* checkbox must be pre-checked
+
+### Test 2
+
+Open existing Tenant Agent bid in edit mode:
+
+* service still appears
+* checked state persists
+
+### Test 3
+
+Open counter/edit state if separate:
+
+* service still preloads correctly
+
+### Test 4
+
+Verify other Tenant services still load correctly
+
+* no duplicates
+* no missing services
+* no unrelated regressions
+
+### Test 5
+
+Verify correct service catalog still shows by property type
+
+* no Buyer services
+* no Seller services
+* no Landlord services
+* no cross-role bleed
+
+---
+
+## Stop rule
+
+If the active Tenant Agent bid flow is using a shared stale helper that also affects Buyer, Seller, or Landlord flows, **stop and report before making broad shared changes**. Prefer a Tenant-only fix unless the shared change is clearly safe and non-breaking.
+
+---
+
+## Deliverable
+
+Make the surgical code fix, then report:
+
+1. exact files changed
+2. root cause found
+3. what was changed
+4. confirmation that no DB/schema/unrelated role changes were made
+5. results of the 5 tests above
+
+---
+
+If you want, I can also make you a **shorter “aggressive surgical fix” version** in your usual Replit style.

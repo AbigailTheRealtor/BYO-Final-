@@ -463,6 +463,13 @@ class TenantAgentAuctionBid extends Component
     //     unset($this->flat_fee_services[$index]);
     //     $this->flat_fee_services = array_values($this->flat_fee_services); // Reindex array
     // }
+    private function normalizeTenantServiceLabels(array $services): array
+    {
+        return array_map(function ($s) {
+            return str_replace("\x27", "\u{2019}", str_replace("\x5c\x27", "\u{2019}", $s));
+        }, $services);
+    }
+
     public function addServiceField(): void
     {
         $this->other_services[] = ''; // Add a new empty field
@@ -525,7 +532,9 @@ class TenantAgentAuctionBid extends Component
         // $this->additional_details = $auction->get->additional_details ?? '';
 
         $rawServices = $auction->get->services ?? null;
-        $this->services = is_string($rawServices) ? (json_decode($rawServices, true) ?? []) : (is_array($rawServices) ? $rawServices : []);
+        $this->services = $this->normalizeTenantServiceLabels(
+            is_string($rawServices) ? (json_decode($rawServices, true) ?? []) : (is_array($rawServices) ? $rawServices : [])
+        );
         $rawOtherServices = $auction->get->other_services ?? null;
         $this->other_services = is_string($rawOtherServices) ? (json_decode($rawOtherServices, true) ?? []) : (is_array($rawOtherServices) ? $rawOtherServices : []);
 
@@ -703,7 +712,9 @@ class TenantAgentAuctionBid extends Component
                 }
                 
                 $services = $bidData->services ?? '';
-                $this->services = is_string($services) ? json_decode($services, true) ?? [] : (array) $services;
+                $this->services = $this->normalizeTenantServiceLabels(
+                    is_string($services) ? json_decode($services, true) ?? [] : (array) $services
+                );
                 
                 $otherServices = $bidData->other_services ?? '';
                 $this->other_services = is_string($otherServices) ? json_decode($otherServices, true) ?? [] : (array) $otherServices;
