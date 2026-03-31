@@ -1703,6 +1703,12 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             }
                             
                             $commissionStructure = data_get($bid, 'get.commission_structure', 'Not specified');
+                            // Apply display alias so stored internal values show current wording
+                            $bidCommissionDisplay = match($commissionStructure) {
+                                'Out-of-Pocket Payment' => 'Tenant Pays Out-of-Pocket',
+                                'Included in Offer'     => 'Requested From Landlord in the Offer',
+                                default                  => $commissionStructure,
+                            };
                             $leaseFeeType = data_get($bid, 'get.lease_fee_type', '');
                             $leaseFeeFlat = data_get($bid, 'get.lease_fee_flat', '');
                             $leaseFeePercentage = data_get($bid, 'get.lease_fee_percentage', '');
@@ -2548,7 +2554,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Tenant's Broker Compensation</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 @if (data_get($bid, 'get.commission_structure'))
-                                                                <li class="mb-1" style="{{ isset($brokerMismatches['commission_structure']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Structure:</span> {{ data_get($bid, 'get.commission_structure') }}{!! isset($brokerMismatches['commission_structure']) ? $mismatchBadge : '' !!}</li>
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['commission_structure']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Structure:</span> {{ $bidCommissionDisplay }}{!! isset($brokerMismatches['commission_structure']) ? $mismatchBadge : '' !!}</li>
                                                                 @endif
                                                                 @if (data_get($bid, 'get.lease_fee_type'))
                                                                 <li class="mb-1" style="{{ isset($brokerMismatches['lease_fee_type']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $commissionFeeDisplay }}{!! isset($brokerMismatches['lease_fee_type']) ? $mismatchBadge : '' !!}</li>
@@ -3543,7 +3549,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 <li class="mb-1 d-flex justify-content-between align-items-start">
                                                                     <span class="fw-semibold">Tenant's Broker Commission Structure:</span>
                                                                     <span style="{{ $isMismatch('commission_structure') ? $mismatchStyle : '' }}">
-                                                                        {{ data_get($bid, 'get.commission_structure') }}
+                                                                        {{ $bidCommissionDisplay }}
                                                                         @if($isMismatch('commission_structure')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
                                                                     </span>
                                                                 </li>

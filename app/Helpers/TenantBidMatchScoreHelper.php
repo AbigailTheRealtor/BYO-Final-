@@ -233,13 +233,19 @@ class TenantBidMatchScoreHelper
 
     /**
      * Parse services + other_services from a data array into a flat, normalized list.
-     * If $catalog is provided, only services whose normalized form appears in the catalog
-     * are kept. This prevents wrong-role services (e.g., Buyer purchase services) from
-     * contaminating Tenant scoring when both were accidentally stored together.
+     * If $catalog is provided, only standard services whose normalized form appears in the
+     * catalog are kept. This prevents wrong-role services (e.g., Buyer purchase services)
+     * from contaminating Tenant scoring when both were accidentally stored together.
+     *
+     * IMPORTANT: The catalog filter applies ONLY to the standard `services` array. Entries in
+     * `other_services` (user-defined custom additional services) always pass through without
+     * filtering — they cannot be confused with wrong-role catalog services, and must always
+     * contribute to the score so that custom services agreed upon by both parties are counted.
      *
      * @param array      $data    Data array containing 'services' and 'other_services' keys
      * @param array|null $catalog Normalized valid-service strings (from getCatalog()). When
-     *                            provided, only catalog-matching services are returned.
+     *                            provided, only catalog-matching standard services are returned
+     *                            (custom other_services are always kept).
      */
     public static function parseServices(array $data, ?array $catalog = null): array
     {
@@ -253,20 +259,25 @@ class TenantBidMatchScoreHelper
             ? array_values(array_filter($other, fn($s) => is_string($s) && !empty(trim($s))))
             : [];
 
-        $all = array_merge($services, $other);
-        $normalized = array_unique(array_map([self::class, 'normalizeService'], $all));
-
-        // Catalog filter: discard any service that does not belong to the valid Tenant catalog.
-        // This removes Buyer, Seller, or Landlord services that were accidentally stored together
-        // with Tenant services in the same JSON array.
+        // Normalize standard services and apply catalog filter if provided.
+        // The catalog filter removes Buyer, Seller, or Landlord services that may have been
+        // accidentally stored alongside Tenant services, but it NEVER touches other_services.
+        $servicesNorm = array_map([self::class, 'normalizeService'], $services);
         if ($catalog !== null) {
-            $normalized = array_values(array_filter(
-                $normalized,
+            $servicesNorm = array_values(array_filter(
+                $servicesNorm,
                 fn($s) => in_array($s, $catalog, true)
             ));
         }
+        $servicesNorm = array_unique($servicesNorm);
 
-        return $normalized;
+        // Custom other_services always pass through — no catalog filter applied.
+        $otherNorm = array_values(array_filter(
+            array_map([self::class, 'normalizeService'], $other),
+            fn($s) => $s !== ''
+        ));
+
+        return array_values(array_unique(array_merge($servicesNorm, $otherNorm)));
     }
 
     /**
