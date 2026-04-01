@@ -1,0 +1,142 @@
+Update the **Platform Referral Disclosure wording** on the Accepted Bid Summary / Acknowledgement page for the **Tenant flow only**, replacing the current vague language with clear, user-friendly wording that confirms the Tenant does not pay a fee.
+
+---
+
+## Goal
+
+Replace the current disclosure:
+
+" A platform referral fee may apply as outlined in the platform's terms of service. "
+
+with:
+
+"The platform may receive a referral fee from the hired Agent or their brokerage as part of the agent’s compensation. The Tenant does not pay any fee to the platform."
+
+---
+
+## Scope
+
+Tenant Accepted Bid Summary / Acknowledgement page only.
+
+Do NOT modify:
+
+* Buyer
+* Seller
+* Landlord
+* global terms pages
+* unrelated disclosures
+
+---
+
+## Hard safeguards
+
+* Do NOT change any data, logic, or database values
+* Do NOT modify how fees are calculated or stored
+* Do NOT change routing or summary generation
+* Do NOT alter any other legal sections
+* Do NOT duplicate the disclosure
+* Do NOT break formatting or layout
+* Only update the wording
+
+---
+
+## Step 1 — Locate the disclosure
+
+Find the file that renders the Accepted Bid Summary / Acknowledgement page for Tenant.
+
+Likely locations:
+
+* resources/views/accepted_bid_summary/view.blade.php
+* OR a partial included in that file
+
+Search for:
+"Platform Referral Disclosure"
+
+Confirm the exact section before editing.
+
+---
+
+## Step 2 — Replace the text only
+
+Replace ONLY the paragraph under:
+
+"7. Platform Referral Disclosure"
+
+### New text (exact)
+
+The platform may receive a referral fee from the hired Agent or their brokerage as part of the agent’s compensation. The Tenant does not pay any fee to the platform.
+
+---
+
+## Step 3 — Preserve formatting
+
+Keep:
+
+* the section number (7.)
+* the section title
+* spacing and styling consistent with other sections
+* font size and alignment
+
+Do NOT:
+
+* bold random parts
+* change typography
+* change layout structure
+
+---
+
+## Step 4 — Verify no duplicates
+
+Ensure:
+
+* this disclosure appears only once on the page
+* no old wording remains anywhere else on the same summary
+
+---
+
+## Step 5 — Test
+
+Use an existing accepted bid (example):
+/tenant/hire/agent/auction/view/140
+
+Then:
+
+1. Accept a bid
+2. Confirm redirect to Accepted Bid Summary
+3. Scroll to section 7
+4. Verify:
+
+   * wording is updated
+   * it clearly states Tenant does not pay
+   * no leftover “fee may apply” language exists
+   * layout looks clean (no wrapping issues)
+
+---
+
+## Step 6 — Regression check
+
+Confirm:
+
+* summary still loads
+* no Blade errors
+* no missing variables
+* PDF download (if applicable) still renders correctly
+* Agent side summary not affected
+
+---
+
+## Deliverable
+
+Provide:
+
+* exact file edited
+* confirmation old wording removed
+* confirmation new wording appears correctly
+* screenshot or verification of final output
+
+---
+
+## Critical rule
+
+Do NOT reinterpret or rewrite the disclosure.
+Use the exact provided wording and only update that section.

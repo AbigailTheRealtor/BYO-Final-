@@ -558,7 +558,9 @@ class AcceptedBidSummaryService
             $pct = $g('purchase_fee_percentage');
             return $pct ? $percent($pct) . ' of Total Purchase Price' : null;
         }
-        if ($type === 'Flat Fee + Percentage of the Total Purchase Price') {
+        // Handle both field-ordering variants — form stores "Percentage + Flat" order
+        if ($type === 'Percentage of the Total Purchase Price + Flat Fee'
+            || $type === 'Flat Fee + Percentage of the Total Purchase Price') {
             $parts = array_filter([
                 $money($g('purchase_fee_flat_combo')),
                 $g('purchase_fee_percentage_combo') ? ($percent($g('purchase_fee_percentage_combo')) . ' of Total Purchase Price') : null,
@@ -568,7 +570,7 @@ class AcceptedBidSummaryService
         if (strtolower($type) === 'other') {
             return $g('purchase_fee_other');
         }
-        return $type ?: null;
+        return null;
     }
 
     protected function parseServices($services): array
@@ -750,7 +752,6 @@ class AcceptedBidSummaryService
             'broker_fee_timing'            => 'Payment Timing for Broker Fees',
             'broker_fee_days'              => 'Calendar Days to Pay',
             'interested_purchase_fee_type' => 'Interested in Purchasing a Property',
-            'purchase_fee_type'            => 'Purchase Fee Type',
             'purchase_fee_amount'          => 'Purchase Fee',
             'lease_option_fee_type'        => 'Compensation for Creating the Lease-Option Agreement',
             'purchase_option_type'         => 'Compensation if Purchase Option is Exercised',
@@ -819,9 +820,6 @@ class AcceptedBidSummaryService
 
         $feeAmountFields = [
             'broker_fee_amount',
-            'purchase_fee_amount',
-            'lease_option_fee_amount',
-            'purchase_option_amount',
         ];
 
         if (in_array($key, $currencyFields)) {
