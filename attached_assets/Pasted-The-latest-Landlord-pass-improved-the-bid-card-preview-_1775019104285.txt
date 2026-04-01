@@ -1,0 +1,74 @@
+The latest Landlord pass improved the bid card preview, but the full private modal still does not match Tenant closely enough in presentation.
+
+This next step is a **final Landlord presentation parity pass only**. Do not change scoring logic unless a proven display/scoring mismatch is found during verification.
+
+## Scope
+
+Landlord private full bid modal only, plus any remaining Landlord bid-card presentation cleanup directly tied to parity with Tenant.
+
+Do not modify:
+
+* Tenant
+* Buyer
+* Seller
+* DB/schema
+* saved values
+* scoring logic unless a direct proven mismatch is found
+
+## Goal
+
+Make the Landlord private modal match the Tenant private modal **to a tee** in presentation style and structure, while keeping Landlord-specific content.
+
+## Required focus areas
+
+### 1. Compensation section parity
+
+The Landlord modal still uses A–G and still feels structurally different from Tenant.
+
+Use Tenant as the exact source-of-truth layout pattern for:
+
+* section grouping rhythm
+* row spacing
+* left-label / right-value layout
+* section heading style
+* mismatch row treatment
+
+Do not invent custom Landlord grouping if Tenant already has the presentation pattern.
+
+If some Landlord-specific fields require an extra grouped subsection, keep it only if absolutely necessary, but make the visual presentation still match Tenant.
+
+### 2. Services section parity
+
+Landlord Services Offered is improved, but still needs final presentation parity with Tenant.
+
+Match Tenant exactly for:
+
+* category heading treatment
+* bullet/list spacing
+* extra service highlighting
+* missing services box style
+* Additional Services presentation
+* color intensity / visual weight
+
+Do not redesign. Mirror Tenant.
+
+### 3. Remove remaining role-drift in preview/modal where not needed
+
+The card preview issue with raw fee type was fixed. Now check for any remaining Landlord-vs-Tenant formatting drift that makes the UI feel like a different product.
+
+If `Tenant's Broker Compensation` is still appearing in a way that makes the Landlord preview/modal feel inconsistent or overly technical, simplify it to match the same preview philosophy used in Tenant: show only what is actually useful and user-facing.
+
+## Verification required
+
+After the final Landlord presentation parity pass, provide:
+
+1. screenshot of Landlord bid card preview
+2. screenshot of Landlord private modal compensation section
+3. screenshot of Landlord private modal services section
+4. side-by-side comparison against Tenant showing parity
+5. confirmation that no scoring/data logic changed unless a proven mismatch required it
+
+## Critical rule
+
+This is not a new redesign.
+This is the final presentation-parity cleanup so Landlord feels like the same system as Tenant.

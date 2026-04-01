@@ -2597,6 +2597,62 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                 <div class="modal-body"
                                                     style="background: #fafafa; padding: 25px;">
 
+                                                    {{-- ========== MATCH SCORE PANEL ========== --}}
+                                                    <div class="match-score-panel mb-4 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; border: 1px solid #dee2e6;">
+                                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                                            <h6 class="mb-0" style="color: #1a3a5c; font-weight: 600;">
+                                                                <i class="fa fa-chart-pie me-2"></i>Match Score
+                                                            </h6>
+                                                            <span class="badge" style="background: {{ $totalScoreColor }}; font-size: 1.1rem; padding: 8px 16px;">
+                                                                {{ $totalScore }}% Match
+                                                            </span>
+                                                        </div>
+                                                        <p class="small text-muted mb-3">
+                                                            <i class="fa fa-info-circle me-1"></i>Match Score compares this bid only to the Landlord's original request. Added services or added terms are shown for transparency but do not increase the score.<br>
+                                                            Comparing to: <strong>{{ $baselineLabel }}</strong>
+                                                        </p>
+                                                        <div class="row g-3">
+                                                            <div class="col-md-6">
+                                                                <div class="p-2 bg-white rounded" style="border-left: 4px solid {{ $getScoreColor($servicesScore) }};">
+                                                                    <div class="d-flex justify-content-between align-items-center">
+                                                                        <span class="small fw-semibold">Services Match</span>
+                                                                        <span class="badge" style="background: {{ $getScoreColor($servicesScore) }};">{{ $servicesScore }}%</span>
+                                                                    </div>
+                                                                    <div class="small text-muted mt-1">
+                                                                        Matched Original: {{ $servicesMatched }}/{{ $servicesTotal }}
+                                                                    </div>
+                                                                    @if ($servicesExtraCount > 0)
+                                                                    <div class="small mt-1 d-flex align-items-center flex-wrap" style="gap: 3px 5px;" title="Extra services were included by the Agent beyond the Landlord&#39;s original request. These do not increase the match score but may provide additional value.">
+                                                                        <span>&#11088;</span>
+                                                                        <span style="font-weight: 500; color: #856404;">Extra Value Added: {{ $servicesExtraCount }} {{ $servicesExtraCount === 1 ? 'Service' : 'Services' }}</span>
+                                                                    </div>
+                                                                    @endif
+                                                                    @if ($servicesMissingCount > 0)
+                                                                    <div class="small mt-1" style="color: #dc3545;">Missing from Original: {{ $servicesMissingCount }}</div>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <div class="p-2 bg-white rounded" style="border-left: 4px solid {{ $getScoreColor($brokerScore) }};">
+                                                                    <div class="d-flex justify-content-between align-items-center">
+                                                                        <span class="small fw-semibold">Terms Match</span>
+                                                                        <span class="badge" style="background: {{ $getScoreColor($brokerScore) }};">{{ $brokerScore }}%</span>
+                                                                    </div>
+                                                                    <div class="small text-muted mt-1">
+                                                                        Matched Original: {{ $brokerMatched }}/{{ $brokerTotal }}
+                                                                    </div>
+                                                                    @if ($termsChangedCount > 0)
+                                                                    <div class="small mt-1" style="color: #dc3545;">Changed from Baseline: {{ $termsChangedCount }}</div>
+                                                                    @endif
+                                                                    @if ($termsAddedCount > 0)
+                                                                    <div class="small mt-1" style="color: #6c757d;">Added by Agent: {{ $termsAddedCount }}</div>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {{-- ========== END MATCH SCORE PANEL ========== --}}
+
                                                     <!-- 1. Agent Overview & Qualifications -->
                                                     <div class="mb-5">
                                                         <h6 class="mb-3"
@@ -3305,42 +3361,31 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                     $modalCats = $isCommercial ? $landlordComCats : $landlordResCats;
                                                     @endphp
 
-                                                    <div class="mb-4">
+                                                    @php
+                                                    // Badge styles matching Tenant modal Services section
+                                                    $svcAddedStyle = 'background-color: #d4edda; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #28a745;';
+                                                    $svcAddedBadge = '<span class="badge bg-success ms-2" style="font-size: 0.65rem; vertical-align: middle;">Extra Service Offered</span>';
+                                                    $svcMissingStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545; text-decoration: line-through; color: #721c24;';
+                                                    $svcMissingBadge = '<span class="badge bg-danger ms-2" style="font-size: 0.65rem; vertical-align: middle;">Not Offered by Agent</span>';
+                                                    @endphp
+                                                    <div class="mb-5">
                                                         <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
                                                             <i class="fa fa-clipboard-list me-2"></i>Offered Services
-                                                            @if($servicesMissingCount > 0)
-                                                            <span class="badge bg-danger ms-2" style="font-size: 0.7rem;">{{ $servicesMissingCount }} Missing</span>
-                                                            @endif
                                                         </h6>
-
-                                                        {{-- Legend --}}
-                                                        <div class="mb-3 small">
-                                                            <span style="color: #28a745;"><i class="fa fa-check-circle me-1"></i>Matched</span>
-                                                            <span class="ms-3" style="color: #17a2b8;"><i class="fa fa-plus-circle me-1"></i>Extra (not in baseline)</span>
-                                                            <span class="ms-3" style="color: #dc3545;"><i class="fa fa-times-circle me-1"></i>Missing (in baseline but not offered)</span>
-                                                        </div>
 
                                                         @if ($hasModalSvcs)
                                                             @foreach ($modalCats as $catName => $catSvcs)
                                                                 @php
-                                                                    // Normalize category strings (handles both actual Unicode chars and literal \u2019 text)
                                                                     $normCatSvcs = array_map($normForCat, $catSvcs);
                                                                     $matchedInCat = array_filter($parsedModalSvcs, fn($svc) => in_array($normForCat($svc), $normCatSvcs));
                                                                 @endphp
                                                                 @if (!empty($matchedInCat))
                                                                 <div class="mb-3">
                                                                     <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">{{ $catName }}</div>
-                                                                    <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem; list-style: none;">
+                                                                    <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
                                                                         @foreach ($matchedInCat as $svc)
-                                                                            @if ($isModalSvcMatched($svc))
-                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px; color: #28a745;">
-                                                                                <i class="fa fa-check-circle me-1"></i>{{ $svc }}
-                                                                            </li>
-                                                                            @else
-                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px; color: #17a2b8;">
-                                                                                <i class="fa fa-plus-circle me-1"></i>{{ $svc }} <small>(extra)</small>
-                                                                            </li>
-                                                                            @endif
+                                                                            @php $svcInBaseline = $isModalSvcMatched($svc); @endphp
+                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px; {{ !$svcInBaseline ? $svcAddedStyle : '' }}">{{ $svc }}{!! !$svcInBaseline ? $svcAddedBadge : '' !!}</li>
                                                                         @endforeach
                                                                     </ul>
                                                                 </div>
@@ -3350,17 +3395,10 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                             @if (!empty($parsedModalOther))
                                                             <div class="mb-3">
                                                                 <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Additional Services</div>
-                                                                <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem; list-style: none;">
+                                                                <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
                                                                     @foreach ($parsedModalOther as $otherSvc)
-                                                                        @if ($isModalSvcMatched($otherSvc))
-                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; color: #28a745;">
-                                                                            <i class="fa fa-check-circle me-1"></i>{{ $otherSvc }}
-                                                                        </li>
-                                                                        @else
-                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; color: #17a2b8;">
-                                                                            <i class="fa fa-plus-circle me-1"></i>{{ $otherSvc }} <small>(extra)</small>
-                                                                        </li>
-                                                                        @endif
+                                                                        @php $svcInBaseline = $isModalSvcMatched($otherSvc); @endphp
+                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; {{ !$svcInBaseline ? $svcAddedStyle : '' }}">{{ $otherSvc }}{!! !$svcInBaseline ? $svcAddedBadge : '' !!}</li>
                                                                     @endforeach
                                                                 </ul>
                                                             </div>
@@ -3368,15 +3406,13 @@ $auser = $auctionUser::find(@$auction->user_id);
 
                                                             {{-- Missing Services Section --}}
                                                             @if (!empty($modalMissingSvcs))
-                                                            <div class="mb-3 mt-3 p-3" style="background-color: #fff5f5; border-radius: 6px; border: 1px solid #f5c6cb;">
-                                                                <div class="fw-bold" style="color: #dc3545; font-size: 0.95rem;">
-                                                                    <i class="fa fa-exclamation-triangle me-1"></i>Missing Services (Not Offered)
+                                                            <div class="mt-4 p-3" style="background-color: #ffe6e6; border-radius: 8px; border: 1px solid #dc3545;">
+                                                                <div class="fw-bold mb-2" style="color: #721c24; font-size: 0.95rem;">
+                                                                    <i class="fa fa-times-circle me-2"></i>Services Requested But Agent Did Not Include ({{ count($modalMissingSvcs) }})
                                                                 </div>
-                                                                <ul class="services mb-0" style="margin-top: 0.5rem; padding-left: 1.2rem; list-style: none;">
+                                                                <ul class="mb-0" style="padding-left: 1.2rem;">
                                                                     @foreach ($modalMissingSvcs as $missingSvc)
-                                                                    <li style="font-size: 0.9rem; margin-bottom: 4px; color: #dc3545;">
-                                                                        <i class="fa fa-times-circle me-1"></i>{{ $missingSvc }}
-                                                                    </li>
+                                                                    <li style="font-size: 0.9rem; margin-bottom: 4px; {{ $svcMissingStyle }}">{{ $missingSvc }}{!! $svcMissingBadge !!}</li>
                                                                     @endforeach
                                                                 </ul>
                                                             </div>
@@ -3385,7 +3421,6 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                         <div class="text-muted" style="font-style: italic;">No services selected for this bid.</div>
                                                         @endif
                                                     </div>
-                                                    <br />
 
                                                     <!-- 4. Agent Presentation & Promotional Materials -->
                                                     @if (data_get($bid, 'get.presentation_link') ||
