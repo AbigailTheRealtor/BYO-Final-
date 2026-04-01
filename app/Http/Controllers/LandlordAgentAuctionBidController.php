@@ -14,6 +14,8 @@ use App\Notifications\BidAcceptedNotification;
 use App\Notifications\BidRejectedNotification;
 use App\Notifications\CounterBidAcceptedNotification;
 use App\Notifications\CounterBidRejectedNotification;
+use App\Notifications\LandlordAgentHiredNotification;
+use App\Services\LandlordAcceptedBidSummaryService;
 
 class LandlordAgentAuctionBidController extends Controller
 {
@@ -178,12 +180,12 @@ class LandlordAgentAuctionBidController extends Controller
     {
         try {
             DB::beginTransaction();
-            $bid = LandlordAgentAuctionBid::whereId($request->bid_id)->first();
+            $bid = LandlordAgentAuctionBid::with('user', 'meta')->whereId($request->bid_id)->first();
             $bid->accepted = "accepted";
             $bid->accepted_date = date('Y-m-d H:i:s');
             $bid->save();
 
-            $auction = LandlordAgentAuction::whereId($request->auction_id)->first();
+            $auction = LandlordAgentAuction::with('user', 'meta')->whereId($request->auction_id)->first();
             $auction->is_sold = true;
             $auction->sold_date = date('Y-m-d H:i:s');
             $auction->save();
@@ -194,16 +196,34 @@ class LandlordAgentAuctionBidController extends Controller
             $ua->agent_id = $bid->user_id;
             $ua->type = 'landlord';
             $ua->property_id = $auction->id;
-
             $ua->save();
 
-            // Notify the bidder that their bid was accepted
-            $bid->user->notify(new BidAcceptedNotification($bid, $auction));
-
             DB::commit();
+
+            // Generate Accepted Bid Summary
+            $summary = null;
+            try {
+                $summaryService = new LandlordAcceptedBidSummaryService();
+                $summary = $summaryService->generateSummary($bid);
+            } catch (\Exception $e) {
+                \Log::error('LandlordAcceptedBidSummaryService failed', ['error' => $e->getMessage()]);
+            }
+
+            $summaryId = $summary ? $summary->id : null;
+
+            // Notify the bidder (agent) that their bid was accepted
+            try { $bid->user->notify(new BidAcceptedNotification($bid, $auction)); } catch (\Exception $e) {}
+
+            // Notify the landlord (listing owner) that an agent has been hired
+            try { $auction->user->notify(new LandlordAgentHiredNotification($bid, $auction, $summaryId)); } catch (\Exception $e) {}
+
+            if ($summary) {
+                return redirect()->route('accepted-bid-summary.view', $summary->id)
+                    ->with('success', 'Bid accepted successfully! Your Accepted Bid Summary is ready.');
+            }
+
             return redirect()->back()->with('success', 'Bid Accepted successfully!');
         } catch (\Exception $th) {
-            //throw $th;
             DB::rollBack();
             return redirect()->back()->with('error', 'Some problem in bid acceptance!');
         }
@@ -237,29 +257,57 @@ class LandlordAgentAuctionBidController extends Controller
 
     public function accept_counter_bid(Request $request)
     {
+        try {
+            DB::beginTransaction();
 
-        $pab = landlordCounterBidding::whereId($request->counter_bid_id)->first();
-        $pab->accepted = "accepted";
-        $pab->accepted_date = date('Y-m-d H:i:s');
+            $pab = landlordCounterBidding::whereId($request->counter_bid_id)->first();
+            $pab->accepted = "accepted";
+            $pab->accepted_date = date('Y-m-d H:i:s');
+            $pab->save();
 
-        $pa = LandlordAgentAuction::whereId($request->auction_id)->first();
-        $pa->is_sold = true;
-        $pa->sold_date = date('Y-m-d H:i:s');
-
-        $bid = LandlordAgentAuctionBid::whereId($pab->landlord_agent_auction_bid_id)->first();
-
-        $ua = new UserAgent();
-        $ua->user_id = $pa->user_id;
-        $ua->agent_id = $bid->user_id;
-        $ua->type = 'landlord';
-        $ua->property_id = $pa->id;
-        $ua->save();
-        // Send notification to counter bidder
-        $pab->user->notify(new CounterBidAcceptedNotification($pab, $pa));
-        if ($pab->save() && $pa->save()) {
+            $pa = LandlordAgentAuction::with('user', 'meta')->whereId($request->auction_id)->first();
+            $pa->is_sold = true;
+            $pa->sold_date = date('Y-m-d H:i:s');
+            $pa->save();
             $pa->saveMeta('listing_status', 'Hired Agent');
+
+            $bid = LandlordAgentAuctionBid::with('user', 'meta')->whereId($pab->landlord_agent_auction_bid_id)->first();
+
+            $ua = new UserAgent();
+            $ua->user_id = $pa->user_id;
+            $ua->agent_id = $bid->user_id;
+            $ua->type = 'landlord';
+            $ua->property_id = $pa->id;
+            $ua->save();
+
+            DB::commit();
+
+            // Generate Accepted Bid Summary (counter bid terms)
+            $summary = null;
+            try {
+                $summaryService = new LandlordAcceptedBidSummaryService();
+                $counterModel = \App\Models\LandlordCounterBidding::find($pab->id);
+                $summary = $summaryService->generateSummary($bid, $counterModel);
+            } catch (\Exception $e) {
+                \Log::error('LandlordAcceptedBidSummaryService (counter) failed', ['error' => $e->getMessage()]);
+            }
+
+            $summaryId = $summary ? $summary->id : null;
+
+            // Notify the counter bidder (agent) that their counter bid was accepted
+            try { $pab->user->notify(new CounterBidAcceptedNotification($pab, $pa)); } catch (\Exception $e) {}
+
+            // Notify the landlord (listing owner) that an agent has been hired
+            try { $pa->user->notify(new LandlordAgentHiredNotification($bid, $pa, $summaryId)); } catch (\Exception $e) {}
+
+            if ($summary) {
+                return redirect()->route('accepted-bid-summary.view', $summary->id)
+                    ->with('success', 'Counter Bid accepted! Your Accepted Bid Summary is ready.');
+            }
+
             return redirect()->back()->with('success', 'Counter Bid Accepted successfully!');
-        } else {
+        } catch (\Exception $th) {
+            DB::rollBack();
             return redirect()->back()->with('error', 'Some problem in bid acceptance!');
         }
     }

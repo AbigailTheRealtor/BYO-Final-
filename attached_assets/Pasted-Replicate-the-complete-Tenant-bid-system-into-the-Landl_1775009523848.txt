@@ -1,0 +1,140 @@
+Replicate the complete Tenant bid system into the Landlord flow using the Tenant implementation as the exact source of truth.
+
+## Goal
+
+Landlord must match Tenant functionality, logic, formatting, and behavior exactly — only replacing role-specific language (Tenant → Landlord).
+
+---
+
+## Scope
+
+Landlord flow only.
+
+Do NOT modify:
+
+* Tenant
+* Buyer
+* Seller
+* database schema
+* existing working logic
+
+---
+
+## Hard Safeguards
+
+* Do NOT rewrite logic
+* Do NOT simplify or restructure systems
+* Do NOT create new variations
+* Copy the exact Tenant logic and adapt only role-specific labels
+* If anything cannot be matched exactly, STOP and report
+
+---
+
+## Required Systems to Match EXACTLY
+
+### 1. Match Score System
+
+* Services Match calculation
+* Terms Match calculation
+* Logical field grouping
+* Additional Services counting (each custom service counts individually)
+* Extra Services logic (⭐ Extra Value Added)
+* Missing Services logic
+
+---
+
+### 2. Services System
+
+* Same service catalog behavior
+* Same filtering (no cross-role services)
+* Same display formatting
+* Same additional services handling
+
+---
+
+### 3. Broker Compensation & Terms
+
+* Same grouping logic
+* Same comparison logic
+* Same mismatch detection
+* Same resolved value formatting (no raw type fields)
+
+---
+
+### 4. Bid + Counter System
+
+* Same bid structure
+* Same counter logic
+* Same data preservation
+* No service loss or duplication
+
+---
+
+### 5. Accepted Bid Summary
+
+* Must match Tenant summary exactly:
+
+  * Same layout
+  * Same section structure
+  * Same formatting
+  * Same resolved value display
+* Replace only role language (Tenant → Landlord where applicable)
+
+---
+
+### 6. Post-Accept Behavior (REQUIRED)
+
+When a Landlord accepts a bid:
+
+* Accepted Bid Summary must open immediately
+* Create notification for both parties
+* Save summary to dashboard
+* Ensure it can be reopened anytime
+
+---
+
+### 7. Dashboard Integration
+
+* Add Accepted Bids section if not present
+* Both Landlord and Agent can access summaries
+* No lost or hidden summaries
+
+---
+
+## Verification
+
+Test full flow:
+
+1. Create Landlord listing
+2. Submit agent bid
+3. Submit counter bid
+4. Accept bid
+5. Verify:
+
+   * match score correct
+   * services correct
+   * terms correct
+   * summary opens automatically
+   * notifications sent
+   * summary saved and accessible
+
+---
+
+## Deliverable
+
+Provide:
+
+* files modified
+* confirmation each system matches Tenant behavior
+* confirmation no regression in Tenant flow
+* screenshots of Landlord flow working end-to-end
+
+---
+
+## Critical Rule
+
+Landlord must behave exactly like Tenant.
+
+No new logic.
+No deviations.
+No partial implementations.

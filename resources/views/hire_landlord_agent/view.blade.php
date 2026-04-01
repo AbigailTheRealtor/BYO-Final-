@@ -2315,6 +2315,13 @@ $auser = $auctionUser::find(@$auction->user_id);
                 @else
                 <p>No one has bid on this auction.</p>
                 @endif
+                @php
+                    // ── Match Score Baseline (Landlord listing request as the reference) ──────
+                    $auctionPropType = $auction->get->property_type ?? 'Residential Property';
+                    $landlordBaselineData = json_decode(json_encode($auction->get ?? []), true) ?: [];
+                    $getScoreColor = fn($s) => \App\Helpers\LandlordBidMatchScoreHelper::scoreColor((int)$s);
+                @endphp
+
                 <div class="accordion" id="accordionExample">
                     <div class="accordion-item border-0">
 
@@ -2362,6 +2369,22 @@ $auser = $auctionUser::find(@$auction->user_id);
                             if (!$canViewBid && $isAgent) { continue; }
                             $landlordFeeType = data_get($bid, 'get.purchase_fee_type', '');
                             $landlordCommissionSummary = $landlordFeeType ?: '—';
+
+                            // ── Match Score ────────────────────────────────────────────
+                            $currentBidData = json_decode(json_encode(data_get($bid, 'get', [])), true) ?: [];
+                            $matchScore = \App\Helpers\LandlordBidMatchScoreHelper::calculate(
+                                $landlordBaselineData, $currentBidData, null, $auctionPropType
+                            );
+                            $totalScore       = $matchScore['overall_percent'];
+                            $totalScoreColor  = $getScoreColor($totalScore);
+                            $servicesScore    = $matchScore['services_match_percent'];
+                            $servicesMatched  = $matchScore['services_matched_count'];
+                            $servicesTotal    = $matchScore['services_baseline_total'];
+                            $servicesMissingCount = $matchScore['services_missing_count'];
+                            $servicesExtraCount   = $matchScore['services_extra_count'];
+                            $brokerScore      = $matchScore['terms_match_percent'];
+                            $brokerMatched    = $matchScore['terms_matched_count'];
+                            $brokerTotal      = $matchScore['terms_baseline_total'];
                         @endphp
 
                         <!-- Bid Card - Collapsible with custom JS toggle -->
@@ -2374,7 +2397,12 @@ $auser = $auctionUser::find(@$auction->user_id);
                                     <i class="fa fa-chevron-down bid-chevron" style="transition: transform 0.3s; color: #1a3a5c;"></i>
                                     <h5 class="mb-0" style="font-weight: 700; color: #1a3a5c; font-size: 1.4rem;">Agent {{ $agentNumber }}</h5>
                                 </div>
-                                <span style="font-weight: 600; color: {{ $bidStatusColor }}; font-size: 1.1rem;">{{ $bidStatusLabel }}</span>
+                                <div class="d-flex align-items-center gap-2">
+                                    @if ($isListingOwner || $isBidOwner)
+                                    <span class="badge" style="background: {{ $totalScoreColor }}; color: white; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem;">{{ $totalScore }}% Match</span>
+                                    @endif
+                                    <span style="font-weight: 600; color: {{ $bidStatusColor }}; font-size: 1.1rem;">{{ $bidStatusLabel }}</span>
+                                </div>
                             </div>
 
                             <!-- Collapsible Content - Default collapsed -->
@@ -2383,9 +2411,45 @@ $auser = $auctionUser::find(@$auction->user_id);
                                 <hr style="margin: 0 0 15px 0; border-color: #e0e0e0;">
                                 <!-- Offered Services Count -->
                                 <p class="mb-0" style="font-size: 1.1rem; color: #1a3a5c;">
-                                    <span style="font-weight: 600;">Offered Services:</span> {{ $totalServicesCount }} Services
+                                    <span style="font-weight: 600;">Offered Services:</span>
+                                    @if ($isListingOwner || $isBidOwner)
+                                        <span style="color: #28a745; font-weight: 600;">{{ $servicesMatched }}/{{ $servicesTotal }}</span> matched
+                                        @if ($servicesExtraCount > 0)
+                                        <span class="text-muted ms-2">&bull; {{ $servicesExtraCount }} extra</span>
+                                        @endif
+                                        @if ($servicesMissingCount > 0)
+                                        <span class="ms-2" style="color: #dc3545;">&bull; {{ $servicesMissingCount }} missing</span>
+                                        @endif
+                                    @else
+                                        {{ $totalServicesCount }} Services
+                                    @endif
                                 </p>
+                                @if (($isListingOwner || $isBidOwner) && $servicesExtraCount > 0)
+                                <div class="mt-2 d-flex align-items-center flex-wrap" style="gap: 4px 6px;">
+                                    <span style="font-size: 0.9rem; line-height: 1.4;">&#11088;</span>
+                                    <span style="font-weight: 500; color: #856404; font-size: 0.95rem;">Extra Value Added: {{ $servicesExtraCount }} {{ $servicesExtraCount === 1 ? 'Service' : 'Services' }}</span>
+                                    <span class="text-muted" style="font-size: 0.78rem; font-style: italic;">&mdash; does not affect match score</span>
+                                </div>
+                                @endif
                                 <hr style="margin: 15px 0; border-color: #e0e0e0;">
+
+                                <!-- Match Score Summary -->
+                                @if ($isListingOwner || $isBidOwner)
+                                <div class="match-score-summary mb-3 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6;">
+                                    <div class="mb-2">
+                                        <span style="font-weight: 600; color: #1a3a5c; font-size: 1rem;"><i class="fa fa-chart-pie me-2"></i>Match Summary</span>
+                                    </div>
+                                    <div class="d-flex gap-3 align-items-center flex-wrap">
+                                        <span class="badge" style="background: {{ $totalScoreColor }}; color: white; padding: 6px 14px; border-radius: 20px; font-size: 1rem;">{{ $totalScore }}% Overall</span>
+                                        <div style="font-size: 0.9rem; color: #6c757d;">
+                                            <span style="color: {{ $getScoreColor($servicesScore) }};">Services {{ $servicesScore }}%</span>
+                                            <span class="mx-1">&bull;</span>
+                                            <span style="color: {{ $getScoreColor($brokerScore) }};">Terms {{ $brokerScore }}%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endif
+
                                 <!-- Broker Compensation Summary -->
                                 <h6 style="font-weight: 600; color: #1a3a5c; font-size: 1.15rem; margin-bottom: 12px;">Broker Compensation Summary:</h6>
                                 <div class="mb-3">
@@ -4488,6 +4552,11 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                 @if(data_get($bid, 'user_id') == Auth::id() && !$agentAcceptedBidSummary->isAgentSigned())
                                                 <a href="{{ route('accepted-bid-summary.sign-form', $agentAcceptedBidSummary->id) }}" class="btn btn-primary btn-sm py-1 px-2">
                                                     <i class="fa fa-signature me-1"></i> Agent: E-Sign
+                                                </a>
+                                                @endif
+                                                @if(Auth::id() == $ownerId && !$agentAcceptedBidSummary->isTenantSigned())
+                                                <a href="{{ route('accepted-bid-summary.sign-form', $agentAcceptedBidSummary->id) }}" class="btn btn-primary btn-sm py-1 px-2">
+                                                    <i class="fa fa-signature me-1"></i> Landlord: E-Sign
                                                 </a>
                                                 @endif
                                                 @if($agentAcceptedBidSummary->isFullySigned())
