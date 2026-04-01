@@ -1030,7 +1030,7 @@ class AcceptedBidSummaryService
 
     <div style="background: #e7f3ff; padding: 20px; border: 1px solid #007bff; border-radius: 8px; margin-bottom: 20px;">
         <h2 style="color: #0056b3; border-bottom: 2px solid #007bff; padding-bottom: 10px;">7. Platform Referral Disclosure</h2>
-        <p style="color: #0056b3;">This transaction was facilitated through the Bid Your Offer platform. A platform referral fee may apply as outlined in the platform's terms of service.</p>
+        <p style="color: #0056b3;">The platform may receive a referral fee from the hired Agent or their brokerage as part of the agent's compensation. The Tenant does not pay any fee to the platform.</p>
     </div>
 
     <div style="background: #f8f9fa; padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px;">
