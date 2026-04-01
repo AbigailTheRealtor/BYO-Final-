@@ -2385,6 +2385,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                             $brokerScore      = $matchScore['terms_match_percent'];
                             $brokerMatched    = $matchScore['terms_matched_count'];
                             $brokerTotal      = $matchScore['terms_baseline_total'];
+                            $brokerMismatches = $matchScore['changed_terms'];
                         @endphp
 
                         <!-- Bid Card - Collapsible with custom JS toggle -->
@@ -2686,555 +2687,320 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                     data_get($bid, 'get.agency_agreement_timeframe') ||
                                                     data_get($bid, 'get.interested_in_property_management') ||
                                                     data_get($bid, 'get.brokerage_relationship') ||
-                                                    data_get($bid, 'get.additional_details_broker'))
+                                                    data_get($bid, 'get.additional_details_broker') ||
+                                                    data_get($bid, 'get.additional_details'))
                                                     <div class="mb-5">
                                                         <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                            <i class="fa fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms:
+                                                            <i class="fa fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
                                                         </h6>
 
-                                                        <!-- Landlord's Broker Lease Fee -->
-                                                        @if (data_get($bid, 'get.purchase_fee_type'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold" style="color: #049399;">Landlord's Broker Lease Fee:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.purchase_fee_type') }}</div>
-                                                        </div>
+                                                        @php
+                                                        $mismatchStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545;';
+                                                        $mismatchBadge = '<span class="badge bg-danger ms-2" style="font-size: 0.7rem; vertical-align: middle;">Mismatch</span>';
 
-                                                        <!-- Residential Property Lease Fee Details -->
-                                                        @if (data_get($bid, 'get.purchase_fee_type') === 'Flat Fee' && data_get($bid, 'get.purchase_fee_flat'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Flat Fee Amount:</div>
-                                                            <div class="text-muted">${{ data_get($bid, 'get.purchase_fee_flat') }}</div>
-                                                        </div>
-                                                        @endif
+                                                        // ── A) Lease Fee composite display ──────────────────────────
+                                                        $leaseFeeType = data_get($bid, 'get.purchase_fee_type', '');
+                                                        $leaseFeeDisplay = $leaseFeeType;
+                                                        if ($leaseFeeType === 'Flat Fee') {
+                                                            $lf = data_get($bid,'get.purchase_fee_flat') ?: data_get($bid,'get.purchase_fee_flat_commercial');
+                                                            if ($lf) $leaseFeeDisplay = '$'.number_format((float)$lf,2).' Flat Fee';
+                                                        } elseif ($leaseFeeType === 'Percentage of the Rent Due Each Rental Period') {
+                                                            $pct = data_get($bid,'get.purchase_fee_rental_period');
+                                                            if ($pct) $leaseFeeDisplay = $pct.'% of Rent Due Each Rental Period';
+                                                        } elseif ($leaseFeeType === 'Percentage of the Gross Lease Value') {
+                                                            $pct = data_get($bid,'get.purchase_fee_percentage_combo');
+                                                            if ($pct) $leaseFeeDisplay = $pct.'% of Gross Lease Value';
+                                                        } elseif ($canon($leaseFeeType) === "Percentage of the First Month's Rent") {
+                                                            $pct = data_get($bid,'get.purchase_fee_flat_combo');
+                                                            if ($pct) $leaseFeeDisplay = $pct."% of First Month's Rent";
+                                                        } elseif ($leaseFeeType === 'Percentage of the Net Aggregate Rent') {
+                                                            $pct = data_get($bid,'get.purchase_fee_net_aggregate');
+                                                            if ($pct) $leaseFeeDisplay = $pct.'% of Net Aggregate Rent';
+                                                        } elseif ($leaseFeeType === 'Percentage of the Gross Rent') {
+                                                            $pct = data_get($bid,'get.purchase_fee_gross_rent');
+                                                            if ($pct) $leaseFeeDisplay = $pct.'% of Gross Rent';
+                                                        } elseif ($canon($leaseFeeType) === "Percentage of Month's Rent") {
+                                                            $pct    = data_get($bid,'get.purchase_fee_monthly_percentage');
+                                                            $months = data_get($bid,'get.purchase_fee_months');
+                                                            if ($pct) $leaseFeeDisplay = $pct."% of Month's Rent".($months ? " × $months months" : '');
+                                                        } elseif ($leaseFeeType === 'other') {
+                                                            $oth = data_get($bid,'get.purchase_fee_other') ?: data_get($bid,'get.purchase_fee_other_commercial');
+                                                            $leaseFeeDisplay = 'Other: '.($oth ?: 'See details');
+                                                        }
 
-                                                        @if (data_get($bid, 'get.purchase_fee_type') === 'Percentage of the Rent Due Each Rental Period' && data_get($bid, 'get.purchase_fee_rental_period'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Percentage of Rent Due Each Rental Period:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.purchase_fee_rental_period') }}%</div>
-                                                        </div>
-                                                        @endif
+                                                        // ── A) Payment Timing composite display ─────────────────────
+                                                        $feeTimingRaw = data_get($bid,'get.broker_fee_timing','');
+                                                        $feeTimingDisplay = match($feeTimingRaw) {
+                                                            'full_execution' => 'Full amount upon execution of lease, sales contract, or other transfer agreement',
+                                                            default => $feeTimingRaw,
+                                                        };
+                                                        if ($feeTimingRaw === 'Deducted from Rent Collected') {
+                                                            $d = data_get($bid,'get.broker_fee_days_from_rent');
+                                                            if ($d) $feeTimingDisplay .= " ($d calendar days)";
+                                                        } elseif ($feeTimingRaw === 'Paid Within Calendar Days After Executed Lease') {
+                                                            $d = data_get($bid,'get.broker_fee_days_after_lease');
+                                                            if ($d) $feeTimingDisplay = "Within $d days after executed lease";
+                                                        } elseif ($feeTimingRaw === 'Paid Within Calendar Days of Tenant Rent Payment') {
+                                                            $d = data_get($bid,'get.broker_fee_days_after_rent');
+                                                            if ($d) $feeTimingDisplay = "Within $d days of tenant rent payment";
+                                                        } elseif ($feeTimingRaw === 'other') {
+                                                            $oth = data_get($bid,'get.broker_fee_timing_other');
+                                                            $feeTimingDisplay = $oth ?: 'Custom arrangement';
+                                                        } elseif (in_array($feeTimingRaw, ['50% due upon execution, 50% due upon commencement of agreement','50% due upon execution, 50% due upon occupancy of premises'])) {
+                                                            $d2 = data_get($bid,'get.broker_fee_days_after_due_event');
+                                                            if ($d2) $feeTimingDisplay .= " (second installment within $d2 days)";
+                                                        }
 
-                                                        @if (data_get($bid, 'get.purchase_fee_type') === 'Percentage of the Gross Lease Value' && data_get($bid, 'get.purchase_fee_percentage_combo'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Percentage of Gross Lease Value:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.purchase_fee_percentage_combo') }}%</div>
-                                                        </div>
-                                                        @endif
+                                                        // ── A) Renewal Fee composite display ────────────────────────
+                                                        $renewalFeeType = data_get($bid,'get.renewal_fee_type','');
+                                                        $renewalFeeDisplay = $renewalFeeType;
+                                                        if ($renewalFeeType === 'Flat Fee') {
+                                                            $flat = data_get($bid,'get.renewal_fee_flat_free');
+                                                            if ($flat) $renewalFeeDisplay = '$'.number_format((float)$flat,2).' Flat Fee';
+                                                        } elseif ($renewalFeeType === 'Percentage of the Rent Due Each Rental Period') {
+                                                            $pct = data_get($bid,'get.renewal_fee_percentage');
+                                                            if ($pct) $renewalFeeDisplay = $pct.'% of Rent Due Each Rental Period';
+                                                        } elseif ($renewalFeeType === 'Percentage of the Gross Lease Value') {
+                                                            $pct = data_get($bid,'get.renewal_fee_lease_value');
+                                                            if ($pct) $renewalFeeDisplay = $pct.'% of Gross Lease Value';
+                                                        } elseif ($canon($renewalFeeType) === "Percentage of the First Month's Rent") {
+                                                            $pct = data_get($bid,'get.renewal_fee_first_month');
+                                                            if ($pct) $renewalFeeDisplay = $pct."% of First Month's Rent";
+                                                        } elseif ($renewalFeeType === 'Percentage of the Net Aggregate Rent') {
+                                                            $pct = data_get($bid,'get.renewal_fee_percentage');
+                                                            if ($pct) $renewalFeeDisplay = $pct.'% of Net Aggregate Rent';
+                                                        } elseif ($renewalFeeType === 'Percentage of the Gross Rent') {
+                                                            $pct = data_get($bid,'get.renewal_fee_lease_value');
+                                                            if ($pct) $renewalFeeDisplay = $pct.'% of Gross Rent';
+                                                        } elseif ($canon($renewalFeeType) === "Percentage of Month's Rent") {
+                                                            $pct    = data_get($bid,'get.renewal_fee_first_month');
+                                                            $months = data_get($bid,'get.renewal_fee_no_of_months');
+                                                            if ($pct) $renewalFeeDisplay = $pct."% of Month's Rent".($months ? " × $months months" : '');
+                                                        } elseif ($renewalFeeType === 'other') {
+                                                            $oth = data_get($bid,'get.renewal_fee_custom');
+                                                            $renewalFeeDisplay = 'Other: '.($oth ?: 'See details');
+                                                        }
 
-                                                        @if ($canon(data_get($bid, 'get.purchase_fee_type') ?? '') === 'Percentage of the First Month\'s Rent' && data_get($bid, 'get.purchase_fee_flat_combo'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Percentage of First Month's Rent:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.purchase_fee_flat_combo') }}%</div>
-                                                        </div>
-                                                        @endif
+                                                        // ── B) Tenant Broker composite display ──────────────────────
+                                                        $tenantBrokerStructure = data_get($bid,'get.tenant_broker_commission_structure','');
+                                                        $tenantBrokerDisplay   = $tenantBrokerStructure;
+                                                        $tbs = data_get($bid,'get.tenant_broker_fee_structure','');
+                                                        if ($tenantBrokerStructure && $tbs) {
+                                                            if ($tbs === 'Percentage of the Rent Due Each Rental Period') {
+                                                                $pct = data_get($bid,'get.tenant_broker_percentage');
+                                                                if ($pct) $tenantBrokerDisplay .= ' – '.$pct.'% of Rent Due Each Rental Period';
+                                                            } elseif ($tbs === 'Percentage of the Gross Lease Value') {
+                                                                $pct = data_get($bid,'get.tenant_broker_gross_lease');
+                                                                if ($pct) $tenantBrokerDisplay .= ' – '.$pct.'% of Gross Lease Value';
+                                                            } elseif ($tbs === "Percentage of the First Month's Rent") {
+                                                                $pct = data_get($bid,'get.tenant_broker_first_month_rent');
+                                                                if ($pct) $tenantBrokerDisplay .= ' – '.$pct."% of First Month's Rent";
+                                                            } elseif ($tbs === 'Flat Fee') {
+                                                                $flat = data_get($bid,'get.tenant_broker_flat_fee');
+                                                                if ($flat) $tenantBrokerDisplay .= ' – $'.number_format((float)$flat,2).' Flat Fee';
+                                                            } elseif ($tbs === 'other') {
+                                                                $oth = data_get($bid,'get.tenant_broker_other');
+                                                                if ($oth) $tenantBrokerDisplay .= ' – Other: '.$oth;
+                                                            }
+                                                        } elseif ($tenantBrokerStructure && !$tbs) {
+                                                            // Structure without fee sub-type: show flat/percentage directly
+                                                            if (data_get($bid,'get.tenant_broker_flat_fee')) {
+                                                                $tenantBrokerDisplay .= ' – $'.number_format((float)data_get($bid,'get.tenant_broker_flat_fee'),2).' Flat Fee';
+                                                            } elseif (data_get($bid,'get.tenant_broker_percentage')) {
+                                                                $tenantBrokerDisplay .= ' – '.data_get($bid,'get.tenant_broker_percentage').'%';
+                                                            }
+                                                        }
 
-                                                        @if (data_get($bid, 'get.purchase_fee_type') === 'other' && data_get($bid, 'get.purchase_fee_other'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Other Lease Fee Structure:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.purchase_fee_other') }}</div>
-                                                        </div>
-                                                        @endif
+                                                        // ── C) Lease-Option composite displays ──────────────────────
+                                                        $leaseOptInterest = data_get($bid,'get.interested_lease_option_agreement','');
+                                                        $leaseOptionCreatedDisplay  = '-';
+                                                        $leaseOptionExercisedDisplay = '-';
+                                                        if ($leaseOptInterest === 'Yes') {
+                                                            $lt = data_get($bid,'get.lease_type');
+                                                            $lv = data_get($bid,'get.lease_value');
+                                                            if ($lt && $lv) {
+                                                                $leaseOptionCreatedDisplay = ($lt === 'percent') ? $lv.'% of option consideration' : '$'.$lv.' flat fee';
+                                                            }
+                                                            $pt = data_get($bid,'get.purchase_type');
+                                                            $pv = data_get($bid,'get.purchase_value');
+                                                            if ($pt && $pv) {
+                                                                $leaseOptionExercisedDisplay = ($pt === 'percent') ? $pv.'% of total purchase price' : '$'.$pv.' flat fee';
+                                                            }
+                                                        }
 
-                                                        <!-- Commercial Property Lease Fee Details -->
-                                                        @if (data_get($bid, 'get.purchase_fee_type') === 'Percentage of the Net Aggregate Rent' && data_get($bid, 'get.purchase_fee_net_aggregate'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Percentage of Net Aggregate Rent:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.purchase_fee_net_aggregate') }}%</div>
-                                                        </div>
-                                                        @endif
+                                                        // ── D) Purchase Fee composite display ───────────────────────
+                                                        $sellingInterest  = data_get($bid,'get.interested_in_selling','');
+                                                        $purchaseFeeDisplay = '-';
+                                                        if ($sellingInterest === 'Yes') {
+                                                            $ist = data_get($bid,'get.interested_in_selling_type','');
+                                                            if ($ist === 'Percentage of the Total Purchase Price') {
+                                                                $pct = data_get($bid,'get.landlord_broker_purchase_price');
+                                                                $purchaseFeeDisplay = $pct ? $pct.'% of Total Purchase Price' : $ist;
+                                                            } elseif ($ist === 'Percentage of the Total Purchase Price + Flat Fee') {
+                                                                $pct  = data_get($bid,'get.landlord_broker_percentage_price');
+                                                                $flat = data_get($bid,'get.landlord_broker_dollar_price');
+                                                                $purchaseFeeDisplay = trim(($pct ? $pct.'%' : '').($pct && $flat ? ' + ' : '').($flat ? '$'.$flat : ''));
+                                                                if (!$purchaseFeeDisplay) $purchaseFeeDisplay = $ist;
+                                                            } elseif ($ist === 'Flat Fee') {
+                                                                $flat = data_get($bid,'get.landlord_broker_flate_fee');
+                                                                $purchaseFeeDisplay = $flat ? '$'.number_format((float)$flat,2).' Flat Fee' : $ist;
+                                                            } elseif ($ist === 'Other') {
+                                                                $oth = data_get($bid,'get.landlord_broker_other');
+                                                                $purchaseFeeDisplay = $oth ? 'Other: '.$oth : 'Other';
+                                                            } else {
+                                                                $purchaseFeeDisplay = $ist ?: '-';
+                                                            }
+                                                        }
 
-                                                        @if (data_get($bid, 'get.purchase_fee_type') === 'Percentage of the Gross Rent' && data_get($bid, 'get.purchase_fee_gross_rent'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Percentage of Gross Rent:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.purchase_fee_gross_rent') }}%</div>
-                                                        </div>
-                                                        @if (data_get($bid, 'get.sales_tax_option_gross'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Sales Tax:</div>
-                                                            <div class="text-muted">
-                                                                {{ data_get($bid, 'get.sales_tax_option_gross') === 'including' ? 'Including Sales Tax' : 'Excluding Sales Tax' }}
-                                                            </div>
-                                                        </div>
-                                                        @endif
-                                                        @endif
+                                                        // ── E) Agency Agreement Timeframe display ───────────────────
+                                                        $agencyTimeframe = data_get($bid,'get.agency_agreement_timeframe','');
+                                                        $agencyTimeframeDisplay = (strtolower(trim($agencyTimeframe)) === 'other')
+                                                            ? (data_get($bid,'get.agency_agreement_custom') ?: 'Other')
+                                                            : $agencyTimeframe;
 
-                                                        @if ($canon(data_get($bid, 'get.purchase_fee_type') ?? '') === 'Percentage of Month\'s Rent' && data_get($bid, 'get.purchase_fee_monthly_percentage'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Percentage of Month's Rent:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.purchase_fee_monthly_percentage') }}%</div>
-                                                        </div>
-                                                        @if (data_get($bid, 'get.purchase_fee_months'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Number of Months:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.purchase_fee_months') }} months</div>
-                                                        </div>
-                                                        @endif
-                                                        @if (data_get($bid, 'get.sales_tax_option_monthly'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Sales Tax:</div>
-                                                            <div class="text-muted">
-                                                                {{ data_get($bid, 'get.sales_tax_option_monthly') === 'including' ? 'Including Sales Tax' : 'Excluding Sales Tax' }}
-                                                            </div>
-                                                        </div>
-                                                        @endif
-                                                        @endif
+                                                        // ── E) Property Management Fee composite display ─────────────
+                                                        $pmFeeDisplay = '-';
+                                                        if (data_get($bid,'get.interested_in_property_management') === 'yes') {
+                                                            $pmFeeType = data_get($bid,'get.interested_in_property_management_fee','');
+                                                            $pmFeeDisplay = $pmFeeType;
+                                                            if ($pmFeeType === 'Percentage of the Gross Lease Value') {
+                                                                $pct = data_get($bid,'get.interested_in_property_management_fee_gross_lease');
+                                                                if ($pct) $pmFeeDisplay = $pct.'% of Gross Lease Value';
+                                                            } elseif ($pmFeeType === 'Percentage of the Rent Due Each Rental Period') {
+                                                                $pct = data_get($bid,'get.interested_in_property_management_fee_rental_periord');
+                                                                if ($pct) $pmFeeDisplay = $pct.'% of Rent Due Each Rental Period';
+                                                            } elseif ($pmFeeType === 'Flat Fee') {
+                                                                $flat = data_get($bid,'get.interested_in_property_management_fee_flate_free');
+                                                                if ($flat) $pmFeeDisplay = '$'.number_format((float)$flat,2).' Flat Fee';
+                                                            } elseif ($pmFeeType === 'Other') {
+                                                                $oth = data_get($bid,'get.interested_in_property_management_fee_other');
+                                                                if ($oth) $pmFeeDisplay = 'Other: '.$oth;
+                                                            }
+                                                        }
+                                                        @endphp
 
-                                                        @if (data_get($bid, 'get.purchase_fee_type') === 'Flat Fee' && data_get($bid, 'get.purchase_fee_flat_commercial'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Flat Fee Amount:</div>
-                                                            <div class="text-muted">${{ data_get($bid, 'get.purchase_fee_flat_commercial')}}</div>
-                                                        </div>
-                                                        @if (data_get($bid, 'get.sales_tax_option_flat'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Sales Tax:</div>
-                                                            <div class="text-muted">
-                                                                {{ data_get($bid, 'get.sales_tax_option_flat') === 'including' ? 'Including Sales Tax' : 'Excluding Sales Tax' }}
-                                                            </div>
-                                                        </div>
-                                                        @endif
-                                                        @endif
-
-                                                        @if (data_get($bid, 'get.purchase_fee_type') === 'other' && data_get($bid, 'get.purchase_fee_other_commercial'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Other Lease Fee Structure:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.purchase_fee_other_commercial') }}</div>
-                                                        </div>
-                                                        @endif
-                                                        @endif
-
-                                                        <!-- Lease Option Agreement -->
-                                                        @if (data_get($bid, 'get.interested_lease_option_agreement') === 'Yes')
-                                                        <div class="mt-4 pt-3 border-top">
-                                                            <h6 class="mb-3" style="color: #049399; font-weight: 600;">Lease-Option Agreement Details:</h6>
-
-                                                            @if (data_get($bid, 'get.lease_value'))
-                                                            <div class="mb-3">
-                                                                <div class="fw-semibold" style="color: #049399;">Lease Option Compensation:</div>
-                                                                <div class="text-muted">
-                                                                    @if (data_get($bid, 'get.lease_type') === 'percent')
-                                                                    {{ data_get($bid, 'get.lease_value') }}% of option consideration
-                                                                    @else
-                                                                    ${{ data_get($bid, 'get.lease_value')}} flat fee
-                                                                    @endif
-                                                                </div>
-                                                            </div>
-                                                            @endif
-
-                                                            @if (data_get($bid, 'get.purchase_value'))
-                                                            <div class="mb-3">
-                                                                <div class="fw-semibold" style="color: #049399;">Purchase Option Compensation:</div>
-                                                                <div class="text-muted">
-                                                                    @if (data_get($bid, 'get.purchase_type') === 'percent')
-                                                                    {{ data_get($bid, 'get.purchase_value') }}% of total purchase price
-                                                                    @else
-                                                                    ${{ data_get($bid, 'get.purchase_value') }} flat fee
-                                                                    @endif
-                                                                </div>
-                                                            </div>
-                                                            @endif
-                                                        </div>
-                                                        @endif
-
-                                                        <!-- Interested in Selling Section -->
-                                                        @if (data_get($bid, 'get.interested_in_selling') === 'Yes')
-                                                        <div class="mt-4 pt-3 border-top">
-                                                            <h6 class="mb-3" style="color: #049399; font-weight: 600;">Purchase Fee Details:</h6>
-
-                                                            @if (data_get($bid, 'get.interested_in_selling_type'))
-                                                            <div class="mb-3">
-                                                                <div class="fw-semibold" style="color: #049399;">Purchase Fee Type:</div>
-                                                                <div class="text-muted">{{ data_get($bid, 'get.interested_in_selling_type') }}</div>
-                                                            </div>
-                                                            @endif
-
-                                                            @if (data_get($bid, 'get.interested_in_selling_type') === 'Percentage of the Total Purchase Price' && data_get($bid, 'get.landlord_broker_purchase_price'))
-                                                            <div class="mb-3">
-                                                                <div class="fw-semibold" style="color: #049399;">Purchase Percentage:</div>
-                                                                <div class="text-muted">{{ data_get($bid, 'get.landlord_broker_purchase_price') }}%</div>
-                                                            </div>
-                                                            @endif
-
-                                                            @if (data_get($bid, 'get.interested_in_selling_type') === 'Percentage of the Total Purchase Price + Flat Fee')
-                                                            @if (data_get($bid, 'get.landlord_broker_percentage_price'))
-                                                            <div class="mb-2">
-                                                                <div class="fw-semibold" style="color: #049399;">Purchase Percentage:</div>
-                                                                <div class="text-muted">{{ data_get($bid, 'get.landlord_broker_percentage_price') }}%</div>
-                                                            </div>
-                                                            @endif
-                                                            @if (data_get($bid, 'get.landlord_broker_dollar_price'))
-                                                            <div class="mb-3">
-                                                                <div class="fw-semibold" style="color: #049399;">Additional Flat Fee:</div>
-                                                                <div class="text-muted">${{ data_get($bid, 'get.landlord_broker_dollar_price') }}</div>
-                                                            </div>
-                                                            @endif
-                                                            @endif
-
-                                                            @if (data_get($bid, 'get.interested_in_selling_type') === 'Flat Fee' && data_get($bid, 'get.landlord_broker_flate_fee'))
-                                                            <div class="mb-3">
-                                                                <div class="fw-semibold" style="color: #049399;">Purchase Flat Fee:</div>
-                                                                <div class="text-muted">${{ data_get($bid, 'get.landlord_broker_flate_fee') }}</div>
-                                                            </div>
-                                                            @endif
-
-                                                            @if (data_get($bid, 'get.interested_in_selling_type') === 'Other' && data_get($bid, 'get.landlord_broker_other'))
-                                                            <div class="mb-3">
-                                                                <div class="fw-semibold" style="color: #049399;">Other Purchase Fee Structure:</div>
-                                                                <div class="text-muted">{{ data_get($bid, 'get.landlord_broker_other') }}</div>
-                                                            </div>
-                                                            @endif
-                                                        </div>
-                                                        @endif
-
-                                                        <!-- Payment Timing for Broker Fees -->
-                                                        @if (data_get($bid, 'get.broker_fee_timing'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold" style="color: #049399;">Payment Timing for Broker Fees:</div>
-                                                            <div class="text-muted">
-                                                                @if (data_get($bid, 'get.broker_fee_timing') === 'full_execution')
-                                                                Full amount upon execution of lease, sales contract, or other transfer agreement
-                                                                @elseif (data_get($bid, 'get.broker_fee_timing') === '50% due upon execution, 50% due upon commencement of agreement')
-                                                                50% due upon execution, 50% due upon commencement of agreement
-                                                                @elseif (data_get($bid, 'get.broker_fee_timing') === '50% due upon execution, 50% due upon occupancy of premises')
-                                                                50% due upon execution, 50% due upon occupancy of premises
-                                                                @else
-                                                                {{ data_get($bid, 'get.broker_fee_timing') }}
+                                                        <!-- A) Landlord's Broker Lease Fee -->
+                                                        @if (data_get($bid, 'get.purchase_fee_type') || data_get($bid, 'get.broker_fee_timing') || data_get($bid, 'get.renewal_fee_type') || data_get($bid, 'get.expansion_commission_percentage'))
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Landlord's Broker Lease Fee</h6>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                @if (data_get($bid, 'get.purchase_fee_type'))
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['purchase_fee_type']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Landlord's Broker Lease Fee:</span> {{ $leaseFeeDisplay }}{!! isset($brokerMismatches['purchase_fee_type']) ? $mismatchBadge : '' !!}</li>
                                                                 @endif
-                                                            </div>
+                                                                @if (data_get($bid, 'get.broker_fee_timing'))
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['broker_fee_timing']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Payment Timing for Broker Fees:</span> {{ $feeTimingDisplay }}{!! isset($brokerMismatches['broker_fee_timing']) ? $mismatchBadge : '' !!}</li>
+                                                                @endif
+                                                                @if (data_get($bid, 'get.renewal_fee_type'))
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['renewal_fee_type']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Lease Renewal/Extension Fee:</span> {{ $renewalFeeDisplay }}{!! isset($brokerMismatches['renewal_fee_type']) ? $mismatchBadge : '' !!}</li>
+                                                                @endif
+                                                                @if (data_get($bid, 'get.expansion_commission_percentage'))
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['expansion_commission_percentage']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Expansion Commission for Lease Amendment:</span> {{ data_get($bid,'get.expansion_commission_percentage') }}% of original commission{!! isset($brokerMismatches['expansion_commission_percentage']) ? $mismatchBadge : '' !!}</li>
+                                                                @endif
+                                                            </ul>
                                                         </div>
 
-                                                        <!-- Residential Payment Timing Details -->
-                                                        @if (data_get($bid, 'get.broker_fee_timing') === 'Deducted from Rent Collected' && data_get($bid, 'get.broker_fee_days_from_rent'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Calendar Days to Pay Balance:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.broker_fee_days_from_rent') }} days</div>
-                                                        </div>
                                                         @endif
 
-                                                        @if (data_get($bid, 'get.broker_fee_timing') === 'Paid Within Calendar Days After Executed Lease' && data_get($bid, 'get.broker_fee_days_after_lease'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Calendar Days to Pay After Executed Lease:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.broker_fee_days_after_lease') }} days</div>
-                                                        </div>
-                                                        @endif
 
-                                                        @if (data_get($bid, 'get.broker_fee_timing') === 'Paid Within Calendar Days of Tenant Rent Payment' && data_get($bid, 'get.broker_fee_days_after_rent'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Calendar Days to Pay After Tenant Rent Payment:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.broker_fee_days_after_rent') }} days</div>
-                                                        </div>
-                                                        @endif
-
-                                                        @if (data_get($bid, 'get.broker_fee_timing') === 'other' && data_get($bid, 'get.broker_fee_timing_other'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Custom Payment Arrangement:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.broker_fee_timing_other') }}</div>
-                                                        </div>
-                                                        @endif
-
-                                                        @if (in_array(data_get($bid, 'get.broker_fee_timing'), ['50% due upon execution, 50% due upon commencement of agreement', '50% due upon execution, 50% due upon occupancy of premises']) && data_get($bid, 'get.broker_fee_days_after_due_event'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Calendar Days to Pay Second Installment:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.broker_fee_days_after_due_event') }} days</div>
-                                                        </div>
-                                                        @endif
-                                                        @endif
-
-                                                        <!-- Lease Renewal/Extension Fee -->
-                                                        @if (data_get($bid, 'get.renewal_fee_type'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold" style="color: #049399;">Lease Renewal/Extension Fee:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.renewal_fee_type') }}</div>
-                                                        </div>
-
-                                                        <!-- Residential Renewal Fees -->
-                                                        @if (data_get($bid, 'get.renewal_fee_type') === 'Percentage of the Rent Due Each Rental Period' && data_get($bid, 'get.renewal_fee_percentage'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Percentage of Rent Due Each Rental Period:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.renewal_fee_percentage') }}%</div>
-                                                        </div>
-                                                        @endif
-
-                                                        @if (data_get($bid, 'get.renewal_fee_type') === 'Percentage of the Gross Lease Value' && data_get($bid, 'get.renewal_fee_lease_value'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Percentage of Gross Lease Value:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.renewal_fee_lease_value') }}%</div>
-                                                        </div>
-                                                        @endif
-
-                                                        @if ($canon(data_get($bid, 'get.renewal_fee_type') ?? '') === 'Percentage of the First Month\'s Rent' && data_get($bid, 'get.renewal_fee_first_month'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Percentage of First Month's Rent:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.renewal_fee_first_month') }}%</div>
-                                                        </div>
-                                                        @endif
-
-                                                        @if (data_get($bid, 'get.renewal_fee_type') === 'Flat Fee' && data_get($bid, 'get.renewal_fee_flat_free'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Flat Fee Amount:</div>
-                                                            <div class="text-muted">${{data_get($bid, 'get.renewal_fee_flat_free') }}</div>
-                                                        </div>
-                                                        @endif
-
-                                                        <!-- Commercial Renewal Fees -->
-                                                        @if (data_get($bid, 'get.renewal_fee_type') === 'Percentage of the Net Aggregate Rent' && data_get($bid, 'get.renewal_fee_percentage'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Percentage of Net Aggregate Rent:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.renewal_fee_percentage') }}%</div>
-                                                        </div>
-                                                        @endif
-
-                                                        @if (data_get($bid, 'get.renewal_fee_type') === 'Percentage of the Gross Rent' && data_get($bid, 'get.renewal_fee_lease_value'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Percentage of Gross Rent:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.renewal_fee_lease_value') }}%</div>
-                                                        </div>
-                                                        @if (data_get($bid, 'get.renewal_fee_sales_tax_lease_value'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Sales Tax:</div>
-                                                            <div class="text-muted">
-                                                                {{ data_get($bid, 'get.renewal_fee_sales_tax_lease_value') === 'including' ? 'Including Sales Tax' : 'Excluding Sales Tax' }}
-                                                            </div>
-                                                        </div>
-                                                        @endif
-                                                        @endif
-
-                                                        @if ($canon(data_get($bid, 'get.renewal_fee_type') ?? '') === 'Percentage of Month\'s Rent' && data_get($bid, 'get.renewal_fee_first_month'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Percentage of Month's Rent:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.renewal_fee_first_month') }}%</div>
-                                                        </div>
-                                                        @if (data_get($bid, 'get.renewal_fee_no_of_months'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Number of Months:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.renewal_fee_no_of_months') }} months</div>
-                                                        </div>
-                                                        @endif
-                                                        @if (data_get($bid, 'get.renewal_fee_sales_tax_first_month'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Sales Tax:</div>
-                                                            <div class="text-muted">
-                                                                {{ data_get($bid, 'get.renewal_fee_sales_tax_first_month') === 'including' ? 'Including Sales Tax' : 'Excluding Sales Tax' }}
-                                                            </div>
-                                                        </div>
-                                                        @endif
-                                                        @endif
-
-                                                        @if (data_get($bid, 'get.renewal_fee_type') === 'Flat Fee' && data_get($bid, 'get.renewal_fee_flat_free'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Flat Fee Amount:</div>
-                                                            <div class="text-muted">${{ data_get($bid, 'get.renewal_fee_flat_free') }}</div>
-                                                        </div>
-                                                        @if (data_get($bid, 'get.renewal_fee_sales_tax_flat_fee'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Sales Tax:</div>
-                                                            <div class="text-muted">
-                                                                {{ data_get($bid, 'get.renewal_fee_sales_tax_flat_fee') === 'including' ? 'Including Sales Tax' : 'Excluding Sales Tax' }}
-                                                            </div>
-                                                        </div>
-                                                        @endif
-                                                        @endif
-
-                                                        @if (data_get($bid, 'get.renewal_fee_type') === 'other' && data_get($bid, 'get.renewal_fee_custom'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Custom Renewal Fee Structure:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.renewal_fee_custom') }}</div>
-                                                        </div>
-                                                        @endif
-                                                        @endif
-
-                                                        <!-- Expansion Commission for Lease Amendment (Commercial only) -->
-                                                        @if (data_get($bid, 'get.expansion_commission_percentage'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold" style="color: #049399;">Expansion Commission for Lease Amendment:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.expansion_commission_percentage') }}% of original commission</div>
-                                                        </div>
-                                                        @endif
-
-                                                        <!-- Tenant's Broker Commission Structure (Residential only) -->
+                                                        <!-- B) Tenant's Broker Compensation -->
                                                         @if (data_get($bid, 'get.tenant_broker_commission_structure'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold" style="color: #049399;">Tenant's Broker Commission Fee:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.tenant_broker_commission_structure') }}</div>
-                                                        </div>
-
-                                                        @if (data_get($bid, 'get.tenant_broker_fee_structure'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Tenant's Broker Commission Fee Structure:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.tenant_broker_fee_structure') }}</div>
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">B) Tenant's Broker Compensation</h6>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['tenant_broker_commission_structure']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $tenantBrokerDisplay }}{!! isset($brokerMismatches['tenant_broker_commission_structure']) ? $mismatchBadge : '' !!}</li>
+                                                            </ul>
                                                         </div>
                                                         @endif
 
-                                                        @if (data_get($bid, 'get.tenant_broker_percentage'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Percentage of Rent Due Each Rental Period:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.tenant_broker_percentage') }}%</div>
+                                                        <!-- C) Lease-Option Details -->
+                                                        @if (data_get($bid, 'get.interested_lease_option_agreement'))
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">C) Lease-Option Details</h6>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['interested_lease_option_agreement']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Interested in Offering a Lease-Option Agreement:</span> {{ data_get($bid,'get.interested_lease_option_agreement') }}{!! isset($brokerMismatches['interested_lease_option_agreement']) ? $mismatchBadge : '' !!}</li>
+                                                                @if (data_get($bid, 'get.interested_lease_option_agreement') === 'Yes')
+                                                                    @if ($leaseOptionCreatedDisplay !== '-')
+                                                                    <li class="mb-1" style="{{ (isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value'])) ? $mismatchStyle : '' }}"><span class="fw-semibold">Compensation for Creating the Lease-Option Agreement:</span> {{ $leaseOptionCreatedDisplay }}{!! (isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value'])) ? $mismatchBadge : '' !!}</li>
+                                                                    @endif
+                                                                    @if ($leaseOptionExercisedDisplay !== '-')
+                                                                    <li class="mb-1" style="{{ (isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value'])) ? $mismatchStyle : '' }}"><span class="fw-semibold">Compensation if Purchase Option is Exercised:</span> {{ $leaseOptionExercisedDisplay }}{!! (isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value'])) ? $mismatchBadge : '' !!}</li>
+                                                                    @endif
+                                                                @endif
+                                                            </ul>
                                                         </div>
                                                         @endif
 
-                                                        @if (data_get($bid, 'get.tenant_broker_gross_lease'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Percentage of Gross Lease Value:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.tenant_broker_gross_lease') }}%</div>
+                                                        <!-- D) Purchase Fee Details -->
+                                                        @if (data_get($bid, 'get.interested_in_selling'))
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">D) Purchase Fee Details</h6>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['interested_in_selling']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Interested in Selling the Property:</span> {{ data_get($bid,'get.interested_in_selling') }}{!! isset($brokerMismatches['interested_in_selling']) ? $mismatchBadge : '' !!}</li>
+                                                                @if (data_get($bid, 'get.interested_in_selling') === 'Yes' && $purchaseFeeDisplay !== '-')
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['interested_in_selling_type']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Purchase Fee:</span> {{ $purchaseFeeDisplay }}{!! isset($brokerMismatches['interested_in_selling_type']) ? $mismatchBadge : '' !!}</li>
+                                                                @endif
+                                                            </ul>
                                                         </div>
                                                         @endif
 
-                                                        @if (data_get($bid, 'get.tenant_broker_first_month_rent'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Percentage of First Month's Rent:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.tenant_broker_first_month_rent') }}%</div>
+                                                        <!-- E) Legal Terms -->
+                                                        @if (data_get($bid, 'get.protection_period') || data_get($bid, 'get.early_termination_fee_option') || data_get($bid, 'get.agency_agreement_timeframe') || data_get($bid, 'get.interested_in_property_management'))
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">E) Legal Terms</h6>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                @if (data_get($bid, 'get.protection_period'))
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['protection_period']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Protection Period Timeframe:</span> {{ data_get($bid,'get.protection_period') }} days{!! isset($brokerMismatches['protection_period']) ? $mismatchBadge : '' !!}</li>
+                                                                @endif
+                                                                @if (data_get($bid, 'get.early_termination_fee_option'))
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['early_termination_fee_option']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Early Termination Fee:</span> {{ data_get($bid,'get.early_termination_fee_option') === 'yes' ? 'Yes' : 'No' }}{!! isset($brokerMismatches['early_termination_fee_option']) ? $mismatchBadge : '' !!}</li>
+                                                                @if (data_get($bid, 'get.early_termination_fee_option') === 'yes' && data_get($bid, 'get.early_termination_fee_amount'))
+                                                                <li class="mb-1"><span class="fw-semibold">Termination Fee Amount:</span> ${{ data_get($bid,'get.early_termination_fee_amount') }}</li>
+                                                                @endif
+                                                                @endif
+                                                                @if (data_get($bid, 'get.agency_agreement_timeframe'))
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['agency_agreement_timeframe']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Landlord Agency Agreement Timeframe:</span> {{ $agencyTimeframeDisplay }}{!! isset($brokerMismatches['agency_agreement_timeframe']) ? $mismatchBadge : '' !!}</li>
+                                                                @endif
+                                                                @if (data_get($bid, 'get.interested_in_property_management'))
+                                                                <li class="mb-1"><span class="fw-semibold">Interested in Property Management:</span> {{ data_get($bid,'get.interested_in_property_management') === 'yes' ? 'Yes' : 'No' }}</li>
+                                                                @if (data_get($bid, 'get.interested_in_property_management') === 'yes' && $pmFeeDisplay !== '-')
+                                                                <li class="mb-1"><span class="fw-semibold">Property Management Fee:</span> {{ $pmFeeDisplay }}</li>
+                                                                @endif
+                                                                @endif
+                                                            </ul>
                                                         </div>
                                                         @endif
 
-                                                        @if (data_get($bid, 'get.tenant_broker_flat_fee'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Flat Fee Amount:</div>
-                                                            <div class="text-muted">${{ data_get($bid, 'get.tenant_broker_flat_fee') }}</div>
-                                                        </div>
-                                                        @endif
-
-                                                        @if (data_get($bid, 'get.tenant_broker_other'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Other Commission Arrangement:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.tenant_broker_other') }}</div>
-                                                        </div>
-                                                        @endif
-                                                        @endif
-
-                                                        <!-- Protection Period -->
-                                                        @if (data_get($bid, 'get.protection_period'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold" style="color: #049399;">Protection Period Timeframe:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.protection_period') }} days</div>
-                                                        </div>
-                                                        @endif
-
-                                                        <!-- Early Termination Fee -->
-                                                        @if (data_get($bid, 'get.early_termination_fee_option'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold" style="color: #049399;">Early Termination Fee:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.early_termination_fee_option') === 'yes' ? 'Yes' : 'No' }}</div>
-                                                        </div>
-
-                                                        @if (data_get($bid, 'get.early_termination_fee_option') === 'yes' && data_get($bid, 'get.early_termination_fee_amount'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold" style="color: #049399;">Termination Fee Amount:</div>
-                                                            <div class="text-muted">${{data_get($bid, 'get.early_termination_fee_amount') }}</div>
-                                                        </div>
-                                                        @endif
-                                                        @endif
-
-                                                        <!-- Agency Agreement Timeframe -->
-                                                        @if (data_get($bid, 'get.agency_agreement_timeframe'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold" style="color: #049399;">Landlord Agency Agreement Timeframe:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.agency_agreement_timeframe') }}</div>
-                                                        </div>
-
-                                                        @if (data_get($bid, 'get.agency_agreement_timeframe') === 'Other' && data_get($bid, 'get.agency_agreement_custom'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold" style="color: #049399;">Custom Timeframe:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.agency_agreement_custom') }}</div>
-                                                        </div>
-                                                        @endif
-                                                        @endif
-
-                                                        <!-- Property Management -->
-                                                        @if (data_get($bid, 'get.interested_in_property_management'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold" style="color: #049399;">Interested in Property Management:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.interested_in_property_management') === 'yes' ? 'Yes' : 'No' }}</div>
-                                                        </div>
-
-                                                        @if (data_get($bid, 'get.interested_in_property_management') === 'yes' && data_get($bid, 'get.interested_in_property_management_fee'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Property Management Fee Type:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.interested_in_property_management_fee') }}</div>
-                                                        </div>
-
-                                                        @if (data_get($bid, 'get.interested_in_property_management_fee') === 'Percentage of the Gross Lease Value' && data_get($bid, 'get.interested_in_property_management_fee_gross_lease'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Percentage of Gross Lease Value:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.interested_in_property_management_fee_gross_lease') }}%</div>
-                                                        </div>
-                                                        @endif
-
-                                                        @if (data_get($bid, 'get.interested_in_property_management_fee') === 'Percentage of the Rent Due Each Rental Period' && data_get($bid, 'get.interested_in_property_management_fee_rental_periord'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Percentage of Rent Due Each Rental Period:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.interested_in_property_management_fee_rental_periord') }}%</div>
-                                                        </div>
-                                                        @endif
-
-                                                        @if (data_get($bid, 'get.interested_in_property_management_fee') === 'Flat Fee' && data_get($bid, 'get.interested_in_property_management_fee_flate_free'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Flat Fee Amount:</div>
-                                                            <div class="text-muted">${{ data_get($bid, 'get.interested_in_property_management_fee_flate_free') }}</div>
-                                                        </div>
-                                                        @endif
-
-                                                        @if (data_get($bid, 'get.interested_in_property_management_fee') === 'Other' && data_get($bid, 'get.interested_in_property_management_fee_other'))
-                                                        <div class="mb-2">
-                                                            <div class="fw-semibold" style="color: #049399;">Other Property Management Fee:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.interested_in_property_management_fee_other') }}</div>
-                                                        @endif
-                                                        @endif
-                                                        @endif
-
-                                                        <!-- Brokerage Relationship -->
+                                                        <!-- F) Brokerage Relationship -->
                                                         @if (data_get($bid, 'get.brokerage_relationship'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold" style="color: #049399;">Acceptable Brokerage Relationship:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.brokerage_relationship') }}</div>
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">F) Brokerage Relationship</h6>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['brokerage_relationship']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Acceptable Brokerage Relationship:</span> {{ data_get($bid,'get.brokerage_relationship') }}{!! isset($brokerMismatches['brokerage_relationship']) ? $mismatchBadge : '' !!}</li>
+                                                            </ul>
                                                         </div>
                                                         @endif
 
-                                                        <!-- Additional Terms -->
-                                                        @if (data_get($bid, 'get.additional_details_broker'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold" style="color: #049399;">Additional Terms:</div>
-                                                            <div class="text-muted">{{ data_get($bid, 'get.additional_details_broker') }}</div>
+                                                        <!-- G) Additional Terms / Additional Details -->
+                                                        @if (data_get($bid, 'get.additional_details_broker') || data_get($bid, 'get.additional_details'))
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">G) Additional Terms / Additional Details</h6>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                @if (data_get($bid, 'get.additional_details_broker'))
+                                                                <li class="mb-1"><span class="fw-semibold">Additional Terms:</span> {{ data_get($bid,'get.additional_details_broker') }}</li>
+                                                                @endif
+                                                                @if (data_get($bid, 'get.additional_details'))
+                                                                <li class="mb-1"><span class="fw-semibold">Additional Details:</span> {{ data_get($bid,'get.additional_details') }}</li>
+                                                                @endif
+                                                            </ul>
                                                         </div>
                                                         @endif
 
                                                     </div>
                                                     @endif
-                                                    <!-- 3. Additional Terms & Details -->
-                                                    @if (data_get($bid, 'get.additional_details_broker') || data_get($bid, 'get.additional_details'))
-                                                    <div class="mb-5">
-                                                        <h6 class="mb-3"
-                                                            style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                            <i
-                                                                class="fa fa-file-contract me-2"></i>Additional
-                                                            Terms & Details:
-                                                        </h6>
 
-                                                        <!-- Additional Terms -->
-                                                        @if (data_get($bid, 'get.additional_details_broker'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">
-                                                                Additional Terms:</div>
-                                                            <div class="text-muted"
-                                                                style="font-style: italic;">
-                                                                {{ data_get($bid, 'get.additional_details_broker') }}
-                                                            </div>
-                                                        </div>
-                                                        @endif
 
-                                                        <!-- Additional Details -->
-                                                        @if (data_get($bid, 'get.additional_details'))
-                                                        <div class="mb-3">
-                                                            <div class="fw-semibold"
-                                                                style="color: #049399;">
-                                                                Additional Details:</div>
-                                                            <div class="text-muted"
-                                                                style="font-style: italic;">
-                                                                {{ data_get($bid, 'get.additional_details') }}
-                                                            </div>
-                                                        </div>
-                                                        @endif
-                                                    </div>
-                                                    @endif
+
+
 
 
 

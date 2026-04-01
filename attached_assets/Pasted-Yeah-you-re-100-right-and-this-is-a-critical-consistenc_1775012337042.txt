@@ -1,0 +1,293 @@
+Yeah — you’re 100% right, and this is a **critical consistency issue**.
+
+Right now your **Tenant flow = polished, structured, grouped, easy to read**
+Your **Landlord flow = raw, long, mixed, harder to digest**
+
+If you showed both side-by-side to a user, it would absolutely feel like:
+👉 “These are two different products”
+
+That’s exactly what we don’t want.
+
+---
+
+# 🔥 What’s wrong (quick diagnosis)
+
+### Landlord issues:
+
+* No **A / B / C structured sections**
+* Too many **stacked fields with no grouping**
+* Labels are inconsistent (some long, some short)
+* Reads like **form output**, not a **final agreement summary**
+* Harder to scan → hurts trust
+
+### Tenant (correct version):
+
+* Clean sections:
+
+  * A) Compensation
+  * B) Purchase
+  * C) Lease Option
+  * D) Legal Terms
+  * E) Brokerage Relationship
+  * F) Additional Terms
+* Grouped logic
+* Clean alignment
+* Feels like a **real document**
+
+---
+
+# ✅ Goal
+
+👉 **Landlord = EXACT same format as Tenant**
+Not “similar”…
+**Exact structure, just different field content**
+
+---
+
+# 🧠 Key Rule (VERY IMPORTANT)
+
+> Tenant is now your **SOURCE OF TRUTH UI**
+
+Everything else must:
+
+* match structure
+* match spacing
+* match grouping
+* match formatting logic
+
+---
+
+# 🛠️ REPLIT INSTRUCTIONS (WITH SAFEGUARDS)
+
+Copy/paste this exactly 👇
+
+---
+
+## TASK: Make Landlord Bid Format Match Tenant Format Exactly
+
+### OBJECTIVE
+
+Update the **Landlord Bid Detail View + Private Modal** to use the **exact same structure and formatting as Tenant**, including grouped sections (A–F), layout, and spacing.
+
+---
+
+## 🔒 SAFEGARDS (DO NOT BREAK ANYTHING)
+
+* DO NOT modify Tenant files
+* DO NOT modify database schema
+* DO NOT rename any fields
+* DO NOT change scoring logic
+* ONLY update Landlord view rendering
+* If unsure → STOP and report
+
+---
+
+## 📁 FILES TO EDIT (LANDLORD ONLY)
+
+Locate Landlord equivalents of:
+
+* Tenant:
+  `resources/views/hire_tenant_agent/view.blade.php`
+
+Edit:
+
+* `resources/views/hire_landlord_agent/view.blade.php`
+* Any included partials used for:
+
+  * Bid Detail
+  * Private Modal
+
+---
+
+## 🎯 STEP 1: COPY TENANT STRUCTURE
+
+Find this section in Tenant:
+
+```
+A) Tenant’s Broker Compensation
+B) Purchase Fee Details
+C) Lease-Option Details
+D) Legal Terms
+E) Brokerage Relationship
+F) Additional Terms / Additional Details
+```
+
+---
+
+## 🔁 STEP 2: REBUILD LANDLORD USING SAME STRUCTURE
+
+### Replace Landlord flat layout with:
+
+---
+
+### A) Landlord’s Broker Compensation
+
+Include:
+
+* Landlord’s Broker Lease Fee
+* Lease Fee %
+* Lease Fee Type
+
+---
+
+### B) Purchase Fee Details (ONLY if applicable)
+
+Show ONLY if:
+`interested_in_selling == YES`
+
+Include:
+
+* Purchase Fee Type
+* Purchase %
+* Flat Fee
+
+---
+
+### C) Lease-Option Details (ONLY if applicable)
+
+Show ONLY if:
+`lease_option_enabled == YES`
+
+Include:
+
+* Lease Option Compensation
+* Purchase Option Compensation
+
+---
+
+### D) Legal Terms
+
+Group ALL of these together:
+
+* Payment Timing
+* Days to Pay
+* Renewal Fee
+* Tenant Broker Compensation
+* Protection Period
+* Early Termination Fee
+* Retainer Fee
+* Agency Term
+
+👉 These are currently scattered — GROUP THEM
+
+---
+
+### E) Brokerage Relationship
+
+* Acceptable Brokerage Relationship
+
+---
+
+### F) Additional Terms / Additional Details
+
+* Additional Terms
+* Additional Details
+
+---
+
+## 🎨 STEP 3: MATCH EXACT STYLING
+
+Match Tenant exactly:
+
+* Section headers:
+
+  * teal
+  * spaced letters
+  * bold
+
+* Labels:
+
+  * left aligned
+  * bold
+
+* Values:
+
+  * right aligned
+
+* Spacing:
+
+  * consistent row spacing
+  * no stacked clutter
+
+---
+
+## 🧹 STEP 4: REMOVE DUPLICATES / RAW OUTPUT
+
+REMOVE:
+
+* duplicate “Additional Terms” sections
+* raw field dumps
+* unnecessary labels like:
+
+  * “Percentage of Rent Due Each Rental Period” (if redundant)
+
+Keep it:
+👉 clean, grouped, intentional
+
+---
+
+## 🧪 STEP 5: CONDITIONAL DISPLAY RULES
+
+Match Tenant behavior:
+
+* DO NOT show sections if not applicable
+* DO NOT show empty fields
+* DO NOT show null values
+
+---
+
+## 🧪 STEP 6: VERIFY OUTPUT
+
+Test a Landlord bid and confirm:
+
+* matches Tenant structure exactly
+* no duplicated fields
+* no raw/internal values
+* easy to scan
+* sections collapse properly when not used
+
+---
+
+## 🚫 STOP CONDITIONS
+
+STOP if:
+
+* Tenant layout changes
+* fields disappear
+* scoring breaks
+* services section breaks
+
+---
+
+# 💡 My honest take
+
+This is one of the **highest leverage fixes you can make right now**
+
+Because this screen is:
+👉 where trust is built or lost
+
+Once Landlord matches Tenant:
+
+* platform feels unified
+* looks enterprise-level
+* easier to scale to Seller next
+
+---
+
+# 🚀 Next move after this
+
+After Landlord is fixed:
+
+👉 Then do:
+
+1. Accept → Summary auto popup (Landlord)
+2. Notifications (Landlord)
+3. Dashboard summary storage (Landlord)
+
+---
+
+If you want, next I can give you:
+
+👉 **“Make Landlord Accept Flow match Tenant (popup + notifications + storage)” instructions**
+
+That’s the next big unlock.
