@@ -14,11 +14,13 @@ class BidSubmittedNotification extends Notification implements ShouldBroadcast
 
     public $bid;
     public $auction;
+    public $auctionType;
 
-    public function __construct($bid, $auction)
+    public function __construct($bid, $auction, $auctionType = 'tenant_agent')
     {
         $this->bid = $bid;
         $this->auction = $auction;
+        $this->auctionType = $auctionType;
     }
 
     public function via($notifiable)
@@ -37,6 +39,7 @@ class BidSubmittedNotification extends Notification implements ShouldBroadcast
             'bid_id' => $this->bid->id,
             'auction_id' => $this->auction->id,
             'type' => 'bid_submitted',
+            'auction_type' => $this->auctionType,
             'created_at' => now()->toDateTimeString(),
         ];
     }
@@ -56,6 +59,7 @@ class BidSubmittedNotification extends Notification implements ShouldBroadcast
                     ($this->auction->title ?? '') . "!",
                 'bid_id' => $this->bid->id,
                 'auction_id' => $this->auction->id,
+                'auction_type' => $this->auctionType,
                 'created_at' => now()->toDateTimeString(),
             ],
         ]);

@@ -1141,7 +1141,7 @@ class LandlordAgentAuctionBid extends Component
 
             // Notify the auction owner
             $auctionOwner = $auction->user;
-            $auctionOwner->notify(new BidSubmittedNotification($bid, $auction));
+            $auctionOwner->notify(new BidSubmittedNotification($bid, $auction, 'landlord_agent'));
             DB::commit();
             session()->flash('success', 'Your bid has been submitted successfully!');
 

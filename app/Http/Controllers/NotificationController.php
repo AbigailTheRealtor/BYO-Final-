@@ -33,13 +33,14 @@ class NotificationController extends Controller
         $bidId = $data['bid_id'] ?? null;
         $auctionId = $data['auction_id'] ?? null;
         $summaryLink = $data['summary_link'] ?? null;
+        $auctionType = $data['auction_type'] ?? null;
         
-        $destination = $this->resolveDestination($type, $bidId, $auctionId, $summaryLink, $user);
+        $destination = $this->resolveDestination($type, $bidId, $auctionId, $summaryLink, $user, $auctionType);
         
         return redirect($destination);
     }
 
-    private function resolveDestination($type, $bidId, $auctionId, $summaryLink, $user)
+    private function resolveDestination($type, $bidId, $auctionId, $summaryLink, $user, $auctionType = null)
     {
         switch ($type) {
             case 'bid_accepted':
@@ -64,6 +65,9 @@ class NotificationController extends Controller
             case 'bid_received':
             case 'bid_modified':
                 if ($auctionId) {
+                    if ($auctionType === 'landlord_agent') {
+                        return route('landlord.agent.auction.view', $auctionId) . '?view=bids';
+                    }
                     return route('tenant.agent.auction.view', $auctionId) . '?view=bids';
                 }
                 return route('dashboard');
