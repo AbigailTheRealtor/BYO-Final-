@@ -2012,10 +2012,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     @endif
                                 </p>
                                 @if ($servicesExtraCount > 0)
-                                <div class="mt-2 d-flex align-items-center" style="gap: 6px;">
-                                    <span style="font-size: 1rem;">&#11088;</span>
-                                    <span style="font-weight: 600; color: #856404;">+{{ $servicesExtraCount }} Extra Services Offered</span>
-                                    <span class="text-muted" style="font-size: 0.8rem; font-style: italic;" title="Extra services were included by the Agent beyond the Tenant's original request. These do not increase the match score but may provide additional value.">(beyond your request &mdash; does not affect match score)</span>
+                                <div class="mt-2 d-flex align-items-center flex-wrap" style="gap: 4px 6px;">
+                                    <span style="font-size: 0.9rem; line-height: 1.4;">&#11088;</span>
+                                    <span style="font-weight: 500; color: #856404; font-size: 0.95rem;" title="Extra services were included by the Agent beyond the Tenant&#39;s original request. These do not increase the match score but may provide additional value.">Extra Value Added: {{ $servicesExtraCount }} {{ $servicesExtraCount === 1 ? 'Service' : 'Services' }}</span>
+                                    <span class="text-muted" style="font-size: 0.78rem; font-style: italic;">&mdash; does not affect match score</span>
                                 </div>
                                 @endif
                                 <hr style="margin: 15px 0; border-color: #e0e0e0;">
@@ -2336,9 +2336,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                         Matched Original: {{ $servicesMatched }}/{{ $servicesTotal }}
                                                                     </div>
                                                                     @if ($servicesExtraCount > 0)
-                                                                    <div class="small mt-1 d-flex align-items-center" style="gap: 4px;">
+                                                                    <div class="small mt-1 d-flex align-items-center flex-wrap" style="gap: 3px 5px;" title="Extra services were included by the Agent beyond the Tenant&#39;s original request. These do not increase the match score but may provide additional value.">
                                                                         <span>&#11088;</span>
-                                                                        <span style="font-weight: 600; color: #856404;">+{{ $servicesExtraCount }} Extra Services Offered</span>
+                                                                        <span style="font-weight: 500; color: #856404;">Extra Value Added: {{ $servicesExtraCount }} {{ $servicesExtraCount === 1 ? 'Service' : 'Services' }}</span>
                                                                     </div>
                                                                     @endif
                                                                     @if ($servicesMissingCount > 0)
@@ -3508,9 +3508,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                         @if ($servicesMissingCount > 0) &bull; Missing: {{ $servicesMissingCount }}@endif
                                                                     </div>
                                                                     @if ($servicesExtraCount > 0)
-                                                                    <div class="small mt-1 d-flex align-items-center" style="gap: 4px;">
+                                                                    <div class="small mt-1 d-flex align-items-center flex-wrap" style="gap: 3px 5px;" title="Extra services were included by the Agent beyond the Tenant&#39;s original request. These do not increase the match score but may provide additional value.">
                                                                         <span>&#11088;</span>
-                                                                        <span style="font-weight: 600; color: #856404;">+{{ $servicesExtraCount }} Extra Services Offered</span>
+                                                                        <span style="font-weight: 500; color: #856404;">Extra Value Added: {{ $servicesExtraCount }} {{ $servicesExtraCount === 1 ? 'Service' : 'Services' }}</span>
                                                                     </div>
                                                                     @endif
                                                                 </div>
