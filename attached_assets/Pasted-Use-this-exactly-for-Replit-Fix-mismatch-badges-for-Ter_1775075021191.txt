@@ -1,0 +1,146 @@
+Use this exactly for Replit:
+
+Fix mismatch badges for Termination Fee Amount and Retainer Fee Amount in Tenant and Landlord bid comparison views. Do not change layout unless required. Do not merge rows into one line. The goal is only to make sure the amount rows independently show `Mismatch` when the numeric values do not match, even when the related Yes/No toggle matches.
+
+Scope:
+
+* Tenant listing bids only
+* Landlord listing bids only
+* Apply anywhere the same bid comparison/mismatch pattern is rendered for these roles:
+
+  * main bid view
+  * private data modal
+  * counter terms view
+  * any shared comparison partial used by Tenant/Landlord bid details
+
+Hard safeguards:
+
+* Do not rename database columns
+* Do not change stored values or save logic
+* Do not modify Buyer or Seller flows
+* Do not change labels, tooltips, wording, or section order
+* Do not convert two-row fields into one-row fields
+* Do not change match score formulas unless absolutely necessary for these exact fields
+* Do not touch unrelated comparison logic
+* If the comparison UI is shared across all roles, wrap the change so it only affects the specific fee amount fields and does not regress other roles
+* Stop if this requires schema changes
+
+What is wrong now:
+
+* `Early Termination Fee: Yes` may correctly show as a match when both sides are Yes
+* but `Termination Fee Amount` does not show `Mismatch` when the amounts differ
+* same bug for `Retainer Fee Amount`
+* this must be fixed for both Tenant and Landlord wherever applicable
+
+Expected comparison behavior:
+
+1. Early Termination Fee
+
+* compare the Yes/No toggle separately
+* show `Mismatch` on that row only when the toggle differs
+
+2. Termination Fee Amount
+
+* only compare/display mismatch when both sides have Early Termination Fee = Yes
+* if both are Yes and numeric amounts differ, show `Mismatch` on the amount row
+* if both are Yes and amounts match, no mismatch on the amount row
+* if one side is Yes and the other is No, the toggle row is the primary mismatch; do not rely on amount mismatch for that case
+* if both are No, amount row should not be considered mismatched
+
+3. Retainer Fee
+
+* compare the Yes/No toggle separately
+* show `Mismatch` on that row only when the toggle differs
+
+4. Retainer Fee Amount
+
+* only compare/display mismatch when both sides have Retainer Fee = Yes
+* if both are Yes and numeric amounts differ, show `Mismatch` on the amount row
+* if both are Yes and amounts match, no mismatch on the amount row
+* if one side is Yes and the other is No, the toggle row is the primary mismatch
+* if both are No, amount row should not be considered mismatched
+
+Normalization rules:
+
+* compare numeric amounts as normalized numeric values, not raw strings
+* treat `$1,000`, `1000`, `1000.00`, and `1,000.00` as the same value
+* trim spaces and ignore currency formatting when comparing
+* do not let null/blank formatting differences create false mismatches if the effective numeric value is the same
+* preserve existing display formatting; only normalize for comparison
+
+Implementation guidance:
+
+1. Find the exact mismatch helper or comparison block currently used to decide whether a row gets the red `Mismatch` badge for Tenant and Landlord bid terms.
+2. Locate the comparison entries for:
+
+* early termination fee toggle
+* termination fee amount
+* retainer fee toggle
+* retainer fee amount
+
+3. Keep the toggle comparison logic separate from the amount comparison logic.
+4. Add or correct explicit amount mismatch checks so the amount rows can independently receive the `Mismatch` badge.
+5. Gate the amount mismatch checks behind the related toggle being Yes on both sides.
+6. Reuse an existing numeric normalization helper if one already exists. If not, add a tiny local helper for comparison only. Keep it surgical.
+7. Apply the same fix to all Tenant/Landlord views that render these comparison rows, preferably through the shared helper/partial if one exists so the behavior stays consistent.
+
+Preferred logic pattern:
+
+* `termination_toggle_mismatch = normalized_bool(listing_value) !== normalized_bool(bid_value)`
+* `termination_amount_mismatch = both_yes && normalized_money(listing_amount) !== normalized_money(bid_amount)`
+* `retainer_toggle_mismatch = normalized_bool(listing_value) !== normalized_bool(bid_value)`
+* `retainer_amount_mismatch = both_yes && normalized_money(listing_amount) !== normalized_money(bid_amount)`
+
+Where `both_yes` means the listing side and bid side both have the related toggle set to Yes.
+
+Views to verify after fix:
+
+* Tenant bid detail view
+* Tenant private data modal
+* Tenant counter terms comparison if it shows these rows
+* Landlord bid detail view
+* Landlord private data modal
+* Landlord counter terms comparison if it shows these rows
+
+Test cases to run:
+
+1. Both Yes, same amount
+
+* Early Termination Fee: Yes vs Yes
+* Amount: 5000 vs 5000
+* Result: no mismatch on either row
+
+2. Both Yes, different amount
+
+* Early Termination Fee: Yes vs Yes
+* Amount: 5000 vs 5999
+* Result: toggle row no mismatch, amount row shows `Mismatch`
+
+3. Toggle mismatch
+
+* Early Termination Fee: Yes vs No
+* Amount: 5000 vs blank
+* Result: toggle row shows `Mismatch`
+* amount row should not be the primary mismatch signal
+
+4. Both No
+
+* Early Termination Fee: No vs No
+* Result: no mismatch
+* amount row should not show mismatch
+
+5. Same exact tests for Retainer Fee and Retainer Fee Amount
+
+6. Formatting normalization
+
+* listing amount `$1,000.00`
+* bid amount `1000`
+* Result: no mismatch
+
+Deliverable:
+
+* only the minimum code changes needed
+* provide the exact files changed
+* provide a short note explaining where the mismatch logic lived and how it was fixed for these four fields only
+
+If the Tenant and Landlord views use separate files, update both. If they use one shared comparison renderer, fix it there once, but verify it does not regress other roles.

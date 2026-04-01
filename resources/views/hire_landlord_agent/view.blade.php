@@ -2944,12 +2944,16 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                             $lt = data_get($bid,'get.lease_type');
                                                             $lv = data_get($bid,'get.lease_value');
                                                             if ($lt && $lv) {
-                                                                $leaseOptionCreatedDisplay = ($lt === 'percent') ? $lv.'% of option consideration' : '$'.$lv.' flat fee';
+                                                                $leaseOptionCreatedDisplay = ($lt === 'percent')
+                                                                    ? ($fmtPercent($lv) ? $fmtPercent($lv).' of Total Purchase Price' : '-')
+                                                                    : ($fmtMoney($lv) ?? '-');
                                                             }
                                                             $pt = data_get($bid,'get.purchase_type');
                                                             $pv = data_get($bid,'get.purchase_value');
                                                             if ($pt && $pv) {
-                                                                $leaseOptionExercisedDisplay = ($pt === 'percent') ? $pv.'% of total purchase price' : '$'.$pv.' flat fee';
+                                                                $leaseOptionExercisedDisplay = ($pt === 'percent')
+                                                                    ? ($fmtPercent($pv) ? $fmtPercent($pv).' of Total Purchase Price' : '-')
+                                                                    : ($fmtMoney($pv) ?? '-');
                                                             }
                                                         }
 
@@ -3079,7 +3083,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                                 @if (data_get($bid, 'get.early_termination_fee_option'))
                                                                 <li class="mb-1" style="{{ isset($brokerMismatches['early_termination_fee_option']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Early Termination Fee:</span> {{ data_get($bid,'get.early_termination_fee_option') === 'yes' ? 'Yes' : 'No' }}{!! isset($brokerMismatches['early_termination_fee_option']) ? $mismatchBadge : '' !!}</li>
                                                                 @if (data_get($bid, 'get.early_termination_fee_option') === 'yes' && data_get($bid, 'get.early_termination_fee_amount'))
-                                                                <li class="mb-1"><span class="fw-semibold">Termination Fee Amount:</span> ${{ data_get($bid,'get.early_termination_fee_amount') }}</li>
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['early_termination_fee_amount']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Termination Fee Amount:</span> {{ $fmtMoney(data_get($bid,'get.early_termination_fee_amount')) ?? ('$'.data_get($bid,'get.early_termination_fee_amount')) }}{!! isset($brokerMismatches['early_termination_fee_amount']) ? $mismatchBadge : '' !!}</li>
                                                                 @endif
                                                                 @endif
                                                                 @if (data_get($bid, 'get.agency_agreement_timeframe'))
@@ -3597,13 +3601,27 @@ $auser = $auctionUser::find(@$auction->user_id);
 
                                                         <!-- Marketing Materials Section -->
                                                         @if (data_get($bid, 'get.promoMaterials'))
+                                                        @php
+                                                            $hasAnyMaterials = false;
+                                                            $promoMaterialsRaw = data_get($bid, 'get.promoMaterials', []);
+                                                            $promoMaterialsNormalized = [];
+                                                            if (is_array($promoMaterialsRaw) || is_object($promoMaterialsRaw)) {
+                                                                foreach ($promoMaterialsRaw as $m) {
+                                                                    $mArr = is_object($m) ? (array) $m : (is_array($m) ? $m : []);
+                                                                    $promoMaterialsNormalized[] = $mArr;
+                                                                    if (!empty($mArr['type']) || !empty($mArr['link']) || !empty($mArr['files'])) {
+                                                                        $hasAnyMaterials = true;
+                                                                    }
+                                                                }
+                                                            }
+                                                        @endphp
+                                                        @if ($hasAnyMaterials)
                                                         <div>
                                                             <div class="fw-semibold mb-2"
                                                                 style="color: #049399;">
                                                                 Marketing Materials:</div>
 
-                                                            @foreach (data_get($bid, 'get.promoMaterials') as $index => $material)
-                                                            @php $material = is_object($material) ? (array) $material : $material; @endphp
+                                                            @foreach ($promoMaterialsNormalized as $index => $material)
                                                             @if (!empty($material['type']) || !empty($material['link']) || !empty($material['files']))
                                                             <div
                                                                 class="mb-3 p-3 border rounded">
@@ -3756,6 +3774,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                             @endif
                                                             @endforeach
                                                         </div>
+                                                        @endif
                                                         @endif
                                                     </div>
                                                     @endif
@@ -4650,7 +4669,20 @@ $auser = $auctionUser::find(@$auction->user_id);
                                     @endphp
 
                                     <div class="d-flex justify-content-between flex-wrap gap-2 mt-3">
-                                        @if ($state === '0' && $isOwnerRow && !$isSold && !$hasAcceptedCounterBid && !$isExpired)
+                                        @if ($state === '0' && $isOwnerRow && !$isSold && !$hasAcceptedCounterBid)
+
+                                        @if ($isBiddingPeriodListing && $isBiddingTimerActive)
+                                        {{-- Bidding Period: Timer still active - actions locked --}}
+                                        <div class="alert alert-info text-center mt-2 mb-0 p-2 w-100" style="margin-left: 20px;">
+                                            <i class="fa fa-clock me-1"></i> <strong>Actions unlock when the bidding period ends.</strong>
+                                        </div>
+                                        @elseif ($isTraditionalListing && $isExpired)
+                                        {{-- Traditional: Listing expired --}}
+                                        <div class="alert alert-warning text-center mt-2 mb-0 p-2 ml-2" style="margin-left: 20px;">
+                                            <strong>Listing Expired</strong>
+                                        </div>
+                                        @elseif ($isBiddingPeriodListing && $isExpired)
+                                        {{-- Bidding Period: Timer ended - show actions --}}
                                             <div class="biding-btn">
                                                 <form
                                                     action="{{ route('landlord.hire.agent.auction.bid.accept') }}"
@@ -4690,7 +4722,52 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                         class="btn-custom btn-counter">Counter</button>
                                                 </form>
                                             </div>
-                                        @elseif($state === 'accepted')
+                                        @elseif ($isTraditionalListing)
+                                        {{-- Traditional: Actions always available immediately --}}
+                                            <div class="biding-btn">
+                                                <form
+                                                    action="{{ route('landlord.hire.agent.auction.bid.accept') }}"
+                                                    method="post">
+                                                    @csrf
+                                                    <input type="hidden" name="auction_id"
+                                                        value="{{ data_get($auction, 'id') }}">
+                                                    <input type="hidden" name="bid_id"
+                                                        value="{{ data_get($bid, 'id') }}">
+                                                    <button type="submit"
+                                                        class="btn-custom btn-accept">Accept</button>
+                                                </form>
+                                            </div>
+                                            <div class="biding-btn">
+                                                <form
+                                                    action="{{ route('landlord.hire.agent.auction.bid.reject') }}"
+                                                    method="post">
+                                                    @csrf
+                                                    <input type="hidden" name="auction_id"
+                                                        value="{{ data_get($auction, 'id') }}">
+                                                    <input type="hidden" name="bid_id"
+                                                        value="{{ data_get($bid, 'id') }}">
+                                                    <button type="submit"
+                                                        class="btn-custom btn-reject">Reject</button>
+                                                </form>
+                                            </div>
+                                            <div class="biding-btn">
+                                                <form
+                                                    action="{{ route('landlord.agent.add.counter-bid') }}"
+                                                    method="post">
+                                                    @csrf
+                                                    <input type="hidden" name="auction_id"
+                                                        value="{{ data_get($auction, 'id') }}">
+                                                    <input type="hidden" name="bid_id"
+                                                        value="{{ data_get($bid, 'id') }}">
+                                                    <button type="submit"
+                                                        class="btn-custom btn-counter">Counter</button>
+                                                </form>
+                                            </div>
+                                        @endif
+
+                                        @endif
+
+                                        @if ($state === 'accepted')
                                             @if (Auth::id() == $ownerId)
                                             <div class="alert alert-success mt-2 w-100 mb-0 py-1 small">
                                                 ✅ This bid has been accepted.
@@ -4741,11 +4818,11 @@ $auser = $auctionUser::find(@$auction->user_id);
                                             <div class="alert alert-success mt-2 w-100 mb-0 py-1 small">
                                                 🏆 Listing has been sold
                                             </div>
-                                        @elseif($isExpired)
+                                        @elseif($isExpired && !$isOwnerRow)
                                             <div class="alert alert-warning mt-2 w-100 mb-0 py-1 small">
                                                 ⏳ Bidding period has ended
                                             </div>
-                                        @elseif($state === '0')
+                                        @elseif($state === '0' && !$isOwnerRow)
                                             @if (data_get($bid, 'user_id') == Auth::id())
                                             <div class="alert alert-secondary mt-2 w-100 mb-0 py-1 small">
                                                 ⏳ Waiting for response from {{ trim($ownerFirst . ' ' . $ownerLast) }}...
@@ -4755,6 +4832,12 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                 ⏳ Bid from {{ trim($agentFirst . ' ' . $agentLast) }} is pending.
                                             </div>
                                             @endif
+                                        @elseif($state === '0' && $isOwnerRow && $isBiddingPeriodListing && $isBiddingTimerActive)
+                                            {{-- Already shown "Actions unlock" message above --}}
+                                        @elseif($state === '0' && $isOwnerRow)
+                                            <div class="alert alert-light mt-2 w-100 mb-0 py-1 small">
+                                                ⏳ Bid from {{ trim($agentFirst . ' ' . $agentLast) }} is pending your decision.
+                                            </div>
                                         @endif
                                     </div>
                             </div>
