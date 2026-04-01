@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use App\Events\BidSubmitted;
 use App\Notifications\BidSubmittedNotification;
+use App\Notifications\BidModifiedNotification;
+use Illuminate\Support\Facades\Log;
 
 class LandlordAgentAuctionBid extends Component
 {
@@ -23,6 +25,9 @@ class LandlordAgentAuctionBid extends Component
     public $property_type;
 
     public $activeTab = 0;
+
+    public $isEditMode = false;
+    public $editBidId = null;
 
     public bool $defaultProfileExists = false;
     public bool $defaultProfileLoaded = false;
@@ -581,6 +586,8 @@ class LandlordAgentAuctionBid extends Component
 
     public function mount($auctionId = null)
     {
+        $this->editBidId = request()->query('edit');
+        $this->isEditMode = !empty($this->editBidId);
 
         $this->promoMaterials = [
             [
@@ -694,9 +701,9 @@ class LandlordAgentAuctionBid extends Component
         $this->reviews_links = [['url' => '']];
         $this->social_media = [['platform' => '', 'url' => '']];
 
-        // Auto-fill Agent Information from user profile
+        // Auto-fill Agent Information from user profile — new bids only
         $user = Auth::user();
-        if ($user) {
+        if (!$this->isEditMode && $user) {
             $this->first_name = $user->first_name ?? '';
             $this->last_name  = $user->last_name ?? '';
             $this->phone      = $user->phone ?? '';
@@ -735,6 +742,194 @@ class LandlordAgentAuctionBid extends Component
                 if (!empty($dp['business_card_stored_path'])) $this->business_card_stored_path  = $dp['business_card_stored_path'];
                 if (!empty($dp['promoMaterials']))             $this->promoMaterials             = $dp['promoMaterials'];
                 $this->defaultProfileLoaded = true;
+            }
+        }
+
+        // --- Edit mode: load existing bid data ---
+        if ($this->isEditMode && $this->editBidId) {
+            $existingBid = LandlordAgentAuctionBidData::find($this->editBidId);
+
+            if ($existingBid && $existingBid->user_id == Auth::id()) {
+                if ($existingBid->accepted === 'accepted') {
+                    session()->flash('error', 'Cannot edit an accepted bid.');
+                    $this->isEditMode = false;
+                    $this->editBidId  = null;
+                    return redirect()->route('landlord.agent.auction.view', $auctionId);
+                }
+                if ($existingBid->accepted === 'rejected') {
+                    session()->flash('error', 'Cannot edit a rejected bid.');
+                    $this->isEditMode = false;
+                    $this->editBidId  = null;
+                    return redirect()->route('landlord.agent.auction.view', $auctionId);
+                }
+
+                $bidData = $existingBid->get;
+                $user    = Auth::user();
+
+                // Agent info — prefer saved bid data, fall back to user profile
+                $this->first_name = (isset($bidData->first_name) && trim($bidData->first_name) !== '') ? $bidData->first_name : ($user->first_name ?? '');
+                $this->last_name  = (isset($bidData->last_name)  && trim($bidData->last_name)  !== '') ? $bidData->last_name  : ($user->last_name  ?? '');
+                $this->phone      = (isset($bidData->phone)       && trim($bidData->phone)       !== '') ? $bidData->phone       : ($user->phone       ?? '');
+                $this->email      = (isset($bidData->email)       && trim($bidData->email)       !== '') ? $bidData->email       : ($user->email       ?? '');
+                $this->brokerage  = (isset($bidData->brokerage)   && trim($bidData->brokerage)   !== '') ? $bidData->brokerage   : ($user->brokerage   ?? '');
+                $this->license_no = (isset($bidData->license_no)  && trim($bidData->license_no)  !== '') ? $bidData->license_no  : ($user->license_no  ?? '');
+                $this->nar_id     = (isset($bidData->nar_id)      && trim($bidData->nar_id)      !== '') ? $bidData->nar_id      : ($user->nar_id      ?? '');
+
+                // Agent Overview
+                $this->bio                 = $bidData->bio ?? '';
+                $this->why_hire_you        = $bidData->why_hire_you ?? '';
+                $this->what_sets_you_apart = $bidData->what_sets_you_apart ?? '';
+                $this->marketing_plan      = $bidData->marketing_plan ?? '';
+                $this->year_licensed       = $bidData->year_licensed ?? '';
+                $this->additional_details  = $bidData->additional_details ?? '';
+
+                // Reviews links
+                $reviewsLinks = $bidData->reviews_links ?? '';
+                if (is_string($reviewsLinks)) {
+                    $decoded = json_decode($reviewsLinks, true);
+                    $this->reviews_links = is_array($decoded) ? $decoded : [['url' => '']];
+                } else {
+                    $this->reviews_links = (array) $reviewsLinks ?: [['url' => '']];
+                }
+
+                // Website link
+                $websiteLink = $bidData->website_link ?? '';
+                $this->website_link = is_array($websiteLink) ? $websiteLink : [$websiteLink];
+
+                // Social media
+                $socialMedia = $bidData->social_media ?? '';
+                if (is_string($socialMedia)) {
+                    $decoded = json_decode($socialMedia, true);
+                    $this->social_media = is_array($decoded) ? $decoded : [['platform' => '', 'url' => '']];
+                } else {
+                    $this->social_media = (array) $socialMedia ?: [['platform' => '', 'url' => '']];
+                }
+
+                // Services
+                $services = $bidData->services ?? '';
+                $this->services = is_string($services) ? (json_decode($services, true) ?? []) : (array) $services;
+
+                $otherServices = $bidData->other_services ?? '';
+                $this->other_services = is_string($otherServices) ? (json_decode($otherServices, true) ?? []) : (array) $otherServices;
+                $this->other_services_enabled = (bool) ($bidData->other_services_enabled ?? false);
+
+                // Lease Option Agreement
+                $this->interested_lease_option_agreement = $bidData->interested_lease_option_agreement ?? '';
+                $this->lease_type  = $bidData->lease_type  ?? 'percent';
+                $this->lease_value = $bidData->lease_value ?? '';
+                $this->purchase_type  = $bidData->purchase_type  ?? 'percent';
+                $this->purchase_value = $bidData->purchase_value ?? '';
+
+                // Landlord's Broker Lease Fee (Residential)
+                $this->purchase_fee_type              = $bidData->purchase_fee_type ?? '';
+                $this->purchase_fee_flat              = $bidData->purchase_fee_flat ?? '';
+                $this->purchase_fee_rental_period     = $bidData->purchase_fee_rental_period ?? '';
+                $this->purchase_fee_percentage_combo  = $bidData->purchase_fee_percentage_combo ?? '';
+                $this->purchase_fee_flat_combo        = $bidData->purchase_fee_flat_combo ?? '';
+                $this->purchase_fee_other             = $bidData->purchase_fee_other ?? '';
+
+                // Landlord's Broker Lease Fee (Commercial)
+                $this->purchase_fee_net_aggregate       = $bidData->purchase_fee_net_aggregate ?? '';
+                $this->purchase_fee_gross_rent          = $bidData->purchase_fee_gross_rent ?? '';
+                $this->sales_tax_option_gross           = $bidData->sales_tax_option_gross ?? '';
+                $this->purchase_fee_monthly_percentage  = $bidData->purchase_fee_monthly_percentage ?? '';
+                $this->purchase_fee_months              = $bidData->purchase_fee_months ?? '';
+                $this->sales_tax_option_monthly         = $bidData->sales_tax_option_monthly ?? '';
+                $this->purchase_fee_flat_commercial     = $bidData->purchase_fee_flat_commercial ?? '';
+                $this->sales_tax_option_flat            = $bidData->sales_tax_option_flat ?? '';
+                $this->purchase_fee_purchase_price      = $bidData->purchase_fee_purchase_price ?? '';
+                $this->purchase_fee_other_commercial    = $bidData->purchase_fee_other_commercial ?? '';
+
+                // Interested in Selling
+                $this->interested_in_selling              = $bidData->interested_in_selling ?? '';
+                $this->interested_in_selling_type         = $bidData->interested_in_selling_type ?? '';
+                $this->landlord_broker_purchase_price     = $bidData->landlord_broker_purchase_price ?? '';
+                $this->landlord_broker_percentage_price   = $bidData->landlord_broker_percentage_price ?? '';
+                $this->landlord_broker_dollar_price       = $bidData->landlord_broker_dollar_price ?? '';
+                $this->landlord_broker_flate_fee          = $bidData->landlord_broker_flate_fee ?? '';
+                $this->landlord_broker_other              = $bidData->landlord_broker_other ?? '';
+
+                // Payment Timing
+                $this->broker_fee_timing              = $bidData->broker_fee_timing ?? '';
+                $this->broker_fee_days_from_rent      = $bidData->broker_fee_days_from_rent ?? '';
+                $this->broker_fee_days_after_lease    = $bidData->broker_fee_days_after_lease ?? '';
+                $this->broker_fee_days_after_rent     = $bidData->broker_fee_days_after_rent ?? '';
+                $this->broker_fee_timing_other        = $bidData->broker_fee_timing_other ?? '';
+                $this->split_payment_due              = $bidData->split_payment_due ?? '';
+                $this->split_payment_due_other        = $bidData->split_payment_due_other ?? '';
+                $this->broker_fee_days_after_due_event = $bidData->broker_fee_days_after_due_event ?? '';
+
+                // Renewal/Extension Fees
+                $this->renewal_fee_type                    = $bidData->renewal_fee_type ?? '';
+                $this->renewal_fee_percentage              = $bidData->renewal_fee_percentage ?? '';
+                $this->renewal_fee_lease_value             = $bidData->renewal_fee_lease_value ?? '';
+                $this->renewal_fee_first_month             = $bidData->renewal_fee_first_month ?? '';
+                $this->renewal_fee_flat_free               = $bidData->renewal_fee_flat_free ?? '';
+                $this->renewal_fee_custom                  = $bidData->renewal_fee_custom ?? '';
+                $this->renewal_fee_sales_tax_lease_value   = $bidData->renewal_fee_sales_tax_lease_value ?? '';
+                $this->renewal_fee_no_of_months            = $bidData->renewal_fee_no_of_months ?? '';
+                $this->renewal_fee_sales_tax_first_month   = $bidData->renewal_fee_sales_tax_first_month ?? '';
+                $this->renewal_fee_sales_tax_flat_fee      = $bidData->renewal_fee_sales_tax_flat_fee ?? '';
+
+                // Commercial Expansion Commission
+                $this->expansion_commission_percentage = $bidData->expansion_commission_percentage ?? '';
+
+                // Tenant's Broker Commission
+                $this->tenant_broker_commission_structure = $bidData->tenant_broker_commission_structure ?? '';
+                $this->tenant_broker_fee_structure        = $bidData->tenant_broker_fee_structure ?? '';
+                $this->tenant_broker_percentage           = $bidData->tenant_broker_percentage ?? '';
+                $this->tenant_broker_gross_lease          = $bidData->tenant_broker_gross_lease ?? '';
+                $this->tenant_broker_first_month_rent     = $bidData->tenant_broker_first_month_rent ?? '';
+                $this->tenant_broker_flat_fee             = $bidData->tenant_broker_flat_fee ?? '';
+                $this->tenant_broker_other                = $bidData->tenant_broker_other ?? '';
+
+                // Protection Period / Early Termination / Agency Agreement / Property Mgmt
+                $this->protection_period                                = $bidData->protection_period ?? '';
+                $this->early_termination_fee_option                     = $bidData->early_termination_fee_option ?? '';
+                $this->early_termination_fee_amount                     = $bidData->early_termination_fee_amount ?? '';
+                $this->agency_agreement_timeframe                       = $bidData->agency_agreement_timeframe ?? '';
+                $this->agency_agreement_custom                          = $bidData->agency_agreement_custom ?? '';
+                $this->interested_in_property_management                = $bidData->interested_in_property_management ?? '';
+                $this->interested_in_property_management_fee            = $bidData->interested_in_property_management_fee ?? '';
+                $this->interested_in_property_management_fee_gross_lease     = $bidData->interested_in_property_management_fee_gross_lease ?? '';
+                $this->interested_in_property_management_fee_rental_periord  = $bidData->interested_in_property_management_fee_rental_periord ?? '';
+                $this->interested_in_property_management_fee_flate_free      = $bidData->interested_in_property_management_fee_flate_free ?? '';
+                $this->interested_in_property_management_fee_other           = $bidData->interested_in_property_management_fee_other ?? '';
+
+                // Brokerage Relationship / Additional Details
+                $this->brokerage_relationship    = $bidData->brokerage_relationship ?? '';
+                $this->additional_details_broker = $bidData->additional_details_broker ?? '';
+
+                // Presentation/Marketing links
+                $this->presentation_link      = $bidData->presentation_link ?? '';
+                $this->business_card_link     = $bidData->business_card_link ?? '';
+                $this->promo_materials_link   = $bidData->promo_materials_link ?? '';
+
+                // Promo Materials
+                $promoMaterialsRaw = $bidData->promoMaterials ?? $bidData->promo_materials ?? null;
+                if (!empty($promoMaterialsRaw)) {
+                    if (is_string($promoMaterialsRaw)) {
+                        $decoded = json_decode($promoMaterialsRaw, true);
+                        if (is_array($decoded)) {
+                            $this->promoMaterials = $decoded;
+                        }
+                    } elseif (is_array($promoMaterialsRaw)) {
+                        $this->promoMaterials = $promoMaterialsRaw;
+                    }
+                    // Normalize: ensure each entry has all required keys
+                    $this->promoMaterials = array_map(function ($m) {
+                        if (is_object($m)) $m = (array) $m;
+                        $m['type']  = $m['type']  ?? '';
+                        $m['link']  = $m['link']  ?? '';
+                        $m['other'] = $m['other'] ?? '';
+                        $m['files'] = (isset($m['files']) && is_array($m['files'])) ? $m['files'] : [];
+                        return $m;
+                    }, $this->promoMaterials);
+                }
+            } else {
+                // Bid not found or ownership mismatch — fall back to new-bid mode
+                $this->isEditMode = false;
+                $this->editBidId  = null;
             }
         }
     }
@@ -913,6 +1108,8 @@ class LandlordAgentAuctionBid extends Component
         \Log::info('[LandlordBid] submit() started', [
             'user_id'    => Auth::id(),
             'auction_id' => $this->auctionId,
+            'is_edit'    => $this->isEditMode,
+            'edit_bid_id'=> $this->editBidId,
             'active_tab' => $this->activeTab,
             'has_bio'    => !empty($this->bio),
             'has_why'    => !empty($this->why_hire_you),
@@ -930,10 +1127,31 @@ class LandlordAgentAuctionBid extends Component
             $allowedVideos = ['mp4', 'mov', 'avi'];
             $allowedPhotos = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx', 'ppt', 'pptx'];
 
-            $bid = new LandlordAgentAuctionBidData();
-            $bid->user_id = Auth::id();
-            $bid->landlord_agent_auction_id = $this->auctionId;
-            $bid->save();
+            if ($this->isEditMode && $this->editBidId) {
+                // Edit mode: reuse existing bid record
+                $bid = LandlordAgentAuctionBidData::find($this->editBidId);
+                if (!$bid || $bid->user_id != Auth::id()) {
+                    session()->flash('error', 'You cannot edit this bid.');
+                    DB::rollBack();
+                    return;
+                }
+                if ($bid->accepted === 'accepted' || $bid->accepted === 'rejected') {
+                    session()->flash('error', 'Cannot edit a bid that has been accepted or rejected.');
+                    DB::rollBack();
+                    return;
+                }
+            } else {
+                // New bid — backend safeguard: if user already has a bid, update it instead of inserting
+                $bid = LandlordAgentAuctionBidData::where('landlord_agent_auction_id', $this->auctionId)
+                    ->where('user_id', Auth::id())
+                    ->first();
+                if (!$bid) {
+                    $bid = new LandlordAgentAuctionBidData();
+                    $bid->user_id = Auth::id();
+                    $bid->landlord_agent_auction_id = $this->auctionId;
+                    $bid->save();
+                }
+            }
 
 
 
@@ -1134,16 +1352,34 @@ class LandlordAgentAuctionBid extends Component
             $bid->saveMeta('license_no', $this->license_no);
             $bid->saveMeta('year_licensed', $this->year_licensed);
             $bid->saveMeta('nar_id', $this->nar_id);
-            // Send Real-Time Notification
+
             $auction = \App\Models\LandlordAgentAuction::find($this->auctionId);
 
-            // Your bid submission logic here...
-
-            // Notify the auction owner
-            $auctionOwner = $auction->user;
-            $auctionOwner->notify(new BidSubmittedNotification($bid, $auction, 'landlord_agent'));
             DB::commit();
-            session()->flash('success', 'Your bid has been submitted successfully!');
+
+            // Notify the listing owner — different notification for edit vs new bid
+            try {
+                $auctionOwner = $auction->user;
+                if ($auctionOwner) {
+                    if ($this->isEditMode) {
+                        $auctionOwner->notify(new BidModifiedNotification($bid, $auction));
+                    } else {
+                        $auctionOwner->notify(new BidSubmittedNotification($bid, $auction, 'landlord_agent'));
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error('[LandlordBid] Failed to send bid notification', [
+                    'bid_id'    => $bid->id,
+                    'auction_id'=> $this->auctionId,
+                    'is_edit'   => $this->isEditMode,
+                    'error'     => $e->getMessage(),
+                ]);
+            }
+
+            $message = $this->isEditMode
+                ? 'Your bid has been updated successfully!'
+                : 'Your bid has been submitted successfully!';
+            session()->flash('success', $message);
 
             return redirect()->route('landlord.agent.auction.view', $this->auctionId);
         } catch (\Illuminate\Validation\ValidationException $e) {
