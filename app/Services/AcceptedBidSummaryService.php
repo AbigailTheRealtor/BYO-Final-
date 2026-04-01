@@ -1014,7 +1014,7 @@ class AcceptedBidSummaryService
     </div>
 
     <div style="background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px;">
-        <h2 style="color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px;">4. Broker Compensation & Agency Agreement Terms</h2>
+        <h2 style="color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px;">4. Agreed Compensation & Agency Terms</h2>
         {{broker_compensation_and_agency_terms_block}}
     </div>
 

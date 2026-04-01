@@ -1,0 +1,117 @@
+Update the **Accepted Bid Summary presentation** for the active Tenant flow so the compensation section reads like a clean final agreement snapshot, not a form export.
+
+## Goal
+
+Improve the wording and presentation of the compensation section in the Accepted Bid Summary now that the field formatting has been corrected.
+
+Use the working resolved-display logic already in place. Do not change the accepted data itself.
+
+---
+
+## Scope
+
+Tenant Accepted Bid Summary only for this step.
+
+Do not modify:
+
+* Buyer
+* Seller
+* Landlord
+* bid detail views
+* counter detail views
+* scoring logic
+* stored data
+
+---
+
+## Hard safeguards
+
+* No destructive DB changes
+* No schema changes
+* No dropping/renaming columns
+* Do not change accepted values
+* Do not change negotiation logic
+* Do not revert the recent formatting fixes already made in `AcceptedBidSummaryService`
+* Do not reintroduce raw type rows
+* Do not show internal field labels when a resolved value should be displayed
+
+---
+
+## Required presentation update
+
+### 1. Update the section heading
+
+Change the compensation section heading in the Accepted Bid Summary to:
+
+**Agreed Compensation & Agency Terms**
+
+Use that exact wording unless the current template structure requires a very slight variation for consistency.
+
+### 2. Keep only resolved, user-facing rows
+
+Continue using the corrected resolved-display logic already implemented:
+
+* no raw `Purchase Fee Type` row
+* no raw `Lease Fee Type` row unless intentionally required
+* no malformed values like `Flat Fee%`
+* no internal stored codes like `percent`, `flat`, `applied`, `Included in Offer`
+
+### 3. Preserve final accepted values
+
+This section should read like a final accepted agreement snapshot. Keep rows such as:
+
+* Tenant’s Broker Commission Structure
+* Tenant’s Broker Commission Fee
+* Payment Timing for Broker Fees
+* Interested in Purchasing a Property
+* Tenant’s Broker Purchase Fee
+* Interested in a Lease-Option Agreement
+* Compensation for Creating the Lease-Option Agreement
+* Compensation if Purchase Option is Exercised
+* Protection Period Timeframe
+* Early Termination Fee
+* Early Termination Fee Amount
+* Retainer Fee
+* Retainer Fee Amount
+* Retainer Fee Application
+* Tenant Agency Agreement Timeframe
+* Acceptable Brokerage Relationship
+* Additional Terms
+
+Only show rows that are applicable based on the accepted final terms.
+
+### 4. Improve readability only
+
+Make the section feel polished and agreement-like:
+
+* clear heading
+* consistent spacing
+* clean row labels
+* no redundant technical rows
+* no internal naming leakage
+
+Do not redesign the whole page. This is a presentation cleanup only.
+
+---
+
+## Verification
+
+After the change, verify on an existing Accepted Bid Summary that:
+
+* the section heading now reads **Agreed Compensation & Agency Terms**
+* the section still shows the exact accepted data
+* no raw/internal fee type rows appear
+* combo fields still display correctly as resolved values
+* Additional Terms still display correctly
+* the page remains printable / PDF-safe if PDF rendering uses the same view
+
+---
+
+## Deliverable
+
+Provide:
+
+* exact file(s) changed
+* exact heading/wording update made
+* confirmation that no accepted data or logic changed
+* before/after verification showing the section now reads like a final accepted agreement snapshot
