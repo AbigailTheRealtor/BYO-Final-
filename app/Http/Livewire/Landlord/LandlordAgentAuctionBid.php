@@ -901,9 +901,10 @@ class LandlordAgentAuctionBid extends Component
                 $this->additional_details_broker = $bidData->additional_details_broker ?? '';
 
                 // Presentation/Marketing links
-                $this->presentation_link      = $bidData->presentation_link ?? '';
-                $this->business_card_link     = $bidData->business_card_link ?? '';
-                $this->promo_materials_link   = $bidData->promo_materials_link ?? '';
+                $this->presentation_link         = $bidData->presentation_link ?? '';
+                $this->business_card_link        = $bidData->business_card_link ?? '';
+                $this->business_card_stored_path = $bidData->business_card ?? null;
+                $this->promo_materials_link      = $bidData->promo_materials_link ?? '';
 
                 // Promo Materials
                 $promoMaterialsRaw = $bidData->promoMaterials ?? $bidData->promo_materials ?? null;
@@ -1287,7 +1288,7 @@ class LandlordAgentAuctionBid extends Component
             }
 
             // Handle business card upload
-            if ($this->business_card) {
+            if ($this->business_card && is_object($this->business_card) && method_exists($this->business_card, 'getClientOriginalExtension')) {
                 $extension = $this->business_card->getClientOriginalExtension();
                 if (in_array($extension, $allowedPhotos)) {
                     $uuid = (string) Str::uuid();
@@ -1295,6 +1296,9 @@ class LandlordAgentAuctionBid extends Component
                     $path = $this->business_card->storeAs('auction/documents', $fileName, 'public');
                     $bid->saveMeta('business_card', $path);
                 }
+            } elseif (!empty($this->business_card_stored_path)) {
+                // No new upload — preserve existing path (from default profile or edit mode)
+                $bid->saveMeta('business_card', $this->business_card_stored_path);
             }
 
             // Handle promotional materials upload
@@ -1317,6 +1321,11 @@ class LandlordAgentAuctionBid extends Component
                     if (is_array($files) && !empty($files)) {
                         foreach ($files as $file) {
                             if (!$file) continue;
+                            // Preserve existing string paths (edit mode or default profile)
+                            if (is_string($file) && !empty($file)) {
+                                $stored[] = $file;
+                                continue;
+                            }
                             if (!is_object($file) || !method_exists($file, 'getClientOriginalExtension')) continue;
                             $ext = strtolower($file->getClientOriginalExtension());
                             if (!in_array($ext, $allowed, true)) continue;

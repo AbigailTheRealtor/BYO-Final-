@@ -3888,9 +3888,75 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                         style="background: #e8f4f5; border-radius: 6px; color: #049399;">
                                                         <i class="fa fa-shield me-2"></i>
                                                         <strong>Confidential:</strong> This information
-                                                        is private and only visible to you as the
-                                                        listing owner.
+                                                        is private and only visible to you{{ $isListingOwner ? ' as the listing owner' : '' }}.
                                                     </div>
+
+                                                    @if ($isListingOwner && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected')
+                                                        @php
+                                                            $showActionButtons = ($isTraditionalListing && !$isExpired) || ($isBiddingPeriodListing && $isExpired);
+                                                        @endphp
+                                                        @if ($showActionButtons)
+                                                        <div class="d-flex gap-3 justify-content-center align-items-center w-100 mb-3" style="flex-wrap: nowrap;">
+                                                            <form action="{{ route('agent.landlord.auction.bid.accept', ['id' => data_get($bid, 'id')]) }}" method="POST" style="margin: 0;"
+                                                                  onsubmit="return confirm('Are you sure you want to accept this bid? This will reject all other bids.');">
+                                                                @csrf
+                                                                <button type="submit" class="btn btn-success" style="padding: 10px 20px; font-size: 0.95rem; background-color: #28a745 !important; border-color: #28a745 !important; color: #fff !important; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center;">
+                                                                    <i class="fa fa-check me-1"></i> Accept Bid
+                                                                </button>
+                                                            </form>
+
+                                                            <form action="{{ route('agent.landlord.auction.bid.reject', ['id' => data_get($bid, 'id')]) }}" method="POST" style="margin: 0;"
+                                                                  onsubmit="return confirm('Are you sure you want to reject this bid?');">
+                                                                @csrf
+                                                                <button type="submit" class="btn btn-danger" style="padding: 10px 20px; font-size: 0.95rem; background-color: #dc3545 !important; border-color: #dc3545 !important; color: #fff !important; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center;">
+                                                                    <i class="fa fa-times me-1"></i> Reject Bid
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                        @elseif ($isBiddingPeriodListing && !$canTakeAction)
+                                                        <div class="w-100 mb-3 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
+                                                            <i class="fa fa-clock me-1"></i> Actions unlock when the bidding period ends.
+                                                        </div>
+                                                        @elseif ($isTraditionalListing && $isExpired)
+                                                        <div class="w-100 mb-3 p-2 text-center" style="background: #ffc107; border-radius: 6px; color: #856404;">
+                                                            <i class="fa fa-clock me-1"></i> Listing has expired - no further actions available. You can extend the expiration date by editing the listing.
+                                                        </div>
+                                                        @endif
+                                                    @elseif ($isListingOwner && $bidAccepted === 'accepted')
+                                                    <div class="w-100 mb-3 p-2 text-center" style="background: #d4edda; border-radius: 6px; color: #155724;">
+                                                        <i class="fa fa-check-circle me-1"></i> This bid has been accepted
+                                                    </div>
+                                                    @php
+                                                        $acceptedBidSummaryL = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->first();
+                                                    @endphp
+                                                    @if($acceptedBidSummaryL)
+                                                    <div class="d-flex gap-2 flex-wrap justify-content-center mt-2 mb-3">
+                                                        <a href="{{ route('accepted-bid-summary.view', $acceptedBidSummaryL->id) }}" class="btn btn-outline-primary btn-sm">
+                                                            <i class="fa fa-file-alt me-1"></i> View Accepted Bid Summary
+                                                        </a>
+                                                        @if(!$acceptedBidSummaryL->isTenantSigned())
+                                                        <a href="{{ route('accepted-bid-summary.sign-form', $acceptedBidSummaryL->id) }}" class="btn btn-primary btn-sm">
+                                                            <i class="fa fa-signature me-1"></i> Landlord: E-Sign Acknowledgement
+                                                        </a>
+                                                        @endif
+                                                        @if(!$acceptedBidSummaryL->isAgentSigned())
+                                                        <a href="{{ route('accepted-bid-summary.sign-form', $acceptedBidSummaryL->id) }}" class="btn btn-secondary btn-sm">
+                                                            <i class="fa fa-signature me-1"></i> Agent: E-Sign Acknowledgement
+                                                        </a>
+                                                        @endif
+                                                        @if($acceptedBidSummaryL->isFullySigned())
+                                                        <a href="{{ route('accepted-bid-summary.download-pdf', $acceptedBidSummaryL->id) }}" class="btn btn-success btn-sm">
+                                                            <i class="fa fa-download me-1"></i> Download Signed PDF
+                                                        </a>
+                                                        @endif
+                                                    </div>
+                                                    @endif
+                                                    @elseif ($isListingOwner && $bidAccepted === 'rejected')
+                                                    <div class="w-100 mb-3 p-2 text-center" style="background: #f8d7da; border-radius: 6px; color: #721c24;">
+                                                        <i class="fa fa-times-circle me-1"></i> This bid has been rejected
+                                                    </div>
+                                                    @endif
+
                                                     <button type="button" class="btn btn-secondary"
                                                         data-bs-dismiss="modal"
                                                         style="background: #6c757d; border: none; border-radius: 6px; padding: 8px 20px;">Close</button>

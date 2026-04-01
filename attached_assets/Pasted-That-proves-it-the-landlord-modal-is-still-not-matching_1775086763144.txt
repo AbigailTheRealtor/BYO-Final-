@@ -1,0 +1,288 @@
+That proves it — the landlord modal is still not matching the working version.
+
+So the previous fix did **not** solve the real landlord issue. The landlord owner modal is still behaving like a limited/read-only modal or a stripped rendering path.
+
+Use this final Replit instruction:
+
+## Replit Instructions With Safeguards
+
+### Goal
+
+Fix the **Landlord listing owner bid modal** so it matches the full working owner modal behavior.
+
+The landlord owner modal is still wrong in three visible ways:
+
+1. **Business Card** is not rendering
+2. **Digital Ads** uploaded files are not rendering as clickable/viewable/downloadable file rows
+3. **Accept Bid / Counter Bid / Reject Bid** buttons are missing, and only **Close** is showing
+
+This is the landlord listing owner view, so it must use the **full owner modal**, not a limited/read-only modal.
+
+---
+
+## Confirmed live issue
+
+On the landlord listing owner modal:
+
+* Agent Presentation & Promotional Materials shows only:
+
+  * `Digital Ads`
+* Business card preview is missing
+* Uploaded file links/buttons are missing
+* Footer only shows:
+
+  * `Close`
+* Footer does **not** show:
+
+  * `Accept Bid`
+  * `Counter Bid`
+  * `Reject Bid`
+
+So this is not resolved.
+
+---
+
+## Safeguards
+
+* Focus only on the **Hire a Landlord Agent owner bid modal/view**
+* Do **not** touch Buyer or Seller
+* Do **not** rename DB columns
+* Do **not** change listing creation/edit flows
+* Do **not** change bid scoring logic
+* Do **not** remove backward compatibility for older saved upload data
+* Do **not** alter the limited modal behavior for non-owner/other-agent viewing
+* Keep changes surgical and limited to:
+
+  * landlord owner modal rendering
+  * landlord owner modal footer/actions
+  * landlord promo materials normalization/rendering
+
+---
+
+# Part 1 — Landlord owner is opening the wrong modal or wrong rendering branch
+
+## Problem
+
+The landlord owner modal is still rendering like a limited/read-only modal:
+
+* only Close button
+* no owner actions
+* incomplete promo materials rendering
+
+That means one of two things is happening:
+
+### A. Wrong modal is being opened
+
+The landlord owner may be opening the limited/read-only modal instead of the full owner modal
+
+### B. Correct modal shell, wrong conditional branch inside it
+
+The landlord owner modal may be using a condition that incorrectly suppresses:
+
+* business card block
+* uploaded file rows
+* action footer
+
+## Required fix
+
+Trace the **exact click path** for the landlord listing owner and identify:
+
+* which modal ID/class/template is opened
+* which conditional determines owner vs limited modal
+* whether landlord owners are being routed into a limited version
+
+### Required result
+
+When the **listing owner** opens a landlord bid, it must use the **full owner modal** with:
+
+* business card preview
+* uploaded file rows with actions
+* Accept Bid
+* Counter Bid
+* Reject Bid
+* Close
+
+Do not change the limited modal for other viewers.
+
+---
+
+# Part 2 — Landlord Agent Presentation & Promotional Materials must fully render
+
+## Problem
+
+Landlord modal still shows only:
+
+* `Digital Ads`
+
+That means the uploaded material category is rendering, but the actual attached file list is not.
+
+Business card preview is also missing.
+
+## Required result
+
+### Business Card
+
+If a business card exists in saved bid data:
+
+* show preview/image block
+* show View Full Size when applicable
+* show Download when applicable
+
+### Marketing Materials
+
+If `Digital Ads` or other material categories exist and files are attached:
+
+* show the category name
+* show each uploaded file row beneath it
+* each file row must include:
+
+  * visible file name
+  * preview/view button when possible
+  * download button
+
+## Important
+
+Do **not** stop after rendering the category label.
+
+The actual files must be rendered.
+
+---
+
+## Backward compatibility requirement
+
+Support both:
+
+* newly uploaded files
+* older/pre-saved saved file metadata
+
+If the landlord view has multiple saved shapes, normalize them into one consistent array/object structure before rendering.
+
+### Specifically check for:
+
+* string file path
+* array of strings
+* array of file objects
+* nested files arrays in materials metadata
+
+If needed, build one landlord-side normalization helper for:
+
+* business card
+* marketing materials files
+
+---
+
+# Part 3 — Restore landlord owner footer actions
+
+## Problem
+
+Footer still shows only:
+
+* Close
+
+That is incorrect for the landlord listing owner.
+
+## Required result
+
+The landlord owner modal footer must match the working owner modal pattern and show:
+
+1. **Accept Bid**
+2. **Counter Bid**
+3. **Reject Bid**
+4. **Close**
+
+### Requirements
+
+* same order
+* same style/colors
+* same spacing
+* same visibility logic as the owner modal pattern
+* wired to correct landlord owner handlers
+
+## Important
+
+Do not just add static buttons.
+Make sure the actual landlord owner flow uses the same full footer/action branch as the working owner modal.
+
+---
+
+# What to inspect
+
+Search specifically in landlord files for:
+
+* landlord bid modal blade/view
+* landlord modal trigger button
+* modal ID or modal target
+* `Accept Bid`
+* `Counter Bid`
+* `Reject Bid`
+* `limitedBidModal`
+* business card rendering block
+* marketing materials rendering block
+* file rows rendering
+* owner condition such as:
+
+  * `$isBidOwner`
+  * listing owner checks
+  * auth user / listing user comparison
+  * role-based conditionals
+
+Also compare landlord against the working owner modal implementation side by side.
+
+---
+
+# What to verify after fix
+
+## Landlord owner modal
+
+Open the exact same landlord listing owner bid from the screenshot.
+
+Expected:
+
+* business card preview visible
+* digital ads uploaded file rows visible
+* file view/download works
+* Accept Bid visible
+* Counter Bid visible
+* Reject Bid visible
+* Close visible
+
+## Old saved bid test
+
+Open an older landlord bid with pre-saved materials.
+
+Expected:
+
+* business card still renders
+* file rows still render
+* buttons work
+
+## Fresh landlord bid test
+
+Create a new landlord bid with:
+
+* business card
+* digital ads file upload
+
+Expected:
+
+* renders correctly after save and reload
+
+## Non-owner/limited view regression
+
+Open landlord bid as a viewer who should only have limited access.
+
+Expected:
+
+* limited modal behavior remains unchanged
+
+---
+
+# Exact instruction to give Replit
+
+> The landlord listing owner modal is still wrong. I confirmed in the live landlord owner view that Business Card is still missing, Digital Ads still only shows the category label without actual uploaded file rows or view/download actions, and the footer still only shows Close with no Accept Bid, Counter Bid, or Reject Bid. Please trace the exact landlord owner click path and identify which modal/template and condition branch is being used. The landlord owner must be opening the full owner modal, not a limited/read-only modal. Fix the landlord owner modal so it fully renders Business Card, uploaded marketing material file rows with view/download actions, and the full owner action footer with Accept Bid, Counter Bid, Reject Bid, and Close. Preserve limited modal behavior for non-owner viewers. Keep this surgical, do not rename DB columns, do not change listing creation/edit flows, and keep backward compatibility for older saved upload metadata.
+
+I would also ask them to send back:
+
+* the exact landlord file they changed
+* the exact owner-vs-limited condition they fixed
+* a screenshot of the landlord owner modal after the fix showing the buttons and uploaded files
