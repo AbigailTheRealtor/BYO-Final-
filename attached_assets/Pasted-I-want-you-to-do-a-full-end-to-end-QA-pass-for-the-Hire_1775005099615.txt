@@ -1,0 +1,211 @@
+I want you to do a **full end-to-end QA pass for the Hire a Tenant Agent flow** and fix only issues you can directly reproduce.
+
+This is the **final Tenant workflow audit and stabilization pass**.
+The goal is to verify the full Tenant flow from start to finish and make Tenant the gold-standard reference before applying the same architecture to Seller, Landlord, and Buyer.
+
+## Scope
+
+Tenant flow only:
+
+* Tenant listing creation
+* Agent bid creation
+* Agent bid display
+* Tenant counter creation
+* Tenant counter display
+* Services Match
+* Terms Match
+* added/missing/extra services display
+* Accept / Counter / Reject actions
+* Accepted Bid Summary
+* Traditional listings
+* Bidding Period listings
+* Residential Tenant
+* Commercial Tenant
+
+## Hard safeguards
+
+* No destructive DB changes
+* No schema changes
+* No dropping/renaming columns
+* No changing field names, labels, tooltip wording, or order
+* No broad refactors outside the active Tenant flow
+* Do not modify Buyer, Seller, or Landlord unless a clearly shared helper is the direct root cause of a proven Tenant bug and can be safely updated without side effects
+* Preserve the current working Tenant fixes already implemented:
+
+  * role/property-type service filtering
+  * contamination prevention
+  * additional-services counting
+  * apostrophe normalization
+  * payment timing save/remap
+  * logical term grouping
+  * Additional Terms mismatch support
+  * Extra Value Added display
+  * search visibility fix
+
+## Required testing approach
+
+Use a structured QA checklist and document every scenario tested.
+
+For each test case, report:
+
+* scenario name
+* listing type / mode
+* exact steps performed
+* expected result
+* actual result
+* pass/fail
+* if fail, exact bug reproduced
+
+## Required scenarios
+
+### 1. Listing creation
+
+Test all four:
+
+1. Residential Tenant Traditional listing
+2. Residential Tenant Bidding Period listing
+3. Commercial Tenant Traditional listing
+4. Commercial Tenant Bidding Period listing
+
+Verify:
+
+* correct Tenant services catalog loads
+* correct broker compensation fields load
+* additional/custom services save correctly
+* listing saves correctly
+* listing appears in Tenant search if intended
+* draft stays non-searchable if saved as draft
+
+### 2. Agent bid creation
+
+For at least one Residential and one Commercial Tenant listing, test:
+5. Submit unchanged bid
+6. Submit bid with 1 service removed
+7. Submit bid with 1 extra service added
+8. Submit bid with custom additional services
+9. Submit bid with 1 logical term changed
+10. Submit bid with Additional Terms changed
+
+Verify:
+
+* one bid thread per agent per listing
+* correct preload from listing
+* no cross-role contamination
+* services save correctly
+* terms save correctly
+* additional/custom services count correctly
+* Agent View Bid shows the exact saved services and terms
+
+### 3. Bid detail / match score
+
+For the submitted bids, verify:
+
+* Services Match denominator is correct
+* each additional service input counts individually
+* missing services count is correct
+* extra services count is correct
+* same service never appears in both extra and missing
+* Terms Match denominator is based on logical term groups only
+* changed count reflects only true logical changes
+* Additional Terms mismatch behaves correctly
+* current wording displays correctly for commission structure and other broker compensation terms
+* services display correctly under categories
+
+### 4. Stability / refresh
+
+For at least one unchanged bid and one changed bid:
+11. Reload the same bid page 3 times
+
+Verify:
+
+* same Services Match denominator every time
+* same Terms Match denominator every time
+* same changed count every time
+* no services appear/disappear between refreshes
+
+### 5. Counter flow
+
+For at least one Residential and one Commercial Tenant listing, test:
+12. Create counter with no changes
+13. Create counter removing exactly 1 service
+14. Create counter removing multiple services
+15. Create counter adding 1 custom service
+16. Create counter with 1 logical term changed
+17. Create counter with Additional Terms changed
+
+Verify:
+
+* counter preloads the correct baseline
+* only intended services are removed
+* no extra services disappear unexpectedly
+* custom services persist correctly
+* Terms Match and Services Match remain accurate
+* row-level mismatch indicators align with score results
+
+### 6. Accept / Counter / Reject
+
+Test:
+18. Accept a bid
+19. Counter a bid
+20. Reject a bid
+
+Verify:
+
+* correct bid thread is used
+* statuses update correctly
+* no duplicate visible bid entries are created
+* notices/actions point to the correct thread
+
+### 7. Accepted Bid Summary
+
+Test:
+21. Accept unchanged bid
+22. Accept bid after service changes
+23. Accept bid after term changes
+24. Accept accepted-counter scenario
+
+Verify:
+
+* Accepted Bid Summary appears only after acceptance
+* it uses the exact final accepted bid thread state
+* it reflects the latest accepted version, not stale values
+* it shows exact accepted services and custom services
+* it shows exact accepted Broker Compensation & Agency Agreement Terms
+* combo fields display resolved values correctly
+* Additional Terms display correctly
+* summary matches what was accepted on screen
+
+### 8. Search visibility / routing
+
+Verify:
+25. Newly created searchable Tenant listings appear in `/search/hire/tenant/agent/auctions`
+26. Listing card opens the correct direct view page
+27. Draft listings do not appear in search
+28. Listing IDs shown on cards still match the direct view record
+
+## Required bug-fix workflow
+
+Only fix bugs that you can directly reproduce during this QA pass.
+
+For each bug fixed, provide:
+
+* exact scenario where it failed
+* root cause
+* exact files changed
+* summary of the fix
+* retest result showing it is resolved
+
+## Required final deliverable
+
+At the end, give me:
+
+1. Full QA report of every scenario tested
+2. List of every bug found
+3. Exact fixes applied
+4. Retest results
+5. Final recommendation on whether the Tenant flow is now stable enough to use as the gold-standard reference for Seller, Landlord, and Buyer
+
+## Critical rule
+
+Do not move on to Seller, Buyer, or Landlord in this pass.
+This pass is only to make Tenant fully stable from start to finish.

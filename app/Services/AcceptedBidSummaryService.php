@@ -353,75 +353,222 @@ class AcceptedBidSummaryService
     protected function getBidData(TenantAgentAuctionBid $bid): array
     {
         $bidData = $bid->get;
-        return [
-            'services' => $this->parseServices(data_get($bidData, 'services', [])),
+        return $this->extractCompensationFields($bidData) + [
+            'services'      => $this->parseServices(data_get($bidData, 'services', [])),
             'other_services' => data_get($bidData, 'other_services', ''),
-            'broker_fee_type' => data_get($bidData, 'broker_fee_type'),
-            'broker_fee_amount' => data_get($bidData, 'broker_fee_amount'),
-            'broker_fee_timing' => data_get($bidData, 'broker_fee_timing'),
-            'broker_fee_days' => data_get($bidData, 'broker_fee_days'),
-            'purchase_fee_type' => data_get($bidData, 'purchase_fee_type'),
-            'purchase_fee_amount' => data_get($bidData, 'purchase_fee_amount'),
-            'purchase_fee_other' => data_get($bidData, 'purchase_fee_other'),
-            'lease_option_fee_type' => data_get($bidData, 'lease_option_fee_type'),
-            'lease_option_fee_amount' => data_get($bidData, 'lease_option_fee_amount'),
-            'lease_fee_other' => data_get($bidData, 'lease_fee_other'),
-            'protection_period' => data_get($bidData, 'protection_period'),
-            'protection_period_other' => data_get($bidData, 'protection_period_other'),
-            'early_termination_fee' => data_get($bidData, 'early_termination_fee'),
-            'early_termination_fee_amount' => data_get($bidData, 'early_termination_fee_amount'),
-            'retainer_fee' => data_get($bidData, 'retainer_fee'),
-            'retainer_fee_amount' => data_get($bidData, 'retainer_fee_amount'),
-            'agency_agreement_timeframe' => data_get($bidData, 'agency_agreement_timeframe'),
-            'agency_agreement_custom' => data_get($bidData, 'agency_agreement_custom'),
-            'brokerage_relationship' => data_get($bidData, 'brokerage_relationship'),
-            'brokerage_relationship_other' => data_get($bidData, 'brokerage_relationship_other'),
-            'additional_terms' => data_get($bidData, 'additional_terms'),
-            'additional_details' => data_get($bidData, 'additional_details'),
-            'agent_name' => data_get($bidData, 'name'),
-            'agent_email' => data_get($bidData, 'email'),
-            'agent_phone' => data_get($bidData, 'phone'),
+            'agent_name'    => data_get($bidData, 'name'),
+            'agent_email'   => data_get($bidData, 'email'),
+            'agent_phone'   => data_get($bidData, 'phone'),
             'agent_brokerage' => data_get($bidData, 'brokerage'),
             'agent_license' => data_get($bidData, 'license_no') ?: data_get($bidData, 'agent_license'),
-            'agent_nar_id' => data_get($bidData, 'mls_id'),
+            'agent_nar_id'  => data_get($bidData, 'mls_id'),
         ];
     }
 
     protected function getCounterData(TenantCounterBidding $counter): array
     {
         $counterData = $counter->get;
-        return [
-            'services' => $this->parseServices(data_get($counterData, 'services', [])),
+        return $this->extractCompensationFields($counterData) + [
+            'services'      => $this->parseServices(data_get($counterData, 'services', [])),
             'other_services' => data_get($counterData, 'other_services', ''),
-            'broker_fee_type' => data_get($counterData, 'broker_fee_type'),
-            'broker_fee_amount' => data_get($counterData, 'broker_fee_amount'),
-            'broker_fee_timing' => data_get($counterData, 'broker_fee_timing'),
-            'broker_fee_days' => data_get($counterData, 'broker_fee_days'),
-            'purchase_fee_type' => data_get($counterData, 'purchase_fee_type'),
-            'purchase_fee_amount' => data_get($counterData, 'purchase_fee_amount'),
-            'purchase_fee_other' => data_get($counterData, 'purchase_fee_other'),
-            'lease_option_fee_type' => data_get($counterData, 'lease_option_fee_type'),
-            'lease_option_fee_amount' => data_get($counterData, 'lease_option_fee_amount'),
-            'lease_fee_other' => data_get($counterData, 'lease_fee_other'),
-            'protection_period' => data_get($counterData, 'protection_period'),
-            'protection_period_other' => data_get($counterData, 'protection_period_other'),
-            'early_termination_fee' => data_get($counterData, 'early_termination_fee'),
-            'early_termination_fee_amount' => data_get($counterData, 'early_termination_fee_amount'),
-            'retainer_fee' => data_get($counterData, 'retainer_fee'),
-            'retainer_fee_amount' => data_get($counterData, 'retainer_fee_amount'),
-            'agency_agreement_timeframe' => data_get($counterData, 'agency_agreement_timeframe'),
-            'agency_agreement_custom' => data_get($counterData, 'agency_agreement_custom'),
-            'brokerage_relationship' => data_get($counterData, 'brokerage_relationship'),
-            'brokerage_relationship_other' => data_get($counterData, 'brokerage_relationship_other'),
-            'additional_terms' => data_get($counterData, 'additional_terms'),
-            'additional_details' => data_get($counterData, 'additional_details'),
-            'agent_name' => null,
-            'agent_email' => null,
-            'agent_phone' => null,
+            'agent_name'    => null,
+            'agent_email'   => null,
+            'agent_phone'   => null,
             'agent_brokerage' => null,
             'agent_license' => null,
-            'agent_nar_id' => null,
+            'agent_nar_id'  => null,
         ];
+    }
+
+    /**
+     * Extract all broker compensation & agency terms from a bid/counter data object.
+     * Reads from current field names first (lease_fee_type, payment_timing, etc.),
+     * then falls back to legacy field names stored by older form versions.
+     *
+     * @param  object|array $data  The ->get accessor result (stdClass or array).
+     */
+    protected function extractCompensationFields($data): array
+    {
+        $g = fn(string $key) => is_object($data) ? ($data->$key ?? null) : ($data[$key] ?? null);
+
+        // Commission Structure: current=commission_structure, legacy=broker_fee_type
+        $commissionStructure = $g('commission_structure') ?: $g('broker_fee_type');
+        $commissionStructureDisplay = match($commissionStructure) {
+            'Out-of-Pocket Payment' => 'Tenant Pays Out-of-Pocket',
+            'Included in Offer'     => 'Requested From Landlord in the Offer',
+            default                  => $commissionStructure,
+        };
+
+        // Commission Fee: current=lease_fee_type + sub-fields, legacy=broker_fee_amount
+        $brokerFeeAmount = $g('broker_fee_amount');
+        if (empty($brokerFeeAmount)) {
+            $brokerFeeAmount = $this->resolveCommissionFeeDisplay($data);
+        }
+
+        // Payment Timing: current=payment_timing, legacy=broker_fee_timing
+        $paymentTiming = $g('payment_timing') ?: $g('broker_fee_timing');
+
+        // Days to Pay: current=days_to_pay, legacy=broker_fee_days
+        $daysToPay = $g('days_to_pay') ?: $g('broker_fee_days');
+
+        // Interested in Purchase: current field only
+        $interestedPurchase = $g('interested_purchase_fee_type');
+
+        // Purchase Fee
+        $purchaseFeeType = $g('purchase_fee_type');
+        $purchaseFeeAmount = $this->resolvePurchaseFeeDisplay($data);
+
+        // Lease-Option: resolve type ('percent'/'flat') + value into single display string
+        $leaseType  = $g('lease_type')  ?: $g('lease_option_fee_type');
+        $leaseValue = $g('lease_value') ?: $g('lease_option_fee_amount');
+        $leaseOptionDisplay = null;
+        if ($leaseType === 'percent' && $leaseValue !== null && $leaseValue !== '') {
+            $leaseOptionDisplay = rtrim(rtrim(number_format((float) $leaseValue, 2), '0'), '.') . '% of Lease Value';
+        } elseif ($leaseValue !== null && $leaseValue !== '') {
+            $leaseOptionDisplay = '$' . number_format((float) str_replace(',', '', (string) $leaseValue), 0);
+        }
+        $leaseOptionType   = $leaseOptionDisplay;
+        $leaseOptionAmount = null;
+
+        // Purchase-Option (exercised): resolve type+value into single display string
+        $purchaseType  = $g('purchase_type');
+        $purchaseValue = $g('purchase_value');
+        $purchaseOptionDisplay = null;
+        if ($purchaseType === 'percent' && $purchaseValue !== null && $purchaseValue !== '') {
+            $purchaseOptionDisplay = rtrim(rtrim(number_format((float) $purchaseValue, 2), '0'), '.') . '% of Purchase Price';
+        } elseif ($purchaseValue !== null && $purchaseValue !== '') {
+            $purchaseOptionDisplay = '$' . number_format((float) str_replace(',', '', (string) $purchaseValue), 0);
+        }
+        $purchaseOptionType   = $purchaseOptionDisplay;
+        $purchaseOptionAmount = null;
+
+        // Early Termination: current=early_termination_fee_option, legacy=early_termination_fee
+        $earlyTermFee = $g('early_termination_fee_option') ?: $g('early_termination_fee');
+
+        // Retainer: current=retainer_fee_option, legacy=retainer_fee
+        $retainerFee = $g('retainer_fee_option') ?: $g('retainer_fee');
+        $retainerFeeApplication = $g('retainer_fee_application');
+        if ($retainerFeeApplication !== null && $retainerFeeApplication !== '') {
+            $retainerFeeApplication = $retainerFeeApplication === 'applied'
+                ? 'Applied toward final compensation'
+                : 'Charged in addition to final compensation';
+        }
+
+        // Additional Terms: current=additional_details_broker, legacy=additional_terms/additional_details
+        $additionalTerms = $g('additional_details_broker')
+            ?: $g('additional_terms')
+            ?: $g('additional_details');
+
+        return [
+            'broker_fee_type'           => $commissionStructureDisplay,
+            'broker_fee_amount'         => $brokerFeeAmount,
+            'broker_fee_timing'         => $paymentTiming,
+            'broker_fee_days'           => $daysToPay,
+            'interested_purchase_fee_type' => $interestedPurchase,
+            'purchase_fee_type'         => $purchaseFeeType,
+            'purchase_fee_amount'       => $purchaseFeeAmount,
+            'purchase_fee_other'        => $g('purchase_fee_other'),
+            'lease_option_fee_type'     => $leaseOptionType,
+            'lease_option_fee_amount'   => $leaseOptionAmount,
+            'purchase_option_type'      => $purchaseOptionType,
+            'purchase_option_amount'    => $purchaseOptionAmount,
+            'lease_fee_other'           => $g('lease_fee_other'),
+            'protection_period'         => $g('protection_period'),
+            'protection_period_other'   => $g('protection_period_other'),
+            'early_termination_fee'     => $earlyTermFee,
+            'early_termination_fee_amount' => $g('early_termination_fee_amount'),
+            'retainer_fee'              => $retainerFee,
+            'retainer_fee_amount'       => $g('retainer_fee_amount'),
+            'retainer_fee_application'  => $retainerFeeApplication,
+            'agency_agreement_timeframe' => $g('agency_agreement_timeframe'),
+            'agency_agreement_custom'   => $g('agency_agreement_custom'),
+            'brokerage_relationship'    => $g('brokerage_relationship'),
+            'brokerage_relationship_other' => $g('brokerage_relationship_other'),
+            'additional_terms'          => $additionalTerms,
+        ];
+    }
+
+    /**
+     * Build a human-readable commission fee display from lease_fee_type + sub-fields.
+     * Mirrors the display logic used in hire_tenant_agent/view.blade.php.
+     */
+    protected function resolveCommissionFeeDisplay($data): ?string
+    {
+        $g = fn(string $key) => is_object($data) ? ($data->$key ?? null) : ($data[$key] ?? null);
+
+        $lft  = (string) ($g('lease_fee_type') ?? '');
+        $flat = $g('lease_fee_flat');
+        $pct  = $g('lease_fee_percentage');
+        $pctMonthly = $g('lease_fee_percentage_monthly_rent');
+        $monthlyNum = $g('lease_fee_percentage_monthly_number');
+        $flatCombo  = $g('lease_fee_flat_combo');
+        $pctCombo   = $g('lease_fee_percentage_combo');
+        $pctNet     = $g('lease_fee_percentage_net');
+        $flatComboNet = $g('lease_fee_flat_combo_net');
+        $pctComboNet  = $g('lease_fee_percentage_combo_net');
+        $other = $g('lease_fee_other');
+
+        $money = fn($v) => $v ? '$' . number_format((float) str_replace(',', '', (string) $v), 0) : null;
+        $percent = fn($v) => $v ? rtrim(rtrim(number_format((float) $v, 2), '0'), '.') . '%' : null;
+        $join = fn(array $parts) => implode(' + ', array_filter($parts));
+
+        if ($lft === 'Flat Fee' && $flat) {
+            return $money($flat);
+        }
+        if ($lft === 'Percentage of the Gross Lease Value' && $pct) {
+            return $percent($pct) . ' of Gross Lease Value';
+        }
+        if ($lft === 'Percentage of Monthly Rent' && $pctMonthly) {
+            $s = $percent($pctMonthly) . ' of Monthly Rent';
+            if ($monthlyNum) $s .= ' x ' . $monthlyNum . ' Months';
+            return $s;
+        }
+        if ($lft === 'Flat Fee + Percentage of the Gross Lease Value') {
+            $parts = array_filter([$money($flatCombo), $pctCombo ? ($percent($pctCombo) . ' of Gross Lease Value') : null]);
+            return $parts ? $join($parts) : null;
+        }
+        if ($lft === 'Percentage of the Net Aggregate Rent' && $pctNet) {
+            return $percent($pctNet) . ' of Net Aggregate Rent';
+        }
+        if ($lft === 'Flat Fee + Percentage of the Net Aggregate Rent') {
+            $parts = array_filter([$money($flatComboNet), $pctComboNet ? ($percent($pctComboNet) . ' of Net Aggregate Rent') : null]);
+            return $parts ? $join($parts) : null;
+        }
+        if (strtolower($lft) === 'other' && $other) {
+            return $other;
+        }
+        return $lft ?: null;
+    }
+
+    /**
+     * Build a human-readable purchase fee display from purchase_fee_type + sub-fields.
+     */
+    protected function resolvePurchaseFeeDisplay($data): ?string
+    {
+        $g = fn(string $key) => is_object($data) ? ($data->$key ?? null) : ($data[$key] ?? null);
+
+        $type = (string) ($g('purchase_fee_type') ?? '');
+        $money = fn($v) => $v ? '$' . number_format((float) str_replace(',', '', (string) $v), 0) : null;
+        $percent = fn($v) => $v ? rtrim(rtrim(number_format((float) $v, 2), '0'), '.') . '%' : null;
+
+        if ($type === 'Flat Fee') {
+            return $money($g('purchase_fee_flat'));
+        }
+        if ($type === 'Percentage of the Total Purchase Price') {
+            $pct = $g('purchase_fee_percentage');
+            return $pct ? $percent($pct) . ' of Total Purchase Price' : null;
+        }
+        if ($type === 'Flat Fee + Percentage of the Total Purchase Price') {
+            $parts = array_filter([
+                $money($g('purchase_fee_flat_combo')),
+                $g('purchase_fee_percentage_combo') ? ($percent($g('purchase_fee_percentage_combo')) . ' of Total Purchase Price') : null,
+            ]);
+            return $parts ? implode(' + ', $parts) : null;
+        }
+        if (strtolower($type) === 'other') {
+            return $g('purchase_fee_other');
+        }
+        return $type ?: null;
     }
 
     protected function parseServices($services): array
@@ -598,22 +745,24 @@ class AcceptedBidSummaryService
         $html = '<table style="width: 100%; border-collapse: collapse;">';
 
         $fields = [
-            'broker_fee_type' => "Tenant's Broker Commission Structure",
-            'broker_fee_amount' => "Tenant's Broker Commission Fee",
-            'broker_fee_timing' => 'Payment Timing for Broker Fees',
-            'broker_fee_days' => 'Calendar Days to Pay',
-            'purchase_fee_type' => 'Purchase Fee Type',
-            'purchase_fee_amount' => 'Purchase Fee Amount',
-            'lease_option_fee_type' => 'Lease-Option Fee Type',
-            'lease_option_fee_amount' => 'Lease-Option Fee Amount',
-            'protection_period' => 'Protection Period Timeframe',
-            'early_termination_fee' => 'Early Termination Fee',
+            'broker_fee_type'              => "Tenant's Broker Commission Structure",
+            'broker_fee_amount'            => "Tenant's Broker Commission Fee",
+            'broker_fee_timing'            => 'Payment Timing for Broker Fees',
+            'broker_fee_days'              => 'Calendar Days to Pay',
+            'interested_purchase_fee_type' => 'Interested in Purchasing a Property',
+            'purchase_fee_type'            => 'Purchase Fee Type',
+            'purchase_fee_amount'          => 'Purchase Fee',
+            'lease_option_fee_type'        => 'Compensation for Creating the Lease-Option Agreement',
+            'purchase_option_type'         => 'Compensation if Purchase Option is Exercised',
+            'protection_period'            => 'Protection Period Timeframe',
+            'early_termination_fee'        => 'Early Termination Fee',
             'early_termination_fee_amount' => 'Early Termination Fee Amount',
-            'retainer_fee' => 'Retainer Fee',
-            'retainer_fee_amount' => 'Retainer Fee Amount',
-            'agency_agreement_timeframe' => 'Tenant Agency Agreement Timeframe',
-            'brokerage_relationship' => 'Brokerage Relationship Type',
-            'additional_terms' => 'Additional Terms',
+            'retainer_fee'                 => 'Retainer Fee',
+            'retainer_fee_amount'          => 'Retainer Fee Amount',
+            'retainer_fee_application'     => 'Retainer Fee Application',
+            'agency_agreement_timeframe'   => 'Tenant Agency Agreement Timeframe',
+            'brokerage_relationship'       => 'Acceptable Brokerage Relationship',
+            'additional_terms'             => 'Additional Terms',
         ];
 
         $hasContent = false;
@@ -672,6 +821,7 @@ class AcceptedBidSummaryService
             'broker_fee_amount',
             'purchase_fee_amount',
             'lease_option_fee_amount',
+            'purchase_option_amount',
         ];
 
         if (in_array($key, $currencyFields)) {

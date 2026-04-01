@@ -630,9 +630,19 @@ class TenantAgentAuctionBidCounter extends Component
             $this->agency_agreement_timeframe = $sourceData->agency_agreement_timeframe ?? '';
             $this->agency_agreement_custom = $sourceData->agency_agreement_custom ?? '';
             $this->brokerage_relationship = $sourceData->brokerage_relationship ?? '';
+            // Payment timing: try current field name first, fall back to legacy name
+            $this->broker_fee_timing = $sourceData->payment_timing ?? $sourceData->broker_fee_timing ?? '';
+            $this->broker_fee_timing_other = $sourceData->broker_fee_timing_other ?? '';
+            $this->broker_fee_days_from_rent = $sourceData->broker_fee_days_from_rent ?? '';
+            $this->broker_fee_days_after_lease = $sourceData->broker_fee_days_after_lease ?? '';
+            $this->broker_fee_days_after_rent = $sourceData->broker_fee_days_after_rent ?? '';
+            // Additional terms: try current field name first, fall back to legacy names
+            $this->additional_details_broker = $sourceData->additional_details_broker
+                ?? $sourceData->additional_terms
+                ?? $sourceData->additional_details
+                ?? '';
             $this->additional_terms = $sourceData->additional_terms ?? '';
             $this->additional_details = $sourceData->additional_details ?? '';
-            $this->additional_details_broker = $sourceData->additional_details_broker ?? '';
             
             // Load service_type if available in sourceData
             if (!empty($sourceData->service_type)) {

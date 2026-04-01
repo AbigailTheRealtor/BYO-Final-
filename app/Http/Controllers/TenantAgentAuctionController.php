@@ -299,7 +299,7 @@ class TenantAgentAuctionController extends Controller
 
         $auctions = TenantAgentAuction::query();
 
-        $auctions->selectRaw("*, (SELECT meta_value FROM tenant_agent_auction_metas WHERE tenant_agent_auction_metas.tenant_agent_auction_id = tenant_agent_auctions.id AND meta_key = 'ideal_price') as price")->where('is_sold', false)->where('is_approved', true);
+        $auctions->selectRaw("*, (SELECT meta_value FROM tenant_agent_auction_metas WHERE tenant_agent_auction_metas.tenant_agent_auction_id = tenant_agent_auctions.id AND meta_key = 'ideal_price') as price")->where('is_sold', false)->where('is_approved', true)->where('is_draft', false);
 
         if ($request->title != "") {
             $auctions->where('title', 'like', '%' . $request->title . '%');
