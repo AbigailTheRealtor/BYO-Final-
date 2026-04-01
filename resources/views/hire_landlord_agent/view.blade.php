@@ -2530,16 +2530,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                 </div>
                                 @endif
 
-                                @if ($bidTenantBrokerStructureDisplay)
-                                <div class="mb-3">
-                                    <p class="mb-1" style="font-size: 1rem; color: #333;">
-                                        <span style="font-weight: 600;">Tenant's Broker Compensation:</span>
-                                    </p>
-                                    <p class="mb-0" style="font-size: 1rem; color: #555;">{{ $bidTenantBrokerStructureDisplay }}</p>
-                                </div>
-                                @endif
-
-                                @if (!$landlordFeeType && !$bidTenantBrokerStructureDisplay)
+                                @if (!$landlordFeeType)
                                 <p class="text-muted" style="font-size: 0.95rem; font-style: italic;">No compensation details provided.</p>
                                 @endif
                                 <!-- View Full Bid link -->
@@ -2660,156 +2651,151 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                             <i class="fa fa-user-tie me-2"></i>Agent
                                                             Overview & Qualifications
                                                         </h6>
-                                                        <div class="row">
 
-                                                            <!-- About Agent -->
-                                                            @if (data_get($bid, 'get.bio'))
-                                                            <div class="mb-3 col-md-6">
-                                                                <div class="fw-semibold"
-                                                                    style="color: #049399;">About Agent:
-                                                                </div>
-                                                                <div class="text-muted">
-                                                                    {{ data_get($bid, 'get.bio') }}
-                                                                </div>
+                                                        <!-- About Agent -->
+                                                        @if (data_get($bid, 'get.bio'))
+                                                        <div class="mb-3">
+                                                            <div class="fw-semibold"
+                                                                style="color: #049399;">About Agent:</div>
+                                                            <div class="text-muted">
+                                                                {{ data_get($bid, 'get.bio') }}
                                                             </div>
-                                                            @endif
-                                                            @if (data_get($bid, 'get.what_sets_you_apart'))
-                                                            <div class="mb-3 col-md-6">
-                                                                <div class="fw-semibold"
-                                                                    style="color: #049399;">What Sets This Agent Apart:</div>
-                                                                <div class="text-muted">
-                                                                    {{ data_get($bid, 'get.what_sets_you_apart') }}
-                                                                </div>
-                                                            </div>
-                                                            @endif
-                                                            <!-- Why Hire You -->
-                                                            @if (data_get($bid, 'get.why_hire_you'))
-                                                            <div class="mb-3 col-md-6">
-                                                                <div class="fw-semibold"
-                                                                    style="color: #049399;">Why Hire This Agent:</div>
-                                                                <div class="text-muted">
-                                                                    {{ data_get($bid, 'get.why_hire_you') }}
-                                                                </div>
-                                                            </div>
-                                                            @endif
-                                                            @if (data_get($bid, 'get.marketing_plan'))
-                                                            <div class="mb-3 col-md-6">
-                                                                <div class="fw-semibold"
-                                                                    style="color: #049399;">Marketing Stategy:</div>
-                                                                <div class="text-muted">
-                                                                    {{ data_get($bid, 'get.marketing_plan') }}
-                                                                </div>
-                                                            </div>
-                                                            @endif
-                                                            @if (data_get($bid, 'get.year_licensed'))
-                                                            <div class="mb-3 col-md-6">
-                                                                <div class="fw-semibold"
-                                                                    style="color: #049399;">Licensed Since:</div>
-                                                                <div class="text-muted">
-                                                                    {{ data_get($bid, 'get.year_licensed') }}
-                                                                </div>
-                                                            </div>
-                                                            @endif
+                                                        </div>
+                                                        @endif
 
-
-                                                            <!-- Reviews Links -->
-                                                            @if (data_get($bid, 'get.reviews_links'))
-                                                            <div class="mb-3 col-md-6">
-                                                                <div class="fw-semibold"
-                                                                    style="color: #049399;">Reviews
-                                                                    Links:</div>
-                                                                <div>
-                                                                    @foreach (data_get($bid, 'get.reviews_links') as $reviewLink)
-                                                                    @if (!empty($reviewLink->url))
-                                                                    <div class="mb-1">
-                                                                        <a href="https://{{ $reviewLink->url }}"
-                                                                            target="_blank"
-                                                                            class="text-primary text-decoration-none">
-                                                                            <i
-                                                                                class="fa fa-external-link-alt me-1"></i>
-                                                                            {{ !empty($reviewLink->text) ? $reviewLink->text : $reviewLink->url }}
-                                                                        </a>
-                                                                    </div>
-                                                                    @endif
-                                                                    @endforeach
-                                                                </div>
+                                                        <!-- Why Hire This Agent -->
+                                                        @if (data_get($bid, 'get.why_hire_you'))
+                                                        <div class="mb-3">
+                                                            <div class="fw-semibold"
+                                                                style="color: #049399;">Why Hire This Agent:</div>
+                                                            <div class="text-muted">
+                                                                {{ data_get($bid, 'get.why_hire_you') }}
                                                             </div>
-                                                            @endif
-                                                            <!-- Website Link -->
-                                                            @if (data_get($bid, 'get.website_link'))
-                                                            <div class="mb-3 col-md-6">
-                                                                <div class="fw-semibold"
-                                                                    style="color: #049399;">Website
-                                                                    Link:</div>
-                                                                <div>
-                                                                    <a href="{{ data_get($bid, 'get.website_link') }}"
+                                                        </div>
+                                                        @endif
+
+                                                        <!-- What Sets This Agent Apart -->
+                                                        @if (data_get($bid, 'get.what_sets_you_apart'))
+                                                        <div class="mb-3">
+                                                            <div class="fw-semibold"
+                                                                style="color: #049399;">What Sets This Agent Apart:</div>
+                                                            <div class="text-muted">
+                                                                {{ data_get($bid, 'get.what_sets_you_apart') }}
+                                                            </div>
+                                                        </div>
+                                                        @endif
+
+                                                        <!-- Marketing Strategy -->
+                                                        @if (data_get($bid, 'get.marketing_plan'))
+                                                        <div class="mb-3">
+                                                            <div class="fw-semibold"
+                                                                style="color: #049399;">Marketing Strategy:</div>
+                                                            <div class="text-muted">
+                                                                {{ data_get($bid, 'get.marketing_plan') }}
+                                                            </div>
+                                                        </div>
+                                                        @endif
+
+                                                        <!-- Review Links -->
+                                                        @php
+                                                            $landlordReviewLinks = data_get($bid, 'get.reviews_links', []);
+                                                            $hasAnyReviewUrl = !empty(array_filter((array) $landlordReviewLinks, fn($rl) => !empty(is_object($rl) ? $rl->url : ($rl['url'] ?? ''))));
+                                                        @endphp
+                                                        @if ($hasAnyReviewUrl)
+                                                        <div class="mb-3">
+                                                            <div class="fw-semibold"
+                                                                style="color: #049399;">Review Links:</div>
+                                                            <div>
+                                                                @foreach ($landlordReviewLinks as $reviewLink)
+                                                                @php $rlUrlVal = is_object($reviewLink) ? $reviewLink->url : ($reviewLink['url'] ?? ''); @endphp
+                                                                @if (!empty($rlUrlVal))
+                                                                <div class="mb-1">
+                                                                    @php
+                                                                        $rlFinal = $rlUrlVal;
+                                                                        if (!str_starts_with($rlFinal, 'http://') && !str_starts_with($rlFinal, 'https://')) {
+                                                                            $rlFinal = 'https://' . $rlFinal;
+                                                                        }
+                                                                        $rlText = is_object($reviewLink) ? ($reviewLink->text ?? '') : ($reviewLink['text'] ?? '');
+                                                                    @endphp
+                                                                    <a href="{{ $rlFinal }}"
                                                                         target="_blank"
                                                                         class="text-primary text-decoration-none">
-                                                                        <i
-                                                                            class="fa fa-globe me-1"></i>
-                                                                        Visit Website
+                                                                        <i class="fa fa-external-link-alt me-1"></i>
+                                                                        {{ !empty($rlText) ? $rlText : $rlUrlVal }}
                                                                     </a>
                                                                 </div>
+                                                                @endif
+                                                                @endforeach
                                                             </div>
-                                                            @endif
-
-                                                            <!-- Social Media Platforms -->
-                                                            @if (data_get($bid, 'get.social_media'))
-                                                            <div class="mb-3 col-md-6">
-                                                                <div class="fw-semibold"
-                                                                    style="color: #049399;">Social
-                                                                    Media:</div>
-                                                                <div>
-                                                                    @foreach (data_get($bid, 'get.social_media') as $social)
-                                                                    @php
-                                                                    // Convert object to array
-                                                                    $socialArray = (array) $social;
-                                                                    @endphp
-                                                                    @if (!empty($socialArray['platform']) && !empty($socialArray['url']))
-                                                                    <div class="mb-1">
-                                                                        @php
-                                                                        $socialUrl =
-                                                                        $socialArray[
-                                                                        'url'
-                                                                        ];
-                                                                        // Agar link mein http:// ya https:// nahi hai toh add karo
-                                                                        if (
-                                                                        !empty(
-                                                                        $socialUrl
-                                                                        ) &&
-                                                                        !str_starts_with(
-                                                                        $socialUrl,
-                                                                        'http://',
-                                                                        ) &&
-                                                                        !str_starts_with(
-                                                                        $socialUrl,
-                                                                        'https://',
-                                                                        )
-                                                                        ) {
-                                                                        $socialUrl =
-                                                                        'https://' .
-                                                                        $socialUrl;
-                                                                        }
-                                                                        @endphp
-                                                                        <a href="{{ $socialUrl }}"
-                                                                            target="_blank"
-                                                                            class="text-primary text-decoration-none">
-                                                                            <i
-                                                                                class="fab fa-{{ strtolower($socialArray['platform']) }} me-1"></i>
-                                                                            @if (!empty($socialArray['text']))
-                                                                            {{ $socialArray['text'] }}
-                                                                            @else
-                                                                            {{ $socialArray['platform'] }}
-                                                                            @endif
-                                                                        </a>
-                                                                    </div>
-                                                                    @endif
-                                                                    @endforeach
-                                                                </div>
-                                                            </div>
-                                                            @endif
-
                                                         </div>
+                                                        @endif
+
+                                                        <!-- Website Link -->
+                                                        @if (data_get($bid, 'get.website_link'))
+                                                        <div class="mb-3">
+                                                            <div class="fw-semibold"
+                                                                style="color: #049399;">Website Link:</div>
+                                                            <div>
+                                                                @php
+                                                                    $websiteLink = data_get($bid, 'get.website_link');
+                                                                    if (!empty($websiteLink) && !str_starts_with($websiteLink, 'http://') && !str_starts_with($websiteLink, 'https://')) {
+                                                                        $websiteLink = 'https://' . $websiteLink;
+                                                                    }
+                                                                @endphp
+                                                                <a href="{{ $websiteLink }}"
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    class="text-primary text-decoration-none">
+                                                                    <i class="fa fa-globe me-1"></i>
+                                                                    Visit Website
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                        @endif
+
+                                                        <!-- Social Media Platforms -->
+                                                        @if (data_get($bid, 'get.social_media'))
+                                                        <div class="mb-3">
+                                                            <div class="fw-semibold"
+                                                                style="color: #049399;">Social Media Platforms:</div>
+                                                            <div>
+                                                                @foreach (data_get($bid, 'get.social_media') as $social)
+                                                                @php $socialArray = (array) $social; @endphp
+                                                                @if (!empty($socialArray['platform']) && !empty($socialArray['url']))
+                                                                <div class="mb-1">
+                                                                    @php
+                                                                    $socialUrl = $socialArray['url'];
+                                                                    if (!empty($socialUrl) && !str_starts_with($socialUrl, 'http://') && !str_starts_with($socialUrl, 'https://')) {
+                                                                        $socialUrl = 'https://' . $socialUrl;
+                                                                    }
+                                                                    @endphp
+                                                                    <a href="{{ $socialUrl }}"
+                                                                        target="_blank"
+                                                                        class="text-primary text-decoration-none">
+                                                                        <i class="fab fa-{{ strtolower($socialArray['platform']) }} me-1"></i>
+                                                                        @if (!empty($socialArray['text']))
+                                                                        {{ $socialArray['text'] }}
+                                                                        @else
+                                                                        {{ $socialArray['platform'] }}
+                                                                        @endif
+                                                                    </a>
+                                                                </div>
+                                                                @endif
+                                                                @endforeach
+                                                            </div>
+                                                        </div>
+                                                        @endif
+
+                                                        <!-- Licensed Year -->
+                                                        @if (data_get($bid, 'get.year_licensed'))
+                                                        <div class="mb-3">
+                                                            <div class="fw-semibold"
+                                                                style="color: #049399;">Licensed Year:</div>
+                                                            <div class="text-muted">
+                                                                {{ data_get($bid, 'get.year_licensed') }}
+                                                            </div>
+                                                        </div>
+                                                        @endif
 
                                                     </div>
 
