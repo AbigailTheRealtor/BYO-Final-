@@ -1775,7 +1775,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 $leaseType = data_get($bid, 'get.lease_type');
                                 $leaseValue = data_get($bid, 'get.lease_value');
                                 if ($leaseType === 'percent' && $leaseValue) {
-                                    $leaseOptionCreatedDisplay = $fmtPercent($leaseValue);
+                                    $leaseOptionCreatedDisplay = $fmtPercent($leaseValue) . ' of Total Purchase Price';
                                 } elseif ($leaseValue) {
                                     $leaseOptionCreatedDisplay = $fmtMoney($leaseValue) ?? '-';
                                 }
@@ -1783,7 +1783,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 $purchaseType = data_get($bid, 'get.purchase_type');
                                 $purchaseValue = data_get($bid, 'get.purchase_value');
                                 if ($purchaseType === 'percent' && $purchaseValue) {
-                                    $leaseOptionExercisedDisplay = $fmtPercent($purchaseValue);
+                                    $leaseOptionExercisedDisplay = $fmtPercent($purchaseValue) . ' of Total Purchase Price';
                                 } elseif ($purchaseValue) {
                                     $leaseOptionExercisedDisplay = $fmtMoney($purchaseValue) ?? '-';
                                 }
@@ -3155,8 +3155,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 $matOther = data_get($material, 'other', '');
                                                                 $matLink = data_get($material, 'link', '');
                                                                 $matFiles = data_get($material, 'files', []);
-                                                                // Normalize files array too
+                                                                // Normalize files: stdClass → array, bare string → single-item array
                                                                 if (is_object($matFiles)) { $matFiles = (array) $matFiles; }
+                                                                elseif (is_string($matFiles)) { $matFiles = $matFiles !== '' ? [$matFiles] : []; }
+                                                                elseif (!is_array($matFiles)) { $matFiles = []; }
                                                             @endphp
                                                             @if (!empty($matType) || !empty($matLink) || !empty($matFiles))
                                                             <div class="mb-3 p-3 border rounded bg-light">

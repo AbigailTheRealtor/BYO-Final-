@@ -2964,11 +2964,11 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                             $ist = data_get($bid,'get.interested_in_selling_type','');
                                                             if ($ist === 'Percentage of the Total Purchase Price') {
                                                                 $pct = data_get($bid,'get.landlord_broker_purchase_price');
-                                                                $purchaseFeeDisplay = $pct ? $pct.'% of Total Purchase Price' : $ist;
+                                                                $purchaseFeeDisplay = $pct ? $fmtPercent($pct).' of Total Purchase Price' : $ist;
                                                             } elseif ($ist === 'Percentage of the Total Purchase Price + Flat Fee') {
                                                                 $pct  = data_get($bid,'get.landlord_broker_percentage_price');
                                                                 $flat = data_get($bid,'get.landlord_broker_dollar_price');
-                                                                $purchaseFeeDisplay = trim(($pct ? $pct.'%' : '').($pct && $flat ? ' + ' : '').($flat ? '$'.$flat : ''));
+                                                                $purchaseFeeDisplay = trim(($pct ? $fmtPercent($pct).' of Total Purchase Price' : '').($pct && $flat ? ' + ' : '').($flat ? $fmtMoney($flat) : ''));
                                                                 if (!$purchaseFeeDisplay) $purchaseFeeDisplay = $ist;
                                                             } elseif ($ist === 'Flat Fee') {
                                                                 $flat = data_get($bid,'get.landlord_broker_flate_fee');
@@ -3675,7 +3675,13 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                                 </div>
                                                                 @endif
 
-                                                                @if (!empty($material['files']))
+                                                                @php
+                                                                $matFilesL = $material['files'] ?? [];
+                                                                if (is_object($matFilesL)) { $matFilesL = (array) $matFilesL; }
+                                                                elseif (is_string($matFilesL)) { $matFilesL = $matFilesL !== '' ? [$matFilesL] : []; }
+                                                                elseif (!is_array($matFilesL)) { $matFilesL = []; }
+                                                                @endphp
+                                                                @if (!empty($matFilesL))
                                                                 <div
                                                                     class="mb-2">
                                                                     <div class="fw-medium mb-1"
@@ -3684,7 +3690,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                                         Files:</div>
                                                                     <div
                                                                         class="row">
-                                                                        @foreach ($material['files'] as $fileIndex => $filePath)
+                                                                        @foreach ($matFilesL as $fileIndex => $filePath)
                                                                         @if (is_string($filePath))
                                                                         @php
                                                                         $fileExtension = pathinfo(
