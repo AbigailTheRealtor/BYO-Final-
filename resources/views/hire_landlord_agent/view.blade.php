@@ -3007,53 +3007,301 @@ $auser = $auctionUser::find(@$auction->user_id);
 
                                                     <!-- Services Offered -->
                                                     @php
-                                                    $biding_services = is_string(data_get($bid, 'get.services'))
-                                                    ? json_decode(data_get($bid, 'get.services'), true)
-                                                    : data_get($bid, 'get.services');
+                                                    // Parse bid services
+                                                    $rawModalSvcs = data_get($bid, 'get.services', []);
+                                                    if (is_string($rawModalSvcs) && !empty($rawModalSvcs)) {
+                                                        $parsedModalSvcs = json_decode($rawModalSvcs, true) ?: [];
+                                                    } else {
+                                                        $parsedModalSvcs = is_array($rawModalSvcs) ? $rawModalSvcs : [];
+                                                    }
+                                                    $parsedModalSvcs = array_values(array_filter($parsedModalSvcs, fn($s) => is_string($s) && trim($s) !== '' && $s !== 'Other'));
+
+                                                    // Parse other_services
+                                                    $rawModalOther = data_get($bid, 'get.other_services', []);
+                                                    if (is_string($rawModalOther) && !empty($rawModalOther)) {
+                                                        $parsedModalOther = json_decode($rawModalOther, true) ?: [];
+                                                    } else {
+                                                        $parsedModalOther = is_array($rawModalOther) ? $rawModalOther : [];
+                                                    }
+                                                    $parsedModalOther = array_values(array_filter($parsedModalOther, fn($s) => is_string($s) && trim($s) !== ''));
+
+                                                    $hasModalSvcs = !empty($parsedModalSvcs) || !empty($parsedModalOther);
+
+                                                    // Baseline: matched + missing = what the auction listing asked for
+                                                    $modalBaselineNorm = array_merge($matchScore['matched_services'], $matchScore['missing_services']);
+                                                    // Current bid normalized services
+                                                    $modalCurrentNorm  = array_merge($matchScore['matched_services'], $matchScore['extra_services']);
+
+                                                    // Per-service color helper
+                                                    $isModalSvcMatched = fn($svc) => in_array(
+                                                        \App\Helpers\LandlordBidMatchScoreHelper::normalizeService((string)$svc),
+                                                        $modalBaselineNorm
+                                                    );
+
+                                                    // Normalize helper that also handles literal \u2019 text (not actual Unicode char)
+                                                    // Used for category-membership matching so that strings with literal \u2019
+                                                    // in the category arrays match DB strings containing the actual ' char.
+                                                    $normForCat = function(string $s): string {
+                                                        $s = mb_strtolower(trim($s));
+                                                        // Replace actual Unicode smart quotes
+                                                        $s = str_replace(["\u{2019}", "\u{2018}", "\u{201C}", "\u{201D}"], ["'", "'", '"', '"'], $s);
+                                                        // Replace literal escape text \u2019 / \u2018 / etc. (6-char sequences)
+                                                        $s = str_replace(['\\u2019', '\\u2018', '\\u201c', '\\u201d', '\\u201C', '\\u201D'], ["'", "'", '"', '"', '"', '"'], $s);
+                                                        // Normalize em-dash \u2014 and literal escape
+                                                        $s = str_replace(["\u{2014}", '\\u2014'], ['-', '-'], $s);
+                                                        $s = preg_replace('/\s+/', ' ', $s);
+                                                        return trim($s);
+                                                    };
+
+                                                    // Missing services: services the auction asked for but bid did NOT offer
+                                                    $baselineSvcsRaw = $landlordBaselineData['services'] ?? [];
+                                                    if (is_string($baselineSvcsRaw)) {
+                                                        $baselineSvcsRaw = json_decode($baselineSvcsRaw, true) ?: [];
+                                                    }
+                                                    $modalMissingSvcs = [];
+                                                    foreach ((array)$baselineSvcsRaw as $bSvc) {
+                                                        $bNorm = \App\Helpers\LandlordBidMatchScoreHelper::normalizeService((string)$bSvc);
+                                                        if (!in_array($bNorm, $modalCurrentNorm, true)) {
+                                                            $modalMissingSvcs[] = $bSvc;
+                                                        }
+                                                    }
+
+                                                    // Landlord service categories (Residential)
+                                                    $landlordResCats = [
+                                                        '📢 Rental Marketing & Listing Promotion' => [
+                                                            'List the property on the local Multiple Listing Service (MLS)',
+                                                            'Syndicate the listing to third-party platforms (e.g., Zillow.com, Realtor.com, Trulia.com, Homes.com)',
+                                                            'Create a branded flyer featuring the property\u2019s key highlights',
+                                                            'Post the property on Facebook Marketplace',
+                                                            'Post the property on Craigslist in the appropriate "Homes for Rent" category',
+                                                            'Share the listing on Nextdoor in Neighborhood or Community Groups',
+                                                            'Promote the listing on Facebook in Housing or Rental Groups',
+                                                            'Share the listing on Instagram using posts, stories, or reels',
+                                                            'Promote the listing on LinkedIn in Professional or Real Estate Groups',
+                                                            'Upload a TikTok video walkthrough of the property',
+                                                            'Upload a YouTube video walkthrough of the property',
+                                                            'Launch a mass email campaign promoting the listing',
+                                                            'Distribute printed flyers or postcards in target geographic areas',
+                                                            'Launch hyperlocal or interest-based digital ad campaigns promoting the listing',
+                                                        ],
+                                                        '📋 Listing Presentation & Preparation' => [
+                                                            'Conduct a property walkthrough and provide recommendations for listing readiness',
+                                                            'Provide a custom listing preparation checklist',
+                                                            'Collect property details and prepare MLS remarks and a public listing description',
+                                                            'Provide a visual consultation for interior layout, cleanliness, and presentation',
+                                                            'Provide a curb appeal consultation focused on exterior presentation',
+                                                            'Provide referrals to third-party vendors (e.g., cleaners, handypeople, electricians, landscapers). Vendor fees billed separately. Referrals only \u2014 no endorsement or warranty is made',
+                                                        ],
+                                                        '📸 Photography, Video & Virtual Media' => [
+                                                            'Provide professional property photography',
+                                                            'Provide aerial (drone) photography (subject to FAA Part 107 compliance)',
+                                                            'Provide a video walkthrough tour',
+                                                            'Provide a 3D virtual tour',
+                                                            'Provide virtual staging (digital enhancements only; no physical staging)',
+                                                            'Provide digital photo enhancements',
+                                                            'Create a basic schematic floor plan (non-certified; for marketing purposes only)',
+                                                        ],
+                                                        '🏡 Showings & Access Coordination' => [
+                                                            'Ensure proper notice is given if the property is occupied',
+                                                            'Install a real estate sign on the property',
+                                                            'Install a lockbox for Agent access',
+                                                            'Schedule and attend showings with prospective Tenants',
+                                                            'Coordinate showings with Tenant\u2019s Agents',
+                                                            'Collect and relay feedback to the Landlord after showings',
+                                                        ],
+                                                        '📝 Tenant Application Support' => [
+                                                            'Provide a link to an online application platform with third-party screening tools (e.g., credit, background, and eviction checks)',
+                                                            'Ensure compliance with Fair Housing laws and screening regulations throughout the application process',
+                                                            'Collect and organize application documents submitted by prospective Tenants',
+                                                            'Verify basic information provided in the application (e.g., employment, income, and references)',
+                                                            'Present complete and organized application packages to the Landlord for review and final selection',
+                                                        ],
+                                                        '📃 Lease Preparation & Execution' => [
+                                                            'Review lease offers submitted by prospective Tenants and summarize key terms',
+                                                            'Coordinate lease negotiation with the Tenant or Tenant\u2019s Agent',
+                                                            'Prepare a state-specific lease agreement using approved forms or templates',
+                                                            'Assist with completing required lease disclosures and reviewing key lease terms',
+                                                            'Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties',
+                                                            'Confirm receipt of required move-in funds and assist the Landlord in verifying amounts due, payment deadlines, and accepted payment methods',
+                                                        ],
+                                                        '🚚 Move-In Support & Coordination' => [
+                                                            'Coordinate move-in date and key handoff logistics with the Tenant or Tenant\u2019s Agent',
+                                                            'Confirm completion of any agreed-upon pre-move-in cleaning or repairs',
+                                                            'Verify receipt of all required move-in funds prior to occupancy (e.g., deposit, rent, pet fees)',
+                                                            'Provide a utility setup checklist and local provider resources for the Tenant',
+                                                            'Share a move-in checklist for documentation and property condition review',
+                                                        ],
+                                                        '📑 Property Management' => [
+                                                            'Provide ongoing property management services throughout the lease term (rent collection, maintenance coordination, Tenant communications, lease enforcement, renewals, etc.)',
+                                                        ],
+                                                        '💡 Leasing Strategy & Guidance' => [
+                                                            'Provide a Rental Market Analysis (RMA) with pricing insights based on comparable rentals, neighborhood trends, and current market conditions ',
+                                                            'Advise on lease types and structures (e.g., month-to-month, annual, furnished, corporate, lease-option)',
+                                                            'Provide general guidance on Landlord obligations and Tenant rights under state law',
+                                                            'Provide general guidance on rental demand, local market conditions, and Tenant expectations',
+                                                        ],
+                                                    ];
+
+                                                    // Landlord service categories (Commercial)
+                                                    $landlordComCats = [
+                                                        '📢 Rental Marketing & Listing Promotion' => [
+                                                            'List the property on the local Multiple Listing Service (MLS)',
+                                                            'List the property on Crexi.com',
+                                                            'List the property on LoopNet.com',
+                                                            'Create a branded flyer featuring the property\u2019s key highlights',
+                                                            'Post the property on Craigslist under the "Office/Commercial" category',
+                                                            'Promote the listing on Facebook in Commercial Leasing or Business Startup Groups',
+                                                            'Share the listing on Instagram using photos, stories, or reels',
+                                                            'Promote the listing on LinkedIn in Professional, Real Estate, or Commercial Investment Groups',
+                                                            'Upload a TikTok video walkthrough of the property',
+                                                            'Upload a YouTube video walkthrough of the property',
+                                                            'Launch a mass email campaign promoting the listing',
+                                                            'Distribute printed flyers or postcards in target geographic areas',
+                                                            'Launch hyperlocal or interest-based digital ad campaigns promoting the listing',
+                                                        ],
+                                                        '📋 Listing Presentation & Preparation' => [
+                                                            'Conduct a property walkthrough and provide recommendations for listing readiness',
+                                                            'Provide a custom listing preparation checklist',
+                                                            'Collect property details such as lease terms, square footage, property features, and allowable uses',
+                                                            'Prepare a marketing packet including zoning, cap rate references, and permitted uses',
+                                                            'Provide a visual consultation focused on interior layout, cleanliness, and presentation',
+                                                            'Provide a curb appeal consultation for exterior appearance and signage opportunities',
+                                                            'Provide referrals to third-party vendors (e.g., cleaners, sign installers, minor repair vendors). Vendor fees billed separately. Referrals only \u2014 no endorsement or warranty is made',
+                                                        ],
+                                                        '📸 Photography, Video & Virtual Media' => [
+                                                            'Provide professional property photography',
+                                                            'Provide aerial (drone) photography (subject to FAA Part 107 compliance)',
+                                                            'Provide a video walkthrough tour',
+                                                            'Provide a 3D virtual tour',
+                                                            'Provide virtual staging (digital enhancements only; no physical staging)',
+                                                            'Provide digital photo enhancements',
+                                                            'Create a basic schematic floor plan (non-certified; for marketing purposes only)',
+                                                        ],
+                                                        '🏢 Showings & Access Coordination' => [
+                                                            'Ensure proper notice is given if the property is occupied',
+                                                            'Install a real estate sign on the property',
+                                                            'Install a lockbox for Agent access',
+                                                            'Schedule and attend showings with prospective Tenants',
+                                                            'Coordinate showings with Tenant\u2019s Agents',
+                                                            'Collect and relay showing feedback to the Landlord',
+                                                        ],
+                                                        '📝 Tenant Application Support' => [
+                                                            'Provide a link to an online application platform or share instructions with prospective Tenants or Tenant\u2019s Agents',
+                                                            'Ensure compliance with applicable federal, state, and local commercial leasing and anti-discrimination laws',
+                                                            'Collect and organize application documents (e.g., business licenses, financials, entity records, references)',
+                                                            'Verify basic information provided in the application (e.g., business operations, income sources, references)',
+                                                            'Present complete application packages to the Landlord for review and final selection',
+                                                        ],
+                                                        '📃 Lease Preparation, LOI & Execution' => [
+                                                            'Coordinate lease negotiation with the Tenant or Tenant\u2019s Agent',
+                                                            'Collect and organize Letters of Intent (LOIs) or draft lease proposals',
+                                                            'Draft or assist with execution of the final lease agreement using approved forms or templates',
+                                                            'Provide and review required lease disclosures and addenda based on state or municipal requirements',
+                                                            'Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties',
+                                                            'Verify receipt of required deposits and track rent commencement and key lease dates to ensure move-in readiness',
+                                                        ],
+                                                        '🚚 Move-In Support & Coordination' => [
+                                                            'Coordinate move-in date and key handoff logistics with the Tenant or Tenant\u2019s Agent',
+                                                            'Confirm completion of any agreed-upon pre-move-in repairs, cleaning, or improvements',
+                                                            'Verify receipt of all required move-in funds and documents prior to occupancy (e.g., rent, security deposit, insurance certificates)',
+                                                            'Provide a utility setup checklist and local provider resources for the Tenant',
+                                                            'Share a move-in checklist for documentation and property condition review',
+                                                            'Assist with coordination of move-in logistics, including Certificate of Insurance (COI) and vendor access (as agreed)',
+                                                        ],
+                                                        '📑 Property Management' => [
+                                                            'Provide ongoing property management services throughout the lease term (rent collection, maintenance coordination, Tenant communications, lease enforcement, renewals, etc.)',
+                                                        ],
+                                                        '💡 Leasing Strategy & Guidance' => [
+                                                            'Provide a Comparable Lease Analysis with pricing recommendations based on similar properties, local vacancy trends, and current market conditions',
+                                                            'Advise on lease types and structures (e.g., NNN, Modified Gross, Full Service) with general explanations of differences',
+                                                            'Provide general guidance on Landlord obligations and Tenant rights under applicable commercial leasing laws',
+                                                            'Provide general guidance on zoning, permitted uses, occupancy standards, or rent escalation terms',
+                                                        ],
+                                                    ];
+
+                                                    $modalCats = $isCommercial ? $landlordComCats : $landlordResCats;
                                                     @endphp
 
-                                                    @if (!empty($biding_services) && is_array($biding_services))
                                                     <div class="mb-4">
                                                         <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                            <i class="fa fa-list-alt me-2"></i>Services Offered
-                                                        </h6>
-                                                        <div class="d-flex flex-wrap gap-2">
-                                                            @foreach ($biding_services as $biding_service)
-                                                            @if ($biding_service == 'Other')
-                                                            @continue
+                                                            <i class="fa fa-clipboard-list me-2"></i>Offered Services
+                                                            @if($servicesMissingCount > 0)
+                                                            <span class="badge bg-danger ms-2" style="font-size: 0.7rem;">{{ $servicesMissingCount }} Missing</span>
                                                             @endif
-                                                            <span class="badge bg-light text-dark border" style="padding: 8px 12px; font-size: 14px; max-width: 200px; word-wrap: break-word; white-space: normal; line-height: 1.4;">
-                                                                {{ $biding_service }}
-                                                            </span>
-                                                            @endforeach
-                                                        </div>
-                                                    </div>
-                                                    @endif
-
-                                                    <!-- Other Services -->
-                                                    @php
-                                                    $biding_other_services = is_string(data_get($bid, 'get.other_services'))
-                                                    ? json_decode(data_get($bid, 'get.other_services'), true)
-                                                    : data_get($bid, 'get.other_services');
-                                                    @endphp
-
-                                                    @if (!empty($biding_other_services) && is_array($biding_other_services))
-                                                    <div class="mb-4">
-                                                        <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                            <i class="fa fa-plus-circle me-2"></i>Other Services
                                                         </h6>
-                                                        <div class="d-flex flex-wrap gap-2">
-                                                            @foreach ($biding_other_services as $biding_other_service)
-                                                            @if ($biding_other_service == 'Other')
-                                                            @continue
-                                                            @endif
-                                                            <span class="badge bg-light text-dark border" style="padding: 8px 12px; font-size: 14px; max-width: 200px; word-wrap: break-word; white-space: normal; line-height: 1.4;">
-                                                                {{ $biding_other_service }}
-                                                            </span>
-                                                            @endforeach
+
+                                                        {{-- Legend --}}
+                                                        <div class="mb-3 small">
+                                                            <span style="color: #28a745;"><i class="fa fa-check-circle me-1"></i>Matched</span>
+                                                            <span class="ms-3" style="color: #17a2b8;"><i class="fa fa-plus-circle me-1"></i>Extra (not in baseline)</span>
+                                                            <span class="ms-3" style="color: #dc3545;"><i class="fa fa-times-circle me-1"></i>Missing (in baseline but not offered)</span>
                                                         </div>
+
+                                                        @if ($hasModalSvcs)
+                                                            @foreach ($modalCats as $catName => $catSvcs)
+                                                                @php
+                                                                    // Normalize category strings (handles both actual Unicode chars and literal \u2019 text)
+                                                                    $normCatSvcs = array_map($normForCat, $catSvcs);
+                                                                    $matchedInCat = array_filter($parsedModalSvcs, fn($svc) => in_array($normForCat($svc), $normCatSvcs));
+                                                                @endphp
+                                                                @if (!empty($matchedInCat))
+                                                                <div class="mb-3">
+                                                                    <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">{{ $catName }}</div>
+                                                                    <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem; list-style: none;">
+                                                                        @foreach ($matchedInCat as $svc)
+                                                                            @if ($isModalSvcMatched($svc))
+                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px; color: #28a745;">
+                                                                                <i class="fa fa-check-circle me-1"></i>{{ $svc }}
+                                                                            </li>
+                                                                            @else
+                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px; color: #17a2b8;">
+                                                                                <i class="fa fa-plus-circle me-1"></i>{{ $svc }} <small>(extra)</small>
+                                                                            </li>
+                                                                            @endif
+                                                                        @endforeach
+                                                                    </ul>
+                                                                </div>
+                                                                @endif
+                                                            @endforeach
+
+                                                            @if (!empty($parsedModalOther))
+                                                            <div class="mb-3">
+                                                                <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Additional Services</div>
+                                                                <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem; list-style: none;">
+                                                                    @foreach ($parsedModalOther as $otherSvc)
+                                                                        @if ($isModalSvcMatched($otherSvc))
+                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; color: #28a745;">
+                                                                            <i class="fa fa-check-circle me-1"></i>{{ $otherSvc }}
+                                                                        </li>
+                                                                        @else
+                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; color: #17a2b8;">
+                                                                            <i class="fa fa-plus-circle me-1"></i>{{ $otherSvc }} <small>(extra)</small>
+                                                                        </li>
+                                                                        @endif
+                                                                    @endforeach
+                                                                </ul>
+                                                            </div>
+                                                            @endif
+
+                                                            {{-- Missing Services Section --}}
+                                                            @if (!empty($modalMissingSvcs))
+                                                            <div class="mb-3 mt-3 p-3" style="background-color: #fff5f5; border-radius: 6px; border: 1px solid #f5c6cb;">
+                                                                <div class="fw-bold" style="color: #dc3545; font-size: 0.95rem;">
+                                                                    <i class="fa fa-exclamation-triangle me-1"></i>Missing Services (Not Offered)
+                                                                </div>
+                                                                <ul class="services mb-0" style="margin-top: 0.5rem; padding-left: 1.2rem; list-style: none;">
+                                                                    @foreach ($modalMissingSvcs as $missingSvc)
+                                                                    <li style="font-size: 0.9rem; margin-bottom: 4px; color: #dc3545;">
+                                                                        <i class="fa fa-times-circle me-1"></i>{{ $missingSvc }}
+                                                                    </li>
+                                                                    @endforeach
+                                                                </ul>
+                                                            </div>
+                                                            @endif
+                                                        @else
+                                                        <div class="text-muted" style="font-style: italic;">No services selected for this bid.</div>
+                                                        @endif
                                                     </div>
-                                                    @endif
                                                     <br />
 
                                                     <!-- 4. Agent Presentation & Promotional Materials -->
@@ -4032,65 +4280,104 @@ $auser = $auctionUser::find(@$auction->user_id);
 
                                                     <!-- Services Offered -->
                                                     @php
-                                                    $services = is_string(
-                                                    $allMeta['services'],
-                                                    )
-                                                    ? json_decode(
-                                                    $allMeta['services'],
-                                                    true,
-                                                    )
-                                                    : $allMeta['services'];
+                                                    $allMetaSvcsRaw = $allMeta['services'] ?? [];
+                                                    if (is_string($allMetaSvcsRaw) && !empty($allMetaSvcsRaw)) {
+                                                        $allMetaSvcsParsed = json_decode($allMetaSvcsRaw, true) ?: [];
+                                                    } else {
+                                                        $allMetaSvcsParsed = is_array($allMetaSvcsRaw) ? $allMetaSvcsRaw : [];
+                                                    }
+                                                    $allMetaSvcsParsed = array_values(array_filter($allMetaSvcsParsed, fn($s) => is_string($s) && trim($s) !== '' && $s !== 'Other'));
+
+                                                    $allMetaOtherRaw = $allMeta['other_services'] ?? [];
+                                                    if (is_string($allMetaOtherRaw) && !empty($allMetaOtherRaw)) {
+                                                        $allMetaOtherParsed = json_decode($allMetaOtherRaw, true) ?: [];
+                                                    } else {
+                                                        $allMetaOtherParsed = is_array($allMetaOtherRaw) ? $allMetaOtherRaw : [];
+                                                    }
+                                                    $allMetaOtherParsed = array_values(array_filter($allMetaOtherParsed, fn($s) => is_string($s) && trim($s) !== ''));
+
+                                                    $hasAllMetaSvcs = !empty($allMetaSvcsParsed) || !empty($allMetaOtherParsed);
                                                     @endphp
 
-                                                    @if (!empty($services))
-                                                    <div style="margin-top: 20px;">
-                                                        <label
-                                                            style="font-size: 18px; font-weight: bold; display: block; margin-bottom: 10px;">
-                                                            Services:
-                                                        </label>
-                                                        <div
-                                                            style="display: flex; flex-wrap: wrap; gap: 10px;">
-                                                            @foreach ($services as $service)
-                                                            @if ($service == 'Other')
-                                                            @continue
+                                                    <div class="mb-4" style="margin-top: 20px;">
+                                                        <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                            <i class="fa fa-clipboard-list me-2"></i>Offered Services
+                                                            @if($servicesMissingCount > 0)
+                                                            <span class="badge bg-danger ms-2" style="font-size: 0.7rem;">{{ $servicesMissingCount }} Missing</span>
                                                             @endif
-                                                            <span
-                                                                style="background: #f1f5f9; color: #111; padding: 6px 12px; border-radius: 8px; font-size: 12px; border: 1px solid #ddd;">
-                                                                {{ $service }}
-                                                            </span>
-                                                            @endforeach
-                                                        </div>
-                                                    </div>
-                                                    @endif
+                                                        </h6>
 
-                                                    @php
-                                                    $other_services = is_string(
-                                                    $allMeta['other_services'],
-                                                    )
-                                                    ? json_decode(
-                                                    $allMeta['other_services'],
-                                                    true,
-                                                    )
-                                                    : $allMeta['other_services'];
-                                                    @endphp
-
-                                                    @if (!empty($other_services))
-                                                    <div style="margin-top: 20px;">
-                                                        <label
-                                                            style="font-size: 18px; font-weight: bold; display: block; margin-bottom: 10px;">
-                                                            Other Services:
-                                                        </label>
-                                                        <div
-                                                            style="display: flex; flex-wrap: wrap; gap: 10px;">
-                                                            @foreach ($other_services as $other_service)
-                                                            <span
-                                                                style="background: #f1f5f9; color: #111; padding: 6px 12px; border-radius: 8px; font-size: 12px; border: 1px solid #ddd;">
-                                                                {{ $other_service }}
-                                                            </span>
-                                                            @endforeach
+                                                        {{-- Legend --}}
+                                                        <div class="mb-3 small">
+                                                            <span style="color: #28a745;"><i class="fa fa-check-circle me-1"></i>Matched</span>
+                                                            <span class="ms-3" style="color: #17a2b8;"><i class="fa fa-plus-circle me-1"></i>Extra (not in baseline)</span>
+                                                            <span class="ms-3" style="color: #dc3545;"><i class="fa fa-times-circle me-1"></i>Missing (in baseline but not offered)</span>
                                                         </div>
+
+                                                        @if ($hasAllMetaSvcs)
+                                                            @foreach ($modalCats as $catName => $catSvcs)
+                                                                @php
+                                                                    $normCatSvcsAM = array_map($normForCat, $catSvcs);
+                                                                    $matchedInCatAM = array_filter($allMetaSvcsParsed, fn($svc) => in_array($normForCat($svc), $normCatSvcsAM));
+                                                                @endphp
+                                                                @if (!empty($matchedInCatAM))
+                                                                <div class="mb-3">
+                                                                    <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">{{ $catName }}</div>
+                                                                    <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem; list-style: none;">
+                                                                        @foreach ($matchedInCatAM as $svc)
+                                                                            @if ($isModalSvcMatched($svc))
+                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px; color: #28a745;">
+                                                                                <i class="fa fa-check-circle me-1"></i>{{ $svc }}
+                                                                            </li>
+                                                                            @else
+                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px; color: #17a2b8;">
+                                                                                <i class="fa fa-plus-circle me-1"></i>{{ $svc }} <small>(extra)</small>
+                                                                            </li>
+                                                                            @endif
+                                                                        @endforeach
+                                                                    </ul>
+                                                                </div>
+                                                                @endif
+                                                            @endforeach
+
+                                                            @if (!empty($allMetaOtherParsed))
+                                                            <div class="mb-3">
+                                                                <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Additional Services</div>
+                                                                <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem; list-style: none;">
+                                                                    @foreach ($allMetaOtherParsed as $otherSvc)
+                                                                        @if ($isModalSvcMatched($otherSvc))
+                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; color: #28a745;">
+                                                                            <i class="fa fa-check-circle me-1"></i>{{ $otherSvc }}
+                                                                        </li>
+                                                                        @else
+                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; color: #17a2b8;">
+                                                                            <i class="fa fa-plus-circle me-1"></i>{{ $otherSvc }} <small>(extra)</small>
+                                                                        </li>
+                                                                        @endif
+                                                                    @endforeach
+                                                                </ul>
+                                                            </div>
+                                                            @endif
+
+                                                            {{-- Missing Services Section --}}
+                                                            @if (!empty($modalMissingSvcs))
+                                                            <div class="mb-3 mt-3 p-3" style="background-color: #fff5f5; border-radius: 6px; border: 1px solid #f5c6cb;">
+                                                                <div class="fw-bold" style="color: #dc3545; font-size: 0.95rem;">
+                                                                    <i class="fa fa-exclamation-triangle me-1"></i>Missing Services (Not Offered)
+                                                                </div>
+                                                                <ul class="services mb-0" style="margin-top: 0.5rem; padding-left: 1.2rem; list-style: none;">
+                                                                    @foreach ($modalMissingSvcs as $missingSvc)
+                                                                    <li style="font-size: 0.9rem; margin-bottom: 4px; color: #dc3545;">
+                                                                        <i class="fa fa-times-circle me-1"></i>{{ $missingSvc }}
+                                                                    </li>
+                                                                    @endforeach
+                                                                </ul>
+                                                            </div>
+                                                            @endif
+                                                        @else
+                                                        <div class="text-muted" style="font-style: italic;">No services selected for this bid.</div>
+                                                        @endif
                                                     </div>
-                                                    @endif
 
                                                     <!-- Counter actions (only when both pending & viewer is the other party & no counter bid is accepted) -->
                                                     @inject('carbon', 'Carbon\Carbon')
