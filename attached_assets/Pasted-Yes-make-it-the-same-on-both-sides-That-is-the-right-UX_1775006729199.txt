@@ -1,0 +1,268 @@
+Yes — make it the **same on both sides**.
+
+That is the right UX.
+
+If a bid is accepted, then:
+
+* the **Tenant** should immediately see the Accepted Bid Summary
+* the **Agent** should also immediately get a clear notification / recent notice
+* both sides should have a persistent place to reopen it later
+
+Otherwise the acceptance flow feels incomplete and people will keep wondering:
+
+* did it work?
+* where did it go?
+* how do I find it again?
+
+Use this for Replit:
+
+Fix the **Tenant and Agent post-acceptance flow** so that when a bid is accepted, the **Accepted Bid Summary immediately appears**, both parties receive a clear notification/recent notice, and both can easily find the summary again later.
+
+## Current problem
+
+Right now, when a Tenant accepts a bid:
+
+* the Accepted Bid Summary does not immediately pop up
+* it is unclear where it went
+* there is no clear persistent place to find it again
+
+I also want this to work on the **Agent side** the same way:
+
+* the Agent should get a notification/recent notice
+* the Agent should be able to open the Accepted Bid Summary easily afterward
+* the Accepted Bid Summary should immediately surface in the post-accept flow where appropriate
+
+---
+
+## Goal
+
+For the active **Tenant flow** and the matching **Agent side for that same accepted bid thread**:
+
+### Required behavior
+
+As soon as a bid is accepted:
+
+1. the **Accepted Bid Summary must immediately appear**
+2. both the **Tenant and the Agent** must have a clear way to access it again afterward
+3. both sides must get a **notification / recent notice**
+4. those notices must open the **correct Accepted Bid Summary for that accepted bid thread**
+5. the accepted summary must use the **latest accepted version**, not stale data
+
+---
+
+## Scope
+
+This step covers:
+
+* Tenant accept action
+* post-accept redirect / popup / summary display
+* Agent post-accept notification flow
+* Accepted Bid Summary routing/display
+* Tenant notifications / recent notices related to accepted bids
+* Agent notifications / recent notices related to accepted bids
+
+Do **not** modify Buyer, Seller, or Landlord unless a clearly shared acceptance/notification helper is the direct root cause and can be safely updated without side effects.
+
+---
+
+## Hard safeguards
+
+* No destructive DB changes
+* No schema changes unless absolutely required and approved
+* No dropping/renaming columns
+* Do not change labels, negotiation terms, or summary content wording
+* Do not break the existing accepted bid summary rendering logic
+* Do not break bid thread state transitions
+* Do not create duplicate acceptance records
+* Do not show the wrong bid version or stale summary
+* Do not create duplicate notifications for the same acceptance event
+
+---
+
+## Required diagnosis first
+
+Trace the exact current acceptance flow from click to final state.
+
+For the exact Tenant accept action, identify:
+
+1. what route/component handles **Accept**
+2. what happens immediately after acceptance
+3. whether the Accepted Bid Summary is generated but not shown
+4. what route/view should display the summary
+5. whether a Tenant notification/recent notice is already being created but not surfaced
+6. whether an Agent notification/recent notice is already being created but not surfaced
+7. where the Tenant is currently sent after acceptance
+8. where the Agent is expected to see the accepted result
+9. whether the accepted bid thread and accepted version are stored correctly
+
+Do not guess. Report the exact current flow.
+
+---
+
+## Required fix
+
+### Part 1 — Immediate Accepted Bid Summary display for Tenant
+
+As soon as the Tenant clicks **Accept** and the acceptance succeeds, immediately show the **Accepted Bid Summary**.
+
+Use the safest existing pattern in the app:
+
+* redirect directly to the Accepted Bid Summary page
+* or open the Accepted Bid Summary modal immediately
+* or show a success popup with a direct action that routes there immediately
+
+### Required rule
+
+The Tenant should not have to hunt for where the summary went.
+
+---
+
+### Part 2 — Agent side accepted summary access
+
+When the bid is accepted, the **Agent side** must also get a clear accepted-state notice and direct access to the Accepted Bid Summary.
+
+This does not have to interrupt the Agent with a popup at that exact millisecond if the Agent is not actively on that page, but the accepted summary must clearly surface in the Agent workflow.
+
+At minimum:
+
+* create a Recent Notice / Notification for the Agent
+* include a direct link/button to open the Accepted Bid Summary
+* make sure it routes to the correct accepted bid thread summary
+
+If the Agent is already on a page where an immediate popup/redirect is appropriate and already supported safely, use it there too.
+
+---
+
+### Part 3 — Persistent access afterward for both parties
+
+Both the Tenant and the Agent must be able to re-open the Accepted Bid Summary later.
+
+Add or confirm a persistent access point in each side’s dashboard / notices / recent activity:
+
+* Tenant side notice
+* Agent side notice
+
+### Required rule
+
+Even if the popup is dismissed or the page is refreshed, both parties must still be able to find the Accepted Bid Summary easily.
+
+---
+
+### Part 4 — Notification / notice entries
+
+Create a notification or recent notice for both parties when a bid is accepted.
+
+#### Tenant notice
+
+Should indicate:
+
+* bid accepted
+* Accepted Bid Summary available
+* click opens the correct summary
+
+#### Agent notice
+
+Should indicate:
+
+* your bid was accepted
+* Accepted Bid Summary available
+* click opens the correct summary
+
+### Important
+
+These notices must point to the **exact accepted bid summary for the correct bid thread**, not just the listing page.
+
+---
+
+### Part 5 — Correct accepted version
+
+Make sure the Accepted Bid Summary shown:
+
+* immediately after acceptance
+* from Tenant notices
+* from Agent notices
+
+always uses:
+
+* the exact accepted bid thread
+* the latest accepted version
+* the final accepted services and terms
+* not a stale earlier bid version
+* not listing defaults
+
+---
+
+### Part 6 — Clear post-accept UX
+
+Recommended final flow:
+
+#### Tenant
+
+1. Tenant clicks Accept
+2. acceptance succeeds
+3. success feedback appears
+4. Accepted Bid Summary opens immediately
+5. Tenant also gets a persistent notice for later access
+
+#### Agent
+
+1. bid thread becomes accepted
+2. Agent gets a clear notice that their bid was accepted
+3. Agent can click directly into the Accepted Bid Summary
+4. summary remains accessible later from notices/dashboard
+
+---
+
+## Required verification
+
+Test the full acceptance flow and verify:
+
+### Tenant
+
+1. Tenant accepts a bid
+2. Accepted Bid Summary appears immediately
+3. summary shows exact accepted data
+4. Tenant can refresh and still find it later
+5. Tenant notice exists
+6. clicking Tenant notice opens the correct summary
+
+### Agent
+
+7. Agent receives accepted notice / recent notice
+8. clicking Agent notice opens the correct Accepted Bid Summary
+9. Agent can still find it later after refresh/login
+10. Agent sees the correct accepted version, not stale data
+
+### Both sides
+
+11. no duplicate notices created
+12. no duplicate acceptance records created
+13. bid thread status updates correctly
+14. no wrong summary route is used
+
+---
+
+## Required deliverable
+
+When done, give me:
+
+* exact files/components/routes changed
+* exact root cause of why the summary was not appearing / was hard to find
+* exact post-accept flow now used for Tenant
+* exact post-accept notification flow now used for Agent
+* where the Accepted Bid Summary can be found later for both sides
+* verification results proving both parties can see it immediately (where appropriate) and reopen it later
+
+## Critical rule
+
+Do not treat acceptance as complete unless:
+
+* the Tenant can immediately see the Accepted Bid Summary
+* the Agent is clearly notified and can open it easily
+* both sides can find it again later from a persistent notice or dashboard location
+
+My recommendation is:
+
+* **Tenant:** redirect straight to Accepted Bid Summary after Accept
+* **Agent:** create a strong dashboard/recent notice with direct link to the same summary
+* **Both:** keep a persistent “Accepted Bid Summary” entry afterward

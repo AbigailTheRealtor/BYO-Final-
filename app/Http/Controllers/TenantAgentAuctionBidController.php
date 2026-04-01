@@ -11,6 +11,7 @@ use App\Models\UserAgent;
 use App\Notifications\BidAcceptedNotification;
 use App\Notifications\BidRejectedNotification;
 use App\Notifications\CounterBidSubmittedNotification;
+use App\Notifications\TenantAgentHiredNotification;
 use App\Services\AcceptedBidSummaryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -191,20 +192,43 @@ class TenantAgentAuctionBidController extends Controller
                 ]);
             }
             
+            // Notify the Agent that their bid was accepted
             try {
                 $agent = User::find($pab->user_id);
                 if ($agent) {
                     $agent->notify(new BidAcceptedNotification($pab, $pa, $summaryId, 'tenant_agent'));
                 }
             } catch (\Exception $e) {
-                Log::error('Failed to send bid accepted notification', [
-                    'bid_id' => $pab->id,
+                Log::error('Failed to send bid accepted notification to agent', [
+                    'bid_id'   => $pab->id,
                     'agent_id' => $pab->user_id,
-                    'error' => $e->getMessage()
+                    'error'    => $e->getMessage(),
                 ]);
             }
-            
-            return redirect()->back()->with('success', 'Bid Accepted successfully!');
+
+            // Notify the Tenant (listing owner) that the agent was hired
+            try {
+                $tenant = User::find($pa->user_id);
+                if ($tenant) {
+                    $tenant->notify(new TenantAgentHiredNotification($pab, $pa, $summaryId, 'tenant_agent'));
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send agent hired notification to tenant', [
+                    'bid_id'    => $pab->id,
+                    'tenant_id' => $pa->user_id,
+                    'error'     => $e->getMessage(),
+                ]);
+            }
+
+            // Redirect Tenant straight to the Accepted Bid Summary
+            if ($summaryId) {
+                return redirect()->route('accepted-bid-summary.view', $summaryId)
+                    ->with('success', 'Agent hired successfully! Your Accepted Bid Summary is ready to review and sign.');
+            }
+
+            // Fallback: redirect via bid lookup (graceful if summary generation failed)
+            return redirect()->route('accepted-bid-summary.by-bid', $pab->id)
+                ->with('success', 'Agent hired successfully! Your Accepted Bid Summary is ready.');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Error accepting bid: ' . $e->getMessage());
@@ -344,21 +368,43 @@ class TenantAgentAuctionBidController extends Controller
                 ]);
             }
             
+            // Notify the Agent that the counter bid was accepted
             try {
-                $notifyUserId = $isListingOwner ? $originalBid->user_id : $pa->user_id;
-                $userToNotify = User::find($notifyUserId);
-                if ($userToNotify) {
-                    $userToNotify->notify(new BidAcceptedNotification($originalBid, $pa, $summaryId, 'tenant_agent'));
+                $agent = User::find($originalBid->user_id);
+                if ($agent) {
+                    $agent->notify(new BidAcceptedNotification($originalBid, $pa, $summaryId, 'tenant_agent'));
                 }
             } catch (\Exception $e) {
-                Log::error('Failed to send counter bid accepted notification', [
-                    'bid_id' => $originalBid->id,
-                    'counter_id' => $counterBid->id,
-                    'error' => $e->getMessage()
+                Log::error('Failed to send counter bid accepted notification to agent', [
+                    'bid_id'    => $originalBid->id,
+                    'counter_id'=> $counterBid->id,
+                    'error'     => $e->getMessage(),
                 ]);
             }
-            
-            return redirect()->back()->with('success', 'Counter Bid Accepted successfully!');
+
+            // Notify the Tenant (listing owner) that the agent was hired via counter
+            try {
+                $tenant = User::find($pa->user_id);
+                if ($tenant) {
+                    $tenant->notify(new TenantAgentHiredNotification($originalBid, $pa, $summaryId, 'tenant_agent'));
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send agent hired notification to tenant after counter accept', [
+                    'bid_id'    => $originalBid->id,
+                    'counter_id'=> $counterBid->id,
+                    'tenant_id' => $pa->user_id,
+                    'error'     => $e->getMessage(),
+                ]);
+            }
+
+            // Redirect the accepting party straight to the Accepted Bid Summary
+            if ($summaryId) {
+                return redirect()->route('accepted-bid-summary.view', $summaryId)
+                    ->with('success', 'Counter Bid Accepted! Your Accepted Bid Summary is ready to review and sign.');
+            }
+
+            return redirect()->route('accepted-bid-summary.by-bid', $originalBid->id)
+                ->with('success', 'Counter Bid Accepted! Your Accepted Bid Summary is ready.');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Error accepting counter bid: ' . $e->getMessage());
