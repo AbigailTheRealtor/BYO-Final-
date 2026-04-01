@@ -2081,7 +2081,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                         <span style="font-weight: 600; color: #1a3a5c; font-size: 1rem;">
                                             <i class="fa fa-chart-pie me-2"></i>Match Score
                                         </span>
-                                        <span class="badge" style="background: {{ $totalScoreColor }}; font-size: 1rem; padding: 6px 12px;">
+                                        <span class="badge" style="background: {{ $totalScoreColor }}; font-size: 1rem; padding: 6px 12px; color: white;">
                                             {{ $totalScore }}%
                                         </span>
                                     </div>
