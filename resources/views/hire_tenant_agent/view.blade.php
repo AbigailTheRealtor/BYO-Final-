@@ -4682,6 +4682,38 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     $other_services = array_filter($other_services ?? [], fn($s) => is_string($s) && !empty(trim($s)));
                                                     
                                                     $hasAnyCounterServices = !empty($services) || !empty($other_services);
+
+                                                    // Build original bid services for diff (counter vs original bid)
+                                                    $origTnBidSvcsRaw = data_get($bid, 'get.services', []);
+                                                    if (is_string($origTnBidSvcsRaw)) $origTnBidSvcsRaw = json_decode($origTnBidSvcsRaw, true) ?: [];
+                                                    $origTnBidSvcsNorm = array_values(array_map(
+                                                        fn($s) => $normalizeStr(is_callable('normalize_service_text') ? normalize_service_text((string)$s) : (string)$s),
+                                                        array_filter((array)$origTnBidSvcsRaw, fn($s) => is_string($s) && trim($s) !== '' && $s !== 'Other')
+                                                    ));
+                                                    // Counter service is "Added" when its normalized form is not in original bid
+                                                    $tnSvcIsAdded = fn(string $svcDisplay): bool =>
+                                                        !in_array($normalizeStr($svcDisplay), $origTnBidSvcsNorm, true);
+                                                    // Build removed services from original bid (in orig but not in counter)
+                                                    $counterSvcsNormFlat = array_values(array_map(
+                                                        fn($s) => $normalizeStr(is_callable('normalize_service_text') ? normalize_service_text((string)$s) : (string)$s),
+                                                        $services
+                                                    ));
+                                                    $origTnBidSvcsDisplay = array_values(array_filter(
+                                                        is_string(data_get($bid, 'get.services', [])) ? json_decode(data_get($bid, 'get.services', '[]'), true) ?? [] : (array)data_get($bid, 'get.services', []),
+                                                        fn($s) => is_string($s) && trim($s) !== '' && $s !== 'Other'
+                                                    ));
+                                                    $tnRemovedDisplay = array_values(array_filter($origTnBidSvcsDisplay, fn($s) =>
+                                                        !in_array($normalizeStr(is_callable('normalize_service_text') ? normalize_service_text((string)$s) : (string)$s), $counterSvcsNormFlat, true)
+                                                    ));
+                                                    // Other services diff
+                                                    $origTnOtherRaw = data_get($bid, 'get.other_services', []);
+                                                    if (is_string($origTnOtherRaw)) $origTnOtherRaw = json_decode($origTnOtherRaw, true) ?: [];
+                                                    $origTnOtherNorm = array_map(fn($s) => strtolower(trim((string)$s)), array_filter((array)$origTnOtherRaw, fn($s) => is_string($s) && trim($s) !== ''));
+                                                    $tnOtherIsAdded = fn(string $s): bool => !in_array(strtolower(trim($s)), $origTnOtherNorm, true);
+                                                    $tnOtherRemovedDisplay = array_values(array_filter(
+                                                        (array)$origTnOtherRaw,
+                                                        fn($s) => is_string($s) && trim($s) !== '' && !in_array(strtolower(trim($s)), array_map(fn($x) => strtolower(trim((string)$x)), $other_services), true)
+                                                    ));
                                                     @endphp
 
                                                     @if ($hasAnyCounterServices)
@@ -4698,11 +4730,20 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             @if (count($selectedInCat) > 0)
                                                             <div class="mb-3">
                                                                 <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">{{ $categoryEmoji }} {{ $category }}</div>
-                                                                <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
+                                                                <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem; list-style: none;">
                                                                     @foreach ($catServices as $service)
-                                                                        @php $serviceNorm = $normalizeStr($service); @endphp
-                                                                        @if (isset($selectedNormalized[$serviceNorm]))
-                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $selectedNormalized[$serviceNorm] }}</li>
+                                                                        @php
+                                                                        $serviceNorm = $normalizeStr($service);
+                                                                        $serviceDisplay = $selectedNormalized[$serviceNorm] ?? null;
+                                                                        @endphp
+                                                                        @if ($serviceDisplay !== null)
+                                                                            @if ($tnSvcIsAdded($serviceDisplay))
+                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px; background-color: #fff3cd; padding: 1px 4px; border-radius: 3px;">
+                                                                                <i class="fa fa-plus-circle me-1" style="color: #856404;"></i>{{ $serviceDisplay }} <span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">Added</span>
+                                                                            </li>
+                                                                            @else
+                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $serviceDisplay }}</li>
+                                                                            @endif
                                                                         @endif
                                                                     @endforeach
                                                                 </ul>
@@ -4713,9 +4754,35 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         @if (!empty($other_services))
                                                         <div class="mb-3">
                                                             <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Additional Services</div>
-                                                            <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
+                                                            <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem; list-style: none;">
                                                                 @foreach ($other_services as $otherService)
-                                                                <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $otherService }}</li>
+                                                                    @if ($tnOtherIsAdded($otherService))
+                                                                    <li style="font-size: 0.9rem; margin-bottom: 4px; background-color: #fff3cd; padding: 1px 4px; border-radius: 3px;">
+                                                                        <i class="fa fa-plus-circle me-1" style="color: #856404;"></i>{{ $otherService }} <span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">Added</span>
+                                                                    </li>
+                                                                    @else
+                                                                    <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $otherService }}</li>
+                                                                    @endif
+                                                                @endforeach
+                                                            </ul>
+                                                        </div>
+                                                        @endif
+
+                                                        @if (!empty($tnRemovedDisplay) || !empty($tnOtherRemovedDisplay))
+                                                        <div class="mb-3 mt-2 p-3" style="background-color: #fff5f5; border-radius: 6px; border: 1px solid #f5c6cb;">
+                                                            <div class="fw-bold mb-1" style="color: #dc3545; font-size: 0.95rem;">
+                                                                <i class="fa fa-minus-circle me-1"></i>Removed Services (in original bid, not in this counter)
+                                                            </div>
+                                                            <ul class="services mb-0" style="margin-top: 0.5rem; padding-left: 1.2rem; list-style: none;">
+                                                                @foreach ($tnRemovedDisplay as $rSvc)
+                                                                <li style="font-size: 0.9rem; margin-bottom: 4px; color: #dc3545;">
+                                                                    <i class="fa fa-times-circle me-1"></i>{{ $rSvc }}
+                                                                </li>
+                                                                @endforeach
+                                                                @foreach ($tnOtherRemovedDisplay as $rSvc)
+                                                                <li style="font-size: 0.9rem; margin-bottom: 4px; color: #dc3545;">
+                                                                    <i class="fa fa-times-circle me-1"></i>{{ $rSvc }}
+                                                                </li>
                                                                 @endforeach
                                                             </ul>
                                                         </div>

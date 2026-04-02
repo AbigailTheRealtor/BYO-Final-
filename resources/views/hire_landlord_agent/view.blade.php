@@ -4387,6 +4387,35 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                             || !empty($allMeta['brokerage_relationship'])
                                                             || !empty($allMeta['additional_details_broker'])
                                                             || !empty($allMeta['additional_details']);
+
+                                                        // === Diff helpers: counter vs original bid ===
+                                                        // Compare two composite display strings (normalized)
+                                                        $ctCompositeChanged = function(string $cDisplay, string $oDisplay): bool {
+                                                            $norm = fn($v) => preg_replace('/[\s$,]/', '', strtolower(trim($v)));
+                                                            return $norm($cDisplay) !== $norm($oDisplay);
+                                                        };
+                                                        // Compare a single raw meta key to the original bid's stored value
+                                                        $ctIsChanged = function($counterVal, string $origKey) use ($bid): bool {
+                                                            $origVal = data_get($bid, 'get.' . $origKey, null);
+                                                            $norm = fn($v) => preg_replace('/[\s$,%]/', '', strtolower(trim((string)($v ?? ''))));
+                                                            return $norm($counterVal) !== $norm($origVal);
+                                                        };
+                                                        $ctChangedStyle = 'background-color: #fff3cd; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #ffc107;';
+                                                        $ctChangedBadge = '<span class="badge bg-warning text-dark ms-2" style="font-size: 0.7rem; vertical-align: middle;">Changed</span>';
+
+                                                        // Services diff: counter services vs ORIGINAL BID services
+                                                        $origBidSvcsRaw = data_get($bid, 'get.services', []);
+                                                        if (is_string($origBidSvcsRaw)) $origBidSvcsRaw = json_decode($origBidSvcsRaw, true) ?: [];
+                                                        $origBidSvcsNorm = array_values(array_map(
+                                                            fn($s) => \App\Helpers\LandlordBidMatchScoreHelper::normalizeService((string)$s),
+                                                            array_filter((array)$origBidSvcsRaw, fn($s) => is_string($s) && trim($s) !== '' && $s !== 'Other')
+                                                        ));
+                                                        $origBidOtherRaw = data_get($bid, 'get.other_services', []);
+                                                        if (is_string($origBidOtherRaw)) $origBidOtherRaw = json_decode($origBidOtherRaw, true) ?: [];
+                                                        $origBidOtherNorm = array_values(array_filter(array_map(
+                                                            fn($s) => strtolower(trim((string)$s)),
+                                                            array_filter((array)$origBidOtherRaw, fn($s) => is_string($s) && trim($s) !== '')
+                                                        )));
                                                     @endphp
 
                                                     @if ($ctHasBrokerComp)
@@ -4401,16 +4430,20 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                             <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">A) Landlord's Broker Lease Fee</div>
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 @if (!empty($ctLeaseFeeType))
-                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Landlord's Broker Lease Fee:</span> {{ $ctLeaseFeeDisplay }}</li>
+                                                                @php $ctLeaseFeeChg = $ctCompositeChanged($ctLeaseFeeDisplay, $leaseFeeDisplay ?? ''); @endphp
+                                                                <li class="mb-1" style="font-size: 12px; {{ $ctLeaseFeeChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Landlord's Broker Lease Fee:</span> {{ $ctLeaseFeeDisplay }}{!! $ctLeaseFeeChg ? $ctChangedBadge : '' !!}</li>
                                                                 @endif
                                                                 @if (!empty($ctFeeTimingRaw))
-                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Payment Timing for Broker Fees:</span> {{ $ctFeeTimingDisplay }}</li>
+                                                                @php $ctFeeTimingChg = $ctCompositeChanged($ctFeeTimingDisplay, $feeTimingDisplay ?? ''); @endphp
+                                                                <li class="mb-1" style="font-size: 12px; {{ $ctFeeTimingChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Payment Timing for Broker Fees:</span> {{ $ctFeeTimingDisplay }}{!! $ctFeeTimingChg ? $ctChangedBadge : '' !!}</li>
                                                                 @endif
                                                                 @if (!empty($ctRenewalFeeType))
-                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Lease Renewal/Extension Fee:</span> {{ $ctRenewalFeeDisplay }}</li>
+                                                                @php $ctRenewalFeeChg = $ctCompositeChanged($ctRenewalFeeDisplay, $renewalFeeDisplay ?? ''); @endphp
+                                                                <li class="mb-1" style="font-size: 12px; {{ $ctRenewalFeeChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Lease Renewal/Extension Fee:</span> {{ $ctRenewalFeeDisplay }}{!! $ctRenewalFeeChg ? $ctChangedBadge : '' !!}</li>
                                                                 @endif
                                                                 @if (!empty($allMeta['expansion_commission_percentage']))
-                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Expansion Commission for Lease Amendment:</span> {{ $allMeta['expansion_commission_percentage'] }}% of original commission</li>
+                                                                @php $ctExpChg = $ctIsChanged($allMeta['expansion_commission_percentage'], 'expansion_commission_percentage'); @endphp
+                                                                <li class="mb-1" style="font-size: 12px; {{ $ctExpChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Expansion Commission for Lease Amendment:</span> {{ $allMeta['expansion_commission_percentage'] }}% of original commission{!! $ctExpChg ? $ctChangedBadge : '' !!}</li>
                                                                 @endif
                                                             </ul>
                                                         </div>
@@ -4421,7 +4454,8 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                         <div class="mb-3">
                                                             <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">B) Tenant's Broker Compensation</div>
                                                             <ul class="list-unstyled ps-3 mb-0">
-                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $ctTenantBrokerDisplay }}</li>
+                                                                @php $ctTenantBrokerChg = $ctCompositeChanged($ctTenantBrokerDisplay, $tenantBrokerDisplay ?? ''); @endphp
+                                                                <li class="mb-1" style="font-size: 12px; {{ $ctTenantBrokerChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $ctTenantBrokerDisplay }}{!! $ctTenantBrokerChg ? $ctChangedBadge : '' !!}</li>
                                                             </ul>
                                                         </div>
                                                         @endif
@@ -4431,13 +4465,16 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                         <div class="mb-3">
                                                             <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">C) Lease-Option Details</div>
                                                             <ul class="list-unstyled ps-3 mb-0">
-                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Interested in Offering a Lease-Option Agreement:</span> {{ $ctLeaseOptInterest }}</li>
+                                                                @php $ctLeaseOptChg = $ctIsChanged($ctLeaseOptInterest, 'interested_lease_option_agreement'); @endphp
+                                                                <li class="mb-1" style="font-size: 12px; {{ $ctLeaseOptChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Interested in Offering a Lease-Option Agreement:</span> {{ $ctLeaseOptInterest }}{!! $ctLeaseOptChg ? $ctChangedBadge : '' !!}</li>
                                                                 @if ($ctLeaseOptInterest === 'Yes')
                                                                     @if ($ctLeaseOptionCreatedDisplay !== '-')
-                                                                    <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Compensation for Creating the Lease-Option Agreement:</span> {{ $ctLeaseOptionCreatedDisplay }}</li>
+                                                                    @php $ctLeaseCreatedChg = $ctCompositeChanged($ctLeaseOptionCreatedDisplay, $leaseOptionCreatedDisplay ?? ''); @endphp
+                                                                    <li class="mb-1" style="font-size: 12px; {{ $ctLeaseCreatedChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Compensation for Creating the Lease-Option Agreement:</span> {{ $ctLeaseOptionCreatedDisplay }}{!! $ctLeaseCreatedChg ? $ctChangedBadge : '' !!}</li>
                                                                     @endif
                                                                     @if ($ctLeaseOptionExercisedDisplay !== '-')
-                                                                    <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Compensation if Purchase Option is Exercised:</span> {{ $ctLeaseOptionExercisedDisplay }}</li>
+                                                                    @php $ctLeaseExercisedChg = $ctCompositeChanged($ctLeaseOptionExercisedDisplay, $leaseOptionExercisedDisplay ?? ''); @endphp
+                                                                    <li class="mb-1" style="font-size: 12px; {{ $ctLeaseExercisedChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Compensation if Purchase Option is Exercised:</span> {{ $ctLeaseOptionExercisedDisplay }}{!! $ctLeaseExercisedChg ? $ctChangedBadge : '' !!}</li>
                                                                     @endif
                                                                 @endif
                                                             </ul>
@@ -4449,9 +4486,11 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                         <div class="mb-3">
                                                             <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">D) Purchase Fee Details</div>
                                                             <ul class="list-unstyled ps-3 mb-0">
-                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Interested in Selling the Property:</span> {{ $ctSellingInterest }}</li>
+                                                                @php $ctSellingChg = $ctIsChanged($ctSellingInterest, 'interested_in_selling'); @endphp
+                                                                <li class="mb-1" style="font-size: 12px; {{ $ctSellingChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Interested in Selling the Property:</span> {{ $ctSellingInterest }}{!! $ctSellingChg ? $ctChangedBadge : '' !!}</li>
                                                                 @if ($ctSellingInterest === 'Yes' && $ctPurchaseFeeDisplay !== '-')
-                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Purchase Fee:</span> {{ $ctPurchaseFeeDisplay }}</li>
+                                                                @php $ctPurchaseFeeChg = $ctCompositeChanged($ctPurchaseFeeDisplay, $purchaseFeeDisplay ?? ''); @endphp
+                                                                <li class="mb-1" style="font-size: 12px; {{ $ctPurchaseFeeChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Purchase Fee:</span> {{ $ctPurchaseFeeDisplay }}{!! $ctPurchaseFeeChg ? $ctChangedBadge : '' !!}</li>
                                                                 @endif
                                                             </ul>
                                                         </div>
@@ -4463,21 +4502,27 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                             <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">E) Legal Terms</div>
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 @if (!empty($allMeta['protection_period']))
-                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Protection Period Timeframe:</span> {{ $allMeta['protection_period'] }} days</li>
+                                                                @php $ctProtChg = $ctIsChanged($allMeta['protection_period'], 'protection_period'); @endphp
+                                                                <li class="mb-1" style="font-size: 12px; {{ $ctProtChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Protection Period Timeframe:</span> {{ $allMeta['protection_period'] }} days{!! $ctProtChg ? $ctChangedBadge : '' !!}</li>
                                                                 @endif
                                                                 @if (!empty($allMeta['early_termination_fee_option']))
-                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Early Termination Fee:</span> {{ $allMeta['early_termination_fee_option'] === 'yes' ? 'Yes' : 'No' }}</li>
+                                                                @php $ctEtfChg = $ctIsChanged($allMeta['early_termination_fee_option'], 'early_termination_fee_option'); @endphp
+                                                                <li class="mb-1" style="font-size: 12px; {{ $ctEtfChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Early Termination Fee:</span> {{ $allMeta['early_termination_fee_option'] === 'yes' ? 'Yes' : 'No' }}{!! $ctEtfChg ? $ctChangedBadge : '' !!}</li>
                                                                 @if ($allMeta['early_termination_fee_option'] === 'yes' && !empty($allMeta['early_termination_fee_amount']))
-                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Termination Fee Amount:</span> {{ $fmtMoney($allMeta['early_termination_fee_amount']) ?? ('$'.$allMeta['early_termination_fee_amount']) }}</li>
+                                                                @php $ctEtfAmtChg = $ctIsChanged($allMeta['early_termination_fee_amount'], 'early_termination_fee_amount'); @endphp
+                                                                <li class="mb-1" style="font-size: 12px; {{ $ctEtfAmtChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Termination Fee Amount:</span> {{ $fmtMoney($allMeta['early_termination_fee_amount']) ?? ('$'.$allMeta['early_termination_fee_amount']) }}{!! $ctEtfAmtChg ? $ctChangedBadge : '' !!}</li>
                                                                 @endif
                                                                 @endif
                                                                 @if (!empty($ctAgencyTimeframe))
-                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Landlord Agency Agreement Timeframe:</span> {{ $ctAgencyTimeframeDisplay }}</li>
+                                                                @php $ctAgencyTfChg = $ctCompositeChanged($ctAgencyTimeframeDisplay, $agencyTimeframeDisplay ?? ''); @endphp
+                                                                <li class="mb-1" style="font-size: 12px; {{ $ctAgencyTfChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Landlord Agency Agreement Timeframe:</span> {{ $ctAgencyTimeframeDisplay }}{!! $ctAgencyTfChg ? $ctChangedBadge : '' !!}</li>
                                                                 @endif
                                                                 @if (!empty($allMeta['interested_in_property_management']))
-                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Interested in Property Management:</span> {{ ($allMeta['interested_in_property_management'] === 'yes') ? 'Yes' : 'No' }}</li>
+                                                                @php $ctPmChg = $ctIsChanged($allMeta['interested_in_property_management'], 'interested_in_property_management'); @endphp
+                                                                <li class="mb-1" style="font-size: 12px; {{ $ctPmChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Interested in Property Management:</span> {{ ($allMeta['interested_in_property_management'] === 'yes') ? 'Yes' : 'No' }}{!! $ctPmChg ? $ctChangedBadge : '' !!}</li>
                                                                 @if (($allMeta['interested_in_property_management'] === 'yes') && $ctPmFeeDisplay !== '-')
-                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Property Management Fee:</span> {{ $ctPmFeeDisplay }}</li>
+                                                                @php $ctPmFeeChg = $ctCompositeChanged($ctPmFeeDisplay, $pmFeeDisplay ?? ''); @endphp
+                                                                <li class="mb-1" style="font-size: 12px; {{ $ctPmFeeChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Property Management Fee:</span> {{ $ctPmFeeDisplay }}{!! $ctPmFeeChg ? $ctChangedBadge : '' !!}</li>
                                                                 @endif
                                                                 @endif
                                                             </ul>
@@ -4489,7 +4534,8 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                         <div class="mb-3">
                                                             <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">F) Brokerage Relationship</div>
                                                             <ul class="list-unstyled ps-3 mb-0">
-                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Acceptable Brokerage Relationship:</span> {{ $allMeta['brokerage_relationship'] }}</li>
+                                                                @php $ctBrokerRelChg = $ctIsChanged($allMeta['brokerage_relationship'], 'brokerage_relationship'); @endphp
+                                                                <li class="mb-1" style="font-size: 12px; {{ $ctBrokerRelChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Acceptable Brokerage Relationship:</span> {{ $allMeta['brokerage_relationship'] }}{!! $ctBrokerRelChg ? $ctChangedBadge : '' !!}</li>
                                                             </ul>
                                                         </div>
                                                         @endif
@@ -4500,10 +4546,12 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                             <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">G) Additional Terms / Additional Details</div>
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 @if (!empty($allMeta['additional_details_broker']))
-                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Additional Terms:</span> {{ $allMeta['additional_details_broker'] }}</li>
+                                                                @php $ctAddTermsChg = $ctIsChanged($allMeta['additional_details_broker'], 'additional_details_broker'); @endphp
+                                                                <li class="mb-1" style="font-size: 12px; {{ $ctAddTermsChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Additional Terms:</span> {{ $allMeta['additional_details_broker'] }}{!! $ctAddTermsChg ? $ctChangedBadge : '' !!}</li>
                                                                 @endif
                                                                 @if (!empty($allMeta['additional_details']))
-                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Additional Details:</span> {{ $allMeta['additional_details'] }}</li>
+                                                                @php $ctAddDetailsChg = $ctIsChanged($allMeta['additional_details'], 'additional_details'); @endphp
+                                                                <li class="mb-1" style="font-size: 12px; {{ $ctAddDetailsChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Additional Details:</span> {{ $allMeta['additional_details'] }}{!! $ctAddDetailsChg ? $ctChangedBadge : '' !!}</li>
                                                                 @endif
                                                             </ul>
                                                         </div>
@@ -4514,61 +4562,79 @@ $auser = $auctionUser::find(@$auction->user_id);
 
 
 
-                                                    <!-- Services Offered -->
+                                                    <!-- Services Offered (diff: counter vs original bid) -->
                                                     @php
-                                                    $allMetaSvcsRaw = $allMeta['services'] ?? [];
-                                                    if (is_string($allMetaSvcsRaw) && !empty($allMetaSvcsRaw)) {
-                                                        $allMetaSvcsParsed = json_decode($allMetaSvcsRaw, true) ?: [];
+                                                    $ctSvcsRaw = $allMeta['services'] ?? [];
+                                                    if (is_string($ctSvcsRaw) && !empty($ctSvcsRaw)) {
+                                                        $ctSvcsParsed = json_decode($ctSvcsRaw, true) ?: [];
                                                     } else {
-                                                        $allMetaSvcsParsed = is_array($allMetaSvcsRaw) ? $allMetaSvcsRaw : [];
+                                                        $ctSvcsParsed = is_array($ctSvcsRaw) ? $ctSvcsRaw : [];
                                                     }
-                                                    $allMetaSvcsParsed = array_values(array_filter($allMetaSvcsParsed, fn($s) => is_string($s) && trim($s) !== '' && $s !== 'Other'));
+                                                    $ctSvcsParsed = array_values(array_filter($ctSvcsParsed, fn($s) => is_string($s) && trim($s) !== '' && $s !== 'Other'));
 
-                                                    $allMetaOtherRaw = $allMeta['other_services'] ?? [];
-                                                    if (is_string($allMetaOtherRaw) && !empty($allMetaOtherRaw)) {
-                                                        $allMetaOtherParsed = json_decode($allMetaOtherRaw, true) ?: [];
+                                                    $ctOtherRaw = $allMeta['other_services'] ?? [];
+                                                    if (is_string($ctOtherRaw) && !empty($ctOtherRaw)) {
+                                                        $ctOtherParsed = json_decode($ctOtherRaw, true) ?: [];
                                                     } else {
-                                                        $allMetaOtherParsed = is_array($allMetaOtherRaw) ? $allMetaOtherRaw : [];
+                                                        $ctOtherParsed = is_array($ctOtherRaw) ? $ctOtherRaw : [];
                                                     }
-                                                    $allMetaOtherParsed = array_values(array_filter($allMetaOtherParsed, fn($s) => is_string($s) && trim($s) !== ''));
+                                                    $ctOtherParsed = array_values(array_filter($ctOtherParsed, fn($s) => is_string($s) && trim($s) !== ''));
 
-                                                    $hasAllMetaSvcs = !empty($allMetaSvcsParsed) || !empty($allMetaOtherParsed);
+                                                    // Normalize counter services for diff
+                                                    $ctSvcsNorm = array_map(
+                                                        fn($s) => \App\Helpers\LandlordBidMatchScoreHelper::normalizeService((string)$s),
+                                                        $ctSvcsParsed
+                                                    );
+
+                                                    // Determine added services (in counter but not in original bid)
+                                                    $ctSvcIsAdded = fn(string $svc): bool =>
+                                                        !in_array(\App\Helpers\LandlordBidMatchScoreHelper::normalizeService($svc), $origBidSvcsNorm, true);
+
+                                                    // Build removed services list (in original bid but not in counter)
+                                                    $ctRemovedSvcs = array_filter($origBidSvcsNorm, fn($n) => !in_array($n, $ctSvcsNorm, true));
+                                                    // Map back to display text from original bid raw
+                                                    $origBidSvcsDisplay = array_values(array_filter(
+                                                        is_string(data_get($bid, 'get.services', [])) ? json_decode(data_get($bid, 'get.services', '[]'), true) ?? [] : (array)data_get($bid, 'get.services', []),
+                                                        fn($s) => is_string($s) && trim($s) !== '' && $s !== 'Other'
+                                                    ));
+                                                    $ctRemovedDisplay = array_values(array_filter($origBidSvcsDisplay, fn($s) =>
+                                                        in_array(\App\Helpers\LandlordBidMatchScoreHelper::normalizeService($s), $ctRemovedSvcs, true)
+                                                    ));
+
+                                                    // Other services diff
+                                                    $ctOtherIsAdded = fn(string $s): bool =>
+                                                        !in_array(strtolower(trim($s)), $origBidOtherNorm, true);
+                                                    $ctOtherRemovedDisplay = array_values(array_filter(
+                                                        is_string(data_get($bid, 'get.other_services', [])) ? json_decode(data_get($bid, 'get.other_services', '[]'), true) ?? [] : (array)data_get($bid, 'get.other_services', []),
+                                                        fn($s) => is_string($s) && trim($s) !== '' && !in_array(strtolower(trim($s)), array_map(fn($x) => strtolower(trim($x)), $ctOtherParsed), true)
+                                                    ));
+
+                                                    $hasCtSvcs = !empty($ctSvcsParsed) || !empty($ctOtherParsed);
                                                     @endphp
 
                                                     <div class="mb-4" style="margin-top: 20px;">
                                                         <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
                                                             <i class="fa fa-clipboard-list me-2"></i>Offered Services
-                                                            @if($servicesMissingCount > 0)
-                                                            <span class="badge bg-danger ms-2" style="font-size: 0.7rem;">{{ $servicesMissingCount }} Missing</span>
-                                                            @endif
                                                         </h6>
 
-                                                        {{-- Legend --}}
-                                                        <div class="mb-3 small">
-                                                            <span style="color: #28a745;"><i class="fa fa-check-circle me-1"></i>Matched</span>
-                                                            <span class="ms-3" style="color: #17a2b8;"><i class="fa fa-plus-circle me-1"></i>Extra (not in baseline)</span>
-                                                            <span class="ms-3" style="color: #dc3545;"><i class="fa fa-times-circle me-1"></i>Missing (in baseline but not offered)</span>
-                                                        </div>
-
-                                                        @if ($hasAllMetaSvcs)
+                                                        @if ($hasCtSvcs)
                                                             @foreach ($modalCats as $catName => $catSvcs)
                                                                 @php
-                                                                    $normCatSvcsAM = array_map($normForCat, $catSvcs);
-                                                                    $matchedInCatAM = array_filter($allMetaSvcsParsed, fn($svc) => in_array($normForCat($svc), $normCatSvcsAM));
+                                                                    $normCatKeys = array_map($normForCat, $catSvcs);
+                                                                    $inCat = array_filter($ctSvcsParsed, fn($svc) => in_array($normForCat($svc), $normCatKeys));
                                                                 @endphp
-                                                                @if (!empty($matchedInCatAM))
+                                                                @if (!empty($inCat))
                                                                 <div class="mb-3">
                                                                     <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">{{ $catName }}</div>
                                                                     <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem; list-style: none;">
-                                                                        @foreach ($matchedInCatAM as $svc)
-                                                                            @if ($isModalSvcMatched($svc))
-                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px; color: #28a745;">
-                                                                                <i class="fa fa-check-circle me-1"></i>{{ $svc }}
+                                                                        @foreach ($inCat as $svc)
+                                                                            @php $svcAdded = $ctSvcIsAdded($svc); @endphp
+                                                                            @if ($svcAdded)
+                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px; background-color: #fff3cd; padding: 1px 4px; border-radius: 3px;">
+                                                                                <i class="fa fa-plus-circle me-1" style="color: #856404;"></i>{{ $svc }} <span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">Added</span>
                                                                             </li>
                                                                             @else
-                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px; color: #17a2b8;">
-                                                                                <i class="fa fa-plus-circle me-1"></i>{{ $svc }} <small>(extra)</small>
-                                                                            </li>
+                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $svc }}</li>
                                                                             @endif
                                                                         @endforeach
                                                                     </ul>
@@ -4576,42 +4642,45 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                                 @endif
                                                             @endforeach
 
-                                                            @if (!empty($allMetaOtherParsed))
+                                                            @if (!empty($ctOtherParsed))
                                                             <div class="mb-3">
                                                                 <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Additional Services</div>
                                                                 <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem; list-style: none;">
-                                                                    @foreach ($allMetaOtherParsed as $otherSvc)
-                                                                        @if ($isModalSvcMatched($otherSvc))
-                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; color: #28a745;">
-                                                                            <i class="fa fa-check-circle me-1"></i>{{ $otherSvc }}
+                                                                    @foreach ($ctOtherParsed as $otherSvc)
+                                                                        @php $otherAdded = $ctOtherIsAdded($otherSvc); @endphp
+                                                                        @if ($otherAdded)
+                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; background-color: #fff3cd; padding: 1px 4px; border-radius: 3px;">
+                                                                            <i class="fa fa-plus-circle me-1" style="color: #856404;"></i>{{ $otherSvc }} <span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">Added</span>
                                                                         </li>
                                                                         @else
-                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; color: #17a2b8;">
-                                                                            <i class="fa fa-plus-circle me-1"></i>{{ $otherSvc }} <small>(extra)</small>
-                                                                        </li>
+                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $otherSvc }}</li>
                                                                         @endif
                                                                     @endforeach
                                                                 </ul>
                                                             </div>
                                                             @endif
 
-                                                            {{-- Missing Services Section --}}
-                                                            @if (!empty($modalMissingSvcs))
+                                                            @if (!empty($ctRemovedDisplay) || !empty($ctOtherRemovedDisplay))
                                                             <div class="mb-3 mt-3 p-3" style="background-color: #fff5f5; border-radius: 6px; border: 1px solid #f5c6cb;">
-                                                                <div class="fw-bold" style="color: #dc3545; font-size: 0.95rem;">
-                                                                    <i class="fa fa-exclamation-triangle me-1"></i>Missing Services (Not Offered)
+                                                                <div class="fw-bold mb-1" style="color: #dc3545; font-size: 0.95rem;">
+                                                                    <i class="fa fa-minus-circle me-1"></i>Removed Services (in original bid, not in this counter)
                                                                 </div>
                                                                 <ul class="services mb-0" style="margin-top: 0.5rem; padding-left: 1.2rem; list-style: none;">
-                                                                    @foreach ($modalMissingSvcs as $missingSvc)
+                                                                    @foreach ($ctRemovedDisplay as $rSvc)
                                                                     <li style="font-size: 0.9rem; margin-bottom: 4px; color: #dc3545;">
-                                                                        <i class="fa fa-times-circle me-1"></i>{{ $missingSvc }}
+                                                                        <i class="fa fa-times-circle me-1"></i>{{ $rSvc }}
+                                                                    </li>
+                                                                    @endforeach
+                                                                    @foreach ($ctOtherRemovedDisplay as $rSvc)
+                                                                    <li style="font-size: 0.9rem; margin-bottom: 4px; color: #dc3545;">
+                                                                        <i class="fa fa-times-circle me-1"></i>{{ $rSvc }}
                                                                     </li>
                                                                     @endforeach
                                                                 </ul>
                                                             </div>
                                                             @endif
                                                         @else
-                                                        <div class="text-muted" style="font-style: italic;">No services selected for this bid.</div>
+                                                        <div class="text-muted" style="font-style: italic;">No services selected for this counter.</div>
                                                         @endif
                                                     </div>
 
