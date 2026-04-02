@@ -3559,10 +3559,22 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                                 @endphp
 
                                                                 @if (in_array(strtolower($businessCardExtension), ['jpg', 'jpeg', 'png', 'gif', 'webp']))
-                                                                <img src="{{ asset('storage/' . $businessCardPath) }}"
-                                                                    style="max-width: 300px; max-height: 200px; border-radius: 6px; border: 1px solid #e0e0e0;"
-                                                                    alt="Business Card"
-                                                                    class="img-fluid">
+                                                                <div class="mb-2">
+                                                                    <img src="{{ asset('storage/' . $businessCardPath) }}"
+                                                                        style="max-width: 300px; max-height: 200px; border-radius: 6px; border: 1px solid #e0e0e0; display: block; margin-bottom: 8px;"
+                                                                        alt="Business Card"
+                                                                        class="img-fluid">
+                                                                    <a href="{{ asset('storage/' . $businessCardPath) }}"
+                                                                        target="_blank"
+                                                                        class="btn btn-sm btn-outline-primary me-2">
+                                                                        <i class="fa fa-eye me-1"></i> View
+                                                                    </a>
+                                                                    <a href="{{ asset('storage/' . $businessCardPath) }}"
+                                                                        download
+                                                                        class="btn btn-sm btn-outline-secondary">
+                                                                        <i class="fa fa-download me-1"></i> Download
+                                                                    </a>
+                                                                </div>
                                                                 @else
                                                                 <div
                                                                     class="d-flex align-items-center text-muted">
@@ -3742,9 +3754,15 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                                                 </div>
                                                                                 <a href="{{ asset('storage/' . $filePath) }}"
                                                                                     target="_blank"
-                                                                                    class="btn btn-sm btn-outline-primary ms-1">
-                                                                                    <i
-                                                                                        class="fa fa-eye"></i>
+                                                                                    class="btn btn-sm btn-outline-primary ms-1"
+                                                                                    title="View">
+                                                                                    <i class="fa fa-eye"></i>
+                                                                                </a>
+                                                                                <a href="{{ asset('storage/' . $filePath) }}"
+                                                                                    download
+                                                                                    class="btn btn-sm btn-outline-secondary ms-1"
+                                                                                    title="Download">
+                                                                                    <i class="fa fa-download"></i>
                                                                                 </a>
                                                                             </div>
                                                                         </div>
@@ -3904,6 +3922,11 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                                     <i class="fa fa-check me-1"></i> Accept Bid
                                                                 </button>
                                                             </form>
+
+                                                            <a href="{{ route('landlord.counter-terms', ['id' => data_get($bid, 'id')]) }}"
+                                                               class="btn btn-primary" style="padding: 10px 20px; font-size: 0.95rem; background-color: #0d6efd !important; border-color: #0d6efd !important; color: #fff !important; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
+                                                                <i class="fa fa-exchange-alt me-1"></i> Counter Bid
+                                                            </a>
 
                                                             <form action="{{ route('agent.landlord.auction.bid.reject', ['id' => data_get($bid, 'id')]) }}" method="POST" style="margin: 0;"
                                                                   onsubmit="return confirm('Are you sure you want to reject this bid?');">
