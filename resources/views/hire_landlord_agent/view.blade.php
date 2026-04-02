@@ -4788,42 +4788,44 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                         @endif
                                                     </div>
 
-                                                    @elseif($counterState === 'accepted')
-                                                    <div class="alert alert-success mt-3 pt-3 border-top">
-                                                        <i class="fa fa-check-circle"></i> This counter offer has been accepted
-                                                    </div>
-                                                    @elseif($counterState === 'rejected')
-                                                    <div class="alert alert-danger mt-3 pt-3 border-top">
-                                                        <i class="fa fa-times-circle"></i> This counter offer has been rejected
-                                                    </div>
-                                                    @elseif($bidIsAccepted || $isSold)
-                                                    <div class="alert alert-info mt-3 pt-3 border-top">
-                                                        <i class="fa fa-info-circle"></i> This bid is no longer available for counter offers
-                                                    </div>
-                                                    @elseif($isExpired)
-                                                    <div class="alert alert-warning mt-3 pt-3 border-top">
-                                                        <i class="fa fa-clock"></i> Bidding period has ended
-                                                    </div>
-                                                    @else
-                                                    <div class="alert alert-secondary mt-3 pt-3 border-top">
-                                                        <i class="fa fa-clock"></i> Waiting for response
-                                                    </div>
                                                     @endif
 
                                                     <!-- Counter footer status -->
                                                     <div class="mt-3 pt-3 border-top">
                                                         @if ($counterState === 'accepted')
+                                                        @if (Auth::id() == $actorUserId)
                                                         <div class="alert alert-success mb-0 py-1 small">
                                                             ✅ This counter bid has been accepted.
                                                         </div>
+                                                        @else
+                                                        <div class="alert alert-success mb-0 py-1 small">
+                                                            ✅ {{ trim($actorFirst . ' ' . $actorLast) }} accepted the counter bid.
+                                                        </div>
+                                                        @endif
                                                         @elseif ($counterState === 'rejected')
-                                                        <div class="alert alert-danger mb-0 py-1 alert-font">
+                                                        @if (Auth::id() == $actorUserId)
+                                                        <div class="alert alert-danger mb-0 py-1 small">
                                                             ❌ This counter bid has been rejected.
                                                         </div>
-                                                        @elseif ($counterState === '0')
-                                                        <div class="alert alert-secondary mb-0 py-1 small">
-                                                            ⏳ Waiting for response...
+                                                        @else
+                                                        <div class="alert alert-danger mb-0 py-1 alert-font">
+                                                            ❌ {{ trim($actorFirst . ' ' . $actorLast) }} rejected the counter bid.
                                                         </div>
+                                                        @endif
+                                                        @elseif ($counterState === '0')
+                                                        @if ($counterBid->user_id == Auth::id())
+                                                        <div class="alert alert-secondary mb-0 py-1 small">
+                                                            ⏳ Waiting for response from
+                                                            {{ $isCounterFromOwner ? trim($agentFirst . ' ' . $agentLast) : trim($ownerFirst . ' ' . $ownerLast) }}...
+                                                        </div>
+                                                        @else
+                                                        <div class="alert alert-light mb-0 py-1 small"
+                                                            style="font-size:13px;">
+                                                            ⏳ Counter bid from
+                                                            {{ trim($creatorFirst . ' ' . $creatorLast) }}
+                                                            is pending.
+                                                        </div>
+                                                        @endif
                                                         @endif
                                                     </div>
                                                 </div>
