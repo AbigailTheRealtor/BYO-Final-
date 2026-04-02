@@ -409,10 +409,11 @@ class LandlordAgentAuctionCounterTerm extends Component
     {
         $this->activeTab = $index;
     }
-    public function mount($pab, $bidId)
+    public function mount($pab, $bidId, $parent_counter_id = null)
     {
-        $this->pab   = $pab;
-        $this->bidId = $bidId;
+        $this->pab              = $pab;
+        $this->bidId            = $bidId;
+        $this->parent_counter_id = $parent_counter_id ?? '';
 
         // property_type lives on the auction, not on the bid meta.
         // $pab may be either a LandlordAgentAuction (from counter_bid controller)
@@ -429,19 +430,36 @@ class LandlordAgentAuctionCounterTerm extends Component
             $this->property_type = $pab->get->property_type ?? '';
         }
 
-        // EDIT MODE: Look for an existing counter term THIS USER submitted for this specific bid.
+        $currentUserId = \Illuminate\Support\Facades\Auth::id();
+
+        // EDIT MODE: Look for a pending counter THIS USER already submitted for this bid.
         // NOTE: landlord_counter_terms.landlord_agent_auction_id stores BID IDs (not auction IDs).
-        $existing = LandlordCounterTerm::with('meta')
+        $ownPending = LandlordCounterTerm::with('meta')
             ->where('landlord_agent_auction_id', $this->bidId)
-            ->where('user_id', \Illuminate\Support\Facades\Auth::id())
+            ->where('user_id', $currentUserId)
+            ->whereNotIn('status', ['accepted', 'rejected'])
             ->latest()
             ->first();
 
-        if ($existing) {
-            $this->counterTermId = $existing->id;
-            $this->hydrateFromMetaMap($existing->meta->pluck('meta_value', 'meta_key')->toArray());
+        if ($ownPending) {
+            // Edit mode: let the user revise their own pending counter.
+            $this->counterTermId = $ownPending->id;
+            $this->hydrateFromMetaMap($ownPending->meta->pluck('meta_value', 'meta_key')->toArray());
+            return;
+        }
+
+        // NEW COUNTER: Prefill from the latest counter submitted by the OTHER party so the
+        // user sees the other side's most-recent terms as the negotiation baseline.
+        $otherPartyLatest = LandlordCounterTerm::with('meta')
+            ->where('landlord_agent_auction_id', $this->bidId)
+            ->where('user_id', '!=', $currentUserId)
+            ->latest()
+            ->first();
+
+        if ($otherPartyLatest) {
+            $this->hydrateFromMetaMap($otherPartyLatest->meta->pluck('meta_value', 'meta_key')->toArray());
         } else {
-            // NEW COUNTER: Prefill from the agent's latest bid data — never from listing defaults.
+            // No counter from the other party yet — prefill from the agent's original bid terms.
             $this->prefillFromAgentBid($this->bidId);
         }
     }

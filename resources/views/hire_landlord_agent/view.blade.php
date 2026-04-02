@@ -236,41 +236,49 @@
     /* Base button style */
     .btn-custom {
         width: 100% !important;
-        color: white;
+        color: white !important;
         border: none;
+        padding: 10px 20px;
+        min-width: 120px;
+        font-weight: 500;
+        border-radius: 4px;
+        cursor: pointer;
+        text-align: center;
+        display: inline-block;
     }
 
     .biding-btn {
         width: 31.5%;
     }
 
-    /* Accept (green) */
+    /* Accept (green) - always solid green background */
     .btn-accept {
-        background-color: #28a745;
+        background-color: #28a745 !important;
+        color: #ffffff !important;
     }
 
     .btn-accept:hover {
-        background-color: #218838;
+        background-color: #218838 !important;
     }
 
-    /* Reject (red) */
+    /* Reject (red) - always solid red background */
     .btn-reject {
-        background-color: #dc3545;
+        background-color: #dc3545 !important;
+        color: #ffffff !important;
     }
 
     .btn-reject:hover {
-        background-color: #c82333;
+        background-color: #c82333 !important;
     }
 
-    /* Counter (orange) */
+    /* Counter (blue) - always solid blue background */
     .btn-counter {
-        background-color: #f0ad4e;
-        color: #212529;
-        /* dark text for better contrast */
+        background-color: #0d6efd !important;
+        color: #ffffff !important;
     }
 
     .btn-counter:hover {
-        background-color: #ec971f;
+        background-color: #0b5ed7 !important;
     }
 
     .view-btn {
