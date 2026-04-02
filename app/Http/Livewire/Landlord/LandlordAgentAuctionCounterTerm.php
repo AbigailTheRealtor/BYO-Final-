@@ -411,116 +411,53 @@ class LandlordAgentAuctionCounterTerm extends Component
     }
     public function mount($pab, $bidId)
     {
-
         $this->pab   = $pab;
         $this->bidId = $bidId;
-        $this->property_type = $pab->get->property_type ?? '';
 
-        // EDIT MODE: Try load existing counter term by auction id
+        // property_type lives on the auction, not on the bid meta.
+        // $pab may be either a LandlordAgentAuction (from counter_bid controller)
+        // or a LandlordAgentAuctionBid (from LandlordCounteredTermsController).
+        // Always resolve property_type from the auction record.
+        $auctionId = $pab instanceof \App\Models\LandlordAgentAuction
+            ? $pab->id
+            : ($pab->landlord_agent_auction_id ?? null);
+
+        if ($auctionId) {
+            $auc = \App\Models\LandlordAgentAuction::find($auctionId);
+            $this->property_type = $auc ? ($auc->get->property_type ?? '') : '';
+        } else {
+            $this->property_type = $pab->get->property_type ?? '';
+        }
+
+        // EDIT MODE: Look for an existing counter term THIS USER submitted for this specific bid.
+        // NOTE: landlord_counter_terms.landlord_agent_auction_id stores BID IDs (not auction IDs).
         $existing = LandlordCounterTerm::with('meta')
-            ->where('landlord_agent_auction_id', $this->pab->id)
+            ->where('landlord_agent_auction_id', $this->bidId)
+            ->where('user_id', \Illuminate\Support\Facades\Auth::id())
+            ->latest()
             ->first();
 
         if ($existing) {
             $this->counterTermId = $existing->id;
             $this->hydrateFromMetaMap($existing->meta->pluck('meta_value', 'meta_key')->toArray());
         } else {
-            $auction = \App\Models\LandlordAgentAuction::find($this->pab->landlord_agent_auction_id ?? $this->pab->id);
-            // $this->additional_details = $auction->get->additional_details ?? '';
-
-            $this->services = is_string($auction->get->services) ? json_decode($auction->get->services, true) ?? [] : (array)$auction->get->services;
-            $this->other_services = is_string($auction->get->other_services) ? json_decode($auction->get->other_services, true) ?? [] : (array)$auction->get->other_services;
-
-            $this->other_services_enabled = $auction->get->other_services_enabled;
-            $this->service_type = $auction->get->service_type;
-            $this->user_type = $auction->get->user_type ?? '';
-            $this->property_type = $auction->get->property_type ?? '';
-
-            // Lease Option Agreement
-            $this->interested_lease_option_agreement = $auction->get->interested_lease_option_agreement ?? '';
-            $this->lease_type = $auction->get->lease_type ?? 'percent';
-            $this->lease_value = $auction->get->lease_value ?? '';
-            $this->purchase_type = $auction->get->purchase_type ?? 'percent';
-            $this->purchase_value = $auction->get->purchase_value ?? '';
-
-            // Residential Property Lease Fee
-            $this->purchase_fee_type = $auction->get->purchase_fee_type ?? '';
-            $this->purchase_fee_flat = $auction->get->purchase_fee_flat ?? '';
-            $this->purchase_fee_rental_period = $auction->get->purchase_fee_rental_period ?? '';
-            $this->purchase_fee_percentage_combo = $auction->get->purchase_fee_percentage_combo ?? '';
-            $this->purchase_fee_flat_combo = $auction->get->purchase_fee_flat_combo ?? '';
-            $this->purchase_fee_other = $auction->get->purchase_fee_other ?? '';
-
-            // Commercial Property Lease Fee
-            $this->purchase_fee_net_aggregate = $auction->get->purchase_fee_net_aggregate ?? '';
-            $this->purchase_fee_gross_rent = $auction->get->purchase_fee_gross_rent ?? '';
-            $this->sales_tax_option_gross = $auction->get->sales_tax_option_gross ?? '';
-            $this->purchase_fee_monthly_percentage = $auction->get->purchase_fee_monthly_percentage ?? '';
-            $this->purchase_fee_months = $auction->get->purchase_fee_months ?? '';
-            $this->sales_tax_option_monthly = $auction->get->sales_tax_option_monthly ?? '';
-            $this->purchase_fee_flat_commercial = $auction->get->purchase_fee_flat_commercial ?? '';
-            $this->sales_tax_option_flat = $auction->get->sales_tax_option_flat ?? '';
-            $this->purchase_fee_purchase_price = $auction->get->purchase_fee_purchase_price ?? '';
-            $this->purchase_fee_other_commercial = $auction->get->purchase_fee_other_commercial ?? '';
-
-            // Interested in Selling
-            $this->interested_in_selling = $auction->get->interested_in_selling ?? '';
-            $this->interested_in_selling_type = $auction->get->interested_in_selling_type ?? '';
-            $this->landlord_broker_purchase_price = $auction->get->landlord_broker_purchase_price ?? '';
-            $this->landlord_broker_percentage_price = $auction->get->landlord_broker_percentage_price ?? '';
-            $this->landlord_broker_dollar_price = $auction->get->landlord_broker_dollar_price ?? '';
-            $this->landlord_broker_flate_fee = $auction->get->landlord_broker_flate_fee ?? '';
-            $this->landlord_broker_other = $auction->get->landlord_broker_other ?? '';
-
-            // Payment Timing
-            $this->broker_fee_timing = $auction->get->broker_fee_timing ?? '';
-            $this->broker_fee_days_from_rent = $auction->get->broker_fee_days_from_rent ?? '';
-            $this->broker_fee_days_after_lease = $auction->get->broker_fee_days_after_lease ?? '';
-            $this->broker_fee_days_after_rent = $auction->get->broker_fee_days_after_rent ?? '';
-            $this->broker_fee_timing_other = $auction->get->broker_fee_timing_other ?? '';
-            $this->split_payment_due = $auction->get->split_payment_due ?? '';
-            $this->split_payment_due_other = $auction->get->split_payment_due_other ?? '';
-            $this->broker_fee_days_after_due_event = $auction->get->broker_fee_days_after_due_event ?? '';
-
-            // Renewal/Extension Fees
-            $this->renewal_fee_type = $auction->get->renewal_fee_type ?? '';
-            $this->renewal_fee_percentage = $auction->get->renewal_fee_percentage ?? '';
-            $this->renewal_fee_lease_value = $auction->get->renewal_fee_lease_value ?? '';
-            $this->renewal_fee_first_month = $auction->get->renewal_fee_first_month ?? '';
-            $this->renewal_fee_flat_free = $auction->get->renewal_fee_flat_free ?? '';
-            $this->renewal_fee_custom = $auction->get->renewal_fee_custom ?? '';
-            $this->renewal_fee_sales_tax_lease_value = $auction->get->renewal_fee_sales_tax_lease_value ?? '';
-            $this->renewal_fee_no_of_months = $auction->get->renewal_fee_no_of_months ?? '';
-            $this->renewal_fee_sales_tax_first_month = $auction->get->renewal_fee_sales_tax_first_month ?? '';
-            $this->renewal_fee_sales_tax_flat_fee = $auction->get->renewal_fee_sales_tax_flat_fee ?? '';
-
-            // Commercial Expansion Commission
-            $this->expansion_commission_percentage = $auction->get->expansion_commission_percentage ?? '';
-
-            // Tenant's Broker Commission (Residential)
-            $this->tenant_broker_commission_structure = $auction->get->tenant_broker_commission_structure ?? '';
-            $this->tenant_broker_fee_structure = $auction->get->tenant_broker_fee_structure ?? '';
-            $this->tenant_broker_percentage = $auction->get->tenant_broker_percentage ?? '';
-            $this->tenant_broker_gross_lease = $auction->get->tenant_broker_gross_lease ?? '';
-            $this->tenant_broker_first_month_rent = $auction->get->tenant_broker_first_month_rent ?? '';
-            $this->tenant_broker_flat_fee = $auction->get->tenant_broker_flat_fee ?? '';
-            $this->tenant_broker_other = $auction->get->tenant_broker_other ?? '';
-
-            // Other important properties
-            $this->protection_period = $auction->get->protection_period ?? '';
-            $this->early_termination_fee_option = $auction->get->early_termination_fee_option ?? '';
-            $this->early_termination_fee_amount = $auction->get->early_termination_fee_amount ?? '';
-            $this->agency_agreement_timeframe = $auction->get->agency_agreement_timeframe ?? '';
-            $this->agency_agreement_custom = $auction->get->agency_agreement_custom ?? '';
-            $this->interested_in_property_management = $auction->get->interested_in_property_management ?? '';
-            $this->interested_in_property_management_fee = $auction->get->interested_in_property_management_fee ?? '';
-            $this->interested_in_property_management_fee_gross_lease = $auction->get->interested_in_property_management_fee_gross_lease ?? '';
-            $this->interested_in_property_management_fee_rental_periord = $auction->get->interested_in_property_management_fee_rental_periord ?? '';
-            $this->interested_in_property_management_fee_flate_free = $auction->get->interested_in_property_management_fee_flate_free ?? '';
-            $this->interested_in_property_management_fee_other = $auction->get->interested_in_property_management_fee_other ?? '';
-            $this->brokerage_relationship = $auction->get->brokerage_relationship ?? '';
-            $this->additional_details_broker = $auction->get->additional_details_broker ?? '';
+            // NEW COUNTER: Prefill from the agent's latest bid data — never from listing defaults.
+            $this->prefillFromAgentBid($this->bidId);
         }
+    }
+
+    /**
+     * Prefill counter form with the agent's bid terms when creating a new counter.
+     * Uses the agent's bid meta as the negotiation baseline.
+     */
+    private function prefillFromAgentBid(int $bidId): void
+    {
+        $bid = \App\Models\LandlordAgentAuctionBid::with('meta')->find($bidId);
+        if (!$bid) {
+            return;
+        }
+        $m = $bid->meta->pluck('meta_value', 'meta_key')->toArray();
+        $this->hydrateFromMetaMap($m);
     }
 
     private function hydrateFromMetaMap(array $m): void
@@ -528,6 +465,7 @@ class LandlordAgentAuctionCounterTerm extends Component
         // Simple scalar/meta -> property mapping
         $assign = [
             'additional_details',
+            'custom_enhancement',
             // === Purchase / Lease Fee Section ===
             'purchase_fee_type',
             'purchase_fee_flat_type',
@@ -631,15 +569,35 @@ class LandlordAgentAuctionCounterTerm extends Component
             }
         }
 
-        // Arrays (JSON) — services, other_services
+        // Arrays (JSON) — services, other_services, photo_enhancements
         if (isset($m['services'])) {
-            $decoded = json_decode($m['services'], true);
-            $this->services = is_array($decoded) ? $decoded : [];
+            $raw = $m['services'];
+            if (is_string($raw)) {
+                $decoded = json_decode($raw, true);
+                $this->services = is_array($decoded) ? $decoded : [];
+            } elseif (is_array($raw)) {
+                $this->services = $raw;
+            }
         }
 
         if (isset($m['other_services'])) {
-            $decoded = json_decode($m['other_services'], true);
-            $this->other_services = is_array($decoded) ? array_values($decoded) : [];
+            $raw = $m['other_services'];
+            if (is_string($raw)) {
+                $decoded = json_decode($raw, true);
+                $this->other_services = is_array($decoded) ? array_values($decoded) : [];
+            } elseif (is_array($raw)) {
+                $this->other_services = array_values($raw);
+            }
+        }
+
+        if (isset($m['photo_enhancements'])) {
+            $raw = $m['photo_enhancements'];
+            if (is_string($raw)) {
+                $decoded = json_decode($raw, true);
+                $this->photo_enhancements = is_array($decoded) ? $decoded : [];
+            } elseif (is_array($raw)) {
+                $this->photo_enhancements = $raw;
+            }
         }
 
         // Booleans or flags that may be stored as strings
@@ -647,6 +605,11 @@ class LandlordAgentAuctionCounterTerm extends Component
             $this->other_services_enabled = filter_var($m['other_services_enabled'], FILTER_VALIDATE_BOOLEAN)
                 || $m['other_services_enabled'] === '1';
         }
+
+        // Restore nested visibility flags from loaded data
+        $this->showEnhancements = !empty($this->photo_enhancements)
+            || in_array('Provide digital photo enhancements', $this->services);
+        $this->showCustomEnhancement = in_array('Other', $this->photo_enhancements);
     }
 
     public function render()
@@ -675,9 +638,10 @@ class LandlordAgentAuctionCounterTerm extends Component
                     'parent_counter_id' => $this->parent_counter_id,
                 ]);
             } else {
+                // landlord_counter_terms.landlord_agent_auction_id stores BID IDs (not auction IDs).
                 $counterTerm = LandlordCounterTerm::create([
                     'user_id' => Auth::id(),
-                    'landlord_agent_auction_id' => $this->pab->id,
+                    'landlord_agent_auction_id' => $this->bidId,
                     'property_type' => $this->property_type,
                     'parent_counter_id' => $this->parent_counter_id,
                 ]);
@@ -691,25 +655,29 @@ class LandlordAgentAuctionCounterTerm extends Component
 
             DB::commit();
 
-            // Notify the other party that a counter bid was submitted
+            // Notify the other party that a counter bid was submitted.
+            // $pab may be either a LandlordAgentAuction or a LandlordAgentAuctionBid.
             try {
-                // pab is the original bid (the bid being countered)
-                // landlord_agent_auction_id on the bid is the auction ID
-                $auction = LandlordAgentAuction::find($this->pab->landlord_agent_auction_id);
-                if ($auction) {
-                    // If listing owner submitted → notify agent; if agent submitted → notify listing owner
-                    $senderId = Auth::id();
-                    $recipientId = ($senderId === $auction->user_id)
-                        ? $this->pab->user_id
-                        : $auction->user_id;
-                    $recipient = User::find($recipientId);
-                    if ($recipient) {
-                        $recipient->notify(new CounterBidSubmittedNotification(
-                            $this->pab,
-                            $auction,
-                            Auth::user(),
-                            $recipientId
-                        ));
+                $bid = \App\Models\LandlordAgentAuctionBid::with('user')->find($this->bidId);
+                if ($bid) {
+                    $auctionId = $this->pab instanceof LandlordAgentAuction
+                        ? $this->pab->id
+                        : $this->pab->landlord_agent_auction_id;
+                    $auction = LandlordAgentAuction::find($auctionId);
+                    if ($auction) {
+                        $senderId = Auth::id();
+                        $recipientId = ($senderId === $auction->user_id)
+                            ? $bid->user_id
+                            : $auction->user_id;
+                        $recipient = User::find($recipientId);
+                        if ($recipient) {
+                            $recipient->notify(new CounterBidSubmittedNotification(
+                                $bid,
+                                $auction,
+                                Auth::user(),
+                                $recipientId
+                            ));
+                        }
                     }
                 }
             } catch (\Exception $e) {
@@ -733,8 +701,9 @@ class LandlordAgentAuctionCounterTerm extends Component
     {
         $counterTerm->saveMeta('services', json_encode($this->services));
         $counterTerm->saveMeta('other_services', json_encode($this->other_services ?? null));
-
         $counterTerm->saveMeta('other_services_enabled', $this->other_services_enabled);
+        $counterTerm->saveMeta('photo_enhancements', json_encode($this->photo_enhancements ?? []));
+        $counterTerm->saveMeta('custom_enhancement', $this->custom_enhancement ?? '');
         $counterTerm->saveMeta('additional_details', $this->additional_details);
 
         // ===== Broker Lease Fee (shared selector) =====
