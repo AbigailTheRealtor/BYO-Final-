@@ -4663,7 +4663,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                             @if (!empty($ctRemovedDisplay) || !empty($ctOtherRemovedDisplay))
                                                             <div class="mb-3 mt-3 p-3" style="background-color: #fff5f5; border-radius: 6px; border: 1px solid #f5c6cb;">
                                                                 <div class="fw-bold mb-1" style="color: #dc3545; font-size: 0.95rem;">
-                                                                    <i class="fa fa-minus-circle me-1"></i>Removed Services (in original bid, not in this counter)
+                                                                    <i class="fa fa-minus-circle me-1"></i>Removed Services
                                                                 </div>
                                                                 <ul class="services mb-0" style="margin-top: 0.5rem; padding-left: 1.2rem; list-style: none;">
                                                                     @foreach ($ctRemovedDisplay as $rSvc)
