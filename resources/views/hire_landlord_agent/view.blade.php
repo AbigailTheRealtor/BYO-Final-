@@ -4195,303 +4195,320 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                             class="text-muted">{{ optional($counterBid->created_at)->format('M j, Y g:i A') }}</small>
                                                     </div>
 
-                                                    @php $allMeta = $counterBid->getAllMeta(); @endphp
-                                                    @if (!empty($allMeta['purchase_fee_type']) || !empty($allMeta['interested_lease_option_agreement']) || !empty($allMeta['interested_in_selling']) || !empty($allMeta['broker_fee_timing']) || !empty($allMeta['renewal_fee_type']) || !empty($allMeta['protection_period']) || !empty($allMeta['early_termination_fee_option']) || !empty($allMeta['agency_agreement_timeframe']) || !empty($allMeta['interested_in_property_management']) || !empty($allMeta['brokerage_relationship']))
+                                                    @php
+                                                        $allMeta = $counterBid->getAllMeta();
+
+                                                        // ── A) Lease Fee composite display ──
+                                                        $ctLeaseFeeType = $allMeta['purchase_fee_type'] ?? '';
+                                                        $ctLeaseFeeDisplay = $ctLeaseFeeType;
+                                                        if ($ctLeaseFeeType === 'Flat Fee') {
+                                                            $lf = $allMeta['purchase_fee_flat'] ?? ($allMeta['purchase_fee_flat_commercial'] ?? null);
+                                                            if ($lf) $ctLeaseFeeDisplay = '$'.number_format((float)$lf,2).' Flat Fee';
+                                                        } elseif ($ctLeaseFeeType === 'Percentage of the Rent Due Each Rental Period') {
+                                                            $pct = $allMeta['purchase_fee_rental_period'] ?? null;
+                                                            if ($pct) $ctLeaseFeeDisplay = $pct.'% of Rent Due Each Rental Period';
+                                                        } elseif ($ctLeaseFeeType === 'Percentage of the Gross Lease Value') {
+                                                            $pct = $allMeta['purchase_fee_percentage_combo'] ?? null;
+                                                            if ($pct) $ctLeaseFeeDisplay = $pct.'% of Gross Lease Value';
+                                                        } elseif ($canon($ctLeaseFeeType) === "Percentage of the First Month's Rent") {
+                                                            $pct = $allMeta['purchase_fee_flat_combo'] ?? null;
+                                                            if ($pct) $ctLeaseFeeDisplay = $pct."% of First Month's Rent";
+                                                        } elseif ($ctLeaseFeeType === 'Percentage of the Net Aggregate Rent') {
+                                                            $pct = $allMeta['purchase_fee_net_aggregate'] ?? null;
+                                                            if ($pct) $ctLeaseFeeDisplay = $pct.'% of Net Aggregate Rent';
+                                                        } elseif ($ctLeaseFeeType === 'Percentage of the Gross Rent') {
+                                                            $pct = $allMeta['purchase_fee_gross_rent'] ?? null;
+                                                            if ($pct) $ctLeaseFeeDisplay = $pct.'% of Gross Rent';
+                                                        } elseif ($canon($ctLeaseFeeType) === "Percentage of Month's Rent") {
+                                                            $pct    = $allMeta['purchase_fee_monthly_percentage'] ?? null;
+                                                            $months = $allMeta['purchase_fee_months'] ?? null;
+                                                            if ($pct) $ctLeaseFeeDisplay = $pct."% of Month's Rent".($months ? " × $months months" : '');
+                                                        } elseif ($ctLeaseFeeType === 'other') {
+                                                            $oth = $allMeta['purchase_fee_other'] ?? ($allMeta['purchase_fee_other_commercial'] ?? null);
+                                                            $ctLeaseFeeDisplay = 'Other: '.($oth ?: 'See details');
+                                                        }
+
+                                                        // ── A) Payment Timing composite display ──
+                                                        $ctFeeTimingRaw = $allMeta['broker_fee_timing'] ?? '';
+                                                        $ctFeeTimingDisplay = match($ctFeeTimingRaw) {
+                                                            'full_execution' => 'Full amount upon execution of lease, sales contract, or other transfer agreement',
+                                                            default => $ctFeeTimingRaw,
+                                                        };
+                                                        if ($ctFeeTimingRaw === 'Deducted from Rent Collected') {
+                                                            $d = $allMeta['broker_fee_days_from_rent'] ?? null;
+                                                            if ($d) $ctFeeTimingDisplay .= " ($d calendar days)";
+                                                        } elseif ($ctFeeTimingRaw === 'Paid Within Calendar Days After Executed Lease') {
+                                                            $d = $allMeta['broker_fee_days_after_lease'] ?? null;
+                                                            if ($d) $ctFeeTimingDisplay = "Within $d days after executed lease";
+                                                        } elseif ($ctFeeTimingRaw === 'Paid Within Calendar Days of Tenant Rent Payment') {
+                                                            $d = $allMeta['broker_fee_days_after_rent'] ?? null;
+                                                            if ($d) $ctFeeTimingDisplay = "Within $d days of tenant rent payment";
+                                                        } elseif ($ctFeeTimingRaw === 'other') {
+                                                            $oth = $allMeta['broker_fee_timing_other'] ?? null;
+                                                            $ctFeeTimingDisplay = $oth ?: 'Custom arrangement';
+                                                        } elseif (in_array($ctFeeTimingRaw, ['50% due upon execution, 50% due upon commencement of agreement','50% due upon execution, 50% due upon occupancy of premises'])) {
+                                                            $d2 = $allMeta['broker_fee_days_after_due_event'] ?? null;
+                                                            if ($d2) $ctFeeTimingDisplay .= " (second installment within $d2 days)";
+                                                        }
+
+                                                        // ── A) Renewal Fee composite display ──
+                                                        $ctRenewalFeeType = $allMeta['renewal_fee_type'] ?? '';
+                                                        $ctRenewalFeeDisplay = $ctRenewalFeeType;
+                                                        if ($ctRenewalFeeType === 'Flat Fee') {
+                                                            $flat = $allMeta['renewal_fee_flat_free'] ?? null;
+                                                            if ($flat) $ctRenewalFeeDisplay = '$'.number_format((float)$flat,2).' Flat Fee';
+                                                        } elseif ($ctRenewalFeeType === 'Percentage of the Rent Due Each Rental Period') {
+                                                            $pct = $allMeta['renewal_fee_percentage'] ?? null;
+                                                            if ($pct) $ctRenewalFeeDisplay = $pct.'% of Rent Due Each Rental Period';
+                                                        } elseif ($ctRenewalFeeType === 'Percentage of the Gross Lease Value') {
+                                                            $pct = $allMeta['renewal_fee_lease_value'] ?? null;
+                                                            if ($pct) $ctRenewalFeeDisplay = $pct.'% of Gross Lease Value';
+                                                        } elseif ($canon($ctRenewalFeeType) === "Percentage of the First Month's Rent") {
+                                                            $pct = $allMeta['renewal_fee_first_month'] ?? null;
+                                                            if ($pct) $ctRenewalFeeDisplay = $pct."% of First Month's Rent";
+                                                        } elseif ($ctRenewalFeeType === 'Percentage of the Net Aggregate Rent') {
+                                                            $pct = $allMeta['renewal_fee_percentage'] ?? null;
+                                                            if ($pct) $ctRenewalFeeDisplay = $pct.'% of Net Aggregate Rent';
+                                                        } elseif ($ctRenewalFeeType === 'Percentage of the Gross Rent') {
+                                                            $pct = $allMeta['renewal_fee_lease_value'] ?? null;
+                                                            if ($pct) $ctRenewalFeeDisplay = $pct.'% of Gross Rent';
+                                                        } elseif ($canon($ctRenewalFeeType) === "Percentage of Month's Rent") {
+                                                            $pct    = $allMeta['renewal_fee_first_month'] ?? null;
+                                                            $months = $allMeta['renewal_fee_no_of_months'] ?? null;
+                                                            if ($pct) $ctRenewalFeeDisplay = $pct."% of Month's Rent".($months ? " × $months months" : '');
+                                                        } elseif ($ctRenewalFeeType === 'other') {
+                                                            $oth = $allMeta['renewal_fee_custom'] ?? null;
+                                                            $ctRenewalFeeDisplay = 'Other: '.($oth ?: 'See details');
+                                                        }
+
+                                                        // ── B) Tenant Broker composite display ──
+                                                        $ctTenantBrokerStructure = $allMeta['tenant_broker_commission_structure'] ?? '';
+                                                        $ctTenantBrokerDisplay   = $ctTenantBrokerStructure;
+                                                        $ctTbs = $allMeta['tenant_broker_fee_structure'] ?? '';
+                                                        if ($ctTenantBrokerStructure && $ctTbs) {
+                                                            if ($ctTbs === 'Percentage of the Rent Due Each Rental Period') {
+                                                                $pct = $allMeta['tenant_broker_percentage'] ?? null;
+                                                                if ($pct) $ctTenantBrokerDisplay .= ' – '.$pct.'% of Rent Due Each Rental Period';
+                                                            } elseif ($ctTbs === 'Percentage of the Gross Lease Value') {
+                                                                $pct = $allMeta['tenant_broker_gross_lease'] ?? null;
+                                                                if ($pct) $ctTenantBrokerDisplay .= ' – '.$pct.'% of Gross Lease Value';
+                                                            } elseif ($ctTbs === "Percentage of the First Month's Rent") {
+                                                                $pct = $allMeta['tenant_broker_first_month_rent'] ?? null;
+                                                                if ($pct) $ctTenantBrokerDisplay .= ' – '.$pct."% of First Month's Rent";
+                                                            } elseif ($ctTbs === 'Flat Fee') {
+                                                                $flat = $allMeta['tenant_broker_flat_fee'] ?? null;
+                                                                if ($flat) $ctTenantBrokerDisplay .= ' – $'.number_format((float)$flat,2).' Flat Fee';
+                                                            } elseif ($ctTbs === 'other') {
+                                                                $oth = $allMeta['tenant_broker_other'] ?? null;
+                                                                if ($oth) $ctTenantBrokerDisplay .= ' – Other: '.$oth;
+                                                            }
+                                                        }
+
+                                                        // ── C) Lease-Option composite displays ──
+                                                        $ctLeaseOptInterest = $allMeta['interested_lease_option_agreement'] ?? '';
+                                                        $ctLeaseOptionCreatedDisplay   = '-';
+                                                        $ctLeaseOptionExercisedDisplay = '-';
+                                                        if ($ctLeaseOptInterest === 'Yes') {
+                                                            $lt = $allMeta['lease_type'] ?? null;
+                                                            $lv = $allMeta['lease_value'] ?? null;
+                                                            if ($lt && $lv) {
+                                                                $ctLeaseOptionCreatedDisplay = ($lt === 'percent')
+                                                                    ? ($fmtPercent($lv) ? $fmtPercent($lv).' of Total Purchase Price' : '-')
+                                                                    : ($fmtMoney($lv) ?? '-');
+                                                            }
+                                                            $pt = $allMeta['purchase_type'] ?? null;
+                                                            $pv = $allMeta['purchase_value'] ?? null;
+                                                            if ($pt && $pv) {
+                                                                $ctLeaseOptionExercisedDisplay = ($pt === 'percent')
+                                                                    ? ($fmtPercent($pv) ? $fmtPercent($pv).' of Total Purchase Price' : '-')
+                                                                    : ($fmtMoney($pv) ?? '-');
+                                                            }
+                                                        }
+
+                                                        // ── D) Purchase Fee composite display ──
+                                                        $ctSellingInterest  = $allMeta['interested_in_selling'] ?? '';
+                                                        $ctPurchaseFeeDisplay = '-';
+                                                        if ($ctSellingInterest === 'Yes') {
+                                                            $ist = $allMeta['interested_in_selling_type'] ?? '';
+                                                            if ($ist === 'Percentage of the Total Purchase Price') {
+                                                                $pct = $allMeta['landlord_broker_purchase_price'] ?? null;
+                                                                $ctPurchaseFeeDisplay = $pct ? $fmtPercent($pct).' of Total Purchase Price' : $ist;
+                                                            } elseif ($ist === 'Percentage of the Total Purchase Price + Flat Fee') {
+                                                                $pct  = $allMeta['landlord_broker_percentage_price'] ?? null;
+                                                                $flat = $allMeta['landlord_broker_dollar_price'] ?? null;
+                                                                $ctPurchaseFeeDisplay = trim(($pct ? $fmtPercent($pct).' of Total Purchase Price' : '').($pct && $flat ? ' + ' : '').($flat ? $fmtMoney($flat) : ''));
+                                                                if (!$ctPurchaseFeeDisplay) $ctPurchaseFeeDisplay = $ist;
+                                                            } elseif ($ist === 'Flat Fee') {
+                                                                $flat = $allMeta['landlord_broker_flate_fee'] ?? null;
+                                                                $ctPurchaseFeeDisplay = $flat ? '$'.number_format((float)$flat,2).' Flat Fee' : $ist;
+                                                            } elseif ($ist === 'Other') {
+                                                                $oth = $allMeta['landlord_broker_other'] ?? null;
+                                                                $ctPurchaseFeeDisplay = $oth ? 'Other: '.$oth : 'Other';
+                                                            } else {
+                                                                $ctPurchaseFeeDisplay = $ist ?: '-';
+                                                            }
+                                                        }
+
+                                                        // ── E) Agency Agreement Timeframe display ──
+                                                        $ctAgencyTimeframe = $allMeta['agency_agreement_timeframe'] ?? '';
+                                                        $ctAgencyTimeframeDisplay = (strtolower(trim($ctAgencyTimeframe)) === 'other')
+                                                            ? ($allMeta['agency_agreement_custom'] ?? 'Other')
+                                                            : $ctAgencyTimeframe;
+
+                                                        // ── E) Property Management Fee composite display ──
+                                                        $ctPmFeeDisplay = '-';
+                                                        if (($allMeta['interested_in_property_management'] ?? '') === 'yes') {
+                                                            $pmFeeType = $allMeta['interested_in_property_management_fee'] ?? '';
+                                                            $ctPmFeeDisplay = $pmFeeType;
+                                                            if ($pmFeeType === 'Percentage of the Gross Lease Value') {
+                                                                $pct = $allMeta['interested_in_property_management_fee_gross_lease'] ?? null;
+                                                                if ($pct) $ctPmFeeDisplay = $pct.'% of Gross Lease Value';
+                                                            } elseif ($pmFeeType === 'Percentage of the Rent Due Each Rental Period') {
+                                                                $pct = $allMeta['interested_in_property_management_fee_rental_periord'] ?? null;
+                                                                if ($pct) $ctPmFeeDisplay = $pct.'% of Rent Due Each Rental Period';
+                                                            } elseif ($pmFeeType === 'Flat Fee') {
+                                                                $flat = $allMeta['interested_in_property_management_fee_flate_free'] ?? null;
+                                                                if ($flat) $ctPmFeeDisplay = '$'.number_format((float)$flat,2).' Flat Fee';
+                                                            } elseif ($pmFeeType === 'Other') {
+                                                                $oth = $allMeta['interested_in_property_management_fee_other'] ?? null;
+                                                                if ($oth) $ctPmFeeDisplay = 'Other: '.$oth;
+                                                            }
+                                                        }
+
+                                                        $ctHasBrokerComp = !empty($ctLeaseFeeType) || !empty($ctFeeTimingRaw) || !empty($ctRenewalFeeType)
+                                                            || !empty($allMeta['expansion_commission_percentage'])
+                                                            || !empty($ctTenantBrokerStructure)
+                                                            || !empty($ctLeaseOptInterest)
+                                                            || !empty($ctSellingInterest)
+                                                            || !empty($allMeta['protection_period'])
+                                                            || !empty($allMeta['early_termination_fee_option'])
+                                                            || !empty($ctAgencyTimeframe)
+                                                            || !empty($allMeta['interested_in_property_management'])
+                                                            || !empty($allMeta['brokerage_relationship'])
+                                                            || !empty($allMeta['additional_details_broker'])
+                                                            || !empty($allMeta['additional_details']);
+                                                    @endphp
+
+                                                    @if ($ctHasBrokerComp)
                                                     <div class="mb-4">
-                                                        <h6 class="mb-3" style="font-weight: 600; border-bottom: 1px solid #ddd; padding-bottom: 8px;">
-                                                            Broker Compensation & Agency Agreement Terms
+                                                        <h6 class="mb-3" style="font-weight: 600; color: #049399; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                            <i class="fa fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
                                                         </h6>
 
-                                                        <!-- Landlord's Broker Lease Fee -->
-                                                        @if (!empty($allMeta['purchase_fee_type']))
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Landlord's Broker Lease Fee Type:</span> {{ $allMeta['purchase_fee_type'] }}</div>
-                                                        @endif
-
-                                                        <!-- Residential Property Lease Fee Amounts -->
-                                                        @if (!empty($allMeta['purchase_fee_flat']) && $allMeta['purchase_fee_type'] === 'Flat Fee')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Flat Fee Amount:</span> ${{ $allMeta['purchase_fee_flat'] }}</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['purchase_fee_rental_period']) && $allMeta['purchase_fee_type'] === 'Percentage of the Rent Due Each Rental Period')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Percentage of Rent Due Each Rental Period:</span> {{ $allMeta['purchase_fee_rental_period'] }}%</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['purchase_fee_percentage_combo']) && $allMeta['purchase_fee_type'] === 'Percentage of the Gross Lease Value')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Percentage of Gross Lease Value:</span> {{ $allMeta['purchase_fee_percentage_combo'] }}%</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['purchase_fee_flat_combo']) && $canon($allMeta['purchase_fee_type'] ?? '') === 'Percentage of the First Month\'s Rent')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Percentage of First Month's Rent:</span> {{ $allMeta['purchase_fee_flat_combo'] }}%</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['purchase_fee_other']) && $allMeta['purchase_fee_type'] === 'other')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Other Lease Fee Structure:</span> {{ $allMeta['purchase_fee_other'] }}</div>
-                                                        @endif
-
-                                                        <!-- Commercial Property Lease Fee Amounts -->
-                                                        @if (!empty($allMeta['purchase_fee_net_aggregate']) && $allMeta['purchase_fee_type'] === 'Percentage of the Net Aggregate Rent')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Percentage of Net Aggregate Rent:</span> {{ $allMeta['purchase_fee_net_aggregate'] }}%</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['purchase_fee_gross_rent']) && $allMeta['purchase_fee_type'] === 'Percentage of the Gross Rent')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Percentage of Gross Rent:</span> {{ $allMeta['purchase_fee_gross_rent'] }}%</div>
-                                                        @if (!empty($allMeta['sales_tax_option_gross']))
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Sales Tax:</span> {{ $allMeta['sales_tax_option_gross'] === 'including' ? 'Including Sales Tax' : 'Excluding Sales Tax' }}</div>
-                                                        @endif
-                                                        @endif
-
-                                                        @if (!empty($allMeta['purchase_fee_monthly_percentage']) && $canon($allMeta['purchase_fee_type'] ?? '') === 'Percentage of Month\'s Rent')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Percentage of Month's Rent:</span> {{ $allMeta['purchase_fee_monthly_percentage'] }}%</div>
-                                                        @if (!empty($allMeta['purchase_fee_months']))
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Number of Months:</span> {{ $allMeta['purchase_fee_months'] }} months</div>
-                                                        @endif
-                                                        @if (!empty($allMeta['sales_tax_option_monthly']))
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Sales Tax:</span> {{ $allMeta['sales_tax_option_monthly'] === 'including' ? 'Including Sales Tax' : 'Excluding Sales Tax' }}</div>
-                                                        @endif
-                                                        @endif
-
-                                                        @if (!empty($allMeta['purchase_fee_flat_commercial']) && $allMeta['purchase_fee_type'] === 'Flat Fee')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Flat Fee Amount:</span> ${{ $allMeta['purchase_fee_flat_commercial']}}</div>
-                                                        @if (!empty($allMeta['sales_tax_option_flat']))
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Sales Tax:</span> {{ $allMeta['sales_tax_option_flat'] === 'including' ? 'Including Sales Tax' : 'Excluding Sales Tax' }}</div>
-                                                        @endif
-                                                        @endif
-
-                                                        @if (!empty($allMeta['purchase_fee_other_commercial']) && $allMeta['purchase_fee_type'] === 'other')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Other Lease Fee Structure:</span> {{ $allMeta['purchase_fee_other_commercial'] }}</div>
-                                                        @endif
-
-                                                        <!-- Lease Option Agreement -->
-                                                        @if (!empty($allMeta['interested_lease_option_agreement']) && $allMeta['interested_lease_option_agreement'] === 'Yes')
-                                                        <div class="mt-3 pt-3 border-top">
-                                                            <h6 class="mb-2" style="font-size: 14px; font-weight: 600;">Lease-Option Agreement Details</h6>
-
-                                                            @if (!empty($allMeta['lease_value']))
-                                                            <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Lease Option Compensation:</span>
-                                                                @if (!empty($allMeta['lease_type']) && $allMeta['lease_type'] === 'percent')
-                                                                {{ $allMeta['lease_value'] }}%
-                                                                @else
-                                                                ${{ $allMeta['lease_value'] }}
+                                                        {{-- A) Landlord's Broker Lease Fee --}}
+                                                        @if (!empty($ctLeaseFeeType) || !empty($ctFeeTimingRaw) || !empty($ctRenewalFeeType) || !empty($allMeta['expansion_commission_percentage']))
+                                                        <div class="mb-3">
+                                                            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">A) Landlord's Broker Lease Fee</div>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                @if (!empty($ctLeaseFeeType))
+                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Landlord's Broker Lease Fee:</span> {{ $ctLeaseFeeDisplay }}</li>
                                                                 @endif
-                                                            </div>
-                                                            @endif
-
-                                                            @if (!empty($allMeta['purchase_value']))
-                                                            <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Purchase Option Compensation:</span>
-                                                                @if (!empty($allMeta['purchase_type']) && $allMeta['purchase_type'] === 'percent')
-                                                                {{ $allMeta['purchase_value'] }}%
-                                                                @else
-                                                                ${{$allMeta['purchase_value'] }}
+                                                                @if (!empty($ctFeeTimingRaw))
+                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Payment Timing for Broker Fees:</span> {{ $ctFeeTimingDisplay }}</li>
                                                                 @endif
-                                                            </div>
-                                                            @endif
+                                                                @if (!empty($ctRenewalFeeType))
+                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Lease Renewal/Extension Fee:</span> {{ $ctRenewalFeeDisplay }}</li>
+                                                                @endif
+                                                                @if (!empty($allMeta['expansion_commission_percentage']))
+                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Expansion Commission for Lease Amendment:</span> {{ $allMeta['expansion_commission_percentage'] }}% of original commission</li>
+                                                                @endif
+                                                            </ul>
                                                         </div>
                                                         @endif
 
-                                                        <!-- Interested in Selling -->
-                                                        @if (!empty($allMeta['interested_in_selling']) && $allMeta['interested_in_selling'] === 'Yes')
-                                                        <div class="mt-3 pt-3 border-top">
-                                                            <h6 class="mb-2" style="font-size: 14px; font-weight: 600;">Purchase Fee Details</h6>
-
-                                                            @if (!empty($allMeta['interested_in_selling_type']))
-                                                            <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Purchase Fee Type:</span> {{ $allMeta['interested_in_selling_type'] }}</div>
-                                                            @endif
-
-                                                            @if (!empty($allMeta['landlord_broker_purchase_price']) && $allMeta['interested_in_selling_type'] === 'Percentage of the Total Purchase Price')
-                                                            <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Purchase Percentage:</span> {{ $allMeta['landlord_broker_purchase_price'] }}%</div>
-                                                            @endif
-
-                                                            @if ($allMeta['interested_in_selling_type'] === 'Percentage of the Total Purchase Price + Flat Fee')
-                                                            @if (!empty($allMeta['landlord_broker_percentage_price']))
-                                                            <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Purchase Percentage:</span> {{ $allMeta['landlord_broker_percentage_price'] }}%</div>
-                                                            @endif
-                                                            @if (!empty($allMeta['landlord_broker_dollar_price']))
-                                                            <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Purchase Flat Fee:</span> ${{ $allMeta['landlord_broker_dollar_price'] }}</div>
-                                                            @endif
-                                                            @endif
-
-                                                            @if (!empty($allMeta['landlord_broker_flate_fee']) && $allMeta['interested_in_selling_type'] === 'Flat Fee')
-                                                            <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Purchase Flat Fee:</span> ${{ $allMeta['landlord_broker_flate_fee'] }}</div>
-                                                            @endif
-
-                                                            @if (!empty($allMeta['landlord_broker_other']) && $allMeta['interested_in_selling_type'] === 'Other')
-                                                            <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Other Purchase Fee Structure:</span> {{ $allMeta['landlord_broker_other'] }}</div>
-                                                            @endif
+                                                        {{-- B) Tenant's Broker Compensation --}}
+                                                        @if (!empty($ctTenantBrokerStructure))
+                                                        <div class="mb-3">
+                                                            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">B) Tenant's Broker Compensation</div>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $ctTenantBrokerDisplay }}</li>
+                                                            </ul>
                                                         </div>
                                                         @endif
 
-                                                        <!-- Payment Timing for Broker Fees -->
-                                                        @if (!empty($allMeta['broker_fee_timing']))
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Payment Timing for Broker Fees:</span> {{ $allMeta['broker_fee_timing'] }}</div>
-
-                                                        @if (!empty($allMeta['broker_fee_days_from_rent']) && $allMeta['broker_fee_timing'] === 'Deducted from Rent Collected')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Calendar Days to Pay Balance:</span> {{ $allMeta['broker_fee_days_from_rent'] }} days</div>
+                                                        {{-- C) Lease-Option Details --}}
+                                                        @if (!empty($ctLeaseOptInterest))
+                                                        <div class="mb-3">
+                                                            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">C) Lease-Option Details</div>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Interested in Offering a Lease-Option Agreement:</span> {{ $ctLeaseOptInterest }}</li>
+                                                                @if ($ctLeaseOptInterest === 'Yes')
+                                                                    @if ($ctLeaseOptionCreatedDisplay !== '-')
+                                                                    <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Compensation for Creating the Lease-Option Agreement:</span> {{ $ctLeaseOptionCreatedDisplay }}</li>
+                                                                    @endif
+                                                                    @if ($ctLeaseOptionExercisedDisplay !== '-')
+                                                                    <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Compensation if Purchase Option is Exercised:</span> {{ $ctLeaseOptionExercisedDisplay }}</li>
+                                                                    @endif
+                                                                @endif
+                                                            </ul>
+                                                        </div>
                                                         @endif
 
-                                                        @if (!empty($allMeta['broker_fee_days_after_lease']) && $allMeta['broker_fee_timing'] === 'Paid Within Calendar Days After Executed Lease')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Calendar Days to Pay After Executed Lease:</span> {{ $allMeta['broker_fee_days_after_lease'] }} days</div>
+                                                        {{-- D) Purchase Fee Details --}}
+                                                        @if (!empty($ctSellingInterest))
+                                                        <div class="mb-3">
+                                                            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">D) Purchase Fee Details</div>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Interested in Selling the Property:</span> {{ $ctSellingInterest }}</li>
+                                                                @if ($ctSellingInterest === 'Yes' && $ctPurchaseFeeDisplay !== '-')
+                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Purchase Fee:</span> {{ $ctPurchaseFeeDisplay }}</li>
+                                                                @endif
+                                                            </ul>
+                                                        </div>
                                                         @endif
 
-                                                        @if (!empty($allMeta['broker_fee_days_after_rent']) && $allMeta['broker_fee_timing'] === 'Paid Within Calendar Days of Tenant Rent Payment')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Calendar Days to Pay After Tenant Rent Payment:</span> {{ $allMeta['broker_fee_days_after_rent'] }} days</div>
+                                                        {{-- E) Legal Terms --}}
+                                                        @if (!empty($allMeta['protection_period']) || !empty($allMeta['early_termination_fee_option']) || !empty($ctAgencyTimeframe) || !empty($allMeta['interested_in_property_management']))
+                                                        <div class="mb-3">
+                                                            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">E) Legal Terms</div>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                @if (!empty($allMeta['protection_period']))
+                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Protection Period Timeframe:</span> {{ $allMeta['protection_period'] }} days</li>
+                                                                @endif
+                                                                @if (!empty($allMeta['early_termination_fee_option']))
+                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Early Termination Fee:</span> {{ $allMeta['early_termination_fee_option'] === 'yes' ? 'Yes' : 'No' }}</li>
+                                                                @if ($allMeta['early_termination_fee_option'] === 'yes' && !empty($allMeta['early_termination_fee_amount']))
+                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Termination Fee Amount:</span> {{ $fmtMoney($allMeta['early_termination_fee_amount']) ?? ('$'.$allMeta['early_termination_fee_amount']) }}</li>
+                                                                @endif
+                                                                @endif
+                                                                @if (!empty($ctAgencyTimeframe))
+                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Landlord Agency Agreement Timeframe:</span> {{ $ctAgencyTimeframeDisplay }}</li>
+                                                                @endif
+                                                                @if (!empty($allMeta['interested_in_property_management']))
+                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Interested in Property Management:</span> {{ ($allMeta['interested_in_property_management'] === 'yes') ? 'Yes' : 'No' }}</li>
+                                                                @if (($allMeta['interested_in_property_management'] === 'yes') && $ctPmFeeDisplay !== '-')
+                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Property Management Fee:</span> {{ $ctPmFeeDisplay }}</li>
+                                                                @endif
+                                                                @endif
+                                                            </ul>
+                                                        </div>
                                                         @endif
 
-                                                        @if (!empty($allMeta['broker_fee_timing_other']) && $allMeta['broker_fee_timing'] === 'other')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Custom Payment Arrangement:</span> {{ $allMeta['broker_fee_timing_other'] }}</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['broker_fee_days_after_due_event']) && ($allMeta['broker_fee_timing'] === '50% due upon execution, 50% due upon commencement of agreement' || $allMeta['broker_fee_timing'] === '50% due upon execution, 50% due upon occupancy of premises'))
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Calendar Days to Pay Second Installment:</span> {{ $allMeta['broker_fee_days_after_due_event'] }} days</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['split_payment_due']) && $allMeta['broker_fee_timing'] === 'split_payment')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Remaining 50% Due Upon:</span> {{ $allMeta['split_payment_due'] }}</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['split_payment_due_other']) && $allMeta['split_payment_due'] === 'Other')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Custom Payment Due:</span> {{ $allMeta['split_payment_due_other'] }}</div>
-                                                        @endif
-                                                        @endif
-
-                                                        <!-- Lease Renewal/Extension Fee -->
-                                                        @if (!empty($allMeta['renewal_fee_type']))
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Lease Renewal/Extension Fee:</span> {{ $allMeta['renewal_fee_type'] }}</div>
-
-                                                        @if (!empty($allMeta['renewal_fee_percentage']) && $allMeta['renewal_fee_type'] === 'Percentage of the Rent Due Each Rental Period')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Percentage of Rent Due Each Rental Period:</span> {{ $allMeta['renewal_fee_percentage'] }}%</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['renewal_fee_lease_value']) && $allMeta['renewal_fee_type'] === 'Percentage of the Gross Lease Value')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Percentage of Gross Lease Value:</span> {{ $allMeta['renewal_fee_lease_value'] }}%</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['renewal_fee_first_month']) && $canon($allMeta['renewal_fee_type'] ?? '') === 'Percentage of the First Month\'s Rent')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Percentage of First Month's Rent:</span> {{ $allMeta['renewal_fee_first_month'] }}%</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['renewal_fee_flat_free']) && $allMeta['renewal_fee_type'] === 'Flat Fee')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Flat Fee Amount:</span> ${{ $allMeta['renewal_fee_flat_free'] }}</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['renewal_fee_sales_tax_lease_value']) && $allMeta['renewal_fee_type'] === 'Percentage of the Gross Rent')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Sales Tax:</span> {{ $allMeta['renewal_fee_sales_tax_lease_value'] === 'including' ? 'Including Sales Tax' : 'Excluding Sales Tax' }}</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['renewal_fee_no_of_months']) && $canon($allMeta['renewal_fee_type'] ?? '') === 'Percentage of Month\'s Rent')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Number of Months:</span> {{ $allMeta['renewal_fee_no_of_months'] }} months</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['renewal_fee_sales_tax_first_month']) && $canon($allMeta['renewal_fee_type'] ?? '') === 'Percentage of Month\'s Rent')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Sales Tax:</span> {{ $allMeta['renewal_fee_sales_tax_first_month'] === 'including' ? 'Including Sales Tax' : 'Excluding Sales Tax' }}</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['renewal_fee_sales_tax_flat_fee']) && $allMeta['renewal_fee_type'] === 'Flat Fee')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Sales Tax:</span> {{ $allMeta['renewal_fee_sales_tax_flat_fee'] === 'including' ? 'Including Sales Tax' : 'Excluding Sales Tax' }}</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['renewal_fee_custom']) && $allMeta['renewal_fee_type'] === 'other')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Custom Renewal Fee Structure:</span> {{ $allMeta['renewal_fee_custom'] }}</div>
-                                                        @endif
-                                                        @endif
-
-                                                        <!-- Expansion Commission for Lease Amendment -->
-                                                        @if (!empty($allMeta['expansion_commission_percentage']))
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Expansion Commission for Lease Amendment:</span> {{ $allMeta['expansion_commission_percentage'] }}% of original commission</div>
-                                                        @endif
-
-                                                        <!-- Tenant's Broker Commission Structure -->
-                                                        @if (!empty($allMeta['tenant_broker_commission_structure']))
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Tenant's Broker Commission Fee:</span> {{ $allMeta['tenant_broker_commission_structure'] }}</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['tenant_broker_fee_structure']))
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Tenant's Broker Commission Fee Structure:</span> {{ $allMeta['tenant_broker_fee_structure'] }}</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['tenant_broker_percentage']) && $allMeta['tenant_broker_fee_structure'] === 'Percentage of the Rent Due Each Rental Period')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Percentage of Rent Due Each Rental Period:</span> {{ $allMeta['tenant_broker_percentage'] }}%</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['tenant_broker_gross_lease']) && $allMeta['tenant_broker_fee_structure'] === 'Percentage of the Gross Lease Value')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Percentage of Gross Lease Value:</span> {{ $allMeta['tenant_broker_gross_lease'] }}%</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['tenant_broker_first_month_rent']) && $canon($allMeta['tenant_broker_fee_structure'] ?? '') === 'Percentage of the First Month\'s Rent')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Percentage of First Month's Rent:</span> {{ $allMeta['tenant_broker_first_month_rent'] }}%</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['tenant_broker_flat_fee']) && $allMeta['tenant_broker_fee_structure'] === 'Flat fee')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Flat Fee Amount:</span> ${{ ($allMeta['tenant_broker_flat_fee']) }}</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['tenant_broker_other']) && $allMeta['tenant_broker_fee_structure'] === 'Other')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Other Commission Arrangement:</span> {{ $allMeta['tenant_broker_other'] }}</div>
-                                                        @endif
-
-                                                        <!-- Protection Period -->
-                                                        @if (!empty($allMeta['protection_period']))
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Protection Period:</span> {{ $allMeta['protection_period'] }} days</div>
-                                                        @endif
-
-                                                        <!-- Early Termination Fee -->
-                                                        @if (!empty($allMeta['early_termination_fee_option']))
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Early Termination Fee:</span> {{ $allMeta['early_termination_fee_option'] === 'yes' ? 'Yes' : 'No' }}</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['early_termination_fee_amount']) && $allMeta['early_termination_fee_option'] === 'yes')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Termination Fee Amount:</span> ${{($allMeta['early_termination_fee_amount']) }}</div>
-                                                        @endif
-
-                                                        <!-- Agency Agreement Timeframe -->
-                                                        @if (!empty($allMeta['agency_agreement_timeframe']))
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Agency Agreement Timeframe:</span> {{ $allMeta['agency_agreement_timeframe'] }}</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['agency_agreement_custom']) && $allMeta['agency_agreement_timeframe'] === 'Other')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Custom Timeframe:</span> {{ $allMeta['agency_agreement_custom'] }}</div>
-                                                        @endif
-
-                                                        <!-- Property Management -->
-                                                        @if (!empty($allMeta['interested_in_property_management']))
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Interested in Property Management:</span> {{ $allMeta['interested_in_property_management'] === 'yes' ? 'Yes' : 'No' }}</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['interested_in_property_management_fee']) && $allMeta['interested_in_property_management'] === 'yes')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Property Management Fee Type:</span> {{ $allMeta['interested_in_property_management_fee'] }}</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['interested_in_property_management_fee_gross_lease']) && $allMeta['interested_in_property_management_fee'] === 'Percentage of the Gross Lease Value')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Percentage of Gross Lease Value:</span> {{ $allMeta['interested_in_property_management_fee_gross_lease'] }}%</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['interested_in_property_management_fee_rental_periord']) && $allMeta['interested_in_property_management_fee'] === 'Percentage of the Rent Due Each Rental Period')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Percentage of Rent Due Each Rental Period:</span> {{ $allMeta['interested_in_property_management_fee_rental_periord'] }}%</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['interested_in_property_management_fee_flate_free']) && $allMeta['interested_in_property_management_fee'] === 'Flat Fee')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Flat Fee Amount:</span> ${{ $allMeta['interested_in_property_management_fee_flate_free'] }}</div>
-                                                        @endif
-
-                                                        @if (!empty($allMeta['interested_in_property_management_fee_other']) && $allMeta['interested_in_property_management_fee'] === 'Other')
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Other Property Management Fee Structure:</span> {{ $allMeta['interested_in_property_management_fee_other'] }}</div>
-                                                        @endif
-
-                                                        <!-- Brokerage Relationship -->
+                                                        {{-- F) Brokerage Relationship --}}
                                                         @if (!empty($allMeta['brokerage_relationship']))
-                                                        <div class="mb-1" style="font-size: 12px;"><span style="font-size: 13px; font-weight: 600;">Brokerage Relationship:</span> {{ $allMeta['brokerage_relationship'] }}</div>
-                                                        @endif
-
-                                                        <!-- Additional Terms -->
-                                                        @if (!empty($allMeta['additional_details_broker']))
-                                                        <div class="mt-3">
-                                                            <div style="font-size: 13px; font-weight: 600; margin-bottom: 5px;">
-                                                                Additional Terms:
-                                                            </div>
-                                                            <div style="font-size: 12px;">
-                                                                {{ $allMeta['additional_details_broker'] }}
-                                                            </div>
+                                                        <div class="mb-3">
+                                                            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">F) Brokerage Relationship</div>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Acceptable Brokerage Relationship:</span> {{ $allMeta['brokerage_relationship'] }}</li>
+                                                            </ul>
                                                         </div>
                                                         @endif
+
+                                                        {{-- G) Additional Terms / Additional Details --}}
+                                                        @if (!empty($allMeta['additional_details_broker']) || !empty($allMeta['additional_details']))
+                                                        <div class="mb-3">
+                                                            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">G) Additional Terms / Additional Details</div>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                @if (!empty($allMeta['additional_details_broker']))
+                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Additional Terms:</span> {{ $allMeta['additional_details_broker'] }}</li>
+                                                                @endif
+                                                                @if (!empty($allMeta['additional_details']))
+                                                                <li class="mb-1" style="font-size: 12px;"><span class="fw-semibold">Additional Details:</span> {{ $allMeta['additional_details'] }}</li>
+                                                                @endif
+                                                            </ul>
+                                                        </div>
+                                                        @endif
+
                                                     </div>
                                                     @endif
 
