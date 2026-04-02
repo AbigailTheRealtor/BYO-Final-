@@ -4511,6 +4511,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 <li class="mb-1" style="font-size: 12px; {{ $retainerAppChanged ? $changedStyle : '' }}"><span class="fw-semibold">Retainer Fee Application:</span> {{ $allMeta['retainer_fee_application'] === 'applied' ? 'Applied toward final compensation' : 'Charged in addition to final compensation' }}{!! $retainerAppChanged ? $changedBadge : '' !!}</li>
                                                                 @endif
                                                                 @endif
+                                                                @endif
                                                                 @if (!empty($allMeta['agency_agreement_timeframe']))
                                                                 @php
                                                                     $metaTimeframe = $allMeta['agency_agreement_timeframe'] ?? '';
