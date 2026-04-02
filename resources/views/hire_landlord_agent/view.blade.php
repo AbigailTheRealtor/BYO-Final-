@@ -4095,7 +4095,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                 );
                                                 $bidState = in_array(
                                                 $rawBidState,
-                                                [null, 0, '0'],
+                                                [null, 0, '0', 'no', 'pending', false],
                                                 true,
                                                 )
                                                 ? '0'
