@@ -17,6 +17,8 @@
     return (floor($num) == $num ? (string)(int)$num : (string)$num) . '%';
   };
 
+  $rentalPeriodSuffix = 'of Rent Due Each Rental Period';
+
   $joinParts = function($parts) {
     $parts = array_values(array_filter($parts, fn($p) => $p !== null && $p !== ''));
     return count($parts) ? implode(' + ', $parts) : null;
@@ -1495,7 +1497,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             if ($landlordLeaseFeeType === 'Flat Fee' && @$auction->get->purchase_fee_flat) {
                 $landlordLeaseFeeCombined = $fmtMoney(@$auction->get->purchase_fee_flat);
             } elseif ($landlordLeaseFeeType === 'Percentage of the Rent Due Each Rental Period' && @$auction->get->purchase_fee_rental_period) {
-                $landlordLeaseFeeCombined = $fmtPercent(@$auction->get->purchase_fee_rental_period) . ' of rent due each rental period';
+                $landlordLeaseFeeCombined = $fmtPercent(@$auction->get->purchase_fee_rental_period) . " $rentalPeriodSuffix";
             } elseif ($landlordLeaseFeeType === 'Percentage of the Gross Lease Value' && @$auction->get->purchase_fee_percentage_combo) {
                 $landlordLeaseFeeCombined = $fmtPercent(@$auction->get->purchase_fee_percentage_combo) . ' of Gross Lease Value';
             } elseif ($landlordLeaseFeeType === "Percentage of the First Month's Rent" && @$auction->get->purchase_fee_flat_combo) {
@@ -1565,7 +1567,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             if ($tenantFeeType === 'Flat Fee' && @$auction->get->tenant_broker_flat_fee) {
                 $tenantFeeCombined = $fmtMoney(@$auction->get->tenant_broker_flat_fee);
             } elseif ($tenantFeeType === 'Percentage of the Rent Due Each Rental Period' && @$auction->get->tenant_broker_percentage) {
-                $tenantFeeCombined = $fmtPercent(@$auction->get->tenant_broker_percentage) . ' of rent due each rental period';
+                $tenantFeeCombined = $fmtPercent(@$auction->get->tenant_broker_percentage) . " $rentalPeriodSuffix";
             } elseif ($tenantFeeType === 'Percentage of the Gross Lease Value' && @$auction->get->tenant_broker_gross_lease) {
                 $tenantFeeCombined = $fmtPercent(@$auction->get->tenant_broker_gross_lease) . ' of Gross Lease Value';
             } elseif ($tenantFeeType === "Percentage of the First Month's Rent" && @$auction->get->tenant_broker_first_month_rent) {
@@ -1638,7 +1640,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             if ($renewalFeeType === 'Flat Fee' && @$auction->get->renewal_fee_flat_free) {
                 $renewalFeeCombined = $fmtMoney(@$auction->get->renewal_fee_flat_free);
             } elseif ($renewalFeeType === 'Percentage of the Rent Due Each Rental Period' && @$auction->get->renewal_fee_percentage) {
-                $renewalFeeCombined = $fmtPercent(@$auction->get->renewal_fee_percentage) . ' of rent due each rental period';
+                $renewalFeeCombined = $fmtPercent(@$auction->get->renewal_fee_percentage) . " $rentalPeriodSuffix";
             } elseif ($renewalFeeType === 'Percentage of the Gross Lease Value' && @$auction->get->renewal_fee_lease_value) {
                 $renewalFeeCombined = $fmtPercent(@$auction->get->renewal_fee_lease_value) . ' of Gross Lease Value';
             } elseif ($renewalFeeType === "Percentage of the First Month's Rent" && @$auction->get->renewal_fee_first_month) {
@@ -1715,7 +1717,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             if ($pmFeeType === 'Flat Fee' && @$auction->get->interested_in_property_management_fee_flate_free) {
                 $pmFeeCombined = $fmtMoney(@$auction->get->interested_in_property_management_fee_flate_free);
             } elseif ($pmFeeType === 'Percentage of the Rent Due Each Rental Period' && @$auction->get->interested_in_property_management_fee_rental_periord) {
-                $pmFeeCombined = $fmtPercent(@$auction->get->interested_in_property_management_fee_rental_periord) . ' of rent due each rental period';
+                $pmFeeCombined = $fmtPercent(@$auction->get->interested_in_property_management_fee_rental_periord) . " $rentalPeriodSuffix";
             } elseif ($pmFeeType === 'Percentage of the Gross Lease Value' && @$auction->get->interested_in_property_management_fee_gross_lease) {
                 $pmFeeCombined = $fmtPercent(@$auction->get->interested_in_property_management_fee_gross_lease) . ' of Gross Lease Value';
             } elseif (strtolower($pmFeeType) === 'other' && @$auction->get->interested_in_property_management_fee_other) {
@@ -2374,7 +2376,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                             if ($landlordFeeType === 'Flat Fee' && data_get($bid,'get.purchase_fee_flat')) {
                                 $landlordFeeDisplay = $fmtMoney(data_get($bid,'get.purchase_fee_flat'));
                             } elseif ($landlordFeeType === 'Percentage of the Rent Due Each Rental Period' && data_get($bid,'get.purchase_fee_rental_period')) {
-                                $landlordFeeDisplay = $fmtPercent(data_get($bid,'get.purchase_fee_rental_period')) . ' of rent due each rental period';
+                                $landlordFeeDisplay = $fmtPercent(data_get($bid,'get.purchase_fee_rental_period')) . " $rentalPeriodSuffix";
                             } elseif ($landlordFeeType === 'Percentage of the Gross Lease Value' && data_get($bid,'get.purchase_fee_percentage_combo')) {
                                 $landlordFeeDisplay = $fmtPercent(data_get($bid,'get.purchase_fee_percentage_combo')) . ' of Gross Lease Value';
                             } elseif ($landlordFeeType === "Percentage of the First Month's Rent" && data_get($bid,'get.purchase_fee_flat_combo')) {

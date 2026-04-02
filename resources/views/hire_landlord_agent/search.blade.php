@@ -229,12 +229,13 @@
 
                         $fmtMoney = function($v) { return '$' . number_format((float)$v, 2); };
                         $fmtPct   = function($v) { return $v . '%'; };
+                        $rentalPeriodSuffix = 'of Rent Due Each Rental Period';
                         $landlordFeeType = strtolower(trim(@$auction->get->purchase_fee_type ?? ''));
                         $landlordFeeCombined = '';
                         if ($landlordFeeType === 'flat fee' && !empty(@$auction->get->purchase_fee_flat)) {
                             $landlordFeeCombined = $fmtMoney($auction->get->purchase_fee_flat);
                         } elseif ($landlordFeeType === 'percentage of the rent due each rental period' && !empty(@$auction->get->purchase_fee_rental_period)) {
-                            $landlordFeeCombined = $fmtPct($auction->get->purchase_fee_rental_period) . ' of rent due each rental period';
+                            $landlordFeeCombined = $fmtPct($auction->get->purchase_fee_rental_period) . " $rentalPeriodSuffix";
                         } elseif ($landlordFeeType === 'percentage of the gross lease value' && !empty(@$auction->get->purchase_fee_percentage_combo)) {
                             $landlordFeeCombined = $fmtPct($auction->get->purchase_fee_percentage_combo) . ' of Gross Lease Value';
                         } elseif ($landlordFeeType === "percentage of the first month's rent" && !empty(@$auction->get->purchase_fee_flat_combo)) {
