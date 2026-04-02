@@ -16,6 +16,7 @@ use App\Models\BuyerAgentAuction;
 use App\Models\BuyerAgentAuctionBid;
 use App\Models\LandlordCounterTerm;
 use App\Models\LandlordAgentAuction;
+use App\Models\LandlordAgentAuctionBid;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
@@ -23,21 +24,17 @@ class LandlordCounteredTermsController extends Controller
 {
     public function add(Request $request, $id)
     {
-
-        $pab = LandlordAgentAuction::whereId($id)->first();
+        $pab = LandlordAgentAuctionBid::whereId($id)->first();
         $bid_id = $id;
         $parent_counter_id = $request->counter_bid_id ? $request->counter_bid_id : null;
-
 
         return view('landlord_counter_terms.add', compact('bid_id', 'pab', 'parent_counter_id'));
     }
     public function edit(Request $request, $id)
     {
-
-        $pab = LandlordAgentAuction::whereId($id)->first();
+        $pab = LandlordAgentAuctionBid::findOrFail($id);
         $bid_id = $id;
-        $parent_counter_id = $request->counter_bid_id ? $request->counter_bid_id : null;
-
+        $parent_counter_id = $request->counter_bid_id ?: null;
 
         return view('landlord_counter_terms.add', compact('bid_id', 'pab', 'parent_counter_id'));
     }

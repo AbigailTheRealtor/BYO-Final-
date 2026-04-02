@@ -410,7 +410,7 @@ class LandlordAgentAuctionCounterTerm extends Component
 
         $this->pab   = $pab;
         $this->bidId = $bidId;
-        $this->property_type = $pab->get->property_type;
+        $this->property_type = $pab->get->property_type ?? '';
 
         // EDIT MODE: Try load existing counter term by auction id
         $existing = LandlordCounterTerm::with('meta')
@@ -421,7 +421,7 @@ class LandlordAgentAuctionCounterTerm extends Component
             $this->counterTermId = $existing->id;
             $this->hydrateFromMetaMap($existing->meta->pluck('meta_value', 'meta_key')->toArray());
         } else {
-            $auction = \App\Models\LandlordAgentAuction::find($this->pab->id);
+            $auction = \App\Models\LandlordAgentAuction::find($this->pab->landlord_agent_auction_id ?? $this->pab->id);
             // $this->additional_details = $auction->get->additional_details ?? '';
 
             $this->services = is_string($auction->get->services) ? json_decode($auction->get->services, true) ?? [] : (array)$auction->get->services;
