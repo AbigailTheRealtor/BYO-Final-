@@ -4,8 +4,12 @@ namespace App\Http\Livewire\Landlord;
 
 use Livewire\Component;
 use App\Models\LandlordCounterTerm;
+use App\Models\LandlordAgentAuction;
+use App\Models\User;
+use App\Notifications\CounterBidSubmittedNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class LandlordAgentAuctionCounterTerm extends Component
 {
@@ -686,6 +690,35 @@ class LandlordAgentAuctionCounterTerm extends Component
             $this->saveAllMetaData($counterTerm);
 
             DB::commit();
+
+            // Notify the other party that a counter bid was submitted
+            try {
+                // pab is the original bid (the bid being countered)
+                // landlord_agent_auction_id on the bid is the auction ID
+                $auction = LandlordAgentAuction::find($this->pab->landlord_agent_auction_id);
+                if ($auction) {
+                    // If listing owner submitted → notify agent; if agent submitted → notify listing owner
+                    $senderId = Auth::id();
+                    $recipientId = ($senderId === $auction->user_id)
+                        ? $this->pab->user_id
+                        : $auction->user_id;
+                    $recipient = User::find($recipientId);
+                    if ($recipient) {
+                        $recipient->notify(new CounterBidSubmittedNotification(
+                            $this->pab,
+                            $auction,
+                            Auth::user(),
+                            $recipientId
+                        ));
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send landlord counter terms notification', [
+                    'bid_id' => $this->bidId,
+                    'error'  => $e->getMessage(),
+                ]);
+            }
+
             session()->flash('success', $this->counterTermId ? 'Counter terms updated!' : 'Counter terms submitted!');
             return redirect()->route('landlord.agent.auctions.list');
         } catch (\Exception $e) {

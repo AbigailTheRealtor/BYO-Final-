@@ -4,16 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\LandlordAgentAuction;
 use App\Models\LandlordAgentAuctionBid;
-use App\Models\landlordCounterBidding;
+use App\Models\LandlordCounterTerm;
 use App\Models\UserAgent;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use App\Notifications\BidAcceptedNotification;
 use App\Notifications\BidRejectedNotification;
-use App\Notifications\CounterBidAcceptedNotification;
-use App\Notifications\CounterBidRejectedNotification;
 use App\Notifications\LandlordAgentHiredNotification;
 use App\Services\LandlordAcceptedBidSummaryService;
 
@@ -178,18 +178,41 @@ class LandlordAgentAuctionBidController extends Controller
 
     public function accept_bid(Request $request)
     {
+        $bid = LandlordAgentAuctionBid::with('user', 'meta')->whereId($request->bid_id)->first();
+        if (!$bid) {
+            return redirect()->back()->with('error', 'Bid not found.');
+        }
+
+        $auction = LandlordAgentAuction::with('user', 'meta')->whereId($request->auction_id)->first();
+        if (!$auction) {
+            return redirect()->back()->with('error', 'Auction not found.');
+        }
+
+        if ($auction->user_id !== Auth::id()) {
+            abort(403, 'Only the listing owner can accept bids.');
+        }
+
+        if ($bid->accepted === 'accepted' || $bid->accepted === 'rejected') {
+            return redirect()->back()->with('error', 'This bid has already been ' . $bid->accepted . '.');
+        }
+
         try {
             DB::beginTransaction();
-            $bid = LandlordAgentAuctionBid::with('user', 'meta')->whereId($request->bid_id)->first();
+
             $bid->accepted = "accepted";
             $bid->accepted_date = date('Y-m-d H:i:s');
             $bid->save();
 
-            $auction = LandlordAgentAuction::with('user', 'meta')->whereId($request->auction_id)->first();
             $auction->is_sold = true;
             $auction->sold_date = date('Y-m-d H:i:s');
             $auction->save();
             $auction->saveMeta('listing_status', 'Hired Agent');
+
+            // Reject all other non-accepted bids on this listing
+            LandlordAgentAuctionBid::where('landlord_agent_auction_id', $auction->id)
+                ->where('id', '!=', $bid->id)
+                ->where('accepted', '!=', 'accepted')
+                ->update(['accepted' => 'rejected', 'accepted_date' => date('Y-m-d H:i:s')]);
 
             $ua = new UserAgent();
             $ua->user_id = Auth::user()->id;
@@ -200,47 +223,100 @@ class LandlordAgentAuctionBidController extends Controller
 
             DB::commit();
 
-            // Generate Accepted Bid Summary
-            $summary = null;
+            $summaryId = null;
             try {
                 $summaryService = new LandlordAcceptedBidSummaryService();
                 $summary = $summaryService->generateSummary($bid);
+                if ($summary) {
+                    $summaryId = $summary->id;
+                }
             } catch (\Exception $e) {
-                \Log::error('LandlordAcceptedBidSummaryService failed', ['error' => $e->getMessage()]);
+                Log::error('LandlordAcceptedBidSummaryService failed', [
+                    'bid_id' => $bid->id,
+                    'error'  => $e->getMessage(),
+                ]);
             }
 
-            $summaryId = $summary ? $summary->id : null;
+            // Notify agent — bid accepted
+            try {
+                $agent = User::find($bid->user_id);
+                if ($agent) {
+                    $agent->notify(new BidAcceptedNotification($bid, $auction, $summaryId, 'landlord_agent'));
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send bid accepted notification to agent (landlord)', [
+                    'bid_id'   => $bid->id,
+                    'agent_id' => $bid->user_id,
+                    'error'    => $e->getMessage(),
+                ]);
+            }
 
-            // Notify the bidder (agent) that their bid was accepted
-            try { $bid->user->notify(new BidAcceptedNotification($bid, $auction)); } catch (\Exception $e) {}
+            // Notify landlord (listing owner) — agent hired
+            try {
+                $landlord = User::find($auction->user_id);
+                if ($landlord) {
+                    $landlord->notify(new LandlordAgentHiredNotification($bid, $auction, $summaryId));
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send agent hired notification to landlord', [
+                    'bid_id'     => $bid->id,
+                    'landlord_id'=> $auction->user_id,
+                    'error'      => $e->getMessage(),
+                ]);
+            }
 
-            // Notify the landlord (listing owner) that an agent has been hired
-            try { $auction->user->notify(new LandlordAgentHiredNotification($bid, $auction, $summaryId)); } catch (\Exception $e) {}
-
-            if ($summary) {
-                return redirect()->route('accepted-bid-summary.view', $summary->id)
-                    ->with('success', 'Bid accepted successfully! Your Accepted Bid Summary is ready.');
+            if ($summaryId) {
+                return redirect()->route('accepted-bid-summary.view', $summaryId)
+                    ->with('success', 'Agent hired successfully! Your Accepted Bid Summary is ready to review and sign.');
             }
 
             return redirect()->back()->with('success', 'Bid Accepted successfully!');
         } catch (\Exception $th) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Some problem in bid acceptance!');
+            return redirect()->back()->with('error', 'Error accepting bid: ' . $th->getMessage());
         }
     }
 
     public function reject_bid(Request $request)
     {
         $bid = LandlordAgentAuctionBid::whereId($request->bid_id)->first();
+        if (!$bid) {
+            return redirect()->back()->with('error', 'Bid not found.');
+        }
+
+        $auction = LandlordAgentAuction::find($request->auction_id);
+        if (!$auction) {
+            return redirect()->back()->with('error', 'Auction not found.');
+        }
+
+        if ($auction->user_id !== Auth::id()) {
+            abort(403, 'Only the listing owner can reject bids.');
+        }
+
+        if ($bid->accepted === 'accepted' || $bid->accepted === 'rejected') {
+            return redirect()->back()->with('error', 'This bid has already been ' . $bid->accepted . '.');
+        }
+
         $bid->accepted = "rejected";
-        $bid->save();
+        $bid->accepted_date = date('Y-m-d H:i:s');
 
-        $auction = LandlordAgentAuction::find($request->auction_id); // We need the auction for the notification
-
-        // Notify the bidder that their bid was rejected
-        $bid->user->notify(new BidRejectedNotification($bid, $auction));
-
-        return redirect()->back()->with('success', 'Bid Rejected successfully!');
+        if ($bid->save()) {
+            try {
+                $agent = User::find($bid->user_id);
+                if ($agent) {
+                    $agent->notify(new BidRejectedNotification($bid, $auction));
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send bid rejected notification (landlord)', [
+                    'bid_id'   => $bid->id,
+                    'agent_id' => $bid->user_id,
+                    'error'    => $e->getMessage(),
+                ]);
+            }
+            return redirect()->back()->with('success', 'Bid Rejected successfully!');
+        } else {
+            return redirect()->back()->with('error', 'Some problem rejecting the bid.');
+        }
     }
 
 
@@ -257,74 +333,154 @@ class LandlordAgentAuctionBidController extends Controller
 
     public function accept_counter_bid(Request $request)
     {
+        $counterTerm = LandlordCounterTerm::whereId($request->counter_bid_id)->first();
+        if (!$counterTerm) {
+            return redirect()->back()->with('error', 'Counter bid not found.');
+        }
+
+        // landlord_counter_terms.landlord_agent_auction_id stores BID ID
+        $originalBid = LandlordAgentAuctionBid::with('user', 'meta')->find($counterTerm->landlord_agent_auction_id);
+        if (!$originalBid) {
+            return redirect()->back()->with('error', 'Original bid not found.');
+        }
+
+        $pa = LandlordAgentAuction::with('user', 'meta')->find($originalBid->landlord_agent_auction_id);
+        if (!$pa) {
+            return redirect()->back()->with('error', 'Auction not found.');
+        }
+
+        $isListingOwner    = $pa->user_id === Auth::id();
+        $isOriginalBidOwner = $originalBid->user_id === Auth::id();
+
+        if (!$isListingOwner && !$isOriginalBidOwner) {
+            abort(403, 'You are not authorized to accept this counter bid.');
+        }
+
+        if ($counterTerm->status === 'accepted' || $counterTerm->status === 'rejected') {
+            return redirect()->back()->with('error', 'This counter bid has already been ' . $counterTerm->status . '.');
+        }
+
         try {
             DB::beginTransaction();
 
-            $pab = landlordCounterBidding::whereId($request->counter_bid_id)->first();
-            $pab->accepted = "accepted";
-            $pab->accepted_date = date('Y-m-d H:i:s');
-            $pab->save();
+            $counterTerm->status = 'accepted';
+            $counterTerm->accepted_date = date('Y-m-d H:i:s');
+            $counterTerm->save();
 
-            $pa = LandlordAgentAuction::with('user', 'meta')->whereId($request->auction_id)->first();
+            $originalBid->accepted = 'accepted';
+            $originalBid->accepted_date = date('Y-m-d H:i:s');
+            $originalBid->save();
+
             $pa->is_sold = true;
             $pa->sold_date = date('Y-m-d H:i:s');
             $pa->save();
             $pa->saveMeta('listing_status', 'Hired Agent');
 
-            $bid = LandlordAgentAuctionBid::with('user', 'meta')->whereId($pab->landlord_agent_auction_bid_id)->first();
+            // Reject all other non-accepted bids
+            LandlordAgentAuctionBid::where('landlord_agent_auction_id', $pa->id)
+                ->where('id', '!=', $originalBid->id)
+                ->where('accepted', '!=', 'accepted')
+                ->update(['accepted' => 'rejected', 'accepted_date' => date('Y-m-d H:i:s')]);
 
             $ua = new UserAgent();
-            $ua->user_id = $pa->user_id;
-            $ua->agent_id = $bid->user_id;
+            $ua->user_id = Auth::user()->id;
+            $ua->agent_id = $originalBid->user_id;
             $ua->type = 'landlord';
             $ua->property_id = $pa->id;
             $ua->save();
 
             DB::commit();
 
-            // Generate Accepted Bid Summary (counter bid terms)
-            $summary = null;
+            $summaryId = null;
             try {
                 $summaryService = new LandlordAcceptedBidSummaryService();
-                $counterModel = \App\Models\LandlordCounterBidding::find($pab->id);
-                $summary = $summaryService->generateSummary($bid, $counterModel);
+                $summary = $summaryService->generateSummary($originalBid, $counterTerm);
+                if ($summary) {
+                    $summaryId = $summary->id;
+                }
             } catch (\Exception $e) {
-                \Log::error('LandlordAcceptedBidSummaryService (counter) failed', ['error' => $e->getMessage()]);
+                Log::error('LandlordAcceptedBidSummaryService (counter) failed', [
+                    'bid_id'     => $originalBid->id,
+                    'counter_id' => $counterTerm->id,
+                    'error'      => $e->getMessage(),
+                ]);
             }
 
-            $summaryId = $summary ? $summary->id : null;
+            // Notify agent that counter bid was accepted
+            try {
+                $agent = User::find($originalBid->user_id);
+                if ($agent) {
+                    $agent->notify(new BidAcceptedNotification($originalBid, $pa, $summaryId, 'landlord_agent'));
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send counter accepted notification to agent (landlord)', [
+                    'bid_id'     => $originalBid->id,
+                    'counter_id' => $counterTerm->id,
+                    'error'      => $e->getMessage(),
+                ]);
+            }
 
-            // Notify the counter bidder (agent) that their counter bid was accepted
-            try { $pab->user->notify(new CounterBidAcceptedNotification($pab, $pa)); } catch (\Exception $e) {}
+            // Notify landlord (listing owner) that agent was hired
+            try {
+                $landlord = User::find($pa->user_id);
+                if ($landlord) {
+                    $landlord->notify(new LandlordAgentHiredNotification($originalBid, $pa, $summaryId));
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send agent hired notification to landlord (counter)', [
+                    'bid_id'      => $originalBid->id,
+                    'landlord_id' => $pa->user_id,
+                    'error'       => $e->getMessage(),
+                ]);
+            }
 
-            // Notify the landlord (listing owner) that an agent has been hired
-            try { $pa->user->notify(new LandlordAgentHiredNotification($bid, $pa, $summaryId)); } catch (\Exception $e) {}
-
-            if ($summary) {
-                return redirect()->route('accepted-bid-summary.view', $summary->id)
-                    ->with('success', 'Counter Bid accepted! Your Accepted Bid Summary is ready.');
+            if ($summaryId) {
+                return redirect()->route('accepted-bid-summary.view', $summaryId)
+                    ->with('success', 'Counter Bid Accepted! Your Accepted Bid Summary is ready to review and sign.');
             }
 
             return redirect()->back()->with('success', 'Counter Bid Accepted successfully!');
         } catch (\Exception $th) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Some problem in bid acceptance!');
+            return redirect()->back()->with('error', 'Error accepting counter bid: ' . $th->getMessage());
         }
     }
+
     public function reject_counter_bid(Request $request)
     {
-        $pab = landlordCounterBidding::whereId($request->counter_bid_id)->first();
-        $pab->accepted = "rejected";
-        $pab->accepted_date = date('Y-m-d H:i:s');
-        $auction = LandlordAgentAuction::find($request->auction_id);
+        $counterTerm = LandlordCounterTerm::whereId($request->counter_bid_id)->first();
+        if (!$counterTerm) {
+            return redirect()->back()->with('error', 'Counter bid not found.');
+        }
 
-        // Send notification to counter bidder
-        $pab->user->notify(new CounterBidRejectedNotification($pab, $auction));
+        $originalBid = LandlordAgentAuctionBid::find($counterTerm->landlord_agent_auction_id);
+        if (!$originalBid) {
+            return redirect()->back()->with('error', 'Original bid not found.');
+        }
 
-        if ($pab->save()) {
+        $pa = LandlordAgentAuction::find($originalBid->landlord_agent_auction_id);
+        if (!$pa) {
+            return redirect()->back()->with('error', 'Auction not found.');
+        }
+
+        $isListingOwner    = $pa->user_id === Auth::id();
+        $isOriginalBidOwner = $originalBid->user_id === Auth::id();
+
+        if (!$isListingOwner && !$isOriginalBidOwner) {
+            abort(403, 'You are not authorized to reject this counter bid.');
+        }
+
+        if ($counterTerm->status === 'accepted' || $counterTerm->status === 'rejected') {
+            return redirect()->back()->with('error', 'This counter bid has already been ' . $counterTerm->status . '.');
+        }
+
+        $counterTerm->status = 'rejected';
+        $counterTerm->accepted_date = date('Y-m-d H:i:s');
+
+        if ($counterTerm->save()) {
             return redirect()->back()->with('success', 'Counter Bid Rejected successfully!');
         } else {
-            return redirect()->back()->with('error', 'Some problem in bid acceptance!');
+            return redirect()->back()->with('error', 'Some problem rejecting the counter bid.');
         }
     }
 

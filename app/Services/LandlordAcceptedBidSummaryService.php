@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\AcceptedBidSummary;
 use App\Models\LandlordAgentAuction;
 use App\Models\LandlordAgentAuctionBid;
-use App\Models\LandlordCounterBidding;
+use App\Models\LandlordCounterTerm;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
@@ -292,7 +292,7 @@ class LandlordAcceptedBidSummaryService
     // Generate / Regenerate
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function generateSummary(LandlordAgentAuctionBid $bid, ?LandlordCounterBidding $acceptedCounter = null): ?AcceptedBidSummary
+    public function generateSummary(LandlordAgentAuctionBid $bid, ?LandlordCounterTerm $acceptedCounter = null): ?AcceptedBidSummary
     {
         try {
             $listing = $bid->auction;
@@ -345,7 +345,7 @@ class LandlordAcceptedBidSummaryService
         ];
     }
 
-    protected function getCounterData(LandlordCounterBidding $counter, LandlordAgentAuctionBid $bid): array
+    protected function getCounterData(LandlordCounterTerm $counter, LandlordAgentAuctionBid $bid): array
     {
         $counterMeta = $counter->getAllMeta();
         $bidData = $bid->get;
@@ -618,7 +618,7 @@ class LandlordAcceptedBidSummaryService
         User $landlord,
         User $agent,
         array $sourceData,
-        ?LandlordCounterBidding $acceptedCounter
+        ?LandlordCounterTerm $acceptedCounter
     ): string {
         $listingData = $listing->get;
         $propertyType = data_get($listingData, 'property_type', 'Residential Property');

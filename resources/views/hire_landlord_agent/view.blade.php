@@ -2068,8 +2068,8 @@ $auser = $auctionUser::find(@$auction->user_id);
         // Check for accepted counter bids
         $acceptedCounterBid = null;
         foreach ($auction->bids as $bid) {
-            $counterBid = \App\Models\LandlordCounterBidding::where('landlord_agent_auction_bid_id', $bid->id)
-                            ->where('accepted', 'accepted')
+            $counterBid = \App\Models\LandlordCounterTerm::where('landlord_agent_auction_id', $bid->id)
+                            ->where('status', 'accepted')
                             ->first();
             if ($counterBid) {
                 $acceptedCounterBid = $counterBid;
@@ -2336,13 +2336,13 @@ $auser = $auctionUser::find(@$auction->user_id);
                             $hasAcceptedCounterBid = false;
 
                             // Get counter bids for this bid
-                            $counterBids = \App\Models\LandlordCounterBidding::with('meta', 'user')
-                                ->where('landlord_agent_auction_bid_id', data_get($bid, 'id'))
+                            $counterBids = \App\Models\LandlordCounterTerm::with('meta', 'user')
+                                ->where('landlord_agent_auction_id', data_get($bid, 'id'))
                                 ->orderBy('created_at', 'desc')
                                 ->get();
 
                             // Check if this bid has any accepted counter bid
-                            $acceptedCounterBidForThisBid = $counterBids->where('accepted', 'accepted')->first();
+                            $acceptedCounterBidForThisBid = $counterBids->where('status', 'accepted')->first();
                             $hasAcceptedCounterBid = $acceptedCounterBidForThisBid ? true : false;
                             $bidIsAccepted = $state === 'accepted' || $hasAcceptedCounterBid;
 
@@ -4013,11 +4013,11 @@ $auser = $auctionUser::find(@$auction->user_id);
                                     <!-- Counter Bids -->
 
                                     @php
-                                    $counterBids = \App\Models\LandlordCounterBidding::with(
+                                    $counterBids = \App\Models\LandlordCounterTerm::with(
                                     'meta',
                                     'user',
                                     )
-                                    ->where('landlord_agent_auction_bid_id', data_get($bid, 'id'))
+                                    ->where('landlord_agent_auction_id', data_get($bid, 'id'))
                                     ->orderBy('created_at', 'desc')
                                     ->get();
                                     @endphp
@@ -4042,7 +4042,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                     $showCounterBids = $isListingOwner || $isBidOwner;
 
                                     // Check if any counter bid is accepted for this main bid
-                                    $hasAcceptedCounterBid = $counterBids->contains('accepted', 'accepted');
+                                    $hasAcceptedCounterBid = $counterBids->contains('status', 'accepted');
                                     @endphp
 
                                     {{-- Counter Bidding Section - Only visible to listing owner and bidding agent --}}
@@ -4104,7 +4104,7 @@ $auser = $auctionUser::find(@$auction->user_id);
 
                                                 $rawCounterState = data_get(
                                                 $counterBid,
-                                                'accepted',
+                                                'status',
                                                 '0',
                                                 );
                                                 $counterState = in_array(

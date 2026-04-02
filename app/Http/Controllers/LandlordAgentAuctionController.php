@@ -503,13 +503,14 @@ class LandlordAgentAuctionController extends Controller
         // $data = LandlordAgentAuction::with('meta')->find($id);
         // return $data->get;
 
-        $page_data['auction'] = $auction = LandlordAgentAuction::find($id);
+        $page_data['auction'] = $auction = LandlordAgentAuction::with(['bids.user', 'bids.meta', 'user', 'meta'])->find($id);
         // Auto-transition Bidding Period listing to Pending when timer ends
         $this->autoTransitionBpToPending($auction);
         $page_data['title'] = $auction->title;
         $page_data['counties'] = County::all();
         $page_data['id'] = $id;
-        $page_data['bids'] = $bids = LandlordAgentAuctionBid::with('meta')->where('landlord_agent_auction_id', $id)->whereNull('counter_id')->get();
+        $page_data['auth_id'] = auth()->id();
+        $page_data['bids'] = $auction->bids->whereNull('counter_id');
         return view('hire_landlord_agent.view', $page_data);
     }
 
