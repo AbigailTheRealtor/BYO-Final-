@@ -5,15 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\LandlordCounterTerm;
 
 class LandlordAgentAuctionBid extends Model
 {
     use HasFactory;
     protected $appends = ["get"];
- public function user()
+
+    public function user()
     {
         return $this->belongsTo(User::class);
     }
+
     public function meta()
     {
         return $this->hasMany(LandlordAgentAuctionBidMeta::class);
@@ -22,6 +25,29 @@ class LandlordAgentAuctionBid extends Model
     public function auction()
     {
         return $this->belongsTo(LandlordAgentAuction::class, 'landlord_agent_auction_id', 'id');
+    }
+
+    public function counterTerms()
+    {
+        return $this->hasMany(LandlordCounterTerm::class, 'landlord_agent_auction_id');
+    }
+
+    public function getBidStatusAttribute(): string
+    {
+        $latestCounter = $this->counterTerms()->latest()->first();
+        if ($latestCounter) {
+            return 'Countered';
+        }
+
+        if ($this->accepted === 'accepted') {
+            return 'Accepted';
+        }
+
+        if ($this->accepted === 'rejected') {
+            return 'Rejected';
+        }
+
+        return 'Active';
     }
 
     public function saveMeta($key, $val)

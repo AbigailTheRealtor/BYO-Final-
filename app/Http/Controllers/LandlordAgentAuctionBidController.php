@@ -485,6 +485,39 @@ class LandlordAgentAuctionBidController extends Controller
     }
 
 
+    public function view_counter_terms($bid_id)
+    {
+        $bid = LandlordAgentAuctionBid::with(['user', 'meta', 'counterTerms', 'auction.user', 'auction.meta'])->findOrFail($bid_id);
+        $auction = $bid->auction;
+
+        if (!$auction) {
+            abort(404, 'Auction not found.');
+        }
+
+        $authId = Auth::id();
+        $isListingOwner = $auction->user_id === $authId;
+        $isAgent = $bid->user_id === $authId;
+
+        if (!$isListingOwner && !$isAgent) {
+            abort(403, 'You are not authorized to view this counter.');
+        }
+
+        $viewerRole = $isAgent ? 'agent' : 'landlord';
+
+        // All counters for this bid
+        $allCounters = $bid->counterTerms()->latest()->get();
+
+        // Landlord's counter = submitted by auction owner
+        $landlordCounter = $allCounters->firstWhere('user_id', $auction->user_id);
+
+        // Agent's counter = submitted by bid owner
+        $agentCounter = $allCounters->firstWhere('user_id', $bid->user_id);
+
+        return view('hire_landlord_agent.view_counter_terms', compact(
+            'bid', 'auction', 'viewerRole', 'landlordCounter', 'agentCounter'
+        ));
+    }
+
     public function saveCounterBid(Request $request, $bid_id)
     {
         $auctionBid = LandlordAgentAuctionBid::with('meta')->find($bid_id);

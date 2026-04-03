@@ -1,0 +1,50 @@
+Update the My Bids → Hiring Landlord’s Agent tab so it matches the working My Bids → Hiring Tenant’s Agent tab in layout, behavior, and action logic.
+
+Current issue:
+- Hiring Tenant’s Agent under My Bids shows the correct modern format with status badges and correct action buttons.
+- Hiring Landlord’s Agent still shows the old legacy format and must be upgraded to match Tenant.
+
+Goals:
+1. Make Hiring Landlord’s Agent rows/cards use the same visual layout as Hiring Tenant’s Agent.
+2. Show correct bid statuses exactly like Tenant:
+   - Active
+   - Accepted
+   - Rejected
+   - Countered
+3. Show the correct action buttons based on state, matching Tenant behavior:
+   - Active → View/Edit Bid + Visit Listing
+   - Accepted → View Summary
+   - Countered → View Counter or equivalent Tenant behavior
+   - Rejected → match Tenant’s rejected-row behavior
+4. Use the same title/address/listing-id display structure and fallback rules as Tenant.
+
+Safeguards:
+- Do not modify Tenant except to inspect/copy its working behavior.
+- Do not rename DB columns, routes, models, or status values.
+- Do not build a new landlord-only custom layout; reuse the same row/card pattern Tenant uses.
+- Do not change unrelated My Bids tabs.
+- Do not change business rules for accepted/countered/rejected states.
+- Keep landlord routes/targets correct, but make the behavior pattern match Tenant.
+
+Implementation steps:
+1. Compare the view/partial/component used for My Bids → Hiring Tenant’s Agent vs Hiring Landlord’s Agent.
+2. Replace the old landlord row rendering with the same HTML/class/card structure Tenant uses.
+3. Compare Tenant’s status mapping and apply the same state resolution logic to landlord bids.
+4. Compare Tenant’s action-button logic and apply the same conditional rendering to landlord bids.
+5. Use the same display field order and fallback handling as Tenant for listing title/address/id.
+6. Keep landlord route targets, but make the layout and button behavior match Tenant exactly.
+
+Verify:
+- Active landlord bids show View/Edit Bid + Visit Listing
+- Accepted landlord bids show View Summary
+- Countered landlord bids show the same counter action Tenant uses
+- Rejected landlord bids match Tenant behavior
+- Tenant tab remains unchanged
+- Other My Bids tabs remain unchanged
+
+Deliverable:
+Provide:
+1. files changed
+2. what old landlord template/logic was replaced
+3. how status/button logic now matches Tenant
+4. confirmation that Hiring Landlord’s Agent under My Bids now mirrors Hiring Tenant’s Agent

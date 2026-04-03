@@ -1,0 +1,48 @@
+Fix the Hire a Landlord’s Agent counter notification and View flow by matching the working Tenant flow exactly.
+
+Current bugs:
+1. When a counter is submitted in landlord flow, the recipient’s View link goes to the wrong place.
+2. In the landlord dashboard, clicking View takes the user to the wrong listing page instead of the exact counter terms page.
+3. In the agent dashboard, clicking View Counter for a landlord counter returns 403 “You do not have permission to view these counter terms.”
+4. The correct behavior already exists in Tenant and must be mirrored.
+
+Goals:
+1. Counter notifications in landlord flow must link directly to the correct counter terms page for the exact bid_id.
+2. Both valid participants in the bid thread must be able to view the landlord counter terms page:
+   - the landlord/listing owner
+   - the agent/user who owns that bid
+3. Unrelated users must still be blocked.
+4. The landlord counter terms page should use the same working Tenant-style format and flow.
+
+Safeguards:
+- Do not modify Tenant logic except to inspect/copy its working behavior.
+- Do not rename routes, DB columns, or models.
+- Do not make this listing-wide; keep everything tied to the exact bid_id.
+- Do not loosen authorization globally.
+- Do not change labels, wording, match score formatting, page structure, or field content.
+- Do not build a second counter-view system; reuse Tenant’s working pattern.
+
+Implementation steps:
+1. Compare Tenant vs Landlord notification creation for counter actions.
+2. Copy Tenant’s exact counter View URL pattern into Landlord notification creation/rendering.
+3. Compare Tenant vs Landlord dashboard recent notice View button targets.
+4. Fix landlord dashboard/View Counter buttons so they link to the exact counter terms page for the exact bid_id, not a generic listing page.
+5. Compare Tenant vs Landlord counter route/controller/component authorization.
+6. Fix landlord counter authorization so access is granted only if the current user is either:
+   - the landlord/listing owner for that bid’s listing
+   - or the bid owner / bidding agent tied to that exact bid
+7. Keep all unrelated users blocked with 403.
+8. Reuse the Tenant counter terms page pattern for Landlord so the page format matches Tenant.
+
+Things to verify:
+- Landlord counters agent → agent clicks View → correct counter page opens, no 403
+- Agent counters landlord → landlord clicks View → correct counter page opens, no wrong listing redirect
+- Multiple bids on same listing still open the correct thread by bid_id
+- Unauthorized users still get blocked
+
+Deliverable:
+Provide:
+1. files changed
+2. what was wrong in the old notification/view target
+3. what was wrong in the old authorization logic
+4. confirmation that landlord counter View now matches Tenant behavior exactly

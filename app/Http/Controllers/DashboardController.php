@@ -230,7 +230,9 @@ class DashboardController extends Controller
             $page_data['bids'] = $bid = SellerAgentAuctionBid::where('user_id', $user->id)->with('auction')->get();
             return view('my-bids.seller-agent', $page_data);
         } else if ($type == 'landlord-agent') {
-            $page_data['bids'] = $bid = LandlordAgentAuctionBid::where('user_id', $user->id)->with('auction')->get();
+            $page_data['bids'] = LandlordAgentAuctionBid::where('user_id', $user->id)
+                ->with(['auction', 'meta', 'counterTerms'])
+                ->get();
             return view('my-bids.landlord-agent', $page_data);
         } else if ($type == 'tenant-agent') {
             $page_data['bids'] = TenantAgentAuctionBid::where('user_id', $user->id)

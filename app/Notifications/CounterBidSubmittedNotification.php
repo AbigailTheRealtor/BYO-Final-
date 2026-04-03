@@ -16,13 +16,15 @@ class CounterBidSubmittedNotification extends Notification implements ShouldBroa
     public $auction;
     public $sender;
     public $recipientId; // needed because broadcastOn() has no $notifiable
+    public $auctionType;
 
-    public function __construct($bid, $auction, $sender, $recipientId)
+    public function __construct($bid, $auction, $sender, $recipientId, $auctionType = null)
     {
         $this->bid = $bid;
         $this->auction = $auction;
         $this->sender = $sender;
         $this->recipientId = $recipientId;
+        $this->auctionType = $auctionType;
     }
 
     public function via($notifiable)
@@ -40,6 +42,7 @@ class CounterBidSubmittedNotification extends Notification implements ShouldBroa
             'bid_id' => $this->bid->id,
             'auction_id' => $this->auction->id,
             'type' => 'counter_bid_submitted',
+            'auction_type' => $this->auctionType,
         ];
     }
 

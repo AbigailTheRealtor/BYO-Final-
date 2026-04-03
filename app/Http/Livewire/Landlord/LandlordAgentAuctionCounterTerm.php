@@ -693,7 +693,8 @@ class LandlordAgentAuctionCounterTerm extends Component
                                 $bid,
                                 $auction,
                                 Auth::user(),
-                                $recipientId
+                                $recipientId,
+                                'landlord_agent'
                             ));
                         }
                     }

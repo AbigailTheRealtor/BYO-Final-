@@ -15,9 +15,36 @@
             @foreach ($bids as $bid)
                 <div class="card p-3 mb-3" data-bs-toggle="collapse" data-bs-target="#collapse{{$loop->iteration}}" aria-expanded="true"
                     aria-controls="collapse{{$loop->iteration}}">
-                    <div class="row myBidsDetails">
-                        <div class="col-12 col-md-8 col-lg-8">
+                    <div class="row myBidsDetails align-items-center">
+                        <div class="col-12 col-md-5 col-lg-5">
                             <div class="fw-bold">{{ $bid->auction->get->address }}</div>
+                        </div>
+                        @php
+                            $bidStatus = $bid->bid_status ?? 'Active';
+                            $statusClass = match($bidStatus) {
+                                'Accepted'  => 'bg-success text-white',
+                                'Rejected'  => 'bg-danger text-white',
+                                'Countered' => 'bg-warning text-dark',
+                                default     => 'bg-primary text-white',
+                            };
+                        @endphp
+                        <div class="col-12 col-md-3 col-lg-3 text-center">
+                            <span class="badge {{ $statusClass }} p-2">{{ $bidStatus }}</span>
+                        </div>
+                        <div class="col-12 col-md-4 col-lg-4 text-end" onclick="event.stopPropagation()">
+                            @if ($bidStatus === 'Countered')
+                                <a href="{{ route('landlord.hire.agent.auction.bid.view-counter', $bid->id) }}" class="btn btn-sm btn-warning text-dark">
+                                    View Counter
+                                </a>
+                            @elseif ($bidStatus === 'Active')
+                                <a href="{{ route('landlord.agent.auction.view', $bid->auction->id) }}" class="btn btn-sm btn-outline-secondary">
+                                    Visit Listing
+                                </a>
+                            @elseif ($bidStatus === 'Rejected')
+                                <a href="{{ route('landlord.agent.auction.view', $bid->auction->id) }}" class="btn btn-sm btn-outline-secondary">
+                                    View Listing
+                                </a>
+                            @endif
                         </div>
                      @if(!empty($bid->get->offering_price))
                         <div class="fw-bold">

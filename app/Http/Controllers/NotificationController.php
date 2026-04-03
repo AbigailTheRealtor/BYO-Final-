@@ -53,6 +53,13 @@ class NotificationController extends Controller
             case 'bid_countered':
             case 'counter_bid_submitted':
                 if ($bidId) {
+                    if ($auctionType === 'landlord_agent') {
+                        if ($user->user_type === 'agent') {
+                            return route('landlord.hire.agent.auction.bid.view-counter', $bidId);
+                        } else {
+                            return route('landlord.agent.auction.view', $auctionId) . '?view=counter&bid_id=' . $bidId;
+                        }
+                    }
                     if ($user->user_type === 'agent') {
                         return route('tenant.hire.agent.auction.bid.view-counter', $bidId);
                     } else {
