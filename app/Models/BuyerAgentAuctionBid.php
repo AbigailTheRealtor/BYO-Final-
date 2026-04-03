@@ -26,6 +26,41 @@ class BuyerAgentAuctionBid extends Model
         return $this->hasMany(BuyerAgentAuctionBidMeta::class);
     }
 
+    public function counterTerms()
+    {
+        return $this->hasMany(BuyerCounterBidding::class, 'buyer_agent_auction_bid_id');
+    }
+
+    public function counterBids()
+    {
+        return $this->hasMany(BuyerCounterBidding::class, 'buyer_agent_auction_bid_id');
+    }
+
+    public function acceptedBidSummary()
+    {
+        return $this->hasOne(AcceptedBidSummary::class, 'accepted_bid_id');
+    }
+
+    public function getBidStatusAttribute(): string
+    {
+        if ($this->accepted === 'accepted') {
+            return 'Accepted';
+        }
+
+        if ($this->accepted === 'rejected') {
+            return 'Rejected';
+        }
+
+        $latestCounter = $this->relationLoaded('counterTerms')
+            ? $this->counterTerms->sortByDesc('created_at')->first()
+            : $this->counterTerms()->latest()->first();
+        if ($latestCounter) {
+            return 'Countered';
+        }
+
+        return 'Active';
+    }
+
     public function saveMeta($key, $val)
     {
         return $this->meta()->updateOrCreate(["meta_key" => $key], ["meta_value" => $val]);

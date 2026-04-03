@@ -3,9 +3,14 @@
 namespace App\Http\Livewire\Buyer;
 
 use Livewire\Component;
+use App\Models\BuyerAgentAuction;
 use App\Models\BuyerCounterBidding;
+use App\Helpers\BuyerBidMatchScoreHelper;
+use App\Notifications\CounterBidSubmittedNotification;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class BuyerAgentAuctionBidCounter extends Component
 {
@@ -165,12 +170,46 @@ public $additional_details_broker = '';
     {
         $this->activeTab = $index;
     }
+    private function filterServicesToCurrentCatalog(array $services): array
+    {
+        $propType = $this->property_type ?: '';
+        if ($propType === '') {
+            return $services;
+        }
+
+        $catalog = BuyerBidMatchScoreHelper::getCatalog($propType);
+        if (empty($catalog)) {
+            return $services;
+        }
+
+        $normalize = static function (string $s): string {
+            return mb_strtolower(trim(str_replace(
+                ["\u{2018}", "\u{2019}", "\u{201C}", "\u{201D}", "'"],
+                ["'",        "'",        '"',        '"',        "'"],
+                $s
+            )));
+        };
+
+        return array_values(array_filter($services, static function ($svc) use ($catalog, $normalize): bool {
+            return in_array($normalize((string) $svc), $catalog, true);
+        }));
+    }
+
     public function mount($pab, $bidId)
     {
-
         $this->pab   = $pab;
         $this->bidId = $bidId;
         $this->property_type = $pab->get->property_type;
+
+        // Carry forward services from the original bid, filtered to current catalog
+        $existingBid = \App\Models\BuyerAgentAuctionBid::with('meta')->find($bidId);
+        if ($existingBid) {
+            $rawServices = $existingBid->info('services');
+            if ($rawServices) {
+                $decoded = is_string($rawServices) ? json_decode($rawServices, true) ?? [] : (array) $rawServices;
+                $this->services = $this->filterServicesToCurrentCatalog($decoded);
+            }
+        }
     }
 
 
@@ -205,12 +244,33 @@ public $additional_details_broker = '';
             $this->saveAllMetaData($counterBid);
 
             DB::commit();
+
+            // Notify the listing owner (buyer) that a counter bid was submitted by the agent
+            try {
+                $auction = BuyerAgentAuction::find($this->pab->id);
+                if ($auction) {
+                    $listingOwner = User::find($auction->user_id);
+                    $sender = Auth::user();
+                    if ($listingOwner && $sender) {
+                        $listingOwner->notify(new CounterBidSubmittedNotification(
+                            $counterBid,
+                            $auction,
+                            $sender,
+                            $listingOwner->id,
+                            'buyer_agent'
+                        ));
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send counter bid submitted notification for buyer listing', [
+                    'counter_bid_id' => $counterBid->id ?? null,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
             session()->flash('success', 'Counter bid has been submitted successfully!');
 
-            // ✅ Redirect to homepage
             return redirect()->route('buyer.view-auction', $this->pab->id);
-            // Optional: reset form or redirect
-            // $this->resetForm();
 
         } catch (\Exception $e) {
             DB::rollBack();

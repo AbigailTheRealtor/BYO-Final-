@@ -15,11 +15,13 @@ class BidRejectedNotification extends Notification implements ShouldBroadcast
 
     public $bid;
     public $auction;
+    public $auctionType;
 
-    public function __construct($bid, $auction)
+    public function __construct($bid, $auction, $auctionType = 'tenant_agent')
     {
         $this->bid = $bid;
         $this->auction = $auction;
+        $this->auctionType = $auctionType;
     }
 
     public function via($notifiable)
@@ -34,6 +36,7 @@ class BidRejectedNotification extends Notification implements ShouldBroadcast
             'bid_id' => $this->bid->id,
             'auction_id' => $this->auction->id,
             'type' => 'bid_rejected',
+            'auction_type' => $this->auctionType,
         ];
     }
 
@@ -46,6 +49,7 @@ class BidRejectedNotification extends Notification implements ShouldBroadcast
                 'message' => "Your bid for the listing \"" . ($this->auction->title ?? '') . "\" has been rejected.",
                 'bid_id' => $this->bid->id,
                 'auction_id' => $this->auction->id,
+                'auction_type' => $this->auctionType,
             ],
             'created_at' => now(),
         ]);

@@ -455,9 +455,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('hire/agent/auction/bid/counter', [BuyerAgentAuctionBidController::class, 'counter_bid'])->name('hire.agent.auction.bid.counter');
         Route::post('hire/agent/auction/bid/accept', [BuyerAgentAuctionBidController::class, 'accept_bid'])->name('hire.agent.auction.bid.accept');
         Route::post('hire/agent/auction/bid/reject', [BuyerAgentAuctionBidController::class, 'reject_bid'])->name('hire.agent.auction.bid.reject');
+        Route::get('hire/agent/auction/bid/{bid_id}/view-counter', [BuyerAgentAuctionBidController::class, 'view_counter_terms'])->name('hire.agent.auction.bid.view-counter');
 
         Route::post('hire/agent/auction/counter/bid/accept', [BuyerAgentAuctionBidController::class, 'accept_counter_bid'])->name('hire.agent.auction.counter.bid.accept');
         Route::post('hire/agent/auction/counter/bid/reject', [BuyerAgentAuctionBidController::class, 'reject_counter_bid'])->name('hire.agent.auction.counter.bid.reject');
+        Route::post('hire/agent/auction/buyer/counter/term/accept', [BuyerAgentAuctionBidController::class, 'accept_buyer_counter_term'])->name('hire.agent.auction.buyer.counter.term.accept');
+        Route::post('hire/agent/auction/buyer/counter/term/reject', [BuyerAgentAuctionBidController::class, 'reject_buyer_counter_term'])->name('hire.agent.auction.buyer.counter.term.reject');
         Route::any('/counter-terms/{id}', [BuyerCounteredTermsController::class, 'add'])->name('counter-terms');
 
         Route::get('/counter-terms/{id}/edit', [BuyerCounteredTermsController::class, 'edit'])
@@ -585,6 +588,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             Route::get('tenant/agent/auction/bid/{auctionId}', TenantAgentAuctionBid::class)->name('tenant.agent.auction.bid');
             Route::get('buyer/agent/auction/bid/{auctionId}', BuyerAgentAuctionBid::class)->name('buyer.agent.auction.bid');
+            Route::get('buyer/agent/auction/bid/{bid_id}/view-counter', [BuyerAgentAuctionBidController::class, 'view_counter_terms'])->name('buyer.agent.auction.bid.view-counter');
             Route::get('landlord/agent/auction/bid/{auctionId}', LandlordAgentAuctionBid::class)->name('landlord.agent.auction.bid');
             
             // Default Bid Profiles

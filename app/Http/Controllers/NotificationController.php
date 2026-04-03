@@ -63,6 +63,13 @@ class NotificationController extends Controller
                     if ($auctionType === 'seller_agent') {
                         return route('hire.seller.agent.auction.bid.view-counter', $bidId);
                     }
+                    if ($auctionType === 'buyer_agent') {
+                        if ($user->user_type === 'agent') {
+                            return route('agent.buyer.agent.auction.bid.view-counter', $bidId);
+                        } else {
+                            return route('buyer.hire.agent.auction.bid.view-counter', $bidId);
+                        }
+                    }
                     if ($user->user_type === 'agent') {
                         return route('tenant.hire.agent.auction.bid.view-counter', $bidId);
                     } else {
@@ -81,6 +88,9 @@ class NotificationController extends Controller
                     if ($auctionType === 'seller_agent') {
                         return route('seller.agent.auction.detail', $auctionId) . '?view=bids';
                     }
+                    if ($auctionType === 'buyer_agent') {
+                        return route('buyer.view-auction', $auctionId) . '?view=bids';
+                    }
                     return route('tenant.agent.auction.view', $auctionId) . '?view=bids';
                 }
                 return route('dashboard');
@@ -90,6 +100,9 @@ class NotificationController extends Controller
                     if ($auctionType === 'seller_agent') {
                         return route('seller.agent.auction.detail', $auctionId);
                     }
+                    if ($auctionType === 'buyer_agent') {
+                        return route('buyer.view-auction', $auctionId);
+                    }
                     return route('tenant.agent.auction.view', $auctionId);
                 }
                 return route('dashboard');
@@ -98,6 +111,9 @@ class NotificationController extends Controller
                 if ($auctionId) {
                     if ($auctionType === 'seller_agent') {
                         return route('seller.agent.auction.detail', $auctionId);
+                    }
+                    if ($auctionType === 'buyer_agent') {
+                        return route('buyer.view-auction', $auctionId);
                     }
                     return route('tenant.agent.auction.view', $auctionId);
                 }
@@ -127,26 +143,6 @@ class NotificationController extends Controller
         return redirect()->back()->with('success', 'Notification dismissed.');
     }
 
-    // public function markRead(Request $request)
-    // {
-    //     $notification = $request->user()
-    //         ->unreadNotifications
-    //         ->where('id', $request->id)
-    //         ->first();
-
-    //     if ($notification) $notification->markAsRead();
-
-    //     return response()->json(['status' => 'success']);
-    // }
-
-    // public function markAllRead(Request $request)
-    // {
-    //     $request->user()->unreadNotifications->markAsRead();
-
-    //     return response()->json(['status' => 'success']);
-    // }
-
-
     public function markRead(Request $request)
     {
         $notification = $request->user()
@@ -173,7 +169,7 @@ class NotificationController extends Controller
 
         foreach ($notifications as $notification) {
             $notification->markAsRead();
-            $notification->delete();   // DELETE each one
+            $notification->delete();
         }
 
         return response()->json(['status' => 'success']);

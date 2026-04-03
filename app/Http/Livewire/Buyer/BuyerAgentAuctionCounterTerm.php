@@ -4,8 +4,13 @@ namespace App\Http\Livewire\Buyer;
 
 use Livewire\Component;
 use App\Models\BuyerCounterTerm;
+use App\Models\BuyerAgentAuctionBid;
+use App\Models\User;
+use App\Helpers\BuyerBidMatchScoreHelper;
+use App\Notifications\CounterBidSubmittedNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class BuyerAgentAuctionCounterTerm extends Component
 {
@@ -162,6 +167,31 @@ public $additional_details_broker = '';
 
     public ?int $counterTermId = null;   // <— track existing record for edit
 
+    private function filterServicesToCurrentCatalog(array $services): array
+    {
+        $propType = $this->property_type ?: '';
+        if ($propType === '') {
+            return $services;
+        }
+
+        $catalog = BuyerBidMatchScoreHelper::getCatalog($propType);
+        if (empty($catalog)) {
+            return $services;
+        }
+
+        $normalize = static function (string $s): string {
+            return mb_strtolower(trim(str_replace(
+                ["\u{2018}", "\u{2019}", "\u{201C}", "\u{201D}", "'"],
+                ["'",        "'",        '"',        '"',        "'"],
+                $s
+            )));
+        };
+
+        return array_values(array_filter($services, static function ($svc) use ($catalog, $normalize): bool {
+            return in_array($normalize((string) $svc), $catalog, true);
+        }));
+    }
+
     public function mount($pab, $bidId)
     {
         $this->pab   = $pab;
@@ -176,7 +206,26 @@ public $additional_details_broker = '';
         if ($existing) {
             $this->counterTermId = $existing->id;
             $this->hydrateFromMetaMap($existing->meta->pluck('meta_value', 'meta_key')->toArray());
+        } else {
+            // NEW COUNTER: Prefill from the agent's bid terms
+            $this->prefillFromAgentBid($pab);
         }
+    }
+
+    private function prefillFromAgentBid($bid): void
+    {
+        $bidData = $bid->get ?? null;
+        if (!$bidData) {
+            return;
+        }
+        $m = (array) $bidData;
+        // Re-encode any array values to JSON so hydrateFromMetaMap can decode them uniformly
+        foreach ($m as $key => $value) {
+            if (is_array($value)) {
+                $m[$key] = json_encode($value);
+            }
+        }
+        $this->hydrateFromMetaMap($m);
     }
 
 
@@ -248,7 +297,8 @@ public $additional_details_broker = '';
         // Arrays (JSON) — services, other_services
         if (isset($m['services'])) {
             $decoded = json_decode($m['services'], true);
-            $this->services = is_array($decoded) ? $decoded : [];
+            $rawServices = is_array($decoded) ? $decoded : [];
+            $this->services = $this->filterServicesToCurrentCatalog($rawServices);
         }
 
         if (isset($m['other_services'])) {
@@ -292,10 +342,31 @@ public $additional_details_broker = '';
             $this->saveAllMetaData($counterTerm);
 
             DB::commit();
-            // session()->flash('success', 'Counter terms has been submitted successfully!');
+
+            // Notify the agent (bid owner) that the buyer submitted counter terms
+            try {
+                $originalBid = BuyerAgentAuctionBid::find($this->bidId);
+                if ($originalBid && $this->pab) {
+                    $agent = User::find($originalBid->user_id);
+                    $sender = Auth::user();
+                    if ($agent && $sender) {
+                        $agent->notify(new CounterBidSubmittedNotification(
+                            $originalBid,
+                            $this->pab,
+                            $sender,
+                            $agent->id,
+                            'buyer_agent'
+                        ));
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send counter terms notification for buyer agent listing', [
+                    'bid_id' => $this->bidId,
+                    'error'  => $e->getMessage(),
+                ]);
+            }
 
             session()->flash('success', $this->counterTermId ? 'Counter terms updated!' : 'Counter terms submitted!');
-            // ✅ Redirect to homepage
             return redirect()->route('buyer.agent.auctions.list');
             // Optional: reset form or redirect
             // $this->resetForm();

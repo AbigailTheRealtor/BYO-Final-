@@ -8,7 +8,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use App\Models\BuyerAgentAuctionBid as BuyerAgentAuctionBidData;
 use App\Models\AgentDefaultProfile;
+use App\Helpers\BuyerBidMatchScoreHelper;
+use App\Models\BuyerAgentAuction;
+use App\Models\User;
+use App\Notifications\BidSubmittedNotification;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class BuyerAgentAuctionBid extends Component
 {
@@ -317,13 +322,17 @@ public $additional_details_broker = '';
         $auction = \App\Models\BuyerAgentAuction::find($auctionId);
         // $this->additional_details = $auction->get->additional_details ?? '';
 
-        $this->services = is_string($auction->get->services) ? json_decode($auction->get->services, true) ?? [] : (array)$auction->get->services;
-        $this->other_services = is_string($auction->get->other_services) ? json_decode($auction->get->other_services, true) ?? [] : (array)$auction->get->other_services;
-
-        $this->other_services_enabled = (bool)($auction->get->other_services_enabled ?? false);
         $this->service_type = $auction->get->service_type ?? '';
         $this->user_type = $auction->get->user_type ?? '';
         $this->property_type = $auction->get->property_type ?? '';
+
+        $rawServices = is_string($auction->get->services) ? json_decode($auction->get->services, true) ?? [] : (array)$auction->get->services;
+        $this->services = $this->filterServicesToCurrentCatalog(
+            $this->normalizeBuyerServiceLabels($rawServices)
+        );
+        $this->other_services = is_string($auction->get->other_services) ? json_decode($auction->get->other_services, true) ?? [] : (array)$auction->get->other_services;
+
+        $this->other_services_enabled = (bool)($auction->get->other_services_enabled ?? false);
 
         $this->auctionId = $auctionId;
         // Initialize arrays
@@ -463,6 +472,38 @@ public $additional_details_broker = '';
                 $this->defaultProfileLoaded = true;
             }
         }
+    }
+
+    private function normalizeBuyerServiceLabels(array $services): array
+    {
+        return array_map(function ($s) {
+            return str_replace("\x27", "\u{2019}", str_replace("\x5c\x27", "\u{2019}", $s));
+        }, $services);
+    }
+
+    private function filterServicesToCurrentCatalog(array $services): array
+    {
+        $propType = $this->property_type ?: '';
+        if ($propType === '') {
+            return $services;
+        }
+
+        $catalog = BuyerBidMatchScoreHelper::getCatalog($propType);
+        if (empty($catalog)) {
+            return $services;
+        }
+
+        $normalize = static function (string $s): string {
+            return mb_strtolower(trim(str_replace(
+                ["\u{2018}", "\u{2019}", "\u{201C}", "\u{201D}", "'"],
+                ["'",        "'",        '"',        '"',        "'"],
+                $s
+            )));
+        };
+
+        return array_values(array_filter($services, static function ($svc) use ($catalog, $normalize): bool {
+            return in_array($normalize((string) $svc), $catalog, true);
+        }));
     }
 
     public function setActiveTab($index)
@@ -850,6 +891,24 @@ public $additional_details_broker = '';
             $bid->saveMeta('nar_id', $this->nar_id);
 
             DB::commit();
+
+            // Notify the listing owner (buyer) that a new bid was submitted
+            try {
+                $auction = BuyerAgentAuction::find($this->auctionId);
+                if ($auction) {
+                    $listingOwner = User::find($auction->user_id);
+                    if ($listingOwner) {
+                        $listingOwner->notify(new BidSubmittedNotification($bid, $auction, 'buyer_agent'));
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send bid submitted notification for buyer agent listing', [
+                    'bid_id'     => $bid->id ?? null,
+                    'auction_id' => $this->auctionId,
+                    'error'      => $e->getMessage(),
+                ]);
+            }
+
             session()->flash('success', 'Your bid has been submitted successfully!');
 
             return redirect()->route('buyer.view-auction', $this->auctionId);

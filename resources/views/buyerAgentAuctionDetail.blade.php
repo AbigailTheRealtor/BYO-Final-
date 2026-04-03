@@ -262,15 +262,14 @@
             background-color: #c82333;
         }
 
-        /* Counter (orange) */
+        /* Counter (blue) - same convention as Tenant view */
         .btn-counter {
-            background-color: #f0ad4e;
-            color: #212529;
-            /* dark text for better contrast */
+            background-color: #0d6efd !important;
+            color: #ffffff !important;
         }
 
         .btn-counter:hover {
-            background-color: #ec971f;
+            background-color: #0b5ed7 !important;
         }
 
         .view-btn {
@@ -2352,6 +2351,56 @@
                                         $servicesCount = count($servicesList);
                                         $commissionSummary = data_get($bid, 'commission_structure', data_get($bid, 'get.commission_structure', ''));
                                         $headerBg = $bidAccepted === 'accepted' ? '#d4edda' : ($bidAccepted === 'rejected' ? '#f8d7da' : '#f8f9fa');
+
+                                        // === MATCH SCORE — baseline-driven (BuyerBidMatchScoreHelper) ===
+                                        $auctionPropType = data_get($auction, 'get.property_type', '');
+                                        $baselineData = (array) $auction->get;
+                                        $currentBidData = (array) $bid->get;
+
+                                        // Check for buyer-countered terms (BuyerCounterTerm) — buyer counters the agent
+                                        $latestBuyerCounter = \App\Models\BuyerCounterTerm::with('meta')
+                                            ->where('buyer_agent_auction_id', $auction->id)
+                                            ->where('user_id', $auction->user_id)
+                                            ->orderBy('created_at', 'desc')
+                                            ->first();
+
+                                        // Check for agent-countered terms (BuyerCounterBidding) — agent counters the buyer
+                                        $latestAgentCounter = \App\Models\BuyerCounterBidding::with('meta')
+                                            ->where('buyer_agent_auction_bid_id', $bidId)
+                                            ->orderBy('created_at', 'desc')
+                                            ->first();
+
+                                        // Determine active baseline (buyer's listing or latest buyer counter)
+                                        if ($latestBuyerCounter) {
+                                            $baselineData = $latestBuyerCounter->getAllMeta();
+                                        }
+
+                                        // Check if bid is in countered state
+                                        $hasCounterBids = $latestBuyerCounter || $latestAgentCounter;
+                                        $bidStatusDisplay = match($bidAccepted) {
+                                            'accepted' => 'Accepted',
+                                            'rejected' => 'Rejected',
+                                            'countered' => 'Countered',
+                                            default => $hasCounterBids ? 'Countered' : 'Active',
+                                        };
+                                        $bidStatusColor = match($bidStatusDisplay) {
+                                            'Accepted' => '#28a745',
+                                            'Rejected' => '#dc3545',
+                                            'Countered' => '#ffc107',
+                                            default => '#1a4a6e',
+                                        };
+
+                                        $score = \App\Helpers\BuyerBidMatchScoreHelper::calculate($baselineData, $currentBidData, null, $auctionPropType);
+                                        $overallScore     = $score['overall_percent'];
+                                        $scoreColor       = \App\Helpers\BuyerBidMatchScoreHelper::scoreColor((int)$overallScore);
+                                        $brokerMismatches = $score['changed_terms'] ?? [];
+                                        $brokerAdded      = $score['added_terms'] ?? [];
+                                        $servicesExtraCount = $score['services_extra_count'] ?? 0;
+                                        $matchedServices  = $score['matched_services'] ?? [];
+                                        $missingServices  = $score['missing_services'] ?? [];
+                                        $extraServices    = $score['extra_services'] ?? [];
+                                        $mismatchStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545;';
+                                        $mismatchBadge = '<span class="badge bg-danger ms-2" style="font-size: 0.7rem; vertical-align: middle;">Mismatch</span>';
                                     @endphp
                                     <!-- Item -->
                                     <div class="bid-accordion-header" data-target="item{{ $bidId }}"
@@ -2363,12 +2412,44 @@
                                                 <span class="badge bg-success ms-1">Accepted</span>
                                             @elseif ($bidAccepted === 'rejected')
                                                 <span class="badge bg-danger ms-1">Rejected</span>
+                                            @else
+                                                <span class="badge ms-1" style="background-color: {{ $bidStatusColor }}; color: #fff;">{{ $bidStatusDisplay }}</span>
+                                            @endif
+                                            {{-- Match score badge in header --}}
+                                            @if ($isListingOwner)
+                                                <span class="badge ms-1" style="background-color: {{ $scoreColor }}; color: #fff;" title="Overall match score">{{ $overallScore }}% Match</span>
                                             @endif
                                         </div>
                                         <i class="fa fa-chevron-down bid-chevron" style="transition:transform .3s;"></i>
                                     </div>
 
                                     <div id="item{{ $bidId }}" class="bid-collapse-content" style="display:none; padding:12px 4px;">
+                                        <!-- Match Score Summary Panel -->
+                                        @if ($isListingOwner)
+                                        <div class="match-score-summary mb-3 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6;">
+                                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                                <div>
+                                                    <span class="fw-semibold" style="font-size: 0.95rem;">Overall Match Score</span>
+                                                    <span class="ms-2 badge" style="background-color: {{ $scoreColor }}; color: #fff; font-size: 0.9rem;">{{ $overallScore }}%</span>
+                                                </div>
+                                                <div class="d-flex gap-3 flex-wrap">
+                                                    <div class="text-center">
+                                                        <div class="fw-bold" style="color: {{ \App\Helpers\BuyerBidMatchScoreHelper::scoreColor((int)($score['broker_comp_percent'] ?? 100)) }};">{{ $score['broker_comp_percent'] ?? 100 }}%</div>
+                                                        <span class="small text-muted">Broker Terms ({{ $score['broker_comp_matched'] ?? 0 }}/{{ $score['broker_comp_total'] ?? 0 }} fields)</span>
+                                                    </div>
+                                                    <div class="text-center">
+                                                        <div class="fw-bold" style="color: {{ \App\Helpers\BuyerBidMatchScoreHelper::scoreColor((int)($score['services_percent'] ?? 100)) }};">{{ $score['services_percent'] ?? 100 }}%</div>
+                                                        <span class="small text-muted">Services ({{ $score['services_matched'] ?? 0 }}/{{ $score['services_total'] ?? 0 }} services)</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            @if ($servicesExtraCount > 0)
+                                            <div class="mt-2 small" style="color: #856404;">
+                                                <i class="fa fa-plus-circle me-1"></i>Extra Value Added: {{ $servicesExtraCount }} {{ $servicesExtraCount === 1 ? 'Service' : 'Services' }} &mdash; <em>does not affect match score</em>
+                                            </div>
+                                            @endif
+                                        </div>
+                                        @endif
                                         <!-- Compact summary bar -->
                                         <div class="d-flex gap-3 flex-wrap align-items-center mb-2 p-2" style="background:#f0f4ff; border-radius:5px;">
                                             @if ($servicesCount > 0)
@@ -2444,7 +2525,17 @@
                                                                             <strong>{{ $catName }}</strong>
                                                                             <ul class="services services-offered">
                                                                                 @foreach ($catServices as $service)
-                                                                                    <li style="font-size: 16px;">{{ $service }}</li>
+                                                                                    @php
+                                                                                        $svcNorm = \App\Helpers\BuyerBidMatchScoreHelper::normalizeService($service);
+                                                                                        $isExtra = in_array($svcNorm, $extraServices, true);
+                                                                                        $isMissing = false;
+                                                                                    @endphp
+                                                                                    <li style="font-size: 16px;">
+                                                                                        {{ $service }}
+                                                                                        @if ($isListingOwner && $isExtra)
+                                                                                            <span class="badge ms-1" style="background-color: #856404; color: #fff; font-size: 0.7rem;" title="Extra value — not in your requested services">Added</span>
+                                                                                        @endif
+                                                                                    </li>
                                                                                 @endforeach
                                                                             </ul>
                                                                         </div>
@@ -2454,10 +2545,29 @@
                                                                 <ul class="services services-offered">
                                                                     @foreach ($bidServicesList as $service)
                                                                         @if ($service != 'Other')
-                                                                            <li style="font-size: 16px;">{{ $service }}</li>
+                                                                            @php
+                                                                                $svcNorm = \App\Helpers\BuyerBidMatchScoreHelper::normalizeService($service);
+                                                                                $isExtra = in_array($svcNorm, $extraServices, true);
+                                                                            @endphp
+                                                                            <li style="font-size: 16px;">
+                                                                                {{ $service }}
+                                                                                @if ($isListingOwner && $isExtra)
+                                                                                    <span class="badge ms-1" style="background-color: #856404; color: #fff; font-size: 0.7rem;">Added</span>
+                                                                                @endif
+                                                                            </li>
                                                                         @endif
                                                                     @endforeach
                                                                 </ul>
+                                                            @endif
+                                                            @if ($isListingOwner && count($missingServices) > 0)
+                                                                <div class="mt-2 p-2" style="background:#fff3cd; border-radius:5px; border-left:3px solid #ffc107;">
+                                                                    <strong class="small text-warning-emphasis">Services You Requested Not Included ({{ count($missingServices) }}):</strong>
+                                                                    <ul class="mb-0 mt-1">
+                                                                        @foreach ($missingServices as $missedSvc)
+                                                                            <li class="small" style="color:#856404;">{{ ucfirst($missedSvc) }}</li>
+                                                                        @endforeach
+                                                                    </ul>
+                                                                </div>
                                                             @endif
                                                         </div>
                                                     @endif
@@ -2661,9 +2771,10 @@
         <h6 class="mt-3 mb-2" style="font-weight: 600;">Buyer's Broker Compensation:</h6>
         
         @if (data_get($bid, 'get.commission_structure'))
-        <div class="col-md-12 col-12 pt-2 fw-bold">
+        <div class="col-md-12 col-12 pt-2 fw-bold" style="{{ $isListingOwner && isset($brokerMismatches['commission_structure']) ? $mismatchStyle : '' }}">
             Buyer's Broker Commission Structure:
             <span class="removeBold">{{ data_get($bid, 'get.commission_structure') }}</span>
+            @if ($isListingOwner && isset($brokerMismatches['commission_structure'])){!! $mismatchBadge !!}@endif
         </div>
         @endif
 
@@ -2686,9 +2797,10 @@
                 $bidPurchaseFeeCombined = data_get($bid, 'get.purchase_fee_other') ?? '—';
             }
         @endphp
-        <div class="col-md-12 col-12 pt-2 fw-bold">
+        <div class="col-md-12 col-12 pt-2 fw-bold" style="{{ $isListingOwner && isset($brokerMismatches['purchase_fee_type']) ? $mismatchStyle : '' }}">
             Buyer's Broker Purchase Fee:
             <span class="removeBold">{{ $bidPurchaseFeeCombined }}</span>
+            @if ($isListingOwner && isset($brokerMismatches['purchase_fee_type'])){!! $mismatchBadge !!}@endif
         </div>
         @endif
 
@@ -2783,23 +2895,26 @@
         <h6 class="mt-3 mb-2" style="font-weight: 600;">Legal Terms:</h6>
 
         @if (data_get($bid, 'get.protection_period'))
-        <div class="col-md-12 col-12 pt-2 fw-bold">
+        <div class="col-md-12 col-12 pt-2 fw-bold" style="{{ $isListingOwner && isset($brokerMismatches['protection_period']) ? $mismatchStyle : '' }}">
             Protection Period Timeframe:
             <span class="removeBold">{{ data_get($bid, 'get.protection_period') }} Days</span>
+            @if ($isListingOwner && isset($brokerMismatches['protection_period'])){!! $mismatchBadge !!}@endif
         </div>
         @endif
 
         @if (data_get($bid, 'get.early_termination_fee_option'))
-        <div class="col-md-12 col-12 pt-2 fw-bold">
+        <div class="col-md-12 col-12 pt-2 fw-bold" style="{{ $isListingOwner && isset($brokerMismatches['early_termination_fee_option']) ? $mismatchStyle : '' }}">
             Early Termination Fee:
             <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(data_get($bid, 'get.early_termination_fee_option'), data_get($bid, 'get.early_termination_fee_amount') ? $fmtMoney(data_get($bid, 'get.early_termination_fee_amount')) : null) }}</span>
+            @if ($isListingOwner && isset($brokerMismatches['early_termination_fee_option'])){!! $mismatchBadge !!}@endif
         </div>
         @endif
 
         @if (data_get($bid, 'get.retainer_fee_option'))
-        <div class="col-md-12 col-12 pt-2 fw-bold">
+        <div class="col-md-12 col-12 pt-2 fw-bold" style="{{ $isListingOwner && isset($brokerMismatches['retainer_fee_option']) ? $mismatchStyle : '' }}">
             Retainer Fee:
             <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(data_get($bid, 'get.retainer_fee_option'), data_get($bid, 'get.retainer_fee_amount') ? $fmtMoney(data_get($bid, 'get.retainer_fee_amount')) : null) }}</span>
+            @if ($isListingOwner && isset($brokerMismatches['retainer_fee_option'])){!! $mismatchBadge !!}@endif
         </div>
         @if (in_array(strtolower(data_get($bid, 'get.retainer_fee_option')), ['yes']))
             @if (data_get($bid, 'get.retainer_fee_application'))
@@ -2815,9 +2930,10 @@
         @endif
 
         @if (data_get($bid, 'get.agency_agreement_timeframe'))
-        <div class="col-md-12 col-12 pt-2 fw-bold">
+        <div class="col-md-12 col-12 pt-2 fw-bold" style="{{ $isListingOwner && isset($brokerMismatches['agency_agreement_timeframe']) ? $mismatchStyle : '' }}">
             Buyer Agency Agreement Timeframe:
             <span class="removeBold">{{ data_get($bid, 'get.agency_agreement_timeframe') === 'custom' ? data_get($bid, 'get.agency_agreement_custom') : data_get($bid, 'get.agency_agreement_timeframe') }}</span>
+            @if ($isListingOwner && isset($brokerMismatches['agency_agreement_timeframe'])){!! $mismatchBadge !!}@endif
         </div>
         @endif
 
@@ -2827,9 +2943,10 @@
         <h6 class="mt-3 mb-2" style="font-weight: 600;">Brokerage Relationship:</h6>
 
         @if (data_get($bid, 'get.brokerage_relationship'))
-        <div class="col-md-12 col-12 pt-2 fw-bold">
+        <div class="col-md-12 col-12 pt-2 fw-bold" style="{{ $isListingOwner && isset($brokerMismatches['brokerage_relationship']) ? $mismatchStyle : '' }}">
             Acceptable Brokerage Relationship:
             <span class="removeBold">{{ data_get($bid, 'get.brokerage_relationship') }}</span>
+            @if ($isListingOwner && isset($brokerMismatches['brokerage_relationship'])){!! $mismatchBadge !!}@endif
         </div>
         @endif
 
@@ -4102,7 +4219,7 @@
                 <div class="p-4 card">
                     <p class="text-600">Share this link via</p>
                     <div class="qr-code" style="width: 100%; height:200px;">
-                        {{ qr_code(route('tenant.agent.view.auction.view', @$auction->id), 200) }}
+                        {{ qr_code(route('buyer.view-auction', @$auction->id), 200) }}
                     </div>
                     <div class="card-social">
                         <ul class="icons">
