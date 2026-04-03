@@ -2862,6 +2862,7 @@
                             $servicesTotal   = $scoreResult['services_total'] ?? 0;
                             $servicesMatched = $scoreResult['services_matched'] ?? 0;
                             $totalScoreColor = \App\Helpers\SellerBidMatchScoreHelper::scoreColor($totalScore);
+                            $getScoreColor   = fn($s) => \App\Helpers\SellerBidMatchScoreHelper::scoreColor((int)$s);
                         @endphp
 
                         <!-- Bid Card - Collapsible Accordion Design (matches Tenant) -->
