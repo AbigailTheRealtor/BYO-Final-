@@ -1,0 +1,141 @@
+ALIGN LANDLORD ACCEPTANCE → ACKNOWLEDGEMENT FLOW WITH TENANT
+
+Goal:
+After a landlord bid or counter is accepted (by landlord or agent), the system must route to the same Accepted Bid Summary / Acknowledgement flow used in Tenant listings.
+
+Tenant is the source of truth.
+
+Do not create a landlord-specific acknowledgement flow.
+Reuse the same structure and behavior, with landlord-specific data only.
+
+==================================================
+REQUIRED FLOW AFTER ACCEPTANCE
+==================================================
+
+When ANY of the following occurs:
+- landlord accepts agent bid
+- landlord accepts counter
+- agent accepts landlord counter
+
+System must:
+
+1. finalize acceptance successfully
+2. create hired relationship (correctly, without SQL errors)
+3. immediately route user to:
+
+→ Accepted Bid Summary (Acknowledgement page)
+
+Same flow as Tenant.
+
+==================================================
+ACKNOWLEDGEMENT PAGE REQUIREMENTS
+==================================================
+
+Landlord acknowledgement page must match Tenant exactly in:
+
+- layout
+- section order
+- styling
+- spacing
+- headings
+- acknowledgement checkboxes
+- signature/confirmation behavior
+- PDF generation (if used)
+- notification behavior
+
+ONLY change:
+- Tenant → Landlord wording
+- Tenant compensation → Landlord compensation
+- Tenant services → Landlord services
+
+Example:
+
+"Agreed Compensation & Agency Terms"
+→ same section, but populated with landlord terms
+
+"Services the Tenant Requests"
+→ "Services the Landlord Requests"
+
+==================================================
+DATA SOURCE RULES
+==================================================
+
+Acknowledgement must reflect FINAL accepted terms:
+
+- latest counter terms (not original listing if changed)
+- final compensation agreement
+- final selected services
+- any additional terms
+
+Must match what was accepted, not just listing defaults.
+
+==================================================
+ROUTING RULES
+==================================================
+
+After acceptance:
+
+DO:
+- redirect to landlord acknowledgement summary page
+- use bid_id or acceptance record to load correct data
+
+DO NOT:
+- redirect back to dashboard
+- show success message only
+- skip acknowledgement
+- send to wrong role view
+- create a separate landlord-only summary page
+
+==================================================
+PERMISSION RULES
+==================================================
+
+Both parties should be able to:
+- view the Accepted Bid Summary
+- acknowledge/sign if required
+- download PDF (if implemented)
+
+No 403 errors for correct participants.
+
+==================================================
+TEST CASES REQUIRED
+==================================================
+
+1. Landlord accepts bid
+→ redirected to acknowledgement page
+→ correct landlord data shown
+
+2. Agent accepts landlord counter
+→ redirected to acknowledgement page
+→ correct landlord + agent agreement shown
+
+3. Accept after multiple counters
+→ acknowledgement reflects FINAL terms only
+
+4. Regression test Tenant
+→ Tenant acknowledgement unchanged
+
+==================================================
+GUARDRAILS
+==================================================
+
+Do NOT:
+- modify Tenant acknowledgement flow
+- create new layout
+- skip acknowledgement step
+- show stale/original terms instead of final terms
+- break existing PDF/signature logic
+
+==================================================
+EXPECTED RESULT
+==================================================
+
+Landlord acceptance experience = identical to Tenant experience
+
+Same:
+- UX
+- legal flow
+- acknowledgement process
+
+Only:
+- landlord-specific data changes
