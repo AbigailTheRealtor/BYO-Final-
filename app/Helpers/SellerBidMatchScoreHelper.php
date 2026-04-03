@@ -140,12 +140,6 @@ class SellerBidMatchScoreHelper
             'key'    => 'brokerage_relationship',
             'fields' => ['brokerage_relationship'],
         ],
-
-        // 16. Additional Terms (free-text)
-        [
-            'key'    => 'additional_details_broker',
-            'fields' => ['additional_details_broker'],
-        ],
     ];
 
     /**
@@ -172,7 +166,6 @@ class SellerBidMatchScoreHelper
         'protection_period',
         'agency_agreement_timeframe',
         'brokerage_relationship',
-        'additional_details_broker',
     ];
 
     /**

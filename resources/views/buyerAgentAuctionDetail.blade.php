@@ -2395,6 +2395,9 @@
                                         $scoreColor       = \App\Helpers\BuyerBidMatchScoreHelper::scoreColor((int)$overallScore);
                                         $brokerMismatches = $score['changed_terms'] ?? [];
                                         $brokerAdded      = $score['added_terms'] ?? [];
+                                        $buyerBaselineLabel = $latestBuyerCounter
+                                            ? ($isListingOwner ? 'Your Counter Terms' : "Buyer's Counter Terms")
+                                            : ($isListingOwner ? 'Your Original Terms' : "Buyer's Original Request");
                                         $servicesExtraCount = $score['services_extra_count'] ?? 0;
                                         $matchedServices  = $score['matched_services'] ?? [];
                                         $missingServices  = $score['missing_services'] ?? [];
@@ -2548,8 +2551,13 @@
                                                         </div>
                                                         <div class="text-muted" style="font-size: 0.8rem;">
                                                             Matched: {{ $score['broker_comp_matched'] ?? 0 }}/{{ $score['broker_comp_total'] ?? 0 }}
+                                                            @if (($score['terms_changed_count'] ?? 0) > 0) &bull; Changed: {{ $score['terms_changed_count'] }}@endif
+                                                            @if (($score['terms_added_count'] ?? 0) > 0) &bull; Added: {{ $score['terms_added_count'] }}@endif
                                                         </div>
                                                     </div>
+                                                </div>
+                                                <div class="mt-2 small text-muted">
+                                                    <i class="fa fa-info-circle me-1"></i>Compared to: {{ $buyerBaselineLabel }}
                                                 </div>
                                                 <div class="mt-1 small" style="color: #6c757d; font-style: italic; font-size: 0.78rem;">
                                                     Match Score compares this bid to the Buyer's original request. Added services or terms do not increase the score.

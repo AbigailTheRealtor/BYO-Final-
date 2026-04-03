@@ -2999,6 +2999,8 @@
                                             </div>
                                             <div class="text-muted" style="font-size: 0.8rem;">
                                                 Matched: {{ $brokerMatched }}/{{ $brokerTotal }}
+                                                @if (($scoreResult['terms_changed_count'] ?? 0) > 0) &bull; Changed: {{ $scoreResult['terms_changed_count'] }}@endif
+                                                @if (($scoreResult['terms_added_count'] ?? 0) > 0) &bull; Added: {{ $scoreResult['terms_added_count'] }}@endif
                                             </div>
                                         </div>
                                     </div>
