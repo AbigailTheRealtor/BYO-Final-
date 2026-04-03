@@ -380,7 +380,36 @@
     @endif
 
     @if (in_array(auth()->user()->user_type, ['landlord']))
-        <!-- Hire Buyer's Agent Auctions  -->
+    <!-- Agent Bids (for Landlords) -->
+    <a href="{{ route('myBids', 'hire-landlord-agent-bids') }}">
+        <div class="d-flex flex-row p-3 border-end border-bottom">
+            <div class="me-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                    </path>
+                </svg>
+            </div>
+            <div class="w-100">
+                <div class="text-600 mb-2"><b>Agent Bids</b>
+                    @php
+                        $pending_landlord_agent_bids_count = \App\Models\LandlordAgentAuctionBid::whereHas('auction', function($q) {
+                            $q->where('user_id', auth()->id());
+                        })->get()->filter(function($bid) {
+                            return in_array($bid->bid_status, ['Active', 'Countered']);
+                        })->count();
+                    @endphp
+                    @if ($pending_landlord_agent_bids_count)
+                        <span class="badge bg-danger ms-2">{{ $pending_landlord_agent_bids_count }}</span>
+                    @endif
+                </div>
+                <div class="opacity-50 text-400 small">View and manage bids from agents on your listings.</div>
+            </div>
+        </div>
+    </a>
+    <!-- End  -->
+        <!-- Hire Landlord's Agent Auctions  -->
         <a href="{{ route('landlord.agent.auctions.list') }}">
             <div class="d-flex flex-row p-3 border-end border-bottom">
                 <div class="me-3">

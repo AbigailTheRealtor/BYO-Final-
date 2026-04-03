@@ -9,6 +9,7 @@ use App\Models\BuyerCriteriaAuctionBid;
 use App\Models\City;
 use App\Models\Country;
 use App\Models\County;
+use App\Models\LandlordAgentAuction;
 use App\Models\LandlordAgentAuctionBid;
 use App\Models\LandlordAuctionBid;
 use App\Models\PropertyAuction;
@@ -253,6 +254,16 @@ class DashboardController extends Controller
                     return in_array($bid->bid_status, ['Active', 'Countered']);
                 });
             return view('my-bids.agent-bids', $page_data);
+        } else if ($type == 'hire-landlord-agent-bids') {
+            $userAuctions = LandlordAgentAuction::where('user_id', $user->id)->pluck('id');
+            $page_data['pendingAgentBids'] = LandlordAgentAuctionBid::whereIn('landlord_agent_auction_id', $userAuctions)
+                ->with(['user', 'auction', 'meta', 'acceptedBidSummary'])
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->filter(function($bid) {
+                    return in_array($bid->bid_status, ['Active', 'Countered']);
+                });
+            return view('my-bids.hire-landlord-agent-bids', $page_data);
         } else {
             abort(404);
         }
