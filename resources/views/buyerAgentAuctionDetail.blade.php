@@ -2354,7 +2354,7 @@
 
                                         // === MATCH SCORE — baseline-driven (BuyerBidMatchScoreHelper) ===
                                         $auctionPropType = data_get($auction, 'get.property_type', '');
-                                        $baselineData = (array) $auction->get;
+                                        $baselineData = $auction->meta->pluck('meta_value', 'meta_key')->toArray();
                                         $currentBidData = (array) $bid->get;
 
                                         // Check for buyer-countered terms (BuyerCounterTerm) — buyer counters the agent
@@ -3505,9 +3505,66 @@
                                                                             style="background: #e8f4f5; border-radius: 6px; color: #049399;">
                                                                             <i class="fa fa-shield me-2"></i>
                                                                             <strong>Confidential:</strong> This information
-                                                                            is private and only visible to you as the
-                                                                            listing owner.
+                                                                            is private and only visible to you{{ $isListingOwner ? ' as the listing owner' : '' }}.
                                                                         </div>
+
+                                                                        @if ($isListingOwner && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected')
+                                                                            @php
+                                                                                $showBuyerActionButtons = ($isTraditionalListing && !$isExpired) || ($isBiddingPeriodListing && $isExpired);
+                                                                            @endphp
+                                                                            @if ($showBuyerActionButtons)
+                                                                            <div class="d-flex gap-3 justify-content-center align-items-center w-100 mb-3" style="flex-wrap: nowrap;">
+                                                                                <form action="{{ route('hire.agent.auction.bid.accept') }}" method="POST" style="margin: 0;"
+                                                                                      onsubmit="return confirm('Are you sure you want to accept this bid? This will reject all other bids.');">
+                                                                                    @csrf
+                                                                                    <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
+                                                                                    <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                                                                    <button type="submit" class="btn btn-accept" style="background-color: #28a745 !important; border-color: #28a745 !important; color: #fff !important; padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center;">
+                                                                                        <i class="fa fa-check me-1"></i> Accept Bid
+                                                                                    </button>
+                                                                                </form>
+                                                                                <form action="{{ route('hire.agent.auction.bid.reject') }}" method="POST" style="margin: 0;"
+                                                                                      onsubmit="return confirm('Are you sure you want to reject this bid?');">
+                                                                                    @csrf
+                                                                                    <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
+                                                                                    <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                                                                    <button type="submit" class="btn btn-danger" style="padding: 10px 20px; font-size: 0.95rem; background-color: #dc3545 !important; border-color: #dc3545 !important; color: #fff !important; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center;">
+                                                                                        <i class="fa fa-times me-1"></i> Reject Bid
+                                                                                    </button>
+                                                                                </form>
+                                                                            </div>
+                                                                            @elseif ($isBiddingPeriodListing && !$canTakeAction)
+                                                                            <div class="w-100 mb-3 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
+                                                                                <i class="fa fa-clock me-1"></i> Actions unlock when the bidding period ends.
+                                                                            </div>
+                                                                            @elseif ($isTraditionalListing && $isExpired)
+                                                                            <div class="w-100 mb-3 p-2 text-center" style="background: #ffc107; border-radius: 6px; color: #856404;">
+                                                                                <i class="fa fa-clock me-1"></i> Listing has expired &mdash; no further actions available. You can extend the expiration date by editing the listing.
+                                                                            </div>
+                                                                            @endif
+                                                                        @elseif ($isListingOwner && $bidAccepted === 'accepted')
+                                                                        <div class="w-100 mb-3 p-2 text-center" style="background: #d4edda; border-radius: 6px; color: #155724;">
+                                                                            <i class="fa fa-check-circle me-1"></i> This bid has been accepted
+                                                                        </div>
+                                                                        @php
+                                                                            $buyerAcceptedBidSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->first();
+                                                                        @endphp
+                                                                        @if ($buyerAcceptedBidSummary)
+                                                                        <div class="d-flex gap-2 flex-wrap justify-content-center mt-2 mb-3">
+                                                                            <a href="{{ route('accepted-bid-summary.view', $buyerAcceptedBidSummary->id) }}" class="btn btn-outline-primary btn-sm">
+                                                                                <i class="fa fa-file-alt me-1"></i> View Accepted Bid Summary
+                                                                            </a>
+                                                                            <a href="{{ route('accepted-bid-summary.sign', $buyerAcceptedBidSummary->id) }}" class="btn btn-outline-success btn-sm">
+                                                                                <i class="fa fa-signature me-1"></i> E-Sign Summary
+                                                                            </a>
+                                                                        </div>
+                                                                        @endif
+                                                                        @elseif ($isListingOwner && $bidAccepted === 'rejected')
+                                                                        <div class="w-100 mb-3 p-2 text-center" style="background: #f8d7da; border-radius: 6px; color: #721c24;">
+                                                                            <i class="fa fa-times-circle me-1"></i> This bid has been rejected
+                                                                        </div>
+                                                                        @endif
+
                                                                         <button type="button" class="btn btn-secondary"
                                                                             data-bs-dismiss="modal"
                                                                             style="background: #6c757d; border: none; border-radius: 6px; padding: 8px 20px;">Close</button>

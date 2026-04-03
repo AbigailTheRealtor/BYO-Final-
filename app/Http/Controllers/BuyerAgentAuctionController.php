@@ -395,16 +395,15 @@ class BuyerAgentAuctionController extends Controller
     public function viewAuctionDetails($id)
     {
 
-        $auction = BuyerAgentAuction::find($id);
+        $auction = BuyerAgentAuction::with('meta', 'bids.meta', 'bids.user', 'user')->find($id);
         // Auto-transition Bidding Period listing to Pending when timer ends
         $this->autoTransitionBpToPending($auction);
 
         $page_data['title'] = $auction->address;
         $counties = County::all();
         $page_data['id'] = $id;
-        $data = BuyerAgentAuction::with('meta')->find($id);
+        $data = $auction;
         $counterTerms = CounterTerm::where('buyer_auction_id', $id)->first();
-        // dd($counterTerms);
         return view('buyerAgentAuctionDetail', compact('counties', 'auction', 'data', 'counterTerms'));
     }
 
