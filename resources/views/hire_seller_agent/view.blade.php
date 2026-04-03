@@ -2974,15 +2974,39 @@
                                     {{-- SINGLE SCORE fallback --}}
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <span style="font-weight: 600; color: #1a3a5c; font-size: 1rem;">
-                                            <i class="fa fa-chart-pie me-2"></i>Match Summary
+                                            <i class="fa fa-chart-pie me-2"></i>Match Score
                                         </span>
-                                        @php $singleColor = $getScoreColor($originalScore['overall_percent']); @endphp
-                                        <span class="badge" style="background: {{ $singleColor }}; font-size: 0.8rem; padding: 3px 8px; color: white;">{{ $originalScore['overall_percent'] }}%</span>
+                                        <span class="badge" style="background: {{ $totalScoreColor }}; font-size: 1rem; padding: 6px 12px; color: white;">
+                                            {{ $totalScore }}%
+                                        </span>
                                     </div>
-                                    <div style="font-size: 0.75rem; color: #6c757d;">vs. Seller's Original Request</div>
-                                    <div class="row g-0 mt-1" style="font-size: 0.75rem;">
-                                        <div class="col-6" style="color: {{ $getScoreColor($originalScore['services_match_percent']) }};">Services {{ $originalScore['services_match_percent'] }}%</div>
-                                        <div class="col-6" style="color: {{ $getScoreColor($originalScore['terms_match_percent']) }};">Terms {{ $originalScore['terms_match_percent'] }}%</div>
+                                    <div class="row g-2 small">
+                                        <div class="col-6">
+                                            <div class="d-flex justify-content-between">
+                                                <span class="text-muted">Services Match:</span>
+                                                <span style="color: {{ $getScoreColor($servicesScore) }}; font-weight: 600;">{{ $servicesScore }}%</span>
+                                            </div>
+                                            <div class="text-muted" style="font-size: 0.8rem;">
+                                                Matched: {{ $servicesMatched }}/{{ $servicesTotal }}
+                                                @if ($servicesExtraCount > 0) &bull; Extra: {{ $servicesExtraCount }}@endif
+                                                @if ($servicesMissingCount > 0) &bull; Missing: {{ $servicesMissingCount }}@endif
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="d-flex justify-content-between">
+                                                <span class="text-muted">Terms Match:</span>
+                                                <span style="color: {{ $getScoreColor($brokerScore) }}; font-weight: 600;">{{ $brokerScore }}%</span>
+                                            </div>
+                                            <div class="text-muted" style="font-size: 0.8rem;">
+                                                Matched: {{ $brokerMatched }}/{{ $brokerTotal }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 small text-muted">
+                                        <i class="fa fa-info-circle me-1"></i>Compared to: {{ $baselineLabel }}
+                                    </div>
+                                    <div class="mt-1 small" style="color: #6c757d; font-style: italic; font-size: 0.78rem;">
+                                        Match Score compares this bid only to the Seller's original request. Added services or added terms are shown for transparency but do not increase the score.
                                     </div>
                                     @endif
                                 </div>

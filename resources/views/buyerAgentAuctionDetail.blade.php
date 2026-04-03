@@ -2559,7 +2559,7 @@
                                             @endif
 
                                             <!-- Broker Compensation Summary -->
-                                            <h6 style="font-weight: 600; color: #1a3a5c; font-size: 1.15rem; margin-bottom: 12px;">Buyer's Broker Compensation Summary:</h6>
+                                            <h6 style="font-weight: 600; color: #1a3a5c; font-size: 1.15rem; margin-bottom: 12px;">Broker Compensation Summary:</h6>
                                             @if ($cardCommissionStructure)
                                             <div class="mb-2">
                                                 <p class="mb-1" style="font-size: 1rem; color: #333;">

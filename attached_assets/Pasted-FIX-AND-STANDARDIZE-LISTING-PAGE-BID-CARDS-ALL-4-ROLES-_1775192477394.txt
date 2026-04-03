@@ -1,0 +1,299 @@
+FIX AND STANDARDIZE LISTING-PAGE BID CARDS (ALL 4 ROLES)
+
+Goal:
+Make all 4 listing-page bid cards match the same complete structure, using the Tenant/Buyer Match Score box as the depth standard and applying it consistently across:
+- Hire a Tenant's Agent
+- Hire a Landlord's Agent
+- Hire a Buyer's Agent
+- Hire a Seller's Agent
+
+This is a bid-card rendering/standardization task.
+Do not redesign the platform.
+Do not create separate card styles by role.
+
+==================================================
+FINAL UX RULE
+==================================================
+
+Do NOT add a separate "Offered Terms" summary line under Offered Services.
+
+Keep the card structure as:
+
+1. Offered Services summary line
+2. Extra Value Added line
+3. Detailed Match Score box
+4. Broker Compensation Summary
+5. View Full Bid
+6. Edit Bid when allowed
+
+Reason:
+- Services are best summarized in a single scan line
+- Terms belong inside the Match Score box
+- A separate Offered Terms line would be redundant and clutter the card
+
+==================================================
+REQUIRED UNIVERSAL BID CARD STRUCTURE
+==================================================
+
+All 4 roles must render the same card structure in the same order:
+
+1. Header row
+- Agent label/name
+- status badge
+
+2. Offered Services summary line
+Format:
+Offered Services: X/Y matched • X extra • X missing
+
+3. Extra Value Added line
+Format:
+Extra Value Added: X Services
+— does not affect match score
+
+4. Detailed Match Score box
+Must match the more complete Tenant/Buyer style, not the simplified Seller/Landlord version.
+
+5. Broker Compensation Summary
+Use this exact heading for all roles:
+Broker Compensation Summary:
+
+Do NOT use:
+- Buyer's Broker Compensation Summary
+- Seller's Broker Compensation Summary
+- Landlord's Broker Compensation Summary
+- Tenant's Broker Compensation Summary
+
+The heading should be universal:
+Broker Compensation Summary:
+
+The role-specific compensation labels/details can remain inside the section.
+
+6. View Full Bid
+
+7. Edit Bid
+- only when appropriate for the bidding agent
+- keep current permission rules
+
+==================================================
+MATCH SCORE BOX — REQUIRED STANDARD
+==================================================
+
+Seller and Landlord Match Summary currently are too simplified.
+They must be upgraded to match the more detailed Tenant/Buyer Match Score box format.
+
+Use one detailed format for all 4 roles:
+
+- Match Score heading
+- overall % badge on the right
+- Services Match: X%
+- Matched: X/Y
+- Terms Match: X%
+- Matched: X/Y
+- Compared to: [correct baseline text]
+- explanatory note
+
+Use the more detailed format already visible in Tenant/Buyer as the structural standard.
+
+==================================================
+BASELINE TEXT
+==================================================
+
+Keep role-correct explanatory text, but structure should be consistent.
+
+Examples:
+- Compared to: Tenant's Original Terms
+- Compared to: Buyer's Original Terms
+- Compared to: Seller's Original Terms
+- Compared to: Landlord's Original Terms
+
+If there is already finalized approved wording in the Tenant flow, use that wording pattern consistently across all roles.
+
+==================================================
+SPECIFIC ISSUES TO FIX
+==================================================
+
+1. Seller bid card
+Currently missing:
+- extra/missing services breakdown
+- Extra Value Added line
+- detailed Match Score box
+
+Needs:
+- Offered Services: X/Y matched • X extra • X missing
+- Extra Value Added
+- detailed Match Score box like Tenant/Buyer
+
+2. Tenant bid card
+Currently missing:
+- extra/missing services breakdown when applicable
+- Extra Value Added line when applicable
+
+Tenant should also use the same universal standard.
+
+3. Landlord bid card
+Currently has simplified Match Summary.
+Needs to match the more detailed Tenant/Buyer Match Score box:
+- Match Score
+- Services Match %
+- Matched count
+- Terms Match %
+- Matched count
+- compared-to text
+- explanatory note
+
+4. Buyer bid card
+Change heading:
+- from Buyer's Broker Compensation Summary
+- to Broker Compensation Summary
+
+Buyer should keep the more detailed Match Score box structure and become part of the shared standard.
+
+==================================================
+OFFERED SERVICES SUMMARY RULE
+==================================================
+
+For all 4 roles, the Offered Services line must show:
+- matched
+- extra
+- missing
+
+Examples:
+- Offered Services: 38/38 matched
+- Offered Services: 50/50 matched • 6 extra
+- Offered Services: 31/33 matched • 3 extra • 2 missing
+
+Do not suppress extra/missing for Seller or Tenant if they exist.
+Restore the same logic consistently.
+
+==================================================
+EXTRA VALUE ADDED RULE
+==================================================
+
+If extra services exist, show:
+Extra Value Added: X Services
+— does not affect match score
+
+Apply consistently across all 4 roles.
+
+==================================================
+BROKER COMPENSATION SUMMARY RULE
+==================================================
+
+Use the universal heading:
+Broker Compensation Summary:
+
+Inside that section, keep role-specific labels/data, for example:
+- Tenant's Broker Commission Structure
+- Buyer's Broker Purchase Fee
+- Seller's Broker Purchase Fee
+- Landlord's Broker Lease Fee
+
+Only the section heading becomes universal.
+
+==================================================
+WHAT TO AUDIT
+==================================================
+
+Audit all 4 listing-page bid card views and any shared partials/components:
+
+1. Tenant
+2. Landlord
+3. Buyer
+4. Seller
+
+Check specifically:
+- Offered Services summary rendering
+- extra/missing count rendering
+- Extra Value Added rendering
+- Match Score box markup
+- simplified Match Summary vs detailed Match Score branches
+- section heading for Broker Compensation Summary
+- any role-specific template divergence
+- any conditional logic suppressing extra/missing lines incorrectly
+
+==================================================
+IMPLEMENTATION APPROACH
+==================================================
+
+Preferred:
+Create or restore one shared bid-card partial/component and use it for all 4 roles.
+
+Pass only role-specific data:
+- role name
+- services matched/extra/missing counts
+- services match %
+- terms match %
+- overall match %
+- comparison text
+- compensation labels/data
+- routes for View Full Bid / Edit Bid
+
+Do not maintain 4 separate drifting card versions.
+
+==================================================
+TEST CASES REQUIRED
+==================================================
+
+For each of the 4 roles:
+
+A. Listing with fully matched services
+- Offered Services line correct
+- Match Score box visible
+- Broker Compensation Summary heading is universal
+
+B. Listing with extra services
+- extra count visible in Offered Services line
+- Extra Value Added visible
+
+C. Listing with missing services
+- missing count visible in Offered Services line
+
+D. Listing with both extra and missing services
+- full summary line visible
+- Match Score box still correct
+
+E. Side-by-side screenshot comparison
+- all 4 roles match structurally
+
+F. Buyer specifically
+- heading says Broker Compensation Summary
+- not Buyer's Broker Compensation Summary
+
+G. Seller and Landlord specifically
+- Match Score box matches Tenant/Buyer depth
+- not simplified Match Summary
+
+==================================================
+GUARDRAILS
+==================================================
+
+Do NOT:
+- add a new separate Offered Terms line
+- redesign the card
+- rename DB columns
+- change scoring formulas unless truly necessary
+- leave role-specific card layouts drifting
+- break timer/traditional fixes already completed
+- remove privacy messaging
+- remove role-specific compensation details inside the summary
+
+==================================================
+EXPECTED FINAL RESULT
+==================================================
+
+All 4 listing-page bid cards should have the same complete structure:
+
+- Offered Services: matched / extra / missing
+- Extra Value Added
+- detailed Match Score box
+  - overall %
+  - Services Match %
+  - Terms Match %
+  - matched counts
+  - compared-to text
+  - explanatory note
+- Broker Compensation Summary
+- View Full Bid
+- Edit Bid when allowed
+
+Only role-specific wording/data inside the card should differ.
