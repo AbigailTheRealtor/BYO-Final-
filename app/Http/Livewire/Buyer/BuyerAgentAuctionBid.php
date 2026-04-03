@@ -20,6 +20,8 @@ class BuyerAgentAuctionBid extends Component
     use WithFileUploads;
 
     public $auctionId;
+    public $editBidId = null;
+    public $isEditMode = false;
     public $service_type; // 'full_service' or 'limited_service'
     public $user_type;
     public $property_type;
@@ -335,24 +337,80 @@ public $additional_details_broker = '';
         $this->other_services_enabled = (bool)($auction->get->other_services_enabled ?? false);
 
         $this->auctionId = $auctionId;
+
+        // Edit mode: read the bid ID from the URL ?edit= parameter
+        $this->editBidId = request()->query('edit');
+        $this->isEditMode = !empty($this->editBidId);
+
         // Initialize arrays
         $this->website_link = [''];
         $this->reviews_links = [['text' => '']];
         $this->social_media = [['platform' => '', 'text' => '']];
 
-        // ── Compensation prefill ──────────────────────────────────────────────
-        // Priority 1: existing saved bid draft by this agent for this listing
-        // Priority 2: the listing's own compensation values
-        // Priority 3: blank (defaults already set above as empty strings)
-        $existingBid = BuyerAgentAuctionBidData::where('buyer_agent_auction_id', $auctionId)
-            ->where('user_id', Auth::id())
-            ->latest()
-            ->first();
+        // ── Compensation + overview prefill ───────────────────────────────────
+        // Edit mode: load from the specific bid being edited.
+        // New bid: load compensation prefill from the most recent bid by this agent,
+        //          then overview/services come from the default profile below.
+        $existingBid = $this->isEditMode
+            ? BuyerAgentAuctionBidData::find($this->editBidId)
+            : BuyerAgentAuctionBidData::where('buyer_agent_auction_id', $auctionId)
+                ->where('user_id', Auth::id())
+                ->latest()
+                ->first();
+
+        // Validate edit-mode ownership
+        if ($this->isEditMode && $existingBid && $existingBid->user_id !== Auth::id()) {
+            $existingBid = null;
+            $this->isEditMode = false;
+            $this->editBidId  = null;
+        }
 
         if ($existingBid && $existingBid->get) {
             // Load every compensation field from the saved bid.
             // Cast to array so PHP 8.2 never raises "Undefined property" on stdClass.
             $b = (array) $existingBid->get;
+
+            // In edit mode also load overview, services, and promo fields
+            if ($this->isEditMode) {
+                $this->bio                 = $b['bio'] ?? '';
+                $this->why_hire_you        = $b['why_hire_you'] ?? '';
+                $this->what_sets_you_apart = $b['what_sets_you_apart'] ?? '';
+                $this->marketing_plan      = $b['marketing_plan'] ?? '';
+                $this->year_licensed       = $b['year_licensed'] ?? '';
+                $this->additional_details  = $b['additional_details'] ?? '';
+
+                $rawReviews = $b['reviews_links'] ?? [];
+                if (is_string($rawReviews)) $rawReviews = json_decode($rawReviews, true) ?? [];
+                if (!empty($rawReviews)) $this->reviews_links = $rawReviews;
+
+                $rawSocial = $b['social_media'] ?? [];
+                if (is_string($rawSocial)) $rawSocial = json_decode($rawSocial, true) ?? [];
+                if (!empty($rawSocial)) $this->social_media = $rawSocial;
+
+                $wl = $b['website_link'] ?? '';
+                $this->website_link = !empty($wl) ? (is_array($wl) ? $wl : [$wl]) : [''];
+
+                $rawSvc = $b['services'] ?? [];
+                if (is_string($rawSvc)) $rawSvc = json_decode($rawSvc, true) ?? [];
+                if (!empty($rawSvc)) {
+                    $this->services = $this->filterServicesToCurrentCatalog(
+                        $this->normalizeBuyerServiceLabels((array) $rawSvc)
+                    );
+                }
+                $rawOther = $b['other_services'] ?? [];
+                if (is_string($rawOther)) $rawOther = json_decode($rawOther, true) ?? [];
+                $this->other_services         = is_array($rawOther) ? $rawOther : [];
+                $this->other_services_enabled = (bool) ($b['other_services_enabled'] ?? false);
+
+                $rawPromo = $b['promoMaterials'] ?? [];
+                if (is_string($rawPromo)) $rawPromo = json_decode($rawPromo, true) ?? [];
+                if (!empty($rawPromo) && is_array($rawPromo)) $this->promoMaterials = $rawPromo;
+
+                $this->presentation_link        = $b['presentation_link'] ?? null;
+                $this->business_card_link       = $b['business_card_link'] ?? null;
+                $this->business_card_stored_path = $b['business_card_stored_path'] ?? null;
+                $this->additional_details_broker = $b['additional_details_broker'] ?? '';
+            }
             $this->commission_structure                  = $b['commission_structure'] ?? '';
             $this->purchase_fee_type                     = $b['purchase_fee_type'] ?? '';
             $this->purchase_fee_flat                     = $b['purchase_fee_flat'] ?? '';
@@ -440,36 +498,38 @@ public $additional_details_broker = '';
             $this->license_no = $user->license_no ?? '';
             $this->nar_id     = $user->nar_id ?? '';
 
-            // Auto-load Default Profile for new bids
-            $defaultProfile = AgentDefaultProfile::findForAgentWithFallback(
-                $user->id,
-                'buyer',
-                $this->property_type ?: 'residential'
-            );
-            if ($defaultProfile) {
-                $this->defaultProfileExists = true;
-                $dp = $defaultProfile->profile_data ?? [];
-                $this->bio                 = $dp['bio'] ?? '';
-                $this->why_hire_you        = $dp['why_hire_you'] ?? '';
-                $this->what_sets_you_apart = $dp['what_sets_you_apart'] ?? '';
-                $this->marketing_plan      = $dp['marketing_plan'] ?? '';
-                $this->year_licensed       = $dp['year_licensed'] ?? '';
-                if (!empty($dp['reviews_links']))    $this->reviews_links    = $dp['reviews_links'];
-                if (!empty($dp['website_link']))     $this->website_link     = $dp['website_link'];
-                if (!empty($dp['social_media']))     $this->social_media     = $dp['social_media'];
-                if (!empty($dp['additional_details'])) $this->additional_details = $dp['additional_details'];
-                if (!empty($dp['first_name']))        $this->first_name        = $dp['first_name'];
-                if (!empty($dp['last_name']))         $this->last_name         = $dp['last_name'];
-                if (!empty($dp['phone']))             $this->phone             = $dp['phone'];
-                if (!empty($dp['email']))             $this->email             = $dp['email'];
-                if (!empty($dp['brokerage']))         $this->brokerage         = $dp['brokerage'];
-                if (!empty($dp['license_no']))        $this->license_no        = $dp['license_no'];
-                if (!empty($dp['nar_id']))            $this->nar_id            = $dp['nar_id'];
-                if (!empty($dp['presentation_link']))         $this->presentation_link         = $dp['presentation_link'];
-                if (!empty($dp['business_card_link']))         $this->business_card_link         = $dp['business_card_link'];
-                if (!empty($dp['business_card_stored_path'])) $this->business_card_stored_path  = $dp['business_card_stored_path'];
-                if (!empty($dp['promoMaterials']))             $this->promoMaterials             = $dp['promoMaterials'];
-                $this->defaultProfileLoaded = true;
+            // Auto-load Default Profile only for new bids (not when editing an existing bid)
+            if (!$this->isEditMode) {
+                $defaultProfile = AgentDefaultProfile::findForAgentWithFallback(
+                    $user->id,
+                    'buyer',
+                    $this->property_type ?: 'residential'
+                );
+                if ($defaultProfile) {
+                    $this->defaultProfileExists = true;
+                    $dp = $defaultProfile->profile_data ?? [];
+                    $this->bio                 = $dp['bio'] ?? '';
+                    $this->why_hire_you        = $dp['why_hire_you'] ?? '';
+                    $this->what_sets_you_apart = $dp['what_sets_you_apart'] ?? '';
+                    $this->marketing_plan      = $dp['marketing_plan'] ?? '';
+                    $this->year_licensed       = $dp['year_licensed'] ?? '';
+                    if (!empty($dp['reviews_links']))    $this->reviews_links    = $dp['reviews_links'];
+                    if (!empty($dp['website_link']))     $this->website_link     = $dp['website_link'];
+                    if (!empty($dp['social_media']))     $this->social_media     = $dp['social_media'];
+                    if (!empty($dp['additional_details'])) $this->additional_details = $dp['additional_details'];
+                    if (!empty($dp['first_name']))        $this->first_name        = $dp['first_name'];
+                    if (!empty($dp['last_name']))         $this->last_name         = $dp['last_name'];
+                    if (!empty($dp['phone']))             $this->phone             = $dp['phone'];
+                    if (!empty($dp['email']))             $this->email             = $dp['email'];
+                    if (!empty($dp['brokerage']))         $this->brokerage         = $dp['brokerage'];
+                    if (!empty($dp['license_no']))        $this->license_no        = $dp['license_no'];
+                    if (!empty($dp['nar_id']))            $this->nar_id            = $dp['nar_id'];
+                    if (!empty($dp['presentation_link']))         $this->presentation_link         = $dp['presentation_link'];
+                    if (!empty($dp['business_card_link']))         $this->business_card_link         = $dp['business_card_link'];
+                    if (!empty($dp['business_card_stored_path'])) $this->business_card_stored_path  = $dp['business_card_stored_path'];
+                    if (!empty($dp['promoMaterials']))             $this->promoMaterials             = $dp['promoMaterials'];
+                    $this->defaultProfileLoaded = true;
+                }
             }
         }
     }
@@ -726,10 +786,22 @@ public $additional_details_broker = '';
             $allowedVideos = ['mp4', 'mov', 'avi'];
             $allowedPhotos = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx', 'ppt', 'pptx'];
 
-            $bid = new BuyerAgentAuctionBidData();
-            $bid->user_id = Auth::id();
-            $bid->buyer_agent_auction_id = $this->auctionId;
-            $bid->save();
+            if ($this->isEditMode && $this->editBidId) {
+                $bid = BuyerAgentAuctionBidData::find($this->editBidId);
+                if (!$bid || $bid->user_id !== Auth::id()) {
+                    session()->flash('error', 'You cannot edit this bid.');
+                    return;
+                }
+                if ($bid->accepted === 'accepted' || $bid->accepted === 'rejected') {
+                    session()->flash('error', 'Cannot edit a bid that has been accepted or rejected.');
+                    return;
+                }
+            } else {
+                $bid = new BuyerAgentAuctionBidData();
+                $bid->user_id = Auth::id();
+                $bid->buyer_agent_auction_id = $this->auctionId;
+                $bid->save();
+            }
 
             // Save Agent Overview
             $bid->saveMeta('bio', $this->bio);

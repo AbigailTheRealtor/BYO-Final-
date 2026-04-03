@@ -75,8 +75,9 @@ class LandlordAgentAuctionBid extends Model
         $data = [];
         $metas = LandlordAgentAuctionBidMeta::where('landlord_agent_auction_bid_id', $this->id)->get();
         foreach ($metas as $row) {
-            if (gettype(json_decode($row->meta_value)) == 'array') {
-                $value = json_decode($row->meta_value);
+            $decoded = json_decode($row->meta_value, true);
+            if (is_array($decoded)) {
+                $value = $decoded;
             } else {
                 $value = $row->meta_value;
             }
