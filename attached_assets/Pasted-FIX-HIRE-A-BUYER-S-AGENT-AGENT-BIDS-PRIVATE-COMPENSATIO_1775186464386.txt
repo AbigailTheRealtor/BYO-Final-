@@ -1,0 +1,268 @@
+FIX HIRE A BUYER'S AGENT → AGENT BIDS → PRIVATE COMPENSATION & AGREEMENT TERMS
+Goal:
+On Hire a Buyer's Agent listings, the Agent Bids flow must match the working Tenant flow structure and behavior.
+
+Current issues to fix:
+1. In Private Compensation & Agreement Terms, these Agent Overview fields are missing from the buyer bid card:
+   - What Sets You Apart From Other Agents?
+   - What Is Your Marketing Strategy?
+2. Edit Bid is missing from the agent bid card on the listing
+3. Accept / Counter / Reject actions are missing in the Private Compensation & Agreement Terms view
+4. Services match score and Broker Compensation & Agency Agreement Terms match score must be verified and corrected so they calculate accurately
+
+Tenant is the source of truth.
+Do not invent a Buyer-specific bid-detail UX.
+Reuse the same Tenant structural flow and adapt only Buyer-specific labels/data.
+
+==================================================
+SOURCE OF TRUTH
+==================================================
+
+Use the working Tenant flow as the exact reference for:
+- private data / compensation modal or page structure
+- agent overview section fields
+- action button visibility and placement
+- edit bid entry point
+- accept / counter / reject controls
+- score calculation and rendering
+- mismatch / extra / missing logic
+
+Buyer should match Tenant in behavior and completeness.
+
+==================================================
+1. RESTORE MISSING AGENT OVERVIEW FIELDS
+==================================================
+
+Problem:
+In Hire a Buyer's Agent → Agent Bids → Private Compensation & Agreement Terms, the bid card/detail is missing:
+
+- What Sets You Apart From Other Agents?
+- What Is Your Marketing Strategy?
+
+Required fix:
+Add these fields back to the Buyer bid card/detail in the same section and formatting pattern used by Tenant when present.
+
+Expected placement:
+Inside the Agent Overview / Qualifications area of the private bid detail, along with:
+- About Agent
+- Why Should You Be Hired
+- reviews
+- website
+- social links
+and any other existing agent overview fields already shown
+
+Requirements:
+- pull the values from the saved bid data for that agent bid
+- do not hardcode
+- if Tenant uses fallback/conditional display rules, Buyer should mirror those rules
+- preserve formatting and line breaks where appropriate
+- do not remove existing overview fields to add these back
+
+==================================================
+2. ADD EDIT BID TO BUYER AGENT BID CARD ON LISTING
+==================================================
+
+Problem:
+Edit Bid is missing from the agent bid card on the Buyer listing.
+
+Required behavior:
+On the listing-side bid card/detail, the bidding agent must have the same Edit Bid / View/Edit Bid entry behavior Tenant has when the bid is in an editable state.
+
+Requirements:
+- add Edit Bid (or View/Edit Bid if that is the Tenant label) in the same style/placement logic Tenant uses
+- route must go to the correct Buyer bid edit page
+- must resolve by bid_id, not only listing_id
+- must open the agent's own Buyer bid only
+- no 403 for the correct bidding agent
+- if Tenant conditionally hides Edit Bid for non-editable states, Buyer must use the same condition rules
+
+Do not:
+- create a Buyer-only custom button placement
+- link Edit Bid to the listing page
+- use a wrong route that opens another role's bid
+
+==================================================
+3. ADD ACCEPT / COUNTER / REJECT TO PRIVATE COMPENSATION & AGREEMENT TERMS
+==================================================
+
+Problem:
+Accept / Counter / Reject actions are missing from the Private Compensation & Agreement Terms view for Buyer bids.
+
+Required behavior:
+The private bid-detail / private terms view for Buyer must expose the same action controls as Tenant when the viewer is the listing owner and the bid state allows action.
+
+Required buttons:
+- Accept
+- Counter
+- Reject
+
+And if Tenant includes agent-side actions on counter views, Buyer must mirror those too.
+
+Requirements:
+- use same visibility logic as Tenant
+- use same placement pattern as Tenant
+- actions must operate on correct Buyer bid by bid_id
+- counter must open the correct Buyer counter flow with prefilled latest terms
+- accept must finalize the correct bid
+- reject must update the correct bid only
+- do not leave the Buyer private terms page as read-only if Tenant equivalent is actionable
+
+==================================================
+4. VERIFY AND FIX MATCH SCORE CALCULATIONS
+==================================================
+
+Problem:
+Need to make sure both:
+- Services match score
+- Broker Compensation & Agency Agreement Terms match score
+
+are correctly calculated on Buyer bids.
+
+Required:
+Audit Buyer score calculation against working Tenant logic.
+
+Buyer must correctly calculate:
+A. Services score
+B. Broker Compensation & Agency Agreement Terms score
+C. Overall / counter match display if applicable
+
+==================================================
+SERVICES SCORE RULES
+==================================================
+
+Use the same rules as Tenant:
+
+- compare only against the services the Buyer selected/requested on the listing
+- each checked requested service counts once
+- each additional service entry counts correctly using the same Tenant logic
+- extra services offered by the agent should not artificially increase match score
+- missing requested services should reduce match
+- stale services from other roles/property types must not be counted
+- service catalog must be filtered to current Buyer property type and role
+
+If Tenant uses:
+matched / extra / missing
+then Buyer must use the same rules and denominator logic.
+
+==================================================
+BROKER COMPENSATION & TERMS SCORE RULES
+==================================================
+
+Use the same rules as Tenant:
+
+- compare Buyer bid terms against the correct baseline
+  - original listing terms
+  - or latest counter terms where counter comparison is intended
+- group/cascade logic must mirror Tenant so child fields do not create false mismatch inflation
+- boolean + amount fields must be compared correctly
+- text fields like Additional Terms / Additional Details must compare accurately
+- punctuation/quote normalization should follow Tenant if already implemented
+- changed fields must be counted consistently
+
+Buyer terms score must not use a simplified or outdated scoring path if Tenant now uses improved logic.
+
+==================================================
+5. FILE / LOGIC AUDIT REQUIRED
+==================================================
+
+Audit all of the following before editing:
+
+1. Working Tenant private bid detail / private compensation view
+2. Current Buyer private bid detail / private compensation view
+3. Buyer bid card on listing
+4. Buyer bid edit route and button conditions
+5. Buyer Accept / Counter / Reject route/controller methods
+6. Buyer score helper / match score helper
+7. Buyer service catalog filtering and hydration
+8. Buyer broker terms comparison logic
+9. Any shared partials/components used by Tenant that Buyer should be reusing but currently is not
+
+==================================================
+6. IMPLEMENTATION APPROACH
+==================================================
+
+Step 1:
+Identify the Tenant files/components that already render:
+- Agent Overview fields including What Sets You Apart and Marketing Strategy
+- Edit Bid / View/Edit Bid
+- Accept / Counter / Reject
+- correct score blocks
+
+Step 2:
+Compare Buyer files and identify what is missing or diverged
+
+Step 3:
+Refactor Buyer to reuse the same Tenant structure/partials/helpers where safe
+
+Step 4:
+Verify Buyer labels stay Buyer-specific:
+- Buyer compensation labels
+- Buyer services
+- Buyer role wording
+
+==================================================
+7. TEST CASES REQUIRED
+==================================================
+
+A. Buyer bid private terms view
+- About Agent displays
+- Why Should You Be Hired displays
+- What Sets You Apart From Other Agents displays
+- What Is Your Marketing Strategy displays
+- reviews / website / socials still display correctly
+
+B. Buyer bid card on listing
+- Edit Bid or View/Edit Bid visible when allowed
+- clicking opens correct Buyer bid edit page
+- no wrong-route / no 403
+
+C. Buyer private terms actions
+- Accept visible when allowed
+- Counter visible when allowed
+- Reject visible when allowed
+- each action affects correct bid_id only
+
+D. Services score
+- matched / extra / missing counts correct
+- score denominator matches Buyer-selected requested services only
+- no stale services from other roles/property types
+
+E. Broker terms score
+- field comparisons correct
+- counter comparison uses latest effective terms when intended
+- changed terms count accurate
+
+F. Regression
+- Tenant remains unchanged
+- Landlord/Seller/other roles not broken by shared refactor
+
+==================================================
+8. GUARDRAILS
+==================================================
+
+Do NOT:
+- change Tenant behavior
+- invent a Buyer-only layout
+- rename DB columns
+- change Buyer listing creation form fields or labels
+- remove existing agent overview fields
+- use listing_id where bid_id is required for actions
+- create new score logic that diverges from Tenant
+- allow cross-role service catalogs to leak into Buyer scoring
+
+Only align Buyer with the proven Tenant flow.
+
+==================================================
+9. EXPECTED FINAL RESULT
+==================================================
+
+Hire a Buyer's Agent → Agent Bids → Private Compensation & Agreement Terms should now behave like Tenant:
+
+- complete Agent Overview fields shown
+- Edit Bid available where appropriate
+- Accept / Counter / Reject available where appropriate
+- services score accurate
+- broker compensation & agency terms score accurate
+
+Same structure and behavior as Tenant.
+Only Buyer-specific data and wording differ.
