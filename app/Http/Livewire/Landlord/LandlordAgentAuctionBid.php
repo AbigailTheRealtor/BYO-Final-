@@ -605,6 +605,12 @@ class LandlordAgentAuctionBid extends Component
         $this->services = is_string($auction->get->services) ? json_decode($auction->get->services, true) ?? [] : (array)$auction->get->services;
         $this->other_services = is_string($auction->get->other_services) ? json_decode($auction->get->other_services, true) ?? [] : (array)$auction->get->other_services;
 
+        $rawPhotoEnhancements = $auction->get->photo_enhancements ?? null;
+        $this->photo_enhancements = is_string($rawPhotoEnhancements) ? (json_decode($rawPhotoEnhancements, true) ?? []) : (is_array($rawPhotoEnhancements) ? $rawPhotoEnhancements : []);
+        $this->custom_enhancement = $auction->get->custom_enhancement ?? '';
+        $this->showEnhancements = in_array('Provide digital photo enhancements', $this->services);
+        $this->showCustomEnhancement = in_array('Other', $this->photo_enhancements);
+
         $this->other_services_enabled = (bool)($auction->get->other_services_enabled ?? false);
         $this->service_type = $auction->get->service_type ?? '';
         $this->user_type = $auction->get->user_type ?? '';
@@ -822,6 +828,12 @@ class LandlordAgentAuctionBid extends Component
                 $otherServices = $bidData->other_services ?? '';
                 $this->other_services = is_string($otherServices) ? (json_decode($otherServices, true) ?? []) : (array) $otherServices;
                 $this->other_services_enabled = (bool) ($bidData->other_services_enabled ?? false);
+
+                $rawBidPhotoEnhancements = $bidData->photo_enhancements ?? null;
+                $this->photo_enhancements = is_string($rawBidPhotoEnhancements) ? (json_decode($rawBidPhotoEnhancements, true) ?? []) : (is_array($rawBidPhotoEnhancements) ? $rawBidPhotoEnhancements : []);
+                $this->custom_enhancement = $bidData->custom_enhancement ?? '';
+                $this->showEnhancements = in_array('Provide digital photo enhancements', $this->services);
+                $this->showCustomEnhancement = in_array('Other', $this->photo_enhancements);
 
                 // Lease Option Agreement
                 $this->interested_lease_option_agreement = $bidData->interested_lease_option_agreement ?? '';
@@ -1180,6 +1192,8 @@ class LandlordAgentAuctionBid extends Component
 
             $bid->saveMeta('services', json_encode($this->services));
             $bid->saveMeta('other_services', json_encode($this->other_services ?? null));
+            $bid->saveMeta('photo_enhancements', json_encode($this->photo_enhancements ?? []));
+            $bid->saveMeta('custom_enhancement', $this->custom_enhancement ?? '');
 
             $bid->saveMeta('other_services_enabled', $this->other_services_enabled);
             $bid->saveMeta('additional_details', $this->additional_details);

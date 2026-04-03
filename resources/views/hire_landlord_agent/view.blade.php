@@ -3386,6 +3386,27 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                                         @foreach ($matchedInCat as $svc)
                                                                             @php $svcInBaseline = $isModalSvcMatched($svc); @endphp
                                                                             <li style="font-size: 0.9rem; margin-bottom: 4px; {{ !$svcInBaseline ? $svcAddedStyle : '' }}">{{ $svc }}{!! !$svcInBaseline ? $svcAddedBadge : '' !!}</li>
+                                                                            @if (trim($normForCat($svc)) === 'provide digital photo enhancements')
+                                                                                @php
+                                                                                    $modalPhotoEnhRaw = data_get($bid, 'get.photo_enhancements', []);
+                                                                                    $modalPhotoEnhancements = is_string($modalPhotoEnhRaw) ? (json_decode($modalPhotoEnhRaw, true) ?: []) : (is_array($modalPhotoEnhRaw) ? $modalPhotoEnhRaw : []);
+                                                                                    $modalCustomEnh = data_get($bid, 'get.custom_enhancement', '');
+                                                                                    $modalEnhOrder = ['Basic edits (brightness, contrast, cropping)', 'Twilight conversion (convert daytime photo to sunset look)', 'Object removal (e.g., cars, trash cans, furniture, etc.)', 'Virtual twilight photography', 'Color correction or sky replacement', 'Other'];
+                                                                                @endphp
+                                                                                @if (!empty($modalPhotoEnhancements))
+                                                                                    <ul style="padding-left: 1.5rem; margin: 4px 0;">
+                                                                                        @foreach ($modalEnhOrder as $enh)
+                                                                                            @if (in_array($enh, $modalPhotoEnhancements))
+                                                                                                @if ($enh === 'Other' && !empty($modalCustomEnh))
+                                                                                                    <li style="font-size: 0.85rem;">{{ $modalCustomEnh }}</li>
+                                                                                                @elseif ($enh !== 'Other')
+                                                                                                    <li style="font-size: 0.85rem;">{{ $enh }}</li>
+                                                                                                @endif
+                                                                                            @endif
+                                                                                        @endforeach
+                                                                                    </ul>
+                                                                                @endif
+                                                                            @endif
                                                                         @endforeach
                                                                     </ul>
                                                                 </div>
