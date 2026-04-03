@@ -175,45 +175,6 @@ class LandlordAgentAuctionBidController extends Controller
         return view('hire_landlord_agent.view-bid', $page_data);
     }
 
-    public function view_counter_terms($bid_id)
-    {
-        $bid = LandlordAgentAuctionBid::with(['meta', 'auction', 'auction.user', 'user'])->find($bid_id);
-
-        if (!$bid) {
-            return redirect()->back()->with('error', 'Bid not found.');
-        }
-
-        $auction = LandlordAgentAuction::with(['user', 'meta'])->find($bid->landlord_agent_auction_id);
-        if (!$auction) {
-            return redirect()->back()->with('error', 'Auction not found.');
-        }
-
-        $userId = Auth::id();
-        $isAgent = ($bid->user_id === $userId);
-        $isLandlord = ($auction->user_id === $userId);
-
-        if (!$isAgent && !$isLandlord) {
-            abort(403, 'You do not have permission to view these counter terms.');
-        }
-
-        $landlordCounter = \App\Models\LandlordCounterBidding::with('meta')
-            ->where('landlord_agent_auction_bid_id', $bid_id)
-            ->orderBy('created_at', 'desc')
-            ->first();
-
-        $viewerRole = $isAgent ? 'agent' : 'landlord';
-
-        return view('hire_landlord_agent.view_counter_terms', [
-            'bid' => $bid,
-            'auction' => $auction,
-            'landlordCounter' => $landlordCounter,
-            'viewerRole' => $viewerRole,
-            'isAgent' => $isAgent,
-            'isLandlord' => $isLandlord,
-        ]);
-    }
-
-
     public function accept_bid(Request $request)
     {
         $bid = LandlordAgentAuctionBid::with('user', 'meta')->whereId($request->bid_id)->first();

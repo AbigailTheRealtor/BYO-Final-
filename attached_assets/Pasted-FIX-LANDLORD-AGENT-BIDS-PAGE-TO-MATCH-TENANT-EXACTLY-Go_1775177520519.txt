@@ -1,0 +1,277 @@
+FIX LANDLORD "AGENT BIDS" PAGE TO MATCH TENANT EXACTLY
+
+Goal:
+Make the owner-side Agent Bids page for "Hire Landlord's Agent Auctions" use the exact same layout, scoring blocks, buttons, behavior, and routing as the working Tenant Agent Bids page.
+
+Tenant is the source of truth.
+Do not invent a landlord-specific Agent Bids UI.
+Clone the Tenant Agent Bids implementation and swap only landlord-specific labels, services, compensation terms, routes, and data sources.
+
+==================================================
+PROBLEM TO FIX
+==================================================
+
+Landlord Agent Bids must match Tenant Agent Bids exactly in:
+- bid card layout
+- agent header block
+- status badge placement
+- match score placement
+- broker terms/services score display
+- mismatch / extra services / not offered chips
+- button row
+- action routing
+- permissions
+- bid detail view behavior
+- counter flow entry points
+
+Landlord should not use a separate or older bid management display.
+The owner viewing bids on a landlord listing should see the same exact bid-card experience that Tenant listings already use.
+
+==================================================
+REQUIRED END RESULT
+==================================================
+
+When landlord user goes to:
+Agent Bids / Hire Landlord's Agent Auctions
+
+Each incoming bid card must match Tenant exactly in:
+1. card structure
+2. spacing
+3. typography hierarchy
+4. status badge location
+5. overall match score badge location
+6. broker terms score display
+7. services score display
+8. submitted date placement
+9. mismatch / extras / not offered sections
+10. button row
+11. Accept / Counter / Reject behavior
+12. View Bid behavior
+
+Only the role-specific text/data should change:
+- landlord labels instead of tenant labels
+- landlord requested services instead of tenant services
+- landlord compensation / agency terms instead of tenant terms
+- landlord routes/controllers/models
+
+==================================================
+CARD STRUCTURE MUST MATCH TENANT
+==================================================
+
+Use the exact same Tenant incoming bid card structure:
+
+TOP AREA
+- agent name
+- agent email / identifying line
+- status badge
+- overall match score badge
+
+MIDDLE AREA
+- listing identifier area
+- submitted date
+- broker terms score
+- services score
+
+DETAIL DIFFERENCE AREA
+- term differences block
+- extra services block
+- not offered block
+- same chip/tag layout and truncation behavior as Tenant
+
+BOTTOM ACTION ROW
+- View Bid
+- Accept
+- Counter
+- Reject
+
+Do not use a custom landlord card format.
+Do not simplify it.
+Do not fall back to an older landlord-only layout.
+
+==================================================
+BUTTONS / ACTIONS MUST MATCH TENANT
+==================================================
+
+Each landlord incoming bid card must provide the same action buttons Tenant uses:
+
+1. View Bid
+- opens the landlord bid detail view for that incoming bid
+- must route to correct landlord bid by bid_id
+- must not open wrong listing
+- must not 403 for listing owner
+
+2. Accept
+- same behavior as Tenant accept flow
+- landlord can accept active bid on their own listing
+- must open/process landlord-specific accept flow correctly
+
+3. Counter
+- same behavior as Tenant counter flow
+- opens landlord counter flow with correct prefilled data
+- must use latest effective terms
+- must route by bid_id, not only listing_id
+
+4. Reject
+- same behavior as Tenant reject flow
+- updates correct landlord bid only
+- correct status handling after reject
+
+If Tenant hides/shows buttons conditionally by state, Landlord must mirror the exact same logic.
+
+==================================================
+MATCH SCORE / SCORE BLOCKS MUST MATCH TENANT
+==================================================
+
+Landlord Agent Bids must display the same scoring structure as Tenant:
+
+- overall match score
+- broker terms score
+- services score
+
+And the same difference breakdown style:
+- term differences
+- extra services
+- not offered
+
+Use the exact same layout and logic pattern as Tenant.
+Only swap in landlord-specific field labels, landlord services, and landlord compensation terms.
+
+Do not create a different scoring UI for landlord.
+
+==================================================
+LANDLORD SERVICES + TERMS MUST BE CORRECT
+==================================================
+
+Very important:
+Do not just copy Tenant data.
+Copy Tenant structure, but landlord content must come from the landlord listing and landlord bid.
+
+Required:
+- requested services must be the landlord listing's selected services
+- services comparison must use landlord service catalog only
+- stale tenant/buyer/seller services must never appear
+- compensation/agency terms comparison must use landlord term set
+- mismatch highlighting must reflect landlord bid vs landlord listing/latest counter context
+- extra services must reflect landlord bid additions not requested by landlord
+- not offered must reflect landlord-requested services not included in bid
+
+Use the same filtering/sanitizing safeguards already used in Landlord counter fixes and Tenant service comparison logic.
+
+==================================================
+ROUTING / PERMISSION RULES
+==================================================
+
+Audit the working Tenant Agent Bids routes and controller/view flow, then mirror them for Landlord.
+
+Required:
+- all bid actions resolve by bid_id
+- listing owner landlord can view/manage bids on their own listing
+- correct bidding agent permissions remain intact on their side
+- no 403 for correct listing owner viewing incoming bids
+- no wrong listing routing
+- no wrong bid routing
+- no listing-wide action confusion
+
+Landlord Agent Bids page should use landlord-specific controller/model/view paths but the same behavioral structure as Tenant.
+
+==================================================
+FILE / IMPLEMENTATION STRATEGY
+==================================================
+
+Step 1:
+Audit Tenant Agent Bids implementation:
+- blade for incoming bid cards
+- controller / Livewire methods
+- status badge logic
+- score helper usage
+- difference chip rendering
+- button conditions
+- accept/counter/reject routes
+- view bid route
+
+Step 2:
+Audit current Landlord Agent Bids implementation:
+- identify layout differences
+- identify missing score blocks
+- identify wrong action routing
+- identify wrong button visibility
+- identify old/legacy landlord card markup
+
+Step 3:
+Replace or refactor Landlord Agent Bids to use the same Tenant structure exactly, with only landlord-specific substitutions.
+
+==================================================
+TEST CASES REQUIRED
+==================================================
+
+Test all of these:
+
+1. Tenant Agent Bids page
+- capture as source-of-truth reference for layout and functionality
+
+2. Landlord Agent Bids page
+- verify each incoming bid card now matches Tenant visually
+- verify same sections appear in same order
+- verify same buttons appear in same position
+
+3. View Bid
+- click on landlord incoming bid
+- opens correct landlord bid detail page
+- no 403
+- no wrong bid
+
+4. Accept
+- landlord accepts a bid
+- correct status change
+- same behavior as Tenant flow
+
+5. Counter
+- landlord counters a bid
+- correct landlord counter form opens with prefill
+- same entry behavior as Tenant flow
+
+6. Reject
+- landlord rejects a bid
+- correct landlord bid updates only
+- same behavior as Tenant flow
+
+7. Score display
+- overall match, broker terms, and services scores display correctly
+- difference chips render correctly
+- no stale cross-role service items
+
+8. Multiple bids on same landlord listing
+- every card maps to correct bid_id
+- no cross-card routing bug
+- actions affect correct bid only
+
+==================================================
+GUARDRAILS
+==================================================
+
+Do NOT:
+- change Tenant Agent Bids behavior
+- change Buyer or Seller while fixing this
+- rename DB columns
+- alter landlord listing creation fields/options
+- invent a landlord-specific card design
+- change score logic globally unless carefully shared and regression tested
+- use listing_id when Tenant uses bid_id for actions
+- allow tenant/buyer/seller services to leak into landlord cards
+
+==================================================
+EXPECTED FINAL RESULT
+==================================================
+
+Landlord Agent Bids should feel exactly like Tenant Agent Bids, except the content is landlord-specific.
+
+That means:
+- same visual card system
+- same score layout
+- same difference chips
+- same action buttons
+- same routing behavior
+- same permission behavior
+- same polished UX
+
+Only the landlord labels, landlord requested services, landlord compensation/agency terms, and landlord routes/models differ.

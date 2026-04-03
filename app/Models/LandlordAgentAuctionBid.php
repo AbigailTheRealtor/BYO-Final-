@@ -29,7 +29,7 @@ class LandlordAgentAuctionBid extends Model
 
     public function counterTerms()
     {
-        return $this->hasMany(LandlordCounterBidding::class, 'landlord_agent_auction_bid_id');
+        return $this->hasMany(LandlordCounterTerm::class, 'landlord_agent_auction_id');
     }
 
     public function acceptedBidSummary()
@@ -46,29 +46,6 @@ class LandlordAgentAuctionBid extends Model
         $latestCounter = $this->counterTerms()->latest()->first();
         if ($latestCounter) {
             return 'Countered';
-        }
-
-        if ($this->accepted === 'rejected') {
-            return 'Rejected';
-        }
-
-        return 'Active';
-    }
-
-    public function counterTerms()
-    {
-        return $this->hasMany(LandlordCounterTerm::class, 'landlord_agent_auction_id');
-    }
-
-    public function getBidStatusAttribute(): string
-    {
-        $latestCounter = $this->counterTerms()->latest()->first();
-        if ($latestCounter) {
-            return 'Countered';
-        }
-
-        if ($this->accepted === 'accepted') {
-            return 'Accepted';
         }
 
         if ($this->accepted === 'rejected') {
