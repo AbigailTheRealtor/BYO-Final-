@@ -249,7 +249,9 @@
                             $commissionFeeDisplay = @$auction->get->lease_fee_other;
                         }
 
-                        $rawDays = trim((string) ($auction->get->auction_time ?? ''));
+                        $rawDays = strtolower(trim($auction->get->auction_type ?? '')) === 'bidding period'
+                            ? trim((string) ($auction->get->auction_time ?? ''))
+                            : '';
                         $lengthDays = 0;
                         $remainingSeconds = 0;
                         $pretty = null;

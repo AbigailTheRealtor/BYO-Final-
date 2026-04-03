@@ -31,6 +31,7 @@
                             Landlord's Agent Required
                         </div>
 
+                        @if (strtolower(trim(@$auction->get->auction_type ?? '')) === 'bidding period')
                         <p class="m-0"><svg xmlns="http://www.w3.org/2000/svg" class="clock" fill="none"
                                 viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -43,6 +44,7 @@
                             </svg><b
                                 class="timer-{{ @$auction->id }} badge bg-info">{{ round(@$auction->auction_length) <= 0 ? 'No Time Limit' : $diff . 'd ' . $start->diff($end)->format('%H:%I:%S') }}</b>
                         </p>
+                        @endif
                     </div>
 
                     <div class="card-footer bg-light">

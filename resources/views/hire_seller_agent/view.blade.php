@@ -407,7 +407,7 @@
                             @endif
 
 
-                            @if (@$auction->get->auction_time != null)
+                            @if (strtolower(trim($auction->get->auction_type ?? '')) === 'bidding period' && @$auction->get->auction_time != null)
                                 <div class="col-md-12 col-12 pt-2 fw-bold">
                                   Auction Length:
                                     <span class="removeBold"> {{ @$auction->get->auction_time }}

@@ -1,0 +1,213 @@
+FIX LISTING TYPE SWITCH BUG (ALL LISTING TYPES)
+
+Goal:
+Ensure that when a listing is switched between Bidding Period and Traditional, all bidding-period-specific data, UI, and logic are correctly handled across ALL listing types.
+
+Applies to:
+- Hire a Tenant’s Agent
+- Hire a Landlord’s Agent
+- Hire a Buyer’s Agent
+- Hire a Seller’s Agent
+
+This must be fixed universally, not per role.
+
+==================================================
+ROOT PROBLEM
+==================================================
+
+Listings created as Bidding Period and later switched to Traditional are still showing:
+
+- countdown timers
+- bidding period length
+- auction-style UI
+- potentially auction-based logic
+
+This is caused by stale bidding-period data not being cleared or properly ignored.
+
+==================================================
+GLOBAL RULE (MANDATORY)
+==================================================
+
+If listing_type = Traditional:
+
+DO NOT show or use:
+- countdown timer
+- bidding period length
+- bidding period labels
+- auction/timed UI
+- bidding-period-based closing logic
+
+Even if old bidding-period values exist in the database.
+
+==================================================
+1. SAVE / EDIT LOGIC (ALL LISTING TYPES)
+==================================================
+
+When user changes listing_type from Bidding Period → Traditional:
+
+System must:
+
+EITHER:
+A. Clear all bidding-period-only fields on save
+
+OR (minimum requirement):
+B. Ensure all logic ignores these fields when listing_type = Traditional
+
+Fields to audit (exact names may vary):
+- bidding_period_length
+- bidding_end_at
+- auction_end_at
+- bidding_period_end
+- countdown/timer fields
+- any flags indicating timed auction
+
+Do NOT assume field names — inspect schema for each listing type.
+
+==================================================
+2. DISPLAY LOGIC (ALL LISTING TYPES)
+==================================================
+
+ALL UI must gate bidding-period elements by:
+
+listing_type == "Bidding Period"
+
+Never render timer/countdown based only on:
+- presence of duration
+- presence of end date
+
+Applies to:
+- search cards
+- listing cards
+- listing detail pages
+- dashboards
+- widgets
+- countdown components
+
+==================================================
+3. LISTING DETAIL PAGE (ALL ROLES)
+==================================================
+
+For Traditional listings:
+
+REMOVE / HIDE:
+- Bidding Period Length
+- countdown/timer
+- auction-style labels
+- bidding window messaging
+
+For Bidding Period listings:
+- keep existing behavior
+
+==================================================
+4. LISTING / SEARCH CARDS (ALL ROLES)
+==================================================
+
+For Traditional listings:
+
+REMOVE:
+- countdown chips
+- time remaining display
+- timer badges
+
+For Bidding Period:
+- show timer as expected
+
+==================================================
+5. DRAFT / EDIT HYDRATION (CRITICAL)
+==================================================
+
+When editing a listing:
+
+If a listing was originally Bidding Period and is switched to Traditional:
+
+- component state must update correctly
+- stale timer values must not rehydrate into UI
+- form fields tied to Bidding Period must reset or be ignored
+
+Applies to all flows:
+- TenantAgentAuction
+- LandlordAgentAuction
+- BuyerAgentAuction
+- SellerAgentAuction
+(and their Edit components)
+
+==================================================
+6. BUSINESS LOGIC SAFETY
+==================================================
+
+Traditional listings must NOT:
+
+- auto-close based on bidding period timer
+- become Pending due to old timer values
+- restrict bidding due to expired bidding window
+- behave like auction listings
+
+Bidding Period listings should continue working as designed.
+
+==================================================
+7. FILES / AREAS TO AUDIT
+==================================================
+
+Audit across ALL listing types:
+
+- create/update controllers or Livewire components
+- edit/draft hydration logic
+- listing detail blade views
+- search/listing card views
+- countdown components
+- status helpers/services
+- any computed attributes exposing timer data
+
+==================================================
+8. TEST CASES (ALL ROLES)
+==================================================
+
+For EACH listing type:
+
+A. Create Bidding Period listing
+→ timer shows correctly
+
+B. Save as draft → reopen → switch to Traditional → save
+
+Expected:
+- no timer anywhere
+- no bidding period length
+- behaves as Traditional
+
+C. Create Traditional listing
+→ confirm no timer appears
+
+D. Switch Traditional → Bidding Period
+→ timer appears only after proper values set
+
+E. Regression:
+- Bidding Period listings still work
+- no break in any role
+
+==================================================
+9. GUARDRAILS
+==================================================
+
+Do NOT:
+- rename DB columns
+- break working Bidding Period listings
+- apply role-specific fixes only (must be universal)
+- rely only on UI hiding (must also fix logic)
+- allow stale timer values to affect business logic
+
+==================================================
+10. EXPECTED FINAL RESULT
+==================================================
+
+Across ALL listing types:
+
+If listing_type = Traditional:
+✔ no timer
+✔ no bidding period fields
+✔ no auction logic
+
+If listing_type = Bidding Period:
+✔ full timer functionality
+✔ correct auction behavior
+
+Listing type must fully control behavior, regardless of prior draft state.

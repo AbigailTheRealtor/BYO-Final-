@@ -1332,7 +1332,7 @@ class SellerAgentAuctionEdit extends Component
         $auction->saveMeta('listing_date', $this->listing_date);
         $auction->saveMeta('desired_agent_hire_date', $this->desired_agent_hire_date);
         $auction->saveMeta('expiration_date', $this->expiration_date);
-        $auction->saveMeta('auction_time', $this->auction_time);
+        $auction->saveMeta('auction_time', $this->auction_type === 'Bidding Period' ? $this->auction_time : '');
 
         // Location Information
         $auction->saveMeta('cities', json_encode($this->cities));
