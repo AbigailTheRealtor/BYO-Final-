@@ -2607,7 +2607,7 @@
                                             <!-- E) Edit Actions for Bid Owner - Same row, matched sizing -->
                                             @if ($canEditWithdraw)
                                             <div class="d-flex gap-2 mt-3 justify-content-end align-items-center">
-                                                <a href="{{ route('buyer.agent.auction.bid', $auction->id) }}?edit={{ $bidId }}" class="btn btn-primary bid-action-btn">
+                                                <a href="{{ route('agent.buyer.agent.auction.bid', $auction->id) }}?edit={{ $bidId }}" class="btn btn-primary bid-action-btn">
                                                     <i class="fa fa-edit me-1"></i> Edit Bid
                                                 </a>
                                             </div>
