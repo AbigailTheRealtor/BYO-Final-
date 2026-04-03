@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\AcceptedBidSummary;
-use App\Models\TenantAgentAuctionBid;
 use App\Services\AcceptedBidSummaryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,7 +23,7 @@ class AcceptedBidSummaryController extends Controller
         $summary = AcceptedBidSummary::findOrFail($id);
 
         $user = Auth::user();
-        if ($user->id !== $summary->tenant_user_id && $user->id !== $summary->agent_user_id) {
+        if (!$this->canAccessSummary($summary, $user)) {
             abort(403, 'You are not authorized to view this summary.');
         }
 
@@ -43,7 +42,7 @@ class AcceptedBidSummaryController extends Controller
         $summary = AcceptedBidSummary::findOrFail($id);
 
         $user = Auth::user();
-        if ($user->id !== $summary->tenant_user_id && $user->id !== $summary->agent_user_id) {
+        if (!$this->canAccessSummary($summary, $user)) {
             abort(403, 'You are not authorized to sign this summary.');
         }
 
@@ -77,7 +76,7 @@ class AcceptedBidSummaryController extends Controller
         $summary = AcceptedBidSummary::findOrFail($id);
 
         $user = Auth::user();
-        if ($user->id !== $summary->tenant_user_id && $user->id !== $summary->agent_user_id) {
+        if (!$this->canAccessSummary($summary, $user)) {
             abort(403, 'You are not authorized to sign this summary.');
         }
 
@@ -116,7 +115,7 @@ class AcceptedBidSummaryController extends Controller
         $summary = AcceptedBidSummary::findOrFail($id);
 
         $user = Auth::user();
-        if ($user->id !== $summary->tenant_user_id && $user->id !== $summary->agent_user_id) {
+        if (!$this->canAccessSummary($summary, $user)) {
             abort(403, 'You are not authorized to download this summary.');
         }
 
@@ -170,6 +169,11 @@ class AcceptedBidSummaryController extends Controller
         }
     }
 
+    protected function canAccessSummary(AcceptedBidSummary $summary, $user): bool
+    {
+        return $user->id === $summary->tenant_user_id || $user->id === $summary->agent_user_id;
+    }
+
     protected function canUserSign(AcceptedBidSummary $summary, $user): bool
     {
         if ($user->id === $summary->tenant_user_id && !$summary->isTenantSigned()) {
@@ -194,19 +198,15 @@ class AcceptedBidSummaryController extends Controller
 
     public function getByBid($bidId)
     {
-        $bid = TenantAgentAuctionBid::findOrFail($bidId);
-        
-        $user = Auth::user();
-        $listing = $bid->auction;
-        
-        if ($user->id !== $listing->user_id && $user->id !== $bid->user_id) {
-            abort(403, 'You are not authorized to view this summary.');
-        }
-
         $summary = AcceptedBidSummary::where('accepted_bid_id', $bidId)->first();
-        
+
         if (!$summary) {
             return redirect()->back()->with('error', 'No accepted bid summary found for this bid.');
+        }
+
+        $user = Auth::user();
+        if (!$this->canAccessSummary($summary, $user)) {
+            abort(403, 'You are not authorized to view this summary.');
         }
 
         return redirect()->route('accepted-bid-summary.view', $summary->id);
