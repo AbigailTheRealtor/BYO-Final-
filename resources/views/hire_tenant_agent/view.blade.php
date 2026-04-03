@@ -2048,7 +2048,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                 </div>
                                                 <div style="font-size: 0.75rem; color: #6c757d;">vs. Tenant's Original Request</div>
                                                 <div class="row g-0 mt-1" style="font-size: 0.75rem;">
-                                                    <div class="col-6" style="color: {{ $getScoreColor($originalScore['services_match_percent']) }};">Svcs {{ $originalScore['services_match_percent'] }}%</div>
+                                                    <div class="col-6" style="color: {{ $getScoreColor($originalScore['services_match_percent']) }};">Services {{ $originalScore['services_match_percent'] }}%</div>
                                                     <div class="col-6" style="color: {{ $getScoreColor($originalScore['terms_match_percent']) }};">Terms {{ $originalScore['terms_match_percent'] }}%</div>
                                                 </div>
                                             </div>
@@ -2065,7 +2065,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                 </div>
                                                 <div style="font-size: 0.75rem; color: #6c757d;">vs. Your Latest Counter</div>
                                                 <div class="row g-0 mt-1" style="font-size: 0.75rem;">
-                                                    <div class="col-6" style="color: {{ $getScoreColor($latestCounterScore['services_match_percent']) }};">Svcs {{ $latestCounterScore['services_match_percent'] }}%</div>
+                                                    <div class="col-6" style="color: {{ $getScoreColor($latestCounterScore['services_match_percent']) }};">Services {{ $latestCounterScore['services_match_percent'] }}%</div>
                                                     <div class="col-6" style="color: {{ $getScoreColor($latestCounterScore['terms_match_percent']) }};">Terms {{ $latestCounterScore['terms_match_percent'] }}%</div>
                                                 </div>
                                             </div>

@@ -2427,9 +2427,24 @@ $auser = $auctionUser::find(@$auction->user_id);
 
                             // ── Match Score ────────────────────────────────────────────
                             $currentBidData = json_decode(json_encode(data_get($bid, 'get', [])), true) ?: [];
-                            $matchScore = \App\Helpers\LandlordBidMatchScoreHelper::calculate(
+                            // Always compute original score vs. landlord baseline
+                            $originalScore = \App\Helpers\LandlordBidMatchScoreHelper::calculate(
                                 $landlordBaselineData, $currentBidData, null, $auctionPropType
                             );
+                            // Check for latest active counter term for this bid
+                            $latestActiveCounter = $counterBids->where('status', 1)->first();
+                            if ($latestActiveCounter && $latestActiveCounter->meta->count()) {
+                                $counterBaselineData = $latestActiveCounter->meta->pluck('meta_value', 'meta_key')->toArray();
+                                $latestCounterScore = \App\Helpers\LandlordBidMatchScoreHelper::calculate(
+                                    $counterBaselineData, $currentBidData, null, $auctionPropType
+                                );
+                                $showDualScore = true;
+                                $matchScore = $latestCounterScore;
+                            } else {
+                                $latestCounterScore = null;
+                                $showDualScore = false;
+                                $matchScore = $originalScore;
+                            }
                             $totalScore       = $matchScore['overall_percent'];
                             $totalScoreColor  = $getScoreColor($totalScore);
                             $servicesScore    = $matchScore['services_match_percent'];
@@ -2487,44 +2502,67 @@ $auser = $auctionUser::find(@$auction->user_id);
                                 @php $showMatchScoreOnCard = $isListingOwner || $isBidOwner; @endphp
                                 @if ($showMatchScoreOnCard)
                                 <div class="match-score-summary mb-3 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6;">
+                                    @if ($showDualScore && $originalScore && $latestCounterScore)
+                                    {{-- DUAL SCORE: Original Match + Latest Counter Match side-by-side --}}
+                                    <div class="mb-2">
+                                        <span style="font-weight: 600; color: #1a3a5c; font-size: 1rem;">
+                                            <i class="fa fa-chart-pie me-2"></i>Match Summary
+                                        </span>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        {{-- Original Match --}}
+                                        @php
+                                            $osColor = $getScoreColor($originalScore['overall_percent']);
+                                        @endphp
+                                        <div class="col-6">
+                                            <div class="p-2 rounded" style="background: #fff; border: 1px solid #dee2e6; border-top: 3px solid #6c757d;">
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <span class="small fw-semibold" style="color: #6c757d;">Original Match</span>
+                                                    <span class="badge" style="background: {{ $osColor }}; font-size: 0.8rem; padding: 3px 8px; color: white;">{{ $originalScore['overall_percent'] }}%</span>
+                                                </div>
+                                                <div style="font-size: 0.75rem; color: #6c757d;">vs. Landlord's Original Request</div>
+                                                <div class="row g-0 mt-1" style="font-size: 0.75rem;">
+                                                    <div class="col-6" style="color: {{ $getScoreColor($originalScore['services_match_percent']) }};">Services {{ $originalScore['services_match_percent'] }}%</div>
+                                                    <div class="col-6" style="color: {{ $getScoreColor($originalScore['terms_match_percent']) }};">Terms {{ $originalScore['terms_match_percent'] }}%</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {{-- Latest Counter Match --}}
+                                        @php
+                                            $lcColor2 = $getScoreColor($latestCounterScore['overall_percent']);
+                                        @endphp
+                                        <div class="col-6">
+                                            <div class="p-2 rounded" style="background: #f0f9ff; border: 1px solid #bde0fe; border-top: 3px solid {{ $lcColor2 }};">
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <span class="small fw-semibold" style="color: #1a3a5c;">Counter Match</span>
+                                                    <span class="badge" style="background: {{ $lcColor2 }}; font-size: 0.8rem; padding: 3px 8px; color: white;">{{ $latestCounterScore['overall_percent'] }}%</span>
+                                                </div>
+                                                <div style="font-size: 0.75rem; color: #6c757d;">vs. Your Latest Counter</div>
+                                                <div class="row g-0 mt-1" style="font-size: 0.75rem;">
+                                                    <div class="col-6" style="color: {{ $getScoreColor($latestCounterScore['services_match_percent']) }};">Services {{ $latestCounterScore['services_match_percent'] }}%</div>
+                                                    <div class="col-6" style="color: {{ $getScoreColor($latestCounterScore['terms_match_percent']) }};">Terms {{ $latestCounterScore['terms_match_percent'] }}%</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="small" style="color: #6c757d; font-style: italic; font-size: 0.76rem;">
+                                        <i class="fa fa-info-circle me-1"></i>Added services or terms do not increase either score.
+                                    </div>
+                                    @else
+                                    {{-- SINGLE SCORE fallback --}}
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <span style="font-weight: 600; color: #1a3a5c; font-size: 1rem;">
-                                            <i class="fa fa-chart-pie me-2"></i>Match Score
+                                            <i class="fa fa-chart-pie me-2"></i>Match Summary
                                         </span>
-                                        <span class="badge" style="background: {{ $totalScoreColor }}; font-size: 1rem; padding: 6px 12px; color: white;">
-                                            {{ $totalScore }}%
-                                        </span>
+                                        @php $singleColor = $getScoreColor($originalScore['overall_percent']); @endphp
+                                        <span class="badge" style="background: {{ $singleColor }}; font-size: 0.8rem; padding: 3px 8px; color: white;">{{ $originalScore['overall_percent'] }}%</span>
                                     </div>
-                                    <div class="row g-2 small">
-                                        <div class="col-6">
-                                            <div class="d-flex justify-content-between">
-                                                <span class="text-muted">Services Match:</span>
-                                                <span style="color: {{ $getScoreColor($servicesScore) }}; font-weight: 600;">{{ $servicesScore }}%</span>
-                                            </div>
-                                            <div class="text-muted" style="font-size: 0.8rem;">
-                                                Matched: {{ $servicesMatched }}/{{ $servicesTotal }}
-                                                @if ($servicesExtraCount > 0) &bull; Extra: {{ $servicesExtraCount }}@endif
-                                                @if ($servicesMissingCount > 0) &bull; Missing: {{ $servicesMissingCount }}@endif
-                                            </div>
-                                        </div>
-                                        <div class="col-6">
-                                            <div class="d-flex justify-content-between">
-                                                <span class="text-muted">Terms Match:</span>
-                                                <span style="color: {{ $getScoreColor($brokerScore) }}; font-weight: 600;">{{ $brokerScore }}%</span>
-                                            </div>
-                                            <div class="text-muted" style="font-size: 0.8rem;">
-                                                Matched: {{ $brokerMatched }}/{{ $brokerTotal }}
-                                                @if ($termsChangedCount > 0) &bull; Changed: {{ $termsChangedCount }}@endif
-                                                @if ($termsAddedCount > 0) &bull; Added: {{ $termsAddedCount }}@endif
-                                            </div>
-                                        </div>
+                                    <div style="font-size: 0.75rem; color: #6c757d;">vs. Landlord's Original Request</div>
+                                    <div class="row g-0 mt-1" style="font-size: 0.75rem;">
+                                        <div class="col-6" style="color: {{ $getScoreColor($originalScore['services_match_percent']) }};">Services {{ $originalScore['services_match_percent'] }}%</div>
+                                        <div class="col-6" style="color: {{ $getScoreColor($originalScore['terms_match_percent']) }};">Terms {{ $originalScore['terms_match_percent'] }}%</div>
                                     </div>
-                                    <div class="mt-2 small text-muted">
-                                        <i class="fa fa-info-circle me-1"></i>Compared to: {{ $baselineLabel }}
-                                    </div>
-                                    <div class="mt-1 small" style="color: #6c757d; font-style: italic; font-size: 0.78rem;">
-                                        Match Score compares this bid only to the Landlord's original request. Added services or added terms are shown for transparency but do not increase the score.
-                                    </div>
+                                    @endif
                                 </div>
                                 @endif
 
@@ -2600,57 +2638,98 @@ $auser = $auctionUser::find(@$auction->user_id);
 
                                                     {{-- ========== MATCH SCORE PANEL ========== --}}
                                                     <div class="match-score-panel mb-4 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; border: 1px solid #dee2e6;">
-                                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                                            <h6 class="mb-0" style="color: #1a3a5c; font-weight: 600;">
-                                                                <i class="fa fa-chart-pie me-2"></i>Match Score
-                                                            </h6>
-                                                            <span class="badge" style="background: {{ $totalScoreColor }}; font-size: 1.1rem; padding: 8px 16px;">
-                                                                {{ $totalScore }}% Match
-                                                            </span>
-                                                        </div>
+                                                        @if ($showDualScore && $originalScore && $latestCounterScore)
+                                                        {{-- DUAL SCORE: Original Match + Latest Counter Match --}}
+                                                        <h6 class="mb-2" style="color: #1a3a5c; font-weight: 600;">
+                                                            <i class="fa fa-chart-pie me-2"></i>Match Summary
+                                                        </h6>
                                                         <p class="small text-muted mb-3">
-                                                            <i class="fa fa-info-circle me-1"></i>Match Score compares this bid only to the Landlord's original request. Added services or added terms are shown for transparency but do not increase the score.<br>
-                                                            Comparing to: <strong>{{ $baselineLabel }}</strong>
+                                                            <i class="fa fa-info-circle me-1"></i>
+                                                            <strong>Original Match</strong> compares this bid to the Landlord's original listing request.<br>
+                                                            <strong>Counter Match</strong> compares this bid to the Landlord's most recent counteroffer.<br>
+                                                            Added services or terms do not increase either score.
                                                         </p>
                                                         <div class="row g-3">
+                                                            {{-- Original Match column --}}
+                                                            @php $omColor = $getScoreColor($originalScore['overall_percent']); @endphp
                                                             <div class="col-md-6">
-                                                                <div class="p-2 bg-white rounded" style="border-left: 4px solid {{ $getScoreColor($servicesScore) }};">
-                                                                    <div class="d-flex justify-content-between align-items-center">
-                                                                        <span class="small fw-semibold">Services Match</span>
-                                                                        <span class="badge" style="background: {{ $getScoreColor($servicesScore) }};">{{ $servicesScore }}%</span>
+                                                                <div class="p-3 bg-white rounded" style="border: 1px solid #dee2e6; border-top: 3px solid #6c757d;">
+                                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                                        <span class="small fw-semibold" style="color: #6c757d;">Original Match</span>
+                                                                        <span class="badge" style="background: {{ $omColor }}; font-size: 1rem; padding: 5px 12px; color: white;">{{ $originalScore['overall_percent'] }}%</span>
                                                                     </div>
-                                                                    <div class="small text-muted mt-1">
-                                                                        Matched Original: {{ $servicesMatched }}/{{ $servicesTotal }}
+                                                                    <div class="small text-muted mb-2">vs. Landlord's Original Request</div>
+                                                                    <div class="d-flex justify-content-between small">
+                                                                        <div>
+                                                                            <div class="fw-semibold" style="color: {{ $getScoreColor($originalScore['services_match_percent']) }};">Services {{ $originalScore['services_match_percent'] }}%</div>
+                                                                            <div class="text-muted">{{ $originalScore['services_matched_count'] }}/{{ $originalScore['services_baseline_total'] }}</div>
+                                                                        </div>
+                                                                        <div>
+                                                                            <div class="fw-semibold" style="color: {{ $getScoreColor($originalScore['terms_match_percent']) }};">Terms {{ $originalScore['terms_match_percent'] }}%</div>
+                                                                            <div class="text-muted">{{ $originalScore['terms_matched_count'] }}/{{ $originalScore['terms_baseline_total'] }}</div>
+                                                                        </div>
                                                                     </div>
-                                                                    @if ($servicesExtraCount > 0)
-                                                                    <div class="small mt-1 d-flex align-items-center flex-wrap" style="gap: 3px 5px;" title="Extra services were included by the Agent beyond the Landlord&#39;s original request. These do not increase the match score but may provide additional value.">
-                                                                        <span>&#11088;</span>
-                                                                        <span style="font-weight: 500; color: #856404;">Extra Value Added: {{ $servicesExtraCount }} {{ $servicesExtraCount === 1 ? 'Service' : 'Services' }}</span>
-                                                                    </div>
-                                                                    @endif
-                                                                    @if ($servicesMissingCount > 0)
-                                                                    <div class="small mt-1" style="color: #dc3545;">Missing from Original: {{ $servicesMissingCount }}</div>
-                                                                    @endif
                                                                 </div>
                                                             </div>
+                                                            {{-- Counter Match column --}}
+                                                            @php $cmColor = $getScoreColor($latestCounterScore['overall_percent']); @endphp
                                                             <div class="col-md-6">
-                                                                <div class="p-2 bg-white rounded" style="border-left: 4px solid {{ $getScoreColor($brokerScore) }};">
-                                                                    <div class="d-flex justify-content-between align-items-center">
-                                                                        <span class="small fw-semibold">Terms Match</span>
-                                                                        <span class="badge" style="background: {{ $getScoreColor($brokerScore) }};">{{ $brokerScore }}%</span>
+                                                                <div class="p-3 rounded" style="background: #f0f9ff; border: 1px solid #bde0fe; border-top: 3px solid {{ $cmColor }};">
+                                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                                        <span class="small fw-semibold" style="color: #1a3a5c;">Counter Match</span>
+                                                                        <span class="badge" style="background: {{ $cmColor }}; font-size: 1rem; padding: 5px 12px; color: white;">{{ $latestCounterScore['overall_percent'] }}%</span>
                                                                     </div>
-                                                                    <div class="small text-muted mt-1">
-                                                                        Matched Original: {{ $brokerMatched }}/{{ $brokerTotal }}
+                                                                    <div class="small text-muted mb-2">vs. Your Latest Counter</div>
+                                                                    <div class="d-flex justify-content-between small">
+                                                                        <div>
+                                                                            <div class="fw-semibold" style="color: {{ $getScoreColor($latestCounterScore['services_match_percent']) }};">Services {{ $latestCounterScore['services_match_percent'] }}%</div>
+                                                                            <div class="text-muted">{{ $latestCounterScore['services_matched_count'] }}/{{ $latestCounterScore['services_baseline_total'] }}</div>
+                                                                            @if($latestCounterScore['services_extra_count'] > 0)<div style="color: #6c757d;">+{{ $latestCounterScore['services_extra_count'] }} added</div>@endif
+                                                                            @if($latestCounterScore['services_missing_count'] > 0)<div style="color: #dc3545;">{{ $latestCounterScore['services_missing_count'] }} missing</div>@endif
+                                                                        </div>
+                                                                        <div>
+                                                                            <div class="fw-semibold" style="color: {{ $getScoreColor($latestCounterScore['terms_match_percent']) }};">Terms {{ $latestCounterScore['terms_match_percent'] }}%</div>
+                                                                            <div class="text-muted">{{ $latestCounterScore['terms_matched_count'] }}/{{ $latestCounterScore['terms_baseline_total'] }}</div>
+                                                                            @if($latestCounterScore['terms_changed_count'] > 0)<div style="color: #dc3545;">{{ $latestCounterScore['terms_changed_count'] }} changed</div>@endif
+                                                                            @if($latestCounterScore['terms_added_count'] > 0)<div style="color: #6c757d;">+{{ $latestCounterScore['terms_added_count'] }} added</div>@endif
+                                                                        </div>
                                                                     </div>
-                                                                    @if ($termsChangedCount > 0)
-                                                                    <div class="small mt-1" style="color: #dc3545;">Changed from Baseline: {{ $termsChangedCount }}</div>
-                                                                    @endif
-                                                                    @if ($termsAddedCount > 0)
-                                                                    <div class="small mt-1" style="color: #6c757d;">Added by Agent: {{ $termsAddedCount }}</div>
-                                                                    @endif
                                                                 </div>
                                                             </div>
                                                         </div>
+                                                        @else
+                                                        {{-- SINGLE SCORE fallback --}}
+                                                        <h6 class="mb-2" style="color: #1a3a5c; font-weight: 600;">
+                                                            <i class="fa fa-chart-pie me-2"></i>Match Summary
+                                                        </h6>
+                                                        <p class="small text-muted mb-3">
+                                                            <i class="fa fa-info-circle me-1"></i>
+                                                            Compares this bid to the Landlord's original listing request.<br>
+                                                            Added services or terms do not increase the score.
+                                                        </p>
+                                                        <div class="row g-3">
+                                                            @php $omColorS = $getScoreColor($originalScore['overall_percent']); @endphp
+                                                            <div class="col-md-6">
+                                                                <div class="p-3 bg-white rounded" style="border: 1px solid #dee2e6; border-top: 3px solid #6c757d;">
+                                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                                        <span class="small fw-semibold" style="color: #6c757d;">Original Match</span>
+                                                                        <span class="badge" style="background: {{ $omColorS }}; font-size: 1rem; padding: 5px 12px; color: white;">{{ $originalScore['overall_percent'] }}%</span>
+                                                                    </div>
+                                                                    <div class="small text-muted mb-2">vs. Landlord's Original Request</div>
+                                                                    <div class="d-flex justify-content-between small">
+                                                                        <div>
+                                                                            <div class="fw-semibold" style="color: {{ $getScoreColor($originalScore['services_match_percent']) }};">Services {{ $originalScore['services_match_percent'] }}%</div>
+                                                                            <div class="text-muted">{{ $originalScore['services_matched_count'] }}/{{ $originalScore['services_baseline_total'] }}</div>
+                                                                        </div>
+                                                                        <div>
+                                                                            <div class="fw-semibold" style="color: {{ $getScoreColor($originalScore['terms_match_percent']) }};">Terms {{ $originalScore['terms_match_percent'] }}%</div>
+                                                                            <div class="text-muted">{{ $originalScore['terms_matched_count'] }}/{{ $originalScore['terms_baseline_total'] }}</div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        @endif
                                                     </div>
                                                     {{-- ========== END MATCH SCORE PANEL ========== --}}
 
