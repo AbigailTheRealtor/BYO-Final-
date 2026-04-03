@@ -1,0 +1,309 @@
+SELLER BID FLOW ALIGNMENT INSTRUCTIONS
+Goal:
+Make Hire a Seller’s Agent bid flow match the Tenant flow exactly in format, behavior, and functionality, using Tenant as the gold standard and Landlord as the recently updated reference. Do not invent a new seller-specific bid UX. Clone the proven Tenant flow pattern and adapt only the Seller-specific labels, compensation fields, services, and routes.
+
+CORE RULE
+Seller bid flow should function exactly like Tenant bid flow across:
+1. Bid card layout
+2. Bid detail view
+3. Counter bid view
+4. Accept / Counter / Reject actions
+5. Notification links
+6. Dashboard “My Bids” display
+7. Autopopulated requested services
+8. Status handling for Active / Countered / Accepted / Rejected
+9. Permission handling for seller and bidding agent
+10. Traditional and Bidding Period listing behavior
+
+DO NOT:
+- create a separate new seller bid design
+- change working Tenant flow logic
+- change working Landlord flow logic unless absolutely required for shared reusable helpers
+- rename database columns
+- remove existing tooltips, labels, or field groups
+- alter listing creation fields or seller service catalog text
+- change unrelated Buyer, Tenant, or Landlord flows
+
+==================================================
+1. SERVICES MUST AUTOPOPULATE FROM THE SELLER LISTING
+==================================================
+
+Problem to fix:
+When an agent bids on a Hire a Seller’s Agent listing, the “Services the Seller Requests from Their Agent” section must auto-populate from the exact services the Seller selected on the original listing, same as Tenant and Landlord. It must not be blank, mixed, stale, or replaced with a different catalog.
+
+Required behavior:
+- When seller creates listing and checks requested services, those selected services become the baseline requested services for that listing.
+- When agent opens bid form, those same selected services must already be shown in the same format used for Tenant/Landlord.
+- When seller later views the bid, the requested services comparison must reference the seller’s original selected services.
+- When counter bids occur, the latest counter terms must carry forward the correct seller requested services display and comparison logic.
+
+Important:
+This section is NOT a fresh agent profile block and NOT a new independent services list.
+It is the seller listing’s requested services baseline, same concept as Tenant and Landlord.
+
+Implementation rules:
+- Reuse the same data loading pattern used in Tenant flow for listing-selected services.
+- Reuse the same filtering/sanitizing logic used in Landlord after the recent fixes so only valid seller services tied to the seller property type are shown.
+- Ensure stale services from another role/property type are never injected.
+- Filter loaded services against the current Seller service catalog before rendering.
+- Preserve section headings, grouping, emoji headings, order, and checked state exactly as seller listing creation defines them.
+
+Expected label:
+“Services the Seller Requests from Their Agent”
+
+If “Other – Specify additional services as needed” exists in seller flow and was selected, preserve the exact same logic and display behavior currently used in seller listing creation/edit/view.
+
+==================================================
+2. BID SHOULD NOT APPEAR AS A “NEW AGENT”
+==================================================
+
+Problem to fix:
+If an existing agent submits a bid, the system should not display or treat them like a brand new agent card/identity block that breaks the flow.
+
+Required behavior:
+- A submitted bid should display like the Tenant bid cards do now.
+- Agent identity / overview area should use the same established bid card structure and not render as an unrelated “new agent” presentation.
+- Seller should see each bid as one bid from one agent, using the same card style and action layout as Tenant.
+- Agent dashboard should also show the bid in the same “My Bids” pattern Tenant uses.
+
+Meaning:
+Do not introduce a separate seller-only card format.
+Do not switch to a profile-first layout that breaks bid consistency.
+Use the Tenant card structure and only substitute Seller-specific field labels/content.
+
+==================================================
+3. SELLER VIEW MUST MATCH TENANT VIEW EXACTLY
+==================================================
+
+Make the Seller bid presentation match Tenant in:
+- card layout
+- spacing
+- status badges
+- section ordering
+- private data modal pattern
+- mismatch highlighting
+- match score positioning
+- action buttons
+- counter terms page structure
+- read-only vs editable states
+
+Seller-specific substitutions only:
+- Replace Tenant wording with Seller wording
+- Replace Tenant compensation labels with Seller compensation labels
+- Replace Tenant service section with Seller service section
+- Replace Tenant property/listing terminology with Seller equivalents where appropriate
+
+Examples:
+Instead of:
+“Tenant’s Broker Commission Structure”
+use seller-specific compensation labels already approved for seller flow.
+
+Instead of:
+“Services the Tenant Requests from Their Agent”
+use:
+“Services the Seller Requests from Their Agent”
+
+But the layout, formatting, and behavior should still mirror Tenant.
+
+==================================================
+4. ACCEPT / COUNTER / REJECT MUST WORK IDENTICALLY
+==================================================
+
+Seller and Agent must both have the same action behavior Tenant has.
+
+Required:
+- If Seller is viewing an active agent bid, Seller can Accept, Counter, or Reject
+- If Agent is viewing Seller’s counter, Agent can Accept, Counter, or Reject
+- If Seller is viewing Agent’s counter, Seller can Accept, Counter, or Reject
+- These actions must appear on counter terms views exactly like Tenant
+- Do not replace them with a passive notice-only state unless the bid is truly finalized or permission/status blocks it
+
+Counter rules:
+- Counter view should open the proper seller counter terms screen
+- Latest counter terms should drive the displayed comparison and match score
+- Notification links should take user directly to the correct bid/counter record
+- No 403 permission errors for the correct party on the correct bid
+- No wrong listing redirection
+- All actions must be bid_id-specific, not listing-wide
+
+Use the exact Tenant permission/action pattern already proven.
+Use Landlord’s recent fixes if shared helper methods were added there.
+
+==================================================
+5. DASHBOARD / MY BIDS MUST MATCH TENANT
+==================================================
+
+Seller flow dashboard and Agent dashboard for seller bids should match Tenant “My Bids” behavior.
+
+Required format:
+- status shown clearly per bid
+- bid appears under correct listing
+- view/edit bid works correctly when still editable
+- view listing takes user to correct seller listing
+- view counter goes to correct counter terms screen
+- accepted/countered/rejected states persist in dashboard notices and bid rows
+- no legacy seller dashboard format
+
+Agent side:
+Seller-agent bids must appear under My Bids exactly like Tenant structure, adapted for seller listing labels.
+
+Seller side:
+Incoming agent bids should appear in the listing view exactly like tenant incoming bids.
+
+==================================================
+6. MATCH SCORE / COUNTER STATE
+==================================================
+
+Use the same current logic direction as Tenant:
+- match score should reflect latest active terms, including counters where applicable
+- mismatch highlighting should compare against the latest effective counter context where your current Tenant flow already does that
+- services, compensation, and agreement terms should all be evaluated consistently
+
+Do not revert to original-only comparison if Tenant now uses latest counter logic.
+
+==================================================
+7. PROPERTY TYPE + SERVICE CATALOG SAFETY
+==================================================
+
+Very important:
+Seller service catalog must stay tied to the correct property type and seller role.
+
+Add safeguards:
+- On mount/hydration, filter saved/requested services to current Seller catalog only
+- Never allow Tenant, Buyer, or Landlord services to appear in Seller bid/counter views
+- Preserve seller property-type-specific grouping and order
+- If listing property type changes or stale data exists, only render services valid for current seller property type
+
+This is the same class of issue previously seen in Tenant counter services. Apply the same defensive filtering approach.
+
+==================================================
+8. ROUTING / PERMISSION SAFEGUARDS
+==================================================
+
+Before changing views, identify the exact working Tenant routes and recently fixed Landlord routes for:
+- bid detail view
+- counter terms view
+- accept
+- reject
+- counter
+- dashboard “view” links
+- notifications
+
+Then make Seller routes mirror that structure.
+
+Guardrails:
+- Every button/link must resolve using bid_id-specific logic
+- Never resolve seller counters by only listing_id
+- Permission checks must allow:
+  - listing owner seller to view bids on their own listing
+  - bidding agent to view their own bid and related counters
+- Do not grant access to other agents
+- Do not return 403 for the correct bid owner / listing owner
+- Do not redirect to wrong listing or wrong bid
+
+==================================================
+9. FILE / LOGIC STRATEGY
+==================================================
+
+Approach:
+- Find Tenant bid flow files first and treat them as source of truth
+- Find recently updated Landlord equivalents and reuse any shared helper methods / fixes already added there
+- Then align Seller to the same structure
+
+You are not designing from scratch.
+You are copying Tenant behavior and adapting Seller labels/data.
+
+Audit first:
+1. Seller listing bid card view
+2. Seller bid detail view
+3. Seller counter terms view
+4. Seller dashboard/my bids view
+5. Seller notification links
+6. Seller action handlers/controllers/livewire methods
+7. Seller service hydration logic
+8. Seller match score calculation source
+9. Seller permission gates/policies
+
+Then implement minimal scoped changes.
+
+==================================================
+10. TEST CASES REQUIRED
+==================================================
+
+Test all of these:
+
+A. Seller creates listing with selected services
+- agent opens bid form
+- seller requested services auto-populate correctly
+- correct seller service headings/order appear
+
+B. Agent submits bid
+- seller sees bid in same format as Tenant
+- agent does not appear as some unrelated “new agent” presentation
+- status shows Active
+- correct buttons exist
+
+C. Seller counters
+- agent gets notification
+- clicking notification opens correct counter terms
+- Accept / Counter / Reject all appear
+- no 403
+
+D. Agent counters back
+- seller gets notification
+- clicking notification opens correct counter terms
+- Accept / Counter / Reject all appear
+- no wrong listing redirect
+
+E. Seller accepts
+- both parties see accepted state like Tenant
+- dashboard and notices update correctly
+
+F. Reject flow
+- correct rejected state
+- no lingering active actions
+
+G. Traditional listing
+- behavior matches Tenant traditional logic
+
+H. Bidding Period listing
+- behavior matches Tenant bidding-period logic
+
+I. Property type safety
+- Residential seller listing only shows residential seller services
+- Commercial/Business/Vacant Land etc only show correct seller catalog for that property type
+- no cross-role stale services
+
+==================================================
+11. NON-DESTRUCTIVE REQUIREMENTS
+==================================================
+
+Do not modify:
+- seller listing creation form text/options
+- existing seller service wording
+- Tenant flow behavior
+- Landlord flow behavior
+- database schema unless absolutely necessary
+- global shared logic unless scoped carefully and verified against Tenant/Landlord
+
+If shared helper extraction is needed, do it safely and verify Tenant + Landlord still behave exactly the same after refactor.
+
+==================================================
+12. EXPECTED END RESULT
+==================================================
+
+Final result should feel like:
+“Seller flow is now the same proven bid system as Tenant, with Seller-specific content.”
+
+Meaning:
+- same visual structure
+- same counter flow
+- same buttons
+- same dashboard behavior
+- same status handling
+- same permissions
+- same notification behavior
+- same requested-services autopopulation concept
+- same polished consistency
+
+Only the role-specific labels, compensation fields, and seller service catalog should differ.
