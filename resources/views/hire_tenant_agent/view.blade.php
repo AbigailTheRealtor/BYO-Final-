@@ -2023,7 +2023,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 <!-- B2) Match Score Summary (Compact Display on Bid Card) -->
                                 @php
                                     // Show Match Score for: listing owner OR agents viewing any bid in Bidding Period listings
-                                    $showMatchScoreOnCard = $isListingOwner || ($isBiddingPeriodListing && $isAgentViewer && $userHasBid);
+                                    $showMatchScoreOnCard = $isListingOwner || $isBidOwner || ($isBiddingPeriodListing && $isAgentViewer && $userHasBid);
                                 @endphp
                                 @if ($showMatchScoreOnCard)
                                 <div class="match-score-summary mb-3 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6;">

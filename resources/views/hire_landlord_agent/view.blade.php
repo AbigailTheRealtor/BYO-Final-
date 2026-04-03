@@ -2499,7 +2499,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                 <hr style="margin: 15px 0; border-color: #e0e0e0;">
 
                                 <!-- Match Score Summary (Compact Display on Bid Card) -->
-                                @php $showMatchScoreOnCard = $isListingOwner || ($isBiddingPeriodListing && $isAgent && $userHasBid); @endphp
+                                @php $showMatchScoreOnCard = $isListingOwner || $isBidOwner || ($isBiddingPeriodListing && $isAgent && $userHasBid); @endphp
                                 @if ($showMatchScoreOnCard)
                                 <div class="match-score-summary mb-3 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6;">
                                     @if ($showDualScore && $originalScore && $latestCounterScore)

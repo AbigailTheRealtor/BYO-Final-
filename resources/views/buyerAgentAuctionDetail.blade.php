@@ -2437,7 +2437,7 @@
 
                                             // Match score visibility: listing owner OR bid owner OR BP agent with a bid
                                             $cardIsAgentViewer = $auth_id && auth()->user() && in_array(auth()->user()->user_type ?? '', ['agent']);
-                                            $cardShowMatchScoreOnCard = $isListingOwner || ($isBiddingPeriodListing && $cardIsAgentViewer && $userHasBid);
+                                            $cardShowMatchScoreOnCard = $isListingOwner || $isBidOwner || ($isBiddingPeriodListing && $cardIsAgentViewer && $userHasBid);
 
                                             // Compact broker compensation summary
                                             $cardCommissionStructure = data_get($bid, 'get.commission_structure', '');
