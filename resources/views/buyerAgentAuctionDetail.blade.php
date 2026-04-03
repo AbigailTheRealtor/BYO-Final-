@@ -2346,7 +2346,7 @@
                                         $agentNumber = $agentNumberMap[$bidId] ?? $loop->iteration;
                                         $bidAccepted = data_get($bid, 'accepted', '0');
                                         $isExpiredBid = $isExpired ?? false;
-                                        $canEditWithdraw = $isBidOwner && $bidAccepted === '0' && !$isExpiredBid && !data_get($auction, 'is_sold');
+                                        $canEditWithdraw = $isBidOwner && !$isExpiredBid && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected';
                                         $servicesList  = (array) data_get($bid, 'get.services', []);
                                         $servicesCount = count($servicesList);
                                         $commissionSummary = data_get($bid, 'commission_structure', data_get($bid, 'get.commission_structure', ''));
@@ -2666,6 +2666,28 @@
                                                                                         You Be Hired</div>
                                                                                     <div class="text-muted">
                                                                                         {{ data_get($bid, 'get.why_hire_you') }}
+                                                                                    </div>
+                                                                                </div>
+                                                                            @endif
+
+                                                                            <!-- What Sets You Apart -->
+                                                                            @if (data_get($bid, 'get.what_sets_you_apart'))
+                                                                                <div class="mb-3">
+                                                                                    <div class="fw-semibold"
+                                                                                        style="color: #049399;">What Sets You Apart From Other Agents</div>
+                                                                                    <div class="text-muted">
+                                                                                        {{ data_get($bid, 'get.what_sets_you_apart') }}
+                                                                                    </div>
+                                                                                </div>
+                                                                            @endif
+
+                                                                            <!-- Marketing Strategy -->
+                                                                            @if (data_get($bid, 'get.marketing_plan'))
+                                                                                <div class="mb-3">
+                                                                                    <div class="fw-semibold"
+                                                                                        style="color: #049399;">What Is Your Marketing Strategy</div>
+                                                                                    <div class="text-muted">
+                                                                                        {{ data_get($bid, 'get.marketing_plan') }}
                                                                                     </div>
                                                                                 </div>
                                                                             @endif
