@@ -728,8 +728,13 @@ class TenantAgentAuctionBid extends Component
                 if (is_string($reviewsLinks)) {
                     $decoded = json_decode($reviewsLinks, true);
                     $this->reviews_links = is_array($decoded) ? $decoded : [['text' => '']];
+                } elseif (is_array($reviewsLinks) || is_object($reviewsLinks)) {
+                    $rl = (array) $reviewsLinks;
+                    $this->reviews_links = !empty($rl)
+                        ? array_map(fn($r) => is_object($r) ? (array) $r : (is_array($r) ? $r : ['text' => '']), $rl)
+                        : [['text' => '']];
                 } else {
-                    $this->reviews_links = (array) $reviewsLinks ?: [['text' => '']];
+                    $this->reviews_links = [['text' => '']];
                 }
                 
                 $websiteLink = $bidData->website_link ?? '';
@@ -739,8 +744,13 @@ class TenantAgentAuctionBid extends Component
                 if (is_string($socialMedia)) {
                     $decoded = json_decode($socialMedia, true);
                     $this->social_media = is_array($decoded) ? $decoded : [['platform' => '', 'text' => '']];
+                } elseif (is_array($socialMedia) || is_object($socialMedia)) {
+                    $sm = (array) $socialMedia;
+                    $this->social_media = !empty($sm)
+                        ? array_map(fn($m) => is_object($m) ? (array) $m : (is_array($m) ? $m : ['platform' => '', 'text' => '']), $sm)
+                        : [['platform' => '', 'text' => '']];
                 } else {
-                    $this->social_media = (array) $socialMedia ?: [['platform' => '', 'text' => '']];
+                    $this->social_media = [['platform' => '', 'text' => '']];
                 }
                 
                 $services = $bidData->services ?? '';

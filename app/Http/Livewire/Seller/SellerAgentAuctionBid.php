@@ -382,6 +382,10 @@ class SellerAgentAuctionBid extends Component
                     if (!empty($m[$arrField])) {
                         $val = $m[$arrField];
                         if (is_string($val)) { $val = json_decode($val, true) ?? $val; }
+                        // Normalize: convert any stdClass items to plain arrays
+                        if (is_array($val)) {
+                            $val = array_map(fn($item) => is_object($item) ? (array) $item : $item, $val);
+                        }
                         $this->$arrField = is_array($val) ? $val : [$val];
                     }
                 }
@@ -390,6 +394,14 @@ class SellerAgentAuctionBid extends Component
                 $editPromo = $m['promo_materials'] ?? [];
                 if (is_string($editPromo)) { $editPromo = json_decode($editPromo, true) ?? []; }
                 if (is_array($editPromo) && !empty($editPromo)) {
+                    // Normalize each item and its nested 'files' array from stdClass to plain array
+                    $editPromo = array_map(function($item) {
+                        $item = is_object($item) ? (array) $item : (is_array($item) ? $item : []);
+                        if (isset($item['files']) && is_array($item['files'])) {
+                            $item['files'] = array_map(fn($f) => is_object($f) ? (array) $f : $f, $item['files']);
+                        }
+                        return $item;
+                    }, $editPromo);
                     $this->promoMaterials = $editPromo;
                 }
             }
