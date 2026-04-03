@@ -2499,7 +2499,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                 <hr style="margin: 15px 0; border-color: #e0e0e0;">
 
                                 <!-- Match Score Summary (Compact Display on Bid Card) -->
-                                @php $showMatchScoreOnCard = $isListingOwner || $isBidOwner; @endphp
+                                @php $showMatchScoreOnCard = $isListingOwner || ($isBiddingPeriodListing && $isAgent && $userHasBid); @endphp
                                 @if ($showMatchScoreOnCard)
                                 <div class="match-score-summary mb-3 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6;">
                                     @if ($showDualScore && $originalScore && $latestCounterScore)
@@ -2583,14 +2583,26 @@ $auser = $auctionUser::find(@$auction->user_id);
                                 @endif
                                 <!-- View Full Bid link -->
                                 @if ($isListingOwner || $isBidOwner)
-                                    <a href="#" data-bs-toggle="modal" data-bs-target="#privateDataModal{{ data_get($bid, 'id') }}"
-                                       style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
-                                        View Full Bid
-                                    </a>
+                                {{-- Listing Owner or Bid Owner: Full access --}}
+                                @if ($isBiddingPeriodListing && $isBiddingTimerActive && $isListingOwner && !$isBidOwner)
+                                {{-- Bidding Period active: Disable View Bid for listing owner --}}
+                                <span style="color: #999; font-size: 1rem; font-weight: 500; cursor: not-allowed;"
+                                      title="Bids can be viewed when the bidding period ends.">
+                                    <i class="fa fa-lock me-1"></i> View Full Bid
+                                </span>
+                                <div class="text-muted small mt-1">
+                                    <i class="fa fa-clock me-1"></i> Bids can be viewed when the bidding period ends.
+                                </div>
                                 @else
-                                    <span style="color: #888; font-style: italic; font-size: 0.95rem;">
-                                        <i class="fa fa-lock me-1"></i> Private - visible only to listing creator
-                                    </span>
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#privateDataModal{{ data_get($bid, 'id') }}"
+                                   style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
+                                    View Full Bid
+                                </a>
+                                @endif
+                                @else
+                                <span style="color: #888; font-style: italic; font-size: 0.95rem;">
+                                    <i class="fa fa-lock me-1"></i> Private - visible only to listing creator
+                                </span>
                                 @endif
                                 <!-- Edit Bid button for bid owner -->
                                 @if ($canEditWithdraw)

@@ -2410,10 +2410,6 @@
                                         <div class="d-flex align-items-center gap-2">
                                             <i class="fa fa-chevron-down bid-chevron" style="transition: transform 0.3s; color: #1a3a5c;"></i>
                                             <h5 class="mb-0" style="font-weight: 700; color: #1a3a5c; font-size: 1.4rem;">Agent {{ $agentNumber }}</h5>
-                                            {{-- Match score badge in header --}}
-                                            @if ($isListingOwner)
-                                                <span class="badge ms-2" style="background-color: {{ $scoreColor }}; color: #fff; font-size: 0.85rem;" title="Overall match score">{{ $overallScore }}% Match</span>
-                                            @endif
                                         </div>
                                         <span style="font-weight: 600; color: {{ $bidStatusColor }}; font-size: 1.1rem;">{{ $bidStatusDisplay }}</span>
                                     </div>
@@ -2438,6 +2434,10 @@
                                                 $cardShowDualScore = true;
                                             }
                                             $cardGetScoreColor = fn($pct) => \App\Helpers\BuyerBidMatchScoreHelper::scoreColor((int)$pct);
+
+                                            // Match score visibility: listing owner OR bid owner OR BP agent with a bid
+                                            $cardIsAgentViewer = $auth_id && auth()->user() && in_array(auth()->user()->user_type ?? '', ['agent']);
+                                            $cardShowMatchScoreOnCard = $isListingOwner || ($isBiddingPeriodListing && $cardIsAgentViewer && $userHasBid);
 
                                             // Compact broker compensation summary
                                             $cardCommissionStructure = data_get($bid, 'get.commission_structure', '');
@@ -2476,8 +2476,8 @@
 
                                             <hr style="margin: 15px 0; border-color: #e0e0e0;">
 
-                                            <!-- Match Summary Box -->
-                                            @if ($isListingOwner)
+                                            <!-- B2) Match Score Summary (Compact Display on Bid Card) -->
+                                            @if ($cardShowMatchScoreOnCard)
                                             <div class="match-score-summary mb-3 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6;">
                                                 @if ($cardShowDualScore && $cardOriginalScore && $cardLatestCounterScore)
                                                 {{-- DUAL SCORE: Original Match + Latest Counter Match --}}
@@ -2580,35 +2580,37 @@
                                             <p class="text-muted small" style="font-style: italic;">Full compensation details available in View Full Bid.</p>
                                             @endif
 
-                                            @if ($canEditWithdraw)
-                                            <div class="mb-2">
-                                                <a href="{{ route('buyer.agent.auction.bid', $auction->id) }}?edit={{ $bidId }}" class="btn btn-primary bid-action-btn">
-                                                    <i class="fa fa-edit me-1"></i> Edit Bid
-                                                </a>
-                                            </div>
-                                            @endif
-
-                                            <!-- View Full Bid Link -->
+                                            <!-- D) View Full Bid Link - visibility rules by listing type and user -->
                                             @if ($isListingOwner || $isBidOwner)
-                                                @if ($isBiddingTimerActive && $isListingOwner && !$isBidOwner)
-                                                    {{-- Bidding Period active: Disable View Bid for listing owner --}}
-                                                    <span style="color: #999; font-size: 1rem; font-weight: 500; cursor: not-allowed;"
-                                                          title="Bids can be viewed when the bidding period ends.">
-                                                        <i class="fa fa-lock me-1"></i> View Full Bid
-                                                    </span>
-                                                    <div class="text-muted small mt-1">
-                                                        <i class="fa fa-clock me-1"></i> Bids can be viewed when the bidding period ends.
-                                                    </div>
-                                                @else
-                                                    <a href="#" data-bs-toggle="modal" data-bs-target="#privateDataModal{{ data_get($bid, 'id') }}"
-                                                       style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
-                                                        View Full Bid
-                                                    </a>
-                                                @endif
+                                            {{-- Listing Owner or Bid Owner: Full access --}}
+                                            @if ($isBiddingTimerActive && $isListingOwner && !$isBidOwner)
+                                            {{-- Bidding Period active: Disable View Bid for listing owner --}}
+                                            <span style="color: #999; font-size: 1rem; font-weight: 500; cursor: not-allowed;"
+                                                  title="Bids can be viewed when the bidding period ends.">
+                                                <i class="fa fa-lock me-1"></i> View Full Bid
+                                            </span>
+                                            <div class="text-muted small mt-1">
+                                                <i class="fa fa-clock me-1"></i> Bids can be viewed when the bidding period ends.
+                                            </div>
+                                            @else
+                                            <a href="#" data-bs-toggle="modal" data-bs-target="#privateDataModal{{ data_get($bid, 'id') }}"
+                                               style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
+                                                View Full Bid
+                                            </a>
+                                            @endif
                                             @else
                                             <span style="color: #888; font-style: italic; font-size: 0.95rem;">
                                                 <i class="fa fa-lock me-1"></i> Private - visible only to listing creator
                                             </span>
+                                            @endif
+
+                                            <!-- E) Edit Actions for Bid Owner - Same row, matched sizing -->
+                                            @if ($canEditWithdraw)
+                                            <div class="d-flex gap-2 mt-3 justify-content-end align-items-center">
+                                                <a href="{{ route('buyer.agent.auction.bid', $auction->id) }}?edit={{ $bidId }}" class="btn btn-primary bid-action-btn">
+                                                    <i class="fa fa-edit me-1"></i> Edit Bid
+                                                </a>
+                                            </div>
                                             @endif
                                         </div>
 
